@@ -15,7 +15,7 @@ You will need:
 
 - `ATTIO_API_KEY` 
 
-Get one [here](https://attio.com/help/apps/other-apps/generating-an-api-key)
+This is expected to be a *bearer token* which means you can get one through the [API Explorer](https://developers.attio.com/reference/get_v2-objects) on the right hand side or configure OAuth and retrieve one throught the Attio API.
 
 
 ### Claude Desktop Configuration
