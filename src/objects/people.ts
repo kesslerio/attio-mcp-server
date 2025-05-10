@@ -16,7 +16,7 @@ import {
 } from "../types/attio.js";
 
 /**
- * Searches for people by name
+ * Searches for people by name, email, or phone number
  * 
  * @param query - Search query string
  * @returns Array of person results
@@ -32,7 +32,11 @@ export async function searchPeople(query: string): Promise<Person[]> {
     
     const response = await api.post(path, {
       filter: {
-        name: { "$contains": query },
+        "$or": [
+          { name: { "$contains": query } },
+          { email: { "$contains": query } },
+          { phone: { "$contains": query } }
+        ]
       }
     });
     return response.data.data || [];

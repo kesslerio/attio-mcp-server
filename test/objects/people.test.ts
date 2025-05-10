@@ -114,7 +114,43 @@ describe('people', () => {
         '/objects/people/records/query',
         expect.objectContaining({
           filter: {
-            name: { "$contains": query }
+            "$or": [
+              { name: { "$contains": query } },
+              { email: { "$contains": query } },
+              { phone: { "$contains": query } }
+            ]
+          }
+        })
+      );
+      expect(result).toEqual(mockPeopleData);
+    });
+    
+    it('should search people by email using direct API if operations fail', async () => {
+      // Arrange
+      const query = 'example.com';
+      mockedAttioOperations.searchObject.mockRejectedValueOnce(new Error('Not available'));
+      
+      const mockResponse = {
+        data: {
+          data: mockPeopleData
+        }
+      };
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+
+      // Act
+      const result = await searchPeople(query);
+
+      // Assert
+      expect(mockedAttioOperations.searchObject).toHaveBeenCalledWith(ResourceType.PEOPLE, query);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/objects/people/records/query',
+        expect.objectContaining({
+          filter: {
+            "$or": [
+              { name: { "$contains": query } },
+              { email: { "$contains": query } },
+              { phone: { "$contains": query } }
+            ]
           }
         })
       );

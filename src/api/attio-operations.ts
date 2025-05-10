@@ -12,7 +12,7 @@ import {
 } from "../types/attio.js";
 
 /**
- * Generic function to search any object type by name
+ * Generic function to search any object type by name and other fields
  * 
  * @param objectType - The type of object to search (people or companies)
  * @param query - Search query string
@@ -26,10 +26,22 @@ export async function searchObject<T extends AttioRecord>(
   const path = `/objects/${objectType}/records/query`;
   
   try {
+    // Create a search filter that looks in multiple fields
+    const searchFilter = objectType === ResourceType.PEOPLE 
+      ? {
+          "$or": [
+            { name: { "$contains": query } },
+            { email: { "$contains": query } },
+            { phone: { "$contains": query } }
+          ]
+        }
+      : {
+          // For companies or other object types, default to name search
+          name: { "$contains": query }
+        };
+    
     const response = await api.post<AttioListResponse<T>>(path, {
-      filter: {
-        name: { "$contains": query },
-      }
+      filter: searchFilter
     });
     return response.data.data || [];
   } catch (error: any) {
