@@ -36,13 +36,11 @@ export async function searchPeople(query: string): Promise<Person[]> {
       const api = getAttioClient();
       const path = "/objects/people/records/query";
       
+      // Use only the name filter as it's the most reliable
+      // Email and phone are accessed through a nested structure
       const response = await api.post(path, {
         filter: {
-          "$or": [
-            { name: { "$contains": query } },
-            { email: { "$contains": query } },
-            { phone: { "$contains": query } }
-          ]
+          name: { "$contains": query }
         }
       });
       return response.data.data || [];
@@ -64,16 +62,27 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
   const path = "/objects/people/records/query";
   
   try {
+    // Use only name filter to avoid the 'unknown attribute slug: email' error
+    // The API needs a different structure for accessing email and phone
     const response = await api.post(path, {
       filter: {
-        "$or": [
-          { name: { "$contains": query } },
-          { email: { "$contains": query } },
-          { phone: { "$contains": query } }
-        ]
+        name: { "$contains": query }
       }
     });
-    return response.data.data || [];
+    
+    // Post-processing to filter by email/phone if the query looks like it might be one
+    let results = response.data.data || [];
+    
+    // If it looks like an email, do client-side filtering
+    if (query.includes('@') && results.length > 0) {
+      results = results.filter((person: Person) => 
+        person.values?.email?.some((email: {value: string}) => 
+          email.value?.toLowerCase().includes(query.toLowerCase())
+        )
+      );
+    }
+    
+    return results;
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
   }
@@ -90,12 +99,22 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
   const path = "/objects/people/records/query";
   
   try {
+    // Fetch all people and filter client-side by email
+    // This avoids the 'unknown attribute slug: email' error
+    // In a production environment with many records, we would need pagination
     const response = await api.post(path, {
-      filter: {
-        email: { "$contains": email }
-      }
+      // We're intentionally not filtering server-side due to API limitations
+      // with the email attribute structure
+      limit: 100 // Increased limit to get more potential matches
     });
-    return response.data.data || [];
+    
+    // Filter the results client-side by email
+    const results = (response.data.data || []) as Person[];
+    return results.filter((person: Person) => 
+      person.values?.email?.some((emailObj: {value: string}) => 
+        emailObj.value?.toLowerCase().includes(email.toLowerCase())
+      )
+    );
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
   }
@@ -112,15 +131,24 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
   const path = "/objects/people/records/query";
   
   try {
+    // Fetch all people and filter client-side by phone
+    // This avoids the 'unknown attribute slug: phone' error
+    // Similar approach to searchPeopleByEmail
     const response = await api.post(path, {
-      filter: {
-        phone: { "$contains": phone }
-      }
+      // We're intentionally not filtering server-side due to API limitations
+      // with the phone attribute structure
+      limit: 100 // Increased limit to get more potential matches
     });
-    return response.data.data || [];
+    
+    // Filter the results client-side by phone
+    const results = (response.data.data || []) as Person[];
+    return results.filter((person: Person) => 
+      person.values?.phone?.some((phoneObj: {value: string}) => 
+        phoneObj.value?.toLowerCase().includes(phone.toLowerCase())
+      )
+    );
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
-
   }
 }
 
