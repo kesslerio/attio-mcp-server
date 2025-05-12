@@ -2,6 +2,7 @@
  * Lists-related tool configurations
  */
 import { ResourceType, AttioList, AttioListEntry } from "../../types/attio.js";
+import { getRecordNameFromEntry } from "../../utils/record-utils.js";
 import {
   getLists,
   getListDetails,
@@ -36,14 +37,10 @@ export const listsToolConfigs = {
     formatResult: (results: AttioListEntry[]) => {
       return `Found ${results.length} entries in list:\n${results.map((entry: AttioListEntry) => {
         // Include both entry ID and record ID for better visibility
-        let recordName = '';
+        const recordName = getRecordNameFromEntry(entry);
+        const displayName = recordName ? ` (${recordName})` : '';
         
-        // Try to extract record name if available
-        if (entry.record?.values?.name && entry.record.values.name.length > 0) {
-          recordName = ` (${entry.record.values.name[0].value})`;
-        }
-        
-        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${recordName}`;
+        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayName}`;
       }).join('\n')}`;
     }
   } as GetListEntriesToolConfig,

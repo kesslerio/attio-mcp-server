@@ -12,6 +12,7 @@ import {
   AttioListEntry
 } from "../types/attio.js";
 import { ErrorType } from '../utils/error-handler.js';
+import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
 
 /**
  * Configuration options for API call retry
@@ -408,9 +409,9 @@ export async function getListEntries(
     try {
       const path = `/lists/${listId}/entries/query`;
       const response = await api.post<AttioListResponse<AttioListEntry>>(path, {
-        limit,
-        offset,
-        expand: ["record"] // Request record data expansion
+        [API_PARAMS.LIMIT]: limit,
+        [API_PARAMS.OFFSET]: offset,
+        [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
       });
       
       // Process response to ensure record_id is correctly extracted
@@ -421,10 +422,10 @@ export async function getListEntries(
       try {
         const fallbackPath = `/lists-entries/query`;
         const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, {
-          list_id: listId,
-          limit,
-          offset,
-          expand: ["record"] // Request record data expansion
+          [API_PARAMS.LIST_ID]: listId,
+          [API_PARAMS.LIMIT]: limit,
+          [API_PARAMS.OFFSET]: offset,
+          [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
         });
         
         const entries = fallbackResponse.data.data || [];
@@ -432,7 +433,7 @@ export async function getListEntries(
       } catch (fallbackError) {
         // Last resort fallback with record expansion as a query parameter
         try {
-          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`;
+          const lastPath = `/lists-entries?${API_PARAMS.LIST_ID}=${listId}&${API_PARAMS.LIMIT}=${limit}&${API_PARAMS.OFFSET}=${offset}&${API_PARAMS.EXPAND}=${API_PARAMS.RECORD}`;
           const lastResponse = await api.get<AttioListResponse<AttioListEntry>>(lastPath);
           
           const entries = lastResponse.data.data || [];
@@ -446,56 +447,6 @@ export async function getListEntries(
       }
     }
   }, retryConfig);
-}
-
-/**
- * Process list entries to ensure record_id is correctly extracted from nested structure
- * 
- * @param entries - Raw list entries from API response
- * @returns Processed list entries with record_id correctly populated
- */
-function processListEntries(entries: AttioListEntry[]): AttioListEntry[] {
-  return entries.map(entry => {
-    // If record_id is already defined, no processing needed
-    if (entry.record_id) {
-      return entry;
-    }
-    
-    // Try to extract record_id from the nested record structure
-    if (entry.record?.id?.record_id) {
-      return {
-        ...entry,
-        record_id: entry.record.id.record_id
-      };
-    }
-    
-    // If record data might be in a different nested structure
-    if (entry.values?.record?.id?.record_id) {
-      return {
-        ...entry,
-        record_id: entry.values.record.id.record_id
-      };
-    }
-    
-    // If we can find a record_id in another location
-    const possibleKeys = Object.keys(entry);
-    for (const key of possibleKeys) {
-      // Check if any property ends with 'record_id' and is a string
-      if (
-        key.endsWith('_record_id') && 
-        typeof entry[key] === 'string' && 
-        entry[key]
-      ) {
-        return {
-          ...entry,
-          record_id: entry[key] as string
-        };
-      }
-    }
-    
-    // Unable to find record_id, return the entry as-is
-    return entry;
-  });
 }
 
 /**
