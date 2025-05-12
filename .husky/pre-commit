@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running Attio MCP workflow validations..."
+
+# Run workflow validation script
+./build/validate_workflow.py --pre-commit

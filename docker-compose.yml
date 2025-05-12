@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  attio-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: attio-mcp-server:latest
+    container_name: attio-mcp-server
+    ports:
+      - "3000:3000"
+    environment:
+      - ATTIO_API_KEY=${ATTIO_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+EOF < /dev/null
