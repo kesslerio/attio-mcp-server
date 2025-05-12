@@ -3,10 +3,11 @@ import {
   listObjects,
   getObjectDetails,
   getObjectNotes,
-  createObjectNote
+  createObjectNote,
+  getListEntries
 } from '../../src/api/attio-operations';
 import { getAttioClient } from '../../src/api/attio-client';
-import { ResourceType, Person, Company } from '../../src/types/attio';
+import { ResourceType, Person, Company, AttioListEntry } from '../../src/types/attio';
 
 // Mock the axios client
 jest.mock('../../src/api/attio-client', () => ({
@@ -193,6 +194,125 @@ describe('Attio Operations', () => {
 
       // Assertions
       expect(result).toEqual(mockPerson);
+    });
+  });
+
+  describe('getListEntries', () => {
+    it('should fetch list entries with the record expansion parameter', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' },
+        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+      ];
+      mockApiClient.post.mockResolvedValueOnce({
+        data: { data: mockEntries }
+      });
+
+      // Act
+      const result = await getListEntries(listId);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
+        limit: 20,
+        offset: 0,
+        expand: ["record"]
+      });
+      expect(result).toEqual(mockEntries);
+    });
+
+    it('should extract record_id from nested record structure', async () => {
+      // Arrange
+      const listId = 'list123';
+      
+      // Mock entries with nested record structure but missing direct record_id
+      const mockNestedEntries = [
+        { 
+          id: { entry_id: 'entry1' }, 
+          record: { id: { record_id: 'record1' } }
+        },
+        { 
+          id: { entry_id: 'entry2' }, 
+          record: { 
+            id: { record_id: 'record2' },
+            values: { name: [{ value: 'Company ABC' }] }
+          }
+        }
+      ];
+      
+      mockApiClient.post.mockResolvedValueOnce({
+        data: { data: mockNestedEntries }
+      });
+
+      // Act
+      const result = await getListEntries(listId);
+
+      // Assert
+      expect(result[0].record_id).toBe('record1');
+      expect(result[1].record_id).toBe('record2');
+    });
+
+    it('should try fallback endpoints if primary endpoint fails', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' },
+        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+      ];
+      
+      // Mock first endpoint to fail
+      mockApiClient.post
+        .mockRejectedValueOnce(new Error('Primary endpoint failed'))
+        .mockResolvedValueOnce({
+          data: { data: mockEntries }
+        });
+
+      // Act
+      const result = await getListEntries(listId);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledTimes(2);
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
+        limit: 20,
+        offset: 0,
+        expand: ["record"]
+      });
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists-entries/query', {
+        list_id: 'list123',
+        limit: 20,
+        offset: 0,
+        expand: ["record"]
+      });
+      expect(result).toEqual(mockEntries);
+    });
+
+    it('should try the last fallback endpoint if others fail', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' },
+        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+      ];
+      
+      // Mock first and second endpoints to fail
+      mockApiClient.post
+        .mockRejectedValueOnce(new Error('Primary endpoint failed'))
+        .mockRejectedValueOnce(new Error('Secondary endpoint failed'));
+      
+      // Mock GET for the last fallback
+      mockApiClient.get.mockResolvedValueOnce({
+        data: { data: mockEntries }
+      });
+
+      // Act
+      const result = await getListEntries(listId);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledTimes(2);
+      expect(mockApiClient.get).toHaveBeenCalledWith(
+        '/lists-entries?list_id=list123&limit=20&offset=0&expand=record'
+      );
+      expect(result).toEqual(mockEntries);
     });
   });
 });

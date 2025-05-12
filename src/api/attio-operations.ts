@@ -12,6 +12,7 @@ import {
   AttioListEntry
 } from "../types/attio.js";
 import { ErrorType } from '../utils/error-handler.js';
+import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
 
 /**
  * Configuration options for API call retry
@@ -404,30 +405,39 @@ export async function getListEntries(
   
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
-    // Try the primary endpoint first
+    // Try the primary endpoint with expanded record data
     try {
       const path = `/lists/${listId}/entries/query`;
       const response = await api.post<AttioListResponse<AttioListEntry>>(path, {
-        limit,
-        offset
+        [API_PARAMS.LIMIT]: limit,
+        [API_PARAMS.OFFSET]: offset,
+        [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
       });
-      return response.data.data || [];
+      
+      // Process response to ensure record_id is correctly extracted
+      const entries = response.data.data || [];
+      return processListEntries(entries);
     } catch (primaryError) {
-      // Try fallback endpoints
+      // Try fallback endpoints with record expansion
       try {
         const fallbackPath = `/lists-entries/query`;
         const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, {
-          list_id: listId,
-          limit,
-          offset
+          [API_PARAMS.LIST_ID]: listId,
+          [API_PARAMS.LIMIT]: limit,
+          [API_PARAMS.OFFSET]: offset,
+          [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
         });
-        return fallbackResponse.data.data || [];
+        
+        const entries = fallbackResponse.data.data || [];
+        return processListEntries(entries);
       } catch (fallbackError) {
-        // Last resort fallback
+        // Last resort fallback with record expansion as a query parameter
         try {
-          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`;
+          const lastPath = `/lists-entries?${API_PARAMS.LIST_ID}=${listId}&${API_PARAMS.LIMIT}=${limit}&${API_PARAMS.OFFSET}=${offset}&${API_PARAMS.EXPAND}=${API_PARAMS.RECORD}`;
           const lastResponse = await api.get<AttioListResponse<AttioListEntry>>(lastPath);
-          return lastResponse.data.data || [];
+          
+          const entries = lastResponse.data.data || [];
+          return processListEntries(entries);
         } catch (lastError: any) {
           if (lastError.response?.status === 404) {
             throw new Error(`List entries for list ${listId} not found`);
