@@ -14,30 +14,36 @@
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
     "check": "tsc --noEmit",
-    "build:watch": "tsc --watch"
+    "build:watch": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:people": "node test/people-test.js",
+    "test:search": "node test/search-test.js",
+    "test:lists": "node test/lists-test.js",
+    "setup-hooks": "chmod +x build/install-hooks.sh && ./build/install-hooks.sh",
+    "postinstall": "npm run setup-hooks",
+    "test-hooks": "chmod +x build/test-hooks.sh && ./build/test-hooks.sh",
+    "docker:build": "chmod +x scripts/docker-build.sh && ./scripts/docker-build.sh",
+    "docker:run": "docker run -p 3000:3000 -e ATTIO_API_KEY=${ATTIO_API_KEY} -e ATTIO_WORKSPACE_ID=${ATTIO_WORKSPACE_ID} attio-mcp-server:latest",
+    "docker:compose": "docker-compose up -d",
+    "docker:logs": "docker-compose logs -f",
+    "docker:stop": "docker-compose down"
   },
   "files": [
     "dist"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1",
-    "axios": "^1.7.9",
-    "shx": "^0.3.4",
-    "typescript": "^5.7.2"
+    "axios": "^1.7.9"
   },
   "author": "@hmk",
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
+    "shx": "^0.4.0",
     "ts-jest": "^29.2.5",
-    "tsx": "^4.19.2"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "testPathIgnorePatterns": [
-      "<rootDir>/dist/"
-    ]
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
   }
 }
