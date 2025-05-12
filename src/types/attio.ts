@@ -76,7 +76,7 @@ export interface AttioListEntry {
     [key: string]: any;
   };
   list_id: string;
-  record_id: string;
+  record_id?: string; // Making this optional to better match the API reality
   created_at: string;
   updated_at?: string;
   record?: AttioRecord; // Optional included record data
