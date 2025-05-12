@@ -2,6 +2,50 @@
 
 This document describes the error handling system implemented in the Attio MCP server.
 
+## MCP-Specific Error Handling
+
+When using Claude with the Attio MCP server, you may encounter errors that are specific to the MCP integration. Here's how these are handled:
+
+### Common MCP Error Scenarios
+
+1. **Authentication Failures**
+   - If your Attio API key is invalid or expired, Claude will receive an authentication error
+   - Claude will prompt you to check your API key configuration
+
+2. **Resource Not Found Errors**
+   - When referencing non-existent records, Claude receives a NOT_FOUND error
+   - Claude will suggest alternative search approaches or creation of new records
+
+3. **Rate Limiting**
+   - Attio API rate limits may cause temporary failures
+   - The MCP server implements retry logic with exponential backoff
+   - Claude will inform you if operations are being delayed due to rate limiting
+
+### Error Recovery Strategies
+
+Claude implements several strategies to recover from errors:
+
+1. **Alternative Search Methods**
+   - If a direct lookup fails, Claude may try broader search criteria
+   - Example: If email search fails, Claude might try name search instead
+
+2. **Graceful Degradation**
+   - When specific operations fail, Claude will continue with available functions
+   - Example: If creating a note fails, Claude can still read existing notes
+
+3. **User Guidance**
+   - Claude provides clear explanations of errors and suggests next steps
+   - For persistent errors, Claude will recommend troubleshooting steps
+
+### Example Error Handling Dialog
+
+**User**: "Update the contact information for john@nonexistentcompany.com"
+
+**Claude**: "I wasn't able to find a contact with the email john@nonexistentcompany.com. Would you like me to:
+1. Search for contacts named John instead
+2. Create a new contact with this email address
+3. Check if there might be a different email address for this contact"
+
 ## Error Types
 
 The server categorizes errors into specific types to make error handling more predictable and actionable. These types are defined in the `ErrorType` enum:

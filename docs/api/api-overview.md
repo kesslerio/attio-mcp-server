@@ -2,6 +2,39 @@
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
+## Understanding the Model Context Protocol (MCP)
+
+The Attio MCP server acts as a bridge between Claude (or other AI assistants) and the Attio API. This integration allows Claude to interact with your CRM data without requiring you to manually copy and paste information.
+
+### How MCP Works
+
+1. **Request Flow**: When you ask Claude about Attio data, Claude sends a structured request to the Attio MCP server
+2. **Authentication**: The MCP server authenticates with Attio using your API key
+3. **Data Retrieval**: The server fetches the requested data from Attio's API
+4. **Response**: Claude receives the data and presents it to you in a conversational format
+
+### URI Scheme
+
+The Attio MCP server uses a custom URI scheme to identify resources:
+
+- Companies: `attio://companies/{company_id}`
+- People: `attio://people/{person_id}`
+- Lists: `attio://lists/{list_id}`
+- Notes: `attio://notes/{note_id}`
+
+Claude uses these URIs to reference specific records when performing operations.
+
+### Available Tools
+
+Claude can interact with Attio using various tools provided by the MCP server:
+
+- **Search tools**: Find companies, people, and other records
+- **Read tools**: View details of specific records
+- **Write tools**: Create notes and update records
+- **List management tools**: Work with Attio lists
+
+See the specific API documentation for details on each tool.
+
 ## Authentication
 
 ### API Keys
