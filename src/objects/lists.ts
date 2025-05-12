@@ -126,16 +126,30 @@ async function tryMultipleListEntryEndpoints(
       const entries = response.data.data || [];
       
       // Check if entries were found and log for debugging
-      if (process.env.NODE_ENV === 'development' && entries.length > 0) {
-        console.log(`Found ${entries.length} entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`);
+      if (process.env.NODE_ENV === 'development') {
+        const messageType = entries.length > 0 ? 'SUCCESS' : 'WARNING';
+        console.log(`[tryMultipleListEntryEndpoints] [${messageType}] Found ${entries.length} entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`, {
+          listId,
+          limit,
+          offset,
+          entryCount: entries.length,
+          endpoint: endpoint.method.toUpperCase()
+        });
       }
       
       // Process entries to ensure record_id is properly set
       return processEntries(entries);
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Failed ${endpoint.method.toUpperCase()} ${endpoint.path}:`, 
-                    error.message || 'Unknown error');
+        console.log(`[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${endpoint.path}:`, 
+                    error.message || 'Unknown error', {
+          listId,
+          limit,
+          offset,
+          endpoint: endpoint.method.toUpperCase(),
+          path: endpoint.path,
+          errorType: error.name || 'UnknownError'
+        });
       }
       // Continue to next endpoint on failure
       continue;
@@ -203,7 +217,12 @@ export async function getListEntries(
     return await getGenericListEntries(listId, limit, offset);
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Generic list entries failed: ${error.message || 'Unknown error'}`);
+      console.log(`[getListEntries] Generic list entries failed: ${error.message || 'Unknown error'}`, {
+        method: 'getGenericListEntries',
+        listId,
+        limit,
+        offset
+      });
     }
     // Fallback to multi-endpoint utility function
     return await tryMultipleListEntryEndpoints(listId, limit, offset);
