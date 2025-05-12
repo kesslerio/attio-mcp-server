@@ -68,17 +68,65 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
  * @param companyId - The ID of the company
  * @returns Company details
  */
-export async function getCompanyDetails(companyId: string): Promise<Company> {
+export async function getCompanyDetails(companyIdOrUri: string): Promise<Company> {
+  // Check if the input is a URI format
+  const isUri = companyIdOrUri.startsWith('attio://');
+  let companyId = companyIdOrUri;
+  
+  // Extract the ID from URI if needed
+  if (isUri) {
+    // Parse the URI format (attio://companies/{id})
+    const parts = companyIdOrUri.split('/');
+    companyId = parts[parts.length - 1];
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Extracted company ID ${companyId} from URI ${companyIdOrUri}`);
+    }
+  }
+  
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
-  } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = `/objects/companies/records/${companyId}`;
+  } catch (error: any) {
+    const firstError = error;
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`First attempt failed: ${firstError.message || 'Unknown error'}`);
+    }
     
-    const response = await api.get(path);
-    return response.data;
+    try {
+      // Try fallback implementation with explicit path
+      const api = getAttioClient();
+      const path = `/objects/companies/records/${companyId}`;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Trying fallback path: ${path}`);
+      }
+      
+      const response = await api.get(path);
+      return response.data;
+    } catch (error: any) {
+      const secondError = error;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Second attempt failed: ${secondError.message || 'Unknown error'}`);
+      }
+      
+      // Last resort - try the alternate endpoint format
+      try {
+        const api = getAttioClient();
+        const alternatePath = `/companies/${companyId}`;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Trying alternate path: ${alternatePath}`);
+        }
+        
+        const response = await api.get(alternatePath);
+        return response.data;
+      } catch (error: any) {
+        const thirdError = error;
+        // If all attempts fail, throw a meaningful error
+        throw new Error(`Could not retrieve company details for ${companyIdOrUri}: ${thirdError.message || 'Unknown error'}`);
+      }
+    }
   }
 }
 
