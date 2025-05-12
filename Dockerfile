@@ -18,6 +18,8 @@ RUN apk --no-cache add curl
 # Expose port
 EXPOSE 3000
 
+# Set environment variables
+ENV NODE_ENV=production
+
 # Command to run the server
 CMD ["node", "dist/index.js"]
-EOD < /dev/null
