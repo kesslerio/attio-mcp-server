@@ -6,6 +6,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { createErrorResult } from "../utils/error-handler.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
 import { ResourceType, AttioListEntry } from "../types/attio.js";
+import { processListEntries } from "../utils/record-utils.js";
 
 // Import tool configurations and definitions
 import {
@@ -300,20 +301,8 @@ export function registerToolHandlers(server: Server): void {
           const entries = await toolConfig.handler(listId, limit, offset);
           const getListEntriesToolConfig = toolConfig as GetListEntriesToolConfig;
           
-          // Special handling for entries to ensure record_id is available
-          const processedEntries = entries.map((entry: AttioListEntry) => {
-            // If record_id is already defined, no processing needed
-            if (entry.record_id) {
-              return entry;
-            }
-            
-            // Try to extract record_id from the nested record structure
-            if (entry.record?.id?.record_id) {
-              entry.record_id = entry.record.id.record_id;
-            }
-            
-            return entry;
-          });
+          // Use shared utility function to process entries and ensure record_id is available
+          const processedEntries = processListEntries(entries);
           
           const formattedResults = getListEntriesToolConfig.formatResult 
             ? getListEntriesToolConfig.formatResult(processedEntries)
