@@ -34,8 +34,17 @@ export const listsToolConfigs = {
     name: "get-list-entries",
     handler: getListEntries,
     formatResult: (results: AttioListEntry[]) => {
-      return `Found ${results.length} entries in list:\n${results.map((entry: AttioListEntry) => 
-        `- ${entry.record_id || 'Unknown ID'}`).join('\n')}`;
+      return `Found ${results.length} entries in list:\n${results.map((entry: AttioListEntry) => {
+        // Include both entry ID and record ID for better visibility
+        let recordName = '';
+        
+        // Try to extract record name if available
+        if (entry.record?.values?.name && entry.record.values.name.length > 0) {
+          recordName = ` (${entry.record.values.name[0].value})`;
+        }
+        
+        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${recordName}`;
+      }).join('\n')}`;
     }
   } as GetListEntriesToolConfig,
   addRecordToList: {

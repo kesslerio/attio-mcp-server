@@ -4,406 +4,47 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
-import { 
-  searchCompanies, 
-  getCompanyDetails, 
-  getCompanyNotes, 
-  createCompanyNote 
-} from "../objects/companies.js";
-import {
-  searchPeople,
-  searchPeopleByEmail,
-  searchPeopleByPhone,
-  getPersonDetails,
-  getPersonNotes,
-  createPersonNote
-} from "../objects/people.js";
-import {
-  getLists,
-  getListDetails,
-  getListEntries,
-  addRecordToList,
-  removeRecordFromList
-} from "../objects/lists.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
-import { ResourceType, AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
+import { ResourceType, AttioListEntry } from "../types/attio.js";
 
-// Tool Configuration Types
-interface ToolConfig {
-  name: string;
-  handler: (...args: any[]) => Promise<any>;
-}
+// Import tool configurations and definitions
+import {
+  companyToolConfigs,
+  companyToolDefinitions,
+  peopleToolConfigs,
+  peopleToolDefinitions,
+  listsToolConfigs,
+  listsToolDefinitions,
+  promptsToolConfigs,
+  promptsToolDefinitions
+} from "./tool-configs/index.js";
 
-interface SearchToolConfig extends ToolConfig {
-  formatResult: (results: AttioRecord[]) => string;
-}
+// Import tool types
+import { 
+  ToolConfig,
+  SearchToolConfig,
+  DetailsToolConfig,
+  NotesToolConfig,
+  CreateNoteToolConfig,
+  GetListsToolConfig,
+  GetListEntriesToolConfig,
+  ListActionToolConfig
+} from "./tool-types.js";
 
-interface DetailsToolConfig extends ToolConfig {
-}
-
-interface NotesToolConfig extends ToolConfig {
-}
-
-interface CreateNoteToolConfig extends ToolConfig {
-  idParam: string;
-}
-
-interface GetListsToolConfig extends ToolConfig {
-  formatResult: (results: AttioList[]) => string;
-}
-
-interface GetListEntriesToolConfig extends ToolConfig {
-  formatResult: (results: AttioListEntry[]) => string;
-}
-
-interface ListActionToolConfig extends ToolConfig {
-  idParams: string[];
-}
-
-// Configuration for all tools by resource type
-const TOOL_CONFIGS: Record<ResourceType, {
-  search?: SearchToolConfig;
-  details?: DetailsToolConfig;
-  notes?: NotesToolConfig;
-  createNote?: CreateNoteToolConfig;
-  
-  // Lists-specific operations
-  getLists?: GetListsToolConfig;
-  getListDetails?: ToolConfig;
-  getListEntries?: GetListEntriesToolConfig;
-  addRecordToList?: ListActionToolConfig;
-  removeRecordFromList?: ListActionToolConfig;
-}> = {
-  [ResourceType.COMPANIES]: {
-    search: {
-      name: "search-companies",
-      handler: searchCompanies,
-      formatResult: (results) => results.map((company) => {
-        const companyName = company.values?.name?.[0]?.value || "Unknown Company";
-        const companyId = company.id?.record_id || "Record ID not found";
-        return `${companyName}: attio://companies/${companyId}`;
-      }).join("\n"),
-    },
-    details: {
-      name: "read-company-details",
-      handler: getCompanyDetails,
-    },
-    notes: {
-      name: "read-company-notes",
-      handler: getCompanyNotes,
-    },
-    createNote: {
-      name: "create-company-note",
-      handler: createCompanyNote,
-      idParam: "companyId",
-    },
-  },
-  [ResourceType.PEOPLE]: {
-    search: {
-      name: "search-people",
-      handler: searchPeople,
-      formatResult: (results) => results.map((person) => {
-        const personName = person.values?.name?.[0]?.value || "Unknown Person";
-        const personId = person.id?.record_id || "Record ID not found";
-        const personEmail = person.values?.email?.[0]?.value ? ` (${person.values.email[0].value})` : '';
-        return `${personName}${personEmail}: attio://people/${personId}`;
-      }).join("\n"),
-    },
-    details: {
-      name: "read-person-details",
-      handler: getPersonDetails,
-    },
-    notes: {
-      name: "read-person-notes",
-      handler: getPersonNotes,
-    },
-    createNote: {
-      name: "create-person-note",
-      handler: createPersonNote,
-      idParam: "personId",
-    },
-  },
-  [ResourceType.LISTS]: {
-    getLists: {
-      name: "get-lists",
-      handler: getLists,
-      formatResult: (results) => results.map((list) => {
-        const listTitle = list.title || "Untitled List";
-        const listId = typeof list.id === 'object' ? list.id.list_id : list.id;
-        return `${listTitle}: attio://lists/${listId}`;
-      }).join("\n"),
-    },
-    getListDetails: {
-      name: "get-list-details",
-      handler: getListDetails,
-    },
-    getListEntries: {
-      name: "get-list-entries",
-      handler: getListEntries,
-      formatResult: (results) => results.map((entry) => {
-        const entryId = typeof entry.id === 'object' ? entry.id.entry_id : entry.id;
-        const recordId = entry.record_id;
-        return `Entry ID: ${entryId}, Record ID: ${recordId}`;
-      }).join("\n"),
-    },
-    addRecordToList: {
-      name: "add-record-to-list",
-      handler: addRecordToList,
-      idParams: ["listId", "recordId"],
-    },
-    removeRecordFromList: {
-      name: "remove-record-from-list",
-      handler: removeRecordFromList,
-      idParams: ["listId", "entryId"],
-    },
-  },
+// Consolidated tool configurations from modular files
+const TOOL_CONFIGS = {
+  [ResourceType.COMPANIES]: companyToolConfigs,
+  [ResourceType.PEOPLE]: peopleToolConfigs,
+  [ResourceType.LISTS]: listsToolConfigs,
+  // Add other resource types as needed
 };
 
-// Tool definitions including schemas, organized by resource type
-const TOOL_DEFINITIONS: Record<ResourceType, Array<{
-  name: string;
-  description: string;
-  inputSchema: any;
-}>> = {
-  [ResourceType.COMPANIES]: [
-    {
-      name: "search-companies",
-      description: "Search for companies by name",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Company name or keyword to search for",
-          },
-        },
-        required: ["query"],
-      },
-    },
-    {
-      name: "read-company-details",
-      description: "Read details of a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the company to read",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "read-company-notes",
-      description: "Read notes for a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the company to read notes for",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of notes to fetch (optional, default 10)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of notes to skip (optional, default 0)",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "create-company-note",
-      description: "Add a new note to a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          companyId: {
-            type: "string",
-            description: "ID of the company to add the note to",
-          },
-          noteTitle: {
-            type: "string",
-            description: "Title of the note",
-          },
-          noteText: {
-            type: "string",
-            description: "Text content of the note",
-          },
-        },
-        required: ["companyId", "noteTitle", "noteText"],
-      },
-    }
-  ],
-  [ResourceType.PEOPLE]: [
-    {
-      name: "search-people",
-      description: "Search for people by name, email, or phone number",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Person name, email, phone number, or keyword to search for",
-          },
-        },
-        required: ["query"],
-      },
-    },
-    {
-      name: "read-person-details",
-      description: "Read details of a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the person to read",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "read-person-notes",
-      description: "Read notes for a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the person to read notes for",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of notes to fetch (optional, default 10)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of notes to skip (optional, default 0)",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "create-person-note",
-      description: "Add a new note to a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          personId: {
-            type: "string",
-            description: "ID of the person to add the note to",
-          },
-          noteTitle: {
-            type: "string",
-            description: "Title of the note",
-          },
-          noteText: {
-            type: "string",
-            description: "Text content of the note",
-          },
-        },
-        required: ["personId", "noteTitle", "noteText"],
-      },
-    }
-  ],
-  [ResourceType.LISTS]: [
-    {
-      name: "get-lists",
-      description: "Get all lists in the workspace",
-      inputSchema: {
-        type: "object",
-        properties: {
-          objectSlug: {
-            type: "string",
-            description: "Optional object type to filter lists by (e.g., 'companies', 'people')",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of lists to fetch (default: 20)",
-          },
-        },
-      },
-    },
-    {
-      name: "get-list-details",
-      description: "Get details for a specific list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-        },
-        required: ["listId"],
-      },
-    },
-    {
-      name: "get-list-entries",
-      description: "Get entries for a specific list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of entries to fetch (default: 20)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of entries to skip (default: 0)",
-          },
-        },
-        required: ["listId"],
-      },
-    },
-    {
-      name: "add-record-to-list",
-      description: "Add a record to a list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          recordId: {
-            type: "string",
-            description: "The ID of the record to add",
-          },
-        },
-        required: ["listId", "recordId"],
-      },
-    },
-    {
-      name: "remove-record-from-list",
-      description: "Remove a record from a list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          entryId: {
-            type: "string",
-            description: "The ID of the list entry to remove",
-          },
-        },
-        required: ["listId", "entryId"],
-      },
-    }
-  ]
+// Consolidated tool definitions from modular files
+const TOOL_DEFINITIONS = {
+  [ResourceType.COMPANIES]: companyToolDefinitions,
+  [ResourceType.PEOPLE]: peopleToolDefinitions,
+  [ResourceType.LISTS]: listsToolDefinitions,
+  // Add other resource types as needed
 };
 
 /**
@@ -417,25 +58,21 @@ function findToolConfig(toolName: string): {
   toolConfig: ToolConfig; 
   toolType: string;
 } | undefined {
-  // Define all possible tool types
-  const toolTypes = [
-    'search', 'details', 'notes', 'createNote',
-    'getLists', 'getListDetails', 'getListEntries', 'addRecordToList', 'removeRecordFromList'
-  ] as const;
-  
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
+    if (!resourceConfig) continue;
     
-    for (const toolType of toolTypes) {
-      if (resourceConfig[toolType]?.name === toolName) {
+    for (const [toolType, config] of Object.entries(resourceConfig)) {
+      if (config && config.name === toolName) {
         return {
-          resourceType,
-          toolConfig: resourceConfig[toolType],
-          toolType
+          resourceType: resourceType as ResourceType,
+          toolConfig: config as ToolConfig,
+          toolType,
         };
       }
     }
   }
+  
   return undefined;
 }
 
@@ -562,6 +199,12 @@ export function registerToolHandlers(server: Server): void {
       if (toolType === 'createNote') {
         const createNoteConfig = toolConfig as CreateNoteToolConfig;
         const idParam = createNoteConfig.idParam;
+        
+        if (!idParam) {
+          const configError = new Error('Missing idParam in tool configuration');
+          return createErrorResult(configError, 'tool-config', 'GET', { status: 400 });
+        }
+        
         const id = request.params.arguments?.[idParam] as string;
         const noteTitle = request.params.arguments?.noteTitle as string;
         const noteText = request.params.arguments?.noteText as string;
@@ -656,9 +299,25 @@ export function registerToolHandlers(server: Server): void {
         try {
           const entries = await toolConfig.handler(listId, limit, offset);
           const getListEntriesToolConfig = toolConfig as GetListEntriesToolConfig;
+          
+          // Special handling for entries to ensure record_id is available
+          const processedEntries = entries.map((entry: AttioListEntry) => {
+            // If record_id is already defined, no processing needed
+            if (entry.record_id) {
+              return entry;
+            }
+            
+            // Try to extract record_id from the nested record structure
+            if (entry.record?.id?.record_id) {
+              entry.record_id = entry.record.id.record_id;
+            }
+            
+            return entry;
+          });
+          
           const formattedResults = getListEntriesToolConfig.formatResult 
-            ? getListEntriesToolConfig.formatResult(entries)
-            : JSON.stringify(entries, null, 2);
+            ? getListEntriesToolConfig.formatResult(processedEntries)
+            : JSON.stringify(processedEntries, null, 2);
           
           return {
             content: [

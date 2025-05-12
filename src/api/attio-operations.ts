@@ -404,30 +404,39 @@ export async function getListEntries(
   
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
-    // Try the primary endpoint first
+    // Try the primary endpoint with expanded record data
     try {
       const path = `/lists/${listId}/entries/query`;
       const response = await api.post<AttioListResponse<AttioListEntry>>(path, {
         limit,
-        offset
+        offset,
+        expand: ["record"] // Request record data expansion
       });
-      return response.data.data || [];
+      
+      // Process response to ensure record_id is correctly extracted
+      const entries = response.data.data || [];
+      return processListEntries(entries);
     } catch (primaryError) {
-      // Try fallback endpoints
+      // Try fallback endpoints with record expansion
       try {
         const fallbackPath = `/lists-entries/query`;
         const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, {
           list_id: listId,
           limit,
-          offset
+          offset,
+          expand: ["record"] // Request record data expansion
         });
-        return fallbackResponse.data.data || [];
+        
+        const entries = fallbackResponse.data.data || [];
+        return processListEntries(entries);
       } catch (fallbackError) {
-        // Last resort fallback
+        // Last resort fallback with record expansion as a query parameter
         try {
-          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`;
+          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`;
           const lastResponse = await api.get<AttioListResponse<AttioListEntry>>(lastPath);
-          return lastResponse.data.data || [];
+          
+          const entries = lastResponse.data.data || [];
+          return processListEntries(entries);
         } catch (lastError: any) {
           if (lastError.response?.status === 404) {
             throw new Error(`List entries for list ${listId} not found`);
@@ -437,6 +446,56 @@ export async function getListEntries(
       }
     }
   }, retryConfig);
+}
+
+/**
+ * Process list entries to ensure record_id is correctly extracted from nested structure
+ * 
+ * @param entries - Raw list entries from API response
+ * @returns Processed list entries with record_id correctly populated
+ */
+function processListEntries(entries: AttioListEntry[]): AttioListEntry[] {
+  return entries.map(entry => {
+    // If record_id is already defined, no processing needed
+    if (entry.record_id) {
+      return entry;
+    }
+    
+    // Try to extract record_id from the nested record structure
+    if (entry.record?.id?.record_id) {
+      return {
+        ...entry,
+        record_id: entry.record.id.record_id
+      };
+    }
+    
+    // If record data might be in a different nested structure
+    if (entry.values?.record?.id?.record_id) {
+      return {
+        ...entry,
+        record_id: entry.values.record.id.record_id
+      };
+    }
+    
+    // If we can find a record_id in another location
+    const possibleKeys = Object.keys(entry);
+    for (const key of possibleKeys) {
+      // Check if any property ends with 'record_id' and is a string
+      if (
+        key.endsWith('_record_id') && 
+        typeof entry[key] === 'string' && 
+        entry[key]
+      ) {
+        return {
+          ...entry,
+          record_id: entry[key] as string
+        };
+      }
+    }
+    
+    // Unable to find record_id, return the entry as-is
+    return entry;
+  });
 }
 
 /**
