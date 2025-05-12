@@ -184,16 +184,23 @@ docker ps -a
 
 ## Documentation
 
-For more detailed information about the API and its components, please refer to the documentation:
+For comprehensive documentation, see the [Documentation Guide](./docs/README.md).
 
-- [API Overview](./docs/api/api-overview.md)
-- [Error Handling](./docs/api/error-handling.md)
-- [Extending MCP](./docs/api/extending-mcp.md)
+### API Reference
+- [API Overview](./docs/api/api-overview.md) - Overview of the Attio API
+- [Error Handling](./docs/api/error-handling.md) - Detailed error handling documentation
+- [Extending MCP](./docs/api/extending-mcp.md) - Guide to extending the MCP server
 
-### API Documentation
-- [People API](./docs/api/people-api.md)
-- [Companies API](./docs/api/objects-api.md)
-- [Lists API](./docs/api/lists-api.md)
-- [Notes API](./docs/api/notes-api.md)
+### MCP Tools Documentation
+- [MCP API Overview](./docs/mcp-api-overview.md) - Overview of the MCP server
+- [People Tools](./docs/mcp-tools/people-tools.md) - Documentation for People tools
+- [Companies Tools](./docs/mcp-tools/companies-tools.md) - Documentation for Companies tools
+- [Lists Tools](./docs/mcp-tools/lists-tools.md) - Documentation for Lists tools
+
+### Attio API Documentation
+- [People API](./docs/api/people-api.md) - Documentation for the People API
+- [Companies API](./docs/api/objects-api.md) - Documentation for the Companies API
+- [Lists API](./docs/api/lists-api.md) - Documentation for the Lists API
+- [Notes API](./docs/api/notes-api.md) - Documentation for the Notes API
 - [Records API](./docs/api/records-api.md) (Coming soon)
 - [Tasks API](./docs/api/tasks-api.md) (Coming soon)
