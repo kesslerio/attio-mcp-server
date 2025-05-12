@@ -114,14 +114,14 @@ describe('tools', () => {
       
       // Check for expected company tools
       expect(toolNames).toContain('search-companies');
-      expect(toolNames).toContain('read-company-details');
-      expect(toolNames).toContain('read-company-notes');
+      expect(toolNames).toContain('get-company-details');
+      expect(toolNames).toContain('get-company-notes');
       expect(toolNames).toContain('create-company-note');
       
       // Check for expected people tools
       expect(toolNames).toContain('search-people');
-      expect(toolNames).toContain('read-person-details');
-      expect(toolNames).toContain('read-person-notes');
+      expect(toolNames).toContain('get-person-details');
+      expect(toolNames).toContain('get-person-notes');
       expect(toolNames).toContain('create-person-note');
     });
 
@@ -184,7 +184,7 @@ describe('tools', () => {
         expect(result.content[0].text).toContain('Found 2 people');
       });
       
-      it('should handle read-company-details tool call successfully', async () => {
+      it('should handle get-company-details tool call successfully', async () => {
         // Mock parseResourceUri to return valid type and ID
         mockedParseResourceUri.mockReturnValueOnce([ResourceType.COMPANIES, 'company1']);
         
@@ -194,7 +194,7 @@ describe('tools', () => {
         // Create a mock request
         const request = {
           params: {
-            name: 'read-company-details',
+            name: 'get-company-details',
             arguments: {
               uri: 'attio://companies/company1'
             }
@@ -212,7 +212,7 @@ describe('tools', () => {
         expect(result.content[0].text).toContain('details for company1');
       });
       
-      it('should handle read-person-details tool call successfully', async () => {
+      it('should handle get-person-details tool call successfully', async () => {
         // Mock parseResourceUri to return valid type and ID
         mockedParseResourceUri.mockReturnValueOnce([ResourceType.PEOPLE, 'person1']);
         
@@ -222,7 +222,7 @@ describe('tools', () => {
         // Create a mock request
         const request = {
           params: {
-            name: 'read-person-details',
+            name: 'get-person-details',
             arguments: {
               uri: 'attio://people/person1'
             }
