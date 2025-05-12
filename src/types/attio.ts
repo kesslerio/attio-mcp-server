@@ -58,6 +58,7 @@ export interface AttioList {
     [key: string]: any;
   };
   title: string;
+  name?: string; // Adding name property as it appears in some API responses
   description?: string;
   object_slug: string;
   workspace_id: string;

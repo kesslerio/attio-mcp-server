@@ -309,8 +309,14 @@ describe('Attio Operations', () => {
 
       // Assert
       expect(mockApiClient.post).toHaveBeenCalledTimes(2);
+      // Use URLSearchParams to ensure consistent parameter order
+      const params = new URLSearchParams();
+      params.append('list_id', 'list123');
+      params.append('expand', 'record');
+      params.append('limit', '20');
+      params.append('offset', '0');
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/lists-entries?list_id=list123&limit=20&offset=0&expand=record'
+        `/lists-entries?${params.toString()}`
       );
       expect(result).toEqual(mockEntries);
     });
