@@ -1,26 +1,33 @@
+/**
+ * Simple HTTP server for health checks
+ */
 import http from 'http';
 
 /**
- * Start a simple HTTP server for health checks
- * This is primarily for Docker container health checks
+ * Starts a simple HTTP health check server
  * 
- * @param port - The port to listen on (default: 3000)
- * @returns The HTTP server instance
+ * @param port - Port number to listen on
+ * @returns The created HTTP server instance
  */
 export function startHealthServer(port: number = 3000): http.Server {
   const server = http.createServer((req, res) => {
-    if (req.url === '/health') {
+    // Basic routing
+    if (req.url === '/health' || req.url === '/') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
+      res.end(JSON.stringify({ 
+        status: 'ok',
+        service: 'attio-mcp-server',
+        timestamp: new Date().toISOString()
+      }));
     } else {
-      res.writeHead(404);
-      res.end();
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not Found' }));
     }
   });
-
+  
   server.listen(port, () => {
-    console.log(`Health check server listening on port ${port}`);
+    console.log(`Health check server running on port ${port}`);
   });
-
+  
   return server;
 }

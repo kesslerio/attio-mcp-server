@@ -1,14 +1,14 @@
 /**
- * Attio API client and related utilities
+ * Attio API client implementation
  */
-import axios, { AxiosInstance } from "axios";
-import { createAttioError } from "../utils/error-handler.js";
+import axios, { AxiosInstance } from 'axios';
+import { createAttioError } from '../errors/api-errors.js';
 
-// Global API client instance
-let apiInstance: AxiosInstance | null = null;
+// Singleton instance of the Attio API client
+let attioClient: AxiosInstance | null = null;
 
 /**
- * Creates and configures an Axios instance for the Attio API
+ * Creates an Axios instance for Attio API communication
  * 
  * @param apiKey - The Attio API key
  * @returns Configured Axios instance
@@ -35,23 +35,26 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 }
 
 /**
- * Initializes the global API client with the provided API key
+ * Initializes the Attio API client singleton
  * 
  * @param apiKey - The Attio API key
  */
 export function initializeAttioClient(apiKey: string): void {
-  apiInstance = createAttioClient(apiKey);
+  if (!apiKey) {
+    throw new Error("API key is required");
+  }
+  attioClient = createAttioClient(apiKey);
 }
 
 /**
- * Gets the global API client instance
+ * Gets the initialized Attio API client instance
  * 
- * @returns The Axios instance for the Attio API
- * @throws If the API client hasn't been initialized
+ * @returns The Attio API client
+ * @throws Error if the client has not been initialized
  */
 export function getAttioClient(): AxiosInstance {
-  if (!apiInstance) {
-    throw new Error("API client not initialized. Call initializeAttioClient first.");
+  if (!attioClient) {
+    throw new Error("Attio API client has not been initialized. Call initializeAttioClient first.");
   }
-  return apiInstance;
+  return attioClient;
 }
