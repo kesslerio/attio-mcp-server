@@ -22,7 +22,11 @@ const server = new Server(
     capabilities: {
       resources: {},
       tools: {},
-      prompts: {}, // Add prompts capability
+      // Declare both prompts/list and prompts/get capabilities
+      prompts: {
+        list: {},
+        get: {}
+      },
     },
   },
 );
@@ -44,12 +48,17 @@ async function main() {
     
     // Start health check server (for Docker)
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-    const healthServer = startHealthServer(port);
+    const healthServer = startHealthServer({
+      port,
+      maxRetries: 5,
+      maxRetryTime: 15000,
+      retryBackoff: 500
+    });
     
     // Handle graceful shutdown
     const shutdown = () => {
       console.log("Shutting down servers...");
-      healthServer.close();
+      (healthServer as any).shutdown?.() || healthServer.close();
       process.exit(0);
     };
     
