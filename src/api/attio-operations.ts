@@ -420,7 +420,12 @@ export async function getListEntries(
     } catch (error: any) {
       const primaryError = error;
       if (process.env.NODE_ENV === 'development') {
-        console.log('Primary endpoint failed:', primaryError.message || 'Unknown error');
+        console.log('[getListEntries] Primary endpoint failed:', primaryError.message || 'Unknown error', {
+          path: `/lists/${listId}/entries/query`,
+          listId,
+          limit,
+          offset
+        });
       }
       
       // Try fallback endpoints with explicit parameter names
@@ -438,7 +443,12 @@ export async function getListEntries(
       } catch (error: any) {
         const fallbackError = error;
         if (process.env.NODE_ENV === 'development') {
-          console.log('Fallback endpoint failed:', fallbackError.message || 'Unknown error');
+          console.log('[getListEntries] Fallback endpoint failed:', fallbackError.message || 'Unknown error', {
+            path: `/lists-entries/query`,
+            listId,
+            limit,
+            offset
+          });
         }
         
         // Last resort fallback with explicit query parameters

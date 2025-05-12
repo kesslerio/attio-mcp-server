@@ -21,13 +21,21 @@ export enum ErrorType {
 }
 
 /**
- * Interface for error details
+ * Interface for error details with improved type safety
  */
 export interface ErrorDetails {
   code: number;
   message: string;
   type: ErrorType;
-  details?: any;
+  details?: {
+    status?: number;
+    method?: string;
+    path?: string;
+    detail?: string;
+    responseData?: Record<string, any>;
+    originalError?: string;
+    [key: string]: any;
+  };
 }
 
 /**
@@ -255,23 +263,41 @@ export function createErrorResult(error: Error, url: string, method: string, res
   
   // For Axios errors with response data
   if (responseData && responseData.status) {
-    // Create a specific API error
-    const apiError = createApiError(
-      responseData.status, 
-      url, 
-      method, 
-      responseData
-    ) as AttioApiError;
-    
-    const errorDetails = {
-      status: apiError.status,
-      method: apiError.method,
-      path: apiError.path,
-      detail: apiError.detail,
-      responseData: apiError.responseData
-    };
-    
-    return formatErrorResponse(apiError, apiError.type, errorDetails);
+    try {
+      // Create a specific API error
+      const apiError = createApiError(
+        responseData.status, 
+        url, 
+        method, 
+        responseData
+      ) as AttioApiError;
+      
+      const errorDetails = {
+        status: apiError.status,
+        method: apiError.method,
+        path: apiError.path,
+        detail: apiError.detail,
+        responseData: apiError.responseData,
+        originalError: error instanceof Error ? error.message : String(error)
+      };
+      
+      return formatErrorResponse(apiError, apiError.type, errorDetails);
+    } catch (formattingError) {
+      // If error formatting fails, preserve the original error
+      console.error('Error while formatting API error:', formattingError);
+      const originalErrorDetails = {
+        url,
+        method,
+        status: responseData.status,
+        originalError: error instanceof Error ? error.message : String(error)
+      };
+      
+      return formatErrorResponse(
+        error instanceof Error ? error : new Error(String(error)), 
+        ErrorType.UNKNOWN_ERROR, 
+        originalErrorDetails
+      );
+    }
   }
   
   // For network or unknown errors

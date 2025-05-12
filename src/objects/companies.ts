@@ -80,7 +80,7 @@ export async function getCompanyDetails(companyIdOrUri: string): Promise<Company
     companyId = parts[parts.length - 1];
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Extracted company ID ${companyId} from URI ${companyIdOrUri}`);
+      console.log(`[getCompanyDetails] Extracted company ID ${companyId} from URI ${companyIdOrUri}`);
     }
   }
   
@@ -90,7 +90,10 @@ export async function getCompanyDetails(companyIdOrUri: string): Promise<Company
   } catch (error: any) {
     const firstError = error;
     if (process.env.NODE_ENV === 'development') {
-      console.log(`First attempt failed: ${firstError.message || 'Unknown error'}`);
+      console.log(`[getCompanyDetails] First attempt failed: ${firstError.message || 'Unknown error'}`, {
+        method: 'getObjectDetails',
+        companyId
+      });
     }
     
     try {
@@ -99,7 +102,10 @@ export async function getCompanyDetails(companyIdOrUri: string): Promise<Company
       const path = `/objects/companies/records/${companyId}`;
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Trying fallback path: ${path}`);
+        console.log(`[getCompanyDetails] Trying fallback path: ${path}`, {
+          method: 'direct API call',
+          companyId
+        });
       }
       
       const response = await api.get(path);
@@ -107,7 +113,11 @@ export async function getCompanyDetails(companyIdOrUri: string): Promise<Company
     } catch (error: any) {
       const secondError = error;
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Second attempt failed: ${secondError.message || 'Unknown error'}`);
+        console.log(`[getCompanyDetails] Second attempt failed: ${secondError.message || 'Unknown error'}`, {
+          method: 'direct API path',
+          path: `/objects/companies/records/${companyId}`,
+          companyId
+        });
       }
       
       // Last resort - try the alternate endpoint format
@@ -116,14 +126,37 @@ export async function getCompanyDetails(companyIdOrUri: string): Promise<Company
         const alternatePath = `/companies/${companyId}`;
         
         if (process.env.NODE_ENV === 'development') {
-          console.log(`Trying alternate path: ${alternatePath}`);
+          console.log(`[getCompanyDetails] Trying alternate path: ${alternatePath}`, {
+            method: 'alternate API path',
+            companyId,
+            originalUri: companyIdOrUri
+          });
         }
         
         const response = await api.get(alternatePath);
         return response.data;
       } catch (error: any) {
         const thirdError = error;
-        // If all attempts fail, throw a meaningful error
+        // If all attempts fail, throw a meaningful error with preserved original errors
+        const errorDetails = {
+          companyId,
+          originalUri: companyIdOrUri,
+          attemptedPaths: [
+            `/objects/companies/records/${companyId}`,
+            `/companies/${companyId}`
+          ],
+          errors: {
+            first: firstError.message || 'Unknown error',
+            second: secondError.message || 'Unknown error',
+            third: thirdError.message || 'Unknown error'
+          }
+        };
+        
+        // Log detailed error information in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`[getCompanyDetails] All retrieval attempts failed:`, errorDetails);
+        }
+        
         throw new Error(`Could not retrieve company details for ${companyIdOrUri}: ${thirdError.message || 'Unknown error'}`);
       }
     }
