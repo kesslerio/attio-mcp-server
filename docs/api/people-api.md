@@ -2,6 +2,58 @@
 
 The People API allows you to manage person records in Attio. Person records represent individual contacts and can be linked to companies, opportunities, and other objects.
 
+## MCP Integration for People Records
+
+### Special Considerations for Email and Phone Searches
+
+When searching for people by email or phone through the MCP server, Claude handles this differently than direct API calls. While the Attio API doesn't support direct filtering by `email` or `phone` attributes, the MCP server implements a client-side search to overcome this limitation.
+
+### Example Claude Interactions
+
+#### Searching for People
+
+```
+Find contacts from XYZ Company
+```
+
+```
+Look up people with the title "CEO"
+```
+
+```
+Search for someone named Sarah
+```
+
+#### Working with Person Records
+
+```
+Show me details for attio://people/record_01abcdefghijklmnopqrstuv
+```
+
+```
+What's the job title for John Smith?
+```
+
+```
+When was the last time we contacted Jane Doe?
+```
+
+#### Creating and Reading Notes
+
+```
+Add a note that I spoke with John about the proposal
+```
+
+```
+What notes do we have for Sarah Jones?
+```
+
+### Common Workflows
+
+1. **Contact Lookup**: "Find contact information for John at Acme Corp"
+2. **Note Taking**: "After my call with Jane, add a note about product interest"
+3. **Relationship Tracking**: "Who's our main contact at XYZ Company?"
+
 ## Required Scopes
 
 Most people operations require the following scopes:
