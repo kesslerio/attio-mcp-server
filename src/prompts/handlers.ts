@@ -13,10 +13,12 @@ import {
   getPromptsByCategory,
   getAllCategories 
 } from './templates/index.js';
-import { PromptExecutionRequest, PromptTemplate } from './types.js';
-// Use require-style import with type assertion to avoid TypeScript error
-const Handlebars = require('handlebars') as typeof import('handlebars');
+import { PromptTemplate } from './types.js';
+import Handlebars, { HandlebarsTemplateDelegate } from 'handlebars';
 import { createErrorResult } from './error-handler.js';
+
+// Template cache for compiled Handlebars templates
+const templateCache = new Map<string, HandlebarsTemplateDelegate>();
 
 // Register Handlebars helpers
 Handlebars.registerHelper('if', function(this: Record<string, unknown>, conditional: any, options: any): string {
@@ -253,8 +255,12 @@ export async function executePrompt(req: Request, res: Response): Promise<void> 
     // Apply default values
     const parameters = applyDefaultValues(prompt, executionRequest.parameters);
     
-    // Compile template
-    const template = Handlebars.compile(prompt.template);
+    // Get or compile template with caching
+    let template = templateCache.get(promptId);
+    if (!template) {
+      template = Handlebars.compile(prompt.template);
+      templateCache.set(promptId, template);
+    }
     const result = template(parameters);
     
     res.json({
@@ -278,7 +284,16 @@ export async function executePrompt(req: Request, res: Response): Promise<void> 
 /**
  * Register MCP prompt handlers with the server
  * 
+ * This function registers handlers for the MCP prompts/list and prompts/get endpoints
+ * required by the Model Context Protocol specification. These endpoints enable
+ * Claude Desktop to discover and retrieve prompt templates from the server.
+ *
  * @param server - MCP server instance
+ * @example
+ * ```typescript
+ * const server = new Server();
+ * registerPromptHandlers(server);
+ * ```
  */
 export function registerPromptHandlers(server: Server): void {
   // Register handler for prompts/list endpoint
