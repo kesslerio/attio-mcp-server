@@ -23,8 +23,11 @@ export const listsToolConfigs = {
     name: "get-lists",
     handler: getLists,
     formatResult: (results: AttioList[]) => {
-      return `Found ${results.length} lists:\n${results.map((list: AttioList) => 
-        `- ${list.name} (ID: ${list.id})`).join('\n')}`;
+      return `Found ${results.length} lists:\n${results.map((list: AttioList) => {
+        // Extract list_id properly from id object
+        const listId = list.id?.list_id || list.id || 'unknown';
+        return `- ${list.name || list.title} (ID: ${listId})`;
+      }).join('\n')}`;
     }
   } as GetListsToolConfig,
   getListDetails: {
@@ -36,11 +39,18 @@ export const listsToolConfigs = {
     handler: getListEntries,
     formatResult: (results: AttioListEntry[]) => {
       return `Found ${results.length} entries in list:\n${results.map((entry: AttioListEntry) => {
-        // Include both entry ID and record ID for better visibility
-        const recordName = getRecordNameFromEntry(entry);
-        const displayName = recordName ? ` (${recordName})` : '';
+        // Extract record details with improved name and type extraction
+        const recordDetails = getRecordNameFromEntry(entry);
         
-        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayName}`;
+        // Format display name with record type for better context
+        let displayInfo = '';
+        if (recordDetails.name) {
+          displayInfo = recordDetails.type 
+            ? ` (${recordDetails.type}: ${recordDetails.name})` 
+            : ` (${recordDetails.name})`;
+        }
+        
+        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
       }).join('\n')}`;
     }
   } as GetListEntriesToolConfig,
@@ -89,6 +99,14 @@ export const listsToolDefinitions = [
         listId: {
           type: "string",
           description: "ID of the list to get entries for"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of entries to fetch (default: 20)"
+        },
+        offset: {
+          type: "number",
+          description: "Number of entries to skip for pagination (default: 0)"
         }
       },
       required: ["listId"]

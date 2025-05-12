@@ -63,20 +63,45 @@ export function processListEntries(entries: AttioListEntry[]): AttioListEntry[] 
 }
 
 /**
- * Safely extracts record name from a list entry if available
+ * Safely extracts record name and type from a list entry if available
  * 
  * @param entry - List entry that may contain record data
- * @returns Record name or empty string if not available
+ * @returns An object with record name and type or empty values if not available
  */
-export function getRecordNameFromEntry(entry: AttioListEntry): string {
+export function getRecordNameFromEntry(entry: AttioListEntry): { name: string; type: string } {
+  const defaultResult = { name: '', type: '' };
+  
+  // If no record data is available, return default
   if (!entry.record || !entry.record.values) {
-    return '';
+    return defaultResult;
   }
   
+  // Try to determine the record type based on available fields
+  // Companies typically have industry or website fields, people typically have email or phone
+  const isPerson = 'email' in entry.record.values || 'phone' in entry.record.values;
+  const isCompany = 'industry' in entry.record.values || 'website' in entry.record.values;
+  
+  // Set the record type based on detected fields
+  let recordType = '';
+  if (isPerson && !isCompany) {
+    recordType = 'Person';
+  } else if (isCompany && !isPerson) {
+    recordType = 'Company';
+  } else if (entry.record.object_slug) {
+    // If we have an object_slug, use it to determine type
+    recordType = entry.record.object_slug === 'people' ? 'Person' : 
+                (entry.record.object_slug === 'companies' ? 'Company' : '');
+  }
+  
+  // Extract name from the record values
   const nameValues = entry.record.values.name;
+  let recordName = '';
   if (Array.isArray(nameValues) && nameValues.length > 0 && 'value' in nameValues[0]) {
-    return nameValues[0].value || '';
+    recordName = nameValues[0].value || '';
   }
   
-  return '';
+  return { 
+    name: recordName, 
+    type: recordType 
+  };
 }

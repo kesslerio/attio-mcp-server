@@ -205,7 +205,7 @@ describe('lists', () => {
       expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
-        { limit, offset }
+        { limit, offset, expand: ["record"] }
       );
       expect(result).toEqual(mockResponse.data.data);
     });
@@ -247,15 +247,19 @@ describe('lists', () => {
       expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
-        { limit, offset }
+        { limit, offset, expand: ["record"] }
       );
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists-entries/query`,
-        { list_id: listId, limit, offset }
+        { list_id: listId, limit, offset, expand: ["record"] }
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`
-      );
+      // Instead of checking exact URL, check for the presence of all expected parameters
+      const getCall = mockAxiosInstance.get.mock.calls[0][0];
+      expect(getCall).toContain('/lists-entries?');
+      expect(getCall).toContain(`list_id=${listId}`);
+      expect(getCall).toContain('expand=record');
+      expect(getCall).toContain(`limit=${limit}`);
+      expect(getCall).toContain(`offset=${offset}`);
       expect(result).toEqual(mockResponse.data.data);
     });
   });
