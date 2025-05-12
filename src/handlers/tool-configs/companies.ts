@@ -60,9 +60,16 @@ export const companyToolDefinitions = [
         companyId: {
           type: "string",
           description: "ID of the company to get details for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
         }
       },
-      required: ["companyId"]
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
     }
   },
   {
@@ -74,9 +81,24 @@ export const companyToolDefinitions = [
         companyId: {
           type: "string",
           description: "ID of the company to get notes for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of notes to fetch (default: 10)"
+        },
+        offset: {
+          type: "number",
+          description: "Number of notes to skip for pagination (default: 0)"
         }
       },
-      required: ["companyId"]
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
     }
   },
   {
@@ -89,12 +111,24 @@ export const companyToolDefinitions = [
           type: "string",
           description: "ID of the company to create a note for"
         },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        },
+        title: {
+          type: "string",
+          description: "Title of the note (optional)"
+        },
         content: {
           type: "string",
           description: "Content of the note"
         }
       },
-      required: ["companyId", "content"]
+      required: ["content"],
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
     }
   }
 ];
