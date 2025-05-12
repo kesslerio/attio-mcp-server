@@ -120,6 +120,7 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
     return response.data.data || [];
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
+
   }
 }
 
@@ -135,18 +136,14 @@ export async function listPeople(limit: number = 20): Promise<Person[]> {
     return await listObjects<Person>(ResourceType.PEOPLE, limit);
   } catch (error) {
     // Fallback implementation
-    try {
-      const api = getAttioClient();
-      const path = "/objects/people/records/query";
-      
-      const response = await api.post(path, {
-        limit,
-        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
-      });
-      return response.data.data || [];
-    } catch (fallbackError) {
-      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
-    }
+    const api = getAttioClient();
+    const path = "/objects/people/records/query";
+    
+    const response = await api.post(path, {
+      limit,
+      sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
+    });
+    return response.data.data || [];
   }
 }
 
