@@ -13,12 +13,15 @@ import {
   getPromptsByCategory,
   getAllCategories 
 } from './templates/index.js';
-import { PromptTemplate } from './types.js';
-import Handlebars, { HandlebarsTemplateDelegate } from 'handlebars';
+import { PromptTemplate, PromptExecutionRequest } from './types.js';
 import { createErrorResult } from './error-handler.js';
 
+// Import Handlebars using ES module import
+// This avoids the "require is not defined in ES module scope" error
+import Handlebars from 'handlebars';
+
 // Template cache for compiled Handlebars templates
-const templateCache = new Map<string, HandlebarsTemplateDelegate>();
+const templateCache = new Map<string, any>();
 
 // Register Handlebars helpers
 Handlebars.registerHelper('if', function(this: Record<string, unknown>, conditional: any, options: any): string {

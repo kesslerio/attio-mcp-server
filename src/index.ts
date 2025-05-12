@@ -22,7 +22,11 @@ const server = new Server(
     capabilities: {
       resources: {},
       tools: {},
-      prompts: {}, // Add prompts capability
+      // Declare both prompts/list and prompts/get capabilities
+      prompts: {
+        list: {},
+        get: {}
+      },
     },
   },
 );
