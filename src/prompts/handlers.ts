@@ -20,8 +20,94 @@ import { createErrorResult } from './error-handler.js';
 // This avoids the "require is not defined in ES module scope" error
 import Handlebars from 'handlebars';
 
-// Template cache for compiled Handlebars templates
-const templateCache = new Map<string, any>();
+// Define template delegate type since it's not exported by the Handlebars module
+type HandlebarsTemplateDelegate = (context: any, options?: any) => string;
+
+/**
+ * Interface for template cache options
+ */
+interface TemplateCacheOptions {
+  maxSize: number;
+}
+
+/**
+ * Template cache implementation for storing compiled Handlebars templates
+ * Provides caching with size limits to prevent memory leaks
+ */
+class TemplateCache {
+  private cache = new Map<string, HandlebarsTemplateDelegate>();
+  private options: TemplateCacheOptions;
+  
+  /**
+   * Create a new template cache
+   * 
+   * @param options - Cache configuration options
+   */
+  constructor(options: Partial<TemplateCacheOptions> = {}) {
+    this.options = {
+      maxSize: 100, // Default max cache size
+      ...options
+    };
+  }
+  
+  /**
+   * Get a compiled template from the cache
+   * 
+   * @param key - Template key
+   * @returns The compiled template or undefined if not found
+   */
+  get(key: string): HandlebarsTemplateDelegate | undefined {
+    return this.cache.get(key);
+  }
+  
+  /**
+   * Store a compiled template in the cache
+   * 
+   * @param key - Template key
+   * @param template - Compiled template to store
+   */
+  set(key: string, template: HandlebarsTemplateDelegate): void {
+    // Check if we need to evict entries (simple LRU implementation)
+    if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
+      // Delete the first entry (oldest)
+      const firstKeyValue = this.cache.keys().next();
+      if (!firstKeyValue.done && firstKeyValue.value) {
+        this.cache.delete(firstKeyValue.value);
+      }
+    }
+    
+    this.cache.set(key, template);
+  }
+  
+  /**
+   * Check if a template exists in the cache
+   * 
+   * @param key - Template key
+   * @returns True if the template exists in the cache
+   */
+  has(key: string): boolean {
+    return this.cache.has(key);
+  }
+  
+  /**
+   * Clear all templates from the cache
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+  
+  /**
+   * Get the current size of the cache
+   * 
+   * @returns Number of templates in the cache
+   */
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+// Create the template cache instance
+const templateCache = new TemplateCache({ maxSize: 100 });
 
 // Register Handlebars helpers
 Handlebars.registerHelper('if', function(this: Record<string, unknown>, conditional: any, options: any): string {
@@ -261,10 +347,35 @@ export async function executePrompt(req: Request, res: Response): Promise<void> 
     // Get or compile template with caching
     let template = templateCache.get(promptId);
     if (!template) {
-      template = Handlebars.compile(prompt.template);
-      templateCache.set(promptId, template);
+      try {
+        template = Handlebars.compile(prompt.template);
+        templateCache.set(promptId, template);
+      } catch (compileError: any) {
+        const errorObj = new Error('Failed to compile template');
+        const errorResult = createErrorResult(
+          errorObj,
+          `Template compilation error for prompt ${promptId}: ${compileError.message || 'Unknown error'}`,
+          500
+        );
+        res.status(Number(errorResult.error.code)).json(errorResult);
+        return;
+      }
     }
-    const result = template(parameters);
+    
+    // Execute the template with error handling
+    let result: string;
+    try {
+      result = template(parameters);
+    } catch (renderError: any) {
+      const errorObj = new Error('Failed to render template');
+      const errorResult = createErrorResult(
+        errorObj,
+        `Template rendering error for prompt ${promptId}: ${renderError.message || 'Unknown error'}`,
+        500
+      );
+      res.status(Number(errorResult.error.code)).json(errorResult);
+      return;
+    }
     
     res.json({
       success: true,
