@@ -69,6 +69,7 @@ describe('People API functions', () => {
 
       // Assertions
       expect(result).toEqual([]);
+
     });
 
     it('should handle API errors', async () => {

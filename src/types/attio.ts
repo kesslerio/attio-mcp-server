@@ -137,3 +137,34 @@ export interface AttioSingleResponse<T> {
   data: T;
   [key: string]: any;
 }
+}
+
+// Response interfaces
+export interface AttioListResponse<T> {
+  data?: T[];
+  has_more?: boolean;
+  next_cursor?: string;
+}
+
+export interface AttioSingleResponse<T> {
+  data?: T;
+}
+
+// Specific record types
+export interface Person extends AttioRecord {
+  values: {
+    name?: Array<{value: string}>;
+    email?: Array<{value: string}>;
+    phone?: Array<{value: string}>;
+    [key: string]: any;
+  };
+}
+
+export interface Company extends AttioRecord {
+  values: {
+    name?: Array<{value: string}>;
+    website?: Array<{value: string}>;
+    industry?: Array<{value: string}>;
+    [key: string]: any;
+  };
+}
