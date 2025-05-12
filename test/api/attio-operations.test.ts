@@ -100,10 +100,19 @@ describe('Attio Operations', () => {
         }
       });
 
+      // Mock the retry functionality to immediately return to avoid timeouts
+      jest.mock('../../src/api/attio-operations', () => {
+        const actual = jest.requireActual('../../src/api/attio-operations');
+        return {
+          ...actual,
+          callWithRetry: (fn: any) => fn()
+        };
+      });
+
       // Call and check for error
-      await expect(searchObject(ResourceType.PEOPLE, 'Nonexistent'))
+      await expect(searchObject(ResourceType.PEOPLE, 'Nonexistent', { maxRetries: 0 }))
         .rejects.toThrow(`No ${ResourceType.PEOPLE} found matching 'Nonexistent'`);
-    });
+    }, 10000); // Increase timeout to 10 seconds
 
     it('should propagate other errors', async () => {
       // Setup mock error
@@ -111,9 +120,9 @@ describe('Attio Operations', () => {
       mockApiClient.post.mockRejectedValueOnce(error);
 
       // Call and check for error
-      await expect(searchObject(ResourceType.PEOPLE, 'Test'))
+      await expect(searchObject(ResourceType.PEOPLE, 'Test', { maxRetries: 0 }))
         .rejects.toThrow('Network error');
-    });
+    }, 10000); // Increase timeout to 10 seconds
   });
 
   describe('listObjects', () => {

@@ -10,7 +10,7 @@ This is an MCP server for [Attio](https://attio.com/), the AI-native CRM. It all
   - [x] reading company notes
   - [x] creating company notes
 - [x] People API
-  - [x] searching people
+  - [x] searching people (enhanced with email and phone support)
   - [x] reading person details
   - [x] reading person notes
   - [x] creating person notes
@@ -22,6 +22,11 @@ This is an MCP server for [Attio](https://attio.com/), the AI-native CRM. It all
   - [x] removing records from lists
 - [ ] Tasks API
 - [ ] Records API
+- [x] Core System Enhancements
+  - [x] Enhanced error handling with categorized errors
+  - [x] Comprehensive input validation
+  - [x] API call retry logic with exponential backoff
+  - [x] Standardized response formatting
 
 ## Usage
 
@@ -176,3 +181,19 @@ The Docker container includes a health check that monitors the server's status. 
 ```sh
 docker ps -a
 ```
+
+## Documentation
+
+For more detailed information about the API and its components, please refer to the documentation:
+
+- [API Overview](./docs/api/api-overview.md)
+- [Error Handling](./docs/api/error-handling.md)
+- [Extending MCP](./docs/api/extending-mcp.md)
+
+### API Documentation
+- [People API](./docs/api/people-api.md)
+- [Companies API](./docs/api/objects-api.md)
+- [Lists API](./docs/api/lists-api.md)
+- [Notes API](./docs/api/notes-api.md)
+- [Records API](./docs/api/records-api.md) (Coming soon)
+- [Tasks API](./docs/api/tasks-api.md) (Coming soon)
