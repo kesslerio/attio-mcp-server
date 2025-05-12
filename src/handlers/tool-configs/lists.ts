@@ -23,8 +23,11 @@ export const listsToolConfigs = {
     name: "get-lists",
     handler: getLists,
     formatResult: (results: AttioList[]) => {
-      return `Found ${results.length} lists:\n${results.map((list: AttioList) => 
-        `- ${list.name} (ID: ${list.id})`).join('\n')}`;
+      return `Found ${results.length} lists:\n${results.map((list: AttioList) => {
+        // Extract list_id properly from id object
+        const listId = list.id?.list_id || list.id || 'unknown';
+        return `- ${list.name || list.title} (ID: ${listId})`;
+      }).join('\n')}`;
     }
   } as GetListsToolConfig,
   getListDetails: {
@@ -89,6 +92,14 @@ export const listsToolDefinitions = [
         listId: {
           type: "string",
           description: "ID of the list to get entries for"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of entries to fetch (default: 20)"
+        },
+        offset: {
+          type: "number",
+          description: "Number of entries to skip for pagination (default: 0)"
         }
       },
       required: ["listId"]
