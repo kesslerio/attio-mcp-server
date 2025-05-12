@@ -1,5 +1,5 @@
 /**
- * Company-related functionality
+ * Companies-related functionality
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { 
@@ -27,15 +27,19 @@ export async function searchCompanies(query: string): Promise<Company[]> {
     return await searchObject<Company>(ResourceType.COMPANIES, query);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = "/objects/companies/records/query";
-    
-    const response = await api.post(path, {
-      filter: {
-        name: { "$contains": query },
-      }
-    });
-    return response.data.data || [];
+    try {
+      const api = getAttioClient();
+      const path = "/objects/companies/records/query";
+      
+      const response = await api.post(path, {
+        filter: {
+          name: { "$contains": query },
+        }
+      });
+      return response.data.data || [];
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -51,14 +55,18 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = "/objects/companies/records/query";
-    
-    const response = await api.post(path, {
-      limit,
-      sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
-    });
-    return response.data.data || [];
+    try {
+      const api = getAttioClient();
+      const path = "/objects/companies/records/query";
+      
+      const response = await api.post(path, {
+        limit,
+        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
+      });
+      return response.data.data || [];
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -74,11 +82,18 @@ export async function getCompanyDetails(companyId: string): Promise<Company> {
     return await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/objects/companies/records/${companyId}`;
-    
-    const response = await api.get(path);
-    return response.data;
+    try {
+      const api = getAttioClient();
+      const path = `/objects/companies/records/${companyId}`;
+      
+      const response = await api.get(path);
+      if (response && response.data) {
+        return response.data;
+      }
+      throw new Error(`No data returned for company ${companyId}`);
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -87,7 +102,7 @@ export async function getCompanyDetails(companyId: string): Promise<Company> {
  * 
  * @param companyId - The ID of the company
  * @param limit - Maximum number of notes to fetch (default: 10)
- * @param offset - Number of notes to skip (default: 0)
+ * @param offset - Number of notes to skip (default: 0) 
  * @returns Array of notes
  */
 export async function getCompanyNotes(companyId: string, limit: number = 10, offset: number = 0): Promise<AttioNote[]> {
@@ -96,11 +111,15 @@ export async function getCompanyNotes(companyId: string, limit: number = 10, off
     return await getObjectNotes(ResourceType.COMPANIES, companyId, limit, offset);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
-    
-    const response = await api.get(path);
-    return response.data.data || [];
+    try {
+      const api = getAttioClient();
+      const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
+      
+      const response = await api.get(path);
+      return response.data.data || [];
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -118,18 +137,22 @@ export async function createCompanyNote(companyId: string, title: string, conten
     return await createObjectNote(ResourceType.COMPANIES, companyId, title, content);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = 'notes';
-    
-    const response = await api.post(path, {
-      data: {
-        format: "plaintext",
-        parent_object: "companies",
-        parent_record_id: companyId,
-        title: `[AI] ${title}`,
-        content
-      },
-    });
-    return response.data;
+    try {
+      const api = getAttioClient();
+      const path = '/notes';
+      
+      const response = await api.post(path, {
+        data: {
+          format: "plaintext",
+          parent_object: "companies",
+          parent_record_id: companyId,
+          title: `[AI] ${title}`,
+          content
+        },
+      });
+      return response.data;
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }

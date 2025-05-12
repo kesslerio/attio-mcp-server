@@ -1,18 +1,16 @@
 /**
  * Lists-related functionality
  */
-import { getAttioClient } from "../api/attio-client.js";
 import { 
-  getAllLists as getGenericLists,
-  getListDetails as getGenericListDetails,
-  getListEntries as getGenericListEntries,
-  addRecordToList as addGenericRecordToList,
-  removeRecordFromList as removeGenericRecordFromList,
+  getAllLists, 
+  getListDetails as getListDetailsOperation, 
+  getListEntries as getListEntriesOperation, 
+  addRecordToList as addRecordToListOperation, 
+  removeRecordFromList as removeRecordFromListOperation 
 } from "../api/attio-operations.js";
 import { 
   AttioList, 
-  AttioListEntry,
-  ResourceType 
+  AttioListEntry 
 } from "../types/attio.js";
 
 /**
@@ -23,20 +21,11 @@ import {
  * @returns Array of list objects
  */
 export async function getLists(objectSlug?: string, limit: number = 20): Promise<AttioList[]> {
-  // Use the generic operation with fallback to direct implementation
   try {
-    return await getGenericLists(objectSlug, limit);
+    return await getAllLists(objectSlug, limit);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    let path = `/lists?limit=${limit}`;
-    
-    if (objectSlug) {
-      path += `&objectSlug=${objectSlug}`;
-    }
-    
-    const response = await api.get(path);
-    return response.data.data || [];
+    // Re-throw original errors to maintain error context
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
@@ -47,70 +36,11 @@ export async function getLists(objectSlug?: string, limit: number = 20): Promise
  * @returns List details
  */
 export async function getListDetails(listId: string): Promise<AttioList> {
-  // Use the generic operation with fallback to direct implementation
   try {
-    return await getGenericListDetails(listId);
+    return await getListDetailsOperation(listId);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}`;
-    
-    const response = await api.get(path);
-    return response.data.data || response.data;
+    throw error instanceof Error ? error : new Error(String(error));
   }
-}
-
-/**
- * Utility function to attempt multiple API endpoints for list entries
- * 
- * @param listId - The ID of the list
- * @param limit - Maximum number of entries to fetch
- * @param offset - Number of entries to skip
- * @returns Array of list entries
- */
-async function tryMultipleListEntryEndpoints(
-  listId: string,
-  limit: number,
-  offset: number
-): Promise<AttioListEntry[]> {
-  const api = getAttioClient();
-  const endpoints = [
-    // Path 1: Direct query endpoint for the specific list
-    {
-      method: 'post',
-      path: `/lists/${listId}/entries/query`,
-      data: { limit, offset }
-    },
-    // Path 2: General lists entries query endpoint
-    {
-      method: 'post',
-      path: `/lists-entries/query`,
-      data: { list_id: listId, limit, offset }
-    },
-    // Path 3: GET request on lists-entries
-    {
-      method: 'get',
-      path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`,
-      data: null
-    }
-  ];
-
-  // Try each endpoint in sequence until one works
-  for (const endpoint of endpoints) {
-    try {
-      const response = endpoint.method === 'post'
-        ? await api.post(endpoint.path, endpoint.data)
-        : await api.get(endpoint.path);
-      
-      return response.data.data || [];
-    } catch (error) {
-      // Continue to next endpoint on failure
-      continue;
-    }
-  }
-  
-  // If all endpoints fail, return empty array
-  return [];
 }
 
 /**
@@ -126,12 +56,10 @@ export async function getListEntries(
   limit: number = 20, 
   offset: number = 0
 ): Promise<AttioListEntry[]> {
-  // Use the generic operation with fallback to direct implementation
   try {
-    return await getGenericListEntries(listId, limit, offset);
+    return await getListEntriesOperation(listId, limit, offset);
   } catch (error) {
-    // Fallback to multi-endpoint utility function
-    return await tryMultipleListEntryEndpoints(listId, limit, offset);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
@@ -146,18 +74,10 @@ export async function addRecordToList(
   listId: string, 
   recordId: string
 ): Promise<AttioListEntry> {
-  // Use the generic operation with fallback to direct implementation
   try {
-    return await addGenericRecordToList(listId, recordId);
+    return await addRecordToListOperation(listId, recordId);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}/entries`;
-    
-    const response = await api.post(path, {
-      record_id: recordId
-    });
-    return response.data.data || response.data;
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
@@ -172,15 +92,9 @@ export async function removeRecordFromList(
   listId: string, 
   entryId: string
 ): Promise<boolean> {
-  // Use the generic operation with fallback to direct implementation
   try {
-    return await removeGenericRecordFromList(listId, entryId);
+    return await removeRecordFromListOperation(listId, entryId);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = `/lists/${listId}/entries/${entryId}`;
-    
-    await api.delete(path);
-    return true;
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }

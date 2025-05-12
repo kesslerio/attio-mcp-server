@@ -1,18 +1,32 @@
 /**
- * Common type definitions for Attio API responses and entities
+ * Type definitions for Attio API entities and responses
  */
 
-/**
- * Base interface for Attio record values
- */
-export interface AttioValue<T> {
-  value: T;
-  [key: string]: any; // Additional fields that might be present
+// Base types for API responses
+export interface AttioListResponse<T> {
+  data: T[];
+  meta?: {
+    total?: number;
+    count?: number;
+    limit?: number;
+    offset?: number;
+  };
 }
 
-/**
- * Base interface for Attio records (common between people and companies)
- */
+export interface AttioSingleResponse<T> {
+  data: T;
+  meta?: any;
+}
+
+// Value wrapper used in Attio records
+export interface AttioValue<T> {
+  id: string;
+  value: T;
+  attribute: string;
+  [key: string]: any;
+}
+
+// Base record type
 export interface AttioRecord {
   id: { 
     record_id: string;
@@ -29,111 +43,81 @@ export interface AttioRecord {
   [key: string]: any; // Additional top-level fields
 }
 
-/**
- * Person record type
- */
+// Person type
 export interface Person extends AttioRecord {
-  // Person-specific fields could be defined here
+  // Person-specific properties
 }
 
-/**
- * Company record type
- */
+// Company type
 export interface Company extends AttioRecord {
-  // Company-specific fields could be defined here
+  // Company-specific properties
 }
 
-/**
- * Note record type
- */
+// Note type
 export interface AttioNote {
-  id: { 
+  id: {
     note_id: string;
     [key: string]: any;
   };
   title: string;
   content: string;
-  format: string;
+  format: 'plaintext' | 'markdown' | 'rich_text';
   parent_object: string;
   parent_record_id: string;
   created_at: string;
   updated_at: string;
-  [key: string]: any; // Additional fields
+  [key: string]: any;
 }
 
-/**
- * List record type
- */
+// List type
 export interface AttioList {
-  id: {
+  id: string | {
     list_id: string;
     [key: string]: any;
   };
   title: string;
-  description?: string;
   object_slug: string;
-  workspace_id: string;
-  created_at: string;
-  updated_at: string;
+  description?: string;
   entry_count?: number;
-  [key: string]: any; // Additional fields
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any;
 }
 
-/**
- * List entry record type
- */
+// List entry type
 export interface AttioListEntry {
-  id: {
+  id: string | {
     entry_id: string;
     [key: string]: any;
   };
   list_id: string;
   record_id: string;
-  created_at: string;
-  updated_at?: string;
-  record?: AttioRecord; // Optional included record data
-  [key: string]: any; // Additional fields
+  created_at?: string;
+  [key: string]: any;
 }
 
-/**
- * Resource type enum for better type safety
- */
+// Resource types
 export enum ResourceType {
   PEOPLE = 'people',
   COMPANIES = 'companies',
   LISTS = 'lists'
 }
 
-/**
- * API error response shape
- */
+// Error response from Attio API
 export interface AttioErrorResponse {
-  status?: number;
-  data?: any;
-  headers?: Record<string, string>;
-  error?: string;
-  message?: string;
-  details?: any;
-  [key: string]: any;
-}
-
-/**
- * API response containing a list of records
- */
-export interface AttioListResponse<T> {
-  data: T[];
-  pagination?: {
-    total_count: number;
-    next_cursor?: string;
-    [key: string]: any;
+  error: {
+    message: string;
+    type: string;
+    code: string;
   };
-  [key: string]: any;
+  status: number;
 }
 
-/**
- * API response containing a single record
- */
-export interface AttioSingleResponse<T> {
-  data: T;
-  [key: string]: any;
+// Enhanced error type
+export interface AttioError extends Error {
+  status?: number;
+  response?: any;
+  request?: any;
+  config?: any;
+  isAxiosError?: boolean;
 }

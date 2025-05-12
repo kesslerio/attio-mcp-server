@@ -12,6 +12,8 @@ import {
 } from "../objects/companies.js";
 import {
   searchPeople,
+  searchPeopleByEmail,
+  searchPeopleByPhone,
   getPersonDetails,
   getPersonNotes,
   createPersonNote
@@ -103,7 +105,8 @@ const TOOL_CONFIGS: Record<ResourceType, {
       formatResult: (results) => results.map((person) => {
         const personName = person.values?.name?.[0]?.value || "Unknown Person";
         const personId = person.id?.record_id || "Record ID not found";
-        return `${personName}: attio://people/${personId}`;
+        const personEmail = person.values?.email?.[0]?.value ? ` (${person.values.email[0].value})` : '';
+        return `${personName}${personEmail}: attio://people/${personId}`;
       }).join("\n"),
     },
     details: {
@@ -239,13 +242,13 @@ const TOOL_DEFINITIONS: Record<ResourceType, Array<{
   [ResourceType.PEOPLE]: [
     {
       name: "search-people",
-      description: "Search for people by name",
+      description: "Search for people by name, email, or phone number",
       inputSchema: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "Person name or keyword to search for",
+            description: "Person name, email, phone number, or keyword to search for",
           },
         },
         required: ["query"],

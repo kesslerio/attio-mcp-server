@@ -1,36 +1,40 @@
+/**
+ * Utilities for parsing Attio resource URIs
+ */
 import { ResourceType } from "../types/attio.js";
 
 /**
- * Parse an Attio resource URI into resource type and ID
+ * Parses an Attio resource URI into its components
  * 
- * @param uri - The URI to parse (format: attio://{type}/{id})
- * @returns Tuple of [resourceType, resourceId]
- * @throws Error if URI format is invalid
+ * @param uri - The Attio resource URI (e.g., attio://people/abc123)
+ * @returns Tuple of [resourceType, id]
+ * @throws Error if the URI is invalid
  */
 export function parseResourceUri(uri: string): [ResourceType, string] {
-  const match = uri.match(/^attio:\/\/([^\/]+)\/(.+)$/);
-  
-  if (!match) {
-    throw new Error(`Invalid resource URI format: ${uri}`);
+  if (!uri) {
+    throw new Error("URI cannot be empty");
   }
   
-  const [, typeStr, id] = match;
+  // Handle both full Attio URIs and shorthand forms
+  const attioUriRegex = /^attio:\/\/([a-z]+)\/([a-zA-Z0-9_-]+)$/;
+  const shorthandRegex = /^([a-z]+)\/([a-zA-Z0-9_-]+)$/;
+  
+  let matches = attioUriRegex.exec(uri);
+  if (!matches) {
+    matches = shorthandRegex.exec(uri);
+  }
+  
+  if (!matches || matches.length < 3) {
+    throw new Error(`Invalid Attio URI format: ${uri}`);
+  }
+  
+  const resourceTypeStr = matches[1];
+  const id = matches[2];
   
   // Validate resource type
-  if (!Object.values(ResourceType).includes(typeStr as ResourceType)) {
-    throw new Error(`Unsupported resource type: ${typeStr}`);
+  if (!Object.values(ResourceType).includes(resourceTypeStr as ResourceType)) {
+    throw new Error(`Unknown resource type in URI: ${resourceTypeStr}`);
   }
   
-  return [typeStr as ResourceType, id];
-}
-
-/**
- * Creates an Attio resource URI from a type and ID
- * 
- * @param type - The resource type
- * @param id - The resource ID
- * @returns Formatted URI
- */
-export function formatResourceUri(type: ResourceType, id: string): string {
-  return `attio://${type}/${id}`;
+  return [resourceTypeStr as ResourceType, id];
 }
