@@ -1,4 +1,11 @@
-import { createErrorResult, AttioApiError, createApiError, createAttioError } from '../../src/utils/error-handler.js';
+import { 
+  createErrorResult, 
+  AttioApiError, 
+  createApiError, 
+  createAttioError,
+  ErrorType,
+  formatErrorResponse
+} from '../../src/utils/error-handler.js';
 
 describe('error-handler', () => {
   describe('createAttioError', () => {
@@ -40,6 +47,7 @@ describe('error-handler', () => {
       if (error instanceof AttioApiError) {
         expect(error.status).toBe(404);
         expect(error.message).toContain('Company not found');
+        expect(error.type).toBe(ErrorType.NOT_FOUND_ERROR);
       }
     });
 
@@ -50,6 +58,7 @@ describe('error-handler', () => {
       if (error instanceof AttioApiError) {
         expect(error.status).toBe(401);
         expect(error.message).toContain('Authentication failed');
+        expect(error.type).toBe(ErrorType.AUTHENTICATION_ERROR);
       }
     });
 
@@ -60,23 +69,22 @@ describe('error-handler', () => {
       if (error instanceof AttioApiError) {
         expect(error.status).toBe(429);
         expect(error.message).toContain('Rate limit exceeded');
+        expect(error.type).toBe(ErrorType.RATE_LIMIT_ERROR);
       }
     });
   });
 
   describe('createErrorResult', () => {
     it('should format an AttioApiError correctly', () => {
-      const error = new AttioApiError('Test error', 500, 'test details', '/test', 'GET', { error: 'Test error' });
+      const error = new AttioApiError('Test error', 500, 'test details', '/test', 'GET', ErrorType.SERVER_ERROR, { error: 'Test error' });
       const result = createErrorResult(error, '/unused', 'UNUSED');
       
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('ERROR: Test error');
-      expect(result.content[0].text).toContain('Method: GET');
-      expect(result.content[0].text).toContain('URL: /test');
-      expect(result.content[0].text).toContain('Status: 500');
+      expect(result.content[0].text).toContain(`ERROR [${ErrorType.SERVER_ERROR}]: Test error`);
       expect(result.error.code).toBe(500);
       expect(result.error.message).toBe('Test error');
+      expect(result.error.type).toBe(ErrorType.SERVER_ERROR);
     });
 
     it('should create a properly formatted error result from status and response data', () => {
@@ -95,22 +103,19 @@ describe('error-handler', () => {
         content: [
           {
             type: 'text',
-            text: expect.stringContaining('ERROR:')
+            text: expect.stringContaining('ERROR')
           }
         ],
         isError: true,
         error: {
           code: 400,
           message: expect.any(String),
-          details: expect.any(String)
+          type: ErrorType.VALIDATION_ERROR
         }
       });
 
-      // Check that all required information is included in the text
-      const text = result.content[0].text;
-      expect(text).toContain('Method: GET');
-      expect(text).toContain('URL: /test/url');
-      expect(text).toContain('Status: 400');
+      // Check that the error type is properly set
+      expect(result.error.type).toBe(ErrorType.VALIDATION_ERROR);
     });
 
     it('should handle missing response data', () => {
@@ -121,19 +126,42 @@ describe('error-handler', () => {
 
       const result = createErrorResult(error, url, method, responseData);
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: expect.stringContaining('ERROR: Test error')
-          }
-        ],
-        isError: true,
-        error: {
-          code: 500,
-          message: 'Test error',
-          details: 'Unknown error occurred'
-        }
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain(`ERROR [${ErrorType.UNKNOWN_ERROR}]`);
+      expect(result.error.code).toBe(500);
+      expect(result.error.message).toBe('Test error');
+      expect(result.error.type).toBe(ErrorType.UNKNOWN_ERROR);
+    });
+  });
+  
+  describe('formatErrorResponse', () => {
+    it('should create a properly formatted error response based on error type', () => {
+      const error = new Error('Validation error');
+      const result = formatErrorResponse(error, ErrorType.VALIDATION_ERROR, { field: 'username', message: 'Required' });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain(`ERROR [${ErrorType.VALIDATION_ERROR}]`);
+      expect(result.error.code).toBe(400);
+      expect(result.error.message).toBe('Validation error');
+      expect(result.error.type).toBe(ErrorType.VALIDATION_ERROR);
+      expect(result.error.details).toEqual({ field: 'username', message: 'Required' });
+    });
+    
+    it('should set the appropriate error code based on error type', () => {
+      const testCases = [
+        { type: ErrorType.VALIDATION_ERROR, expectedCode: 400 },
+        { type: ErrorType.AUTHENTICATION_ERROR, expectedCode: 401 },
+        { type: ErrorType.RATE_LIMIT_ERROR, expectedCode: 429 },
+        { type: ErrorType.NOT_FOUND_ERROR, expectedCode: 404 },
+        { type: ErrorType.SERVER_ERROR, expectedCode: 500 },
+        { type: ErrorType.UNKNOWN_ERROR, expectedCode: 500 }
+      ];
+      
+      testCases.forEach(testCase => {
+        const result = formatErrorResponse(new Error('Test error'), testCase.type);
+        expect(result.error.code).toBe(testCase.expectedCode);
       });
     });
   });

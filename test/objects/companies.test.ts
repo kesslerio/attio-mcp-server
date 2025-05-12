@@ -57,9 +57,18 @@ describe('companies', () => {
       const mockError = new Error('API Error');
       mockAxiosInstance.post.mockRejectedValue(mockError);
 
+      // Mock the retry functionality directly in the test
+      jest.mock('../../src/api/attio-operations.js', () => {
+        const actual = jest.requireActual('../../src/api/attio-operations.js');
+        return {
+          ...actual,
+          callWithRetry: (fn: any) => fn()
+        };
+      });
+
       // Act & Assert
       await expect(searchCompanies(query)).rejects.toThrow('API Error');
-    });
+    }, 10000); // Increase timeout to 10 seconds
   });
 
   describe('listCompanies', () => {

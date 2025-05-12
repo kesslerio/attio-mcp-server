@@ -4,6 +4,30 @@
 import { AttioErrorResponse } from "../types/attio.js";
 
 /**
+ * Enum for categorizing different types of errors
+ */
+export enum ErrorType {
+  VALIDATION_ERROR = 'validation_error',
+  API_ERROR = 'api_error',
+  AUTHENTICATION_ERROR = 'authentication_error',
+  RATE_LIMIT_ERROR = 'rate_limit_error',
+  NETWORK_ERROR = 'network_error',
+  NOT_FOUND_ERROR = 'not_found_error',
+  SERVER_ERROR = 'server_error',
+  UNKNOWN_ERROR = 'unknown_error',
+}
+
+/**
+ * Interface for error details
+ */
+export interface ErrorDetails {
+  code: number;
+  message: string;
+  type: ErrorType;
+  details?: any;
+}
+
+/**
  * Custom error class for Attio API errors
  */
 export class AttioApiError extends Error {
@@ -12,14 +36,16 @@ export class AttioApiError extends Error {
   path: string;
   method: string;
   responseData: any;
+  type: ErrorType;
 
-  constructor(message: string, status: number, detail: string, path: string, method: string, responseData: any = {}) {
+  constructor(message: string, status: number, detail: string, path: string, method: string, type: ErrorType = ErrorType.API_ERROR, responseData: any = {}) {
     super(message);
     this.name = 'AttioApiError';
     this.status = status;
     this.detail = detail;
     this.path = path;
     this.method = method;
+    this.type = type;
     this.responseData = responseData;
   }
 }
@@ -64,101 +90,104 @@ export function createApiError(status: number, path: string, method: string, res
   const defaultMessage = responseData?.error?.message || responseData?.message || 'Unknown API error';
   const detail = responseData?.error?.detail || responseData?.detail || 'No additional details';
   
+  let errorType = ErrorType.API_ERROR;
+  let message = '';
+  
   // Create specific error messages based on status code and context
   switch (status) {
     case 400:
-      return new AttioApiError(
-        `Bad Request: ${defaultMessage}`, 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      errorType = ErrorType.VALIDATION_ERROR;
+      message = `Bad Request: ${defaultMessage}`;
+      break;
     
     case 401:
-      return new AttioApiError(
-        'Authentication failed. Please check your API key.', 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
-    
     case 403:
-      return new AttioApiError(
-        'Permission denied. Your API key lacks the necessary permissions.', 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      errorType = ErrorType.AUTHENTICATION_ERROR;
+      message = status === 401 
+        ? 'Authentication failed. Please check your API key.' 
+        : 'Permission denied. Your API key lacks the necessary permissions.';
+      break;
     
     case 404:
+      errorType = ErrorType.NOT_FOUND_ERROR;
       // Customize 404 message based on path
       if (path.includes('/objects/people/')) {
-        return new AttioApiError(
-          `Person not found: ${path.split('/').pop()}`, 
-          status, 
-          detail, 
-          path, 
-          method, 
-          responseData
-        );
+        message = `Person not found: ${path.split('/').pop()}`;
       } else if (path.includes('/objects/companies/')) {
-        return new AttioApiError(
-          `Company not found: ${path.split('/').pop()}`, 
-          status, 
-          detail, 
-          path, 
-          method, 
-          responseData
-        );
+        message = `Company not found: ${path.split('/').pop()}`;
+      } else {
+        message = `Resource not found: ${path}`;
       }
-      return new AttioApiError(
-        `Resource not found: ${path}`, 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      break;
     
     case 429:
-      return new AttioApiError(
-        'Rate limit exceeded. Please try again later.', 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      errorType = ErrorType.RATE_LIMIT_ERROR;
+      message = 'Rate limit exceeded. Please try again later.';
+      break;
       
     case 500:
     case 502:
     case 503:
     case 504:
-      return new AttioApiError(
-        `Attio API server error (${status}): ${defaultMessage}`, 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      errorType = ErrorType.SERVER_ERROR;
+      message = `Attio API server error (${status}): ${defaultMessage}`;
+      break;
       
     default:
-      return new AttioApiError(
-        `API Error (${status}): ${defaultMessage}`, 
-        status, 
-        detail, 
-        path, 
-        method, 
-        responseData
-      );
+      if (status >= 500) {
+        errorType = ErrorType.SERVER_ERROR;
+      } else if (status >= 400) {
+        errorType = ErrorType.API_ERROR;
+      } else {
+        errorType = ErrorType.UNKNOWN_ERROR;
+      }
+      message = `API Error (${status}): ${defaultMessage}`;
+      break;
   }
+  
+  return new AttioApiError(
+    message,
+    status, 
+    detail, 
+    path, 
+    method, 
+    errorType,
+    responseData
+  );
+}
+
+/**
+ * Format an error into a standardized response based on error type
+ * 
+ * @param error - The error to format
+ * @param type - The error type
+ * @param details - Additional error details
+ * @returns Formatted error response
+ */
+export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UNKNOWN_ERROR, details?: any) {
+  const errorCode = 
+    type === ErrorType.VALIDATION_ERROR ? 400 :
+    type === ErrorType.AUTHENTICATION_ERROR ? 401 :
+    type === ErrorType.RATE_LIMIT_ERROR ? 429 :
+    type === ErrorType.NOT_FOUND_ERROR ? 404 :
+    type === ErrorType.SERVER_ERROR ? 500 : 
+    500;
+  
+  return {
+    content: [
+      {
+        type: "text",
+        text: `ERROR [${type}]: ${error.message}${details ? '\n\nDetails: ' + JSON.stringify(details, null, 2) : ''}`,
+      },
+    ],
+    isError: true,
+    error: {
+      code: errorCode,
+      message: error.message,
+      type,
+      details,
+    },
+  };
 }
 
 /**
@@ -173,7 +202,15 @@ export function createApiError(status: number, path: string, method: string, res
 export function createErrorResult(error: Error, url: string, method: string, responseData: AttioErrorResponse = {}) {
   // If it's already an AttioApiError, use it directly
   if (error instanceof AttioApiError) {
-    return formatErrorResponse(error);
+    const errorDetails = {
+      status: error.status,
+      method: error.method,
+      path: error.path,
+      detail: error.detail,
+      responseData: error.responseData
+    };
+    
+    return formatErrorResponse(error, error.type, errorDetails);
   }
   
   // For Axios errors with response data
@@ -184,60 +221,36 @@ export function createErrorResult(error: Error, url: string, method: string, res
       url, 
       method, 
       responseData
-    );
-    return formatErrorResponse(apiError as AttioApiError);
+    ) as AttioApiError;
+    
+    const errorDetails = {
+      status: apiError.status,
+      method: apiError.method,
+      path: apiError.path,
+      detail: apiError.detail,
+      responseData: apiError.responseData
+    };
+    
+    return formatErrorResponse(apiError, apiError.type, errorDetails);
   }
   
-  // For other errors
-  return {
-    content: [
-      {
-        type: "text",
-        text: `ERROR: ${error.message}\n\n` +
-          `=== Request Details ===\n` +
-          `- Method: ${method}\n` +
-          `- URL: ${url}\n\n` +
-          `=== Response Details ===\n` +
-          `- Status: ${responseData.status || 'Unknown'}\n` +
-          `- Headers: ${JSON.stringify(responseData.headers || {}, null, 2)}\n` +
-          `- Data: ${JSON.stringify(responseData.data || {}, null, 2)}\n`
-      },
-    ],
-    isError: true,
-    error: {
-      code: responseData.status || 500,
-      message: error.message,
-      details: responseData.error || "Unknown error occurred"
-    }
+  // For network or unknown errors
+  let errorType = ErrorType.UNKNOWN_ERROR;
+  
+  // Try to determine error type based on message or instance
+  if (error.message.includes('network') || error.message.includes('connection')) {
+    errorType = ErrorType.NETWORK_ERROR;
+  } else if (error.message.includes('timeout')) {
+    errorType = ErrorType.NETWORK_ERROR;
+  }
+  
+  const errorDetails = {
+    method,
+    url,
+    status: responseData.status || 'Unknown',
+    headers: responseData.headers || {},
+    data: responseData.data || {}
   };
-}
-
-/**
- * Format an AttioApiError into a standardized error response for MCP
- * 
- * @param error - The API error to format
- * @returns Formatted error response
- */
-function formatErrorResponse(error: AttioApiError) {
-  return {
-    content: [
-      {
-        type: "text",
-        text: `ERROR: ${error.message}\n\n` +
-          `=== Request Details ===\n` +
-          `- Method: ${error.method}\n` +
-          `- URL: ${error.path}\n\n` +
-          `=== Response Details ===\n` +
-          `- Status: ${error.status}\n` +
-          `- Detail: ${error.detail}\n` +
-          `- Data: ${JSON.stringify(error.responseData || {}, null, 2)}\n`
-      },
-    ],
-    isError: true,
-    error: {
-      code: error.status,
-      message: error.message,
-      details: error.detail
-    }
-  };
+  
+  return formatErrorResponse(error, errorType, errorDetails);
 }
