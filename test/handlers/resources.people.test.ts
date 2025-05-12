@@ -33,8 +33,26 @@ describe('resources-people', () => {
       
       // Create sample data for the test
       const mockPeople = [
-        { id: { record_id: 'person1' }, values: { name: [{ value: 'Person A' }] } },
-        { id: { record_id: 'person2' }, values: { name: [{ value: 'Person B' }] } }
+        { 
+          id: { record_id: 'person1' }, 
+          values: { 
+            name: [{ 
+              id: 'id1', 
+              value: 'Person A', 
+              attribute: 'name' 
+            }] 
+          } 
+        },
+        { 
+          id: { record_id: 'person2' }, 
+          values: { 
+            name: [{ 
+              id: 'id2', 
+              value: 'Person B', 
+              attribute: 'name' 
+            }] 
+          } 
+        }
       ];
       
       // Set up our mock to return this data
@@ -95,7 +113,13 @@ describe('resources-people', () => {
       // Create sample data for the test
       const mockPerson = { 
         id: { record_id: 'person1' }, 
-        values: { name: [{ value: 'Person A' }] } 
+        values: { 
+          name: [{ 
+            id: 'id1', 
+            value: 'Person A', 
+            attribute: 'name' 
+          }] 
+        } 
       };
       
       // Set up our mock to return this data

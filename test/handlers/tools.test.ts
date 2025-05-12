@@ -23,57 +23,147 @@ describe('tools', () => {
     const mockCompanySearchResults = [
       {
         id: { record_id: 'company1' },
-        values: { name: [{ value: 'Acme Corp' }] }
+        values: { 
+          name: [{ 
+            id: 'name1', 
+            value: 'Acme Corp', 
+            attribute: 'name' 
+          }] 
+        }
       },
       {
         id: { record_id: 'company2' },
-        values: { name: [{ value: 'Globex Inc' }] }
+        values: { 
+          name: [{ 
+            id: 'name2', 
+            value: 'Globex Inc', 
+            attribute: 'name' 
+          }] 
+        }
       }
     ];
 
     const mockPeopleSearchResults = [
       {
         id: { record_id: 'person1' },
-        values: { name: [{ value: 'John Doe' }] }
+        values: { 
+          name: [{ 
+            id: 'name1', 
+            value: 'John Doe', 
+            attribute: 'name' 
+          }] 
+        }
       },
       {
         id: { record_id: 'person2' },
-        values: { name: [{ value: 'Jane Smith' }] }
+        values: { 
+          name: [{ 
+            id: 'name2', 
+            value: 'Jane Smith', 
+            attribute: 'name' 
+          }] 
+        }
       }
     ];
 
     const mockCompanyDetails = {
       id: { record_id: 'company1' },
       values: {
-        name: [{ value: 'Acme Corp' }],
-        industry: [{ value: 'Technology' }]
+        name: [{ 
+          id: 'name1', 
+          value: 'Acme Corp', 
+          attribute: 'name' 
+        }],
+        industry: [{ 
+          id: 'industry1', 
+          value: 'Technology', 
+          attribute: 'industry' 
+        }]
       }
     };
 
     const mockPersonDetails = {
       id: { record_id: 'person1' },
       values: {
-        name: [{ value: 'John Doe' }],
-        email: [{ value: 'john@example.com' }]
+        name: [{ 
+          id: 'name1', 
+          value: 'John Doe', 
+          attribute: 'name' 
+        }],
+        email: [{ 
+          id: 'email1', 
+          value: 'john@example.com', 
+          attribute: 'email' 
+        }]
       }
     };
 
     const mockCompanyNotes = [
-      { id: { note_id: 'note1' }, title: 'Meeting notes', content: 'Discussed project timeline' },
-      { id: { note_id: 'note2' }, title: 'Follow-up', content: 'Sent proposal' }
+      { 
+        id: { note_id: 'note1' }, 
+        title: 'Meeting notes', 
+        content: 'Discussed project timeline',
+        format: 'plaintext' as 'plaintext',
+        parent_object: 'companies',
+        parent_record_id: 'company1',
+        created_at: '2025-01-01T00:00:00Z',
+        updated_at: '2025-01-01T00:00:00Z'
+      },
+      { 
+        id: { note_id: 'note2' }, 
+        title: 'Follow-up', 
+        content: 'Sent proposal',
+        format: 'plaintext' as 'plaintext',
+        parent_object: 'companies',
+        parent_record_id: 'company1',
+        created_at: '2025-01-02T00:00:00Z',
+        updated_at: '2025-01-02T00:00:00Z'
+      }
     ];
 
     const mockPersonNotes = [
-      { id: { note_id: 'note3' }, title: 'Introduction', content: 'First contact with John' },
-      { id: { note_id: 'note4' }, title: 'Career history', content: 'Discussed background' }
+      { 
+        id: { note_id: 'note3' }, 
+        title: 'Introduction', 
+        content: 'First contact with John',
+        format: 'plaintext' as 'plaintext',
+        parent_object: 'people',
+        parent_record_id: 'person1',
+        created_at: '2025-01-01T00:00:00Z',
+        updated_at: '2025-01-01T00:00:00Z'
+      },
+      { 
+        id: { note_id: 'note4' }, 
+        title: 'Career history', 
+        content: 'Discussed background',
+        format: 'plaintext' as 'plaintext',
+        parent_object: 'people',
+        parent_record_id: 'person1',
+        created_at: '2025-01-02T00:00:00Z',
+        updated_at: '2025-01-02T00:00:00Z'
+      }
     ];
 
     const mockCreatedCompanyNote = {
-      id: { note_id: 'note5' }
+      id: { note_id: 'note5' },
+      title: 'Meeting notes',
+      content: 'Discussed project timeline',
+      format: 'plaintext' as 'plaintext',
+      parent_object: 'companies',
+      parent_record_id: 'company1',
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z'
     };
 
     const mockCreatedPersonNote = {
-      id: { note_id: 'note6' }
+      id: { note_id: 'note6' },
+      title: 'Introduction',
+      content: 'First contact with John',
+      format: 'plaintext' as 'plaintext',
+      parent_object: 'people',
+      parent_record_id: 'person1',
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z'
     };
 
     beforeEach(() => {

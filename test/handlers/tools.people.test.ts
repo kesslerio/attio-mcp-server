@@ -69,7 +69,16 @@ describe('tools-people', () => {
       
       // Setup mock people data
       const mockPeople = [
-        { id: { record_id: 'person1' }, values: { name: [{ value: 'Test Person' }] } }
+        { 
+          id: { record_id: 'person1' }, 
+          values: { 
+            name: [{ 
+              id: 'id1', 
+              value: 'Test Person', 
+              attribute: 'name' 
+            }] 
+          } 
+        }
       ];
       mockedPeople.searchPeople.mockResolvedValue(mockPeople);
       
@@ -127,7 +136,13 @@ describe('tools-people', () => {
       // Setup mock person data
       const mockPerson = { 
         id: { record_id: 'person1' }, 
-        values: { name: [{ value: 'Test Person' }] } 
+        values: { 
+          name: [{ 
+            id: 'id1', 
+            value: 'Test Person', 
+            attribute: 'name' 
+          }] 
+        } 
       };
       mockedPeople.getPersonDetails.mockResolvedValue(mockPerson);
       
@@ -159,7 +174,7 @@ describe('tools-people', () => {
           id: { note_id: 'note1' }, 
           title: 'Note 1', 
           content: 'Content 1',
-          format: 'plaintext',
+          format: 'plaintext' as 'plaintext',
           parent_object: 'people',
           parent_record_id: 'person1',
           created_at: '2025-01-01T00:00:00Z',
@@ -200,7 +215,7 @@ describe('tools-people', () => {
         id: { note_id: 'note123' },
         title: '[AI] Test Note',
         content: 'This is a test note',
-        format: 'plaintext',
+        format: 'plaintext' as 'plaintext',
         parent_object: 'people',
         parent_record_id: 'person1',
         created_at: '2025-01-01T00:00:00Z',

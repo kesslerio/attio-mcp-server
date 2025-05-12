@@ -12,20 +12,24 @@ describe('people', () => {
   const mockPeopleData = [
     {
       id: { record_id: 'person1' },
-      values: { name: [{ value: 'John Doe' }] }
+      values: { 
+        name: [{ id: 'name1', value: 'John Doe', attribute: 'name' }] 
+      }
     },
     {
       id: { record_id: 'person2' },
-      values: { name: [{ value: 'Jane Smith' }] }
+      values: { 
+        name: [{ id: 'name2', value: 'Jane Smith', attribute: 'name' }] 
+      }
     }
   ];
 
   const mockPersonDetails = {
     id: { record_id: 'person1' },
     values: {
-      name: [{ value: 'John Doe' }],
-      email: [{ value: 'john@example.com' }],
-      phone: [{ value: '+1234567890' }]
+      name: [{ id: 'name1', value: 'John Doe', attribute: 'name' }],
+      email: [{ id: 'email1', value: 'john@example.com', attribute: 'email' }],
+      phone: [{ id: 'phone1', value: '+1234567890', attribute: 'phone' }]
     }
   };
 
@@ -34,7 +38,7 @@ describe('people', () => {
       id: { note_id: 'note1' }, 
       title: 'First meeting', 
       content: 'Met with John',
-      format: 'plaintext',
+      format: 'plaintext' as 'plaintext',
       parent_object: 'people',
       parent_record_id: 'person1',
       created_at: '2025-01-01T00:00:00Z',
@@ -44,7 +48,7 @@ describe('people', () => {
       id: { note_id: 'note2' }, 
       title: 'Follow-up', 
       content: 'Discussed next steps',
-      format: 'plaintext',
+      format: 'plaintext' as 'plaintext',
       parent_object: 'people',
       parent_record_id: 'person1',
       created_at: '2025-01-02T00:00:00Z',
@@ -56,7 +60,7 @@ describe('people', () => {
     id: { note_id: 'note3' },
     title: '[AI] Meeting summary',
     content: 'Discussed project details',
-    format: 'plaintext',
+    format: 'plaintext' as 'plaintext',
     parent_object: 'people',
     parent_record_id: 'person1',
     created_at: '2025-01-03T00:00:00Z',

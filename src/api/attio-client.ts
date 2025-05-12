@@ -54,7 +54,7 @@ export function initializeAttioClient(apiKey: string): void {
  */
 export function getAttioClient(): AxiosInstance {
   if (!attioClient) {
-    throw new Error("Attio API client has not been initialized. Call initializeAttioClient first.");
+    throw new Error("API client not initialized");
   }
   return attioClient;
 }

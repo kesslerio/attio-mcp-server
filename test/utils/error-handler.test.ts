@@ -121,19 +121,18 @@ describe('error-handler', () => {
 
       const result = createErrorResult(error, url, method, responseData);
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: expect.stringContaining('ERROR: Test error')
-          }
-        ],
-        isError: true,
-        error: {
-          code: 500,
-          message: 'Test error',
-          details: 'Unknown error occurred'
+      // We need to check specific properties and ignore the debug property
+      expect(result.content).toEqual([
+        {
+          type: 'text',
+          text: expect.stringContaining('ERROR: Test error')
         }
+      ]);
+      expect(result.isError).toBe(true);
+      expect(result.error).toEqual({
+        code: 500,
+        message: 'Test error',
+        details: 'Unknown error occurred'
       });
     });
   });

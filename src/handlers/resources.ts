@@ -2,7 +2,7 @@
  * Handlers for resource-related requests
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { DeleteResourceRequestSchema, GetResourceRequestSchema, ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { ReadResourceRequestSchema, ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
 import { searchPeople, getPersonDetails } from "../objects/people.js";
 import { searchCompanies, getCompanyDetails } from "../objects/companies.js";
@@ -19,8 +19,8 @@ export function registerResourceHandlers(server: Server): void {
   // Handler for listing resources
   server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
     try {
-      const resourceType = request.params.type;
-      const query = request.params.query;
+      const resourceType = request.params?.type || '';
+      const query = request.params?.query || '';
       
       if (!resourceType && !query) {
         return { resources: [] };
@@ -32,7 +32,8 @@ export function registerResourceHandlers(server: Server): void {
       // Handle search or list operations based on query and type
       if (resourceType === 'people' || (!resourceType && query)) {
         try {
-          const people = await searchPeople(query || '');
+          // Cast to string to satisfy TypeScript
+          const people = await searchPeople(query as string);
           resources = [
             ...resources,
             ...people.map(person => {
@@ -52,7 +53,8 @@ export function registerResourceHandlers(server: Server): void {
       
       if (resourceType === 'companies' || (!resourceType && query)) {
         try {
-          const companies = await searchCompanies(query || '');
+          // Cast to string to satisfy TypeScript
+          const companies = await searchCompanies(query as string);
           resources = [
             ...resources,
             ...companies.map(company => {
@@ -98,9 +100,9 @@ export function registerResourceHandlers(server: Server): void {
   });
 
   // Handler for getting a specific resource
-  server.setRequestHandler(GetResourceRequestSchema, async (request) => {
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     try {
-      const uri = request.params.uri;
+      const uri = request.params?.uri || '';
       const [resourceType, id] = parseResourceUri(uri);
       
       // Fetch resource data based on type
@@ -159,12 +161,19 @@ export function registerResourceHandlers(server: Server): void {
         throw new Error(`Unknown resource type: ${resourceType}`);
       }
       
-      // Return resource with properties
+      // Return resource with properties in format expected by tests
       return {
         resource: {
           ...resource,
           properties,
         },
+        contents: [
+          {
+            uri: resource.uri,
+            mimeType: 'application/json',
+            content: JSON.stringify(properties)
+          }
+        ],
       };
     } catch (error) {
       return createErrorResult(
@@ -176,13 +185,5 @@ export function registerResourceHandlers(server: Server): void {
     }
   });
 
-  // Handler for deleting a resource (not implemented)
-  server.setRequestHandler(DeleteResourceRequestSchema, async (request) => {
-    return createErrorResult(
-      new Error("Resource deletion is not currently supported"),
-      request.params.uri,
-      "DELETE",
-      {}
-    );
-  });
+  // Handler for deleting a resource is not implemented
 }

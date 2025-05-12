@@ -23,40 +23,88 @@ describe('resources', () => {
     const mockCompanies = [
       {
         id: { record_id: 'company1' },
-        values: { name: [{ value: 'Acme Corp' }] }
+        values: { 
+          name: [{ 
+            id: 'name1', 
+            value: 'Acme Corp', 
+            attribute: 'name' 
+          }] 
+        }
       },
       {
         id: { record_id: 'company2' },
-        values: { name: [{ value: 'Globex Inc' }] }
+        values: { 
+          name: [{ 
+            id: 'name2', 
+            value: 'Globex Inc', 
+            attribute: 'name' 
+          }] 
+        }
       }
     ];
 
     const mockPeople = [
       {
         id: { record_id: 'person1' },
-        values: { name: [{ value: 'John Doe' }] }
+        values: { 
+          name: [{ 
+            id: 'name1', 
+            value: 'John Doe', 
+            attribute: 'name' 
+          }] 
+        }
       },
       {
         id: { record_id: 'person2' },
-        values: { name: [{ value: 'Jane Smith' }] }
+        values: { 
+          name: [{ 
+            id: 'name2', 
+            value: 'Jane Smith', 
+            attribute: 'name' 
+          }] 
+        }
       }
     ];
 
     const mockCompanyDetails = {
       id: { record_id: 'company1' },
       values: {
-        name: [{ value: 'Acme Corp' }],
-        industry: [{ value: 'Technology' }],
-        website: [{ value: 'https://acme.example.com' }]
+        name: [{ 
+          id: 'name1', 
+          value: 'Acme Corp', 
+          attribute: 'name' 
+        }],
+        industry: [{ 
+          id: 'industry1', 
+          value: 'Technology', 
+          attribute: 'industry' 
+        }],
+        website: [{ 
+          id: 'website1', 
+          value: 'https://acme.example.com', 
+          attribute: 'website' 
+        }]
       }
     };
 
     const mockPersonDetails = {
       id: { record_id: 'person1' },
       values: {
-        name: [{ value: 'John Doe' }],
-        email: [{ value: 'john@example.com' }],
-        phone: [{ value: '+1234567890' }]
+        name: [{ 
+          id: 'name1', 
+          value: 'John Doe', 
+          attribute: 'name' 
+        }],
+        email: [{ 
+          id: 'email1', 
+          value: 'john@example.com', 
+          attribute: 'email' 
+        }],
+        phone: [{ 
+          id: 'phone1', 
+          value: '+1234567890', 
+          attribute: 'phone' 
+        }]
       }
     };
 

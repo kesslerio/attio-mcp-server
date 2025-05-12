@@ -16,8 +16,8 @@ export function parseResourceUri(uri: string): [ResourceType, string] {
   }
   
   // Handle both full Attio URIs and shorthand forms
-  const attioUriRegex = /^attio:\/\/([a-z]+)\/([a-zA-Z0-9_-]+)$/;
-  const shorthandRegex = /^([a-z]+)\/([a-zA-Z0-9_-]+)$/;
+  const attioUriRegex = /^attio:\/\/([a-z]+)\/([a-zA-Z0-9_.-]+)$/;
+  const shorthandRegex = /^([a-z]+)\/([a-zA-Z0-9_.-]+)$/;
   
   let matches = attioUriRegex.exec(uri);
   if (!matches) {
@@ -25,7 +25,7 @@ export function parseResourceUri(uri: string): [ResourceType, string] {
   }
   
   if (!matches || matches.length < 3) {
-    throw new Error(`Invalid Attio URI format: ${uri}`);
+    throw new Error(`Invalid resource URI format: ${uri}`);
   }
   
   const resourceTypeStr = matches[1];
@@ -33,8 +33,19 @@ export function parseResourceUri(uri: string): [ResourceType, string] {
   
   // Validate resource type
   if (!Object.values(ResourceType).includes(resourceTypeStr as ResourceType)) {
-    throw new Error(`Unknown resource type in URI: ${resourceTypeStr}`);
+    throw new Error(`Unsupported resource type: ${resourceTypeStr}`);
   }
   
   return [resourceTypeStr as ResourceType, id];
+}
+
+/**
+ * Formats a resource type and ID into an Attio resource URI
+ * 
+ * @param resourceType - The resource type (e.g., people, companies)
+ * @param id - The resource ID
+ * @returns Formatted URI (e.g., attio://people/abc123)
+ */
+export function formatResourceUri(resourceType: ResourceType, id: string): string {
+  return `attio://${resourceType}/${id}`;
 }
