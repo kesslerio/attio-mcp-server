@@ -39,11 +39,18 @@ export const listsToolConfigs = {
     handler: getListEntries,
     formatResult: (results: AttioListEntry[]) => {
       return `Found ${results.length} entries in list:\n${results.map((entry: AttioListEntry) => {
-        // Include both entry ID and record ID for better visibility
-        const recordName = getRecordNameFromEntry(entry);
-        const displayName = recordName ? ` (${recordName})` : '';
+        // Extract record details with improved name and type extraction
+        const recordDetails = getRecordNameFromEntry(entry);
         
-        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayName}`;
+        // Format display name with record type for better context
+        let displayInfo = '';
+        if (recordDetails.name) {
+          displayInfo = recordDetails.type 
+            ? ` (${recordDetails.type}: ${recordDetails.name})` 
+            : ` (${recordDetails.name})`;
+        }
+        
+        return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
       }).join('\n')}`;
     }
   } as GetListEntriesToolConfig,
