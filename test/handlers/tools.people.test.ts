@@ -44,8 +44,10 @@ describe('tools-people', () => {
       // Expected people tool names
       const expectedPeopleTools = [
         "search-people", 
-        "read-person-details", 
-        "read-person-notes",
+        "search-people-by-email",
+        "search-people-by-phone",
+        "get-person-details", 
+        "get-person-notes",
         "create-person-note"
       ];
       
@@ -117,7 +119,7 @@ describe('tools-people', () => {
       expect(result).toBe(mockErrorResult);
     });
 
-    it('should handle read-person-details tool call', async () => {
+    it('should handle get-person-details tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
       
@@ -131,10 +133,10 @@ describe('tools-people', () => {
       };
       mockedPeople.getPersonDetails.mockResolvedValue(mockPerson);
       
-      // Call the handler with read-person-details tool
+      // Call the handler with get-person-details tool
       const result = await callToolHandler[1]({
         params: {
-          name: 'read-person-details',
+          name: 'get-person-details',
           arguments: { uri: 'attio://people/person1' }
         }
       });
@@ -146,7 +148,7 @@ describe('tools-people', () => {
       expect(result.content[0].text).toContain('details for person1');
     });
 
-    it('should handle read-person-notes tool call', async () => {
+    it('should handle get-person-notes tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
       
@@ -168,10 +170,10 @@ describe('tools-people', () => {
       ];
       mockedPeople.getPersonNotes.mockResolvedValue(mockNotes);
       
-      // Call the handler with read-person-notes tool
+      // Call the handler with get-person-notes tool
       const result = await callToolHandler[1]({
         params: {
-          name: 'read-person-notes',
+          name: 'get-person-notes',
           arguments: { 
             uri: 'attio://people/person1',
             limit: 5,
