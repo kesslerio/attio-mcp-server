@@ -197,14 +197,50 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle notes tools
       if (toolType === 'notes') {
-        const uri = request.params.arguments?.uri as string;
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
         const limit = request.params.arguments?.limit as number || 10;
         const offset = request.params.arguments?.offset as number || 0;
         
+        // Use either direct ID or URI
+        if (uri) {
+          try {
+            id = uri; // Pass the full URI to the handler which now handles URI parsing
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/notes`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
+        
         try {
-          const [uriType, id] = parseResourceUri(uri);
-          if (uriType !== resourceType) {
-            throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[tools.notes] Calling notes handler for ${resourceType} with: `, {
+              id,
+              limit,
+              offset
+            });
           }
           
           const notes = await toolConfig.handler(id, limit, offset);
@@ -213,7 +249,7 @@ export function registerToolHandlers(server: Server): void {
             content: [
               {
                 type: "text",
-                text: `Found ${notes.length} notes for ${resourceType.slice(0, -1)} ${id}:\n${notes.map((note: any) => JSON.stringify(note)).join("----------\n")}`,
+                text: `Found ${notes.length} notes for ${resourceType.slice(0, -1)} ${id.includes('attio://') ? id.split('/').pop() : id}:\n${notes.length > 0 ? notes.map((note: any) => JSON.stringify(note)).join("----------\n") : "No notes found."}`,
               },
             ],
             isError: false,
@@ -238,18 +274,62 @@ export function registerToolHandlers(server: Server): void {
           return createErrorResult(configError, 'tool-config', 'GET', { status: 400 });
         }
         
-        const id = request.params.arguments?.[idParam] as string;
-        const noteTitle = request.params.arguments?.noteTitle as string;
-        const noteText = request.params.arguments?.noteText as string;
+        let id: string;
+        let uri = request.params.arguments?.uri as string;
+        const directId = request.params.arguments?.[idParam] as string;
+        const noteTitle = request.params.arguments?.title || request.params.arguments?.noteTitle as string || 'Note';
+        const noteText = request.params.arguments?.content || request.params.arguments?.noteText as string;
+        
+        if (!noteText) {
+          return createErrorResult(
+            new Error("Missing required parameter: content or noteText"),
+            "notes/create",
+            "POST",
+            { status: 400, message: "Missing required parameter: content" }
+          );
+        }
+        
+        // Use either direct ID or URI
+        if (uri) {
+          try {
+            id = uri; // Pass the full URI to the handler which now handles URI parsing
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "POST",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error(`Missing required parameter: uri or ${idParam}`),
+            "notes/create",
+            "POST",
+            { status: 400, message: `Missing required parameter: uri or ${idParam}` }
+          );
+        }
         
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[tools.createNote] Creating note for ${resourceType} with: `, {
+              id,
+              title: noteTitle,
+              textLength: typeof noteText === 'string' ? noteText.length : 0
+            });
+          }
+          
           const response = await toolConfig.handler(id, noteTitle, noteText);
           
           return {
             content: [
               {
                 type: "text",
-                text: `Note added to ${resourceType.slice(0, -1)} ${id}: attio://notes/${response?.id?.note_id}`,
+                text: `Note added to ${resourceType.slice(0, -1)} ${id.includes('attio://') ? id.split('/').pop() : id}: attio://notes/${response?.id?.note_id || 'unknown'}`,
               },
             ],
             isError: false,

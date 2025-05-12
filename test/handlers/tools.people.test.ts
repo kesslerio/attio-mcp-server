@@ -183,7 +183,7 @@ describe('tools-people', () => {
       });
       
       // Assert
-      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith('person1', 5, 10);
+      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith('attio://people/person1', 5, 10);
       expect(result).toHaveProperty('content');
       expect(result).toHaveProperty('isError', false);
       expect(result.content[0].text).toContain('notes for');
