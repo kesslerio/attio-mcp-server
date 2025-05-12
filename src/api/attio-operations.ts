@@ -9,7 +9,11 @@ import {
   Person,
   Company,
   AttioList,
-  AttioListEntry
+  AttioListEntry,
+  BatchRequestItem,
+  BatchItemResult,
+  BatchResponse,
+  BatchConfig
 } from "../types/attio.js";
 import { ErrorType } from '../utils/error-handler.js';
 import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
@@ -603,4 +607,145 @@ export async function removeRecordFromList(
       throw error;
     }
   }, retryConfig);
+}
+
+/**
+ * Default batch configuration
+ */
+export const DEFAULT_BATCH_CONFIG: BatchConfig = {
+  maxBatchSize: 10,
+  continueOnError: true,
+  retryConfig: DEFAULT_RETRY_CONFIG
+};
+
+/**
+ * Execute a batch of operations with chunking, error handling, and retry support
+ * 
+ * @param operations - Array of operations to process in batch
+ * @param apiCall - Function that processes a single operation
+ * @param config - Batch configuration options
+ * @returns Batch response with individual results and summary
+ */
+export async function executeBatchOperations<T, R>(
+  operations: BatchRequestItem<T>[],
+  apiCall: (params: T) => Promise<R>,
+  config: Partial<BatchConfig> = {}
+): Promise<BatchResponse<R>> {
+  // Merge with default config
+  const batchConfig: BatchConfig = {
+    ...DEFAULT_BATCH_CONFIG,
+    ...config
+  };
+  
+  // Initialize batch response
+  const batchResponse: BatchResponse<R> = {
+    results: [],
+    summary: {
+      total: operations.length,
+      succeeded: 0,
+      failed: 0
+    }
+  };
+  
+  // Process operations in chunks to respect maxBatchSize
+  const chunks = [];
+  for (let i = 0; i < operations.length; i += batchConfig.maxBatchSize) {
+    chunks.push(operations.slice(i, i + batchConfig.maxBatchSize));
+  }
+  
+  // Process each chunk
+  for (const chunk of chunks) {
+    // Process operations in the current chunk
+    await Promise.all(chunk.map(async (operation) => {
+      const result: BatchItemResult<R> = {
+        id: operation.id,
+        success: false
+      };
+      
+      try {
+        // Execute the operation with retry logic if configured
+        if (batchConfig.retryConfig) {
+          result.data = await callWithRetry(
+            () => apiCall(operation.params),
+            batchConfig.retryConfig
+          );
+        } else {
+          result.data = await apiCall(operation.params);
+        }
+        
+        // Mark as successful
+        result.success = true;
+        batchResponse.summary.succeeded++;
+      } catch (error) {
+        // Handle operation failure
+        result.success = false;
+        result.error = error;
+        batchResponse.summary.failed++;
+        
+        // If configured to abort on error, throw the error to stop processing
+        if (!batchConfig.continueOnError) {
+          throw error;
+        }
+      }
+      
+      // Add result to batch response
+      batchResponse.results.push(result);
+    }));
+  }
+  
+  return batchResponse;
+}
+
+/**
+ * Generic function to perform batch searches for any object type
+ * 
+ * @param objectType - Type of object to search (people or companies)
+ * @param queries - Array of search query strings
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with search results
+ */
+export async function batchSearchObjects<T extends AttioRecord>(
+  objectType: ResourceType,
+  queries: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<T[]>> {
+  // Convert queries to batch request items
+  const operations: BatchRequestItem<string>[] = queries.map((query, index) => ({
+    params: query,
+    id: `search_${objectType}_${index}`
+  }));
+  
+  // Execute batch operations using the searchObject function
+  return executeBatchOperations<string, T[]>(
+    operations,
+    (query) => searchObject<T>(objectType, query),
+    batchConfig
+  );
+}
+
+/**
+ * Generic function to get details for multiple records of any object type
+ * 
+ * @param objectType - Type of object to get details for (people or companies)
+ * @param recordIds - Array of record IDs to fetch
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with record details
+ */
+export async function batchGetObjectDetails<T extends AttioRecord>(
+  objectType: ResourceType,
+  recordIds: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<T>> {
+  // Convert record IDs to batch request items
+  const operations: BatchRequestItem<string>[] = recordIds.map((recordId) => ({
+    params: recordId,
+    id: `get_${objectType}_${recordId}`
+  }));
+  
+  // Execute batch operations using the getObjectDetails function
+  return executeBatchOperations<string, T>(
+    operations,
+    (recordId) => getObjectDetails<T>(objectType, recordId),
+    batchConfig
+  );
 }
