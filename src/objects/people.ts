@@ -24,12 +24,46 @@ import {
 export async function searchPeople(query: string): Promise<Person[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
-    return await searchObject<Person>(ResourceType.PEOPLE, query);
+    return await searchPeopleByQuery(query);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = "/objects/people/records/query";
+    // Just rethrow the error if it's from our own implementation
+    if (error instanceof Error) {
+      throw error;
+    }
     
+    // Fallback implementation
+    try {
+      const api = getAttioClient();
+      const path = "/objects/people/records/query";
+      
+      const response = await api.post(path, {
+        filter: {
+          "$or": [
+            { name: { "$contains": query } },
+            { email: { "$contains": query } },
+            { phone: { "$contains": query } }
+          ]
+        }
+      });
+      return response.data.data || [];
+    } catch (fallbackError) {
+      // Ensure we pass through the original error
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
+  }
+}
+
+/**
+ * Searches for people by name, email, or phone number using an OR filter
+ * 
+ * @param query - Search query string
+ * @returns Array of person results
+ */
+export async function searchPeopleByQuery(query: string): Promise<Person[]> {
+  const api = getAttioClient();
+  const path = "/objects/people/records/query";
+  
+  try {
     const response = await api.post(path, {
       filter: {
         "$or": [
@@ -40,6 +74,53 @@ export async function searchPeople(query: string): Promise<Person[]> {
       }
     });
     return response.data.data || [];
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Searches specifically for people by email
+ * 
+ * @param email - Email address to search for
+ * @returns Array of person results
+ */
+export async function searchPeopleByEmail(email: string): Promise<Person[]> {
+  const api = getAttioClient();
+  const path = "/objects/people/records/query";
+  
+  try {
+    const response = await api.post(path, {
+      filter: {
+        email: { "$contains": email }
+      }
+    });
+    return response.data.data || [];
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Searches specifically for people by phone number
+ * 
+ * @param phone - Phone number to search for
+ * @returns Array of person results
+ */
+export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
+  const api = getAttioClient();
+  const path = "/objects/people/records/query";
+  
+  try {
+    const response = await api.post(path, {
+      filter: {
+        phone: { "$contains": phone }
+      }
+    });
+    return response.data.data || [];
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+
   }
 }
 
@@ -77,12 +158,24 @@ export async function getPersonDetails(personId: string): Promise<Person> {
   try {
     return await getObjectDetails<Person>(ResourceType.PEOPLE, personId);
   } catch (error) {
-    // Fallback implementation
-    const api = getAttioClient();
-    const path = `/objects/people/records/${personId}`;
+    // If it's an error from the original implementation, just pass it through
+    if (error instanceof Error) {
+      throw error;
+    }
     
-    const response = await api.get(path);
-    return response.data;
+    // Fallback implementation
+    try {
+      const api = getAttioClient();
+      const path = `/objects/people/records/${personId}`;
+      
+      const response = await api.get(path);
+      if (response && response.data) {
+        return response.data;
+      }
+      throw new Error(`No data returned for person ${personId}`);
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -100,11 +193,15 @@ export async function getPersonNotes(personId: string, limit: number = 10, offse
     return await getObjectNotes(ResourceType.PEOPLE, personId, limit, offset);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = `/notes?limit=${limit}&offset=${offset}&parent_object=people&parent_record_id=${personId}`;
-    
-    const response = await api.get(path);
-    return response.data.data || [];
+    try {
+      const api = getAttioClient();
+      const path = `/notes?limit=${limit}&offset=${offset}&parent_object=people&parent_record_id=${personId}`;
+      
+      const response = await api.get(path);
+      return response.data.data || [];
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
 
@@ -122,18 +219,22 @@ export async function createPersonNote(personId: string, title: string, content:
     return await createObjectNote(ResourceType.PEOPLE, personId, title, content);
   } catch (error) {
     // Fallback implementation
-    const api = getAttioClient();
-    const path = 'notes';
-    
-    const response = await api.post(path, {
-      data: {
-        format: "plaintext",
-        parent_object: "people",
-        parent_record_id: personId,
-        title: `[AI] ${title}`,
-        content
-      },
-    });
-    return response.data;
+    try {
+      const api = getAttioClient();
+      const path = 'notes';
+      
+      const response = await api.post(path, {
+        data: {
+          format: "plaintext",
+          parent_object: "people",
+          parent_record_id: personId,
+          title: `[AI] ${title}`,
+          content
+        },
+      });
+      return response.data;
+    } catch (fallbackError) {
+      throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+    }
   }
 }
