@@ -29,19 +29,7 @@ export interface AttioRecord {
   [key: string]: any; // Additional top-level fields
 }
 
-/**
- * Person record type
- */
-export interface Person extends AttioRecord {
-  // Person-specific fields could be defined here
-}
-
-/**
- * Company record type
- */
-export interface Company extends AttioRecord {
-  // Company-specific fields could be defined here
-}
+// Person and Company interfaces are defined in detail below
 
 /**
  * Note record type
@@ -127,6 +115,8 @@ export interface AttioListResponse<T> {
     next_cursor?: string;
     [key: string]: any;
   };
+  has_more?: boolean;
+  next_cursor?: string;
   [key: string]: any;
 }
 
@@ -136,18 +126,6 @@ export interface AttioListResponse<T> {
 export interface AttioSingleResponse<T> {
   data: T;
   [key: string]: any;
-}
-}
-
-// Response interfaces
-export interface AttioListResponse<T> {
-  data?: T[];
-  has_more?: boolean;
-  next_cursor?: string;
-}
-
-export interface AttioSingleResponse<T> {
-  data?: T;
 }
 
 // Specific record types
