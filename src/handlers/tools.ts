@@ -135,14 +135,46 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle details tools
       if (toolType === 'details') {
-        const uri = request.params.arguments?.uri as string;
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
+        
+        // Use either direct ID or URI, with priority to URI if both are provided
+        if (uri) {
+          try {
+            const [uriType, uriId] = parseResourceUri(uri);
+            if (uriType !== resourceType) {
+              throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+            }
+            id = uriId;
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/details`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
         
         try {
-          const [uriType, id] = parseResourceUri(uri);
-          if (uriType !== resourceType) {
-            throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
-          }
-          
           const details = await toolConfig.handler(id);
           return {
             content: [
@@ -294,15 +326,40 @@ export function registerToolHandlers(server: Server): void {
       // Handle getListEntries tool
       if (toolType === 'getListEntries') {
         const listId = request.params.arguments?.listId as string;
-        const limit = request.params.arguments?.limit as number || 20;
-        const offset = request.params.arguments?.offset as number || 0;
+        
+        // Ensure parameters are properly typed to match the handler expectations
+        // Convert parameters to the correct type and handle undefined values properly
+        let limit: number | undefined;
+        let offset: number | undefined;
+        
+        // Only set the parameter values if they are explicitly provided in the request
+        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+          limit = Number(request.params.arguments.limit);
+        }
+        
+        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+          offset = Number(request.params.arguments.offset);
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getListEntries Tool] Processing request with parameters:', {
+            listId,
+            limit,
+            offset,
+            request_limit_type: typeof request.params.arguments?.limit,
+            request_limit_value: request.params.arguments?.limit,
+            calculated_limit_type: typeof limit,
+            calculated_limit_value: limit
+          });
+        }
         
         try {
+          // Pass parameters directly to the handler, letting it handle defaults
           const entries = await toolConfig.handler(listId, limit, offset);
           const getListEntriesToolConfig = toolConfig as GetListEntriesToolConfig;
           
           // Use shared utility function to process entries and ensure record_id is available
-          const processedEntries = processListEntries(entries);
+          const processedEntries = entries ? processListEntries(entries) : [];
           
           const formattedResults = getListEntriesToolConfig.formatResult 
             ? getListEntriesToolConfig.formatResult(processedEntries)
@@ -312,7 +369,7 @@ export function registerToolHandlers(server: Server): void {
             content: [
               {
                 type: "text",
-                text: `Found ${entries.length} entries in list ${listId}:\n${formattedResults}`,
+                text: `Found ${processedEntries.length} entries in list ${listId}:\n${formattedResults}`,
               },
             ],
             isError: false,
