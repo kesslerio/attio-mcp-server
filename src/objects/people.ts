@@ -7,12 +7,16 @@ import {
   listObjects, 
   getObjectDetails, 
   getObjectNotes, 
-  createObjectNote 
+  createObjectNote,
+  batchSearchObjects,
+  batchGetObjectDetails,
+  BatchConfig,
+  BatchResponse
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Person, 
-  AttioNote 
+  AttioNote
 } from "../types/attio.js";
 
 /**
@@ -264,5 +268,113 @@ export async function createPersonNote(personId: string, title: string, content:
     } catch (fallbackError) {
       throw fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
     }
+  }
+}
+
+/**
+ * Performs batch searches for people by name, email, or phone
+ * 
+ * @param queries - Array of search query strings
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with search results for each query
+ */
+export async function batchSearchPeople(
+  queries: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<Person[]>> {
+  try {
+    // Use the generic batch search objects operation
+    return await batchSearchObjects<Person>(ResourceType.PEOPLE, queries, batchConfig);
+  } catch (error) {
+    // If the error is serious enough to abort the batch, rethrow it
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    // Fallback implementation - execute each search individually and combine results
+    const results: BatchResponse<Person[]> = {
+      results: [],
+      summary: {
+        total: queries.length,
+        succeeded: 0,
+        failed: 0
+      }
+    };
+    
+    // Process each query individually
+    await Promise.all(queries.map(async (query, index) => {
+      try {
+        const people = await searchPeople(query);
+        results.results.push({
+          id: `search_people_${index}`,
+          success: true,
+          data: people
+        });
+        results.summary.succeeded++;
+      } catch (searchError) {
+        results.results.push({
+          id: `search_people_${index}`,
+          success: false,
+          error: searchError
+        });
+        results.summary.failed++;
+      }
+    }));
+    
+    return results;
+  }
+}
+
+/**
+ * Gets details for multiple people in batch
+ * 
+ * @param personIds - Array of person IDs to fetch
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with person details for each ID
+ */
+export async function batchGetPeopleDetails(
+  personIds: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<Person>> {
+  try {
+    // Use the generic batch get object details operation
+    return await batchGetObjectDetails<Person>(ResourceType.PEOPLE, personIds, batchConfig);
+  } catch (error) {
+    // If the error is serious enough to abort the batch, rethrow it
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    // Fallback implementation - execute each get operation individually and combine results
+    const results: BatchResponse<Person> = {
+      results: [],
+      summary: {
+        total: personIds.length,
+        succeeded: 0,
+        failed: 0
+      }
+    };
+    
+    // Process each personId individually
+    await Promise.all(personIds.map(async (personId) => {
+      try {
+        const person = await getPersonDetails(personId);
+        results.results.push({
+          id: `get_people_${personId}`,
+          success: true,
+          data: person
+        });
+        results.summary.succeeded++;
+      } catch (getError) {
+        results.results.push({
+          id: `get_people_${personId}`,
+          success: false,
+          error: getError
+        });
+        results.summary.failed++;
+      }
+    }));
+    
+    return results;
   }
 }

@@ -1,6 +1,7 @@
 /**
  * Common type definitions for Attio API responses and entities
  */
+import { RetryConfig } from "../api/attio-operations.js";
 
 /**
  * Base interface for Attio record values
@@ -27,6 +28,45 @@ export interface AttioRecord {
     [key: string]: any; // Other fields
   };
   [key: string]: any; // Additional top-level fields
+}
+
+/**
+ * Interface for a batch request item
+ */
+export interface BatchRequestItem<T> {
+  params: T;      // The parameters for this specific operation
+  id?: string;    // Optional ID to track this specific request
+}
+
+/**
+ * Interface for a batch operation result item
+ */
+export interface BatchItemResult<R> {
+  id?: string;     // Optional ID matching the request ID if provided
+  success: boolean; // Whether this specific operation succeeded
+  data?: R;        // The result data if successful
+  error?: any;     // Error information if failed
+}
+
+/**
+ * Interface for a batch operation response
+ */
+export interface BatchResponse<R> {
+  results: BatchItemResult<R>[];  // Individual results for each request
+  summary: {
+    total: number;    // Total number of operations attempted
+    succeeded: number; // Number of successful operations
+    failed: number;    // Number of failed operations
+  };
+}
+
+/**
+ * Configuration options for batch operations
+ */
+export interface BatchConfig {
+  maxBatchSize: number;     // Maximum number of operations in a single batch
+  continueOnError: boolean; // Whether to continue processing remaining items on error
+  retryConfig?: RetryConfig; // Optional retry configuration for batch operations
 }
 
 // Person and Company interfaces are defined in detail below
