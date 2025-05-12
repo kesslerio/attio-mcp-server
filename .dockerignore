@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Node.js
+node_modules
+npm-debug.log
+
+# Build artifacts
+dist
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+!README.md
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Test files
+test
+coverage
+__tests__
+*.test.ts
+*.spec.ts
+
+# Logs
+logs
+*.log

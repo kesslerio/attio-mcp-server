@@ -1,0 +1,21 @@
+#!/bin/sh
+# Attio MCP pre-commit hook
+# This hook runs workflow validation checks before allowing commits
+
+# Exit on any error
+set -e
+
+echo "Running Attio MCP workflow validations..."
+
+# Get the path to the commit message file
+COMMIT_MSG_FILE="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
+
+# Export the commit message file path as an environment variable
+export GIT_COMMIT_MSG_FILE="$COMMIT_MSG_FILE"
+
+# Run workflow validation script
+./build/validate_workflow.py --pre-commit
+
+# If the script detected issues, it will exit with a non-zero status code,
+# which will abort the commit
+exit $?
