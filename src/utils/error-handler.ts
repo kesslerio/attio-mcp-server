@@ -14,6 +14,9 @@ export enum ErrorType {
   NETWORK_ERROR = 'network_error',
   NOT_FOUND_ERROR = 'not_found_error',
   SERVER_ERROR = 'server_error',
+  PARAMETER_ERROR = 'parameter_error',
+  SERIALIZATION_ERROR = 'serialization_error',
+  FORMAT_ERROR = 'format_error',
   UNKNOWN_ERROR = 'unknown_error',
 }
 
@@ -96,8 +99,20 @@ export function createApiError(status: number, path: string, method: string, res
   // Create specific error messages based on status code and context
   switch (status) {
     case 400:
-      errorType = ErrorType.VALIDATION_ERROR;
-      message = `Bad Request: ${defaultMessage}`;
+      // Detect common parameter and format errors in the 400 response
+      if (defaultMessage.includes('parameter') || defaultMessage.includes('param') || responseData?.error?.details?.includes('parameter')) {
+        errorType = ErrorType.PARAMETER_ERROR;
+        message = `Parameter Error: ${defaultMessage}`;
+      } else if (defaultMessage.includes('format') || defaultMessage.includes('invalid')) {
+        errorType = ErrorType.FORMAT_ERROR;
+        message = `Format Error: ${defaultMessage}`;
+      } else if (defaultMessage.includes('serialize') || defaultMessage.includes('parse')) {
+        errorType = ErrorType.SERIALIZATION_ERROR;
+        message = `Serialization Error: ${defaultMessage}`;
+      } else {
+        errorType = ErrorType.VALIDATION_ERROR;
+        message = `Bad Request: ${defaultMessage}`;
+      }
       break;
     
     case 401:
@@ -115,9 +130,21 @@ export function createApiError(status: number, path: string, method: string, res
         message = `Person not found: ${path.split('/').pop()}`;
       } else if (path.includes('/objects/companies/')) {
         message = `Company not found: ${path.split('/').pop()}`;
+      } else if (path.includes('/lists/')) {
+        const listId = path.split('/').pop();
+        if (path.includes('/entries')) {
+          message = `List entry not found in list ${path.split('/')[2]}`;
+        } else {
+          message = `List not found: ${listId}`;
+        }
       } else {
         message = `Resource not found: ${path}`;
       }
+      break;
+    
+    case 422:
+      errorType = ErrorType.PARAMETER_ERROR;
+      message = `Unprocessable Entity: ${defaultMessage}`;
       break;
     
     case 429:
@@ -170,14 +197,27 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
     type === ErrorType.AUTHENTICATION_ERROR ? 401 :
     type === ErrorType.RATE_LIMIT_ERROR ? 429 :
     type === ErrorType.NOT_FOUND_ERROR ? 404 :
-    type === ErrorType.SERVER_ERROR ? 500 : 
+    type === ErrorType.SERVER_ERROR ? 500 :
+    type === ErrorType.PARAMETER_ERROR ? 400 :
+    type === ErrorType.FORMAT_ERROR ? 400 :
+    type === ErrorType.SERIALIZATION_ERROR ? 400 :
     500;
+  
+  // Enhance error message with helpful tips for specific error types
+  let helpfulTip = '';
+  if (type === ErrorType.PARAMETER_ERROR) {
+    helpfulTip = '\n\nTIP: Check parameter names and formats. Use direct string parameters instead of constants or placeholders.';
+  } else if (type === ErrorType.FORMAT_ERROR) {
+    helpfulTip = '\n\nTIP: Ensure all parameters use the correct format as specified in the API documentation.';
+  } else if (type === ErrorType.SERIALIZATION_ERROR) {
+    helpfulTip = '\n\nTIP: Verify objects are properly serialized to strings where needed.';
+  }
   
   return {
     content: [
       {
         type: "text",
-        text: `ERROR [${type}]: ${error.message}${details ? '\n\nDetails: ' + JSON.stringify(details, null, 2) : ''}`,
+        text: `ERROR [${type}]: ${error.message}${helpfulTip}${details ? '\n\nDetails: ' + JSON.stringify(details, null, 2) : ''}`,
       },
     ],
     isError: true,
