@@ -182,6 +182,38 @@ The Docker container includes a health check that monitors the server's status. 
 docker ps -a
 ```
 
+## MCP Integration
+
+The Attio MCP server allows Claude and other AI assistants to interact with your Attio CRM data through the Model Context Protocol (MCP). This integration enables AI-powered workflows like:
+
+- Searching for contacts and companies
+- Reading and creating notes
+- Managing lists and records
+- Performing complex CRM operations through natural language
+
+### How It Works
+
+When you ask Claude about your Attio data, it sends structured requests to the Attio MCP server, which then:
+1. Authenticates with Attio using your API key
+2. Retrieves or modifies data using the Attio API
+3. Returns the information to Claude in a format it can understand
+
+Claude can reference Attio resources using custom URIs like `attio://companies/{id}` and `attio://people/{id}`.
+
+### Example Claude Prompts
+
+```
+Find all technology companies in our CRM
+```
+
+```
+Add a note to Acme Corporation about our recent product demo
+```
+
+```
+Show me all contacts from Microsoft and their recent activity
+```
+
 ## Documentation
 
 For comprehensive documentation, see the [Documentation Guide](./docs/README.md).

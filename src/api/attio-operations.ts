@@ -405,35 +405,55 @@ export async function getListEntries(
   
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
-    // Try the primary endpoint with expanded record data
+    // Try the primary endpoint with expanded record data using explicit parameter names
     try {
       const path = `/lists/${listId}/entries/query`;
       const response = await api.post<AttioListResponse<AttioListEntry>>(path, {
-        [API_PARAMS.LIMIT]: limit,
-        [API_PARAMS.OFFSET]: offset,
-        [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
+        "limit": limit,
+        "offset": offset,
+        "expand": ["record"] // Use explicit string array for expand parameter
       });
       
       // Process response to ensure record_id is correctly extracted
       const entries = response.data.data || [];
       return processListEntries(entries);
-    } catch (primaryError) {
-      // Try fallback endpoints with record expansion
+    } catch (error: any) {
+      const primaryError = error;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[getListEntries] Primary endpoint failed:', primaryError.message || 'Unknown error', {
+          path: `/lists/${listId}/entries/query`,
+          listId,
+          limit,
+          offset
+        });
+      }
+      
+      // Try fallback endpoints with explicit parameter names
       try {
         const fallbackPath = `/lists-entries/query`;
         const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, {
-          [API_PARAMS.LIST_ID]: listId,
-          [API_PARAMS.LIMIT]: limit,
-          [API_PARAMS.OFFSET]: offset,
-          [API_PARAMS.EXPAND]: [API_PARAMS.RECORD] // Request record data expansion
+          "list_id": listId,
+          "limit": limit,
+          "offset": offset,
+          "expand": ["record"] // Use explicit string array for expand parameter
         });
         
         const entries = fallbackResponse.data.data || [];
         return processListEntries(entries);
-      } catch (fallbackError) {
-        // Last resort fallback with record expansion as a query parameter
+      } catch (error: any) {
+        const fallbackError = error;
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getListEntries] Fallback endpoint failed:', fallbackError.message || 'Unknown error', {
+            path: `/lists-entries/query`,
+            listId,
+            limit,
+            offset
+          });
+        }
+        
+        // Last resort fallback with explicit query parameters
         try {
-          const lastPath = `/lists-entries?${API_PARAMS.LIST_ID}=${listId}&${API_PARAMS.LIMIT}=${limit}&${API_PARAMS.OFFSET}=${offset}&${API_PARAMS.EXPAND}=${API_PARAMS.RECORD}`;
+          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`;
           const lastResponse = await api.get<AttioListResponse<AttioListEntry>>(lastPath);
           
           const entries = lastResponse.data.data || [];
