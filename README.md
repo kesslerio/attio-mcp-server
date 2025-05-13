@@ -1,43 +1,49 @@
-# attio-mcp-server
+# Attio MCP Server
 
-This is an MCP server for [Attio](https://attio.com/), the AI-native CRM. It allows mcp clients (like Claude) to connect to the Attio API.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-#### Current Capabilities
+A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-native CRM. This server enables AI assistants like Claude to interact directly with your Attio data, providing a seamless integration between conversational AI and your CRM.
 
-- [x] Company API
-  - [x] searching companies
-  - [x] reading company details
-  - [x] reading company notes
-  - [x] creating company notes
-- [x] People API
-  - [x] searching people (enhanced with email and phone support)
-  - [x] reading person details
-  - [x] reading person notes
-  - [x] creating person notes
-- [x] Lists API
-  - [x] getting all lists
-  - [x] getting list details
-  - [x] getting list entries
-  - [x] adding records to lists
-  - [x] removing records from lists
-- [ ] Tasks API
-- [ ] Records API
-- [x] Core System Enhancements
-  - [x] Enhanced error handling with categorized errors
-  - [x] Comprehensive input validation
-  - [x] API call retry logic with exponential backoff
-  - [x] Standardized response formatting
+## 🚀 Key Features
 
-## Usage
+- **Comprehensive Attio API Support**
+  - Companies: Search, view details, manage notes
+  - People: Search (with email/phone support), view details, manage notes
+  - Lists: View, manage entries, add/remove records
+  - Records: Create, read, update, delete (coming soon)
+  - Tasks: View and manage (coming soon)
 
-You will need:
+- **Enhanced Capabilities**
+  - Robust error handling with helpful messages
+  - Automatic retry logic with exponential backoff
+  - Input validation to prevent common errors
+  - Standardized response formatting
 
-- `ATTIO_API_KEY` 
+## 🔍 Example: Using with Claude
 
-This is expected to be a *bearer token* which means you can get one through the [API Explorer](https://developers.attio.com/reference/get_v2-objects) on the right hand side or configure OAuth and retrieve one throught the Attio API.
+Ask Claude natural questions about your Attio data:
 
+```
+"Find all technology companies in our CRM"
+"Add a note to Acme Corporation about our recent product demo"
+"Show me all contacts from Microsoft who were added this month"
+"Add Sarah Johnson's new phone number: +1-555-123-4567"
+```
 
-### Claude Desktop Configuration
+## ⚡ Quick Start
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- Attio API Key ([Get one here](https://developers.attio.com/reference/get_v2-objects))
+
+### Installation
+
+```bash
+npm install attio-mcp-server
+```
+
+### Configuration for Claude Desktop
 
 ```json
 {
@@ -52,148 +58,43 @@ This is expected to be a *bearer token* which means you can get one through the 
   }
 }
 ```
-## Development
 
-### Prerequisites
+## 🌐 Deployment Options
 
-Before you begin, ensure you have the following installed:
+- **Local Development**: [Development Guide](./docs/development-guide.md)
+- **Docker**: [Docker Guide](./docs/docker/docker-guide.md)
+  - Easy setup with Docker Compose
+  - Health checks included
+  - Configurable through environment variables
 
-- Node.js (recommended v18 or higher)
-- npm
-- git
-- dotenv
-- Docker and Docker Compose (optional, for containerized development)
+## 📚 Documentation
 
-### Setting up Development Environment
+Full documentation is available in the [docs directory](./docs):
 
-To set up the development environment, follow these steps:
+- **Getting Started**
+  - [Installation & Setup](./docs/getting-started.md)
+  - [Claude Desktop Config](./docs/claude-desktop-config.md)
 
-1. Fork the repository
+- **API Reference**
+  - [API Overview](./docs/api/api-overview.md)
+  - [People API](./docs/api/people-api.md)
+  - [Companies API](./docs/api/objects-api.md)
+  - [Lists API](./docs/api/lists-api.md)
+  - [Notes API](./docs/api/notes-api.md)
 
-   - Click the "Fork" button in the top-right corner of this repository
-   - This creates your own copy of the repository under your Github account
+- **Deployment**
+  - [Docker Guide](./docs/docker/docker-guide.md)
+  - [Security Best Practices](./docs/docker/security-guide.md)
 
-1. Clone Your Fork:
+- **Development**
+  - [Contributing Guidelines](./CONTRIB.md)
+  - [Error Handling](./docs/api/error-handling.md)
+  - [Extending MCP](./docs/api/extending-mcp.md)
 
-   ```sh
-   git clone https://github.com/YOUR_USERNAME/attio-mcp-server.git
-   cd attio-mcp-server
-   ```
+## 🤝 Contributing
 
-1. Add Upstream Remote
-   ```sh
-   git remote add upstream https://github.com/hmk/attio-mcp-server.git
-   ```
+Contributions are welcome! Please see our [Contributing Guidelines](./CONTRIB.md) for details on how to submit pull requests, report issues, and suggest improvements.
 
-1. Copy the dotenv file
-    ```sh
-    cp .env.template .env
-    ```
+## 📄 License
 
-1. Install dependencies:
-
-   ```sh
-   npm install
-   ```
-
-1. Run watch to keep index.js updated:
-
-   ```sh
-   npm run build:watch
-   ```
-
-1. Start the model context protocol development server:
-
-   ```sh
-   dotenv npx @modelcontextprotocol/inspector node PATH_TO_YOUR_CLONED_REPO/dist/index.js
-   ```
-
-1. If the development server did not load the environment variable correctly, set the `ATTIO_API_KEY` on the left-hand side of the mcp inspector.
-
-## Docker Support
-
-You can also run the Attio MCP Server in a Docker container, which simplifies deployment and ensures consistency across different environments.
-
-### Building the Docker Image
-
-```sh
-# Build using the provided script
-./scripts/docker-build.sh
-
-# Or build with custom name and tag
-./scripts/docker-build.sh --name my-attio-mcp --tag v1.0.0
-```
-
-### Running with Docker Compose
-
-1. Set up your environment variables in a `.env` file:
-
-   ```sh
-   ATTIO_API_KEY=your_api_key_here
-   ATTIO_WORKSPACE_ID=your_workspace_id_here
-   ```
-
-2. Start the container using Docker Compose:
-
-   ```sh
-   docker-compose up -d
-   ```
-
-3. Check logs:
-
-   ```sh
-   docker-compose logs -f
-   ```
-
-4. Stop the container:
-
-   ```sh
-   docker-compose down
-   ```
-
-### Running with Docker Directly
-
-```sh
-docker run -p 3000:3000 \
-  -e ATTIO_API_KEY=your_api_key_here \
-  -e ATTIO_WORKSPACE_ID=your_workspace_id_here \
-  attio-mcp-server:latest
-```
-
-### Docker Configuration for Claude
-
-To use the dockerized Attio MCP Server with Claude:
-
-```json
-{
-  "mcpServers": {
-    "attio": {
-      "url": "http://localhost:3000"
-    }
-  }
-}
-```
-
-### Docker Health Check
-
-The Docker container includes a health check that monitors the server's status. You can view the health status with:
-
-```sh
-docker ps -a
-```
-
-## Documentation
-
-For more detailed information about the API and its components, please refer to the documentation:
-
-- [API Overview](./docs/api/api-overview.md)
-- [Error Handling](./docs/api/error-handling.md)
-- [Extending MCP](./docs/api/extending-mcp.md)
-
-### API Documentation
-- [People API](./docs/api/people-api.md)
-- [Companies API](./docs/api/objects-api.md)
-- [Lists API](./docs/api/lists-api.md)
-- [Notes API](./docs/api/notes-api.md)
-- [Records API](./docs/api/records-api.md) (Coming soon)
-- [Tasks API](./docs/api/tasks-api.md) (Coming soon)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
