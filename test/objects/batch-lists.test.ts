@@ -172,6 +172,7 @@ describe('Lists Batch Operations', () => {
               id: op.id,
               success: true,
               data
+            };
           }));
           
           // Return a properly structured BatchResponse
