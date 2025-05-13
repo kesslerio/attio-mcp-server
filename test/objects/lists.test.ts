@@ -169,8 +169,45 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
       expect(result).toEqual(mockEntries);
+    });
+
+    it('should pass filter parameters to the generic operation', async () => {
+      // Arrange
+      const listId = 'list123';
+      const limit = 5;
+      const offset = 10;
+      const filters = {
+        filters: [
+          {
+            attribute: {
+              slug: 'stage'
+            },
+            condition: 'equals',
+            value: 'Discovery'
+          }
+        ]
+      };
+      
+      const mockFilteredEntries = [
+        { 
+          id: { entry_id: 'entry1' },
+          list_id: listId,
+          record_id: 'record1',
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-02T00:00:00Z'
+        }
+      ];
+      
+      mockedAttioOperations.getListEntries.mockResolvedValue(mockFilteredEntries);
+
+      // Act
+      const result = await getListEntries(listId, limit, offset, filters);
+
+      // Assert
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, filters);
+      expect(result).toEqual(mockFilteredEntries);
     });
 
     it('should try multiple endpoints when generic operation fails', async () => {
@@ -202,7 +239,7 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
         { limit, offset, expand: ["record"] }
@@ -244,7 +281,7 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
         { limit, offset, expand: ["record"] }
