@@ -74,11 +74,12 @@ Full documentation is available in the [docs directory](./docs):
 - **Getting Started**
   - [Installation & Setup](./docs/getting-started.md)
   - [Claude Desktop Config](./docs/claude-desktop-config.md)
+  - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
 - **API Reference**
   - [API Overview](./docs/api/api-overview.md)
   - [People API](./docs/api/people-api.md)
-  - [Companies API](./docs/api/objects-api.md)
+  - [Companies API](./docs/api/companies-api.md)
   - [Lists API](./docs/api/lists-api.md)
   - [Notes API](./docs/api/notes-api.md)
 
