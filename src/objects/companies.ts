@@ -408,7 +408,7 @@ export async function createCompanyNote(companyIdOrUri: string, title: string, c
  * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
  * @returns Extracted company ID
  */
-function extractCompanyId(companyIdOrUri: string): string {
+export function extractCompanyId(companyIdOrUri: string): string {
   // Determine if the input is a URI or a direct ID
   const isUri = companyIdOrUri.startsWith('attio://');
   
