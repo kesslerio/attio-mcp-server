@@ -133,6 +133,60 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle searchByEmail tools
+      if (toolType === 'searchByEmail') {
+        const email = request.params.arguments?.email as string;
+        try {
+          const searchToolConfig = toolConfig as SearchToolConfig;
+          const results = await searchToolConfig.handler(email);
+          const formattedResults = searchToolConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle searchByPhone tools
+      if (toolType === 'searchByPhone') {
+        const phone = request.params.arguments?.phone as string;
+        try {
+          const searchToolConfig = toolConfig as SearchToolConfig;
+          const results = await searchToolConfig.handler(phone);
+          const formattedResults = searchToolConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
       // Handle details tools
       if (toolType === 'details') {
         let id: string;
