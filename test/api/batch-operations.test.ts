@@ -4,10 +4,12 @@ import {
   batchGetObjectDetails,
   DEFAULT_BATCH_CONFIG,
   BatchRequestItem,
-  BatchResponse
+  BatchResponse,
+  BatchItemResult,
+  BatchConfig
 } from '../../src/api/attio-operations';
 import { getAttioClient } from '../../src/api/attio-client';
-import { ResourceType, Person, Company } from '../../src/types/attio';
+import { ResourceType, Person, Company, AttioRecord } from '../../src/types/attio';
 
 // Mock the axios client
 jest.mock('../../src/api/attio-client', () => ({
@@ -124,8 +126,8 @@ describe('Batch Operations', () => {
       const customExecuteBatchOperations = async <T, R>(
         operations: BatchRequestItem<T>[],
         apiCall: (params: T) => Promise<R>,
-        config?: Partial<BatchConfigType>
-      ): Promise<BatchResponseType<R>> => {
+        config?: Partial<BatchConfig>
+      ): Promise<BatchResponse<R>> => {
         // Implementation adapted for test purposes
         const batchConfig = {
           maxBatchSize: 10,
@@ -133,7 +135,7 @@ describe('Batch Operations', () => {
           ...config
         };
         
-        const results: BatchItemResultType<R>[] = [];
+        const results: BatchItemResult<R>[] = [];
         let succeeded = 0;
         let failed = 0;
         
@@ -214,8 +216,8 @@ describe('Batch Operations', () => {
       const customExecuteBatchOperations = async <T, R>(
         operations: BatchRequestItem<T>[],
         apiCall: (params: T) => Promise<R>,
-        config?: Partial<BatchConfigType>
-      ): Promise<BatchResponseType<R>> => {
+        config?: Partial<BatchConfig>
+      ): Promise<BatchResponse<R>> => {
         // Implementation adapted for test purposes
         const batchConfig = {
           maxBatchSize: 10,
@@ -223,7 +225,7 @@ describe('Batch Operations', () => {
           ...config
         };
         
-        const results: BatchItemResultType<R>[] = [];
+        const results: BatchItemResult<R>[] = [];
         let succeeded = 0;
         let failed = 0;
         
