@@ -221,6 +221,154 @@ describe('Attio Operations', () => {
       expect(result).toEqual(mockEntries);
     });
 
+    it('should support filtering by list attributes', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockFilteredEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+      ];
+      mockApiClient.post.mockResolvedValueOnce({
+        data: { data: mockFilteredEntries }
+      });
+
+      // Create filter for "stage equals Discovery"
+      const filters = {
+        filters: [
+          {
+            attribute: {
+              slug: 'stage'
+            },
+            condition: 'equals',
+            value: 'Discovery'
+          }
+        ]
+      };
+
+      // Act
+      const result = await getListEntries(listId, 20, 0, filters);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
+        limit: 20,
+        offset: 0,
+        expand: ["record"],
+        filter: {
+          stage: {
+            '$equals': 'Discovery'
+          }
+        }
+      });
+      expect(result).toEqual(mockFilteredEntries);
+    });
+
+    it('should support multiple filter conditions', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockFilteredEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+      ];
+      mockApiClient.post.mockResolvedValueOnce({
+        data: { data: mockFilteredEntries }
+      });
+
+      // Create filter for "stage equals Discovery AND value greater_than 50000"
+      const filters = {
+        filters: [
+          {
+            attribute: {
+              slug: 'stage'
+            },
+            condition: 'equals',
+            value: 'Discovery'
+          },
+          {
+            attribute: {
+              slug: 'value'
+            },
+            condition: 'greater_than',
+            value: 50000
+          }
+        ]
+      };
+
+      // Act
+      const result = await getListEntries(listId, 20, 0, filters);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
+        limit: 20,
+        offset: 0,
+        expand: ["record"],
+        filter: {
+          stage: {
+            '$equals': 'Discovery'
+          },
+          value: {
+            '$greater_than': 50000
+          }
+        }
+      });
+      expect(result).toEqual(mockFilteredEntries);
+    });
+
+    it('should not use the GET fallback when filters are provided', async () => {
+      // Arrange
+      const listId = 'list123';
+      const mockFilteredEntries = [
+        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+      ];
+      
+      // Mock first endpoint to fail
+      mockApiClient.post
+        .mockRejectedValueOnce(new Error('Primary endpoint failed'))
+        .mockResolvedValueOnce({
+          data: { data: mockFilteredEntries }
+        });
+
+      // Create filter for "stage equals Discovery"
+      const filters = {
+        filters: [
+          {
+            attribute: {
+              slug: 'stage'
+            },
+            condition: 'equals',
+            value: 'Discovery'
+          }
+        ]
+      };
+
+      // Act
+      const result = await getListEntries(listId, 20, 0, filters);
+
+      // Assert
+      expect(mockApiClient.post).toHaveBeenCalledTimes(2);
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
+        limit: 20,
+        offset: 0,
+        expand: ["record"],
+        filter: {
+          stage: {
+            '$equals': 'Discovery'
+          }
+        }
+      });
+      expect(mockApiClient.post).toHaveBeenCalledWith('/lists-entries/query', {
+        list_id: 'list123',
+        limit: 20,
+        offset: 0,
+        expand: ["record"],
+        filter: {
+          stage: {
+            '$equals': 'Discovery'
+          }
+        }
+      });
+      // GET should not be called
+      expect(mockApiClient.get).not.toHaveBeenCalled();
+      expect(result).toEqual(mockFilteredEntries);
+    });
+
     it('should extract record_id from nested record structure', async () => {
       // Arrange
       const listId = 'list123';
