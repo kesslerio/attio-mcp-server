@@ -1,7 +1,8 @@
 /**
  * Utility functions for working with Attio records and responses
  */
-import { AttioListEntry } from "../types/attio.js";
+import { AttioListEntry, isValidFilterCondition, FilterConditionType } from "../types/attio.js";
+import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
 
 // API parameter constants for better maintainability
 export const API_PARAMS = {
@@ -104,4 +105,134 @@ export function getRecordNameFromEntry(entry: AttioListEntry): { name: string; t
     name: recordName, 
     type: recordType 
   };
+}
+
+/**
+ * Error class for filter validation issues
+ */
+export class FilterValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FilterValidationError';
+  }
+}
+
+/**
+ * Type for the Attio API filter object format
+ */
+export type AttioApiFilter = {
+  [attributeSlug: string]: {
+    [condition: string]: any
+  }
+};
+
+/**
+ * Transforms list entry filters to the format expected by the Attio API
+ * This function handles both simple filters and advanced filters with logical operators
+ * 
+ * @param filters - Filter configuration from the MCP API
+ * @param validateConditions - Whether to validate condition types (default: true)
+ * @returns Transformed filter object for Attio API
+ * @throws FilterValidationError if validation fails
+ */
+export function transformFiltersToApiFormat(
+  filters: ListEntryFilters | undefined,
+  validateConditions: boolean = true
+): { filter?: AttioApiFilter } {
+  // If no filters provided, return empty object
+  if (!filters || !filters.filters || filters.filters.length === 0) {
+    return {};
+  }
+  
+  // Determine if we need to use the $or operator based on matchAny
+  // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
+  const useOrLogic = filters.matchAny === true;
+  
+  // For OR logic, we need a completely different structure with filter objects in an array
+  if (useOrLogic) {
+    // Create array of condition objects for $or
+    const orConditions: any[] = [];
+    
+    // Process each filter to create individual condition objects
+    filters.filters.forEach(filter => {
+      // Validate filter structure
+      if (!filter.attribute || !filter.attribute.slug) {
+        console.warn(`Invalid filter: Missing attribute slug`, filter);
+        return; // Skip this filter
+      }
+      
+      if (!filter.condition) {
+        console.warn(`Invalid filter: Missing condition for attribute ${filter.attribute.slug}`, filter);
+        return; // Skip this filter
+      }
+      
+      const { slug } = filter.attribute;
+      
+      // Validate condition type if enabled
+      if (validateConditions && !isValidFilterCondition(filter.condition)) {
+        throw new FilterValidationError(
+          `Invalid filter condition '${filter.condition}' for attribute '${slug}'. ` +
+          `Valid conditions are: ${Object.values(FilterConditionType).join(', ')}`
+        );
+      }
+      
+      // Create a condition object for this individual filter
+      const condition: any = {};
+      condition[slug] = {
+        [`$${filter.condition}`]: filter.value
+      };
+      
+      // Add to the OR conditions array
+      orConditions.push(condition);
+    });
+    
+    // Only return the $or structure if we have valid conditions
+    if (orConditions.length > 0) {
+      return {
+        filter: { "$or": orConditions }
+      };
+    }
+    
+    return {}; // No valid conditions
+  }
+  
+  // Standard AND logic - similar to the original implementation
+  const apiFilter: AttioApiFilter = {};
+  let hasValidFilters = false;
+  
+  // Process each filter
+  filters.filters.forEach(filter => {
+    // Validate filter structure
+    if (!filter.attribute || !filter.attribute.slug) {
+      console.warn(`Invalid filter: Missing attribute slug`, filter);
+      return; // Skip this filter
+    }
+    
+    if (!filter.condition) {
+      console.warn(`Invalid filter: Missing condition for attribute ${filter.attribute.slug}`, filter);
+      return; // Skip this filter
+    }
+    
+    const { slug } = filter.attribute;
+    
+    // Validate condition type if enabled
+    if (validateConditions && !isValidFilterCondition(filter.condition)) {
+      throw new FilterValidationError(
+        `Invalid filter condition '${filter.condition}' for attribute '${slug}'. ` +
+        `Valid conditions are: ${Object.values(FilterConditionType).join(', ')}`
+      );
+    }
+    
+    // Initialize attribute entry if needed
+    if (!apiFilter[slug]) {
+      apiFilter[slug] = {};
+    }
+    
+    // Add condition with $ prefix as required by Attio API
+    apiFilter[slug][`$${filter.condition}`] = filter.value;
+    hasValidFilters = true;
+  });
+  
+  // Return the filter object only if valid filters were found
+  return hasValidFilters ? { filter: apiFilter } : {};
 }

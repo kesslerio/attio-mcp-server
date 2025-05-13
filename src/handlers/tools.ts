@@ -533,6 +533,114 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle filterListEntries tool
+      if (toolType === 'filterListEntries') {
+        const listId = request.params.arguments?.listId as string;
+        const attributeSlug = request.params.arguments?.attributeSlug as string;
+        const condition = request.params.arguments?.condition as string;
+        const value = request.params.arguments?.value;
+        
+        // Convert parameters to the correct type
+        let limit: number | undefined;
+        let offset: number | undefined;
+        
+        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+          limit = Number(request.params.arguments.limit);
+        }
+        
+        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+          offset = Number(request.params.arguments.offset);
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[filterListEntries Tool] Processing request with parameters:', {
+            listId,
+            attributeSlug,
+            condition,
+            value,
+            limit,
+            offset
+          });
+        }
+        
+        try {
+          const entries = await toolConfig.handler(listId, attributeSlug, condition, value, limit, offset);
+          const processedEntries = entries ? processListEntries(entries) : [];
+          const formattedResults = toolConfig.formatResult 
+            ? toolConfig.formatResult(processedEntries) 
+            : JSON.stringify(processedEntries, null, 2);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/lists/${listId}/entries/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle advancedFilterListEntries tool
+      if (toolType === 'advancedFilterListEntries') {
+        const listId = request.params.arguments?.listId as string;
+        const filters = request.params.arguments?.filters as any;
+        
+        // Convert parameters to the correct type
+        let limit: number | undefined;
+        let offset: number | undefined;
+        
+        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+          limit = Number(request.params.arguments.limit);
+        }
+        
+        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+          offset = Number(request.params.arguments.offset);
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[advancedFilterListEntries] Processing request with parameters:', {
+            listId,
+            filters: JSON.stringify(filters),
+            limit,
+            offset
+          });
+        }
+        
+        try {
+          const entries = await toolConfig.handler(listId, filters, limit, offset);
+          const processedEntries = entries ? processListEntries(entries) : [];
+          const formattedResults = toolConfig.formatResult 
+            ? toolConfig.formatResult(processedEntries) 
+            : JSON.stringify(processedEntries, null, 2);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/lists/${listId}/entries/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
       // Handle addRecordToList tool
       if (toolType === 'addRecordToList') {
         const listId = request.params.arguments?.listId as string;
