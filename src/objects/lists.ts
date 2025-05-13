@@ -11,13 +11,15 @@ import {
   BatchConfig,
   BatchResponse,
   executeBatchOperations,
-  BatchRequestItem
+  BatchRequestItem,
+  ListEntryFilters
 } from "../api/attio-operations.js";
 import { 
   AttioList, 
   AttioListEntry,
   ResourceType 
 } from "../types/attio.js";
+import { processListEntries, transformFiltersToApiFormat } from "../utils/record-utils.js";
 
 /**
  * Gets all lists in the workspace
@@ -83,7 +85,7 @@ async function tryMultipleListEntryEndpoints(
   listId: string,
   limit: number,
   offset: number,
-  filters?: { filters: Array<{ attribute: { slug: string }; condition: string; value: any }> }
+  filters?: ListEntryFilters
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
   
@@ -94,24 +96,8 @@ async function tryMultipleListEntryEndpoints(
     "expand": ["record"]
   };
   
-  // Add filters if provided
-  let filterData: { filter?: Record<string, Record<string, any>> } = {};
-  if (filters && filters.filters && filters.filters.length > 0) {
-    filterData.filter = {};
-    
-    // Convert filter array to filter object compatible with Attio API
-    filters.filters.forEach(filter => {
-      if (filter.attribute && filter.attribute.slug && filter.condition) {
-        // If we don't already have this attribute in our filter, initialize it
-        if (!filterData.filter![filter.attribute.slug]) {
-          filterData.filter![filter.attribute.slug] = {};
-        }
-        
-        // Add the condition with $ prefix as required by Attio API
-        filterData.filter![filter.attribute.slug][`$${filter.condition}`] = filter.value;
-      }
-    });
-  }
+  // Transform filters using our centralized utility function
+  const filterData = transformFiltersToApiFormat(filters);
   
   // Setup endpoints with correct data
   const endpoints = [
@@ -170,8 +156,8 @@ async function tryMultipleListEntryEndpoints(
         });
       }
       
-      // Process entries to ensure record_id is properly set
-      return processEntries(entries);
+      // Process entries to ensure record_id is properly set from the utils function
+      return processListEntries(entries);
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.log(`[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${endpoint.path}:`, 
@@ -194,44 +180,7 @@ async function tryMultipleListEntryEndpoints(
   return [];
 }
 
-/**
- * Process list entries to extract record IDs and handle complex objects
- * 
- * @param entries - Raw list entries from API
- * @returns Processed entries with properly extracted record IDs
- */
-function processEntries(entries: any[]): AttioListEntry[] {
-  return entries.map(entry => {
-    let recordId = null;
-    
-    // Try multiple potential paths to find the record ID
-    if (entry.record_id) {
-      recordId = entry.record_id;
-    } else if (entry.record?.id?.record_id) {
-      recordId = entry.record.id.record_id;
-    } else if (entry.values?.record?.id?.record_id) {
-      recordId = entry.values.record.id.record_id;
-    } else {
-      // Search for any property that might contain the record ID
-      for (const key of Object.keys(entry)) {
-        if (key.includes('record_id') && typeof entry[key] === 'string') {
-          recordId = entry[key];
-          break;
-        }
-      }
-    }
-    
-    // Format the entry with the extracted record ID
-    return {
-      ...entry,
-      record_id: recordId,
-      // Ensure the ID is properly formatted as a string to avoid [object Object]
-      id: typeof entry.id === 'object' ? 
-          { entry_id: entry.id.entry_id || entry.id.id || entry.id.toString() } : 
-          { entry_id: String(entry.id) }
-    };
-  });
-}
+// We no longer need this function as we use processListEntries from record-utils.js
 
 /**
  * Gets entries for a specific list
@@ -246,7 +195,7 @@ export async function getListEntries(
   listId: string, 
   limit: number = 20, 
   offset: number = 0,
-  filters?: { filters: Array<{ attribute: { slug: string }; condition: string; value: any }> }
+  filters?: ListEntryFilters
 ): Promise<AttioListEntry[]> {
   // Use the generic operation with fallback to direct implementation
   try {
@@ -261,9 +210,8 @@ export async function getListEntries(
         hasFilters: filters && filters.filters ? filters.filters.length > 0 : false
       });
     }
-    // Fallback to multi-endpoint utility function - note that the fallback doesn't support filters yet
-    // This will be handled in a future update to make tryMultipleListEntryEndpoints support filters
-    return await tryMultipleListEntryEndpoints(listId, limit, offset);
+    // Fallback to our multi-endpoint utility function with enhanced filter support
+    return await tryMultipleListEntryEndpoints(listId, limit, offset, filters);
   }
 }
 
