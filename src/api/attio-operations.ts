@@ -9,9 +9,26 @@ import {
   Person,
   Company,
   AttioList,
-  AttioListEntry
+  AttioListEntry,
+  BatchRequestItem as BatchRequestItemType,
+  BatchItemResult as BatchItemResultType,
+  BatchResponse as BatchResponseType,
+  BatchConfig as BatchConfigType,
+  RecordCreateParams,
+  RecordUpdateParams,
+  RecordListParams,
+  RecordBatchCreateParams,
+  RecordBatchUpdateParams,
+  RecordAttributes
 } from "../types/attio.js";
+
+// Re-export batch types for convenience
+export type BatchRequestItem<T> = BatchRequestItemType<T>;
+export type BatchItemResult<R> = BatchItemResultType<R>;
+export type BatchResponse<R> = BatchResponseType<R>;
+export type BatchConfig = BatchConfigType;
 import { ErrorType } from '../utils/error-handler.js';
+import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
 
 /**
  * Configuration options for API call retry
@@ -389,50 +406,153 @@ export async function getListDetails(
  * Gets entries for a specific list
  * 
  * @param listId - The ID of the list
- * @param limit - Maximum number of entries to fetch (default: 20)
- * @param offset - Number of entries to skip (default: 0)
+ * @param limit - Maximum number of entries to fetch (optional)
+ * @param offset - Number of entries to skip (optional)
  * @param retryConfig - Optional retry configuration
  * @returns Array of list entries
  */
 export async function getListEntries(
   listId: string, 
-  limit: number = 20, 
-  offset: number = 0,
+  limit?: number, 
+  offset?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
   
+  // Input validation - make sure we have a valid listId
+  if (!listId) {
+    throw new Error('Invalid list ID: No ID provided');
+  }
+  
+  // Coerce input parameters to ensure proper types
+  const safeLimit = typeof limit === 'number' ? limit : undefined;
+  const safeOffset = typeof offset === 'number' ? offset : undefined;
+  
+  // Only include parameters that are explicitly provided
+  const createRequestBody = () => {
+    const body: any = {
+      "expand": ["record"]
+    };
+    
+    // Always include limit and offset as explicit parameters with default values if not provided
+    // This ensures the parameters are always present in the request
+    body.limit = safeLimit !== undefined ? safeLimit : 20; // Default to 20 if not specified
+    body.offset = safeOffset !== undefined ? safeOffset : 0; // Default to 0 if not specified
+    
+    return body;
+  };
+  
+  // Enhanced logging function
+  const logOperation = (stage: string, details: any, isError = false) => {
+    if (process.env.NODE_ENV === 'development') {
+      const prefix = isError ? 'ERROR' : (stage.includes('failed') ? 'WARNING' : 'INFO');
+      console.log(`[getListEntries] ${prefix} - ${stage}`, {
+        ...details,
+        listId,
+        limit: safeLimit,
+        offset: safeOffset,
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+  
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
-    // Try the primary endpoint first
+    // Try the primary endpoint with expanded record data
     try {
       const path = `/lists/${listId}/entries/query`;
-      const response = await api.post<AttioListResponse<AttioListEntry>>(path, {
-        limit,
-        offset
+      const requestBody = createRequestBody();
+      
+      logOperation('Attempt 1: Calling primary endpoint', { 
+        path, 
+        requestBody: JSON.stringify(requestBody) 
       });
-      return response.data.data || [];
-    } catch (primaryError) {
-      // Try fallback endpoints
+      
+      const response = await api.post<AttioListResponse<AttioListEntry>>(path, requestBody);
+      
+      logOperation('Primary endpoint successful', { 
+        resultCount: response.data.data?.length || 0 
+      });
+      
+      // Process response to ensure record_id is correctly extracted
+      const entries = response.data.data || [];
+      return processListEntries(entries);
+    } catch (error: any) {
+      const primaryError = error;
+      
+      logOperation('Primary endpoint failed', { 
+        path: `/lists/${listId}/entries/query`,
+        error: primaryError.message || 'Unknown error' 
+      }, true);
+      
+      // Try fallback endpoints with proper parameter handling
       try {
         const fallbackPath = `/lists-entries/query`;
-        const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, {
-          list_id: listId,
-          limit,
-          offset
+        const requestBody = {
+          ...createRequestBody(),
+          "list_id": listId
+        };
+        
+        logOperation('Attempt 2: Calling fallback endpoint', { 
+          path: fallbackPath, 
+          requestBody: JSON.stringify(requestBody) 
         });
-        return fallbackResponse.data.data || [];
-      } catch (fallbackError) {
-        // Last resort fallback
+        
+        const fallbackResponse = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, requestBody);
+        
+        logOperation('Fallback endpoint successful', { 
+          resultCount: fallbackResponse.data.data?.length || 0 
+        });
+        
+        const entries = fallbackResponse.data.data || [];
+        return processListEntries(entries);
+      } catch (error: any) {
+        const fallbackError = error;
+        
+        logOperation('Fallback endpoint failed', { 
+          path: `/lists-entries/query`,
+          error: fallbackError.message || 'Unknown error' 
+        }, true);
+        
+        // Last resort fallback with proper query parameter handling
         try {
-          const lastPath = `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`;
+          // Build the URL with explicit parameters using consistent naming
+          const params = new URLSearchParams();
+          params.append('list_id', listId);
+          params.append('expand', 'record');
+          
+          // Always include limit and offset parameters with default values
+          params.append('limit', String(safeLimit !== undefined ? safeLimit : 20));
+          params.append('offset', String(safeOffset !== undefined ? safeOffset : 0));
+          
+          const lastPath = `/lists-entries?${params.toString()}`;
+          
+          logOperation('Attempt 3: Calling last resort endpoint', { path: lastPath });
+          
           const lastResponse = await api.get<AttioListResponse<AttioListEntry>>(lastPath);
-          return lastResponse.data.data || [];
+          
+          logOperation('Last resort endpoint successful', { 
+            resultCount: lastResponse.data.data?.length || 0 
+          });
+          
+          const entries = lastResponse.data.data || [];
+          return processListEntries(entries);
         } catch (lastError: any) {
+          // Combine all errors for better debugging
+          const allErrors = {
+            primary: primaryError.message || 'Unknown error',
+            fallback: fallbackError.message || 'Unknown error',
+            lastResort: lastError.message || 'Unknown error'
+          };
+          
+          logOperation('All attempts failed', { allErrors }, true);
+          
           if (lastError.response?.status === 404) {
-            throw new Error(`List entries for list ${listId} not found`);
+            throw new Error(`List entries for list ${listId} not found. All attempts failed.`);
           }
-          throw lastError;
+          
+          // Include all errors in the thrown error for better context
+          throw new Error(`Failed to retrieve list entries: ${JSON.stringify(allErrors)}`);
         }
       }
     }
@@ -499,4 +619,430 @@ export async function removeRecordFromList(
       throw error;
     }
   }, retryConfig);
+}
+
+/**
+ * Gets a specific object path based on slug or ID
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param objectId - Optional object ID (alternative to slug)
+ * @returns Proper path segment for the API URL
+ */
+function getObjectPath(objectSlug: string, objectId?: string): string {
+  // If object ID is provided, use it, otherwise use the slug
+  return `/objects/${objectId || objectSlug}`;
+}
+
+/**
+ * Creates a new record
+ * 
+ * @param params - Record creation parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Created record
+ */
+export async function createRecord<T extends AttioRecord>(
+  params: RecordCreateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.post<AttioSingleResponse<T>>(path, {
+        attributes: params.attributes
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to create record: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Gets a specific record by ID
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param recordId - ID of the record to retrieve
+ * @param attributes - Optional list of attribute slugs to include
+ * @param objectId - Optional object ID (alternative to slug)
+ * @param retryConfig - Optional retry configuration
+ * @returns Record details
+ */
+export async function getRecord<T extends AttioRecord>(
+  objectSlug: string,
+  recordId: string,
+  attributes?: string[],
+  objectId?: string,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(objectSlug, objectId);
+  let path = `${objectPath}/records/${recordId}`;
+  
+  // Add attributes parameter if provided
+  if (attributes && attributes.length > 0) {
+    const attributesParam = attributes.join(',');
+    path += `?attributes=${encodeURIComponent(attributesParam)}`;
+  }
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.get<AttioSingleResponse<T>>(path);
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Updates a specific record
+ * 
+ * @param params - Record update parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Updated record
+ */
+export async function updateRecord<T extends AttioRecord>(
+  params: RecordUpdateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/${params.recordId}`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.patch<AttioSingleResponse<T>>(path, {
+        attributes: params.attributes
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to update record: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${params.recordId} not found in ${params.objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Deletes a specific record
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param recordId - ID of the record to delete
+ * @param objectId - Optional object ID (alternative to slug)
+ * @param retryConfig - Optional retry configuration
+ * @returns True if deletion was successful
+ */
+export async function deleteRecord(
+  objectSlug: string,
+  recordId: string,
+  objectId?: string,
+  retryConfig?: Partial<RetryConfig>
+): Promise<boolean> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(objectSlug, objectId);
+  const path = `${objectPath}/records/${recordId}`;
+  
+  return callWithRetry(async () => {
+    try {
+      await api.delete(path);
+      return true;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Lists records with filtering options
+ * 
+ * @param params - Record listing parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of records
+ */
+export async function listRecords<T extends AttioRecord>(
+  params: RecordListParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.page) {
+    queryParams.append('page', String(params.page));
+  }
+  
+  if (params.pageSize) {
+    queryParams.append('pageSize', String(params.pageSize));
+  }
+  
+  if (params.query) {
+    queryParams.append('query', params.query);
+  }
+  
+  if (params.attributes && params.attributes.length > 0) {
+    queryParams.append('attributes', params.attributes.join(','));
+  }
+  
+  if (params.sort) {
+    queryParams.append('sort', params.sort);
+  }
+  
+  if (params.direction) {
+    queryParams.append('direction', params.direction);
+  }
+  
+  const path = `${objectPath}/records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.get<AttioListResponse<T>>(path);
+      return response.data.data || [];
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(`Invalid parameters when listing ${params.objectSlug} records`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Creates multiple records in a batch operation
+ * 
+ * @param params - Batch record creation parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of created records
+ */
+export async function batchCreateRecords<T extends AttioRecord>(
+  params: RecordBatchCreateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/batch`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.post<AttioListResponse<T>>(path, {
+        records: params.records.map(record => ({ attributes: record.attributes }))
+      });
+      
+      return response.data.data || [];
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to batch create records: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Updates multiple records in a batch operation
+ * 
+ * @param params - Batch record update parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of updated records
+ */
+export async function batchUpdateRecords<T extends AttioRecord>(
+  params: RecordBatchUpdateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/batch`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.patch<AttioListResponse<T>>(path, {
+        records: params.records.map(record => ({
+          id: record.id,
+          attributes: record.attributes
+        }))
+      });
+      
+      return response.data.data || [];
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to batch update records: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found or one of the records was not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Default batch configuration
+ */
+export const DEFAULT_BATCH_CONFIG: BatchConfig = {
+  maxBatchSize: 10,
+  continueOnError: true,
+  retryConfig: DEFAULT_RETRY_CONFIG
+};
+
+/**
+ * Execute a batch of operations with chunking, error handling, and retry support
+ * 
+ * @param operations - Array of operations to process in batch
+ * @param apiCall - Function that processes a single operation
+ * @param config - Batch configuration options
+ * @returns Batch response with individual results and summary
+ */
+export async function executeBatchOperations<T, R>(
+  operations: BatchRequestItem<T>[],
+  apiCall: (params: T) => Promise<R>,
+  config: Partial<BatchConfig> = {}
+): Promise<BatchResponse<R>> {
+  // Merge with default config
+  const batchConfig: BatchConfig = {
+    ...DEFAULT_BATCH_CONFIG,
+    ...config
+  };
+  
+  // Initialize batch response
+  const batchResponse: BatchResponse<R> = {
+    results: [],
+    summary: {
+      total: operations.length,
+      succeeded: 0,
+      failed: 0
+    }
+  };
+  
+  // Process operations in chunks to respect maxBatchSize
+  const chunks = [];
+  for (let i = 0; i < operations.length; i += batchConfig.maxBatchSize) {
+    chunks.push(operations.slice(i, i + batchConfig.maxBatchSize));
+  }
+  
+  // Process each chunk
+  for (const chunk of chunks) {
+    // Process operations in the current chunk
+    await Promise.all(chunk.map(async (operation) => {
+      const result: BatchItemResult<R> = {
+        id: operation.id,
+        success: false
+      };
+      
+      try {
+        // Execute the operation with retry logic if configured
+        if (batchConfig.retryConfig) {
+          result.data = await callWithRetry(
+            () => apiCall(operation.params),
+            batchConfig.retryConfig
+          );
+        } else {
+          result.data = await apiCall(operation.params);
+        }
+        
+        // Mark as successful
+        result.success = true;
+        batchResponse.summary.succeeded++;
+      } catch (error) {
+        // Handle operation failure
+        result.success = false;
+        result.error = error;
+        batchResponse.summary.failed++;
+        
+        // If configured to abort on error, throw the error to stop processing
+        if (!batchConfig.continueOnError) {
+          throw error;
+        }
+      }
+      
+      // Add result to batch response
+      batchResponse.results.push(result);
+    }));
+  }
+  
+  return batchResponse;
+}
+
+/**
+ * Generic function to perform batch searches for any object type
+ * 
+ * @param objectType - Type of object to search (people or companies)
+ * @param queries - Array of search query strings
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with search results
+ */
+export async function batchSearchObjects<T extends AttioRecord>(
+  objectType: ResourceType,
+  queries: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<T[]>> {
+  // Convert queries to batch request items
+  const operations: BatchRequestItem<string>[] = queries.map((query, index) => ({
+    params: query,
+    id: `search_${objectType}_${index}`
+  }));
+  
+  // Execute batch operations using the searchObject function
+  return executeBatchOperations<string, T[]>(
+    operations,
+    (query) => searchObject<T>(objectType, query),
+    batchConfig
+  );
+}
+
+/**
+ * Generic function to get details for multiple records of any object type
+ * 
+ * @param objectType - Type of object to get details for (people or companies)
+ * @param recordIds - Array of record IDs to fetch
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with record details
+ */
+export async function batchGetObjectDetails<T extends AttioRecord>(
+  objectType: ResourceType,
+  recordIds: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<T>> {
+  // Convert record IDs to batch request items
+  const operations: BatchRequestItem<string>[] = recordIds.map((recordId) => ({
+    params: recordId,
+    id: `get_${objectType}_${recordId}`
+  }));
+  
+  // Execute batch operations using the getObjectDetails function
+  return executeBatchOperations<string, T>(
+    operations,
+    (recordId) => getObjectDetails<T>(objectType, recordId),
+    batchConfig
+  );
 }

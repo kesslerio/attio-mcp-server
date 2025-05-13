@@ -2,6 +2,58 @@
 
 The People API allows you to manage person records in Attio. Person records represent individual contacts and can be linked to companies, opportunities, and other objects.
 
+## MCP Integration for People Records
+
+### Special Considerations for Email and Phone Searches
+
+When searching for people by email or phone through the MCP server, Claude handles this differently than direct API calls. While the Attio API doesn't support direct filtering by `email` or `phone` attributes, the MCP server implements a client-side search to overcome this limitation.
+
+### Example Claude Interactions
+
+#### Searching for People
+
+```
+Find contacts from XYZ Company
+```
+
+```
+Look up people with the title "CEO"
+```
+
+```
+Search for someone named Sarah
+```
+
+#### Working with Person Records
+
+```
+Show me details for attio://people/record_01abcdefghijklmnopqrstuv
+```
+
+```
+What's the job title for John Smith?
+```
+
+```
+When was the last time we contacted Jane Doe?
+```
+
+#### Creating and Reading Notes
+
+```
+Add a note that I spoke with John about the proposal
+```
+
+```
+What notes do we have for Sarah Jones?
+```
+
+### Common Workflows
+
+1. **Contact Lookup**: "Find contact information for John at Acme Corp"
+2. **Note Taking**: "After my call with Jane, add a note about product interest"
+3. **Relationship Tracking**: "Who's our main contact at XYZ Company?"
+
 ## Required Scopes
 
 Most people operations require the following scopes:
@@ -37,20 +89,20 @@ Lists all people records.
 {
   "data": [
     {
-      "id": "record_01abcdefghijklmnopqrstuv",
+      "id": { "record_id": "record_01abcdefghijklmnopqrstuv" },
       "title": "Jane Smith",
       "object_id": "object_01wxyzabcdefghijklmnopq",
       "object_slug": "people",
-      "attributes": {
-        "name": "Jane Smith",
-        "email": "jane@example.com",
-        "phone": "+1 (555) 123-4567",
-        "job_title": "CEO",
-        "company": {
-          "record_id": "record_01defghijklmnopqrstuvwxy"
-        },
-        "linkedin_url": "https://linkedin.com/in/janesmith",
-        "last_contacted": "2023-06-15T00:00:00.000Z"
+      "values": {
+        "name": [{ "value": "Jane Smith" }],
+        "email": [{ "value": "jane@example.com" }],
+        "phone": [{ "value": "+1 (555) 123-4567" }],
+        "job_title": [{ "value": "CEO" }],
+        "company": [{
+          "value": { "record_id": "record_01defghijklmnopqrstuvwxy" }
+        }],
+        "linkedin_url": [{ "value": "https://linkedin.com/in/janesmith" }],
+        "last_contacted": [{ "value": "2023-06-15T00:00:00.000Z" }]
       },
       "created_at": "2023-02-15T10:30:00.000Z",
       "updated_at": "2023-06-10T14:20:00.000Z"
@@ -94,9 +146,50 @@ Searches for people records with advanced filtering options.
 | offset          | number   | Number of records to skip (for pagination) | No |
 | sorts           | array    | Sorting criteria for the results | No |
 
-#### Response
+> **Important Note**: The API does not directly support filtering by `email` or `phone` attributes using the filter object. Attempting to use `email` or `phone` as attribute slugs will result in a 400 error with message "Unknown attribute slug: email". For email or phone searches, use a general name search and then filter the results client-side.
 
-Returns an array of people records matching the filter criteria.
+#### Response Structure
+
+The API returns person records with the following structure:
+
+```json
+{
+  "data": [
+    {
+      "id": { "record_id": "record_01abcdefghijklmnopqrstuv" },
+      "values": {
+        "name": [{ "value": "Jane Smith" }],
+        "email": [{ "value": "jane@example.com" }],
+        "phone": [{ "value": "+1 (555) 123-4567" }],
+        "job_title": [{ "value": "CEO" }]
+      },
+      "created_at": "2023-02-15T10:30:00.000Z",
+      "updated_at": "2023-06-10T14:20:00.000Z"
+    }
+  ]
+}
+```
+
+Note that attributes like `email` and `phone` are arrays of objects with a `value` property, not direct string values.
+
+#### Client-side Filtering Example
+
+For email searches, you may need to implement client-side filtering:
+
+```typescript
+// Get all people (with a higher limit) and filter client-side
+const response = await api.post("/objects/people/records/query", {
+  limit: 100 // Increased limit to get more potential matches
+});
+
+// Filter the results client-side by email
+const results = response.data.data || [];
+const filteredResults = results.filter(person => 
+  person.values?.email?.some(emailObj => 
+    emailObj.value?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+);
+```
 
 ### Create a Person
 

@@ -1,0 +1,134 @@
+/**
+ * Company-related tool configurations
+ */
+import { ResourceType, AttioRecord } from "../../types/attio.js";
+import { 
+  searchCompanies, 
+  getCompanyDetails, 
+  getCompanyNotes, 
+  createCompanyNote 
+} from "../../objects/companies.js";
+import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig } from "../tool-types.js";
+
+// Company tool configurations
+export const companyToolConfigs = {
+  search: {
+    name: "search-companies",
+    handler: searchCompanies,
+    formatResult: (results: AttioRecord[]) => {
+      return `Found ${results.length} companies:\n${results.map((company: any) => 
+        `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
+    }
+  } as SearchToolConfig,
+  details: {
+    name: "get-company-details",
+    handler: getCompanyDetails,
+  } as DetailsToolConfig,
+  notes: {
+    name: "get-company-notes",
+    handler: getCompanyNotes,
+  } as NotesToolConfig,
+  createNote: {
+    name: "create-company-note",
+    handler: createCompanyNote,
+    idParam: "companyId"
+  } as CreateNoteToolConfig
+};
+
+// Company tool definitions
+export const companyToolDefinitions = [
+  {
+    name: "search-companies",
+    description: "Search for companies in Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query for companies"
+        }
+      },
+      required: ["query"]
+    }
+  },
+  {
+    name: "get-company-details",
+    description: "Get details of a company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to get details for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "get-company-notes",
+    description: "Get notes for a company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to get notes for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of notes to fetch (default: 10)"
+        },
+        offset: {
+          type: "number",
+          description: "Number of notes to skip for pagination (default: 0)"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "create-company-note",
+    description: "Create a note for a specific company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to create a note for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        },
+        title: {
+          type: "string",
+          description: "Title of the note (optional)"
+        },
+        content: {
+          type: "string",
+          description: "Content of the note"
+        }
+      },
+      required: ["content"],
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  }
+];

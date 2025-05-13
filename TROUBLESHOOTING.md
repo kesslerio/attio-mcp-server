@@ -2,6 +2,60 @@
 
 This document provides solutions for common issues you might encounter when working with the Attio MCP Server.
 
+## Docker Deployment Issues
+
+### Container Health Check Failing
+
+**Problem:** Docker container health check fails with `unhealthy` status.
+
+**Solution:**
+- Check if the server is running and listening on port 3000 inside the container:
+  ```bash
+  docker exec -it attio-mcp-server sh -c "ps aux | grep node"
+  docker exec -it attio-mcp-server sh -c "netstat -tulpn | grep 3000"
+  ```
+- Verify that the health check endpoint is accessible:
+  ```bash
+  docker exec -it attio-mcp-server sh -c "curl -v http://localhost:3000/health"
+  ```
+- Check the container logs for startup errors:
+  ```bash
+  docker logs attio-mcp-server
+  ```
+- Ensure your API key is correctly configured in the container environment variables:
+  ```bash
+  docker exec -it attio-mcp-server sh -c "printenv | grep ATTIO"
+  ```
+
+### API Key Issues
+
+**Problem:** The server fails to start with "ATTIO_API_KEY environment variable not found" error.
+
+**Solution:**
+- Ensure your .env file contains the ATTIO_API_KEY variable:
+  ```bash
+  echo "ATTIO_API_KEY=your_api_key_here" > .env
+  ```
+- When using docker-compose, verify that your .env file is in the same directory as your docker-compose.yml file.
+- When running containers manually, make sure to pass the environment variable:
+  ```bash
+  docker run -e ATTIO_API_KEY=your_api_key_here attio-mcp-server
+  ```
+
+### Port Conflict Issues
+
+**Problem:** The container fails to start with "port is already allocated" error.
+
+**Solution:**
+- Check if another process is using port 3000:
+  ```bash
+  lsof -i :3000
+  ```
+- Change the host port mapping in docker-compose.yml or when running the container:
+  ```bash
+  docker run -p 8080:3000 attio-mcp-server
+  ```
+
 ## Type Definition Errors
 
 ### Duplicate Interface Definitions
