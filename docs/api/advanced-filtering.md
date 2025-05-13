@@ -1,6 +1,6 @@
 # Advanced Filtering in Attio MCP
 
-The Attio MCP server provides enhanced filtering capabilities that extend beyond the standard Attio API. This document outlines the advanced filtering features available for People, Companies, and Lists objects.
+The Attio MCP server provides enhanced filtering capabilities that extend beyond the standard Attio API. This document outlines the advanced filtering features available for People, Companies, and Lists objects, which are now implemented as part of the advanced filtering suite (Issue #57).
 
 ## Overview
 
