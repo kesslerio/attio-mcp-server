@@ -1,5 +1,8 @@
 /**
  * Tests for advanced filtering capabilities
+ * 
+ * These tests verify the new advanced filtering functionality for People and Companies,
+ * ensuring that the implementation meets the requirements specified in Issue #57.
  */
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
