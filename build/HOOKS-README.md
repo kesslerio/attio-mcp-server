@@ -1,6 +1,6 @@
 # Git Hooks for Attio MCP
 
-This directory contains git hooks to enforce code quality standards and prevent unwanted AI attribution in the codebase.
+This directory contains git hooks to enforce code quality standards and prevent unwanted AI attribution in commit messages.
 
 ## Available Hooks
 
