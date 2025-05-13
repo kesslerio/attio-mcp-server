@@ -31,9 +31,9 @@ import { ErrorType } from '../utils/error-handler.js';
 import { 
   processListEntries, 
   API_PARAMS, 
-  transformFiltersToApiFormat,
-  FilterValidationError
+  transformFiltersToApiFormat
 } from '../utils/record-utils.js';
+import { FilterValidationError } from '../errors/api-errors.js';
 
 /**
  * Configuration options for API call retry
@@ -490,9 +490,29 @@ export async function getListEntries(
       // Add filter to body if it exists
       if (filterObject.filter) {
         body.filter = filterObject.filter;
+        
+        // Log filter transformation for debugging in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getListEntries] Transformed filters:', {
+            originalFilters: JSON.stringify(filters),
+            transformedFilters: JSON.stringify(filterObject.filter),
+            useOrLogic: filters?.matchAny === true,
+            filterCount: filters?.filters?.length || 0
+          });
+        }
       }
-    } catch (error) {
+    } catch (err: any) {
+      const error = err as Error;
+      
       if (error instanceof FilterValidationError) {
+        // Log the problematic filters for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[getListEntries] Filter validation error:', {
+            error: error.message,
+            providedFilters: JSON.stringify(filters)
+          });
+        }
+        
         // Rethrow with more context
         throw new Error(`Filter validation failed: ${error.message}`);
       }
