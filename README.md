@@ -1,6 +1,6 @@
 # Attio MCP Server
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-native CRM. This server enables AI assistants like Claude to interact directly with your Attio data, providing a seamless integration between conversational AI and your CRM.
 
@@ -97,4 +97,4 @@ Contributions are welcome! Please see our [Contributing Guidelines](./CONTRIB.md
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
