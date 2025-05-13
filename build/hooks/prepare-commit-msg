@@ -36,15 +36,12 @@ ATTRIBUTION_PATTERNS=(
   "Created with Claude"
 )
 
-# Read the commit message into an array of lines
-readarray -t lines <<< "$ORIGINAL_COMMIT_MSG"
-
 # Initialize a flag to check if we found any attributions
 FOUND_ATTRIBUTION=false
 CLEANED_MSG=""
 
-# Process each line
-for line in "${lines[@]}"; do
+# Process the message line by line
+while IFS= read -r line; do
   # Check if the line contains any attribution pattern
   CONTAINS_ATTRIBUTION=false
   for pattern in "${ATTRIBUTION_PATTERNS[@]}"; do
@@ -61,7 +58,7 @@ for line in "${lines[@]}"; do
     CLEANED_MSG="${CLEANED_MSG}${line}
 "
   fi
-done
+done <<< "$ORIGINAL_COMMIT_MSG"
 
 # Only modify the file if attributions were found
 if [ "$FOUND_ATTRIBUTION" = true ]; then
