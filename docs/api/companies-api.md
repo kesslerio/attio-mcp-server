@@ -6,6 +6,17 @@ The Companies API allows you to manage company records in Attio. Companies are a
 
 Claude can help you interact with company records in Attio through the MCP server. Here are some common tasks and example prompts:
 
+### Advanced Filtering Capabilities
+
+The MCP server now provides enhanced filtering capabilities for company records through the `advanced-search-companies` tool. This feature supports:
+
+- Complex filtering with multiple conditions
+- Logical operators (AND/OR)
+- All comparison operators (equals, contains, starts_with, etc.)
+- Filtering by any company attribute including name, website, and industry
+
+See the [Advanced Filtering documentation](./advanced-filtering.md) for detailed information about these capabilities.
+
 ### Searching for Companies
 
 You can ask Claude to search for companies using various criteria:

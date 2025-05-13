@@ -3,7 +3,8 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { 
-  searchObject, 
+  searchObject,
+  advancedSearchObject,
   listObjects, 
   getObjectDetails, 
   getObjectNotes, 
@@ -11,12 +12,15 @@ import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse
+  BatchResponse,
+  ListEntryFilters,
+  ListEntryFilter
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Company, 
-  AttioNote 
+  AttioNote,
+  FilterConditionType
 } from "../types/attio.js";
 
 /**
@@ -573,4 +577,101 @@ export async function batchGetCompanyDetails(
     
     return results;
   }
+}
+
+/**
+ * Search for companies using advanced filtering capabilities
+ * 
+ * @param filters - Filter conditions to apply
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching company records
+ */
+export async function advancedSearchCompanies(
+  filters: ListEntryFilters,
+  limit?: number,
+  offset?: number
+): Promise<Company[]> {
+  try {
+    return await advancedSearchObject<Company>(
+      ResourceType.COMPANIES,
+      filters,
+      limit,
+      offset
+    );
+  } catch (error) {
+    // Handle specific API limitations for website/industry filtering if needed
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    // If we reach here, it's an unexpected error
+    throw new Error(`Failed to search companies with advanced filters: ${String(error)}`);
+  }
+}
+
+/**
+ * Helper function to create filters for searching companies by name
+ * 
+ * @param name - Name to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for name search
+ */
+export function createNameFilter(
+  name: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'name' },
+        condition: condition,
+        value: name
+      }
+    ]
+  };
+}
+
+/**
+ * Helper function to create filters for searching companies by website
+ * 
+ * @param website - Website to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for website search
+ */
+export function createWebsiteFilter(
+  website: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'website' },
+        condition: condition,
+        value: website
+      }
+    ]
+  };
+}
+
+/**
+ * Helper function to create filters for searching companies by industry
+ * 
+ * @param industry - Industry to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for industry search
+ */
+export function createIndustryFilter(
+  industry: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'industry' },
+        condition: condition,
+        value: industry
+      }
+    ]
+  };
 }

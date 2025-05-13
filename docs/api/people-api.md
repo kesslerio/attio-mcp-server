@@ -8,6 +8,17 @@ The People API allows you to manage person records in Attio. Person records repr
 
 When searching for people by email or phone through the MCP server, Claude handles this differently than direct API calls. While the Attio API doesn't support direct filtering by `email` or `phone` attributes, the MCP server implements a client-side search to overcome this limitation.
 
+### Advanced Filtering Capabilities
+
+The MCP server now provides enhanced filtering capabilities for people records through the `advanced-search-people` tool. This feature supports:
+
+- Complex filtering with multiple conditions
+- Logical operators (AND/OR)
+- All comparison operators (equals, contains, starts_with, etc.)
+- Special handling for email and phone attributes with client-side filtering
+
+See the [Advanced Filtering documentation](./advanced-filtering.md) for detailed information about these capabilities.
+
 ### Example Claude Interactions
 
 #### Searching for People

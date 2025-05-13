@@ -3,7 +3,8 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { 
-  searchObject, 
+  searchObject,
+  advancedSearchObject,
   listObjects, 
   getObjectDetails, 
   getObjectNotes, 
@@ -11,12 +12,15 @@ import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse
+  BatchResponse,
+  ListEntryFilters,
+  ListEntryFilter
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Person, 
-  AttioNote
+  AttioNote,
+  FilterConditionType
 } from "../types/attio.js";
 
 /**
@@ -377,4 +381,207 @@ export async function batchGetPeopleDetails(
     
     return results;
   }
+}
+
+/**
+ * Search for people using advanced filtering capabilities
+ * 
+ * @param filters - Filter conditions to apply
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching person records
+ */
+export async function advancedSearchPeople(
+  filters: ListEntryFilters,
+  limit?: number,
+  offset?: number
+): Promise<Person[]> {
+  try {
+    return await advancedSearchObject<Person>(
+      ResourceType.PEOPLE,
+      filters,
+      limit,
+      offset
+    );
+  } catch (error) {
+    // Handle specific API limitations for email and phone filtering
+    if (error instanceof Error && 
+        (error.message.includes('unknown attribute slug: email') || 
+         error.message.includes('unknown attribute slug: phone'))) {
+      
+      // If the error is related to email/phone filtering, try client-side filtering
+      // First, determine what filter criteria to handle server-side vs. client-side
+      const emailFilter = filters.filters?.find(f => f.attribute.slug === 'email');
+      const phoneFilter = filters.filters?.find(f => f.attribute.slug === 'phone');
+      
+      // Create a new filter that excludes email and phone
+      const serverFilters: ListEntryFilters = {
+        ...filters,
+        filters: filters.filters?.filter(f => 
+          f.attribute.slug !== 'email' && f.attribute.slug !== 'phone'
+        ) || []
+      };
+      
+      // Fetch data from server with remaining filters
+      const results = await advancedSearchObject<Person>(
+        ResourceType.PEOPLE,
+        serverFilters,
+        // Increase limit to account for client-side filtering reducing results
+        emailFilter || phoneFilter ? Math.max(100, limit || 100) : limit,
+        offset
+      );
+      
+      // Apply email filtering client-side
+      let filteredResults = results;
+      
+      if (emailFilter) {
+        filteredResults = filteredResults.filter(person => {
+          if (!person.values?.email || !Array.isArray(person.values.email)) {
+            return emailFilter.condition === FilterConditionType.IS_EMPTY || 
+                   emailFilter.condition === FilterConditionType.IS_NOT_SET;
+          }
+          
+          // Get array of email values
+          const emails = person.values.email.map(e => e.value?.toLowerCase() || '');
+          
+          // Apply the appropriate condition
+          switch (emailFilter.condition) {
+            case FilterConditionType.EQUALS:
+              return emails.some(e => e === emailFilter.value?.toLowerCase());
+            case FilterConditionType.NOT_EQUALS:
+              return !emails.some(e => e === emailFilter.value?.toLowerCase());
+            case FilterConditionType.CONTAINS:
+              return emails.some(e => e.includes(emailFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.NOT_CONTAINS:
+              return !emails.some(e => e.includes(emailFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.STARTS_WITH:
+              return emails.some(e => e.startsWith(emailFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.ENDS_WITH:
+              return emails.some(e => e.endsWith(emailFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.IS_EMPTY:
+              return emails.length === 0 || emails.every(e => e === '');
+            case FilterConditionType.IS_NOT_EMPTY:
+              return emails.length > 0 && emails.some(e => e !== '');
+            default:
+              return true; // Skip filtering for unsupported conditions
+          }
+        });
+      }
+      
+      // Apply phone filtering client-side
+      if (phoneFilter) {
+        filteredResults = filteredResults.filter(person => {
+          if (!person.values?.phone || !Array.isArray(person.values.phone)) {
+            return phoneFilter.condition === FilterConditionType.IS_EMPTY || 
+                   phoneFilter.condition === FilterConditionType.IS_NOT_SET;
+          }
+          
+          // Get array of phone values
+          const phones = person.values.phone.map(p => p.value?.toLowerCase() || '');
+          
+          // Apply the appropriate condition
+          switch (phoneFilter.condition) {
+            case FilterConditionType.EQUALS:
+              return phones.some(p => p === phoneFilter.value?.toLowerCase());
+            case FilterConditionType.NOT_EQUALS:
+              return !phones.some(p => p === phoneFilter.value?.toLowerCase());
+            case FilterConditionType.CONTAINS:
+              return phones.some(p => p.includes(phoneFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.NOT_CONTAINS:
+              return !phones.some(p => p.includes(phoneFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.STARTS_WITH:
+              return phones.some(p => p.startsWith(phoneFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.ENDS_WITH:
+              return phones.some(p => p.endsWith(phoneFilter.value?.toLowerCase() || ''));
+            case FilterConditionType.IS_EMPTY:
+              return phones.length === 0 || phones.every(p => p === '');
+            case FilterConditionType.IS_NOT_EMPTY:
+              return phones.length > 0 && phones.some(p => p !== '');
+            default:
+              return true; // Skip filtering for unsupported conditions
+          }
+        });
+      }
+      
+      // Apply limit and offset to the client-side filtered results
+      const safeLimit = typeof limit === 'number' ? limit : 20;
+      const safeOffset = typeof offset === 'number' ? offset : 0;
+      
+      // Only apply limit and offset if they weren't already applied server-side
+      if (emailFilter || phoneFilter) {
+        return filteredResults.slice(safeOffset, safeOffset + safeLimit);
+      }
+      
+      return filteredResults;
+    }
+    
+    // For other errors, just throw them as is
+    throw error;
+  }
+}
+
+/**
+ * Helper function to create filters for searching people by name
+ * 
+ * @param name - Name to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for name search
+ */
+export function createNameFilter(
+  name: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'name' },
+        condition: condition,
+        value: name
+      }
+    ]
+  };
+}
+
+/**
+ * Helper function to create filters for searching people by email
+ * 
+ * @param email - Email to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for email search
+ */
+export function createEmailFilter(
+  email: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'email' },
+        condition: condition,
+        value: email
+      }
+    ]
+  };
+}
+
+/**
+ * Helper function to create filters for searching people by phone
+ * 
+ * @param phone - Phone number to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for phone search
+ */
+export function createPhoneFilter(
+  phone: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  return {
+    filters: [
+      {
+        attribute: { slug: 'phone' },
+        condition: condition,
+        value: phone
+      }
+    ]
+  };
 }
