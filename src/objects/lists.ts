@@ -8,6 +8,10 @@ import {
   getListEntries as getGenericListEntries,
   addRecordToList as addGenericRecordToList,
   removeRecordFromList as removeGenericRecordFromList,
+  BatchConfig,
+  BatchResponse,
+  executeBatchOperations,
+  BatchRequestItem
 } from "../api/attio-operations.js";
 import { 
   AttioList, 
@@ -283,4 +287,55 @@ export async function removeRecordFromList(
     await api.delete(path);
     return true;
   }
+}
+
+/**
+ * Gets details for multiple lists in batch
+ * 
+ * @param listIds - Array of list IDs to fetch
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with list details for each ID
+ */
+export async function batchGetListsDetails(
+  listIds: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<AttioList>> {
+  // Create batch request items
+  const operations: BatchRequestItem<string>[] = listIds.map((listId) => ({
+    params: listId,
+    id: `get_list_${listId}`
+  }));
+  
+  // Execute batch operations
+  return executeBatchOperations<string, AttioList>(
+    operations,
+    (listId) => getListDetails(listId),
+    batchConfig
+  );
+}
+
+/**
+ * Gets entries for multiple lists in batch
+ * 
+ * @param listConfigs - Array of list configurations with ID, limit, and offset
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with list entries for each configuration
+ */
+export async function batchGetListsEntries(
+  listConfigs: Array<{ listId: string; limit?: number; offset?: number }>,
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<AttioListEntry[]>> {
+  // Create batch request items
+  const operations: BatchRequestItem<{ listId: string; limit?: number; offset?: number }>[] = 
+    listConfigs.map((config, index) => ({
+      params: config,
+      id: `get_list_entries_${config.listId}_${index}`
+    }));
+  
+  // Execute batch operations
+  return executeBatchOperations<{ listId: string; limit?: number; offset?: number }, AttioListEntry[]>(
+    operations,
+    (params) => getListEntries(params.listId, params.limit, params.offset),
+    batchConfig
+  );
 }
