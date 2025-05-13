@@ -11,23 +11,13 @@ import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse,
-  ListEntryFilters
+  BatchResponse
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Company, 
-  AttioNote,
-  FilterConditionType,
-  DateRange
+  AttioNote 
 } from "../types/attio.js";
-import {
-  createDateRangeFilter,
-  createBeforeDateFilter,
-  createAfterDateFilter,
-  createNumericRangeFilter
-} from "../utils/record-utils.js";
-import { normalizeDateRange } from "../utils/date-utils.js";
 
 /**
  * Searches for companies by name
@@ -583,156 +573,4 @@ export async function batchGetCompanyDetails(
     
     return results;
   }
-}
-
-/**
- * Advanced search for companies with date filtering capabilities
- * 
- * @param filters - Filter configuration
- * @param limit - Maximum number of records to return (default: 20)
- * @param offset - Number of records to skip (default: 0)
- * @returns Array of matching companies
- */
-export async function advancedSearchCompanies(
-  filters?: ListEntryFilters,
-  limit: number = 20,
-  offset: number = 0
-): Promise<Company[]> {
-  try {
-    const api = getAttioClient();
-    const path = "/objects/companies/records/query";
-    
-    // Prepare base request parameters
-    const requestParams: any = {
-      limit: limit,
-      offset: offset
-    };
-    
-    // Add filter configuration if present
-    if (filters && filters.filters && filters.filters.length > 0) {
-      // Transform filters to API format
-      const apiFilters = require('../utils/record-utils.js').transformFiltersToApiFormat(filters);
-      
-      if (apiFilters.filter) {
-        requestParams.filter = apiFilters.filter;
-      }
-    }
-    
-    const response = await api.post(path, requestParams);
-    return response.data.data || [];
-  } catch (error) {
-    throw error instanceof Error ? error : new Error(String(error));
-  }
-}
-
-/**
- * Create a filter for companies by name with flexible condition types
- * 
- * @param name - Company name to search for
- * @param condition - Filter condition type (default: CONTAINS)
- * @returns Filter configuration
- */
-export function createNameFilter(
-  name: string, 
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'name' },
-        condition: condition,
-        value: name
-      }
-    ]
-  };
-}
-
-/**
- * Create a filter for companies by website domain
- * 
- * @param website - Website domain to filter by
- * @param condition - Filter condition type (default: CONTAINS)
- * @returns Filter configuration
- */
-export function createWebsiteFilter(
-  website: string, 
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'website' },
-        condition: condition,
-        value: website
-      }
-    ]
-  };
-}
-
-/**
- * Create a filter for companies by industry
- * 
- * @param industry - Industry to filter by
- * @param condition - Filter condition type (default: EQUALS)
- * @returns Filter configuration
- */
-export function createIndustryFilter(
-  industry: string, 
-  condition: FilterConditionType = FilterConditionType.EQUALS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'industry' },
-        condition: condition,
-        value: industry
-      }
-    ]
-  };
-}
-
-/**
- * Create a date filter for companies based on creation date
- * 
- * @param dateRange - Date range for filtering
- * @returns Filter configuration
- */
-export function createCreatedDateFilter(dateRange: DateRange): ListEntryFilters {
-  return createDateRangeFilter('created_at', dateRange);
-}
-
-/**
- * Create a date filter for companies based on last modified date
- * 
- * @param dateRange - Date range for filtering
- * @returns Filter configuration
- */
-export function createModifiedDateFilter(dateRange: DateRange): ListEntryFilters {
-  return createDateRangeFilter('updated_at', dateRange);
-}
-
-/**
- * Create a date filter for companies based on last interaction date
- * 
- * @param dateRange - Date range for filtering
- * @returns Filter configuration
- */
-export function createLastInteractionFilter(dateRange: DateRange): ListEntryFilters {
-  return createDateRangeFilter('last_interaction', dateRange);
-}
-
-/**
- * Create a numeric range filter for companies (e.g., for employee count, revenue)
- * 
- * @param attribute - The attribute to filter on (e.g., 'employee_count', 'annual_revenue')
- * @param min - Minimum value (inclusive)
- * @param max - Maximum value (inclusive)
- * @returns Filter configuration
- */
-export function createNumericFilter(
-  attribute: string,
-  min?: number,
-  max?: number
-): ListEntryFilters {
-  return createNumericRangeFilter(attribute, min, max);
 }
