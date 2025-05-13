@@ -48,22 +48,22 @@ describe('Companies Batch Operations', () => {
 
   describe('extractCompanyId', () => {
     it('should extract ID from URI format', () => {
-      const result = (extractCompanyId as any)('attio://companies/company123');
+      const result = extractCompanyId('attio://companies/company123');
       expect(result).toBe('company123');
     });
 
     it('should handle direct IDs', () => {
-      const result = (extractCompanyId as any)('company123');
+      const result = extractCompanyId('company123');
       expect(result).toBe('company123');
     });
 
     it('should throw error for invalid resource type', () => {
-      expect(() => (extractCompanyId as any)('attio://people/person123'))
+      expect(() => extractCompanyId('attio://people/person123'))
         .toThrow('Invalid resource type in URI: Expected \'companies\', got \'people\'');
     });
 
     it('should handle malformed URIs with graceful fallback', () => {
-      const result = (extractCompanyId as any)('attio://malformed/company123/extra');
+      const result = extractCompanyId('attio://malformed/company123/extra');
       expect(result).toBe('extra');
     });
   });
@@ -100,7 +100,9 @@ describe('Companies Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchSearchObjects to fail
-      (attioOperations.batchSearchObjects as jest.Mock).mockRejectedValue(new Error('Batch operation failed'));
+      (attioOperations.batchSearchObjects as jest.Mock).mockImplementation(() => {
+        throw new Error('Batch operation failed');
+      });
       
       // Mock the searchCompanies for individual searches in the fallback
       jest.spyOn(require('../../src/objects/companies'), 'searchCompanies')
@@ -189,7 +191,9 @@ describe('Companies Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchGetObjectDetails to fail
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockRejectedValue(new Error('Batch operation failed'));
+      (attioOperations.batchGetObjectDetails as jest.Mock).mockImplementation(() => {
+        throw new Error('Batch operation failed');
+      });
       
       // Mock the getCompanyDetails for individual gets in the fallback
       jest.spyOn(require('../../src/objects/companies'), 'getCompanyDetails')
