@@ -55,6 +55,85 @@ The filter-list-entries tool supports these conditions:
 - is_empty, is_not_empty - Whether a field has a value
 - is_set, is_not_set - Whether an attribute is set
 
+#### Advanced Filtering
+
+For more complex scenarios, you can use the advanced filtering capabilities to combine multiple conditions with AND/OR logic:
+
+```
+Find companies in our "Enterprise Accounts" list that have industry equal to "Technology" OR have annual revenue greater than 10 million
+```
+
+```
+Show me people in our "Sales Leads" list who have status equals "Hot Lead" AND have last contact date less than 7 days ago
+```
+
+The advanced-filter-list-entries tool supports:
+- Multiple filter conditions combined with AND/OR logic
+- Logical operators to create complex filter expressions
+- matchAny parameter to switch between AND/OR logic between all filters
+
+#### Complex Filter Examples
+
+Here are some examples of advanced filter scenarios:
+
+**Combined Conditions with AND logic:**
+```javascript
+// Find technology companies with annual revenue greater than $5M
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "industry" },
+      condition: "equals",
+      value: "Technology"
+    },
+    {
+      attribute: { slug: "annual_revenue" },
+      condition: "greater_than",
+      value: 5000000
+    }
+  ],
+  matchAny: false // default (AND logic)
+};
+```
+
+**Combined Conditions with OR logic:**
+```javascript
+// Find companies that are either in Technology OR have revenue over $10M
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "industry" },
+      condition: "equals",
+      value: "Technology"
+    },
+    {
+      attribute: { slug: "annual_revenue" },
+      condition: "greater_than",
+      value: 10000000
+    }
+  ],
+  matchAny: true // OR logic
+};
+```
+
+**Existence and Range Conditions:**
+```javascript
+// Find companies that have a website and were created in the last year
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "website" },
+      condition: "is_set"
+    },
+    {
+      attribute: { slug: "created_at" },
+      condition: "greater_than",
+      value: "2023-01-01T00:00:00Z"
+    }
+  ]
+};
+```
+
 ### Managing List Membership
 
 Claude can help you add or remove records from lists:
@@ -500,6 +579,40 @@ async function createFilteredList() {
 }
 
 createFilteredList();
+```
+
+### Using Advanced Filtering with MCP Tools
+
+```javascript
+// Example of using the MCP advanced-filter-list-entries tool
+const advancedFilters = {
+  filters: [
+    {
+      attribute: {
+        slug: "industry"
+      },
+      condition: "equals",
+      value: "Technology",
+      logicalOperator: "or" // This filter is combined with the next using OR
+    },
+    {
+      attribute: {
+        slug: "annual_revenue"
+      },
+      condition: "greater_than",
+      value: 10000000
+    }
+  ],
+  matchAny: true // When true, ANY of the filters must match (equivalent to OR)
+                 // When false, ALL filters must match (equivalent to AND)
+};
+
+// Usage with the MCP tool
+// advanced-filter-list-entries({
+//   listId: "list_01defghijklmnopqrstuvwxy",
+//   filters: advancedFilters,
+//   limit: 50
+// })
 ```
 
 ### Using the Lists API with TypeScript

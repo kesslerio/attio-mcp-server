@@ -28,7 +28,12 @@ export type BatchItemResult<R> = BatchItemResultType<R>;
 export type BatchResponse<R> = BatchResponseType<R>;
 export type BatchConfig = BatchConfigType;
 import { ErrorType } from '../utils/error-handler.js';
-import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
+import { 
+  processListEntries, 
+  API_PARAMS, 
+  transformFiltersToApiFormat
+} from '../utils/record-utils.js';
+import { FilterValidationError } from '../errors/api-errors.js';
 
 /**
  * Configuration options for API call retry
@@ -411,13 +416,34 @@ export interface ListEntryFilter {
   };
   condition: string;
   value: any;
+  /**
+   * Optional logical operator to use when combined with other filters
+   * If not provided, default is 'and'
+   */
+  logicalOperator?: 'and' | 'or';
 }
 
 /**
  * Parameters for filtering list entries
  */
 export interface ListEntryFilters {
+  /**
+   * Individual filter conditions to apply
+   */
   filters?: ListEntryFilter[];
+  /**
+   * When true, at least one filter must match (equivalent to OR)
+   * When false or omitted, all filters must match (equivalent to AND)
+   */
+  matchAny?: boolean;
+  /**
+   * Optional array of attribute groups for complex nested conditions
+   * Each group is treated as a unit with its own logical operator
+   */
+  filterGroups?: Array<{
+    filters: ListEntryFilter[];
+    matchAny?: boolean;
+  }>;
 }
 
 /**
@@ -448,34 +474,49 @@ export async function getListEntries(
   const safeLimit = typeof limit === 'number' ? limit : undefined;
   const safeOffset = typeof offset === 'number' ? offset : undefined;
   
-  // Only include parameters that are explicitly provided
+  // Create request body with parameters and filters
   const createRequestBody = () => {
+    // Start with base parameters
     const body: any = {
-      "expand": ["record"]
+      "expand": ["record"],
+      "limit": safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
+      "offset": safeOffset !== undefined ? safeOffset : 0 // Default to 0 if not specified
     };
     
-    // Always include limit and offset as explicit parameters with default values if not provided
-    // This ensures the parameters are always present in the request
-    body.limit = safeLimit !== undefined ? safeLimit : 20; // Default to 20 if not specified
-    body.offset = safeOffset !== undefined ? safeOffset : 0; // Default to 0 if not specified
-    
-    // Add filters if provided
-    if (filters && filters.filters && filters.filters.length > 0) {
-      body.filter = {};
+    try {
+      // Use our shared utility to transform filters to API format
+      const filterObject = transformFiltersToApiFormat(filters, true);
       
-      // Convert filter array to filter object compatible with Attio API
-      filters.filters.forEach(filter => {
-        // Handle single filter
-        if (filter.attribute && filter.attribute.slug && filter.condition) {
-          // If we don't already have this attribute in our filter, initialize it
-          if (!body.filter[filter.attribute.slug]) {
-            body.filter[filter.attribute.slug] = {};
-          }
-          
-          // Add the condition
-          body.filter[filter.attribute.slug][`$${filter.condition}`] = filter.value;
+      // Add filter to body if it exists
+      if (filterObject.filter) {
+        body.filter = filterObject.filter;
+        
+        // Log filter transformation for debugging in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getListEntries] Transformed filters:', {
+            originalFilters: JSON.stringify(filters),
+            transformedFilters: JSON.stringify(filterObject.filter),
+            useOrLogic: filters?.matchAny === true,
+            filterCount: filters?.filters?.length || 0
+          });
         }
-      });
+      }
+    } catch (err: any) {
+      const error = err as Error;
+      
+      if (error instanceof FilterValidationError) {
+        // Log the problematic filters for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[getListEntries] Filter validation error:', {
+            error: error.message,
+            providedFilters: JSON.stringify(filters)
+          });
+        }
+        
+        // Rethrow with more context
+        throw new Error(`Filter validation failed: ${error.message}`);
+      }
+      throw error; // Rethrow other errors
     }
     
     return body;
@@ -560,7 +601,12 @@ export async function getListEntries(
         try {
           // If we have filters, we need to fail fast since GET endpoint doesn't support them
           if (filters && filters.filters && filters.filters.length > 0) {
-            throw new Error('GET endpoint does not support filters');
+            throw new Error(
+              'GET endpoint cannot be used with filters. This is a limitation of the Attio API. ' +
+              'When using filters, only POST endpoints with JSON body are supported. ' +
+              'The previous POST endpoints have failed but we cannot fall back to GET method ' +
+              'while keeping your filter criteria.'
+            );
           }
           
           // Build the URL with explicit parameters using consistent naming

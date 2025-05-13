@@ -1,5 +1,6 @@
 /**
  * Error class hierarchy for Attio API errors
+ * Includes specialized error types for API interactions and validation
  */
 
 /**
@@ -235,4 +236,39 @@ export function createApiErrorFromAxiosError(error: any, endpoint: string, metho
   }
   
   return createApiErrorFromStatus(statusCode, message, endpoint, method, details);
+}
+
+/**
+ * Error class for filter validation issues
+ * 
+ * Used when validating filter conditions and structures to ensure they meet
+ * the requirements of the Attio API format.
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   // Validate filter conditions
+ *   if (!isValidFilterCondition(condition)) {
+ *     throw new FilterValidationError(`Invalid filter condition: ${condition}`);
+ *   }
+ * } catch (error) {
+ *   if (error instanceof FilterValidationError) {
+ *     // Handle filter validation error
+ *   }
+ * }
+ * ```
+ */
+export class FilterValidationError extends Error {
+  /**
+   * Create a new FilterValidationError
+   * 
+   * @param message - Detailed error message explaining the validation issue
+   */
+  constructor(message: string) {
+    super(message);
+    this.name = 'FilterValidationError';
+    
+    // This line is needed to properly capture the stack trace
+    Object.setPrototypeOf(this, FilterValidationError.prototype);
+  }
 }

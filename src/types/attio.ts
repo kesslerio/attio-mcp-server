@@ -1,7 +1,7 @@
 /**
  * Common type definitions for Attio API responses and entities
  */
-import { RetryConfig } from "../api/attio-operations.js";
+import { RetryConfig, ListEntryFilter } from "../api/attio-operations.js";
 
 /**
  * Base interface for Attio record values
@@ -9,6 +9,60 @@ import { RetryConfig } from "../api/attio-operations.js";
 export interface AttioValue<T> {
   value: T;
   [key: string]: any; // Additional fields that might be present
+}
+
+/**
+ * Valid filter condition types for Attio API
+ */
+export enum FilterConditionType {
+  // Equality conditions
+  EQUALS = 'equals',
+  NOT_EQUALS = 'not_equals',
+  
+  // String conditions
+  CONTAINS = 'contains',
+  NOT_CONTAINS = 'not_contains',
+  STARTS_WITH = 'starts_with',
+  ENDS_WITH = 'ends_with',
+  
+  // Numeric/Date conditions
+  GREATER_THAN = 'greater_than',
+  LESS_THAN = 'less_than',
+  GREATER_THAN_OR_EQUALS = 'greater_than_or_equals',
+  LESS_THAN_OR_EQUALS = 'less_than_or_equals',
+  
+  // Existence conditions
+  IS_EMPTY = 'is_empty',
+  IS_NOT_EMPTY = 'is_not_empty',
+  IS_SET = 'is_set', 
+  IS_NOT_SET = 'is_not_set'
+}
+
+/**
+ * Type guard to check if a string is a valid filter condition
+ * 
+ * This function validates that a given string represents a valid filter condition
+ * type as defined in the FilterConditionType enum. It provides type safety when
+ * working with filter conditions from external input.
+ * 
+ * @param condition - The string condition to check
+ * @returns True if the condition is a valid FilterConditionType, false otherwise
+ * 
+ * @example
+ * ```typescript
+ * const userCondition = "equals";
+ * 
+ * if (isValidFilterCondition(userCondition)) {
+ *   // TypeScript knows userCondition is a FilterConditionType here
+ *   // Safe to use in filter operations
+ * } else {
+ *   // Handle invalid condition
+ *   throw new FilterValidationError(`Invalid filter condition: ${userCondition}`);
+ * }
+ * ```
+ */
+export function isValidFilterCondition(condition: string): condition is FilterConditionType {
+  return Object.values(FilterConditionType).includes(condition as FilterConditionType);
 }
 
 /**
