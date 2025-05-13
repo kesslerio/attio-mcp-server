@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Attio MCP Server Documentation
+    url: https://github.com/kesslerio/attio-mcp-server/tree/main/docs
+    about: Check the documentation before creating an issue
+  - name: GitHub Discussions
+    url: https://github.com/kesslerio/attio-mcp-server/discussions
+    about: Please ask general questions in the discussions section
