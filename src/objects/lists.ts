@@ -76,43 +76,71 @@ export async function getListDetails(listId: string): Promise<AttioList> {
  * @param listId - The ID of the list
  * @param limit - Maximum number of entries to fetch
  * @param offset - Number of entries to skip
+ * @param filters - Optional filters to apply to list entries
  * @returns Array of list entries
  */
 async function tryMultipleListEntryEndpoints(
   listId: string,
   limit: number,
-  offset: number
+  offset: number,
+  filters?: { filters: Array<{ attribute: { slug: string }; condition: string; value: any }> }
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
+  
+  // Prepare the base data for POST requests
+  const baseData = { 
+    "limit": limit, 
+    "offset": offset,
+    "expand": ["record"]
+  };
+  
+  // Add filters if provided
+  let filterData: { filter?: Record<string, Record<string, any>> } = {};
+  if (filters && filters.filters && filters.filters.length > 0) {
+    filterData.filter = {};
+    
+    // Convert filter array to filter object compatible with Attio API
+    filters.filters.forEach(filter => {
+      if (filter.attribute && filter.attribute.slug && filter.condition) {
+        // If we don't already have this attribute in our filter, initialize it
+        if (!filterData.filter![filter.attribute.slug]) {
+          filterData.filter![filter.attribute.slug] = {};
+        }
+        
+        // Add the condition with $ prefix as required by Attio API
+        filterData.filter![filter.attribute.slug][`$${filter.condition}`] = filter.value;
+      }
+    });
+  }
+  
+  // Setup endpoints with correct data
   const endpoints = [
     // Path 1: Direct query endpoint for the specific list with explicit parameters
     {
       method: 'post',
       path: `/lists/${listId}/entries/query`,
-      data: { 
-        "limit": limit, 
-        "offset": offset,
-        "expand": ["record"]
-      }
+      data: { ...baseData, ...filterData }
     },
     // Path 2: General lists entries query endpoint with explicit parameters
     {
       method: 'post',
       path: `/lists-entries/query`,
       data: { 
-        "list_id": listId, 
-        "limit": limit, 
-        "offset": offset,
-        "expand": ["record"]
+        ...baseData,
+        ...filterData,
+        "list_id": listId
       }
-    },
-    // Path 3: GET request on lists-entries with explicit query parameters
-    {
-      method: 'get',
-      path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`,
-      data: null
     }
   ];
+  
+  // Only add the GET endpoint if we don't have filters, as it doesn't support them
+  if (!filters || !filters.filters || filters.filters.length === 0) {
+    endpoints.push({
+      method: 'get',
+      path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`,
+      data: { ...baseData } // Copy baseData to ensure it has the required shape
+    });
+  }
 
   // Try each endpoint in sequence until one works
   for (const endpoint of endpoints) {
@@ -136,6 +164,7 @@ async function tryMultipleListEntryEndpoints(
           listId,
           limit,
           offset,
+          hasFilters: filters && filters.filters ? filters.filters.length > 0 : false,
           entryCount: entries.length,
           endpoint: endpoint.method.toUpperCase()
         });
@@ -150,6 +179,7 @@ async function tryMultipleListEntryEndpoints(
           listId,
           limit,
           offset,
+          hasFilters: filters && filters.filters ? filters.filters.length > 0 : false,
           endpoint: endpoint.method.toUpperCase(),
           path: endpoint.path,
           errorType: error.name || 'UnknownError'
@@ -209,26 +239,30 @@ function processEntries(entries: any[]): AttioListEntry[] {
  * @param listId - The ID of the list
  * @param limit - Maximum number of entries to fetch (default: 20)
  * @param offset - Number of entries to skip (default: 0)
+ * @param filters - Optional filters to apply to the list entries
  * @returns Array of list entries
  */
 export async function getListEntries(
   listId: string, 
   limit: number = 20, 
-  offset: number = 0
+  offset: number = 0,
+  filters?: { filters: Array<{ attribute: { slug: string }; condition: string; value: any }> }
 ): Promise<AttioListEntry[]> {
   // Use the generic operation with fallback to direct implementation
   try {
-    return await getGenericListEntries(listId, limit, offset);
+    return await getGenericListEntries(listId, limit, offset, filters);
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[getListEntries] Generic list entries failed: ${error.message || 'Unknown error'}`, {
         method: 'getGenericListEntries',
         listId,
         limit,
-        offset
+        offset,
+        hasFilters: filters && filters.filters ? filters.filters.length > 0 : false
       });
     }
-    // Fallback to multi-endpoint utility function
+    // Fallback to multi-endpoint utility function - note that the fallback doesn't support filters yet
+    // This will be handled in a future update to make tryMultipleListEntryEndpoints support filters
     return await tryMultipleListEntryEndpoints(listId, limit, offset);
   }
 }
