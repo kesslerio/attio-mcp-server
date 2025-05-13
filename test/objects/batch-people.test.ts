@@ -79,7 +79,9 @@ describe('People Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchSearchObjects to fail
-      (attioOperations.batchSearchObjects as jest.Mock).mockRejectedValue(new Error('Batch operation failed'));
+      (attioOperations.batchSearchObjects as jest.Mock).mockImplementation(() => {
+        throw new Error('Batch operation failed');
+      });
       
       // Mock the searchPeople for individual searches in the fallback
       jest.spyOn(require('../../src/objects/people'), 'searchPeople')
@@ -136,7 +138,9 @@ describe('People Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchGetObjectDetails to fail
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockRejectedValue(new Error('Batch operation failed'));
+      (attioOperations.batchGetObjectDetails as jest.Mock).mockImplementation(() => {
+        throw new Error('Batch operation failed');
+      });
       
       // Mock the getPersonDetails for individual gets in the fallback
       jest.spyOn(require('../../src/objects/people'), 'getPersonDetails')

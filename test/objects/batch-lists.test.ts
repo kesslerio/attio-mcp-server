@@ -73,8 +73,8 @@ describe('Lists Batch Operations', () => {
       (attioOperations.executeBatchOperations as jest.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
-          const results = await Promise.all(operations.map(async (op) => {
-            let data;
+          const results = await Promise.all(operations.map(async (op: any) => {
+            let data: AttioList | undefined;
             if (op.params === 'list123') {
               data = mockList1;
             } else if (op.params === 'list456') {
@@ -160,8 +160,8 @@ describe('Lists Batch Operations', () => {
       (attioOperations.executeBatchOperations as jest.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
-          const results = await Promise.all(operations.map(async (op) => {
-            let data;
+          const results = await Promise.all(operations.map(async (op: any) => {
+            let data: AttioListEntry[] = [];
             if (op.params.listId === 'list123') {
               data = [mockListEntry1, mockListEntry2];
             } else {
@@ -172,7 +172,6 @@ describe('Lists Batch Operations', () => {
               id: op.id,
               success: true,
               data
-            };
           }));
           
           // Return a properly structured BatchResponse
