@@ -115,12 +115,12 @@ To verify that the server is running correctly:
 
 - Explore the [API Reference](./api/api-overview.md) to understand the capabilities
 - Read about [Docker deployment](./docker/docker-guide.md) for production use
-- Check the [Troubleshooting](./troubleshooting.md) guide if you encounter issues
+- Check the [Troubleshooting Guide](../TROUBLESHOOTING.md) if you encounter issues
 
 ## Support
 
 If you encounter any issues, please:
 
-1. Check the [Troubleshooting](./troubleshooting.md) guide
+1. Check the [Troubleshooting Guide](../TROUBLESHOOTING.md)
 2. Look for similar issues on our [GitHub Issues](https://github.com/kesslerio/attio-mcp-server/issues) page
 3. Create a new issue if your problem isn't addressed
