@@ -31,6 +31,11 @@ export enum FilterConditionType {
   GREATER_THAN_OR_EQUALS = 'greater_than_or_equals',
   LESS_THAN_OR_EQUALS = 'less_than_or_equals',
   
+  // Date range specific conditions
+  BEFORE = 'before',
+  AFTER = 'after',
+  BETWEEN = 'between',
+  
   // Existence conditions
   IS_EMPTY = 'is_empty',
   IS_NOT_EMPTY = 'is_not_empty',
@@ -222,6 +227,54 @@ export interface AttioListResponse<T> {
 export interface AttioSingleResponse<T> {
   data: T;
   [key: string]: any;
+}
+
+/**
+ * Represents a relative date value for date range filtering
+ */
+export enum RelativeDateUnit {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+  QUARTER = 'quarter',
+  YEAR = 'year'
+}
+
+/**
+ * Represents a relative date expression for filtering
+ */
+export interface RelativeDate {
+  unit: RelativeDateUnit;
+  value: number;
+  direction: 'past' | 'future';
+}
+
+/**
+ * Represents a date range value for filtering
+ */
+export interface DateRange {
+  start?: string | RelativeDate; // ISO date string or relative date
+  end?: string | RelativeDate; // ISO date string or relative date
+}
+
+/**
+ * Checks if a value is a RelativeDate
+ */
+export function isRelativeDate(value: any): value is RelativeDate {
+  return value && 
+    typeof value === 'object' && 
+    'unit' in value && 
+    'value' in value && 
+    'direction' in value;
+}
+
+/**
+ * Checks if a value is a DateRange
+ */
+export function isDateRange(value: any): value is DateRange {
+  return value && 
+    typeof value === 'object' && 
+    ('start' in value || 'end' in value);
 }
 
 // Specific record types

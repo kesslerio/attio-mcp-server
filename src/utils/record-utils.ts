@@ -3,9 +3,16 @@
  * Provides functions for processing list entries, extracting record information,
  * and transforming filters to Attio API format.
  */
-import { AttioListEntry, isValidFilterCondition, FilterConditionType } from "../types/attio.js";
+import { 
+  AttioListEntry, 
+  isValidFilterCondition, 
+  FilterConditionType,
+  DateRange,
+  isDateRange
+} from "../types/attio.js";
 import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
 import { FilterValidationError } from "../errors/api-errors.js";
+import { normalizeDateRange } from "./date-utils.js";
 
 // API parameter constants for better maintainability
 export const API_PARAMS = {
@@ -170,14 +177,50 @@ export function transformFiltersToApiFormat(
         );
       }
       
-      // Create a condition object for this individual filter
-      const condition: any = {};
-      condition[slug] = {
-        [`$${filter.condition}`]: filter.value
-      };
-      
-      // Add to the OR conditions array
-      orConditions.push(condition);
+      // Special handling for the BETWEEN condition
+      if (filter.condition === FilterConditionType.BETWEEN && isDateRange(filter.value)) {
+        // For BETWEEN, create separate conditions for start and end dates
+        const dateRange = filter.value as DateRange;
+        const normalizedRange = normalizeDateRange(dateRange);
+        
+        // Create a combined condition for the date range
+        const rangeCondition: any = {};
+        
+        // Add conditions based on available range boundaries
+        if (normalizedRange.start && normalizedRange.end) {
+          // Both start and end are specified - create a nested AND condition
+          rangeCondition[slug] = {
+            "$and": [
+              { "$greater_than_or_equals": normalizedRange.start },
+              { "$less_than_or_equals": normalizedRange.end }
+            ]
+          };
+        } else if (normalizedRange.start) {
+          // Only start date specified
+          rangeCondition[slug] = {
+            "$greater_than_or_equals": normalizedRange.start
+          };
+        } else if (normalizedRange.end) {
+          // Only end date specified
+          rangeCondition[slug] = {
+            "$less_than_or_equals": normalizedRange.end
+          };
+        }
+        
+        // Add to the OR conditions array if we have a valid range condition
+        if (Object.keys(rangeCondition[slug]).length > 0) {
+          orConditions.push(rangeCondition);
+        }
+      } else {
+        // Standard condition handling
+        const condition: any = {};
+        condition[slug] = {
+          [`$${filter.condition}`]: filter.value
+        };
+        
+        // Add to the OR conditions array
+        orConditions.push(condition);
+      }
     });
     
     // Only return the $or structure if we have valid conditions
@@ -190,7 +233,7 @@ export function transformFiltersToApiFormat(
     return {}; // No valid conditions
   }
   
-  // Standard AND logic - similar to the original implementation
+  // Standard AND logic with enhanced support for date ranges
   const apiFilter: AttioApiFilter = {};
   let hasValidFilters = false;
   
@@ -222,11 +265,185 @@ export function transformFiltersToApiFormat(
       apiFilter[slug] = {};
     }
     
-    // Add condition with $ prefix as required by Attio API
-    apiFilter[slug][`$${filter.condition}`] = filter.value;
+    // Special handling for date range and numeric range conditions
+    if (filter.condition === FilterConditionType.BETWEEN) {
+      // For date ranges
+      if (isDateRange(filter.value)) {
+        const dateRange = filter.value as DateRange;
+        const normalizedRange = normalizeDateRange(dateRange);
+        
+        // Add start and end date conditions
+        if (normalizedRange.start) {
+          apiFilter[slug]["$greater_than_or_equals"] = normalizedRange.start;
+        }
+        
+        if (normalizedRange.end) {
+          apiFilter[slug]["$less_than_or_equals"] = normalizedRange.end;
+        }
+      }
+      // For numeric ranges (assuming the value is an object with min and max properties)
+      else if (typeof filter.value === 'object' && filter.value !== null) {
+        const range = filter.value as { min?: number; max?: number };
+        
+        if (range.min !== undefined) {
+          apiFilter[slug]["$greater_than_or_equals"] = range.min;
+        }
+        
+        if (range.max !== undefined) {
+          apiFilter[slug]["$less_than_or_equals"] = range.max;
+        }
+      }
+    }
+    // Handle before date condition
+    else if (filter.condition === FilterConditionType.BEFORE) {
+      apiFilter[slug]["$less_than_or_equals"] = filter.value;
+    }
+    // Handle after date condition
+    else if (filter.condition === FilterConditionType.AFTER) {
+      apiFilter[slug]["$greater_than_or_equals"] = filter.value;
+    }
+    // Standard condition handling
+    else {
+      apiFilter[slug][`$${filter.condition}`] = filter.value;
+    }
+    
     hasValidFilters = true;
   });
   
   // Return the filter object only if valid filters were found
   return hasValidFilters ? { filter: apiFilter } : {};
+}
+
+/**
+ * Creates a date range filter for a specific attribute
+ * 
+ * @param attributeSlug - The attribute slug to filter on
+ * @param dateRange - Date range object with start and/or end dates
+ * @returns ListEntryFilters object configured for date range filtering
+ */
+export function createDateRangeFilter(
+  attributeSlug: string,
+  dateRange: DateRange
+): ListEntryFilters {
+  // Normalize the date range
+  const normalizedRange = normalizeDateRange(dateRange);
+  const filters: ListEntryFilter[] = [];
+  
+  // Add start date filter if provided
+  if (normalizedRange.start) {
+    filters.push({
+      attribute: { slug: attributeSlug },
+      condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+      value: normalizedRange.start
+    });
+  }
+  
+  // Add end date filter if provided
+  if (normalizedRange.end) {
+    filters.push({
+      attribute: { slug: attributeSlug },
+      condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+      value: normalizedRange.end
+    });
+  }
+  
+  return {
+    filters,
+    // Use AND logic for date ranges (both start and end conditions must be met)
+    matchAny: false
+  };
+}
+
+/**
+ * Creates a "before date" filter for a specific attribute
+ * 
+ * @param attributeSlug - The attribute slug to filter on
+ * @param date - Date string or relative date
+ * @returns ListEntryFilters object configured for "before date" filtering
+ */
+export function createBeforeDateFilter(
+  attributeSlug: string,
+  date: string | DateRange
+): ListEntryFilters {
+  // If a date range is provided, use only the end date
+  if (isDateRange(date)) {
+    return createDateRangeFilter(attributeSlug, { end: date.end });
+  }
+  
+  return {
+    filters: [
+      {
+        attribute: { slug: attributeSlug },
+        condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+        value: date
+      }
+    ]
+  };
+}
+
+/**
+ * Creates an "after date" filter for a specific attribute
+ * 
+ * @param attributeSlug - The attribute slug to filter on
+ * @param date - Date string or relative date
+ * @returns ListEntryFilters object configured for "after date" filtering
+ */
+export function createAfterDateFilter(
+  attributeSlug: string,
+  date: string | DateRange
+): ListEntryFilters {
+  // If a date range is provided, use only the start date
+  if (isDateRange(date)) {
+    return createDateRangeFilter(attributeSlug, { start: date.start });
+  }
+  
+  return {
+    filters: [
+      {
+        attribute: { slug: attributeSlug },
+        condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+        value: date
+      }
+    ]
+  };
+}
+
+/**
+ * Creates a numeric range filter for a specific attribute
+ * 
+ * @param attributeSlug - The attribute slug to filter on
+ * @param min - Minimum value (inclusive)
+ * @param max - Maximum value (inclusive)
+ * @returns ListEntryFilters object configured for numeric range filtering
+ */
+export function createNumericRangeFilter(
+  attributeSlug: string,
+  min?: number,
+  max?: number
+): ListEntryFilters {
+  const filters: ListEntryFilter[] = [];
+  
+  // Add minimum value filter if provided
+  if (min !== undefined) {
+    filters.push({
+      attribute: { slug: attributeSlug },
+      condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+      value: min
+    });
+  }
+  
+  // Add maximum value filter if provided
+  if (max !== undefined) {
+    filters.push({
+      attribute: { slug: attributeSlug },
+      condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+      value: max
+    });
+  }
+  
+  return {
+    filters,
+    // Use AND logic for numeric ranges (both min and max conditions must be met)
+    matchAny: false
+  };
 }

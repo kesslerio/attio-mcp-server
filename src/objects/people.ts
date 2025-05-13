@@ -11,13 +11,24 @@ import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse
+  BatchResponse,
+  ListEntryFilters
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Person, 
-  AttioNote
+  AttioNote,
+  FilterConditionType,
+  DateRange,
+  RelativeDate
 } from "../types/attio.js";
+import {
+  createDateRangeFilter,
+  createBeforeDateFilter,
+  createAfterDateFilter,
+  createNumericRangeFilter
+} from "../utils/record-utils.js";
+import { normalizeDateRange } from "../utils/date-utils.js";
 
 /**
  * Searches for people by name, email, or phone number
@@ -377,4 +388,176 @@ export async function batchGetPeopleDetails(
     
     return results;
   }
+}
+
+/**
+ * Advanced search for people with date filtering capabilities
+ * 
+ * @param filters - Filter configuration
+ * @param limit - Maximum number of records to return (default: 20)
+ * @param offset - Number of records to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function advancedSearchPeople(
+  filters?: ListEntryFilters,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Person[]> {
+  // Always ensure higher limit when filtering client-side for email/phone
+  // to have enough data for post-filtering
+  const apiLimit = limit * 3; // 3x to ensure we have enough data after client filtering
+  
+  try {
+    const api = getAttioClient();
+    const path = "/objects/people/records/query";
+    
+    // Prepare base request parameters
+    const requestParams: any = {
+      limit: apiLimit,
+      offset: offset
+    };
+    
+    // Add filter configuration if present
+    if (filters && filters.filters && filters.filters.length > 0) {
+      // Transform filters to API format
+      const apiFilters = require('../utils/record-utils.js').transformFiltersToApiFormat(filters);
+      
+      if (apiFilters.filter) {
+        requestParams.filter = apiFilters.filter;
+      }
+    }
+    
+    const response = await api.post(path, requestParams);
+    let results = response.data.data || [];
+    
+    // Check if we need to perform client-side filtering for email/phone
+    if (filters && filters.filters) {
+      const hasEmailFilter = filters.filters.some(f => 
+        f.attribute.slug === 'email' || 
+        (f.attribute.slug === 'contact' && f.value?.toString().includes('@'))
+      );
+      
+      const hasPhoneFilter = filters.filters.some(f => 
+        f.attribute.slug === 'phone' || 
+        (f.attribute.slug === 'contact' && /\d{3,}/.test(f.value?.toString() || ''))
+      );
+      
+      // Client-side email filtering
+      if (hasEmailFilter) {
+        const emailFilters = filters.filters.filter(f => 
+          f.attribute.slug === 'email' || 
+          (f.attribute.slug === 'contact' && f.value?.toString().includes('@'))
+        );
+        
+        results = results.filter((person: Person) => {
+          return emailFilters.some(filter => {
+            // Skip if person has no email
+            if (!person.values?.email) return false;
+            
+            const emailValue = filter.value?.toString().toLowerCase();
+            return person.values.email.some((email: {value: string}) => {
+              const personEmail = email.value?.toLowerCase() || '';
+              
+              switch (filter.condition) {
+                case FilterConditionType.EQUALS:
+                  return personEmail === emailValue;
+                case FilterConditionType.NOT_EQUALS:
+                  return personEmail !== emailValue;
+                case FilterConditionType.CONTAINS:
+                  return personEmail.includes(emailValue);
+                case FilterConditionType.NOT_CONTAINS:
+                  return !personEmail.includes(emailValue);
+                case FilterConditionType.STARTS_WITH:
+                  return personEmail.startsWith(emailValue);
+                case FilterConditionType.ENDS_WITH:
+                  return personEmail.endsWith(emailValue);
+                case FilterConditionType.IS_EMPTY:
+                  return !personEmail;
+                case FilterConditionType.IS_NOT_EMPTY:
+                  return !!personEmail;
+                default:
+                  return false;
+              }
+            });
+          });
+        });
+      }
+      
+      // Client-side phone filtering
+      if (hasPhoneFilter) {
+        const phoneFilters = filters.filters.filter(f => 
+          f.attribute.slug === 'phone' || 
+          (f.attribute.slug === 'contact' && /\d{3,}/.test(f.value?.toString() || ''))
+        );
+        
+        results = results.filter((person: Person) => {
+          return phoneFilters.some(filter => {
+            // Skip if person has no phone
+            if (!person.values?.phone) return false;
+            
+            const phoneValue = filter.value?.toString().replace(/\D/g, '');
+            return person.values.phone.some((phone: {value: string}) => {
+              const personPhone = (phone.value || '').replace(/\D/g, '');
+              
+              switch (filter.condition) {
+                case FilterConditionType.EQUALS:
+                  return personPhone === phoneValue;
+                case FilterConditionType.NOT_EQUALS:
+                  return personPhone !== phoneValue;
+                case FilterConditionType.CONTAINS:
+                  return personPhone.includes(phoneValue);
+                case FilterConditionType.NOT_CONTAINS:
+                  return !personPhone.includes(phoneValue);
+                case FilterConditionType.STARTS_WITH:
+                  return personPhone.startsWith(phoneValue);
+                case FilterConditionType.ENDS_WITH:
+                  return personPhone.endsWith(phoneValue);
+                case FilterConditionType.IS_EMPTY:
+                  return !personPhone;
+                case FilterConditionType.IS_NOT_EMPTY:
+                  return !!personPhone;
+                default:
+                  return false;
+              }
+            });
+          });
+        });
+      }
+    }
+    
+    // Apply original limit and offset after client-side filtering
+    return results.slice(0, limit);
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Create a date filter for people based on creation date
+ * 
+ * @param dateRange - Date range for filtering
+ * @returns Filter configuration
+ */
+export function createCreatedDateFilter(dateRange: DateRange): ListEntryFilters {
+  return createDateRangeFilter('created_at', dateRange);
+}
+
+/**
+ * Create a date filter for people based on last modified date
+ * 
+ * @param dateRange - Date range for filtering
+ * @returns Filter configuration
+ */
+export function createModifiedDateFilter(dateRange: DateRange): ListEntryFilters {
+  return createDateRangeFilter('updated_at', dateRange);
+}
+
+/**
+ * Create a date filter for people based on last interaction date
+ * 
+ * @param dateRange - Date range for filtering
+ * @returns Filter configuration
+ */
+export function createLastInteractionFilter(dateRange: DateRange): ListEntryFilters {
+  return createDateRangeFilter('last_interaction', dateRange);
 }
