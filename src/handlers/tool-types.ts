@@ -2,7 +2,7 @@
  * Common types for tool configurations
  */
 import { Request, Response } from "express";
-import { AttioRecord, AttioNote, AttioList, AttioListEntry, RecordAttributes } from "../types/attio.js";
+import { AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
 
 // Base tool configuration interface
 export interface ToolConfig {
@@ -33,18 +33,6 @@ export interface CreateNoteToolConfig extends ToolConfig {
   idParam?: string; // Parameter name for the ID (e.g., "companyId", "personId")
 }
 
-// Update record tool configuration
-export interface UpdateRecordToolConfig extends ToolConfig {
-  handler: (id: string, attributes: RecordAttributes) => Promise<AttioRecord>;
-  idParam?: string; // Parameter name for the ID (e.g., "companyId", "personId")
-}
-
-// Update attribute tool configuration
-export interface UpdateAttributeToolConfig extends ToolConfig {
-  handler: (id: string, attributeSlug: string, attributeValue: any) => Promise<AttioRecord>;
-  idParam?: string; // Parameter name for the ID (e.g., "companyId", "personId")
-}
-
 // Lists tool configuration
 export interface GetListsToolConfig extends ToolConfig {
   handler: () => Promise<AttioList[]>;
@@ -64,10 +52,4 @@ export interface ListActionToolConfig extends ToolConfig {
 // Prompts tool configuration
 export interface PromptsToolConfig extends ToolConfig {
   handler: (req: Request, res: Response) => Promise<void>;
-}
-
-// Advanced search tool configuration
-export interface AdvancedSearchToolConfig extends ToolConfig {
-  handler: (filters?: any, limit?: number, offset?: number) => Promise<AttioRecord[]>;
-  formatResult: (results: AttioRecord[]) => string;
 }

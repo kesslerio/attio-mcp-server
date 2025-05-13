@@ -31,8 +31,7 @@ import {
   CreateNoteToolConfig,
   GetListsToolConfig,
   GetListEntriesToolConfig,
-  ListActionToolConfig,
-  AdvancedSearchToolConfig
+  ListActionToolConfig
 } from "./tool-types.js";
 
 // Import record tool types
@@ -636,98 +635,6 @@ export function registerToolHandlers(server: Server): void {
           return createErrorResult(
             error instanceof Error ? error : new Error("Unknown error"),
             `/lists/${listId}/entries/query`,
-            "POST",
-            (error as any).response?.data || {}
-          );
-        }
-      }
-      
-      // Handle advancedSearch tools (for both people and companies)
-      if (toolType === 'advancedSearch' || 
-          toolType === 'searchByDateCreated' || 
-          toolType === 'searchByDateModified' || 
-          toolType === 'searchByLastInteraction' ||
-          toolType === 'searchByEmployeeCount' ||
-          toolType === 'searchByIndustry') {
-        
-        // Extract appropriate parameters based on tool type
-        let params: any = {};
-        
-        // Common parameters for all advanced search tools
-        let limit: number | undefined;
-        let offset: number | undefined;
-        
-        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
-          limit = Number(request.params.arguments.limit);
-        }
-        
-        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
-          offset = Number(request.params.arguments.offset);
-        }
-        
-        // Tool-specific parameters
-        if (toolType === 'advancedSearch') {
-          params.filters = request.params.arguments?.filters;
-        } else if (toolType === 'searchByDateCreated' || 
-                  toolType === 'searchByDateModified' || 
-                  toolType === 'searchByLastInteraction') {
-          params.dateRange = request.params.arguments?.dateRange;
-        } else if (toolType === 'searchByEmployeeCount') {
-          params.min = request.params.arguments?.min;
-          params.max = request.params.arguments?.max;
-        } else if (toolType === 'searchByIndustry') {
-          params.industry = request.params.arguments?.industry;
-          params.condition = request.params.arguments?.condition;
-        }
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[${toolType}] Processing request with parameters:`, {
-            ...params,
-            limit,
-            offset,
-            resourceType
-          });
-        }
-        
-        try {
-          const advancedSearchConfig = toolConfig as AdvancedSearchToolConfig;
-          
-          // Call handler with appropriate parameters based on tool type
-          // Call handler with appropriate parameters based on tool type
-          let results: any[] = [];
-          
-          if (toolType === 'advancedSearch') {
-            results = await advancedSearchConfig.handler(params.filters, limit, offset);
-          } else if (toolType === 'searchByDateCreated' || 
-                    toolType === 'searchByDateModified' || 
-                    toolType === 'searchByLastInteraction') {
-            results = await advancedSearchConfig.handler(params.dateRange, limit, offset);
-          } else if (toolType === 'searchByEmployeeCount') {
-            // Use the handler directly as defined in the tool config
-            results = await advancedSearchConfig.handler(params.min, params.max, limit);
-          } else if (toolType === 'searchByIndustry') {
-            // Use the handler directly as defined in the tool config
-            results = await advancedSearchConfig.handler(params.industry, params.condition, limit);
-          }
-          
-          // Format the results - ensure results is never undefined
-          const formattedResults = advancedSearchConfig.formatResult 
-            ? advancedSearchConfig.formatResult(results || [])
-            : JSON.stringify(results || [], null, 2);
-          
-          return {
-            content: [
-              {
-                type: "text",
-                text: formattedResults,
-              },
-            ],
-            isError: false,
-          };
-        } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
-            `/objects/${resourceType}/records/query`,
             "POST",
             (error as any).response?.data || {}
           );
