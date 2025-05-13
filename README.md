@@ -21,7 +21,13 @@ This is an MCP server for [Attio](https://attio.com/), the AI-native CRM. It all
   - [x] adding records to lists
   - [x] removing records from lists
 - [ ] Tasks API
-- [ ] Records API
+- [x] Records API
+  - [x] creating new records
+  - [x] reading record details
+  - [x] updating existing records
+  - [x] deleting records
+  - [x] listing and filtering records
+  - [x] batch operations for creating and updating records
 - [x] Core System Enhancements
   - [x] Enhanced error handling with categorized errors
   - [x] Comprehensive input validation
@@ -234,5 +240,5 @@ For comprehensive documentation, see the [Documentation Guide](./docs/README.md)
 - [Companies API](./docs/api/objects-api.md) - Documentation for the Companies API
 - [Lists API](./docs/api/lists-api.md) - Documentation for the Lists API
 - [Notes API](./docs/api/notes-api.md) - Documentation for the Notes API
-- [Records API](./docs/api/records-api.md) (Coming soon)
+- [Records API](./docs/api/records-api.md)
 - [Tasks API](./docs/api/tasks-api.md) (Coming soon)
