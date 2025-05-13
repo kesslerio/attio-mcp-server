@@ -445,7 +445,7 @@ describe('Batch Operations', () => {
       
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe('Search failed');
+      expect(result.results[1].error?.message).toBe('Search failed');
     });
   });
 

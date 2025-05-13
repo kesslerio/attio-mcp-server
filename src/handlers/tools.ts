@@ -17,7 +17,9 @@ import {
   listsToolConfigs,
   listsToolDefinitions,
   promptsToolConfigs,
-  promptsToolDefinitions
+  promptsToolDefinitions,
+  recordToolConfigs,
+  recordToolDefinitions
 } from "./tool-configs/index.js";
 
 // Import tool types
@@ -32,11 +34,23 @@ import {
   ListActionToolConfig
 } from "./tool-types.js";
 
+// Import record tool types
+import {
+  RecordCreateToolConfig,
+  RecordGetToolConfig,
+  RecordUpdateToolConfig,
+  RecordDeleteToolConfig,
+  RecordListToolConfig,
+  RecordBatchCreateToolConfig,
+  RecordBatchUpdateToolConfig
+} from "./tool-configs/records.js";
+
 // Consolidated tool configurations from modular files
 const TOOL_CONFIGS = {
   [ResourceType.COMPANIES]: companyToolConfigs,
   [ResourceType.PEOPLE]: peopleToolConfigs,
   [ResourceType.LISTS]: listsToolConfigs,
+  [ResourceType.RECORDS]: recordToolConfigs,
   // Add other resource types as needed
 };
 
@@ -45,6 +59,7 @@ const TOOL_DEFINITIONS = {
   [ResourceType.COMPANIES]: companyToolDefinitions,
   [ResourceType.PEOPLE]: peopleToolDefinitions,
   [ResourceType.LISTS]: listsToolDefinitions,
+  [ResourceType.RECORDS]: recordToolDefinitions,
   // Add other resource types as needed
 };
 
@@ -569,6 +584,230 @@ export function registerToolHandlers(server: Server): void {
             error instanceof Error ? error : new Error("Unknown error"),
             `/lists/${listId}/entries/${entryId}`,
             "DELETE",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record creation
+      if (toolType === 'create') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const attributes = request.params.arguments?.attributes || {};
+        
+        try {
+          const recordCreateConfig = toolConfig as RecordCreateToolConfig;
+          const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record retrieval
+      if (toolType === 'get') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        const attributes = request.params.arguments?.attributes as string[];
+        
+        try {
+          const recordGetConfig = toolConfig as RecordGetToolConfig;
+          const record = await recordGetConfig.handler(objectSlug, recordId, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record details for ${objectSlug}/${recordId}:\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record update
+      if (toolType === 'update') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        const attributes = request.params.arguments?.attributes || {};
+        
+        try {
+          const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
+          const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "PATCH",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record deletion
+      if (toolType === 'delete') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        
+        try {
+          const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
+          const success = await recordDeleteConfig.handler(objectSlug, recordId, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: success ? 
+                  `Record ${recordId} deleted successfully from ${objectSlug}` : 
+                  `Failed to delete record ${recordId} from ${objectSlug}`,
+              },
+            ],
+            isError: !success,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "DELETE",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record listing
+      if (toolType === 'list') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const options = { ...request.params.arguments };
+        
+        // Remove non-option properties
+        delete options.objectSlug;
+        delete options.objectId;
+        
+        try {
+          const recordListConfig = toolConfig as RecordListToolConfig;
+          const records = await recordListConfig.handler(objectSlug, options, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Found ${records.length} records in ${objectSlug}:\n${records.map((record: any) => 
+                  `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${record.id?.record_id || 'unknown'})`).join('\n')}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle batch record creation
+      if (toolType === 'batchCreate') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        try {
+          const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
+          const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Batch create operation completed for ${objectSlug}:\n` +
+                  `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
+                  `${result.results.map((r: any, i: number) => 
+                    r.success 
+                      ? `✅ Record ${i+1}: Created successfully (ID: ${r.data?.id?.record_id || 'unknown'})`
+                      : `❌ Record ${i+1}: Failed - ${r.error?.message || 'Unknown error'}`
+                  ).join('\n')}`,
+              },
+            ],
+            isError: result.summary.failed > 0,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle batch record updates
+      if (toolType === 'batchUpdate') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        try {
+          const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
+          const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Batch update operation completed for ${objectSlug}:\n` +
+                  `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
+                  `${result.results.map((r: any) => 
+                    r.success 
+                      ? `✅ Record ${r.id}: Updated successfully`
+                      : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`
+                  ).join('\n')}`,
+              },
+            ],
+            isError: result.summary.failed > 0,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
             (error as any).response?.data || {}
           );
         }

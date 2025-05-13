@@ -13,7 +13,13 @@ import {
   BatchRequestItem as BatchRequestItemType,
   BatchItemResult as BatchItemResultType,
   BatchResponse as BatchResponseType,
-  BatchConfig as BatchConfigType
+  BatchConfig as BatchConfigType,
+  RecordCreateParams,
+  RecordUpdateParams,
+  RecordListParams,
+  RecordBatchCreateParams,
+  RecordBatchUpdateParams,
+  RecordAttributes
 } from "../types/attio.js";
 
 // Re-export batch types for convenience
@@ -609,6 +615,291 @@ export async function removeRecordFromList(
     } catch (error: any) {
       if (error.response?.status === 404) {
         throw new Error(`List entry ${entryId} in list ${listId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Gets a specific object path based on slug or ID
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param objectId - Optional object ID (alternative to slug)
+ * @returns Proper path segment for the API URL
+ */
+function getObjectPath(objectSlug: string, objectId?: string): string {
+  // If object ID is provided, use it, otherwise use the slug
+  return `/objects/${objectId || objectSlug}`;
+}
+
+/**
+ * Creates a new record
+ * 
+ * @param params - Record creation parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Created record
+ */
+export async function createRecord<T extends AttioRecord>(
+  params: RecordCreateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.post<AttioSingleResponse<T>>(path, {
+        attributes: params.attributes
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to create record: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Gets a specific record by ID
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param recordId - ID of the record to retrieve
+ * @param attributes - Optional list of attribute slugs to include
+ * @param objectId - Optional object ID (alternative to slug)
+ * @param retryConfig - Optional retry configuration
+ * @returns Record details
+ */
+export async function getRecord<T extends AttioRecord>(
+  objectSlug: string,
+  recordId: string,
+  attributes?: string[],
+  objectId?: string,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(objectSlug, objectId);
+  let path = `${objectPath}/records/${recordId}`;
+  
+  // Add attributes parameter if provided
+  if (attributes && attributes.length > 0) {
+    const attributesParam = attributes.join(',');
+    path += `?attributes=${encodeURIComponent(attributesParam)}`;
+  }
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.get<AttioSingleResponse<T>>(path);
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Updates a specific record
+ * 
+ * @param params - Record update parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Updated record
+ */
+export async function updateRecord<T extends AttioRecord>(
+  params: RecordUpdateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/${params.recordId}`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.patch<AttioSingleResponse<T>>(path, {
+        attributes: params.attributes
+      });
+      
+      return response.data.data;
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to update record: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${params.recordId} not found in ${params.objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Deletes a specific record
+ * 
+ * @param objectSlug - Object slug (e.g., 'companies', 'people')
+ * @param recordId - ID of the record to delete
+ * @param objectId - Optional object ID (alternative to slug)
+ * @param retryConfig - Optional retry configuration
+ * @returns True if deletion was successful
+ */
+export async function deleteRecord(
+  objectSlug: string,
+  recordId: string,
+  objectId?: string,
+  retryConfig?: Partial<RetryConfig>
+): Promise<boolean> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(objectSlug, objectId);
+  const path = `${objectPath}/records/${recordId}`;
+  
+  return callWithRetry(async () => {
+    try {
+      await api.delete(path);
+      return true;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Lists records with filtering options
+ * 
+ * @param params - Record listing parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of records
+ */
+export async function listRecords<T extends AttioRecord>(
+  params: RecordListParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.page) {
+    queryParams.append('page', String(params.page));
+  }
+  
+  if (params.pageSize) {
+    queryParams.append('pageSize', String(params.pageSize));
+  }
+  
+  if (params.query) {
+    queryParams.append('query', params.query);
+  }
+  
+  if (params.attributes && params.attributes.length > 0) {
+    queryParams.append('attributes', params.attributes.join(','));
+  }
+  
+  if (params.sort) {
+    queryParams.append('sort', params.sort);
+  }
+  
+  if (params.direction) {
+    queryParams.append('direction', params.direction);
+  }
+  
+  const path = `${objectPath}/records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.get<AttioListResponse<T>>(path);
+      return response.data.data || [];
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(`Invalid parameters when listing ${params.objectSlug} records`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Creates multiple records in a batch operation
+ * 
+ * @param params - Batch record creation parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of created records
+ */
+export async function batchCreateRecords<T extends AttioRecord>(
+  params: RecordBatchCreateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/batch`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.post<AttioListResponse<T>>(path, {
+        records: params.records.map(record => ({ attributes: record.attributes }))
+      });
+      
+      return response.data.data || [];
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to batch create records: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
+ * Updates multiple records in a batch operation
+ * 
+ * @param params - Batch record update parameters
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of updated records
+ */
+export async function batchUpdateRecords<T extends AttioRecord>(
+  params: RecordBatchUpdateParams,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const objectPath = getObjectPath(params.objectSlug, params.objectId);
+  const path = `${objectPath}/records/batch`;
+  
+  return callWithRetry(async () => {
+    try {
+      const response = await api.patch<AttioListResponse<T>>(path, {
+        records: params.records.map(record => ({
+          id: record.id,
+          attributes: record.attributes
+        }))
+      });
+      
+      return response.data.data || [];
+    } catch (error: any) {
+      // Enhance error message with more context
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data?.message || 'Invalid parameters';
+        throw new Error(`Failed to batch update records: ${errorMsg}`);
+      } else if (error.response?.status === 404) {
+        throw new Error(`Object type ${params.objectSlug || params.objectId} not found or one of the records was not found`);
       }
       throw error;
     }
