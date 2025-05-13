@@ -4,406 +4,63 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
-import { 
-  searchCompanies, 
-  getCompanyDetails, 
-  getCompanyNotes, 
-  createCompanyNote 
-} from "../objects/companies.js";
-import {
-  searchPeople,
-  searchPeopleByEmail,
-  searchPeopleByPhone,
-  getPersonDetails,
-  getPersonNotes,
-  createPersonNote
-} from "../objects/people.js";
-import {
-  getLists,
-  getListDetails,
-  getListEntries,
-  addRecordToList,
-  removeRecordFromList
-} from "../objects/lists.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
-import { ResourceType, AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
+import { ResourceType, AttioListEntry } from "../types/attio.js";
+import { processListEntries } from "../utils/record-utils.js";
 
-// Tool Configuration Types
-interface ToolConfig {
-  name: string;
-  handler: (...args: any[]) => Promise<any>;
-}
+// Import tool configurations and definitions
+import {
+  companyToolConfigs,
+  companyToolDefinitions,
+  peopleToolConfigs,
+  peopleToolDefinitions,
+  listsToolConfigs,
+  listsToolDefinitions,
+  promptsToolConfigs,
+  promptsToolDefinitions,
+  recordToolConfigs,
+  recordToolDefinitions
+} from "./tool-configs/index.js";
 
-interface SearchToolConfig extends ToolConfig {
-  formatResult: (results: AttioRecord[]) => string;
-}
+// Import tool types
+import { 
+  ToolConfig,
+  SearchToolConfig,
+  DetailsToolConfig,
+  NotesToolConfig,
+  CreateNoteToolConfig,
+  GetListsToolConfig,
+  GetListEntriesToolConfig,
+  ListActionToolConfig
+} from "./tool-types.js";
 
-interface DetailsToolConfig extends ToolConfig {
-}
+// Import record tool types
+import {
+  RecordCreateToolConfig,
+  RecordGetToolConfig,
+  RecordUpdateToolConfig,
+  RecordDeleteToolConfig,
+  RecordListToolConfig,
+  RecordBatchCreateToolConfig,
+  RecordBatchUpdateToolConfig
+} from "./tool-configs/records.js";
 
-interface NotesToolConfig extends ToolConfig {
-}
-
-interface CreateNoteToolConfig extends ToolConfig {
-  idParam: string;
-}
-
-interface GetListsToolConfig extends ToolConfig {
-  formatResult: (results: AttioList[]) => string;
-}
-
-interface GetListEntriesToolConfig extends ToolConfig {
-  formatResult: (results: AttioListEntry[]) => string;
-}
-
-interface ListActionToolConfig extends ToolConfig {
-  idParams: string[];
-}
-
-// Configuration for all tools by resource type
-const TOOL_CONFIGS: Record<ResourceType, {
-  search?: SearchToolConfig;
-  details?: DetailsToolConfig;
-  notes?: NotesToolConfig;
-  createNote?: CreateNoteToolConfig;
-  
-  // Lists-specific operations
-  getLists?: GetListsToolConfig;
-  getListDetails?: ToolConfig;
-  getListEntries?: GetListEntriesToolConfig;
-  addRecordToList?: ListActionToolConfig;
-  removeRecordFromList?: ListActionToolConfig;
-}> = {
-  [ResourceType.COMPANIES]: {
-    search: {
-      name: "search-companies",
-      handler: searchCompanies,
-      formatResult: (results) => results.map((company) => {
-        const companyName = company.values?.name?.[0]?.value || "Unknown Company";
-        const companyId = company.id?.record_id || "Record ID not found";
-        return `${companyName}: attio://companies/${companyId}`;
-      }).join("\n"),
-    },
-    details: {
-      name: "read-company-details",
-      handler: getCompanyDetails,
-    },
-    notes: {
-      name: "read-company-notes",
-      handler: getCompanyNotes,
-    },
-    createNote: {
-      name: "create-company-note",
-      handler: createCompanyNote,
-      idParam: "companyId",
-    },
-  },
-  [ResourceType.PEOPLE]: {
-    search: {
-      name: "search-people",
-      handler: searchPeople,
-      formatResult: (results) => results.map((person) => {
-        const personName = person.values?.name?.[0]?.value || "Unknown Person";
-        const personId = person.id?.record_id || "Record ID not found";
-        const personEmail = person.values?.email?.[0]?.value ? ` (${person.values.email[0].value})` : '';
-        return `${personName}${personEmail}: attio://people/${personId}`;
-      }).join("\n"),
-    },
-    details: {
-      name: "read-person-details",
-      handler: getPersonDetails,
-    },
-    notes: {
-      name: "read-person-notes",
-      handler: getPersonNotes,
-    },
-    createNote: {
-      name: "create-person-note",
-      handler: createPersonNote,
-      idParam: "personId",
-    },
-  },
-  [ResourceType.LISTS]: {
-    getLists: {
-      name: "get-lists",
-      handler: getLists,
-      formatResult: (results) => results.map((list) => {
-        const listTitle = list.title || "Untitled List";
-        const listId = typeof list.id === 'object' ? list.id.list_id : list.id;
-        return `${listTitle}: attio://lists/${listId}`;
-      }).join("\n"),
-    },
-    getListDetails: {
-      name: "get-list-details",
-      handler: getListDetails,
-    },
-    getListEntries: {
-      name: "get-list-entries",
-      handler: getListEntries,
-      formatResult: (results) => results.map((entry) => {
-        const entryId = typeof entry.id === 'object' ? entry.id.entry_id : entry.id;
-        const recordId = entry.record_id;
-        return `Entry ID: ${entryId}, Record ID: ${recordId}`;
-      }).join("\n"),
-    },
-    addRecordToList: {
-      name: "add-record-to-list",
-      handler: addRecordToList,
-      idParams: ["listId", "recordId"],
-    },
-    removeRecordFromList: {
-      name: "remove-record-from-list",
-      handler: removeRecordFromList,
-      idParams: ["listId", "entryId"],
-    },
-  },
+// Consolidated tool configurations from modular files
+const TOOL_CONFIGS = {
+  [ResourceType.COMPANIES]: companyToolConfigs,
+  [ResourceType.PEOPLE]: peopleToolConfigs,
+  [ResourceType.LISTS]: listsToolConfigs,
+  [ResourceType.RECORDS]: recordToolConfigs,
+  // Add other resource types as needed
 };
 
-// Tool definitions including schemas, organized by resource type
-const TOOL_DEFINITIONS: Record<ResourceType, Array<{
-  name: string;
-  description: string;
-  inputSchema: any;
-}>> = {
-  [ResourceType.COMPANIES]: [
-    {
-      name: "search-companies",
-      description: "Search for companies by name",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Company name or keyword to search for",
-          },
-        },
-        required: ["query"],
-      },
-    },
-    {
-      name: "read-company-details",
-      description: "Read details of a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the company to read",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "read-company-notes",
-      description: "Read notes for a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the company to read notes for",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of notes to fetch (optional, default 10)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of notes to skip (optional, default 0)",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "create-company-note",
-      description: "Add a new note to a company",
-      inputSchema: {
-        type: "object",
-        properties: {
-          companyId: {
-            type: "string",
-            description: "ID of the company to add the note to",
-          },
-          noteTitle: {
-            type: "string",
-            description: "Title of the note",
-          },
-          noteText: {
-            type: "string",
-            description: "Text content of the note",
-          },
-        },
-        required: ["companyId", "noteTitle", "noteText"],
-      },
-    }
-  ],
-  [ResourceType.PEOPLE]: [
-    {
-      name: "search-people",
-      description: "Search for people by name, email, or phone number",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Person name, email, phone number, or keyword to search for",
-          },
-        },
-        required: ["query"],
-      },
-    },
-    {
-      name: "read-person-details",
-      description: "Read details of a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the person to read",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "read-person-notes",
-      description: "Read notes for a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          uri: {
-            type: "string",
-            description: "URI of the person to read notes for",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of notes to fetch (optional, default 10)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of notes to skip (optional, default 0)",
-          },
-        },
-        required: ["uri"],
-      },
-    },
-    {
-      name: "create-person-note",
-      description: "Add a new note to a person",
-      inputSchema: {
-        type: "object",
-        properties: {
-          personId: {
-            type: "string",
-            description: "ID of the person to add the note to",
-          },
-          noteTitle: {
-            type: "string",
-            description: "Title of the note",
-          },
-          noteText: {
-            type: "string",
-            description: "Text content of the note",
-          },
-        },
-        required: ["personId", "noteTitle", "noteText"],
-      },
-    }
-  ],
-  [ResourceType.LISTS]: [
-    {
-      name: "get-lists",
-      description: "Get all lists in the workspace",
-      inputSchema: {
-        type: "object",
-        properties: {
-          objectSlug: {
-            type: "string",
-            description: "Optional object type to filter lists by (e.g., 'companies', 'people')",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of lists to fetch (default: 20)",
-          },
-        },
-      },
-    },
-    {
-      name: "get-list-details",
-      description: "Get details for a specific list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-        },
-        required: ["listId"],
-      },
-    },
-    {
-      name: "get-list-entries",
-      description: "Get entries for a specific list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of entries to fetch (default: 20)",
-          },
-          offset: {
-            type: "number",
-            description: "Number of entries to skip (default: 0)",
-          },
-        },
-        required: ["listId"],
-      },
-    },
-    {
-      name: "add-record-to-list",
-      description: "Add a record to a list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          recordId: {
-            type: "string",
-            description: "The ID of the record to add",
-          },
-        },
-        required: ["listId", "recordId"],
-      },
-    },
-    {
-      name: "remove-record-from-list",
-      description: "Remove a record from a list",
-      inputSchema: {
-        type: "object",
-        properties: {
-          listId: {
-            type: "string",
-            description: "The ID of the list",
-          },
-          entryId: {
-            type: "string",
-            description: "The ID of the list entry to remove",
-          },
-        },
-        required: ["listId", "entryId"],
-      },
-    }
-  ]
+// Consolidated tool definitions from modular files
+const TOOL_DEFINITIONS = {
+  [ResourceType.COMPANIES]: companyToolDefinitions,
+  [ResourceType.PEOPLE]: peopleToolDefinitions,
+  [ResourceType.LISTS]: listsToolDefinitions,
+  [ResourceType.RECORDS]: recordToolDefinitions,
+  // Add other resource types as needed
 };
 
 /**
@@ -417,25 +74,21 @@ function findToolConfig(toolName: string): {
   toolConfig: ToolConfig; 
   toolType: string;
 } | undefined {
-  // Define all possible tool types
-  const toolTypes = [
-    'search', 'details', 'notes', 'createNote',
-    'getLists', 'getListDetails', 'getListEntries', 'addRecordToList', 'removeRecordFromList'
-  ] as const;
-  
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
+    if (!resourceConfig) continue;
     
-    for (const toolType of toolTypes) {
-      if (resourceConfig[toolType]?.name === toolName) {
+    for (const [toolType, config] of Object.entries(resourceConfig)) {
+      if (config && config.name === toolName) {
         return {
-          resourceType,
-          toolConfig: resourceConfig[toolType],
-          toolType
+          resourceType: resourceType as ResourceType,
+          toolConfig: config as ToolConfig,
+          toolType,
         };
       }
     }
   }
+  
   return undefined;
 }
 
@@ -495,16 +148,102 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle searchByEmail tools
+      if (toolType === 'searchByEmail') {
+        const email = request.params.arguments?.email as string;
+        try {
+          const searchToolConfig = toolConfig as SearchToolConfig;
+          const results = await searchToolConfig.handler(email);
+          const formattedResults = searchToolConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle searchByPhone tools
+      if (toolType === 'searchByPhone') {
+        const phone = request.params.arguments?.phone as string;
+        try {
+          const searchToolConfig = toolConfig as SearchToolConfig;
+          const results = await searchToolConfig.handler(phone);
+          const formattedResults = searchToolConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
       // Handle details tools
       if (toolType === 'details') {
-        const uri = request.params.arguments?.uri as string;
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
+        
+        // Use either direct ID or URI, with priority to URI if both are provided
+        if (uri) {
+          try {
+            const [uriType, uriId] = parseResourceUri(uri);
+            if (uriType !== resourceType) {
+              throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+            }
+            id = uriId;
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/details`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
         
         try {
-          const [uriType, id] = parseResourceUri(uri);
-          if (uriType !== resourceType) {
-            throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
-          }
-          
           const details = await toolConfig.handler(id);
           return {
             content: [
@@ -527,14 +266,50 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle notes tools
       if (toolType === 'notes') {
-        const uri = request.params.arguments?.uri as string;
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
         const limit = request.params.arguments?.limit as number || 10;
         const offset = request.params.arguments?.offset as number || 0;
         
+        // Use either direct ID or URI
+        if (uri) {
+          try {
+            id = uri; // Pass the full URI to the handler which now handles URI parsing
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/notes`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
+        
         try {
-          const [uriType, id] = parseResourceUri(uri);
-          if (uriType !== resourceType) {
-            throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[tools.notes] Calling notes handler for ${resourceType} with: `, {
+              id,
+              limit,
+              offset
+            });
           }
           
           const notes = await toolConfig.handler(id, limit, offset);
@@ -543,7 +318,7 @@ export function registerToolHandlers(server: Server): void {
             content: [
               {
                 type: "text",
-                text: `Found ${notes.length} notes for ${resourceType.slice(0, -1)} ${id}:\n${notes.map((note: any) => JSON.stringify(note)).join("----------\n")}`,
+                text: `Found ${notes.length} notes for ${resourceType.slice(0, -1)} ${id.includes('attio://') ? id.split('/').pop() : id}:\n${notes.length > 0 ? notes.map((note: any) => JSON.stringify(note)).join("----------\n") : "No notes found."}`,
               },
             ],
             isError: false,
@@ -562,18 +337,68 @@ export function registerToolHandlers(server: Server): void {
       if (toolType === 'createNote') {
         const createNoteConfig = toolConfig as CreateNoteToolConfig;
         const idParam = createNoteConfig.idParam;
-        const id = request.params.arguments?.[idParam] as string;
-        const noteTitle = request.params.arguments?.noteTitle as string;
-        const noteText = request.params.arguments?.noteText as string;
+        
+        if (!idParam) {
+          const configError = new Error('Missing idParam in tool configuration');
+          return createErrorResult(configError, 'tool-config', 'GET', { status: 400 });
+        }
+        
+        let id: string;
+        let uri = request.params.arguments?.uri as string;
+        const directId = request.params.arguments?.[idParam] as string;
+        const noteTitle = request.params.arguments?.title || request.params.arguments?.noteTitle as string || 'Note';
+        const noteText = request.params.arguments?.content || request.params.arguments?.noteText as string;
+        
+        if (!noteText) {
+          return createErrorResult(
+            new Error("Missing required parameter: content or noteText"),
+            "notes/create",
+            "POST",
+            { status: 400, message: "Missing required parameter: content" }
+          );
+        }
+        
+        // Use either direct ID or URI
+        if (uri) {
+          try {
+            id = uri; // Pass the full URI to the handler which now handles URI parsing
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "POST",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error(`Missing required parameter: uri or ${idParam}`),
+            "notes/create",
+            "POST",
+            { status: 400, message: `Missing required parameter: uri or ${idParam}` }
+          );
+        }
         
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[tools.createNote] Creating note for ${resourceType} with: `, {
+              id,
+              title: noteTitle,
+              textLength: typeof noteText === 'string' ? noteText.length : 0
+            });
+          }
+          
           const response = await toolConfig.handler(id, noteTitle, noteText);
           
           return {
             content: [
               {
                 type: "text",
-                text: `Note added to ${resourceType.slice(0, -1)} ${id}: attio://notes/${response?.id?.note_id}`,
+                text: `Note added to ${resourceType.slice(0, -1)} ${id.includes('attio://') ? id.split('/').pop() : id}: attio://notes/${response?.id?.note_id || 'unknown'}`,
               },
             ],
             isError: false,
@@ -650,21 +475,50 @@ export function registerToolHandlers(server: Server): void {
       // Handle getListEntries tool
       if (toolType === 'getListEntries') {
         const listId = request.params.arguments?.listId as string;
-        const limit = request.params.arguments?.limit as number || 20;
-        const offset = request.params.arguments?.offset as number || 0;
+        
+        // Ensure parameters are properly typed to match the handler expectations
+        // Convert parameters to the correct type and handle undefined values properly
+        let limit: number | undefined;
+        let offset: number | undefined;
+        
+        // Only set the parameter values if they are explicitly provided in the request
+        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+          limit = Number(request.params.arguments.limit);
+        }
+        
+        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+          offset = Number(request.params.arguments.offset);
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getListEntries Tool] Processing request with parameters:', {
+            listId,
+            limit,
+            offset,
+            request_limit_type: typeof request.params.arguments?.limit,
+            request_limit_value: request.params.arguments?.limit,
+            calculated_limit_type: typeof limit,
+            calculated_limit_value: limit
+          });
+        }
         
         try {
+          // Pass parameters directly to the handler, letting it handle defaults
           const entries = await toolConfig.handler(listId, limit, offset);
           const getListEntriesToolConfig = toolConfig as GetListEntriesToolConfig;
+          
+          // Use shared utility function to process entries and ensure record_id is available
+          const processedEntries = entries ? processListEntries(entries) : [];
+          
           const formattedResults = getListEntriesToolConfig.formatResult 
-            ? getListEntriesToolConfig.formatResult(entries)
-            : JSON.stringify(entries, null, 2);
+            ? getListEntriesToolConfig.formatResult(processedEntries)
+            : JSON.stringify(processedEntries, null, 2);
           
           return {
             content: [
               {
                 type: "text",
-                text: `Found ${entries.length} entries in list ${listId}:\n${formattedResults}`,
+                text: `Found ${processedEntries.length} entries in list ${listId}:\n${formattedResults}`,
               },
             ],
             isError: false,
@@ -730,6 +584,230 @@ export function registerToolHandlers(server: Server): void {
             error instanceof Error ? error : new Error("Unknown error"),
             `/lists/${listId}/entries/${entryId}`,
             "DELETE",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record creation
+      if (toolType === 'create') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const attributes = request.params.arguments?.attributes || {};
+        
+        try {
+          const recordCreateConfig = toolConfig as RecordCreateToolConfig;
+          const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record retrieval
+      if (toolType === 'get') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        const attributes = request.params.arguments?.attributes as string[];
+        
+        try {
+          const recordGetConfig = toolConfig as RecordGetToolConfig;
+          const record = await recordGetConfig.handler(objectSlug, recordId, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record details for ${objectSlug}/${recordId}:\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record update
+      if (toolType === 'update') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        const attributes = request.params.arguments?.attributes || {};
+        
+        try {
+          const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
+          const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "PATCH",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record deletion
+      if (toolType === 'delete') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const recordId = request.params.arguments?.recordId as string;
+        
+        try {
+          const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
+          const success = await recordDeleteConfig.handler(objectSlug, recordId, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: success ? 
+                  `Record ${recordId} deleted successfully from ${objectSlug}` : 
+                  `Failed to delete record ${recordId} from ${objectSlug}`,
+              },
+            ],
+            isError: !success,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/${recordId}`,
+            "DELETE",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle record listing
+      if (toolType === 'list') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const options = { ...request.params.arguments };
+        
+        // Remove non-option properties
+        delete options.objectSlug;
+        delete options.objectId;
+        
+        try {
+          const recordListConfig = toolConfig as RecordListToolConfig;
+          const records = await recordListConfig.handler(objectSlug, options, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Found ${records.length} records in ${objectSlug}:\n${records.map((record: any) => 
+                  `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${record.id?.record_id || 'unknown'})`).join('\n')}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle batch record creation
+      if (toolType === 'batchCreate') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        try {
+          const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
+          const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Batch create operation completed for ${objectSlug}:\n` +
+                  `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
+                  `${result.results.map((r: any, i: number) => 
+                    r.success 
+                      ? `✅ Record ${i+1}: Created successfully (ID: ${r.data?.id?.record_id || 'unknown'})`
+                      : `❌ Record ${i+1}: Failed - ${r.error?.message || 'Unknown error'}`
+                  ).join('\n')}`,
+              },
+            ],
+            isError: result.summary.failed > 0,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle batch record updates
+      if (toolType === 'batchUpdate') {
+        const objectSlug = request.params.arguments?.objectSlug as string;
+        const objectId = request.params.arguments?.objectId as string;
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        try {
+          const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
+          const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Batch update operation completed for ${objectSlug}:\n` +
+                  `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
+                  `${result.results.map((r: any) => 
+                    r.success 
+                      ? `✅ Record ${r.id}: Updated successfully`
+                      : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`
+                  ).join('\n')}`,
+              },
+            ],
+            isError: result.summary.failed > 0,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
             (error as any).response?.data || {}
           );
         }

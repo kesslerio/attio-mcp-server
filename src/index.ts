@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { initializeAttioClient } from "./api/attio-client.js";
 import { registerResourceHandlers } from "./handlers/resources.js";
 import { registerToolHandlers } from "./handlers/tools.js";
+import { registerPromptHandlers } from "./prompts/handlers.js";
 import { startHealthServer } from "./health/http-server.js";
 
 // Create server instance
@@ -17,6 +22,11 @@ const server = new Server(
     capabilities: {
       resources: {},
       tools: {},
+      // Declare both prompts/list and prompts/get capabilities
+      prompts: {
+        list: {},
+        get: {}
+      },
     },
   },
 );
@@ -34,15 +44,21 @@ async function main() {
     // Register handlers
     registerResourceHandlers(server);
     registerToolHandlers(server);
+    registerPromptHandlers(server);
     
     // Start health check server (for Docker)
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-    const healthServer = startHealthServer(port);
+    const healthServer = startHealthServer({
+      port,
+      maxRetries: 5,
+      maxRetryTime: 15000,
+      retryBackoff: 500
+    });
     
     // Handle graceful shutdown
     const shutdown = () => {
       console.log("Shutting down servers...");
-      healthServer.close();
+      (healthServer as any).shutdown?.() || healthServer.close();
       process.exit(0);
     };
     

@@ -8,6 +8,10 @@ import {
   getListEntries as getGenericListEntries,
   addRecordToList as addGenericRecordToList,
   removeRecordFromList as removeGenericRecordFromList,
+  BatchConfig,
+  BatchResponse,
+  executeBatchOperations,
+  BatchRequestItem
 } from "../api/attio-operations.js";
 import { 
   AttioList, 
@@ -26,7 +30,10 @@ export async function getLists(objectSlug?: string, limit: number = 20): Promise
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericLists(objectSlug, limit);
-  } catch (error) {
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generic getLists failed: ${error.message || 'Unknown error'}`);
+    }
     // Fallback implementation
     const api = getAttioClient();
     let path = `/lists?limit=${limit}`;
@@ -50,7 +57,10 @@ export async function getListDetails(listId: string): Promise<AttioList> {
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListDetails(listId);
-  } catch (error) {
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generic getListDetails failed: ${error.message || 'Unknown error'}`);
+    }
     // Fallback implementation
     const api = getAttioClient();
     const path = `/lists/${listId}`;
@@ -75,22 +85,31 @@ async function tryMultipleListEntryEndpoints(
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
   const endpoints = [
-    // Path 1: Direct query endpoint for the specific list
+    // Path 1: Direct query endpoint for the specific list with explicit parameters
     {
       method: 'post',
       path: `/lists/${listId}/entries/query`,
-      data: { limit, offset }
+      data: { 
+        "limit": limit, 
+        "offset": offset,
+        "expand": ["record"]
+      }
     },
-    // Path 2: General lists entries query endpoint
+    // Path 2: General lists entries query endpoint with explicit parameters
     {
       method: 'post',
       path: `/lists-entries/query`,
-      data: { list_id: listId, limit, offset }
+      data: { 
+        "list_id": listId, 
+        "limit": limit, 
+        "offset": offset,
+        "expand": ["record"]
+      }
     },
-    // Path 3: GET request on lists-entries
+    // Path 3: GET request on lists-entries with explicit query parameters
     {
       method: 'get',
-      path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}`,
+      path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`,
       data: null
     }
   ];
@@ -98,12 +117,44 @@ async function tryMultipleListEntryEndpoints(
   // Try each endpoint in sequence until one works
   for (const endpoint of endpoints) {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Trying ${endpoint.method.toUpperCase()} ${endpoint.path}`, 
+                    endpoint.data ? JSON.stringify(endpoint.data) : '');
+      }
+      
       const response = endpoint.method === 'post'
         ? await api.post(endpoint.path, endpoint.data)
         : await api.get(endpoint.path);
       
-      return response.data.data || [];
-    } catch (error) {
+      // Process the response to extract record IDs properly
+      const entries = response.data.data || [];
+      
+      // Check if entries were found and log for debugging
+      if (process.env.NODE_ENV === 'development') {
+        const messageType = entries.length > 0 ? 'SUCCESS' : 'WARNING';
+        console.log(`[tryMultipleListEntryEndpoints] [${messageType}] Found ${entries.length} entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`, {
+          listId,
+          limit,
+          offset,
+          entryCount: entries.length,
+          endpoint: endpoint.method.toUpperCase()
+        });
+      }
+      
+      // Process entries to ensure record_id is properly set
+      return processEntries(entries);
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${endpoint.path}:`, 
+                    error.message || 'Unknown error', {
+          listId,
+          limit,
+          offset,
+          endpoint: endpoint.method.toUpperCase(),
+          path: endpoint.path,
+          errorType: error.name || 'UnknownError'
+        });
+      }
       // Continue to next endpoint on failure
       continue;
     }
@@ -111,6 +162,45 @@ async function tryMultipleListEntryEndpoints(
   
   // If all endpoints fail, return empty array
   return [];
+}
+
+/**
+ * Process list entries to extract record IDs and handle complex objects
+ * 
+ * @param entries - Raw list entries from API
+ * @returns Processed entries with properly extracted record IDs
+ */
+function processEntries(entries: any[]): AttioListEntry[] {
+  return entries.map(entry => {
+    let recordId = null;
+    
+    // Try multiple potential paths to find the record ID
+    if (entry.record_id) {
+      recordId = entry.record_id;
+    } else if (entry.record?.id?.record_id) {
+      recordId = entry.record.id.record_id;
+    } else if (entry.values?.record?.id?.record_id) {
+      recordId = entry.values.record.id.record_id;
+    } else {
+      // Search for any property that might contain the record ID
+      for (const key of Object.keys(entry)) {
+        if (key.includes('record_id') && typeof entry[key] === 'string') {
+          recordId = entry[key];
+          break;
+        }
+      }
+    }
+    
+    // Format the entry with the extracted record ID
+    return {
+      ...entry,
+      record_id: recordId,
+      // Ensure the ID is properly formatted as a string to avoid [object Object]
+      id: typeof entry.id === 'object' ? 
+          { entry_id: entry.id.entry_id || entry.id.id || entry.id.toString() } : 
+          { entry_id: String(entry.id) }
+    };
+  });
 }
 
 /**
@@ -129,7 +219,15 @@ export async function getListEntries(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListEntries(listId, limit, offset);
-  } catch (error) {
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[getListEntries] Generic list entries failed: ${error.message || 'Unknown error'}`, {
+        method: 'getGenericListEntries',
+        listId,
+        limit,
+        offset
+      });
+    }
     // Fallback to multi-endpoint utility function
     return await tryMultipleListEntryEndpoints(listId, limit, offset);
   }
@@ -149,7 +247,10 @@ export async function addRecordToList(
   // Use the generic operation with fallback to direct implementation
   try {
     return await addGenericRecordToList(listId, recordId);
-  } catch (error) {
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generic addRecordToList failed: ${error.message || 'Unknown error'}`);
+    }
     // Fallback implementation
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
@@ -175,7 +276,10 @@ export async function removeRecordFromList(
   // Use the generic operation with fallback to direct implementation
   try {
     return await removeGenericRecordFromList(listId, entryId);
-  } catch (error) {
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generic removeRecordFromList failed: ${error.message || 'Unknown error'}`);
+    }
     // Fallback implementation
     const api = getAttioClient();
     const path = `/lists/${listId}/entries/${entryId}`;
@@ -183,4 +287,55 @@ export async function removeRecordFromList(
     await api.delete(path);
     return true;
   }
+}
+
+/**
+ * Gets details for multiple lists in batch
+ * 
+ * @param listIds - Array of list IDs to fetch
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with list details for each ID
+ */
+export async function batchGetListsDetails(
+  listIds: string[],
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<AttioList>> {
+  // Create batch request items
+  const operations: BatchRequestItem<string>[] = listIds.map((listId) => ({
+    params: listId,
+    id: `get_list_${listId}`
+  }));
+  
+  // Execute batch operations
+  return executeBatchOperations<string, AttioList>(
+    operations,
+    (listId) => getListDetails(listId),
+    batchConfig
+  );
+}
+
+/**
+ * Gets entries for multiple lists in batch
+ * 
+ * @param listConfigs - Array of list configurations with ID, limit, and offset
+ * @param batchConfig - Optional batch configuration
+ * @returns Batch response with list entries for each configuration
+ */
+export async function batchGetListsEntries(
+  listConfigs: Array<{ listId: string; limit?: number; offset?: number }>,
+  batchConfig?: Partial<BatchConfig>
+): Promise<BatchResponse<AttioListEntry[]>> {
+  // Create batch request items
+  const operations: BatchRequestItem<{ listId: string; limit?: number; offset?: number }>[] = 
+    listConfigs.map((config, index) => ({
+      params: config,
+      id: `get_list_entries_${config.listId}_${index}`
+    }));
+  
+  // Execute batch operations
+  return executeBatchOperations<{ listId: string; limit?: number; offset?: number }, AttioListEntry[]>(
+    operations,
+    (params) => getListEntries(params.listId, params.limit, params.offset),
+    batchConfig
+  );
 }

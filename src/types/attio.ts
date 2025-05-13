@@ -1,6 +1,7 @@
 /**
  * Common type definitions for Attio API responses and entities
  */
+import { RetryConfig } from "../api/attio-operations.js";
 
 /**
  * Base interface for Attio record values
@@ -27,6 +28,45 @@ export interface AttioRecord {
     [key: string]: any; // Other fields
   };
   [key: string]: any; // Additional top-level fields
+}
+
+/**
+ * Interface for a batch request item
+ */
+export interface BatchRequestItem<T> {
+  params: T;      // The parameters for this specific operation
+  id?: string;    // Optional ID to track this specific request
+}
+
+/**
+ * Interface for a batch operation result item
+ */
+export interface BatchItemResult<R> {
+  id?: string;     // Optional ID matching the request ID if provided
+  success: boolean; // Whether this specific operation succeeded
+  data?: R;        // The result data if successful
+  error?: any;     // Error information if failed
+}
+
+/**
+ * Interface for a batch operation response
+ */
+export interface BatchResponse<R> {
+  results: BatchItemResult<R>[];  // Individual results for each request
+  summary: {
+    total: number;    // Total number of operations attempted
+    succeeded: number; // Number of successful operations
+    failed: number;    // Number of failed operations
+  };
+}
+
+/**
+ * Configuration options for batch operations
+ */
+export interface BatchConfig {
+  maxBatchSize: number;     // Maximum number of operations in a single batch
+  continueOnError: boolean; // Whether to continue processing remaining items on error
+  retryConfig?: RetryConfig; // Optional retry configuration for batch operations
 }
 
 // Person and Company interfaces are defined in detail below
@@ -58,6 +98,7 @@ export interface AttioList {
     [key: string]: any;
   };
   title: string;
+  name?: string; // Adding name property as it appears in some API responses
   description?: string;
   object_slug: string;
   workspace_id: string;
@@ -76,7 +117,7 @@ export interface AttioListEntry {
     [key: string]: any;
   };
   list_id: string;
-  record_id: string;
+  record_id?: string; // Making this optional to better match the API reality
   created_at: string;
   updated_at?: string;
   record?: AttioRecord; // Optional included record data
@@ -89,7 +130,8 @@ export interface AttioListEntry {
 export enum ResourceType {
   PEOPLE = 'people',
   COMPANIES = 'companies',
-  LISTS = 'lists'
+  LISTS = 'lists',
+  RECORDS = 'records'
 }
 
 /**
@@ -145,4 +187,70 @@ export interface Company extends AttioRecord {
     industry?: Array<{value: string}>;
     [key: string]: any;
   };
+}
+
+/**
+ * Record attribute types
+ */
+export interface RecordAttributes {
+  [key: string]: any; // Generic attribute map
+}
+
+/**
+ * Parameters for creating a record
+ */
+export interface RecordCreateParams {
+  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
+  objectId?: string;         // Alternative to objectSlug - direct object ID
+  attributes: RecordAttributes; // Record attributes as key-value pairs
+}
+
+/**
+ * Parameters for updating a record
+ */
+export interface RecordUpdateParams {
+  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
+  objectId?: string;         // Alternative to objectSlug - direct object ID
+  recordId: string;          // ID of the record to update
+  attributes: RecordAttributes; // Record attributes to update
+}
+
+/**
+ * Parameters for listing records
+ */
+export interface RecordListParams {
+  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
+  objectId?: string;         // Alternative to objectSlug - direct object ID
+  page?: number;             // Page number to retrieve (starting at 1)
+  pageSize?: number;         // Number of items per page
+  query?: string;            // Search query to filter records
+  attributes?: string[];     // List of attribute slugs to include
+  sort?: string;             // Attribute slug to sort by
+  direction?: 'asc' | 'desc'; // Sort direction
+}
+
+/**
+ * Record item for batch operations
+ */
+export interface BatchRecordItem {
+  id?: string;               // Record ID for updates, omit for creation
+  attributes: RecordAttributes; // Record attributes
+}
+
+/**
+ * Parameters for batch creating records
+ */
+export interface RecordBatchCreateParams {
+  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
+  objectId?: string;         // Alternative to objectSlug - direct object ID
+  records: Omit<BatchRecordItem, 'id'>[]; // Array of records to create
+}
+
+/**
+ * Parameters for batch updating records
+ */
+export interface RecordBatchUpdateParams {
+  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
+  objectId?: string;         // Alternative to objectSlug - direct object ID
+  records: BatchRecordItem[]; // Array of records to update with their IDs
 }
