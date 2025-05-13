@@ -40,6 +40,26 @@ export enum FilterConditionType {
 
 /**
  * Type guard to check if a string is a valid filter condition
+ * 
+ * This function validates that a given string represents a valid filter condition
+ * type as defined in the FilterConditionType enum. It provides type safety when
+ * working with filter conditions from external input.
+ * 
+ * @param condition - The string condition to check
+ * @returns True if the condition is a valid FilterConditionType, false otherwise
+ * 
+ * @example
+ * ```typescript
+ * const userCondition = "equals";
+ * 
+ * if (isValidFilterCondition(userCondition)) {
+ *   // TypeScript knows userCondition is a FilterConditionType here
+ *   // Safe to use in filter operations
+ * } else {
+ *   // Handle invalid condition
+ *   throw new FilterValidationError(`Invalid filter condition: ${userCondition}`);
+ * }
+ * ```
  */
 export function isValidFilterCondition(condition: string): condition is FilterConditionType {
   return Object.values(FilterConditionType).includes(condition as FilterConditionType);

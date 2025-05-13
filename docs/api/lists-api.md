@@ -72,6 +72,68 @@ The advanced-filter-list-entries tool supports:
 - Logical operators to create complex filter expressions
 - matchAny parameter to switch between AND/OR logic between all filters
 
+#### Complex Filter Examples
+
+Here are some examples of advanced filter scenarios:
+
+**Combined Conditions with AND logic:**
+```javascript
+// Find technology companies with annual revenue greater than $5M
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "industry" },
+      condition: "equals",
+      value: "Technology"
+    },
+    {
+      attribute: { slug: "annual_revenue" },
+      condition: "greater_than",
+      value: 5000000
+    }
+  ],
+  matchAny: false // default (AND logic)
+};
+```
+
+**Combined Conditions with OR logic:**
+```javascript
+// Find companies that are either in Technology OR have revenue over $10M
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "industry" },
+      condition: "equals",
+      value: "Technology"
+    },
+    {
+      attribute: { slug: "annual_revenue" },
+      condition: "greater_than",
+      value: 10000000
+    }
+  ],
+  matchAny: true // OR logic
+};
+```
+
+**Existence and Range Conditions:**
+```javascript
+// Find companies that have a website and were created in the last year
+const filters = {
+  filters: [
+    {
+      attribute: { slug: "website" },
+      condition: "is_set"
+    },
+    {
+      attribute: { slug: "created_at" },
+      condition: "greater_than",
+      value: "2023-01-01T00:00:00Z"
+    }
+  ]
+};
+```
+
 ### Managing List Membership
 
 Claude can help you add or remove records from lists:

@@ -1,8 +1,11 @@
 /**
  * Utility functions for working with Attio records and responses
+ * Provides functions for processing list entries, extracting record information,
+ * and transforming filters to Attio API format.
  */
 import { AttioListEntry, isValidFilterCondition, FilterConditionType } from "../types/attio.js";
 import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
+import { FilterValidationError } from "../errors/api-errors.js";
 
 // API parameter constants for better maintainability
 export const API_PARAMS = {
@@ -108,17 +111,8 @@ export function getRecordNameFromEntry(entry: AttioListEntry): { name: string; t
 }
 
 /**
- * Error class for filter validation issues
- */
-export class FilterValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'FilterValidationError';
-  }
-}
-
-/**
  * Type for the Attio API filter object format
+ * Represents the structure expected by Attio API endpoints
  */
 export type AttioApiFilter = {
   [attributeSlug: string]: {
