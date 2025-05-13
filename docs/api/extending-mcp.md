@@ -1,17 +1,19 @@
 # Extending Attio MCP Server
 
-This guide describes how to extend the Attio MCP server to handle additional object types like People and Lists, beyond the currently implemented Companies functionality.
+This guide describes how to extend the Attio MCP server with additional features and capabilities.
 
 ## Current Architecture
 
-The current Attio MCP server has the following capabilities:
-- Reading company records
-- Reading company notes
-- Writing company notes
+The Attio MCP server already supports multiple object types:
+- **Companies**: Search, view details, manage notes
+- **People**: Search, view details, manage notes
+- **Lists**: View lists, manage entries, add/remove records
 
-## Implementing People Object Support
+This guide provides examples and patterns for extending the server with new functionality.
 
-To add support for People objects, we'll need to create several new tools and resource handlers. Here's how to implement it:
+## Example: Implementing New Object Type Support
+
+The following sections demonstrate the patterns used to implement object support, using People objects as an example. These patterns can be adapted for new object types.
 
 ### 1. Update ListResourcesRequestSchema Handler
 
@@ -349,9 +351,9 @@ if (toolName === "create-person-note") {
 }
 ```
 
-## Implementing List Management
+## Example: Implementing List Management
 
-To add list management capabilities, we'll need to create tools for working with Attio lists:
+The following example shows how to implement list management capabilities:
 
 ### 1. Add List-related Tools
 
@@ -577,47 +579,61 @@ if (toolName === "remove-record-from-list") {
 }
 ```
 
-## Refactoring Considerations
+## Best Practices for Extending the MCP Server
 
-As you expand the MCP server, consider these refactoring steps to keep the code maintainable:
+When extending the MCP server with new functionality, follow these best practices:
 
 1. **Create Helper Functions for Common Operations**: 
    - Extract repeated API call patterns into helper functions
-   - Create separate functions for different object types (companies, people, lists)
+   - Implement type-safe interfaces for all API interactions
+   - Use consistent error handling patterns
 
-2. **Modularize the Code**:
-   - Split the code into separate files based on functionality
-   - Create separate modules for each object type (companies.ts, people.ts, lists.ts)
-   - Use a common utilities module for shared functions
+2. **Follow the Modular Structure**:
+   - The codebase is already organized by object type (companies.ts, people.ts, lists.ts)
+   - Place new object handlers in their own modules in the `src/objects/` directory
+   - Use the shared utilities and API client from existing modules
 
 3. **Error Handling and Validation**:
-   - Enhance error handling with more specific error types
-   - Add input validation for all tool parameters
+   - Use the `createErrorResult` helper for consistent error responses
+   - Implement thorough input validation for all parameters
+   - Add detailed error messages that help identify the issue
 
-## Testing Your Implementation
+4. **Ensure Type Safety**:
+   - Define TypeScript interfaces for all data structures
+   - Use generics for reusable functions
+   - Leverage type guards for runtime type checking
 
-After implementing the new features:
+## Testing Your Extensions
 
-1. Build your server:
+After implementing new features:
+
+1. Build the server:
    ```sh
    npm run build
    ```
 
-2. Test with the MCP Inspector:
+2. Write unit tests in the `/test` directory that match the structure of your source files
+
+3. Test with the MCP Inspector:
    ```sh
    dotenv npx @modelcontextprotocol/inspector node ./dist/index.js
    ```
 
-3. Update your Claude Desktop configuration to use the updated server.
+4. Test each new tool with Claude to ensure it works correctly with real data
 
-4. Test each new tool with Claude to ensure it works correctly.
+## Ideas for Future Extensions
 
-## Next Steps
+Consider extending the MCP server with these additional features:
 
-After implementing People and Lists support, consider adding these features:
-
-1. **Record Creation and Updating**: Add tools to create and update records
+1. **Record Creation and Updating**: Enhance tools to create and update records
 2. **Advanced Filtering**: Implement more sophisticated search and filter options
-3. **Bulk Operations**: Add support for batch operations on records
+   - Filter by multiple criteria
+   - Support for complex boolean logic (nested AND/OR)
+   - Filter by date ranges
+3. **Bulk Operations**: Expand support for batch operations on records
 4. **Activity Tracking**: Implement tools to log activities and interactions
-5. **Custom Fields**: Add support for working with custom fields and attributes
+5. **Custom Fields**: Add better support for working with custom fields and attributes
+6. **Deals API**: Implement support for Attio's Deals functionality
+7. **Tasks API**: Implement support for task management
+8. **Improved Pagination**: Enhanced pagination support for large data sets
+9. **Webhooks Support**: Allow setting up and managing webhooks for real-time updates

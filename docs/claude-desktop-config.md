@@ -8,7 +8,7 @@ Before setting up the integration, ensure you have:
 
 1. Claude Desktop installed on your system
 2. Node.js and npm installed
-3. The attio-mcp-server package installed (`npm install -g attio-mcp-server`)
+3. The attio-mcp-server package installed or cloned from repository
 4. A valid Attio API key
 
 ## Configuration
@@ -19,8 +19,9 @@ Add the following configuration to your Claude Desktop configuration file:
 {
   "mcp_servers": {
     "attio": {
-      "command": "npx",
-      "args": ["attio-mcp-server"],
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "cwd": "/path/to/attio-mcp-server",
       "env": {
         "ATTIO_API_KEY": "your_attio_api_key_here"
       }
@@ -28,6 +29,8 @@ Add the following configuration to your Claude Desktop configuration file:
   }
 }
 ```
+
+Replace `/path/to/attio-mcp-server` with the actual path to your cloned repository.
 
 ### Configuration Location
 
@@ -52,19 +55,30 @@ To verify the integration is working correctly:
 
 The attio-mcp-server automatically exposes all available tools without requiring manual configuration. These include:
 
+### Company Tools
 - `search-companies`: Search for companies by name
 - `read-company-details`: Get detailed information about a company
 - `read-company-notes`: Retrieve notes for a company
 - `create-company-note`: Add a new note to a company
+
+### People Tools
+- `search-people`: Search for people by name
+- `read-person-details`: Get detailed information about a person
+- `read-person-notes`: Retrieve notes for a person
+- `create-person-note`: Add a new note to a person
+
+### List Tools
 - `get-lists`: Get lists from Attio
 - `get-list-entries`: Get entries from a specific list
+- `add-record-to-list`: Add a record to a list
+- `remove-record-from-list`: Remove a record from a list
 
 ## Troubleshooting
 
 If you encounter issues with the integration:
 
 1. Check that the ATTIO_API_KEY environment variable is correctly set
-2. Ensure the attio-mcp-server is installed globally or locally in your project
+2. Ensure the MCP server has been built using `npm run build`
 3. Restart Claude Desktop after making configuration changes
 4. Check Claude Desktop logs for any error messages
 
