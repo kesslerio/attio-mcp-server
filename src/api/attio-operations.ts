@@ -10,11 +10,17 @@ import {
   Company,
   AttioList,
   AttioListEntry,
-  BatchRequestItem,
-  BatchItemResult,
-  BatchResponse,
-  BatchConfig
+  BatchRequestItem as BatchRequestItemType,
+  BatchItemResult as BatchItemResultType,
+  BatchResponse as BatchResponseType,
+  BatchConfig as BatchConfigType
 } from "../types/attio.js";
+
+// Re-export batch types for convenience
+export type BatchRequestItem<T> = BatchRequestItemType<T>;
+export type BatchItemResult<R> = BatchItemResultType<R>;
+export type BatchResponse<R> = BatchResponseType<R>;
+export type BatchConfig = BatchConfigType;
 import { ErrorType } from '../utils/error-handler.js';
 import { processListEntries, API_PARAMS } from '../utils/record-utils.js';
 
