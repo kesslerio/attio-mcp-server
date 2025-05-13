@@ -30,6 +30,31 @@ Show me the companies in my "Enterprise Customers" list
 Who's in our "High Priority Prospects" list?
 ```
 
+### Filtering List Entries
+
+You can filter list entries by their attributes to find specific records:
+
+```
+Find all companies in the "Sales Pipeline" list with stage equal to "Discovery"
+```
+
+```
+Show me people in the "Candidates" list with status equal to "Interview Scheduled"
+```
+
+```
+List deals in our "Q3 Opportunities" list with value greater than 50000
+```
+
+The filter-list-entries tool supports these conditions:
+- equals, not_equals - Exact match or non-match
+- contains, not_contains - Contains or doesn't contain a string
+- starts_with, ends_with - String starts or ends with value
+- greater_than, less_than - Numeric comparisons
+- greater_than_or_equals, less_than_or_equals - Inclusive numeric comparisons
+- is_empty, is_not_empty - Whether a field has a value
+- is_set, is_not_set - Whether an attribute is set
+
 ### Managing List Membership
 
 Claude can help you add or remove records from lists:
@@ -57,10 +82,15 @@ Here are some practical workflows you can accomplish with Claude:
 3. **List Analysis**:
    - "Compare the companies in my Enterprise list vs SMB list"
    - "What's the total value of opportunities in my Q3 Pipeline list?"
+   
+4. **Filtered List Operations**:
+   - "Find all deals in my Sales Pipeline list with status equal to 'Closing' and add a note to each one"
+   - "Show me all companies in our Target Accounts list with industry equal to 'Healthcare' and last touch date greater than 30 days ago"
+   - "Create a follow-up task for each lead in our Marketing Qualified Leads list with score greater than 80"
 
 ## Version Information
 - **API Version**: v2
-- **Last Updated**: 2023-07-15
+- **Last Updated**: 2023-05-13
 - **Stability**: Stable
 
 ## Required Scopes

@@ -403,11 +403,30 @@ export async function getListDetails(
 }
 
 /**
+ * Filter definition for list entries
+ */
+export interface ListEntryFilter {
+  attribute: {
+    slug: string;
+  };
+  condition: string;
+  value: any;
+}
+
+/**
+ * Parameters for filtering list entries
+ */
+export interface ListEntryFilters {
+  filters?: ListEntryFilter[];
+}
+
+/**
  * Gets entries for a specific list
  * 
  * @param listId - The ID of the list
  * @param limit - Maximum number of entries to fetch (optional)
  * @param offset - Number of entries to skip (optional)
+ * @param filters - Optional filters to apply to list entries
  * @param retryConfig - Optional retry configuration
  * @returns Array of list entries
  */
@@ -415,6 +434,7 @@ export async function getListEntries(
   listId: string, 
   limit?: number, 
   offset?: number,
+  filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
@@ -439,6 +459,25 @@ export async function getListEntries(
     body.limit = safeLimit !== undefined ? safeLimit : 20; // Default to 20 if not specified
     body.offset = safeOffset !== undefined ? safeOffset : 0; // Default to 0 if not specified
     
+    // Add filters if provided
+    if (filters && filters.filters && filters.filters.length > 0) {
+      body.filter = {};
+      
+      // Convert filter array to filter object compatible with Attio API
+      filters.filters.forEach(filter => {
+        // Handle single filter
+        if (filter.attribute && filter.attribute.slug && filter.condition) {
+          // If we don't already have this attribute in our filter, initialize it
+          if (!body.filter[filter.attribute.slug]) {
+            body.filter[filter.attribute.slug] = {};
+          }
+          
+          // Add the condition
+          body.filter[filter.attribute.slug][`$${filter.condition}`] = filter.value;
+        }
+      });
+    }
+    
     return body;
   };
   
@@ -451,6 +490,7 @@ export async function getListEntries(
         listId,
         limit: safeLimit,
         offset: safeOffset,
+        hasFilters: filters && filters.filters ? filters.filters.length > 0 : false,
         timestamp: new Date().toISOString()
       });
     }
@@ -515,7 +555,14 @@ export async function getListEntries(
         }, true);
         
         // Last resort fallback with proper query parameter handling
+        // Note: The GET endpoint doesn't support complex filters, so we only use this as a last resort
+        // when no filters are applied
         try {
+          // If we have filters, we need to fail fast since GET endpoint doesn't support them
+          if (filters && filters.filters && filters.filters.length > 0) {
+            throw new Error('GET endpoint does not support filters');
+          }
+          
           // Build the URL with explicit parameters using consistent naming
           const params = new URLSearchParams();
           params.append('list_id', listId);
