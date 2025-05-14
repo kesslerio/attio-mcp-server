@@ -18,14 +18,16 @@ import {
   searchPeopleByCreationDate,
   searchPeopleByModificationDate,
   searchPeopleByLastInteraction,
-  searchPeopleByActivity
+  searchPeopleByActivity,
+  advancedSearchPeople
 } from "../../objects/people.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
   NotesToolConfig, 
   CreateNoteToolConfig,
-  AdvancedSearchToolConfig 
+  AdvancedSearchToolConfig,
+  DateBasedSearchToolConfig
 } from "../tool-types.js";
 
 // People tool configurations
@@ -84,7 +86,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people created in the specified date range:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'}, Created: ${person.values?.created_at || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig,
+  } as DateBasedSearchToolConfig,
   
   searchByModificationDate: {
     name: "search-people-by-modification-date",
@@ -93,7 +95,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people modified in the specified date range:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'}, Modified: ${person.values?.updated_at || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig,
+  } as DateBasedSearchToolConfig,
   
   searchByLastInteraction: {
     name: "search-people-by-last-interaction",
@@ -102,7 +104,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people with interactions in the specified date range:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig,
+  } as DateBasedSearchToolConfig,
   
   searchByActivity: {
     name: "search-people-by-activity",
@@ -111,7 +113,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people with matching activity:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig
+  } as DateBasedSearchToolConfig
 };
 
 // People tool definitions
