@@ -54,6 +54,14 @@ export const peopleToolConfigs = {
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
     }
   } as SearchToolConfig,
+  advancedSearch: {
+    name: "advanced-search-people",
+    handler: advancedSearchPeople,
+    formatResult: (results: AttioRecord[]) => {
+      return `Found ${results.length} people with specified filters:\n${results.map((person: any) => 
+        `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
+    }
+  } as AdvancedSearchToolConfig,
   details: {
     name: "get-person-details",
     handler: getPersonDetails,
@@ -148,6 +156,63 @@ export const peopleToolDefinitions = [
         }
       },
       required: ["phone"]
+    }
+  },
+  {
+    name: "advanced-search-people",
+    description: "Search for people using advanced filtering capabilities",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filters: {
+          type: "object",
+          description: "Complex filter object for advanced searching",
+          properties: {
+            filters: {
+              type: "array",
+              description: "Array of filter conditions",
+              items: {
+                type: "object",
+                properties: {
+                  attribute: {
+                    type: "object",
+                    properties: {
+                      slug: {
+                        type: "string",
+                        description: "Attribute to filter on (e.g., 'name', 'email', 'phone')"
+                      }
+                    },
+                    required: ["slug"]
+                  },
+                  condition: {
+                    type: "string",
+                    description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                  },
+                  value: {
+                    type: ["string", "number", "boolean"],
+                    description: "Value to filter by"
+                  }
+                },
+                required: ["attribute", "condition", "value"]
+              }
+            },
+            matchAny: {
+              type: "boolean",
+              description: "When true, matches any filter (OR logic). When false, matches all filters (AND logic)"
+            }
+          },
+          required: ["filters"]
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of results to return (default: 20)"
+        },
+        offset: {
+          type: "number",
+          description: "Number of results to skip (default: 0)"
+        }
+      },
+      required: ["filters"]
     }
   },
   {

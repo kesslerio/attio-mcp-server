@@ -26,6 +26,7 @@ import {
 import { 
   ToolConfig,
   SearchToolConfig,
+  AdvancedSearchToolConfig,
   DetailsToolConfig,
   NotesToolConfig,
   CreateNoteToolConfig,
@@ -1009,6 +1010,54 @@ export function registerToolHandlers(server: Server): void {
             error instanceof Error ? error : new Error("Unknown error"),
             `objects/${objectSlug}/records/batch`,
             "PATCH",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle advanced search tools
+      if (toolType === 'advancedSearch') {
+        const filters = request.params.arguments?.filters as any;
+        
+        // Convert parameters to the correct type
+        let limit: number | undefined;
+        let offset: number | undefined;
+        
+        if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+          limit = Number(request.params.arguments.limit);
+        }
+        
+        if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+          offset = Number(request.params.arguments.offset);
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
+            filters: JSON.stringify(filters),
+            limit,
+            offset
+          });
+        }
+        
+        try {
+          const advancedSearchToolConfig = toolConfig as AdvancedSearchToolConfig;
+          const results = await advancedSearchToolConfig.handler(filters, limit, offset);
+          const formattedResults = advancedSearchToolConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
+            "POST",
             (error as any).response?.data || {}
           );
         }

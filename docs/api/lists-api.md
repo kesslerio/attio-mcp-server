@@ -72,6 +72,8 @@ The advanced-filter-list-entries tool supports:
 - Logical operators to create complex filter expressions
 - matchAny parameter to switch between AND/OR logic between all filters
 
+For comprehensive documentation on advanced filtering capabilities, including examples and best practices, see the [Advanced Filtering documentation](./advanced-filtering.md). This advanced filtering approach is now available for Lists, People, and Companies.
+
 #### Complex Filter Examples
 
 Here are some examples of advanced filter scenarios:
