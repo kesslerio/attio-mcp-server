@@ -1,5 +1,5 @@
-import { BatchConfig, BatchResponse } from "../api/attio-operations.js";
-import { Person, AttioNote } from "../types/attio.js";
+import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
+import { Person, AttioNote, DateRange, InteractionType, ActivityFilter } from "../types/attio.js";
 /**
  * Searches for people by name, email, or phone number
  *
@@ -76,4 +76,51 @@ export declare function batchSearchPeople(queries: string[], batchConfig?: Parti
  * @returns Batch response with person details for each ID
  */
 export declare function batchGetPeopleDetails(personIds: string[], batchConfig?: Partial<BatchConfig>): Promise<BatchResponse<Person>>;
+/**
+ * Advanced search for people with filter capabilities
+ *
+ * @param filters - Filters to apply to the search
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function advancedSearchPeople(filters?: ListEntryFilters, limit?: number, offset?: number): Promise<Person[]>;
+/**
+ * Search for people by creation date
+ *
+ * @param dateRange - Date range to filter by (when people were created)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByCreationDate(dateRange: DateRange, limit?: number, offset?: number): Promise<Person[]>;
+/**
+ * Search for people by last modification date
+ *
+ * @param dateRange - Date range to filter by (when people were last modified)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByModificationDate(dateRange: DateRange, limit?: number, offset?: number): Promise<Person[]>;
+/**
+ * Search for people by last interaction date
+ *
+ * @param dateRange - Date range to filter by (when the last interaction occurred)
+ * @param interactionType - Optional type of interaction to filter by
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByLastInteraction(dateRange: DateRange, interactionType?: InteractionType, limit?: number, offset?: number): Promise<Person[]>;
+/**
+ * Search for people by activity history
+ * Combines date range and interaction type filters
+ *
+ * @param activityFilter - Activity filter configuration
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByActivity(activityFilter: ActivityFilter, limit?: number, offset?: number): Promise<Person[]>;
 //# sourceMappingURL=people.d.ts.map

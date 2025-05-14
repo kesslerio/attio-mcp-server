@@ -23,6 +23,9 @@ export declare enum FilterConditionType {
     LESS_THAN = "less_than",
     GREATER_THAN_OR_EQUALS = "greater_than_or_equals",
     LESS_THAN_OR_EQUALS = "less_than_or_equals",
+    BEFORE = "before",
+    AFTER = "after",
+    BETWEEN = "between",
     IS_EMPTY = "is_empty",
     IS_NOT_EMPTY = "is_not_empty",
     IS_SET = "is_set",
@@ -52,6 +55,73 @@ export declare enum FilterConditionType {
  * ```
  */
 export declare function isValidFilterCondition(condition: string): condition is FilterConditionType;
+/**
+ * Time units for relative date expressions
+ */
+export declare enum RelativeDateUnit {
+    DAY = "day",
+    WEEK = "week",
+    MONTH = "month",
+    QUARTER = "quarter",
+    YEAR = "year"
+}
+/**
+ * Supported date range preset values
+ */
+export declare enum DateRangePreset {
+    TODAY = "today",
+    YESTERDAY = "yesterday",
+    THIS_WEEK = "this_week",
+    LAST_WEEK = "last_week",
+    THIS_MONTH = "this_month",
+    LAST_MONTH = "last_month",
+    THIS_QUARTER = "this_quarter",
+    LAST_QUARTER = "last_quarter",
+    THIS_YEAR = "this_year",
+    LAST_YEAR = "last_year"
+}
+/**
+ * Representation of a relative date (e.g., "last 7 days")
+ */
+export interface RelativeDate {
+    unit: RelativeDateUnit;
+    value: number;
+    direction: 'past' | 'future';
+}
+/**
+ * Date range specification for filtering
+ */
+export interface DateRange {
+    start?: string | RelativeDate;
+    end?: string | RelativeDate;
+    preset?: string;
+}
+/**
+ * Numeric range specification for filtering
+ */
+export interface NumericRange {
+    min?: number;
+    max?: number;
+    equals?: number;
+}
+/**
+ * Interaction types for activity filtering
+ */
+export declare enum InteractionType {
+    ANY = "any",
+    EMAIL = "email",
+    CALENDAR = "calendar",
+    PHONE = "phone",
+    MEETING = "meeting",
+    CUSTOM = "custom"
+}
+/**
+ * Activity history related filtering options
+ */
+export interface ActivityFilter {
+    dateRange: DateRange;
+    interactionType?: InteractionType;
+}
 /**
  * Base interface for Attio records (common between people and companies)
  */
