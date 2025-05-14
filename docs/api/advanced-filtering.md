@@ -258,6 +258,69 @@ const dateRangeFilter = {
     }
   ]
 };
+
+// Using the createDateRangeFilter helper function
+const dateRangeFilter = createDateRangeFilter('created_at', {
+  start: "2023-01-01T00:00:00Z",
+  end: "2024-01-01T00:00:00Z"
+});
+
+// Using a preset for this month
+const thisMonthFilter = createDateRangeFilter('created_at', {
+  preset: 'this_month'
+});
+
+// Using a relative date (last 30 days)
+const last30DaysFilter = createDateRangeFilter('created_at', {
+  start: {
+    unit: 'day',
+    value: 30,
+    direction: 'past'
+  },
+  end: new Date().toISOString()
+});
+```
+
+### Numeric Range Filtering
+
+```typescript
+// Companies with revenue between $1M and $10M
+const revenueFilter = {
+  filters: [
+    {
+      attribute: { slug: 'annual_revenue' },
+      condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+      value: 1000000
+    },
+    {
+      attribute: { slug: 'annual_revenue' },
+      condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+      value: 10000000
+    }
+  ]
+};
+
+// Using the createNumericFilter helper function
+const revenueFilter = createNumericFilter('annual_revenue', {
+  min: 1000000,
+  max: 10000000
+});
+
+// Companies with exactly 500 employees
+const exactEmployeeFilter = createNumericFilter('employee_count', {
+  equals: 500
+});
+
+// Companies with at least 100 employees
+const minEmployeeFilter = createNumericFilter('employee_count', {
+  min: 100
+});
+
+// Companies with at most 1000 employees
+const maxEmployeeFilter = createNumericFilter('employee_count', {
+  max: 1000
+});
+```
 ```
 
 ## Related Documentation
