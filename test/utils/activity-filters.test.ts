@@ -21,10 +21,11 @@ describe('Activity and Historical filtering', () => {
       const dateRange: DateRange = { start: startDate };
       const filter = createDateRangeFilter('created_at', dateRange);
       
-      expect(filter.filters).toHaveLength(1);
-      expect(filter.filters[0].attribute.slug).toBe('created_at');
-      expect(filter.filters[0].condition).toBe('greater_than_or_equals');
-      expect(filter.filters[0].value).toBe(startDate);
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(1);
+      expect(filter.filters?.[0].attribute.slug).toBe('created_at');
+      expect(filter.filters?.[0].condition).toBe('greater_than_or_equals');
+      expect(filter.filters?.[0].value).toBe(startDate);
     });
     
     it('should create a filter with end date only', () => {
@@ -32,10 +33,11 @@ describe('Activity and Historical filtering', () => {
       const dateRange: DateRange = { end: endDate };
       const filter = createDateRangeFilter('created_at', dateRange);
       
-      expect(filter.filters).toHaveLength(1);
-      expect(filter.filters[0].attribute.slug).toBe('created_at');
-      expect(filter.filters[0].condition).toBe('less_than_or_equals');
-      expect(filter.filters[0].value).toBe(endDate);
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(1);
+      expect(filter.filters?.[0].attribute.slug).toBe('created_at');
+      expect(filter.filters?.[0].condition).toBe('less_than_or_equals');
+      expect(filter.filters?.[0].value).toBe(endDate);
     });
     
     it('should create a filter with both start and end dates', () => {
@@ -44,13 +46,14 @@ describe('Activity and Historical filtering', () => {
       const dateRange: DateRange = { start: startDate, end: endDate };
       const filter = createDateRangeFilter('created_at', dateRange);
       
-      expect(filter.filters).toHaveLength(2);
-      expect(filter.filters[0].attribute.slug).toBe('created_at');
-      expect(filter.filters[0].condition).toBe('greater_than_or_equals');
-      expect(filter.filters[0].value).toBe(startDate);
-      expect(filter.filters[1].attribute.slug).toBe('created_at');
-      expect(filter.filters[1].condition).toBe('less_than_or_equals');
-      expect(filter.filters[1].value).toBe(endDate);
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(2);
+      expect(filter.filters?.[0].attribute.slug).toBe('created_at');
+      expect(filter.filters?.[0].condition).toBe('greater_than_or_equals');
+      expect(filter.filters?.[0].value).toBe(startDate);
+      expect(filter.filters?.[1].attribute.slug).toBe('created_at');
+      expect(filter.filters?.[1].condition).toBe('less_than_or_equals');
+      expect(filter.filters?.[1].value).toBe(endDate);
       expect(filter.matchAny).toBe(false);
     });
   });
@@ -63,9 +66,10 @@ describe('Activity and Historical filtering', () => {
       };
       const filter = createCreatedDateFilter(dateRange);
       
-      expect(filter.filters).toHaveLength(2);
-      expect(filter.filters[0].attribute.slug).toBe('created_at');
-      expect(filter.filters[1].attribute.slug).toBe('created_at');
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(2);
+      expect(filter.filters?.[0].attribute.slug).toBe('created_at');
+      expect(filter.filters?.[1].attribute.slug).toBe('created_at');
     });
   });
   
@@ -77,9 +81,10 @@ describe('Activity and Historical filtering', () => {
       };
       const filter = createModifiedDateFilter(dateRange);
       
-      expect(filter.filters).toHaveLength(2);
-      expect(filter.filters[0].attribute.slug).toBe('updated_at');
-      expect(filter.filters[1].attribute.slug).toBe('updated_at');
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(2);
+      expect(filter.filters?.[0].attribute.slug).toBe('updated_at');
+      expect(filter.filters?.[1].attribute.slug).toBe('updated_at');
     });
   });
   
@@ -91,9 +96,10 @@ describe('Activity and Historical filtering', () => {
       };
       const filter = createLastInteractionFilter(dateRange);
       
-      expect(filter.filters).toHaveLength(2);
-      expect(filter.filters[0].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[1].attribute.slug).toBe('last_interaction');
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(2);
+      expect(filter.filters?.[0].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[1].attribute.slug).toBe('last_interaction');
     });
     
     it('should include interaction type when specified', () => {
@@ -104,12 +110,13 @@ describe('Activity and Historical filtering', () => {
       const interactionType = InteractionType.EMAIL;
       const filter = createLastInteractionFilter(dateRange, interactionType);
       
-      expect(filter.filters).toHaveLength(3);
-      expect(filter.filters[0].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[1].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[2].attribute.slug).toBe('interaction_type');
-      expect(filter.filters[2].condition).toBe('equals');
-      expect(filter.filters[2].value).toBe(interactionType);
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(3);
+      expect(filter.filters?.[0].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[1].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[2].attribute.slug).toBe('interaction_type');
+      expect(filter.filters?.[2].condition).toBe('equals');
+      expect(filter.filters?.[2].value).toBe(interactionType);
     });
     
     it('should not include interaction type when ANY is specified', () => {
@@ -120,9 +127,10 @@ describe('Activity and Historical filtering', () => {
       const interactionType = InteractionType.ANY;
       const filter = createLastInteractionFilter(dateRange, interactionType);
       
-      expect(filter.filters).toHaveLength(2);
-      expect(filter.filters[0].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[1].attribute.slug).toBe('last_interaction');
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(2);
+      expect(filter.filters?.[0].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[1].attribute.slug).toBe('last_interaction');
     });
   });
   
@@ -137,11 +145,12 @@ describe('Activity and Historical filtering', () => {
       };
       const filter = createActivityFilter(activityFilter);
       
-      expect(filter.filters).toHaveLength(3);
-      expect(filter.filters[0].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[1].attribute.slug).toBe('last_interaction');
-      expect(filter.filters[2].attribute.slug).toBe('interaction_type');
-      expect(filter.filters[2].value).toBe(InteractionType.EMAIL);
+      expect(filter.filters).toBeDefined();
+      expect(filter.filters?.length).toBe(3);
+      expect(filter.filters?.[0].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[1].attribute.slug).toBe('last_interaction');
+      expect(filter.filters?.[2].attribute.slug).toBe('interaction_type');
+      expect(filter.filters?.[2].value).toBe(InteractionType.EMAIL);
     });
   });
 });
