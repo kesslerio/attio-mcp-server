@@ -3,8 +3,10 @@
  * Provides functions for processing list entries, extracting record information,
  * and transforming filters to Attio API format.
  */
-import { isValidFilterCondition, FilterConditionType } from "../types/attio.js";
+import { isValidFilterCondition, FilterConditionType, InteractionType } from "../types/attio.js";
 import { FilterValidationError } from "../errors/api-errors.js";
+import { resolveDateRange } from "./date-utils.js";
+import { createNumericRangeFilter } from "./numeric-utils.js";
 // API parameter constants for better maintainability
 export const API_PARAMS = {
     EXPAND: "expand",
@@ -97,6 +99,18 @@ export function getRecordNameFromEntry(entry) {
     };
 }
 /**
+ * Attribute constants for better code readability and consistency
+ */
+export const ATTRIBUTE_SLUGS = {
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    LAST_INTERACTION: 'last_interaction',
+    INTERACTION_TYPE: 'interaction_type',
+    EMAIL: 'email',
+    PHONE: 'phone',
+    NAME: 'name'
+};
+/**
  * Transforms list entry filters to the format expected by the Attio API
  * This function handles both simple filters and advanced filters with logical operators
  *
@@ -180,5 +194,116 @@ export function transformFiltersToApiFormat(filters, validateConditions = true) 
     });
     // Return the filter object only if valid filters were found
     return hasValidFilters ? { filter: apiFilter } : {};
+}
+/**
+ * Creates a date range filter for a specific attribute
+ *
+ * @param attributeSlug - The attribute slug to filter on (e.g., 'created_at', 'modified_at')
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export function createDateRangeFilter(attributeSlug, dateRange) {
+    // Resolve any relative dates to absolute ISO strings
+    const resolvedRange = resolveDateRange(dateRange);
+    const filters = [];
+    // Add filter for start date if specified (using greater than or equal)
+    if (resolvedRange.start) {
+        filters.push({
+            attribute: { slug: attributeSlug },
+            condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+            value: resolvedRange.start
+        });
+    }
+    // Add filter for end date if specified (using less than or equal)
+    if (resolvedRange.end) {
+        filters.push({
+            attribute: { slug: attributeSlug },
+            condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+            value: resolvedRange.end
+        });
+    }
+    return {
+        filters,
+        // When both start and end are specified, we want records that match both (AND logic)
+        matchAny: false
+    };
+}
+/**
+ * Creates a filter for records based on their creation date
+ *
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export function createCreatedDateFilter(dateRange) {
+    return createDateRangeFilter(ATTRIBUTE_SLUGS.CREATED_AT, dateRange);
+}
+/**
+ * Creates a filter for records based on their last modification date
+ *
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export function createModifiedDateFilter(dateRange) {
+    return createDateRangeFilter(ATTRIBUTE_SLUGS.UPDATED_AT, dateRange);
+}
+/**
+ * Creates a filter for records based on their last interaction date
+ * Optionally filtered by interaction type (email, calendar, etc.)
+ *
+ * @param dateRange - Date range specification
+ * @param interactionType - Optional type of interaction to filter by
+ * @returns Configured filter object
+ */
+export function createLastInteractionFilter(dateRange, interactionType) {
+    // Basic date range filter on the last_interaction attribute
+    const filters = [];
+    const resolvedRange = resolveDateRange(dateRange);
+    // Add filter for start date if specified
+    if (resolvedRange.start) {
+        filters.push({
+            attribute: { slug: ATTRIBUTE_SLUGS.LAST_INTERACTION },
+            condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+            value: resolvedRange.start
+        });
+    }
+    // Add filter for end date if specified
+    if (resolvedRange.end) {
+        filters.push({
+            attribute: { slug: ATTRIBUTE_SLUGS.LAST_INTERACTION },
+            condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+            value: resolvedRange.end
+        });
+    }
+    // Add additional filter for interaction type if specified
+    if (interactionType && interactionType !== InteractionType.ANY) {
+        filters.push({
+            attribute: { slug: ATTRIBUTE_SLUGS.INTERACTION_TYPE },
+            condition: FilterConditionType.EQUALS,
+            value: interactionType
+        });
+    }
+    return {
+        filters,
+        matchAny: false
+    };
+}
+/**
+ * Creates a combined activity filter including date range and interaction type
+ *
+ * @param activityFilter - Activity filter configuration
+ * @returns Configured filter object
+ */
+export function createActivityFilter(activityFilter) {
+    return createLastInteractionFilter(activityFilter.dateRange, activityFilter.interactionType);
+}
+/**
+ * Creates a numeric filter for filtering by number values
+ *
+ * @param attributeSlug - The attribute slug to filter on (e.g., 'revenue', 'employee_count')
+ * @param range - Numeric range specification with min, max, or equals
+ * @returns Configured filter object
+ */
+export function createNumericFilter(attributeSlug, range) {
+    return createNumericRangeFilter(attributeSlug, range);
 }
 //# sourceMappingURL=record-utils.js.map
