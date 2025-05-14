@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "generated": "2025-05-14T00:00:00Z",
+    "description": "Default attribute mappings for Attio MCP Server"
+  },
+  "mappings": {
+    "attributes": {
+      "common": {
+        "Name": "name",
+        "Website": "website",
+        "Industry": "industry",
+        "Revenue": "annual_revenue",
+        "Annual Revenue": "annual_revenue",
+        "Employee Count": "employee_count",
+        "Employees": "employee_count",
+        "Created At": "created_at",
+        "Updated At": "updated_at",
+        "Last Interaction": "last_interaction",
+        "Interaction Type": "interaction_type",
+        "Notes": "notes",
+        "Email": "email",
+        "Phone": "phone",
+        "Mobile": "mobile",
+        "Address": "address",
+        "City": "city",
+        "State": "state",
+        "Country": "country",
+        "ZIP": "zip",
+        "Postal Code": "zip"
+      },
+      "objects": {
+        "companies": {
+          "B2B Segment": "type_persona",
+          "Type Persona": "type_persona",
+          "Company Name": "name",
+          "Company Website": "website",
+          "Company Type": "company_type"
+        },
+        "people": {
+          "First Name": "first_name",
+          "Last Name": "last_name",
+          "Full Name": "name",
+          "Title": "title",
+          "Job Title": "title",
+          "Position": "title",
+          "Department": "department",
+          "Company": "company"
+        }
+      },
+      "custom": {}
+    },
+    "objects": {
+      "Companies": "companies",
+      "People": "people",
+      "Users": "users",
+      "Activities": "activities"
+    },
+    "lists": {},
+    "relationships": {}
+  }
+}
