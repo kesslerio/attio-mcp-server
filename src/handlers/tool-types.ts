@@ -3,6 +3,7 @@
  */
 import { Request, Response } from "express";
 import { AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
+import { ListEntryFilters } from "../api/attio-operations.js";
 
 // Base tool configuration interface
 export interface ToolConfig {
@@ -14,6 +15,12 @@ export interface ToolConfig {
 // Search tool configuration
 export interface SearchToolConfig extends ToolConfig {
   handler: (query: string) => Promise<AttioRecord[]>;
+  formatResult: (results: AttioRecord[]) => string;
+}
+
+// Advanced search tool configuration
+export interface AdvancedSearchToolConfig extends ToolConfig {
+  handler: (filters: ListEntryFilters, limit?: number, offset?: number) => Promise<AttioRecord[]>;
   formatResult: (results: AttioRecord[]) => string;
 }
 
@@ -52,4 +59,10 @@ export interface ListActionToolConfig extends ToolConfig {
 // Prompts tool configuration
 export interface PromptsToolConfig extends ToolConfig {
   handler: (req: Request, res: Response) => Promise<void>;
+}
+
+// Advanced search tool configuration
+export interface AdvancedSearchToolConfig extends ToolConfig {
+  handler: (...args: any[]) => Promise<AttioRecord[]>;
+  formatResult: (results: AttioRecord[]) => string;
 }
