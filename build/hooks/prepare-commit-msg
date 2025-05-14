@@ -1,6 +1,6 @@
 #!/bin/bash
 # prepare-commit-msg hook for use with pre-commit hook
-# This script runs after the pre-commit hook and validates the commit message format
+# This script handles checking and validation after the pre-commit hook has run
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,10 +19,27 @@ fi
 # Read the commit message
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 
+# Define the standard attribution block that appears at the end of commit messages
+STANDARD_BLOCK=$'🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>'
+
+# Check if the message contains the standard attribution block
+if [[ "$COMMIT_MSG" == *"$STANDARD_BLOCK"* ]]; then
+  echo -e "${YELLOW}Warning:${NC} Found standard attribution block in commit message"
+  
+  # Remove the standard block
+  CLEANED_MSG="${COMMIT_MSG//$STANDARD_BLOCK/}"
+  echo "$CLEANED_MSG" > "$COMMIT_MSG_FILE"
+  
+  echo -e "${GREEN}✅ Attribution block has been removed from commit message.${NC}"
+fi
+
 # Validate that the commit follows the formatting requirements
 # Format should be: "Type: Description" where Type is one of:
 # Feature, Fix, Docs, Refactor, Test, Chore
 if ! grep -q -E "^(Feature|Fix|Docs|Refactor|Test|Chore): " "$COMMIT_MSG_FILE"; then
+  # Get the commit message again (may have been changed)
+  COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+  
   # Check if the message is empty after removing attribution
   if [[ -z "$COMMIT_MSG" || "$COMMIT_MSG" == "Please provide a meaningful commit message" ]]; then
     echo "Please provide a meaningful commit message" > "$COMMIT_MSG_FILE"
