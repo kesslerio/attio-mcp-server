@@ -53,14 +53,15 @@ export async function paginatedSearchPeople(
     
     // In a real implementation, we would get totalCount from the API
     // For now, we'll estimate it based on results and current page
-    const hasMore = results.length === validPageSize;
+    const resultArray = Array.isArray(results) ? results : [];
+    const hasMore = resultArray.length === validPageSize;
     const totalCount = hasMore 
       ? validPage * validPageSize + validPageSize  // Estimate more records
-      : ((validPage - 1) * validPageSize) + results.length; // Current count
+      : ((validPage - 1) * validPageSize) + resultArray.length; // Current count
     
     // Return paginated response
     return createPaginatedResponse(
-      results,
+      resultArray,
       totalCount,
       validPage,
       validPageSize
@@ -100,14 +101,15 @@ export async function paginatedSearchPeopleByCreationDate(
     
     // In a real implementation, we would get totalCount from the API
     // For now, we'll estimate it based on results and current page
-    const hasMore = results.length === validPageSize;
+    const resultArray = Array.isArray(results) ? results : [];
+    const hasMore = resultArray.length === validPageSize;
     const totalCount = hasMore 
       ? validPage * validPageSize + validPageSize  // Estimate more records
-      : ((validPage - 1) * validPageSize) + results.length; // Current count
+      : ((validPage - 1) * validPageSize) + resultArray.length; // Current count
     
     // Return paginated response
     return createPaginatedResponse(
-      results,
+      resultArray,
       totalCount,
       validPage,
       validPageSize
