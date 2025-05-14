@@ -3,7 +3,8 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { 
-  searchObject, 
+  searchObject,
+  advancedSearchObject,
   listObjects, 
   getObjectDetails, 
   getObjectNotes, 

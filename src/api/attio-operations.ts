@@ -211,6 +211,93 @@ export async function searchObject<T extends AttioRecord>(
 }
 
 /**
+ * Generic function to search any object type with advanced filtering capabilities
+ * 
+ * @param objectType - The type of object to search (people or companies)
+ * @param filters - Optional filters to apply
+ * @param limit - Maximum number of results to return (optional)
+ * @param offset - Number of results to skip (optional)
+ * @param retryConfig - Optional retry configuration
+ * @returns Array of matching records
+ */
+export async function advancedSearchObject<T extends AttioRecord>(
+  objectType: ResourceType,
+  filters?: ListEntryFilters,
+  limit?: number,
+  offset?: number,
+  retryConfig?: Partial<RetryConfig>
+): Promise<T[]> {
+  const api = getAttioClient();
+  const path = `/objects/${objectType}/records/query`;
+  
+  // Coerce input parameters to ensure proper types
+  const safeLimit = typeof limit === 'number' ? limit : undefined;
+  const safeOffset = typeof offset === 'number' ? offset : undefined;
+  
+  // Create request body with parameters and filters
+  const createRequestBody = () => {
+    // Start with base parameters
+    const body: any = {
+      "limit": safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
+      "offset": safeOffset !== undefined ? safeOffset : 0 // Default to 0 if not specified
+    };
+    
+    try {
+      // Use our shared utility to transform filters to API format
+      const filterObject = transformFiltersToApiFormat(filters, true);
+      
+      // Add filter to body if it exists
+      if (filterObject.filter) {
+        body.filter = filterObject.filter;
+        
+        // Log filter transformation for debugging in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[advancedSearchObject] Transformed filters:', {
+            originalFilters: JSON.stringify(filters),
+            transformedFilters: JSON.stringify(filterObject.filter),
+            useOrLogic: filters?.matchAny === true,
+            filterCount: filters?.filters?.length || 0
+          });
+        }
+      }
+    } catch (err: any) {
+      const error = err as Error;
+      
+      if (error instanceof FilterValidationError) {
+        // Log the problematic filters for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[advancedSearchObject] Filter validation error:', {
+            error: error.message,
+            providedFilters: JSON.stringify(filters)
+          });
+        }
+        
+        // Rethrow with more context
+        throw new Error(`Filter validation failed: ${error.message}`);
+      }
+      throw error; // Rethrow other errors
+    }
+    
+    return body;
+  };
+  
+  return callWithRetry(async () => {
+    try {
+      const requestBody = createRequestBody();
+      const response = await api.post<AttioListResponse<T>>(path, requestBody);
+      return response.data.data || [];
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error(`No ${objectType} found with the specified filters`);
+      } else if (error.response?.status === 400) {
+        throw new Error(`Invalid filter parameters for ${objectType} search: ${error.response.data?.message || 'Bad request'}`);
+      }
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
  * Generic function to list any object type with pagination and sorting
  * 
  * @param objectType - The type of object to list (people or companies)
