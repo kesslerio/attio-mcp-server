@@ -6,6 +6,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { createErrorResult } from "../utils/error-handler.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
 import { ResourceType, AttioListEntry, AttioRecord } from "../types/attio.js";
+import { ListEntryFilters } from "../api/attio-operations.js";
 import { processListEntries } from "../utils/record-utils.js";
 
 // Import tool configurations and definitions
@@ -33,7 +34,7 @@ import {
   GetListsToolConfig,
   GetListEntriesToolConfig,
   ListActionToolConfig,
-  AdvancedSearchToolConfig
+  DateBasedSearchToolConfig
 } from "./tool-types.js";
 
 // Import record tool types
@@ -895,7 +896,7 @@ export function registerToolHandlers(server: Server): void {
           toolType === 'searchByActivity') {
         
         try {
-          const advancedSearchConfig = toolConfig as AdvancedSearchToolConfig;
+          const advancedSearchConfig = toolConfig as AdvancedSearchToolConfig | DateBasedSearchToolConfig;
           let results: AttioRecord[] = [];
           
           // Parse or extract parameters based on tool type
@@ -915,7 +916,14 @@ export function registerToolHandlers(server: Server): void {
               }
             }
             
-            const response = await advancedSearchConfig.handler(dateRange, limit, offset);
+            // Create a properly typed filter object if it's not already one
+            let filter: ListEntryFilters = { filters: [] };
+            if (typeof dateRange === 'object' && dateRange !== null) {
+              filter = dateRange as ListEntryFilters;
+            } else {
+              filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: dateRange }] };
+            }
+            const response = await advancedSearchConfig.handler(filter, limit, offset);
             results = response || [];
           } 
           else if (toolType === 'searchByLastInteraction') {
@@ -935,7 +943,16 @@ export function registerToolHandlers(server: Server): void {
               }
             }
             
-            const response = await advancedSearchConfig.handler(dateRange, interactionType, limit, offset);
+            // Create a properly typed filter object
+            let filter: ListEntryFilters = { filters: [] };
+            // Construct proper filter based on date range and interaction type
+            filter = { 
+              filters: [
+                { attribute: { slug: 'last_interaction' }, condition: 'equals', value: dateRange },
+                ...(interactionType ? [{ attribute: { slug: 'interaction_type' }, condition: 'equals', value: interactionType }] : [])
+              ]
+            };
+            const response = await advancedSearchConfig.handler(filter, limit, offset);
             results = response || [];
           }
           else if (toolType === 'searchByActivity') {
@@ -954,7 +971,18 @@ export function registerToolHandlers(server: Server): void {
               }
             }
             
-            const response = await advancedSearchConfig.handler(activityFilter, limit, offset);
+            // Create a properly typed filter object
+            let filter: ListEntryFilters = { filters: [] };
+            if (typeof activityFilter === 'object' && activityFilter !== null) {
+              filter = { 
+                filters: [
+                  { attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }
+                ]
+              };
+            } else {
+              filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }] };
+            }
+            const response = await advancedSearchConfig.handler(filter, limit, offset);
             results = response || [];
           }
           
@@ -1040,7 +1068,7 @@ export function registerToolHandlers(server: Server): void {
         }
         
         try {
-          const advancedSearchToolConfig = toolConfig as AdvancedSearchToolConfig;
+          const advancedSearchToolConfig = toolConfig as AdvancedSearchToolConfig | DateBasedSearchToolConfig;
           const results = await advancedSearchToolConfig.handler(filters, limit, offset);
           const formattedResults = advancedSearchToolConfig.formatResult(results);
           
