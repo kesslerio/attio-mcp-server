@@ -3,7 +3,8 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { 
-  searchObject, 
+  searchObject,
+  advancedSearchObject,
   listObjects, 
   getObjectDetails, 
   getObjectNotes, 
@@ -11,13 +12,30 @@ import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse
+  BatchResponse,
+  ListEntryFilters
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Person, 
-  AttioNote
+  AttioNote,
+  DateRange,
+  InteractionType,
+  ActivityFilter
 } from "../types/attio.js";
+import {
+  createCreatedDateFilter,
+  createModifiedDateFilter,
+  createLastInteractionFilter,
+  createActivityFilter
+} from "../utils/filter-utils.js";
+import { FilterValidationError } from "../errors/api-errors.js";
+import { 
+  validateDateRange,
+  validateActivityFilter,
+  validateNumericParam
+} from "../utils/filter-validation.js";
+import { PaginatedResponse, createPaginatedResponse } from "../utils/pagination.js";
 
 /**
  * Searches for people by name, email, or phone number
@@ -376,5 +394,287 @@ export async function batchGetPeopleDetails(
     }));
     
     return results;
+  }
+}
+
+/**
+ * Advanced search for people with filter capabilities 
+ * 
+ * @param filters - Filters to apply to the search
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @param returnPaginated - Whether to return paginated results (default: false)
+ * @param page - Current page number, used when returnPaginated is true (default: 1)
+ * @returns Array of matching people or paginated response
+ */
+export async function advancedSearchPeople(
+  filters?: ListEntryFilters,
+  limit: number = 20,
+  offset: number = 0,
+  returnPaginated: boolean = false,
+  page: number = 1
+): Promise<Person[] | PaginatedResponse<Person>> {
+  const api = getAttioClient();
+  const path = "/objects/people/records/query";
+  
+  try {
+    // Use the filters if provided, applying any transformations needed
+    let transformedFilters = {};
+    
+    if (filters && filters.filters && filters.filters.length > 0) {
+      const { filter } = require("../utils/filter-utils.js").transformFiltersToApiFormat(filters);
+      transformedFilters = { filter };
+    }
+    
+    // Construct request with filters, limit, offset
+    const requestBody = {
+      ...transformedFilters,
+      limit,
+      offset
+    };
+    
+    const response = await api.post(path, requestBody);
+    
+    // Handle special case for email/phone filtering which might need client-side processing
+    let results = response.data.data || [];
+    
+    // Determine if we need client-side filtering for email or phone
+    const needsEmailFiltering = filters?.filters?.some(f => 
+      f.attribute?.slug === 'email'
+    );
+    
+    const needsPhoneFiltering = filters?.filters?.some(f => 
+      f.attribute?.slug === 'phone'
+    );
+    
+    // Apply client-side filtering if needed
+    if (needsEmailFiltering) {
+      // Extract the email filter value and condition
+      const emailFilter = filters?.filters?.find(f => f.attribute?.slug === 'email');
+      const emailValue = emailFilter?.value;
+      const emailCondition = emailFilter?.condition;
+      
+      if (emailValue && typeof emailValue === 'string') {
+        results = results.filter((person: Person) => {
+          if (!person.values?.email) return false;
+          
+          // Get all email values for this person
+          const emails = person.values.email.map(e => e.value?.toLowerCase());
+          
+          // Apply the appropriate condition
+          switch (emailCondition) {
+            case 'equals':
+              return emails.some(e => e === emailValue.toLowerCase());
+            case 'contains':
+              return emails.some(e => e?.includes(emailValue.toLowerCase()));
+            case 'starts_with':
+              return emails.some(e => e?.startsWith(emailValue.toLowerCase()));
+            case 'ends_with':
+              return emails.some(e => e?.endsWith(emailValue.toLowerCase()));
+            default:
+              return emails.some(e => e?.includes(emailValue.toLowerCase()));
+          }
+        });
+      }
+    }
+    
+    if (needsPhoneFiltering) {
+      // Extract the phone filter value and condition
+      const phoneFilter = filters?.filters?.find(f => f.attribute?.slug === 'phone');
+      const phoneValue = phoneFilter?.value;
+      const phoneCondition = phoneFilter?.condition;
+      
+      if (phoneValue && typeof phoneValue === 'string') {
+        const normalizedPhoneValue = phoneValue.replace(/[^0-9+]/g, '');
+        
+        results = results.filter((person: Person) => {
+          if (!person.values?.phone) return false;
+          
+          // Get all phone values for this person
+          const phones = person.values.phone.map(p => {
+            return p.value?.replace(/[^0-9+]/g, '');
+          });
+          
+          // Apply the appropriate condition
+          switch (phoneCondition) {
+            case 'equals':
+              return phones.some(p => p === normalizedPhoneValue);
+            case 'contains':
+              return phones.some(p => p?.includes(normalizedPhoneValue));
+            case 'starts_with':
+              return phones.some(p => p?.startsWith(normalizedPhoneValue));
+            case 'ends_with':
+              return phones.some(p => p?.endsWith(normalizedPhoneValue));
+            default:
+              return phones.some(p => p?.includes(normalizedPhoneValue));
+          }
+        });
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Search for people by creation date
+ * 
+ * @param dateRange - Date range to filter by (when people were created)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByCreationDate(
+  dateRange: DateRange | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createCreatedDateFilter(validatedDateRange);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people by last modification date
+ * 
+ * @param dateRange - Date range to filter by (when people were last modified)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByModificationDate(
+  dateRange: DateRange | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createModifiedDateFilter(validatedDateRange);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people by last interaction date
+ * 
+ * @param dateRange - Date range to filter by (when the last interaction occurred)
+ * @param interactionType - Optional type of interaction to filter by
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByLastInteraction(
+  dateRange: DateRange | string | any,
+  interactionType?: InteractionType | string,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate interactionType if provided
+    let validatedInteractionType: InteractionType | undefined = undefined;
+    if (interactionType !== undefined) {
+      // Convert to string if not already
+      const typeString = String(interactionType).toLowerCase();
+      
+      // Validate against enum values
+      const validTypes = Object.values(InteractionType);
+      if (!validTypes.includes(typeString as InteractionType)) {
+        throw new FilterValidationError(
+          `Invalid interaction type: "${interactionType}". ` +
+          `Valid types are: ${validTypes.join(', ')}`
+        );
+      }
+      
+      validatedInteractionType = typeString as InteractionType;
+    }
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createLastInteractionFilter(validatedDateRange, validatedInteractionType);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people by activity history
+ * Combines date range and interaction type filters
+ * 
+ * @param activityFilter - Activity filter configuration
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByActivity(
+  activityFilter: ActivityFilter | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate and normalize the activityFilter parameter
+    const validatedActivityFilter = validateActivityFilter(activityFilter);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createActivityFilter(validatedActivityFilter);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
