@@ -60,3 +60,9 @@ export interface ListActionToolConfig extends ToolConfig {
 export interface PromptsToolConfig extends ToolConfig {
   handler: (req: Request, res: Response) => Promise<void>;
 }
+
+// Advanced search tool configuration
+export interface AdvancedSearchToolConfig extends ToolConfig {
+  handler: (...args: any[]) => Promise<AttioRecord[]>;
+  formatResult: (results: AttioRecord[]) => string;
+}

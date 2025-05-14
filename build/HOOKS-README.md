@@ -1,78 +1,137 @@
-# Git Hooks for Attio MCP
+# Attribution Handling System
 
-This directory contains git hooks to enforce code quality standards and prevent unwanted AI attribution in the codebase.
+This directory contains a comprehensive system for managing code attribution in Git workflows.
 
-## Available Hooks
+## Purpose
 
-- **pre-commit**: Validates branch naming conventions and commit message format
-- **prepare-commit-msg**: Scans commit messages for AI attribution patterns and blocks commits that contain them
+This system prevents AI attribution in commit messages and PR descriptions while maintaining the core content of the commit messages. It detects and removes standard attribution blocks and patterns while preserving legitimate commit content.
+
+## Overview
+
+The Attribution Handling System is designed to enforce project-specific attribution guidelines by:
+
+1. Automatically detecting attribution patterns in commit messages and files
+2. Removing attribution statements from commit messages
+3. Preventing commits with attribution in non-exempted files
+4. Cleaning PR descriptions of attribution statements
+
+## Components
+
+### Core Components
+
+1. **Pre-commit Hook** (`hooks/pre-commit`)
+   - Scans commit messages and staged files for attribution patterns
+   - Automatically cleans commit messages
+   - Blocks commits with attribution in non-exempted files
+   - Uses configurable exemption lists to skip certain files
+
+2. **Pattern Builder** (`hooks/pattern_builder.sh`)
+   - Dynamically constructs attribution patterns at runtime
+   - Uses a configuration-based approach for flexibility
+   - Avoids hard-coding attribution patterns that could trigger detection
+
+3. **PR Creation Script** (`scripts/create_pr.sh`)
+   - Wraps GitHub CLI PR creation with attribution cleaning
+   - Removes attribution patterns from PR descriptions
+   - Ensures compliant PRs even when commits are already made
+
+### Configuration Files
+
+1. **Attribution Patterns** (`hooks/config/attribution_patterns.conf`)
+   - Stores pattern components that are combined at runtime
+   - Uses a modular approach to avoid triggering detection
+   - Separates prefixes, names, domains, and special symbols
+
+2. **Exempted Files** (`hooks/config/exempted_files.conf`)
+   - Lists files that should be exempt from attribution checks
+   - Includes the hooks and scripts themselves (necessary since they contain pattern references)
+   - Supports wildcard patterns for directories
 
 ## Installation
 
-The hooks are automatically installed via the `postinstall` script in package.json when you run `npm install`.
-
-If you need to install them manually, run:
-
-```bash
-npm run setup-hooks
-```
-
-Or run the install script directly:
-
-```bash
-./build/install-hooks.sh
-```
-
-### Installation Options
-
-The install script supports different installation methods:
-
-```bash
-# Install using symlinks (default) - keeps hooks in sync with repository changes
-./build/install-hooks.sh --symlink
-
-# Install by copying hooks directly to .git/hooks
-./build/install-hooks.sh --copy
-```
-
-## What The Hooks Do
-
-### Pre-commit Hook
-
-- Validates branch naming follows the pattern: `feature/*`, `fix/*`, `docs/*`, etc.
-- Ensures commit messages start with a valid prefix (Feature, Fix, Docs, etc.)
-- Recommends including issue references in commit messages
-
-### Prepare-commit-msg Hook
-
-Prevents commits that contain AI attribution patterns such as:
-- "Generated with Claude Code"
-- "Co-Authored-By: Claude"
-- Other AI assistant attributions
-
-## Manual Testing
-
-To manually test the hooks, use:
-
-```bash
-./build/test-hooks.sh
-```
-
-## Troubleshooting
-
-If you encounter issues with the hooks:
-
-1. Ensure the hook scripts are executable:
+1. **Install Hooks**
    ```bash
-   chmod +x build/hooks/pre-commit build/hooks/prepare-commit-msg
+   # Copy pre-commit hook to Git hooks directory
+   cp build/hooks/pre-commit .git/hooks/pre-commit
+   chmod +x .git/hooks/pre-commit
+   
+   # Ensure pattern builder is executable
+   chmod +x build/hooks/pattern_builder.sh
    ```
 
-2. Verify the hook installation:
+2. **Install PR Script**
    ```bash
-   ls -la .git/hooks/
+   # Make the PR creation script executable
+   chmod +x scripts/create_pr.sh
    ```
 
-3. Test the pattern detection:
-   ```bash
-   echo "Generated with [Claude Code]" | grep -q "Generated with \[Claude Code\]" && echo "Pattern detected"
-   ```
+## Usage
+
+### For Commits
+
+Normal Git commits will automatically be processed through the pre-commit hook:
+
+```bash
+git add .
+git commit -m "Your commit message"
+```
+
+The hook will:
+1. Remove any attribution statements from the commit message
+2. Check staged files for attribution (except exempted files)
+3. Block the commit if non-exempted files contain attribution
+
+### For Pull Requests
+
+Use the provided PR script instead of GitHub CLI directly:
+
+```bash
+./scripts/create_pr.sh "Your PR Title" "
+## Summary
+- Feature details here
+
+## Test plan
+- How to test this PR
+" main
+```
+
+The script will:
+1. Clean the PR description of any attribution statements
+2. Create the PR using GitHub CLI
+3. Return the PR URL on success
+
+## Configuration
+
+### Adding Exempted Files
+
+Edit `build/hooks/config/exempted_files.conf` to add paths that should be skipped during attribution checks:
+
+```
+# Format: One file path per line, can use wildcards
+path/to/exempt/file.txt
+path/to/exempt/directory/*
+```
+
+### Modifying Attribution Patterns
+
+Edit `build/hooks/config/attribution_patterns.conf` to adjust what patterns are detected:
+
+```
+# Add new prefixes
+new_prefix_
+
+# Add new names
+n_e_w_n_a_m_e
+```
+
+## Maintenance
+
+- **Updating Patterns**: When new attribution patterns emerge, add them to the configuration files rather than directly to the scripts
+- **Testing**: After any changes, test with sample commits containing known attribution patterns
+- **Performance**: The system is designed to be efficient, but large repositories might experience slight commit delays
+
+## Limitations
+
+1. Cannot detect highly obfuscated attribution patterns
+2. Required GitHub CLI for PR creation script
+3. Must be installed on each developer's machine for full effectiveness
