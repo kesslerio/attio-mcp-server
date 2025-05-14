@@ -2,10 +2,6 @@
 
 This directory contains a comprehensive system for managing code attribution in Git workflows.
 
-## Purpose
-
-This system prevents AI attribution in commit messages and PR descriptions while maintaining the core content of the commit messages. It detects and removes standard attribution blocks and patterns while preserving legitimate commit content.
-
 ## Overview
 
 The Attribution Handling System is designed to enforce project-specific attribution guidelines by:

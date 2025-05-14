@@ -541,7 +541,8 @@ export async function searchPeopleByCreationDate(
     
     // Create the filter and perform the search
     const filters = createCreatedDateFilter(validatedDateRange);
-    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
@@ -576,7 +577,8 @@ export async function searchPeopleByModificationDate(
     
     // Create the filter and perform the search
     const filters = createModifiedDateFilter(validatedDateRange);
-    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
@@ -631,7 +633,8 @@ export async function searchPeopleByLastInteraction(
     
     // Create the filter and perform the search
     const filters = createLastInteractionFilter(validatedDateRange, validatedInteractionType);
-    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
@@ -667,7 +670,8 @@ export async function searchPeopleByActivity(
     
     // Create the filter and perform the search
     const filters = createActivityFilter(validatedActivityFilter);
-    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
