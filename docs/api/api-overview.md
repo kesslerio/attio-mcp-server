@@ -29,11 +29,28 @@ Claude uses these URIs to reference specific records when performing operations.
 Claude can interact with Attio using various tools provided by the MCP server:
 
 - **Search tools**: Find companies, people, and other records
+- **Advanced search tools**: Use complex filters including date ranges, numeric values, and relationships
 - **Read tools**: View details of specific records
 - **Write tools**: Create notes and update records
 - **List management tools**: Work with Attio lists
 
 See the specific API documentation for details on each tool.
+
+### Advanced Filtering Capabilities
+
+The Attio MCP server provides multiple filtering methods:
+
+- **Basic filtering**: Simple text-based searches for names, emails, etc.
+- **Advanced filtering**: Complex filter conditions with multiple attributes and logic
+- **Date and numeric filtering**: Filter by dates and numeric values with range support
+- **Activity filtering**: Find records based on interaction history and activity
+- **Relationship filtering**: Find records based on their relationships with other records
+
+For details, see:
+- [Advanced Filtering Guide](./advanced-filtering.md)
+- [Date and Numeric Filtering](./date-numeric-filtering.md)
+- [Activity and Historical Filtering](./activity-historical-filtering.md)
+- [Relationship-Based Filtering](./relationship-filtering.md)
 
 ## Authentication
 
