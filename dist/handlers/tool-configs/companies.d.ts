@@ -1,6 +1,7 @@
-import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig } from "../tool-types.js";
+import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig } from "../tool-types.js";
 export declare const companyToolConfigs: {
     search: SearchToolConfig;
+    advancedSearch: AdvancedSearchToolConfig;
     details: DetailsToolConfig;
     notes: NotesToolConfig;
     createNote: CreateNoteToolConfig;
@@ -15,10 +16,73 @@ export declare const companyToolDefinitions: ({
                 type: string;
                 description: string;
             };
-            companyId?: undefined;
-            uri?: undefined;
+            filters?: undefined;
             limit?: undefined;
             offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            filters: {
+                type: string;
+                description: string;
+                properties: {
+                    filters: {
+                        type: string;
+                        description: string;
+                        items: {
+                            type: string;
+                            properties: {
+                                attribute: {
+                                    type: string;
+                                    properties: {
+                                        slug: {
+                                            type: string;
+                                            description: string;
+                                        };
+                                    };
+                                    required: string[];
+                                };
+                                condition: {
+                                    type: string;
+                                    description: string;
+                                };
+                                value: {
+                                    type: string[];
+                                    description: string;
+                                };
+                            };
+                            required: string[];
+                        };
+                    };
+                    matchAny: {
+                        type: string;
+                        description: string;
+                    };
+                };
+                required: string[];
+            };
+            limit: {
+                type: string;
+                description: string;
+            };
+            offset: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
             title?: undefined;
             content?: undefined;
         };
@@ -40,6 +104,7 @@ export declare const companyToolDefinitions: ({
                 description: string;
             };
             query?: undefined;
+            filters?: undefined;
             limit?: undefined;
             offset?: undefined;
             title?: undefined;
@@ -73,6 +138,7 @@ export declare const companyToolDefinitions: ({
                 description: string;
             };
             query?: undefined;
+            filters?: undefined;
             title?: undefined;
             content?: undefined;
         };
@@ -104,6 +170,7 @@ export declare const companyToolDefinitions: ({
                 description: string;
             };
             query?: undefined;
+            filters?: undefined;
             limit?: undefined;
             offset?: undefined;
         };

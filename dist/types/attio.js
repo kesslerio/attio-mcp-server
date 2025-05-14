@@ -16,6 +16,10 @@ export var FilterConditionType;
     FilterConditionType["LESS_THAN"] = "less_than";
     FilterConditionType["GREATER_THAN_OR_EQUALS"] = "greater_than_or_equals";
     FilterConditionType["LESS_THAN_OR_EQUALS"] = "less_than_or_equals";
+    // Date range specific conditions
+    FilterConditionType["BEFORE"] = "before";
+    FilterConditionType["AFTER"] = "after";
+    FilterConditionType["BETWEEN"] = "between";
     // Existence conditions
     FilterConditionType["IS_EMPTY"] = "is_empty";
     FilterConditionType["IS_NOT_EMPTY"] = "is_not_empty";
@@ -48,6 +52,45 @@ export var FilterConditionType;
 export function isValidFilterCondition(condition) {
     return Object.values(FilterConditionType).includes(condition);
 }
+/**
+ * Time units for relative date expressions
+ */
+export var RelativeDateUnit;
+(function (RelativeDateUnit) {
+    RelativeDateUnit["DAY"] = "day";
+    RelativeDateUnit["WEEK"] = "week";
+    RelativeDateUnit["MONTH"] = "month";
+    RelativeDateUnit["QUARTER"] = "quarter";
+    RelativeDateUnit["YEAR"] = "year";
+})(RelativeDateUnit || (RelativeDateUnit = {}));
+/**
+ * Supported date range preset values
+ */
+export var DateRangePreset;
+(function (DateRangePreset) {
+    DateRangePreset["TODAY"] = "today";
+    DateRangePreset["YESTERDAY"] = "yesterday";
+    DateRangePreset["THIS_WEEK"] = "this_week";
+    DateRangePreset["LAST_WEEK"] = "last_week";
+    DateRangePreset["THIS_MONTH"] = "this_month";
+    DateRangePreset["LAST_MONTH"] = "last_month";
+    DateRangePreset["THIS_QUARTER"] = "this_quarter";
+    DateRangePreset["LAST_QUARTER"] = "last_quarter";
+    DateRangePreset["THIS_YEAR"] = "this_year";
+    DateRangePreset["LAST_YEAR"] = "last_year";
+})(DateRangePreset || (DateRangePreset = {}));
+/**
+ * Interaction types for activity filtering
+ */
+export var InteractionType;
+(function (InteractionType) {
+    InteractionType["ANY"] = "any";
+    InteractionType["EMAIL"] = "email";
+    InteractionType["CALENDAR"] = "calendar";
+    InteractionType["PHONE"] = "phone";
+    InteractionType["MEETING"] = "meeting";
+    InteractionType["CUSTOM"] = "custom";
+})(InteractionType || (InteractionType = {}));
 /**
  * Resource type enum for better type safety
  */

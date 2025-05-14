@@ -3,7 +3,7 @@
  * Provides functions for processing list entries, extracting record information,
  * and transforming filters to Attio API format.
  */
-import { AttioListEntry } from "../types/attio.js";
+import { AttioListEntry, DateRange, NumericRange, InteractionType, ActivityFilter } from "../types/attio.js";
 import { ListEntryFilters } from "../api/attio-operations.js";
 export declare const API_PARAMS: {
     EXPAND: string;
@@ -39,6 +39,18 @@ export type AttioApiFilter = {
     };
 };
 /**
+ * Attribute constants for better code readability and consistency
+ */
+export declare const ATTRIBUTE_SLUGS: {
+    CREATED_AT: string;
+    UPDATED_AT: string;
+    LAST_INTERACTION: string;
+    INTERACTION_TYPE: string;
+    EMAIL: string;
+    PHONE: string;
+    NAME: string;
+};
+/**
  * Transforms list entry filters to the format expected by the Attio API
  * This function handles both simple filters and advanced filters with logical operators
  *
@@ -50,4 +62,50 @@ export type AttioApiFilter = {
 export declare function transformFiltersToApiFormat(filters: ListEntryFilters | undefined, validateConditions?: boolean): {
     filter?: AttioApiFilter;
 };
+/**
+ * Creates a date range filter for a specific attribute
+ *
+ * @param attributeSlug - The attribute slug to filter on (e.g., 'created_at', 'modified_at')
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export declare function createDateRangeFilter(attributeSlug: string, dateRange: DateRange): ListEntryFilters;
+/**
+ * Creates a filter for records based on their creation date
+ *
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export declare function createCreatedDateFilter(dateRange: DateRange): ListEntryFilters;
+/**
+ * Creates a filter for records based on their last modification date
+ *
+ * @param dateRange - Date range specification
+ * @returns Configured filter object
+ */
+export declare function createModifiedDateFilter(dateRange: DateRange): ListEntryFilters;
+/**
+ * Creates a filter for records based on their last interaction date
+ * Optionally filtered by interaction type (email, calendar, etc.)
+ *
+ * @param dateRange - Date range specification
+ * @param interactionType - Optional type of interaction to filter by
+ * @returns Configured filter object
+ */
+export declare function createLastInteractionFilter(dateRange: DateRange, interactionType?: InteractionType): ListEntryFilters;
+/**
+ * Creates a combined activity filter including date range and interaction type
+ *
+ * @param activityFilter - Activity filter configuration
+ * @returns Configured filter object
+ */
+export declare function createActivityFilter(activityFilter: ActivityFilter): ListEntryFilters;
+/**
+ * Creates a numeric filter for filtering by number values
+ *
+ * @param attributeSlug - The attribute slug to filter on (e.g., 'revenue', 'employee_count')
+ * @param range - Numeric range specification with min, max, or equals
+ * @returns Configured filter object
+ */
+export declare function createNumericFilter(attributeSlug: string, range: NumericRange): ListEntryFilters;
 //# sourceMappingURL=record-utils.d.ts.map
