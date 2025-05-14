@@ -31,6 +31,11 @@ export enum FilterConditionType {
   GREATER_THAN_OR_EQUALS = 'greater_than_or_equals',
   LESS_THAN_OR_EQUALS = 'less_than_or_equals',
   
+  // Date range specific conditions
+  BEFORE = 'before',
+  AFTER = 'after',
+  BETWEEN = 'between',
+  
   // Existence conditions
   IS_EMPTY = 'is_empty',
   IS_NOT_EMPTY = 'is_not_empty',
@@ -63,6 +68,55 @@ export enum FilterConditionType {
  */
 export function isValidFilterCondition(condition: string): condition is FilterConditionType {
   return Object.values(FilterConditionType).includes(condition as FilterConditionType);
+}
+
+/**
+ * Time units for relative date expressions
+ */
+export enum RelativeDateUnit {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+  QUARTER = 'quarter',
+  YEAR = 'year'
+}
+
+/**
+ * Representation of a relative date (e.g., "last 7 days")
+ */
+export interface RelativeDate {
+  unit: RelativeDateUnit;
+  value: number;
+  direction: 'past' | 'future';
+}
+
+/**
+ * Date range specification for filtering
+ */
+export interface DateRange {
+  start?: string | RelativeDate;
+  end?: string | RelativeDate;
+  preset?: string;
+}
+
+/**
+ * Interaction types for activity filtering
+ */
+export enum InteractionType {
+  ANY = 'any',
+  EMAIL = 'email',
+  CALENDAR = 'calendar',
+  PHONE = 'phone',
+  MEETING = 'meeting',
+  CUSTOM = 'custom'
+}
+
+/**
+ * Activity history related filtering options
+ */
+export interface ActivityFilter {
+  dateRange: DateRange;
+  interactionType?: InteractionType;
 }
 
 /**

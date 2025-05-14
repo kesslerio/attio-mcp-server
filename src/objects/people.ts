@@ -13,15 +13,22 @@ import {
   batchGetObjectDetails,
   BatchConfig,
   BatchResponse,
-  ListEntryFilters,
-  ListEntryFilter
+  ListEntryFilters
 } from "../api/attio-operations.js";
 import { 
   ResourceType, 
   Person, 
   AttioNote,
-  FilterConditionType
+  DateRange,
+  InteractionType,
+  ActivityFilter
 } from "../types/attio.js";
+import {
+  createCreatedDateFilter,
+  createModifiedDateFilter,
+  createLastInteractionFilter,
+  createActivityFilter
+} from "../utils/record-utils.js";
 
 /**
  * Searches for people by name, email, or phone number
@@ -384,204 +391,189 @@ export async function batchGetPeopleDetails(
 }
 
 /**
- * Search for people using advanced filtering capabilities
+ * Advanced search for people with filter capabilities 
  * 
- * @param filters - Filter conditions to apply
+ * @param filters - Filters to apply to the search
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
- * @returns Array of matching person records
+ * @returns Array of matching people
  */
 export async function advancedSearchPeople(
-  filters: ListEntryFilters,
-  limit?: number,
-  offset?: number
+  filters?: ListEntryFilters,
+  limit: number = 20,
+  offset: number = 0
 ): Promise<Person[]> {
+  const api = getAttioClient();
+  const path = "/objects/people/records/query";
+  
   try {
-    return await advancedSearchObject<Person>(
-      ResourceType.PEOPLE,
-      filters,
-      limit,
-      offset
-    );
-  } catch (error) {
-    // Handle specific API limitations for email and phone filtering
-    if (error instanceof Error && 
-        (error.message.includes('unknown attribute slug: email') || 
-         error.message.includes('unknown attribute slug: phone'))) {
-      
-      // If the error is related to email/phone filtering, try client-side filtering
-      // First, determine what filter criteria to handle server-side vs. client-side
-      const emailFilter = filters.filters?.find(f => f.attribute.slug === 'email');
-      const phoneFilter = filters.filters?.find(f => f.attribute.slug === 'phone');
-      
-      // Create a new filter that excludes email and phone
-      const serverFilters: ListEntryFilters = {
-        ...filters,
-        filters: filters.filters?.filter(f => 
-          f.attribute.slug !== 'email' && f.attribute.slug !== 'phone'
-        ) || []
-      };
-      
-      // Fetch data from server with remaining filters
-      const results = await advancedSearchObject<Person>(
-        ResourceType.PEOPLE,
-        serverFilters,
-        // Increase limit to account for client-side filtering reducing results
-        emailFilter || phoneFilter ? Math.max(100, limit || 100) : limit,
-        offset
-      );
-      
-      // Apply email filtering client-side
-      let filteredResults = results;
-      
-      if (emailFilter) {
-        filteredResults = filteredResults.filter(person => {
-          if (!person.values?.email || !Array.isArray(person.values.email)) {
-            return emailFilter.condition === FilterConditionType.IS_EMPTY || 
-                   emailFilter.condition === FilterConditionType.IS_NOT_SET;
-          }
-          
-          // Get array of email values
-          const emails = person.values.email.map(e => e.value?.toLowerCase() || '');
-          
-          // Apply the appropriate condition
-          switch (emailFilter.condition) {
-            case FilterConditionType.EQUALS:
-              return emails.some(e => e === emailFilter.value?.toLowerCase());
-            case FilterConditionType.NOT_EQUALS:
-              return !emails.some(e => e === emailFilter.value?.toLowerCase());
-            case FilterConditionType.CONTAINS:
-              return emails.some(e => e.includes(emailFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.NOT_CONTAINS:
-              return !emails.some(e => e.includes(emailFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.STARTS_WITH:
-              return emails.some(e => e.startsWith(emailFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.ENDS_WITH:
-              return emails.some(e => e.endsWith(emailFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.IS_EMPTY:
-              return emails.length === 0 || emails.every(e => e === '');
-            case FilterConditionType.IS_NOT_EMPTY:
-              return emails.length > 0 && emails.some(e => e !== '');
-            default:
-              return true; // Skip filtering for unsupported conditions
-          }
-        });
-      }
-      
-      // Apply phone filtering client-side
-      if (phoneFilter) {
-        filteredResults = filteredResults.filter(person => {
-          if (!person.values?.phone || !Array.isArray(person.values.phone)) {
-            return phoneFilter.condition === FilterConditionType.IS_EMPTY || 
-                   phoneFilter.condition === FilterConditionType.IS_NOT_SET;
-          }
-          
-          // Get array of phone values
-          const phones = person.values.phone.map(p => p.value?.toLowerCase() || '');
-          
-          // Apply the appropriate condition
-          switch (phoneFilter.condition) {
-            case FilterConditionType.EQUALS:
-              return phones.some(p => p === phoneFilter.value?.toLowerCase());
-            case FilterConditionType.NOT_EQUALS:
-              return !phones.some(p => p === phoneFilter.value?.toLowerCase());
-            case FilterConditionType.CONTAINS:
-              return phones.some(p => p.includes(phoneFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.NOT_CONTAINS:
-              return !phones.some(p => p.includes(phoneFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.STARTS_WITH:
-              return phones.some(p => p.startsWith(phoneFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.ENDS_WITH:
-              return phones.some(p => p.endsWith(phoneFilter.value?.toLowerCase() || ''));
-            case FilterConditionType.IS_EMPTY:
-              return phones.length === 0 || phones.every(p => p === '');
-            case FilterConditionType.IS_NOT_EMPTY:
-              return phones.length > 0 && phones.some(p => p !== '');
-            default:
-              return true; // Skip filtering for unsupported conditions
-          }
-        });
-      }
-      
-      // Apply limit and offset to the client-side filtered results
-      const safeLimit = typeof limit === 'number' ? limit : 20;
-      const safeOffset = typeof offset === 'number' ? offset : 0;
-      
-      // Only apply limit and offset if they weren't already applied server-side
-      if (emailFilter || phoneFilter) {
-        return filteredResults.slice(safeOffset, safeOffset + safeLimit);
-      }
-      
-      return filteredResults;
+    // Use the filters if provided, applying any transformations needed
+    let transformedFilters = {};
+    
+    if (filters && filters.filters && filters.filters.length > 0) {
+      const { filter } = require("../utils/record-utils.js").transformFiltersToApiFormat(filters);
+      transformedFilters = { filter };
     }
     
-    // For other errors, just throw them as is
-    throw error;
+    // Construct request with filters, limit, offset
+    const requestBody = {
+      ...transformedFilters,
+      limit,
+      offset
+    };
+    
+    const response = await api.post(path, requestBody);
+    
+    // Handle special case for email/phone filtering which might need client-side processing
+    let results = response.data.data || [];
+    
+    // Determine if we need client-side filtering for email or phone
+    const needsEmailFiltering = filters?.filters?.some(f => 
+      f.attribute?.slug === 'email'
+    );
+    
+    const needsPhoneFiltering = filters?.filters?.some(f => 
+      f.attribute?.slug === 'phone'
+    );
+    
+    // Apply client-side filtering if needed
+    if (needsEmailFiltering) {
+      // Extract the email filter value and condition
+      const emailFilter = filters?.filters?.find(f => f.attribute?.slug === 'email');
+      const emailValue = emailFilter?.value;
+      const emailCondition = emailFilter?.condition;
+      
+      if (emailValue && typeof emailValue === 'string') {
+        results = results.filter((person: Person) => {
+          if (!person.values?.email) return false;
+          
+          // Get all email values for this person
+          const emails = person.values.email.map(e => e.value?.toLowerCase());
+          
+          // Apply the appropriate condition
+          switch (emailCondition) {
+            case 'equals':
+              return emails.some(e => e === emailValue.toLowerCase());
+            case 'contains':
+              return emails.some(e => e?.includes(emailValue.toLowerCase()));
+            case 'starts_with':
+              return emails.some(e => e?.startsWith(emailValue.toLowerCase()));
+            case 'ends_with':
+              return emails.some(e => e?.endsWith(emailValue.toLowerCase()));
+            default:
+              return emails.some(e => e?.includes(emailValue.toLowerCase()));
+          }
+        });
+      }
+    }
+    
+    if (needsPhoneFiltering) {
+      // Extract the phone filter value and condition
+      const phoneFilter = filters?.filters?.find(f => f.attribute?.slug === 'phone');
+      const phoneValue = phoneFilter?.value;
+      const phoneCondition = phoneFilter?.condition;
+      
+      if (phoneValue && typeof phoneValue === 'string') {
+        const normalizedPhoneValue = phoneValue.replace(/[^0-9+]/g, '');
+        
+        results = results.filter((person: Person) => {
+          if (!person.values?.phone) return false;
+          
+          // Get all phone values for this person
+          const phones = person.values.phone.map(p => {
+            return p.value?.replace(/[^0-9+]/g, '');
+          });
+          
+          // Apply the appropriate condition
+          switch (phoneCondition) {
+            case 'equals':
+              return phones.some(p => p === normalizedPhoneValue);
+            case 'contains':
+              return phones.some(p => p?.includes(normalizedPhoneValue));
+            case 'starts_with':
+              return phones.some(p => p?.startsWith(normalizedPhoneValue));
+            case 'ends_with':
+              return phones.some(p => p?.endsWith(normalizedPhoneValue));
+            default:
+              return phones.some(p => p?.includes(normalizedPhoneValue));
+          }
+        });
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
 /**
- * Helper function to create filters for searching people by name
+ * Search for people by creation date
  * 
- * @param name - Name to search for
- * @param condition - Condition type (default: CONTAINS)
- * @returns ListEntryFilters object configured for name search
+ * @param dateRange - Date range to filter by (when people were created)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
  */
-export function createNameFilter(
-  name: string, 
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'name' },
-        condition: condition,
-        value: name
-      }
-    ]
-  };
+export async function searchPeopleByCreationDate(
+  dateRange: DateRange,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Person[]> {
+  const filters = createCreatedDateFilter(dateRange);
+  return advancedSearchPeople(filters, limit, offset);
 }
 
 /**
- * Helper function to create filters for searching people by email
+ * Search for people by last modification date
  * 
- * @param email - Email to search for
- * @param condition - Condition type (default: CONTAINS)
- * @returns ListEntryFilters object configured for email search
+ * @param dateRange - Date range to filter by (when people were last modified)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
  */
-export function createEmailFilter(
-  email: string, 
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'email' },
-        condition: condition,
-        value: email
-      }
-    ]
-  };
+export async function searchPeopleByModificationDate(
+  dateRange: DateRange,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Person[]> {
+  const filters = createModifiedDateFilter(dateRange);
+  return advancedSearchPeople(filters, limit, offset);
 }
 
 /**
- * Helper function to create filters for searching people by phone
+ * Search for people by last interaction date
  * 
- * @param phone - Phone number to search for
- * @param condition - Condition type (default: CONTAINS)
- * @returns ListEntryFilters object configured for phone search
+ * @param dateRange - Date range to filter by (when the last interaction occurred)
+ * @param interactionType - Optional type of interaction to filter by
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
  */
-export function createPhoneFilter(
-  phone: string, 
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'phone' },
-        condition: condition,
-        value: phone
-      }
-    ]
-  };
+export async function searchPeopleByLastInteraction(
+  dateRange: DateRange,
+  interactionType?: InteractionType,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Person[]> {
+  const filters = createLastInteractionFilter(dateRange, interactionType);
+  return advancedSearchPeople(filters, limit, offset);
+}
+
+/**
+ * Search for people by activity history
+ * Combines date range and interaction type filters
+ * 
+ * @param activityFilter - Activity filter configuration
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByActivity(
+  activityFilter: ActivityFilter,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Person[]> {
+  const filters = createActivityFilter(activityFilter);
+  return advancedSearchPeople(filters, limit, offset);
 }
