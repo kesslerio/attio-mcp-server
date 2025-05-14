@@ -8,20 +8,15 @@ import {
 } from "../api/attio-operations.js";
 import { 
   ResourceType,
-  FilterConditionType
+  FilterConditionType,
+  RelationshipType
 } from "../types/attio.js";
-import { FilterValidationError } from "../errors/api-errors.js";
+import { 
+  FilterValidationError,
+  RelationshipFilterError,
+  ListRelationshipError
+} from "../errors/api-errors.js";
 import { combineFiltersWithAnd, createEqualsFilter } from "./filter-utils.js";
-
-/**
- * Relationship types in Attio
- */
-export enum RelationshipType {
-  WORKS_AT = 'works_at',       // Person to Company
-  EMPLOYS = 'employs',         // Company to Person
-  BELONGS_TO_LIST = 'in_list',  // Any record to List
-  HAS_NOTE = 'has_note'        // Any record to Note
-}
 
 /**
  * Configuration for a relationship-based filter
@@ -50,7 +45,12 @@ export function createPeopleByCompanyFilter(companyFilter: ListEntryFilters): Li
   try {
     // Validate company filters
     if (!companyFilter || !companyFilter.filters || companyFilter.filters.length === 0) {
-      throw new Error('Company filter must contain at least one valid filter condition');
+      throw new RelationshipFilterError(
+        'Company filter must contain at least one valid filter condition',
+        ResourceType.PEOPLE.toString(),
+        ResourceType.COMPANIES.toString(),
+        RelationshipType.WORKS_AT
+      );
     }
     
     // Create a relationship filter configuration
@@ -64,6 +64,12 @@ export function createPeopleByCompanyFilter(companyFilter: ListEntryFilters): Li
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
+    // Check if it's already a specialized error
+    if (error instanceof RelationshipFilterError) {
+      throw error;
+    }
+    
+    // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(`Failed to create people-by-company filter: ${errorMessage}`);
   }
@@ -79,7 +85,12 @@ export function createCompaniesByPeopleFilter(peopleFilter: ListEntryFilters): L
   try {
     // Validate people filters
     if (!peopleFilter || !peopleFilter.filters || peopleFilter.filters.length === 0) {
-      throw new Error('People filter must contain at least one valid filter condition');
+      throw new RelationshipFilterError(
+        'People filter must contain at least one valid filter condition',
+        ResourceType.COMPANIES.toString(),
+        ResourceType.PEOPLE.toString(),
+        RelationshipType.EMPLOYS
+      );
     }
     
     // Create a relationship filter configuration
@@ -93,6 +104,12 @@ export function createCompaniesByPeopleFilter(peopleFilter: ListEntryFilters): L
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
+    // Check if it's already a specialized error
+    if (error instanceof RelationshipFilterError) {
+      throw error;
+    }
+    
+    // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(`Failed to create companies-by-people filter: ${errorMessage}`);
   }
@@ -110,8 +127,16 @@ export function createRecordsByListFilter(
   listId: string
 ): ListEntryFilters {
   try {
-    if (!listId || listId.trim() === '') {
-      throw new Error('List ID must be provided');
+    // Import from validation to avoid circular dependencies
+    const { isValidListId } = require('../utils/validation.js');
+    
+    // Validate list ID format and security
+    if (!listId || !isValidListId(listId)) {
+      throw new ListRelationshipError(
+        'Invalid list ID format. Expected format: list_[alphanumeric]',
+        resourceType.toString(),
+        listId
+      );
     }
     
     // Create a relationship filter configuration
@@ -125,6 +150,12 @@ export function createRecordsByListFilter(
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
+    // Check if it's already a specialized error
+    if (error instanceof ListRelationshipError || error instanceof RelationshipFilterError) {
+      throw error;
+    }
+    
+    // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(`Failed to create records-by-list filter: ${errorMessage}`);
   }
@@ -138,8 +169,12 @@ export function createRecordsByListFilter(
  */
 export function createPeopleByCompanyListFilter(listId: string): ListEntryFilters {
   try {
-    if (!listId || listId.trim() === '') {
-      throw new Error('List ID must be provided');
+    // Import from validation to avoid circular dependencies
+    const { isValidListId } = require('../utils/validation.js');
+    
+    // Validate list ID format and security
+    if (!listId || !isValidListId(listId)) {
+      throw new Error('Invalid list ID format. Expected format: list_[alphanumeric]');
     }
     
     // First, create a filter for companies in the list
@@ -164,8 +199,12 @@ export function createPeopleByCompanyListFilter(listId: string): ListEntryFilter
  */
 export function createCompaniesByPeopleListFilter(listId: string): ListEntryFilters {
   try {
-    if (!listId || listId.trim() === '') {
-      throw new Error('List ID must be provided');
+    // Import from validation to avoid circular dependencies
+    const { isValidListId } = require('../utils/validation.js');
+    
+    // Validate list ID format and security
+    if (!listId || !isValidListId(listId)) {
+      throw new Error('Invalid list ID format. Expected format: list_[alphanumeric]');
     }
     
     // First, create a filter for people in the list

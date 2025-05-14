@@ -272,3 +272,79 @@ export class FilterValidationError extends Error {
     Object.setPrototypeOf(this, FilterValidationError.prototype);
   }
 }
+
+/**
+ * Error for relationship filter validation issues
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   if (!isValidRelationshipType(type)) {
+ *     throw new RelationshipFilterError(`Invalid relationship type: ${type}`, 'people', 'companies');
+ *   }
+ * } catch (error) {
+ *   if (error instanceof RelationshipFilterError) {
+ *     // Handle relationship filter error
+ *   }
+ * }
+ * ```
+ */
+export class RelationshipFilterError extends FilterValidationError {
+  /**
+   * Create a RelationshipFilterError
+   * 
+   * @param message - Error message
+   * @param sourceType - The source entity type (e.g., 'people', 'companies')
+   * @param targetType - The target entity type (e.g., 'companies', 'lists')
+   * @param relationshipType - The type of relationship that failed validation
+   */
+  constructor(
+    message: string,
+    public readonly sourceType?: string,
+    public readonly targetType?: string,
+    public readonly relationshipType?: string
+  ) {
+    super(message);
+    this.name = 'RelationshipFilterError';
+    
+    // This line is needed to properly capture the stack trace in derived classes
+    Object.setPrototypeOf(this, RelationshipFilterError.prototype);
+  }
+}
+
+/**
+ * Error specifically for list relationship issues
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   if (!isValidListId(listId)) {
+ *     throw new ListRelationshipError(`Invalid list ID: ${listId}`, 'people', listId);
+ *   }
+ * } catch (error) {
+ *   if (error instanceof ListRelationshipError) {
+ *     // Handle list relationship error
+ *   }
+ * }
+ * ```
+ */
+export class ListRelationshipError extends RelationshipFilterError {
+  /**
+   * Create a ListRelationshipError
+   * 
+   * @param message - Error message
+   * @param sourceType - The source entity type (e.g., 'people', 'companies')
+   * @param listId - The list ID that caused the error
+   */
+  constructor(
+    message: string,
+    sourceType?: string,
+    public readonly listId?: string
+  ) {
+    super(message, sourceType, 'lists', 'in_list');
+    this.name = 'ListRelationshipError';
+    
+    // This line is needed to properly capture the stack trace
+    Object.setPrototypeOf(this, ListRelationshipError.prototype);
+  }
+}
