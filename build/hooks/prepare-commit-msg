@@ -43,25 +43,33 @@ ATTRIBUTION_PATTERNS=(
 FOUND_ATTRIBUTION=false
 CLEANED_MSG=""
 
-# Process the message line by line
-while IFS= read -r line; do
-  # Check if the line contains any attribution pattern
-  CONTAINS_ATTRIBUTION=false
-  for pattern in "${ATTRIBUTION_PATTERNS[@]}"; do
-    if [[ "$line" == *"$pattern"* ]]; then
-      CONTAINS_ATTRIBUTION=true
-      FOUND_ATTRIBUTION=true
-      echo -e "${YELLOW}Warning:${NC} Removed AI attribution: '${YELLOW}$pattern${NC}'"
-      break
-    fi
-  done
-  
-  # Only keep lines without attribution
-  if [ "$CONTAINS_ATTRIBUTION" = false ]; then
-    CLEANED_MSG="${CLEANED_MSG}${line}
+# First, check for the standard Claude attribution block at the end
+STANDARD_ATTRIBUTION_BLOCK=$'🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>'
+if [[ "$ORIGINAL_COMMIT_MSG" == *"$STANDARD_ATTRIBUTION_BLOCK"* ]]; then
+  echo -e "${YELLOW}Warning:${NC} Removed standard Claude attribution block"
+  CLEANED_MSG="${ORIGINAL_COMMIT_MSG//$STANDARD_ATTRIBUTION_BLOCK/}"
+  FOUND_ATTRIBUTION=true
+else
+  # If no standard block, process the message line by line for other patterns
+  while IFS= read -r line; do
+    modified_line="$line"
+    # Check if the line contains any attribution pattern
+    for pattern in "${ATTRIBUTION_PATTERNS[@]}"; do
+      if [[ "$line" == *"$pattern"* ]]; then
+        FOUND_ATTRIBUTION=true
+        echo -e "${YELLOW}Warning:${NC} Removed AI attribution: '${YELLOW}$pattern${NC}'"
+        # Remove the pattern from the line
+        modified_line="${modified_line//$pattern/}"
+      fi
+    done
+    
+    # Keep the line (with patterns removed if any were found)
+    if [ -n "$modified_line" ]; then
+      CLEANED_MSG="${CLEANED_MSG}${modified_line}
 "
-  fi
-done <<< "$ORIGINAL_COMMIT_MSG"
+    fi
+  done <<< "$ORIGINAL_COMMIT_MSG"
+fi
 
 # Only modify the file if attributions were found
 if [ "$FOUND_ATTRIBUTION" = true ]; then

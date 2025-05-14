@@ -102,7 +102,7 @@ describe('record-utils', () => {
       const result = getRecordNameFromEntry(entry);
 
       // Assert
-      expect(result).toBe('Test Company');
+      expect(result.name).toBe('Test Company');
     });
 
     it('should return empty string when record data is not available', () => {
@@ -118,7 +118,7 @@ describe('record-utils', () => {
       const result = getRecordNameFromEntry(entry);
 
       // Assert
-      expect(result).toBe('');
+      expect(result.name).toBe('');
     });
 
     it('should return empty string when name array is empty', () => {
@@ -140,7 +140,7 @@ describe('record-utils', () => {
       const result = getRecordNameFromEntry(entry);
 
       // Assert
-      expect(result).toBe('');
+      expect(result.name).toBe('');
     });
   });
 

@@ -160,7 +160,7 @@ describe('transformFiltersToApiFormat', () => {
     const filter = {
       filters: [
         {
-          attribute: {}, // Missing slug
+          attribute: { slug: '' }, // Empty slug
           condition: FilterConditionType.EQUALS,
           value: 'discovery'
         }
