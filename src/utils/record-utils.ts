@@ -8,12 +8,14 @@ import {
   isValidFilterCondition, 
   FilterConditionType,
   DateRange,
+  NumericRange,
   InteractionType,
   ActivityFilter
 } from "../types/attio.js";
 import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 import { resolveDateRange } from "./date-utils.js";
+import { createNumericRangeFilter } from "./numeric-utils.js";
 
 // API parameter constants for better maintainability
 export const API_PARAMS = {
@@ -372,4 +374,18 @@ export function createActivityFilter(activityFilter: ActivityFilter): ListEntryF
     activityFilter.dateRange,
     activityFilter.interactionType
   );
+}
+
+/**
+ * Creates a numeric filter for filtering by number values
+ * 
+ * @param attributeSlug - The attribute slug to filter on (e.g., 'revenue', 'employee_count')
+ * @param range - Numeric range specification with min, max, or equals
+ * @returns Configured filter object
+ */
+export function createNumericFilter(
+  attributeSlug: string,
+  range: NumericRange
+): ListEntryFilters {
+  return createNumericRangeFilter(attributeSlug, range);
 }

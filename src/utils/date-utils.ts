@@ -2,15 +2,42 @@
  * Date utility functions for working with Attio date filters
  * Provides functions for handling date ranges, relative dates, and date formatting.
  */
-import { RelativeDate, RelativeDateUnit, DateRange } from "../types/attio.js";
+import { RelativeDate, RelativeDateUnit, DateRange, DateRangePreset } from "../types/attio.js";
 
 /**
  * Converts a relative date (e.g., "last 7 days") to an absolute ISO date string
  * 
  * @param relativeDate - The relative date configuration
  * @returns ISO date string representation
+ * @throws Error when validation fails
  */
 export function resolveRelativeDate(relativeDate: RelativeDate): string {
+  // Validate required properties
+  if (!relativeDate) {
+    throw new Error('RelativeDate object is required');
+  }
+  
+  if (!relativeDate.unit) {
+    throw new Error('RelativeDate must specify a unit (day, week, month, quarter, year)');
+  }
+  
+  if (relativeDate.value === undefined || relativeDate.value === null) {
+    throw new Error('RelativeDate must specify a numeric value');
+  }
+  
+  if (!relativeDate.direction) {
+    throw new Error('RelativeDate must specify a direction (past or future)');
+  }
+  
+  if (relativeDate.direction !== 'past' && relativeDate.direction !== 'future') {
+    throw new Error('RelativeDate direction must be either "past" or "future"');
+  }
+
+  // Value should be a positive number
+  if (typeof relativeDate.value !== 'number' || isNaN(relativeDate.value) || relativeDate.value < 0) {
+    throw new Error('RelativeDate value must be a positive number');
+  }
+  
   const now = new Date();
   let resultDate = new Date(now);
   
@@ -42,13 +69,31 @@ export function resolveRelativeDate(relativeDate: RelativeDate): string {
   return resultDate.toISOString();
 }
 
+
 /**
  * Creates a date range from a preset string (today, yesterday, this_week, etc.)
  * 
  * @param preset - Preset identifier string
  * @returns Object with start and end dates as ISO strings
+ * @throws Error for invalid preset values
  */
 export function createDateRangeFromPreset(preset: string): { start: string; end: string } {
+  // Validate preset
+  if (!preset || typeof preset !== 'string') {
+    throw new Error('Date preset must be a non-empty string');
+  }
+  
+  const normalizedPreset = preset.toLowerCase().trim();
+  
+  // Check if preset is a valid DateRangePreset value
+  const isValidPreset = Object.values(DateRangePreset).includes(normalizedPreset as DateRangePreset);
+  if (!isValidPreset) {
+    throw new Error(
+      `Unsupported date preset: "${preset}". ` +
+      `Valid presets are: ${Object.values(DateRangePreset).join(', ')}`
+    );
+  }
+  
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let start = new Date(today);
@@ -57,49 +102,49 @@ export function createDateRangeFromPreset(preset: string): { start: string; end:
   // Set end to end of today by default
   end.setHours(23, 59, 59, 999);
   
-  switch (preset.toLowerCase()) {
-    case 'today':
+  switch (normalizedPreset) {
+    case DateRangePreset.TODAY:
       // start is already set to beginning of today
       break;
       
-    case 'yesterday':
+    case DateRangePreset.YESTERDAY:
       start.setDate(today.getDate() - 1);
       end.setDate(today.getDate() - 1);
       break;
       
-    case 'this_week':
+    case DateRangePreset.THIS_WEEK:
       // Set start to beginning of current week (Sunday)
       const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
       start.setDate(today.getDate() - dayOfWeek);
       break;
       
-    case 'last_week':
+    case DateRangePreset.LAST_WEEK:
       // Set start to beginning of last week
       const lastWeekDay = today.getDay();
       start.setDate(today.getDate() - lastWeekDay - 7);
       end.setDate(today.getDate() - lastWeekDay - 1);
       break;
       
-    case 'this_month':
+    case DateRangePreset.THIS_MONTH:
       // Set start to beginning of current month
       start.setDate(1);
       break;
       
-    case 'last_month':
+    case DateRangePreset.LAST_MONTH:
       // Set start to beginning of last month
       start.setMonth(today.getMonth() - 1);
       start.setDate(1);
       end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
       break;
       
-    case 'this_quarter':
+    case DateRangePreset.THIS_QUARTER:
       // Set start to beginning of current quarter
       const currentQuarter = Math.floor(today.getMonth() / 3);
       start.setMonth(currentQuarter * 3);
       start.setDate(1);
       break;
       
-    case 'last_quarter':
+    case DateRangePreset.LAST_QUARTER:
       // Set start to beginning of last quarter
       const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
       const lastQuarterYear = lastQuarter < 0 ? today.getFullYear() - 1 : today.getFullYear();
@@ -109,13 +154,13 @@ export function createDateRangeFromPreset(preset: string): { start: string; end:
       end = new Date(lastQuarterYear, (normalizedLastQuarter + 1) * 3, 0, 23, 59, 59, 999);
       break;
       
-    case 'this_year':
+    case DateRangePreset.THIS_YEAR:
       // Set start to beginning of current year
       start.setMonth(0);
       start.setDate(1);
       break;
       
-    case 'last_year':
+    case DateRangePreset.LAST_YEAR:
       // Set start to beginning of last year
       start.setFullYear(today.getFullYear() - 1);
       start.setMonth(0);
@@ -124,6 +169,7 @@ export function createDateRangeFromPreset(preset: string): { start: string; end:
       break;
       
     default:
+      // This shouldn't happen due to earlier validation, but included for type safety
       throw new Error(`Unsupported date preset: ${preset}`);
   }
   
@@ -134,44 +180,119 @@ export function createDateRangeFromPreset(preset: string): { start: string; end:
 }
 
 /**
- * Resolves a date range to absolute ISO date strings
+ * Validates and resolves a date range to absolute ISO date strings
  * Handles both relative and absolute date specifications
  * 
  * @param dateRange - The date range specification
  * @returns Object with resolved start and end dates as ISO strings
+ * @throws Error when date range validation fails
  */
 export function resolveDateRange(dateRange: DateRange): { start?: string; end?: string } {
+  // Validate date range
+  if (!dateRange) {
+    throw new Error('DateRange object is required');
+  }
+  
+  // A date range must have at least one of: preset, start, or end
+  if (!dateRange.preset && !dateRange.start && !dateRange.end) {
+    throw new Error('DateRange must specify at least one of: preset, start, or end');
+  }
+  
   const result: { start?: string; end?: string } = {};
   
   // Handle preset if specified
   if (dateRange.preset) {
-    const presetRange = createDateRangeFromPreset(dateRange.preset);
-    return presetRange;
+    try {
+      // If preset is specified along with start/end, warn but continue with preset
+      if (dateRange.start || dateRange.end) {
+        console.warn(
+          'DateRange contains both preset and start/end specifications. ' +
+          'Using preset and ignoring explicit start/end values.'
+        );
+      }
+      
+      const presetRange = createDateRangeFromPreset(dateRange.preset);
+      return presetRange;
+    } catch (error) {
+      // Throw a more descriptive error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to resolve date range preset: ${errorMessage}`);
+    }
   }
   
   // Handle start date if specified
   if (dateRange.start) {
-    if (typeof dateRange.start === 'string') {
-      // Direct ISO string
-      result.start = dateRange.start;
-    } else {
-      // Relative date object
-      result.start = resolveRelativeDate(dateRange.start);
+    try {
+      if (typeof dateRange.start === 'string') {
+        // Validate ISO date string format
+        if (!isValidISODateString(dateRange.start)) {
+          throw new Error(`Invalid ISO date string format: ${dateRange.start}`);
+        }
+        
+        // Direct ISO string
+        result.start = dateRange.start;
+      } else {
+        // Relative date object
+        result.start = resolveRelativeDate(dateRange.start);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to resolve start date: ${errorMessage}`);
     }
   }
   
   // Handle end date if specified
   if (dateRange.end) {
-    if (typeof dateRange.end === 'string') {
-      // Direct ISO string
-      result.end = dateRange.end;
-    } else {
-      // Relative date object
-      result.end = resolveRelativeDate(dateRange.end);
+    try {
+      if (typeof dateRange.end === 'string') {
+        // Validate ISO date string format
+        if (!isValidISODateString(dateRange.end)) {
+          throw new Error(`Invalid ISO date string format: ${dateRange.end}`);
+        }
+        
+        // Direct ISO string
+        result.end = dateRange.end;
+      } else {
+        // Relative date object
+        result.end = resolveRelativeDate(dateRange.end);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to resolve end date: ${errorMessage}`);
+    }
+  }
+  
+  // Validate that if both dates are provided, start is before end
+  if (result.start && result.end) {
+    const startDate = new Date(result.start);
+    const endDate = new Date(result.end);
+    
+    if (startDate > endDate) {
+      throw new Error(
+        `Invalid date range: start date (${result.start}) ` +
+        `must be before or equal to end date (${result.end})`
+      );
     }
   }
   
   return result;
+}
+
+/**
+ * Helper function to check if a string is a valid ISO date string
+ * 
+ * @param dateString - The string to validate
+ * @returns True if the string is a valid ISO date, false otherwise
+ */
+function isValidISODateString(dateString: string): boolean {
+  // Check basic format
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(dateString)) {
+    return false;
+  }
+  
+  // Check if it's a valid date
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
 }
 
 /**
