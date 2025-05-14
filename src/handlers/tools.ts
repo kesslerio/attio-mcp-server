@@ -5,7 +5,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
-import { ResourceType, AttioListEntry } from "../types/attio.js";
+import { ResourceType, AttioListEntry, AttioRecord } from "../types/attio.js";
 import { processListEntries } from "../utils/record-utils.js";
 
 // Import tool configurations and definitions
@@ -31,7 +31,8 @@ import {
   CreateNoteToolConfig,
   GetListsToolConfig,
   GetListEntriesToolConfig,
-  ListActionToolConfig
+  ListActionToolConfig,
+  AdvancedSearchToolConfig
 } from "./tool-types.js";
 
 // Import record tool types
@@ -880,6 +881,98 @@ export function registerToolHandlers(server: Server): void {
           return createErrorResult(
             error instanceof Error ? error : new Error("Unknown error"),
             `objects/${objectSlug}/records/batch`,
+            "POST",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle advancedSearch tools (for both people and companies)
+      if (toolType === 'searchByCreationDate' || 
+          toolType === 'searchByModificationDate' || 
+          toolType === 'searchByLastInteraction' ||
+          toolType === 'searchByActivity') {
+        
+        try {
+          const advancedSearchConfig = toolConfig as AdvancedSearchToolConfig;
+          let results: AttioRecord[] = [];
+          
+          // Parse or extract parameters based on tool type
+          if (toolType === 'searchByCreationDate' || toolType === 'searchByModificationDate') {
+            // Handle date range parameter
+            let dateRange = request.params.arguments?.dateRange;
+            const limit = Number(request.params.arguments?.limit) || 20;
+            const offset = Number(request.params.arguments?.offset) || 0;
+            
+            // If dateRange is a string, try to parse it as JSON
+            if (typeof dateRange === 'string') {
+              try {
+                dateRange = JSON.parse(dateRange);
+              } catch (error) {
+                console.warn(`Failed to parse dateRange parameter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Continue with the string, the handler will need to handle it
+              }
+            }
+            
+            const response = await advancedSearchConfig.handler(dateRange, limit, offset);
+            results = response || [];
+          } 
+          else if (toolType === 'searchByLastInteraction') {
+            // Handle date range and interaction type parameters
+            let dateRange = request.params.arguments?.dateRange;
+            const interactionType = request.params.arguments?.interactionType;
+            const limit = Number(request.params.arguments?.limit) || 20;
+            const offset = Number(request.params.arguments?.offset) || 0;
+            
+            // If dateRange is a string, try to parse it as JSON
+            if (typeof dateRange === 'string') {
+              try {
+                dateRange = JSON.parse(dateRange);
+              } catch (error) {
+                console.warn(`Failed to parse dateRange parameter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Continue with the string, the handler will need to handle it
+              }
+            }
+            
+            const response = await advancedSearchConfig.handler(dateRange, interactionType, limit, offset);
+            results = response || [];
+          }
+          else if (toolType === 'searchByActivity') {
+            // Handle activity filter parameter
+            let activityFilter = request.params.arguments?.activityFilter;
+            const limit = Number(request.params.arguments?.limit) || 20;
+            const offset = Number(request.params.arguments?.offset) || 0;
+            
+            // If activityFilter is a string, try to parse it as JSON
+            if (typeof activityFilter === 'string') {
+              try {
+                activityFilter = JSON.parse(activityFilter);
+              } catch (error) {
+                console.warn(`Failed to parse activityFilter parameter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Continue with the string, the handler will need to handle it
+              }
+            }
+            
+            const response = await advancedSearchConfig.handler(activityFilter, limit, offset);
+            results = response || [];
+          }
+          
+          // Format and return results
+          const formattedResults = advancedSearchConfig.formatResult(results);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: formattedResults,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `/objects/${resourceType}/records/query`,
             "POST",
             (error as any).response?.data || {}
           );
