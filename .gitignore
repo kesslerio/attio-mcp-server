@@ -9,3 +9,15 @@ node_modules/
 
 # Keep examples
 !.env.example
+
+# Temporary and test files
+*-test.js
+test-*.*
+debug-tools.js
+server.log
+*.log
+
+# Temp markdown files
+comment.md
+issue_body.md
+pr_review.md
