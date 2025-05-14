@@ -29,6 +29,11 @@ import {
   createLastInteractionFilter,
   createActivityFilter
 } from "../utils/filter-utils.js";
+import {
+  createPeopleByCompanyFilter,
+  createPeopleByCompanyListFilter,
+  createRecordsByNotesFilter
+} from "../utils/relationship-utils.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 import { 
   validateDateRange,
@@ -679,6 +684,122 @@ export async function searchPeopleByActivity(
     }
     throw new FilterValidationError(
       `Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people based on attributes of their associated companies
+ * 
+ * @param companyFilter - Filter to apply to companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByCompany(
+  companyFilter: ListEntryFilters | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Ensure companyFilter is a properly structured filter object
+    if (typeof companyFilter !== 'object' || !companyFilter || !companyFilter.filters) {
+      throw new FilterValidationError(
+        'Company filter must be a valid ListEntryFilters object with at least one filter'
+      );
+    }
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the relationship-based filter and perform the search
+    const filters = createPeopleByCompanyFilter(companyFilter);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by company: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people who work at companies in a specific list
+ * 
+ * @param listId - ID of the list containing companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByCompanyList(
+  listId: string,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate listId
+    if (!listId || typeof listId !== 'string' || listId.trim() === '') {
+      throw new FilterValidationError('List ID must be a non-empty string');
+    }
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the relationship-based filter and perform the search
+    const filters = createPeopleByCompanyListFilter(listId);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by company list: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Search for people that have notes containing specific text
+ * 
+ * @param searchText - Text to search for in notes
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByNotes(
+  searchText: string,
+  limit: number | string = 20,
+  offset: number | string = 0
+): Promise<Person[]> {
+  try {
+    // Validate searchText
+    if (!searchText || typeof searchText !== 'string' || searchText.trim() === '') {
+      throw new FilterValidationError('Search text must be a non-empty string');
+    }
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the relationship-based filter and perform the search
+    const filters = createRecordsByNotesFilter(ResourceType.PEOPLE, searchText);
+    const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+    return Array.isArray(results) ? results : [];
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by notes: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
