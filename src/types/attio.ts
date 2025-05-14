@@ -82,6 +82,22 @@ export enum RelativeDateUnit {
 }
 
 /**
+ * Supported date range preset values
+ */
+export enum DateRangePreset {
+  TODAY = 'today',
+  YESTERDAY = 'yesterday',
+  THIS_WEEK = 'this_week',
+  LAST_WEEK = 'last_week',
+  THIS_MONTH = 'this_month',
+  LAST_MONTH = 'last_month',
+  THIS_QUARTER = 'this_quarter',
+  LAST_QUARTER = 'last_quarter',
+  THIS_YEAR = 'this_year',
+  LAST_YEAR = 'last_year'
+}
+
+/**
  * Representation of a relative date (e.g., "last 7 days")
  */
 export interface RelativeDate {
@@ -97,6 +113,15 @@ export interface DateRange {
   start?: string | RelativeDate;
   end?: string | RelativeDate;
   preset?: string;
+}
+
+/**
+ * Numeric range specification for filtering
+ */
+export interface NumericRange {
+  min?: number;
+  max?: number;
+  equals?: number;
 }
 
 /**

@@ -28,7 +28,14 @@ import {
   createModifiedDateFilter,
   createLastInteractionFilter,
   createActivityFilter
-} from "../utils/record-utils.js";
+} from "../utils/filter-utils.js";
+import { FilterValidationError } from "../errors/api-errors.js";
+import { 
+  validateDateRange,
+  validateActivityFilter,
+  validateNumericParam
+} from "../utils/filter-validation.js";
+import { PaginatedResponse, createPaginatedResponse } from "../utils/pagination.js";
 
 /**
  * Searches for people by name, email, or phone number
@@ -396,13 +403,17 @@ export async function batchGetPeopleDetails(
  * @param filters - Filters to apply to the search
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
- * @returns Array of matching people
+ * @param returnPaginated - Whether to return paginated results (default: false)
+ * @param page - Current page number, used when returnPaginated is true (default: 1)
+ * @returns Array of matching people or paginated response
  */
 export async function advancedSearchPeople(
   filters?: ListEntryFilters,
   limit: number = 20,
-  offset: number = 0
-): Promise<Person[]> {
+  offset: number = 0,
+  returnPaginated: boolean = false,
+  page: number = 1
+): Promise<Person[] | PaginatedResponse<Person>> {
   const api = getAttioClient();
   const path = "/objects/people/records/query";
   
@@ -411,7 +422,7 @@ export async function advancedSearchPeople(
     let transformedFilters = {};
     
     if (filters && filters.filters && filters.filters.length > 0) {
-      const { filter } = require("../utils/record-utils.js").transformFiltersToApiFormat(filters);
+      const { filter } = require("../utils/filter-utils.js").transformFiltersToApiFormat(filters);
       transformedFilters = { filter };
     }
     
@@ -516,12 +527,30 @@ export async function advancedSearchPeople(
  * @returns Array of matching people
  */
 export async function searchPeopleByCreationDate(
-  dateRange: DateRange,
-  limit: number = 20,
-  offset: number = 0
+  dateRange: DateRange | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
 ): Promise<Person[]> {
-  const filters = createCreatedDateFilter(dateRange);
-  return advancedSearchPeople(filters, limit, offset);
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createCreatedDateFilter(validatedDateRange);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 /**
@@ -533,12 +562,30 @@ export async function searchPeopleByCreationDate(
  * @returns Array of matching people
  */
 export async function searchPeopleByModificationDate(
-  dateRange: DateRange,
-  limit: number = 20,
-  offset: number = 0
+  dateRange: DateRange | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
 ): Promise<Person[]> {
-  const filters = createModifiedDateFilter(dateRange);
-  return advancedSearchPeople(filters, limit, offset);
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createModifiedDateFilter(validatedDateRange);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 /**
@@ -551,13 +598,49 @@ export async function searchPeopleByModificationDate(
  * @returns Array of matching people
  */
 export async function searchPeopleByLastInteraction(
-  dateRange: DateRange,
-  interactionType?: InteractionType,
-  limit: number = 20,
-  offset: number = 0
+  dateRange: DateRange | string | any,
+  interactionType?: InteractionType | string,
+  limit: number | string = 20,
+  offset: number | string = 0
 ): Promise<Person[]> {
-  const filters = createLastInteractionFilter(dateRange, interactionType);
-  return advancedSearchPeople(filters, limit, offset);
+  try {
+    // Validate and normalize the dateRange parameter
+    const validatedDateRange = validateDateRange(dateRange);
+    
+    // Validate interactionType if provided
+    let validatedInteractionType: InteractionType | undefined = undefined;
+    if (interactionType !== undefined) {
+      // Convert to string if not already
+      const typeString = String(interactionType).toLowerCase();
+      
+      // Validate against enum values
+      const validTypes = Object.values(InteractionType);
+      if (!validTypes.includes(typeString as InteractionType)) {
+        throw new FilterValidationError(
+          `Invalid interaction type: "${interactionType}". ` +
+          `Valid types are: ${validTypes.join(', ')}`
+        );
+      }
+      
+      validatedInteractionType = typeString as InteractionType;
+    }
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createLastInteractionFilter(validatedDateRange, validatedInteractionType);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 /**
@@ -570,10 +653,28 @@ export async function searchPeopleByLastInteraction(
  * @returns Array of matching people
  */
 export async function searchPeopleByActivity(
-  activityFilter: ActivityFilter,
-  limit: number = 20,
-  offset: number = 0
+  activityFilter: ActivityFilter | string | any,
+  limit: number | string = 20,
+  offset: number | string = 0
 ): Promise<Person[]> {
-  const filters = createActivityFilter(activityFilter);
-  return advancedSearchPeople(filters, limit, offset);
+  try {
+    // Validate and normalize the activityFilter parameter
+    const validatedActivityFilter = validateActivityFilter(activityFilter);
+    
+    // Validate and normalize limit and offset parameters
+    const validatedLimit = validateNumericParam(limit, 'limit', 20);
+    const validatedOffset = validateNumericParam(offset, 'offset', 0);
+    
+    // Create the filter and perform the search
+    const filters = createActivityFilter(validatedActivityFilter);
+    return advancedSearchPeople(filters, validatedLimit, validatedOffset);
+  } catch (error) {
+    // Convert all errors to FilterValidationErrors for consistent handling
+    if (error instanceof FilterValidationError) {
+      throw error;
+    }
+    throw new FilterValidationError(
+      `Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }

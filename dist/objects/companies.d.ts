@@ -1,5 +1,5 @@
-import { BatchConfig, BatchResponse } from "../api/attio-operations.js";
-import { Company, AttioNote } from "../types/attio.js";
+import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
+import { Company, AttioNote, FilterConditionType } from "../types/attio.js";
 /**
  * Searches for companies by name
  *
@@ -62,4 +62,37 @@ export declare function batchSearchCompanies(queries: string[], batchConfig?: Pa
  * @returns Batch response with company details for each ID
  */
 export declare function batchGetCompanyDetails(companyIdsOrUris: string[], batchConfig?: Partial<BatchConfig>): Promise<BatchResponse<Company>>;
+/**
+ * Search for companies using advanced filtering capabilities
+ *
+ * @param filters - Filter conditions to apply
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching company records
+ */
+export declare function advancedSearchCompanies(filters: ListEntryFilters, limit?: number, offset?: number): Promise<Company[]>;
+/**
+ * Helper function to create filters for searching companies by name
+ *
+ * @param name - Name to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for name search
+ */
+export declare function createNameFilter(name: string, condition?: FilterConditionType): ListEntryFilters;
+/**
+ * Helper function to create filters for searching companies by website
+ *
+ * @param website - Website to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for website search
+ */
+export declare function createWebsiteFilter(website: string, condition?: FilterConditionType): ListEntryFilters;
+/**
+ * Helper function to create filters for searching companies by industry
+ *
+ * @param industry - Industry to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for industry search
+ */
+export declare function createIndustryFilter(industry: string, condition?: FilterConditionType): ListEntryFilters;
 //# sourceMappingURL=companies.d.ts.map
