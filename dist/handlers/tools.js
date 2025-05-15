@@ -72,10 +72,26 @@ export function registerToolHandlers(server) {
             // Handle search tools
             if (toolType === 'search') {
                 const query = request.params.arguments?.query;
+                // Debug log the incoming request
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[tools.search] Starting search for ${resourceType} with:`, {
+                        toolName,
+                        resourceType,
+                        query,
+                        fullArguments: request.params.arguments
+                    });
+                }
                 try {
                     const searchToolConfig = toolConfig;
                     const results = await searchToolConfig.handler(query);
                     const formattedResults = searchToolConfig.formatResult(results);
+                    // Debug log the results
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log(`[tools.search] Search completed:`, {
+                            resultCount: results.length,
+                            resourceType
+                        });
+                    }
                     return {
                         content: [
                             {
@@ -796,7 +812,7 @@ export function registerToolHandlers(server) {
                     offset = Number(request.params.arguments.offset);
                 }
                 // Import the attribute mapping utility
-                const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping.js");
+                const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping/index.js");
                 // Translate any human-readable attribute names to their slug equivalents
                 // Pass resourceType for object-specific mappings
                 const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
