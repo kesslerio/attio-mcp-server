@@ -1,0 +1,6 @@
+# Ignore user-specific mapping files
+user.json
+
+# Don't ignore default and sample files
+\!default.json
+\!sample.json

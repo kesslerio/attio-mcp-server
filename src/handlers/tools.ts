@@ -1059,9 +1059,17 @@ export function registerToolHandlers(server: Server): void {
           offset = Number(request.params.arguments.offset);
         }
         
+        // Import the attribute mapping utility
+        const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping.js");
+        
+        // Translate any human-readable attribute names to their slug equivalents
+        // Pass resourceType for object-specific mappings
+        const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
+        
         if (process.env.NODE_ENV === 'development') {
           console.log(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
-            filters: JSON.stringify(filters),
+            originalFilters: JSON.stringify(filters),
+            translatedFilters: JSON.stringify(translatedFilters),
             limit,
             offset
           });
@@ -1069,7 +1077,7 @@ export function registerToolHandlers(server: Server): void {
         
         try {
           const advancedSearchToolConfig = toolConfig as AdvancedSearchToolConfig | DateBasedSearchToolConfig;
-          const results = await advancedSearchToolConfig.handler(filters, limit, offset);
+          const results = await advancedSearchToolConfig.handler(translatedFilters, limit, offset);
           const formattedResults = advancedSearchToolConfig.formatResult(results);
           
           return {
