@@ -23,6 +23,26 @@ Special case handling has been added for attributes that commonly cause mapping 
 - `B2B Segment` / `b2b_segment` / `b2bsegment` / etc. → `type_persona`
 - Additional common variations are handled for frequently used attributes
 
+#### Special Field Handling
+
+Some fields require special handling. For example, the "type_persona" field (B2B Segment) requires a special shorthand filter format. Instead of using operators like "$equals", this field uses direct value assignment. The system automatically handles this field using the Attio shorthand format. Two helper functions are provided to simplify B2B Segment filtering:
+
+```typescript
+// In utils/filter-utils.js
+export function createB2BSegmentFilter(
+  value: string
+): ListEntryFilters {
+  // Creates a filter specifically for B2B Segment
+}
+
+// Or in objects/companies.js
+export function createB2BSegmentFilter(
+  segment: string
+): ListEntryFilters {
+  // Creates the same filter, but imported from the companies module
+}
+```
+
 ### 3. Detailed Logging
 
 In development mode, the system provides detailed logging to help debug mapping issues:
@@ -45,7 +65,7 @@ const filters = {
       attribute: {
         slug: "B2B Segment"  // Will be translated to "type_persona"
       },
-      condition: "equals",
+      condition: "equals",   // We'll automatically use the correct operator for type_persona
       value: "Enterprise"
     },
     {
@@ -57,6 +77,12 @@ const filters = {
     }
   ]
 };
+
+// RECOMMENDED: Use the helper function for B2B Segment filtering
+import { createB2BSegmentFilter } from '../utils/filter-utils.js';
+const enterpriseFilter = createB2BSegmentFilter('Enterprise');
+const titleFilter = createContainsFilter('title', 'CEO');
+const combinedFilter = combineFiltersWithAnd(enterpriseFilter, titleFilter);
 ```
 
 ## Extending the Mapping System
