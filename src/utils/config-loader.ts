@@ -25,11 +25,25 @@ export interface MappingConfig {
 }
 
 /**
+ * Get the project root directory
+ */
+function getProjectRoot(): string {
+  // First try to use import.meta.url for ES modules
+  if (import.meta.url) {
+    const currentDir = path.dirname(new URL(import.meta.url).pathname);
+    // Navigate up from utils directory to project root
+    return path.resolve(currentDir, '../..');
+  }
+  // Fallback to process.cwd()
+  return process.cwd();
+}
+
+/**
  * Default paths for configuration files
  */
 const CONFIG_PATHS = {
-  default: path.resolve(process.cwd(), 'config/mappings/default.json'),
-  user: path.resolve(process.cwd(), 'config/mappings/user.json'),
+  default: path.join(getProjectRoot(), 'config', 'mappings', 'default.json'),
+  user: path.join(getProjectRoot(), 'config', 'mappings', 'user.json'),
 };
 
 /**
