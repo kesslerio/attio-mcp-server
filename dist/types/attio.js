@@ -101,4 +101,15 @@ export var ResourceType;
     ResourceType["LISTS"] = "lists";
     ResourceType["RECORDS"] = "records";
 })(ResourceType || (ResourceType = {}));
+/**
+ * Relationship types in Attio
+ * Defines the types of relationships between different record types
+ */
+export var RelationshipType;
+(function (RelationshipType) {
+    RelationshipType["WORKS_AT"] = "works_at";
+    RelationshipType["EMPLOYS"] = "employs";
+    RelationshipType["BELONGS_TO_LIST"] = "in_list";
+    RelationshipType["HAS_NOTE"] = "has_note"; // Any record to Note relationship
+})(RelationshipType || (RelationshipType = {}));
 //# sourceMappingURL=attio.js.map

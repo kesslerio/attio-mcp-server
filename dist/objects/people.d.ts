@@ -1,5 +1,6 @@
 import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
 import { Person, AttioNote, DateRange, InteractionType, ActivityFilter } from "../types/attio.js";
+import { PaginatedResponse } from "../utils/pagination.js";
 /**
  * Searches for people by name, email, or phone number
  *
@@ -82,9 +83,11 @@ export declare function batchGetPeopleDetails(personIds: string[], batchConfig?:
  * @param filters - Filters to apply to the search
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
- * @returns Array of matching people
+ * @param returnPaginated - Whether to return paginated results (default: false)
+ * @param page - Current page number, used when returnPaginated is true (default: 1)
+ * @returns Array of matching people or paginated response
  */
-export declare function advancedSearchPeople(filters?: ListEntryFilters, limit?: number, offset?: number): Promise<Person[]>;
+export declare function advancedSearchPeople(filters?: ListEntryFilters, limit?: number, offset?: number, returnPaginated?: boolean, page?: number): Promise<Person[] | PaginatedResponse<Person>>;
 /**
  * Search for people by creation date
  *
@@ -93,7 +96,7 @@ export declare function advancedSearchPeople(filters?: ListEntryFilters, limit?:
  * @param offset - Number of results to skip (default: 0)
  * @returns Array of matching people
  */
-export declare function searchPeopleByCreationDate(dateRange: DateRange, limit?: number, offset?: number): Promise<Person[]>;
+export declare function searchPeopleByCreationDate(dateRange: DateRange | string | any, limit?: number | string, offset?: number | string): Promise<Person[]>;
 /**
  * Search for people by last modification date
  *
@@ -102,7 +105,7 @@ export declare function searchPeopleByCreationDate(dateRange: DateRange, limit?:
  * @param offset - Number of results to skip (default: 0)
  * @returns Array of matching people
  */
-export declare function searchPeopleByModificationDate(dateRange: DateRange, limit?: number, offset?: number): Promise<Person[]>;
+export declare function searchPeopleByModificationDate(dateRange: DateRange | string | any, limit?: number | string, offset?: number | string): Promise<Person[]>;
 /**
  * Search for people by last interaction date
  *
@@ -112,7 +115,7 @@ export declare function searchPeopleByModificationDate(dateRange: DateRange, lim
  * @param offset - Number of results to skip (default: 0)
  * @returns Array of matching people
  */
-export declare function searchPeopleByLastInteraction(dateRange: DateRange, interactionType?: InteractionType, limit?: number, offset?: number): Promise<Person[]>;
+export declare function searchPeopleByLastInteraction(dateRange: DateRange | string | any, interactionType?: InteractionType | string, limit?: number | string, offset?: number | string): Promise<Person[]>;
 /**
  * Search for people by activity history
  * Combines date range and interaction type filters
@@ -122,5 +125,32 @@ export declare function searchPeopleByLastInteraction(dateRange: DateRange, inte
  * @param offset - Number of results to skip (default: 0)
  * @returns Array of matching people
  */
-export declare function searchPeopleByActivity(activityFilter: ActivityFilter, limit?: number, offset?: number): Promise<Person[]>;
+export declare function searchPeopleByActivity(activityFilter: ActivityFilter | string | any, limit?: number | string, offset?: number | string): Promise<Person[]>;
+/**
+ * Search for people based on attributes of their associated companies
+ *
+ * @param companyFilter - Filter to apply to companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByCompany(companyFilter: ListEntryFilters | string | any, limit?: number | string, offset?: number | string): Promise<Person[]>;
+/**
+ * Search for people who work at companies in a specific list
+ *
+ * @param listId - ID of the list containing companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByCompanyList(listId: string, limit?: number | string, offset?: number | string): Promise<Person[]>;
+/**
+ * Search for people that have notes containing specific text
+ *
+ * @param searchText - Text to search for in notes
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export declare function searchPeopleByNotes(searchText: string, limit?: number | string, offset?: number | string): Promise<Person[]>;
 //# sourceMappingURL=people.d.ts.map

@@ -1,4 +1,4 @@
-import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig } from "../tool-types.js";
+import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig, DateBasedSearchToolConfig } from "../tool-types.js";
 export declare const peopleToolConfigs: {
     search: SearchToolConfig;
     searchByEmail: SearchToolConfig;
@@ -7,10 +7,13 @@ export declare const peopleToolConfigs: {
     details: DetailsToolConfig;
     notes: NotesToolConfig;
     createNote: CreateNoteToolConfig;
-    searchByCreationDate: AdvancedSearchToolConfig;
-    searchByModificationDate: AdvancedSearchToolConfig;
-    searchByLastInteraction: AdvancedSearchToolConfig;
-    searchByActivity: AdvancedSearchToolConfig;
+    searchByCreationDate: DateBasedSearchToolConfig;
+    searchByModificationDate: DateBasedSearchToolConfig;
+    searchByLastInteraction: DateBasedSearchToolConfig;
+    searchByActivity: DateBasedSearchToolConfig;
+    searchByCompany: AdvancedSearchToolConfig;
+    searchByCompanyList: SearchToolConfig;
+    searchByNotes: SearchToolConfig;
 };
 export declare const peopleToolDefinitions: ({
     name: string;
@@ -32,6 +35,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -55,6 +61,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -78,6 +87,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -142,6 +154,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -165,6 +180,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -191,6 +209,9 @@ export declare const peopleToolDefinitions: ({
             dateRange?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -234,6 +255,9 @@ export declare const peopleToolDefinitions: ({
             content?: undefined;
             interactionType?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -281,6 +305,9 @@ export declare const peopleToolDefinitions: ({
             personId?: undefined;
             content?: undefined;
             activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
         };
         required: string[];
     };
@@ -337,6 +364,140 @@ export declare const peopleToolDefinitions: ({
             content?: undefined;
             dateRange?: undefined;
             interactionType?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+        };
+        required: string[];
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyFilter: {
+                type: string;
+                description: string;
+                properties: {
+                    filters: {
+                        type: string;
+                        description: string;
+                        items: {
+                            type: string;
+                            properties: {
+                                attribute: {
+                                    type: string;
+                                    properties: {
+                                        slug: {
+                                            type: string;
+                                            description: string;
+                                        };
+                                    };
+                                    required: string[];
+                                };
+                                condition: {
+                                    type: string;
+                                    description: string;
+                                };
+                                value: {
+                                    type: string[];
+                                    description: string;
+                                };
+                            };
+                            required: string[];
+                        };
+                    };
+                    matchAny: {
+                        type: string;
+                        description: string;
+                    };
+                };
+                required: string[];
+            };
+            limit: {
+                type: string;
+                description: string;
+            };
+            offset: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            email?: undefined;
+            phone?: undefined;
+            filters?: undefined;
+            personId?: undefined;
+            content?: undefined;
+            dateRange?: undefined;
+            interactionType?: undefined;
+            activityFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+        };
+        required: string[];
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            listId: {
+                type: string;
+                description: string;
+            };
+            limit: {
+                type: string;
+                description: string;
+            };
+            offset: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            email?: undefined;
+            phone?: undefined;
+            filters?: undefined;
+            personId?: undefined;
+            content?: undefined;
+            dateRange?: undefined;
+            interactionType?: undefined;
+            activityFilter?: undefined;
+            companyFilter?: undefined;
+            searchText?: undefined;
+        };
+        required: string[];
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            searchText: {
+                type: string;
+                description: string;
+            };
+            limit: {
+                type: string;
+                description: string;
+            };
+            offset: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            email?: undefined;
+            phone?: undefined;
+            filters?: undefined;
+            personId?: undefined;
+            content?: undefined;
+            dateRange?: undefined;
+            interactionType?: undefined;
+            activityFilter?: undefined;
+            companyFilter?: undefined;
+            listId?: undefined;
         };
         required: string[];
     };

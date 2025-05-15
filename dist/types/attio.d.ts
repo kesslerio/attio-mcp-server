@@ -235,6 +235,16 @@ export declare enum ResourceType {
     RECORDS = "records"
 }
 /**
+ * Relationship types in Attio
+ * Defines the types of relationships between different record types
+ */
+export declare enum RelationshipType {
+    WORKS_AT = "works_at",// Person to Company relationship
+    EMPLOYS = "employs",// Company to Person relationship
+    BELONGS_TO_LIST = "in_list",// Any record to List relationship
+    HAS_NOTE = "has_note"
+}
+/**
  * API error response shape
  */
 export interface AttioErrorResponse {

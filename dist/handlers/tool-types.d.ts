@@ -40,7 +40,7 @@ export interface ListActionToolConfig extends ToolConfig {
 export interface PromptsToolConfig extends ToolConfig {
     handler: (req: Request, res: Response) => Promise<void>;
 }
-export interface AdvancedSearchToolConfig extends ToolConfig {
+export interface DateBasedSearchToolConfig extends ToolConfig {
     handler: (...args: any[]) => Promise<AttioRecord[]>;
     formatResult: (results: AttioRecord[]) => string;
 }
