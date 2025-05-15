@@ -8,7 +8,6 @@ import { initializeAttioClient } from "./api/attio-client.js";
 import { registerResourceHandlers } from "./handlers/resources.js";
 import { registerToolHandlers } from "./handlers/tools.js";
 import { registerPromptHandlers } from "./prompts/handlers.js";
-import { startHealthServer } from "./health/http-server.js";
 import { startAutoDiscovery, stopAutoDiscovery } from "./utils/auto-discovery.js";
 // Create server instance
 const server = new Server({
@@ -44,24 +43,15 @@ async function main() {
             intervalMinutes: process.env.ATTIO_DISCOVERY_INTERVAL ?
                 parseInt(process.env.ATTIO_DISCOVERY_INTERVAL, 10) : 60, // Default to 60 minutes
         };
-        console.log('Starting Attio MCP server...');
-        console.log(`Auto-discovery enabled: ${autoDiscoveryConfig.enabled}`);
+        // Silent mode - no console outputs for MCP compatibility
         if (autoDiscoveryConfig.enabled) {
             await startAutoDiscovery(process.env.ATTIO_API_KEY, autoDiscoveryConfig);
         }
-        // Start health check server (for Docker)
-        const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-        const healthServer = startHealthServer({
-            port,
-            maxRetries: 5,
-            maxRetryTime: 15000,
-            retryBackoff: 500
-        });
+        // Health check server removed for MCP compatibility
         // Handle graceful shutdown
         const shutdown = () => {
-            console.log("Shutting down servers...");
+            // Silent shutdown for MCP compatibility
             stopAutoDiscovery();
-            healthServer.shutdown?.() || healthServer.close();
             process.exit(0);
         };
         process.on('SIGINT', shutdown);
