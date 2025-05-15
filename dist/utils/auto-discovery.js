@@ -5,9 +5,9 @@ import { getObjectAttributes, getAvailableObjects } from '../cli/commands/attrib
 import { loadMappingConfig, writeMappingConfig } from './config-loader.js';
 // Simple logging for auto-discovery
 const log = {
-    info: (msg) => console.log(`[AUTO-DISCOVERY] ${msg}`),
-    warn: (msg) => console.warn(`[AUTO-DISCOVERY] ${msg}`),
-    error: (msg, error) => console.error(`[AUTO-DISCOVERY] ${msg}`, error || '')
+    info: (msg) => process.stderr.write(`[AUTO-DISCOVERY] ${msg}\n`),
+    warn: (msg) => process.stderr.write(`[AUTO-DISCOVERY] [WARN] ${msg}\n`),
+    error: (msg, error) => process.stderr.write(`[AUTO-DISCOVERY] [ERROR] ${msg}${error ? `: ${error}` : ''}\n`)
 };
 /**
  * Default configuration for auto-discovery

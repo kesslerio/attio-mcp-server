@@ -6,9 +6,9 @@ import { loadMappingConfig, writeMappingConfig, MappingConfig } from './config-l
 
 // Simple logging for auto-discovery
 const log = {
-  info: (msg: string) => console.log(`[AUTO-DISCOVERY] ${msg}`),
-  warn: (msg: string) => console.warn(`[AUTO-DISCOVERY] ${msg}`),
-  error: (msg: string, error?: any) => console.error(`[AUTO-DISCOVERY] ${msg}`, error || '')
+  info: (msg: string) => process.stderr.write(`[AUTO-DISCOVERY] ${msg}\n`),
+  warn: (msg: string) => process.stderr.write(`[AUTO-DISCOVERY] [WARN] ${msg}\n`),
+  error: (msg: string, error?: any) => process.stderr.write(`[AUTO-DISCOVERY] [ERROR] ${msg}${error ? `: ${error}` : ''}\n`)
 };
 
 /**

@@ -31,7 +31,6 @@ export declare const companyToolDefinitions: ({
             searchText?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -96,7 +95,6 @@ export declare const companyToolDefinitions: ({
             searchText?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -122,10 +120,7 @@ export declare const companyToolDefinitions: ({
             listId?: undefined;
             searchText?: undefined;
         };
-        oneOf: {
-            required: string[];
-        }[];
-        required?: undefined;
+        required: never[];
     };
 } | {
     name: string;
@@ -157,10 +152,7 @@ export declare const companyToolDefinitions: ({
             listId?: undefined;
             searchText?: undefined;
         };
-        oneOf: {
-            required: string[];
-        }[];
-        required?: undefined;
+        required: never[];
     };
 } | {
     name: string;
@@ -193,9 +185,6 @@ export declare const companyToolDefinitions: ({
             searchText?: undefined;
         };
         required: string[];
-        oneOf: {
-            required: string[];
-        }[];
     };
 } | {
     name: string;
@@ -260,7 +249,6 @@ export declare const companyToolDefinitions: ({
             searchText?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -290,7 +278,6 @@ export declare const companyToolDefinitions: ({
             searchText?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -320,7 +307,6 @@ export declare const companyToolDefinitions: ({
             listId?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 })[];
 //# sourceMappingURL=companies.d.ts.map
