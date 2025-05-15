@@ -11,6 +11,7 @@ import { registerResourceHandlers } from "./handlers/resources.js";
 import { registerToolHandlers } from "./handlers/tools.js";
 import { registerPromptHandlers } from "./prompts/handlers.js";
 import { startHealthServer } from "./health/http-server.js";
+import { startAutoDiscovery, stopAutoDiscovery } from "./utils/auto-discovery.js";
 
 // Create server instance
 const server = new Server(
@@ -46,6 +47,21 @@ async function main() {
     registerToolHandlers(server);
     registerPromptHandlers(server);
     
+    // Start automatic attribute discovery
+    const autoDiscoveryConfig = {
+      enabled: process.env.ATTIO_AUTO_DISCOVERY !== 'false', // Default to true
+      runOnStartup: process.env.ATTIO_DISCOVERY_ON_STARTUP !== 'false', // Default to true
+      intervalMinutes: process.env.ATTIO_DISCOVERY_INTERVAL ? 
+        parseInt(process.env.ATTIO_DISCOVERY_INTERVAL, 10) : 60, // Default to 60 minutes
+    };
+    
+    console.log('Starting Attio MCP server...');
+    console.log(`Auto-discovery enabled: ${autoDiscoveryConfig.enabled}`);
+    
+    if (autoDiscoveryConfig.enabled) {
+      await startAutoDiscovery(process.env.ATTIO_API_KEY, autoDiscoveryConfig);
+    }
+    
     // Start health check server (for Docker)
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
     const healthServer = startHealthServer({
@@ -58,6 +74,7 @@ async function main() {
     // Handle graceful shutdown
     const shutdown = () => {
       console.log("Shutting down servers...");
+      stopAutoDiscovery();
       (healthServer as any).shutdown?.() || healthServer.close();
       process.exit(0);
     };
