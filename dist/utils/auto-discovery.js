@@ -3,11 +3,11 @@
  */
 import { getObjectAttributes, getAvailableObjects } from '../cli/commands/attributes.js';
 import { loadMappingConfig, writeMappingConfig } from './config-loader.js';
-// Simple logging for auto-discovery
+// Simple logging for auto-discovery - disabled for MCP protocol compatibility
 const log = {
-    info: (msg) => process.stderr.write(`[AUTO-DISCOVERY] ${msg}\n`),
-    warn: (msg) => process.stderr.write(`[AUTO-DISCOVERY] [WARN] ${msg}\n`),
-    error: (msg, error) => process.stderr.write(`[AUTO-DISCOVERY] [ERROR] ${msg}${error ? `: ${error}` : ''}\n`)
+    info: (msg) => { },
+    warn: (msg) => { },
+    error: (msg, error) => { }
 };
 /**
  * Default configuration for auto-discovery
