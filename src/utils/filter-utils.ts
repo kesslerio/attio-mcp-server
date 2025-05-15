@@ -44,6 +44,17 @@ export type AttioApiFilter = {
 };
 
 /**
+ * Special case field-operator mappings and handling flags
+ */
+export const FIELD_SPECIAL_HANDLING: Record<string, any> = {
+  // Special handling for B2B Segment field (type_persona)
+  'type_persona': {
+    // This field needs special shorthand format handling
+    useShorthandFormat: true
+  }
+};
+
+/**
  * Validates a filter structure for basic required properties
  * 
  * @param filter - The filter to validate
@@ -113,9 +124,28 @@ export function transformFiltersToApiFormat(
       
       // Create a condition object for this individual filter
       const condition: any = {};
-      condition[slug] = {
-        [`$${filter.condition}`]: filter.value
-      };
+      
+      // Check for special case handling
+      if (FIELD_SPECIAL_HANDLING[slug] && FIELD_SPECIAL_HANDLING[slug].useShorthandFormat) {
+        // For special fields that need shorthand format (no operators)
+        // This uses the Attio shorthand filter format
+        
+        // Log special handling in development mode
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[OR Logic] Using shorthand filter format for field ${slug}`);
+        }
+        
+        // Direct value assignment for shorthand format
+        condition[slug] = filter.value;
+      } else {
+        // Standard operator handling for normal fields
+        let operator = filter.condition;
+        
+        // Create the condition with operator
+        condition[slug] = {
+          [`$${operator}`]: filter.value
+        };
+      }
       
       // Add to the OR conditions array
       orConditions.push(condition);
@@ -154,13 +184,36 @@ export function transformFiltersToApiFormat(
       );
     }
     
-    // Initialize attribute entry if needed
-    if (!apiFilter[slug]) {
-      apiFilter[slug] = {};
+    // Check for special case handling
+    if (FIELD_SPECIAL_HANDLING[slug] && FIELD_SPECIAL_HANDLING[slug].useShorthandFormat) {
+      // For special fields that need shorthand format (no operators)
+      // This uses the Attio shorthand filter format
+      
+      // Log special handling in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Using shorthand filter format for field ${slug}`);
+      }
+      
+      // Direct value assignment for shorthand format
+      if (!apiFilter[slug]) {
+        apiFilter[slug] = filter.value;
+      } else {
+        console.warn(`Multiple filters for ${slug} using shorthand format will overwrite previous values`);
+        apiFilter[slug] = filter.value;
+      }
+    } else {
+      // Standard operator handling for normal fields
+      let operator = filter.condition;
+      
+      // Initialize attribute entry if needed for operator-based filtering
+      if (!apiFilter[slug]) {
+        apiFilter[slug] = {};
+      }
+      
+      // Add operator with $ prefix as required by Attio API
+      apiFilter[slug][`$${operator}`] = filter.value;
     }
     
-    // Add condition with $ prefix as required by Attio API
-    apiFilter[slug][`$${filter.condition}`] = filter.value;
     hasValidFilters = true;
   });
   
@@ -346,6 +399,28 @@ export function createRevenueFilter(range: NumericRange): ListEntryFilters {
  */
 export function createEmployeeCountFilter(range: NumericRange): ListEntryFilters {
   return createNumericFilter(FILTER_ATTRIBUTES.EMPLOYEE_COUNT, range);
+}
+
+/**
+ * Creates a filter for B2B Segment (type_persona)
+ * 
+ * @param value - B2B Segment value to filter by
+ * @returns Configured filter object
+ */
+export function createB2BSegmentFilter(
+  value: string
+): ListEntryFilters {
+  // Using a simple equals filter that will be transformed using the shorthand format
+  return {
+    filters: [
+      {
+        attribute: { slug: 'type_persona' },
+        condition: FilterConditionType.EQUALS, // This won't be used for type_persona due to shorthand format
+        value
+      }
+    ],
+    matchAny: false
+  };
 }
 
 /**
