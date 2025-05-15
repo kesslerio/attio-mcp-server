@@ -74,6 +74,14 @@ export function transformFiltersToApiFormat(filters, validateConditions = true) 
         const orConditions = [];
         // Process each filter to create individual condition objects
         filters.filters.forEach(filter => {
+            // Debug log each filter
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`[transformFiltersToApiFormat] Processing filter:`, {
+                    attribute: filter.attribute,
+                    condition: filter.condition,
+                    value: filter.value
+                });
+            }
             // Validate filter structure
             if (!validateFilterStructure(filter)) {
                 const slugInfo = filter.attribute?.slug ? ` ${filter.attribute.slug}` : '';
@@ -81,6 +89,10 @@ export function transformFiltersToApiFormat(filters, validateConditions = true) 
                 return; // Skip this filter
             }
             const { slug } = filter.attribute;
+            // Debug log the slug being processed
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`[transformFiltersToApiFormat] Filter slug: ${slug}`);
+            }
             // Validate condition type if enabled
             if (validateConditions && !isValidFilterCondition(filter.condition)) {
                 throw new FilterValidationError(`Invalid filter condition '${filter.condition}' for attribute '${slug}'. ` +
@@ -102,10 +114,22 @@ export function transformFiltersToApiFormat(filters, validateConditions = true) 
             else {
                 // Standard operator handling for normal fields
                 let operator = filter.condition;
+                // Debug log the operator transformation
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[transformFiltersToApiFormat] Creating condition with operator:`, {
+                        slug,
+                        operator: `$${operator}`,
+                        value: filter.value
+                    });
+                }
                 // Create the condition with operator
                 condition[slug] = {
                     [`$${operator}`]: filter.value
                 };
+            }
+            // Debug log the condition being added
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`[transformFiltersToApiFormat] Adding condition:`, condition);
             }
             // Add to the OR conditions array
             orConditions.push(condition);
