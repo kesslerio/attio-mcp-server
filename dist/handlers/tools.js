@@ -72,10 +72,26 @@ export function registerToolHandlers(server) {
             // Handle search tools
             if (toolType === 'search') {
                 const query = request.params.arguments?.query;
+                // Debug log the incoming request
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`[tools.search] Starting search for ${resourceType} with:`, {
+                        toolName,
+                        resourceType,
+                        query,
+                        fullArguments: request.params.arguments
+                    });
+                }
                 try {
                     const searchToolConfig = toolConfig;
                     const results = await searchToolConfig.handler(query);
                     const formattedResults = searchToolConfig.formatResult(results);
+                    // Debug log the results
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log(`[tools.search] Search completed:`, {
+                            resultCount: results.length,
+                            resourceType
+                        });
+                    }
                     return {
                         content: [
                             {
@@ -672,7 +688,15 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(dateRange, limit, offset);
+                        // Create a properly typed filter object if it's not already one
+                        let filter = { filters: [] };
+                        if (typeof dateRange === 'object' && dateRange !== null) {
+                            filter = dateRange;
+                        }
+                        else {
+                            filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: dateRange }] };
+                        }
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     else if (toolType === 'searchByLastInteraction') {
@@ -691,7 +715,16 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(dateRange, interactionType, limit, offset);
+                        // Create a properly typed filter object
+                        let filter = { filters: [] };
+                        // Construct proper filter based on date range and interaction type
+                        filter = {
+                            filters: [
+                                { attribute: { slug: 'last_interaction' }, condition: 'equals', value: dateRange },
+                                ...(interactionType ? [{ attribute: { slug: 'interaction_type' }, condition: 'equals', value: interactionType }] : [])
+                            ]
+                        };
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     else if (toolType === 'searchByActivity') {
@@ -709,7 +742,19 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(activityFilter, limit, offset);
+                        // Create a properly typed filter object
+                        let filter = { filters: [] };
+                        if (typeof activityFilter === 'object' && activityFilter !== null) {
+                            filter = {
+                                filters: [
+                                    { attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }
+                                ]
+                            };
+                        }
+                        else {
+                            filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }] };
+                        }
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     // Format and return results
@@ -766,16 +811,22 @@ export function registerToolHandlers(server) {
                 if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
                     offset = Number(request.params.arguments.offset);
                 }
+                // Import the attribute mapping utility
+                const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping/index.js");
+                // Translate any human-readable attribute names to their slug equivalents
+                // Pass resourceType for object-specific mappings
+                const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
                 if (process.env.NODE_ENV === 'development') {
                     console.log(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
-                        filters: JSON.stringify(filters),
+                        originalFilters: JSON.stringify(filters),
+                        translatedFilters: JSON.stringify(translatedFilters),
                         limit,
                         offset
                     });
                 }
                 try {
                     const advancedSearchToolConfig = toolConfig;
-                    const results = await advancedSearchToolConfig.handler(filters, limit, offset);
+                    const results = await advancedSearchToolConfig.handler(translatedFilters, limit, offset);
                     const formattedResults = advancedSearchToolConfig.formatResult(results);
                     return {
                         content: [

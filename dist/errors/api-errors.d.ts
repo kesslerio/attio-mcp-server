@@ -108,4 +108,61 @@ export declare class FilterValidationError extends Error {
      */
     constructor(message: string);
 }
+/**
+ * Error for relationship filter validation issues
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   if (!isValidRelationshipType(type)) {
+ *     throw new RelationshipFilterError(`Invalid relationship type: ${type}`, 'people', 'companies');
+ *   }
+ * } catch (error) {
+ *   if (error instanceof RelationshipFilterError) {
+ *     // Handle relationship filter error
+ *   }
+ * }
+ * ```
+ */
+export declare class RelationshipFilterError extends FilterValidationError {
+    readonly sourceType?: string | undefined;
+    readonly targetType?: string | undefined;
+    readonly relationshipType?: string | undefined;
+    /**
+     * Create a RelationshipFilterError
+     *
+     * @param message - Error message
+     * @param sourceType - The source entity type (e.g., 'people', 'companies')
+     * @param targetType - The target entity type (e.g., 'companies', 'lists')
+     * @param relationshipType - The type of relationship that failed validation
+     */
+    constructor(message: string, sourceType?: string | undefined, targetType?: string | undefined, relationshipType?: string | undefined);
+}
+/**
+ * Error specifically for list relationship issues
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   if (!isValidListId(listId)) {
+ *     throw new ListRelationshipError(`Invalid list ID: ${listId}`, 'people', listId);
+ *   }
+ * } catch (error) {
+ *   if (error instanceof ListRelationshipError) {
+ *     // Handle list relationship error
+ *   }
+ * }
+ * ```
+ */
+export declare class ListRelationshipError extends RelationshipFilterError {
+    readonly listId?: string | undefined;
+    /**
+     * Create a ListRelationshipError
+     *
+     * @param message - Error message
+     * @param sourceType - The source entity type (e.g., 'people', 'companies')
+     * @param listId - The list ID that caused the error
+     */
+    constructor(message: string, sourceType?: string, listId?: string | undefined);
+}
 //# sourceMappingURL=api-errors.d.ts.map

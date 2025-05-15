@@ -103,13 +103,62 @@ To use the Attio MCP Server with Claude Desktop, add the following to your Claud
 
 For more details on Claude configuration, see [Claude Desktop Configuration](./claude-desktop-config.md).
 
+## Automatic Attribute Discovery
+
+The Attio MCP server now automatically discovers and maintains attribute mappings:
+
+- **Runs on Startup**: Automatically discovers all attributes when the server starts
+- **Periodic Updates**: Refreshes mappings every hour by default
+- **Zero Configuration**: Works out of the box with no manual setup required
+
+### Customizing Auto-Discovery
+
+You can customize the behavior via environment variables in your `.env` file:
+
+```bash
+# Disable auto-discovery (default: true)
+ATTIO_AUTO_DISCOVERY=false
+
+# Disable discovery on startup (default: true)  
+ATTIO_DISCOVERY_ON_STARTUP=false
+
+# Set update interval in minutes (default: 60)
+ATTIO_DISCOVERY_INTERVAL=120
+```
+
+### Manual Discovery (Optional)
+
+If you prefer manual control or need immediate updates:
+
+```bash
+# Discover all attributes manually
+npm run discover:all-attributes:robust
+
+# This creates config/mappings/user.json with your workspace's attribute mappings
+```
+
+For more details, see the [CLI Documentation](./cli/README.md).
+
 ## Verifying Installation
 
 To verify that the server is running correctly:
 
 1. Start the server as described above
-2. Ask Claude a question about your Attio data, such as "List all companies in my Attio CRM"
-3. Claude should respond with data from your Attio instance
+2. Wait a moment for automatic attribute discovery (check logs)
+3. Ask Claude a question about your Attio data, such as "List all companies in my Attio CRM"
+4. Claude should respond with data from your Attio instance
+
+The server will automatically discover attributes on startup. Check the logs for:
+```
+Starting automatic attribute discovery...
+Discovered X attributes for companies
+Automatic attribute discovery completed successfully
+```
+
+If discovery fails, it won't prevent the server from starting. You can:
+- Check logs for error details
+- Run manual discovery: `npm run discover:all-attributes:robust`
+- See [CLI Troubleshooting](./cli/README.md#troubleshooting) for more help
 
 ## Next Steps
 

@@ -38,38 +38,44 @@ export function validateNumericRange(range) {
  * @throws Error when range is invalid
  */
 export function createNumericRangeFilter(attributeSlug, range) {
-    // Validate the numeric range
-    validateNumericRange(range);
-    const filters = [];
-    // Handle exact match case
-    if (range.equals !== undefined) {
-        filters.push({
-            attribute: { slug: attributeSlug },
-            condition: FilterConditionType.EQUALS,
-            value: range.equals
-        });
-        return { filters, matchAny: false };
+    try {
+        // Validate the numeric range
+        validateNumericRange(range);
+        const filters = [];
+        // Handle exact match case
+        if (range.equals !== undefined) {
+            filters.push({
+                attribute: { slug: attributeSlug },
+                condition: FilterConditionType.EQUALS,
+                value: range.equals
+            });
+            return { filters, matchAny: false };
+        }
+        // Handle min value (greater than or equal)
+        if (range.min !== undefined) {
+            filters.push({
+                attribute: { slug: attributeSlug },
+                condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
+                value: range.min
+            });
+        }
+        // Handle max value (less than or equal)
+        if (range.max !== undefined) {
+            filters.push({
+                attribute: { slug: attributeSlug },
+                condition: FilterConditionType.LESS_THAN_OR_EQUALS,
+                value: range.max
+            });
+        }
+        return {
+            filters,
+            // When both min and max are specified, we want records that match both (AND logic)
+            matchAny: false
+        };
     }
-    // Handle min value (greater than or equal)
-    if (range.min !== undefined) {
-        filters.push({
-            attribute: { slug: attributeSlug },
-            condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
-            value: range.min
-        });
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to create numeric filter: ${errorMessage}`);
     }
-    // Handle max value (less than or equal)
-    if (range.max !== undefined) {
-        filters.push({
-            attribute: { slug: attributeSlug },
-            condition: FilterConditionType.LESS_THAN_OR_EQUALS,
-            value: range.max
-        });
-    }
-    return {
-        filters,
-        // When both min and max are specified, we want records that match both (AND logic)
-        matchAny: false
-    };
 }
 //# sourceMappingURL=numeric-utils.js.map

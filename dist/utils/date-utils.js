@@ -241,7 +241,7 @@ export function resolveDateRange(dateRange) {
  * @param dateString - The string to validate
  * @returns True if the string is a valid ISO date, false otherwise
  */
-function isValidISODateString(dateString) {
+export function isValidISODateString(dateString) {
     // Check basic format
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(dateString)) {
         return false;

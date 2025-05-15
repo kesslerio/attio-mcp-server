@@ -1,4 +1,4 @@
-import { searchPeople, searchPeopleByEmail, searchPeopleByPhone, getPersonDetails, getPersonNotes, createPersonNote, searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity } from "../../objects/people.js";
+import { searchPeople, searchPeopleByEmail, searchPeopleByPhone, getPersonDetails, getPersonNotes, createPersonNote, searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, searchPeopleByCompany, searchPeopleByCompanyList, searchPeopleByNotes, advancedSearchPeople } from "../../objects/people.js";
 // People tool configurations
 export const peopleToolConfigs = {
     search: {
@@ -69,6 +69,28 @@ export const peopleToolConfigs = {
         handler: searchPeopleByActivity,
         formatResult: (results) => {
             return `Found ${results.length} people with matching activity:\n${results.map((person) => `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`).join('\n')}`;
+        }
+    },
+    // Relationship-based filtering tools
+    searchByCompany: {
+        name: "search-people-by-company",
+        handler: searchPeopleByCompany,
+        formatResult: (results) => {
+            return `Found ${results.length} people matching the company filter:\n${results.map((person) => `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
+        }
+    },
+    searchByCompanyList: {
+        name: "search-people-by-company-list",
+        handler: searchPeopleByCompanyList,
+        formatResult: (results) => {
+            return `Found ${results.length} people who work at companies in the specified list:\n${results.map((person) => `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
+        }
+    },
+    searchByNotes: {
+        name: "search-people-by-notes",
+        handler: searchPeopleByNotes,
+        formatResult: (results) => {
+            return `Found ${results.length} people with matching notes:\n${results.map((person) => `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
         }
     }
 };
@@ -380,6 +402,108 @@ export const peopleToolDefinitions = [
                 }
             },
             required: ["activityFilter"]
+        }
+    },
+    // Relationship-based filtering tool definitions
+    {
+        name: "search-people-by-company",
+        description: "Search for people based on attributes of their associated companies",
+        inputSchema: {
+            type: "object",
+            properties: {
+                companyFilter: {
+                    type: "object",
+                    description: "Filter conditions to apply to companies",
+                    properties: {
+                        filters: {
+                            type: "array",
+                            description: "Array of filter conditions",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    attribute: {
+                                        type: "object",
+                                        properties: {
+                                            slug: {
+                                                type: "string",
+                                                description: "Company attribute to filter on (e.g., 'name', 'industry', 'website')"
+                                            }
+                                        },
+                                        required: ["slug"]
+                                    },
+                                    condition: {
+                                        type: "string",
+                                        description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                                    },
+                                    value: {
+                                        type: ["string", "number", "boolean"],
+                                        description: "Value to filter by"
+                                    }
+                                },
+                                required: ["attribute", "condition", "value"]
+                            }
+                        },
+                        matchAny: {
+                            type: "boolean",
+                            description: "When true, matches any filter (OR logic). When false, matches all filters (AND logic)"
+                        }
+                    },
+                    required: ["filters"]
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["companyFilter"]
+        }
+    },
+    {
+        name: "search-people-by-company-list",
+        description: "Search for people who work at companies in a specific list",
+        inputSchema: {
+            type: "object",
+            properties: {
+                listId: {
+                    type: "string",
+                    description: "ID of the list containing companies"
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["listId"]
+        }
+    },
+    {
+        name: "search-people-by-notes",
+        description: "Search for people that have notes containing specific text",
+        inputSchema: {
+            type: "object",
+            properties: {
+                searchText: {
+                    type: "string",
+                    description: "Text to search for in notes"
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["searchText"]
         }
     }
 ];
