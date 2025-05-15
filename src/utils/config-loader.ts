@@ -142,8 +142,13 @@ export async function writeMappingConfig(
   try {
     // Ensure the directory exists
     const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      await fs.promises.mkdir(dir, { recursive: true });
+    } catch (error: any) {
+      // Ignore EEXIST errors as directory already exists
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
     }
 
     // Update metadata
