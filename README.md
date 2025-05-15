@@ -14,10 +14,19 @@ A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-na
   - Tasks: View and manage (coming soon)
 
 - **Enhanced Capabilities**
+  - Automatic attribute discovery on startup and periodic updates
+  - Natural language attribute mapping
   - Robust error handling with helpful messages
   - Automatic retry logic with exponential backoff
   - Input validation to prevent common errors
   - Standardized response formatting
+
+- **Automatic Configuration**
+  - Zero-configuration attribute discovery
+  - Runs automatically on server startup
+  - Periodic updates to keep mappings in sync
+  - No manual setup required
+  - Configurable via environment variables
 
 ## 🔍 Example: Using with Claude
 

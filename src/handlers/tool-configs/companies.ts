@@ -169,10 +169,7 @@ export const companyToolDefinitions = [
           description: "URI of the company in the format 'attio://companies/{id}'"
         }
       },
-      oneOf: [
-        { required: ["companyId"] },
-        { required: ["uri"] }
-      ]
+      required: []
     }
   },
   {
@@ -198,10 +195,7 @@ export const companyToolDefinitions = [
           description: "Number of notes to skip for pagination (default: 0)"
         }
       },
-      oneOf: [
-        { required: ["companyId"] },
-        { required: ["uri"] }
-      ]
+      required: []
     }
   },
   {
@@ -227,11 +221,7 @@ export const companyToolDefinitions = [
           description: "Content of the note"
         }
       },
-      required: ["content"],
-      oneOf: [
-        { required: ["companyId"] },
-        { required: ["uri"] }
-      ]
+      required: ["content"]
     }
   },
   
