@@ -1060,7 +1060,7 @@ export function registerToolHandlers(server: Server): void {
         }
         
         // Import the attribute mapping utility
-        const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping.js");
+        const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping/index.js");
         
         // Translate any human-readable attribute names to their slug equivalents
         // Pass resourceType for object-specific mappings
