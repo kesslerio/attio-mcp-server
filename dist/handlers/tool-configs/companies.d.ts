@@ -1,4 +1,4 @@
-import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig } from "../tool-types.js";
+import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig, ToolConfig } from "../tool-types.js";
 export declare const companyToolConfigs: {
     search: SearchToolConfig;
     searchByPeople: AdvancedSearchToolConfig;
@@ -8,6 +8,19 @@ export declare const companyToolConfigs: {
     details: DetailsToolConfig;
     notes: NotesToolConfig;
     createNote: CreateNoteToolConfig;
+    create: ToolConfig;
+    update: ToolConfig;
+    updateAttribute: ToolConfig;
+    delete: ToolConfig;
+    json: DetailsToolConfig;
+    basicInfo: DetailsToolConfig;
+    contactInfo: DetailsToolConfig;
+    businessInfo: DetailsToolConfig;
+    socialInfo: DetailsToolConfig;
+    fields: ToolConfig;
+    customFields: ToolConfig;
+    discoverAttributes: ToolConfig;
+    getAttributes: ToolConfig;
 };
 export declare const companyToolDefinitions: ({
     name: string;
@@ -29,8 +42,14 @@ export declare const companyToolDefinitions: ({
             peopleFilter?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -93,8 +112,14 @@ export declare const companyToolDefinitions: ({
             peopleFilter?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -119,8 +144,16 @@ export declare const companyToolDefinitions: ({
             peopleFilter?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
-        required: never[];
+        oneOf: {
+            required: string[];
+        }[];
+        required?: undefined;
     };
 } | {
     name: string;
@@ -151,8 +184,16 @@ export declare const companyToolDefinitions: ({
             peopleFilter?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
-        required: never[];
+        oneOf: {
+            required: string[];
+        }[];
+        required?: undefined;
     };
 } | {
     name: string;
@@ -183,8 +224,16 @@ export declare const companyToolDefinitions: ({
             peopleFilter?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf: {
+            required: string[];
+        }[];
     };
 } | {
     name: string;
@@ -247,8 +296,14 @@ export declare const companyToolDefinitions: ({
             content?: undefined;
             listId?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -276,8 +331,14 @@ export declare const companyToolDefinitions: ({
             content?: undefined;
             peopleFilter?: undefined;
             searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf?: undefined;
     };
 } | {
     name: string;
@@ -305,8 +366,284 @@ export declare const companyToolDefinitions: ({
             content?: undefined;
             peopleFilter?: undefined;
             listId?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
         };
         required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            attributes: {
+                type: string;
+                description: string;
+                properties: {
+                    name: {
+                        type: string;
+                        description: string;
+                    };
+                    website: {
+                        type: string;
+                        description: string;
+                    };
+                    industry: {
+                        type: string;
+                        description: string;
+                    };
+                };
+                additionalProperties: boolean;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            attributes: {
+                type: string;
+                description: string;
+                additionalProperties: boolean;
+                properties?: undefined;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            attributeName: {
+                type: string;
+                description: string;
+            };
+            attributeValue: {
+                type: string[];
+                description: string;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            attributeName: {
+                type: string;
+                description: string;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            fields: {
+                type: string;
+                items: {
+                    type: string;
+                };
+                description: string;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            customFieldNames?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyId: {
+                type: string;
+                description: string;
+            };
+            customFieldNames: {
+                type: string[];
+                items: {
+                    type: string;
+                };
+                description: string;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+        };
+        required?: undefined;
+        oneOf?: undefined;
     };
 })[];
 //# sourceMappingURL=companies.d.ts.map

@@ -805,7 +805,9 @@ export async function createRecord<T extends AttioRecord>(
   return callWithRetry(async () => {
     try {
       const response = await api.post<AttioSingleResponse<T>>(path, {
-        attributes: params.attributes
+        data: {
+          values: params.attributes
+        }
       });
       
       return response.data.data;
@@ -839,12 +841,17 @@ export async function getRecord<T extends AttioRecord>(
   
   // Add attributes parameter if provided
   if (attributes && attributes.length > 0) {
-    const attributesParam = attributes.join(',');
-    path += `?attributes=${encodeURIComponent(attributesParam)}`;
+    // Use array syntax for multiple attributes
+    const params = new URLSearchParams();
+    attributes.forEach(attr => params.append('attributes[]', attr));
+    path += `?${params.toString()}`;
   }
   
   return callWithRetry(async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[getRecord] Final request path:', path);
+      }
       const response = await api.get<AttioSingleResponse<T>>(path);
       return response.data.data;
     } catch (error: any) {
@@ -871,12 +878,26 @@ export async function updateRecord<T extends AttioRecord>(
   
   return callWithRetry(async () => {
     try {
-      const response = await api.patch<AttioSingleResponse<T>>(path, {
-        attributes: params.attributes
-      });
+      console.log('[updateRecord] Request path:', path);
+      console.log('[updateRecord] Attributes:', JSON.stringify(params.attributes, null, 2));
+      
+      // The API expects 'data.values' structure
+      const payload = {
+        data: {
+          values: params.attributes
+        }
+      };
+      console.log('[updateRecord] Full payload:', JSON.stringify(payload, null, 2));
+      
+      const response = await api.patch<AttioSingleResponse<T>>(path, payload);
       
       return response.data.data;
     } catch (error: any) {
+      console.error('[updateRecord] Error:', error.message);
+      console.error('[updateRecord] Response data:', error.response?.data);
+      console.error('[updateRecord] Response status:', error.response?.status);
+      console.error('[updateRecord] Response headers:', error.response?.headers);
+      console.error('[updateRecord] Request config:', error.config);
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }

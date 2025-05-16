@@ -21,6 +21,14 @@ export function createAttioClient(apiKey) {
     });
     // Add response interceptor for error handling
     client.interceptors.response.use(response => response, error => {
+        if (process.env.NODE_ENV === 'development') {
+            console.error('[Attio API] Request failed:');
+            console.error('URL:', error.config?.url);
+            console.error('Method:', error.config?.method);
+            console.error('Data:', error.config?.data);
+            console.error('Response status:', error.response?.status);
+            console.error('Response data:', error.response?.data);
+        }
         const enhancedError = createAttioError(error);
         return Promise.reject(enhancedError);
     });
