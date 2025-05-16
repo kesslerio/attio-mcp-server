@@ -228,3 +228,42 @@ try {
     *   If you must use `console.log` for quick debugging, ensure it's done in a context where it won't be mixed with client responses (e.g., in standalone scripts, unit tests, or very early in the request lifecycle before any response headers/body are sent, and remove them afterward).
 
 **Key Takeaway:** The data stream for a JSON API response must contain *only* valid JSON. Any extraneous text, including server-side debug logs, will likely cause parsing failures on the client.
+
+## Claude Desktop App Crashes
+
+### Large JSON Response Causing Crashes
+
+**Problem:** Claude Desktop app crashes when receiving large company details with JSON responses containing thousands of lines.
+
+**Symptoms:**
+- App crashes specifically when calling `get-company-details`
+- Large JSON responses with multiple nested attributes
+- Response includes data anomalies (e.g., typos like "typpe" instead of "type")
+
+**Cause:**
+The `get-company-details` tool was returning raw JSON with thousands of lines, which can overwhelm Claude Desktop's processing capabilities, especially when the JSON contains errors or unusual data.
+
+**Solution:**
+1. **Use the Improved get-company-details Tool:**
+   - The `get-company-details` tool now returns a formatted summary instead of raw JSON
+   - Shows key fields like name, website, industry, location, etc.
+   - Provides company ID for further queries if needed
+
+2. **For Full JSON Data:**
+   - Use the new `get-company-json` tool when you specifically need the complete JSON data
+   - This tool also fixes known data issues (e.g., corrects "typpe" to "type")
+   - Still returns JSON but with cleaner formatting
+
+**Example Usage:**
+```bash
+# Get a human-readable summary
+get-company-details --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# Get the full JSON data when needed
+get-company-json --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+```
+
+**Prevention:**
+- Always use the formatted `get-company-details` for general queries
+- Only use `get-company-json` when you specifically need the raw data
+- Be cautious with companies that have extensive attribute data

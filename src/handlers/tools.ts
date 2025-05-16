@@ -250,6 +250,22 @@ export function registerToolHandlers(server: Server): void {
         
         try {
           const details = await toolConfig.handler(id);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(details);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
           return {
             content: [
               {

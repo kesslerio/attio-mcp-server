@@ -74,6 +74,36 @@ export const companyToolConfigs = {
   details: {
     name: "get-company-details",
     handler: getCompanyDetails,
+    formatResult: (company: Company) => {
+      const companyName = company.values?.name?.[0]?.value || 'Unnamed';
+      const companyId = company.id?.record_id || 'unknown';
+      const website = company.values?.website?.[0]?.value || 'Not available';
+      const industry = company.values?.industry?.[0]?.value || 'Not available';
+      const description = company.values?.description?.[0]?.value || 'No description available';
+      const createdAt = company.created_at || 'Unknown';
+      
+      // Extract other key details
+      const location = company.values?.primary_location?.[0];
+      const locationStr = location ? 
+        `${location.locality || ''}, ${location.region || ''} ${location.country_code || ''}`.trim() : 
+        'Not available';
+      
+      const employeeRange = company.values?.employee_range?.[0]?.option?.title || 'Not available';
+      const foundationDate = company.values?.foundation_date?.[0]?.value || 'Not available';
+      
+      return `Company: ${companyName} (ID: ${companyId})
+Created: ${createdAt}
+Website: ${website}
+Industry: ${industry}
+Location: ${locationStr}
+Employees: ${employeeRange}
+Founded: ${foundationDate}
+
+Description:
+${description}
+
+For full details, use get-company-json with this ID: ${companyId}`;
+    }
   } as DetailsToolConfig,
   notes: {
     name: "get-company-notes",
@@ -106,7 +136,20 @@ export const companyToolConfigs = {
     name: "delete-company",
     handler: deleteCompany,
     formatResult: (result: boolean) => result ? "Company deleted successfully" : "Failed to delete company"
-  } as ToolConfig
+  } as ToolConfig,
+  json: {
+    name: "get-company-json",
+    handler: getCompanyDetails,
+    formatResult: (company: Company) => {
+      const cleanedCompany = JSON.parse(JSON.stringify(company));
+      // Fix the typo in the response data
+      if (cleanedCompany.values?.typpe) {
+        cleanedCompany.values.type = cleanedCompany.values.typpe;
+        delete cleanedCompany.values.typpe;
+      }
+      return JSON.stringify(cleanedCompany, null, 2);
+    }
+  } as DetailsToolConfig
 };
 
 // Company tool definitions
@@ -447,6 +490,27 @@ export const companyToolDefinitions = [
         }
       },
       required: ["companyId"]
+    }
+  },
+  {
+    name: "get-company-json",
+    description: "Get full JSON details of a company (returns raw JSON data)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to get details for"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
     }
   }
 ];
