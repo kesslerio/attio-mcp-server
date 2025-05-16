@@ -156,32 +156,4 @@ export function checkFilterRateLimit(req, endpoint) {
     // Check rate limit
     return limiter.check(req);
 }
-/**
- * Rate limiting for relationship queries
- *
- * @param req - Request object
- * @param relationshipType - Type of relationship being queried
- * @param isNested - Whether this is a nested relationship query
- * @returns Object with allowed status and rate limit info
- */
-export function checkRelationshipQueryRateLimit(req, relationshipType, isNested = false) {
-    // Configuration for relationship queries
-    const config = {
-        maxRequests: isNested ? 10 : 30, // Lower limit for nested queries
-        windowMs: 60 * 1000, // per minute
-        trackByIp: true, // track by IP address
-        keyFn: (req) => {
-            // Create a key that includes the relationship type and nested flag
-            const ip = req.ip ||
-                req.connection?.remoteAddress ||
-                req.headers?.['x-forwarded-for'] ||
-                'unknown';
-            return `relationship:${ip}:${relationshipType}:${isNested ? 'nested' : 'direct'}`;
-        }
-    };
-    // Get limiter for this relationship type
-    const limiter = getRateLimiter(`relationship:${relationshipType}`, config);
-    // Check rate limit
-    return limiter.check(req);
-}
 //# sourceMappingURL=rate-limiter.js.map

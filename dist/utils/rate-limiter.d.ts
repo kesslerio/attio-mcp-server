@@ -79,18 +79,4 @@ export declare function checkFilterRateLimit(req: any, endpoint: string): {
     resetTime: number;
     msUntilReset: number;
 };
-/**
- * Rate limiting for relationship queries
- *
- * @param req - Request object
- * @param relationshipType - Type of relationship being queried
- * @param isNested - Whether this is a nested relationship query
- * @returns Object with allowed status and rate limit info
- */
-export declare function checkRelationshipQueryRateLimit(req: any, relationshipType: string, isNested?: boolean): {
-    allowed: boolean;
-    remaining: number;
-    resetTime: number;
-    msUntilReset: number;
-};
 //# sourceMappingURL=rate-limiter.d.ts.map
