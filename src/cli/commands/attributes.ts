@@ -60,7 +60,7 @@ function createAttioClient(apiKey: string) {
  * @param apiKey - The Attio API key
  * @returns Array of object slugs
  */
-async function getAvailableObjects(apiKey: string): Promise<string[]> {
+export async function getAvailableObjects(apiKey: string): Promise<string[]> {
   const client = createAttioClient(apiKey);
   
   try {
@@ -86,7 +86,7 @@ async function getAvailableObjects(apiKey: string): Promise<string[]> {
  * @param apiKey - The Attio API key
  * @returns Map of attribute titles to API slugs
  */
-async function getObjectAttributes(objectSlug: string, apiKey: string): Promise<Record<string, string>> {
+export async function getObjectAttributes(objectSlug: string, apiKey: string): Promise<Record<string, string>> {
   const client = createAttioClient(apiKey);
   
   try {
