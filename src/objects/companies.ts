@@ -451,11 +451,17 @@ export async function getCompanyFields(companyIdOrUri: string, fields: string[])
     // Use the getRecord function which supports field selection
     const { getRecord } = await import("../api/attio-operations.js");
     
-    return await getRecord<Company>(
+    const result = await getRecord<Company>(
       ResourceType.COMPANIES,
       companyId,
       fields
     );
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[getCompanyFields] Received ${Object.keys(result.values || {}).length} fields`);
+    }
+    
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Could not retrieve company fields: ${error.message}`);

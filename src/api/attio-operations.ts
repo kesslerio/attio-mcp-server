@@ -839,12 +839,17 @@ export async function getRecord<T extends AttioRecord>(
   
   // Add attributes parameter if provided
   if (attributes && attributes.length > 0) {
-    const attributesParam = attributes.join(',');
-    path += `?attributes=${encodeURIComponent(attributesParam)}`;
+    // Use array syntax for multiple attributes
+    const params = new URLSearchParams();
+    attributes.forEach(attr => params.append('attributes[]', attr));
+    path += `?${params.toString()}`;
   }
   
   return callWithRetry(async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[getRecord] Final request path:', path);
+      }
       const response = await api.get<AttioSingleResponse<T>>(path);
       return response.data.data;
     } catch (error: any) {
