@@ -158,7 +158,25 @@ For full details, use get-company-json with this ID: ${companyId}`;
           }
         }
         
-        return JSON.stringify(cleanedCompany, null, 2);
+        // Instead of returning the entire JSON at once, create a summary
+        const summary = {
+          id: cleanedCompany.id,
+          created_at: cleanedCompany.created_at,
+          web_url: cleanedCompany.web_url,
+          basic_values: {
+            name: cleanedCompany.values?.name?.[0]?.value,
+            website: cleanedCompany.values?.website?.[0]?.value,
+            type: cleanedCompany.values?.type?.[0]?.option?.title,
+            type_persona: cleanedCompany.values?.type_persona?.[0]?.option?.title,
+            services: cleanedCompany.values?.services || [],
+            employee_range: cleanedCompany.values?.employee_range?.[0]?.option?.title,
+            foundation_date: cleanedCompany.values?.foundation_date?.[0]?.value
+          },
+          attribute_count: Object.keys(cleanedCompany.values || {}).length,
+          message: "Full JSON data is too large for display. Use get-company-attributes to access specific fields."
+        };
+        
+        return JSON.stringify(summary, null, 2);
       } catch (error) {
         // If any error occurs during JSON processing, return a safe error message
         return JSON.stringify({
@@ -168,7 +186,78 @@ For full details, use get-company-json with this ID: ${companyId}`;
         }, null, 2);
       }
     }
-  } as DetailsToolConfig
+  } as DetailsToolConfig,
+  attributes: {
+    name: "get-company-attributes",
+    handler: async (companyId: string, attributeName?: string) => {
+      const company = await getCompanyDetails(companyId);
+      
+      if (!attributeName) {
+        // Return list of available attributes
+        const attributes = Object.keys(company.values || {}).map(key => ({
+          name: key,
+          type: Array.isArray(company.values?.[key]) && company.values[key].length > 0
+            ? company.values[key][0].attribute_type
+            : "unknown",
+          hasValue: Array.isArray(company.values?.[key]) && company.values[key].length > 0
+        }));
+        
+        return {
+          companyId: company.id?.record_id,
+          companyName: company.values?.name?.[0]?.value,
+          attributeCount: attributes.length,
+          attributes: attributes.sort((a, b) => a.name.localeCompare(b.name))
+        };
+      }
+      
+      // Return specific attribute value
+      const attributeData = company.values?.[attributeName];
+      
+      return {
+        companyId: company.id?.record_id,
+        companyName: company.values?.name?.[0]?.value,
+        attribute: attributeName,
+        value: attributeData || null,
+        exists: attributeData !== undefined
+      };
+    },
+    formatResult: (result: any) => {
+      if (result.attributes) {
+        // List of attributes
+        const grouped = result.attributes.reduce((acc: any, attr: any) => {
+          if (!acc[attr.type]) acc[attr.type] = [];
+          acc[attr.type].push(attr);
+          return acc;
+        }, {});
+        
+        let output = `Company: ${result.companyName} (ID: ${result.companyId})\n`;
+        output += `Total attributes: ${result.attributeCount}\n\n`;
+        
+        Object.entries(grouped).forEach(([type, attrs]: [string, any]) => {
+          output += `${type.toUpperCase()} attributes:\n`;
+          attrs.forEach((attr: any) => {
+            output += `  - ${attr.name}${!attr.hasValue ? ' (empty)' : ''}\n`;
+          });
+          output += '\n';
+        });
+        
+        return output;
+      } else {
+        // Specific attribute value
+        let output = `Company: ${result.companyName} (ID: ${result.companyId})\n`;
+        output += `Attribute: ${result.attribute}\n`;
+        output += `Exists: ${result.exists}\n`;
+        
+        if (result.value) {
+          output += `Value:\n${JSON.stringify(result.value, null, 2)}`;
+        } else {
+          output += 'Value: null';
+        }
+        
+        return output;
+      }
+    }
+  } as ToolConfig
 };
 
 // Company tool definitions
@@ -513,7 +602,7 @@ export const companyToolDefinitions = [
   },
   {
     name: "get-company-json",
-    description: "Get full JSON details of a company (returns raw JSON data)",
+    description: "Get summary JSON details of a company (full data too large to display)",
     inputSchema: {
       type: "object",
       properties: {
@@ -530,6 +619,24 @@ export const companyToolDefinitions = [
         { required: ["companyId"] },
         { required: ["uri"] }
       ]
+    }
+  },
+  {
+    name: "get-company-attributes",
+    description: "Get all available attributes or a specific attribute value for a company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        attributeName: {
+          type: "string",
+          description: "Optional: specific attribute name to retrieve. If omitted, returns list of all attributes."
+        }
+      },
+      required: ["companyId"]
     }
   }
 ];

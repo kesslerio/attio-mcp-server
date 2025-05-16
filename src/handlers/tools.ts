@@ -363,6 +363,57 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle attributes tools
+      if (toolType === 'attributes') {
+        let companyId = request.params.arguments?.companyId as string;
+        const attributeName = request.params.arguments?.attributeName as string;
+        
+        if (!companyId) {
+          return createErrorResult(
+            new Error("Missing required parameter: companyId"),
+            `${resourceType}/attributes`,
+            "GET",
+            { status: 400, message: "Missing required parameter: companyId" }
+          );
+        }
+        
+        try {
+          const result = await toolConfig.handler(companyId, attributeName);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `${resourceType}/attributes/${companyId}`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
       // Handle notes tools
       if (toolType === 'notes') {
         let id: string;
