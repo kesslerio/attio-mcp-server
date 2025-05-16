@@ -129,29 +129,10 @@ export function registerToolHandlers(server: Server): void {
       // Handle search tools
       if (toolType === 'search') {
         const query = request.params.arguments?.query as string;
-        
-        // Debug log the incoming request
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[tools.search] Starting search for ${resourceType} with:`, {
-            toolName,
-            resourceType,
-            query,
-            fullArguments: request.params.arguments
-          });
-        }
-        
         try {
           const searchToolConfig = toolConfig as SearchToolConfig;
           const results = await searchToolConfig.handler(query);
           const formattedResults = searchToolConfig.formatResult(results);
-          
-          // Debug log the results
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[tools.search] Search completed:`, {
-              resultCount: results.length,
-              resourceType
-            });
-          }
           
           return {
             content: [
@@ -269,6 +250,22 @@ export function registerToolHandlers(server: Server): void {
         
         try {
           const details = await toolConfig.handler(id);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(details);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
           return {
             content: [
               {
@@ -282,6 +279,375 @@ export function registerToolHandlers(server: Server): void {
           return createErrorResult(
             error instanceof Error ? error : new Error("Unknown error"),
             uri,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle getAttributes tools
+      if (toolType === 'getAttributes') {
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributeName = request.params.arguments?.attributeName as string | undefined;
+          
+          try {
+            const result = await toolConfig.handler(companyId, attributeName);
+            const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : JSON.stringify(result, null, 2);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `companies/${companyId}/attributes`,
+              "GET",
+              (error as any).response?.data || {}
+            );
+          }
+        }
+      }
+      
+      // Handle json tools (same as details but with json tool type)
+      if (toolType === 'json') {
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
+        
+        // Use either direct ID or URI, with priority to URI if both are provided
+        if (uri) {
+          try {
+            const [uriType, uriId] = parseResourceUri(uri);
+            if (uriType !== resourceType) {
+              throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+            }
+            id = uriId;
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/json`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
+        
+        try {
+          const details = await toolConfig.handler(id);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(details);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
+          return {
+            content: [
+              {
+                type: "text",
+                text: `${resourceType.slice(0, -1).charAt(0).toUpperCase() + resourceType.slice(1, -1)} JSON for ${id}:\n${JSON.stringify(details, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            uri,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle basic info tools  
+      if (toolType === 'basicInfo' || toolType === 'contactInfo' || toolType === 'businessInfo' || toolType === 'socialInfo') {
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
+        
+        // Use either direct ID or URI, with priority to URI if both are provided
+        if (uri) {
+          try {
+            const [uriType, uriId] = parseResourceUri(uri);
+            if (uriType !== resourceType) {
+              throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+            }
+            id = uriId;
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/${toolType}`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
+        
+        try {
+          const result = await toolConfig.handler(id);
+          
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            uri,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle fields tool 
+      if (toolType === 'fields') {
+        const companyId = request.params.arguments?.companyId as string;
+        const fields = request.params.arguments?.fields as string[];
+        
+        if (!companyId || !fields || !Array.isArray(fields)) {
+          return createErrorResult(
+            new Error("Missing required parameters: companyId and fields array"),
+            `${resourceType}/fields`,
+            "GET",
+            { status: 400, message: "Missing required parameters: companyId and fields array" }
+          );
+        }
+        
+        try {
+          const result = await toolConfig.handler(companyId, fields);
+          
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `${resourceType}/fields/${companyId}`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle custom fields tool
+      if (toolType === 'customFields') {
+        const companyId = request.params.arguments?.companyId as string;
+        const customFieldNames = request.params.arguments?.customFieldNames;
+        
+        if (!companyId) {
+          return createErrorResult(
+            new Error("Missing required parameter: companyId"),
+            `${resourceType}/custom-fields`,
+            "GET",
+            { status: 400, message: "Missing required parameter: companyId" }
+          );
+        }
+        
+        try {
+          const result = await toolConfig.handler(companyId, customFieldNames);
+          
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `${resourceType}/custom-fields/${companyId}`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle discover attributes tool  
+      if (toolType === 'discoverAttributes') {
+        try {
+          const result = await toolConfig.handler();
+          
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `${resourceType}/discover-attributes`,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
+      // Handle attributes tools
+      if (toolType === 'attributes') {
+        let companyId = request.params.arguments?.companyId as string;
+        const attributeName = request.params.arguments?.attributeName as string;
+        
+        if (!companyId) {
+          return createErrorResult(
+            new Error("Missing required parameter: companyId"),
+            `${resourceType}/attributes`,
+            "GET",
+            { status: 400, message: "Missing required parameter: companyId" }
+          );
+        }
+        
+        try {
+          const result = await toolConfig.handler(companyId, attributeName);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(result);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            `${resourceType}/attributes/${companyId}`,
             "GET",
             (error as any).response?.data || {}
           );
@@ -782,31 +1148,119 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle record update
       if (toolType === 'update') {
-        const objectSlug = request.params.arguments?.objectSlug as string;
-        const objectId = request.params.arguments?.objectId as string;
-        const recordId = request.params.arguments?.recordId as string;
-        const attributes = request.params.arguments?.attributes || {};
-        
-        try {
-          const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
-          const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+        // For company resources, handle the specific company parameters
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributes = request.params.arguments?.attributes || {};
           
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
-              },
-            ],
-            isError: false,
-          };
-        } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
-            `objects/${objectSlug}/records/${recordId}`,
-            "PATCH",
-            (error as any).response?.data || {}
-          );
+          try {
+            const updateConfig = toolConfig as ToolConfig;
+            const record = await updateConfig.handler(companyId, attributes);
+            
+            // Check for formatResult function
+            if ('formatResult' in updateConfig && typeof updateConfig.formatResult === 'function') {
+              const formattedResult = updateConfig.formatResult(record);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: formattedResult,
+                  },
+                ],
+                isError: false,
+              };
+            }
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Company updated successfully: ${record.values?.name?.[0]?.value || 'Unknown'} (ID: ${record.id?.record_id})`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `/objects/companies/records/${companyId}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
+        } else {
+          // Default record update for other resource types
+          const objectSlug = request.params.arguments?.objectSlug as string;
+          const objectId = request.params.arguments?.objectId as string;
+          const recordId = request.params.arguments?.recordId as string;
+          const attributes = request.params.arguments?.attributes || {};
+          
+          try {
+            const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
+            const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${objectSlug}/records/${recordId}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
+        }
+      }
+      
+      // Handle company attribute update
+      if (toolType === 'updateAttribute') {
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributeName = request.params.arguments?.attributeName as string;
+          const attributeValue = request.params.arguments?.attributeValue;
+          
+          try {
+            const updateAttributeConfig = toolConfig as ToolConfig;
+            const record = await updateAttributeConfig.handler(companyId, attributeName, attributeValue);
+            
+            // Check for formatResult function
+            if ('formatResult' in updateAttributeConfig && typeof updateAttributeConfig.formatResult === 'function') {
+              const formattedResult = updateAttributeConfig.formatResult(record);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: formattedResult,
+                  },
+                ],
+                isError: false,
+              };
+            }
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Company attribute updated: ${attributeName} for ${record.values?.name?.[0]?.value || 'Unknown'} (ID: ${record.id?.record_id})`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `/objects/companies/records/${companyId}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
         }
       }
       

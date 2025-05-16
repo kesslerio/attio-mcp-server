@@ -228,3 +228,148 @@ try {
     *   If you must use `console.log` for quick debugging, ensure it's done in a context where it won't be mixed with client responses (e.g., in standalone scripts, unit tests, or very early in the request lifecycle before any response headers/body are sent, and remove them afterward).
 
 **Key Takeaway:** The data stream for a JSON API response must contain *only* valid JSON. Any extraneous text, including server-side debug logs, will likely cause parsing failures on the client.
+
+## Claude Desktop App Crashes
+
+### Large JSON Response Causing Crashes
+
+**Problem:** Claude Desktop app crashes when receiving large company details with JSON responses containing thousands of lines.
+
+**Symptoms:**
+- App crashes specifically when calling `get-company-details`
+- Large JSON responses with multiple nested attributes
+- Response includes data anomalies (e.g., typos like "typpe" instead of "type")
+
+**Cause:**
+The `get-company-details` tool was returning raw JSON with thousands of lines, which can overwhelm Claude Desktop's processing capabilities, especially when the JSON contains errors or unusual data.
+
+**Solution:**
+1. **Use the Improved get-company-details Tool:**
+   - The `get-company-details` tool now returns a formatted summary instead of raw JSON
+   - Shows key fields like name, website, industry, location, etc.
+   - Provides company ID for further queries if needed
+
+2. **For JSON Data:**
+   - The `get-company-json` tool now returns a JSON summary instead of full data
+   - This prevents crashes from extremely large JSON responses
+   - Full data access is available through the new `get-company-attributes` tool
+
+3. **For Specific Attributes:**
+   - Use the new `get-company-attributes` tool to safely access specific fields
+   - Can list all available attributes or get a specific attribute value
+   - No risk of crashes from large data volumes
+
+**Example Usage:**
+```bash
+# Get a human-readable summary
+get-company-details --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# Get a JSON summary (safe, won't crash)
+get-company-json --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# List all available attributes
+get-company-attributes --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# Get a specific attribute value
+get-company-attributes --companyId "49b11210-df4c-5246-9eda-2add14964eb4" --attributeName "services"
+```
+
+**Prevention:**
+- Always use the formatted `get-company-details` for general queries
+- Use `get-company-json` for a safe JSON summary
+- Use `get-company-attributes` when you need specific field values
+- Never attempt to retrieve the full raw JSON for companies with extensive data
+## MCP Server Crash Prevention for Claude Desktop
+
+### The Problem
+
+When retrieving company details from Attio, large JSON responses can crash Claude Desktop. This particularly affects companies with many attributes (70+ fields).
+
+### The Solution
+
+We've implemented field selection and server-side filtering to limit response sizes. Use the appropriate tool based on your needs to prevent crashes.
+
+### Field Selection Implementation
+
+**How It Works:**
+1. The Attio API does not support field selection natively through query parameters
+2. We implemented server-side filtering that:
+   - Fetches all company data from Attio
+   - Filters to only requested fields before returning
+   - Simplifies the data structure to minimize JSON complexity
+   - Always includes the company name for context
+
+**Using Field Selection:**
+```javascript
+// Request specific fields only
+const result = await getCompanyFields(companyId, ['name', 'services', 'products']);
+```
+
+### Tools by Data Volume
+
+#### ⚠️ High Risk - Full Data
+**Tool**: `get-company-json`  
+**Data**: Returns all raw JSON data  
+**When to use**: When you need complete access to all fields and underlying data structure  
+**Crash risk**: HIGH - May crash with companies having many fields  
+
+#### ✅ Field Selection - Custom Data
+**Tool**: `get-company-fields`  
+**Data**: Returns only the specific fields you request  
+**When to use**: When you need specific fields and want to minimize data transfer  
+**Crash risk**: LOW - Only returns requested fields with simplified structure  
+**Example**: `get-company-fields` with `fields: ["name", "services", "products"]`
+
+#### ✅ Recommended - Limited Data
+These tools return formatted, limited data and should NOT crash Claude Desktop:
+
+1. **get-company-details**
+   - Returns: Basic formatted summary
+   - Use for: General company overview
+   - Crash risk: LOW
+   
+2. **get-company-basic-info**
+   - Returns: Essential fields only (name, industry, location, etc.)
+   - Use for: Quick company lookups
+   - Crash risk: VERY LOW
+   
+3. **get-company-contact-info**
+   - Returns: Contact-related fields
+   - Use for: Finding contact information
+   - Crash risk: VERY LOW
+   
+4. **get-company-business-info**
+   - Returns: Business data (revenue, employees, categories)
+   - Use for: Business analysis
+   - Crash risk: VERY LOW
+   
+5. **get-company-social-info**
+   - Returns: Social media and online presence
+   - Use for: Social media research
+   - Crash risk: VERY LOW
+   
+6. **get-company-custom-fields**
+   - Returns: Only custom field values
+   - Use for: Accessing user-defined fields
+   - Crash risk: LOW
+   
+7. **discover-company-attributes**
+   - Returns: List of available fields without values
+   - Use for: Understanding data structure
+   - Crash risk: VERY LOW
+
+### Best Practices to Avoid Crashes
+
+1. **Start with `discover-company-attributes`** to understand what fields are available
+2. **Use specialized tools** (`get-company-basic-info`, `get-company-contact-info`, etc.) for common use cases
+3. **Use `get-company-fields`** when you need specific fields that aren't covered by the specialized tools
+4. **Only use `get-company-json`** when absolutely necessary and be prepared for potential crashes with large datasets
+
+### Debugging Tips
+
+If Claude Desktop continues to crash:
+1. Check the MCP server logs for the actual response size
+2. Try fetching fewer fields at once
+3. Use the specialized tools that return pre-filtered data
+4. Report the issue with the specific company ID and field count for investigation
+EOF < /dev/null

@@ -19,7 +19,7 @@ import {
   ListRelationshipError
 } from "../../errors/api-errors.js";
 import { resolveDateRange } from "../date-utils.js";
-import { checkRelationshipQueryRateLimit } from "../rate-limiter.js";
+// import { checkRelationshipQueryRateLimit } from "../rate-limiter.js";
 import { 
   getCachedRelationshipFilter,
   cacheRelationshipFilter,
@@ -565,17 +565,18 @@ export namespace Relationship {
     isNested: boolean = false
   ): void {
     // Check the rate limit
-    const result = checkRelationshipQueryRateLimit(req, relationshipType, isNested);
+    // TODO: Restore when checkRelationshipQueryRateLimit is available
+    // const result = checkRelationshipQueryRateLimit(req, relationshipType, isNested);
     
     // If not allowed, throw rate limit error
-    if (!result.allowed) {
-      throw new RelationshipRateLimitError(
-        `Rate limit exceeded for ${isNested ? 'nested ' : ''}relationship query of type '${relationshipType}'. Try again in ${Math.ceil(result.msUntilReset / 1000)} seconds.`,
-        relationshipType,
-        result.resetTime,
-        result.msUntilReset
-      );
-    }
+    // if (!result.allowed) {
+    //   throw new RelationshipRateLimitError(
+    //     `Rate limit exceeded for ${isNested ? 'nested ' : ''}relationship query of type '${relationshipType}'. Try again in ${Math.ceil(result.msUntilReset / 1000)} seconds.`,
+    //     relationshipType,
+    //     result.resetTime,
+    //     result.msUntilReset
+    //   );
+    // }
   }
 
   /**
