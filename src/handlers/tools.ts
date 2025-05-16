@@ -1109,12 +1109,25 @@ export function registerToolHandlers(server: Server): void {
             isError: false,
           };
         } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
+          // const errorObj = error as any;
+          // console.log('[advancedSearch] Caught error:', error);
+          // console.log('[advancedSearch] Error type:', errorObj.constructor?.name);
+          // console.log('[advancedSearch] Error message:', errorObj.message);
+          // console.log('[advancedSearch] Error response data:', errorObj.response?.data);
+          
+          // Import error enhancement utilities
+          const { interceptAndEnhanceError } = await import("./error-interceptor.js");
+          
+          // Try to enhance the error with value suggestions
+          const enhancedResult = interceptAndEnhanceError(
+            error,
             `/objects/${resourceType}/records/query`,
-            "POST",
-            (error as any).response?.data || {}
+            "POST"
           );
+          
+          // console.log('[advancedSearch] Enhanced result:', JSON.stringify(enhancedResult, null, 2));
+          
+          return enhancedResult;
         }
       }
       

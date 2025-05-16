@@ -202,9 +202,7 @@ export async function searchObject<T extends AttioRecord>(
       });
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`No ${objectType} found matching '${query}'`);
-      }
+      // Let upstream handlers create specific, rich error objects from the original Axios error.
       throw error;
     }
   }, retryConfig);
@@ -287,11 +285,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
       const response = await api.post<AttioListResponse<T>>(path, requestBody);
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`No ${objectType} found with the specified filters`);
-      } else if (error.response?.status === 400) {
-        throw new Error(`Invalid filter parameters for ${objectType} search: ${error.response.data?.message || 'Bad request'}`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -321,9 +315,7 @@ export async function listObjects<T extends AttioRecord>(
       });
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error(`Invalid parameters when listing ${objectType}`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -350,9 +342,7 @@ export async function getObjectDetails<T extends AttioRecord>(
       const response = await api.get<AttioSingleResponse<T>>(path);
       return response.data.data || response.data;
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`${objectType.charAt(0).toUpperCase() + objectType.slice(1, -1)} with ID ${recordId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -383,9 +373,7 @@ export async function getObjectNotes(
       const response = await api.get<AttioListResponse<AttioNote>>(path);
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`Notes for ${objectType.slice(0, -1)} ${recordId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -424,11 +412,7 @@ export async function createObjectNote(
       });
       return response.data.data || response.data;
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error(`Failed to create note: ${error.response.data.message || 'Invalid parameters'}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`${objectType.charAt(0).toUpperCase() + objectType.slice(1, -1)} with ID ${recordId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -459,9 +443,7 @@ export async function getAllLists(
       const response = await api.get<AttioListResponse<AttioList>>(path);
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error('Invalid parameters when fetching lists');
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -486,9 +468,7 @@ export async function getListDetails(
       const response = await api.get<AttioSingleResponse<AttioList>>(path);
       return response.data.data || response.data;
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`List with ID ${listId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -731,8 +711,8 @@ export async function getListEntries(
             throw new Error(`List entries for list ${listId} not found. All attempts failed.`);
           }
           
-          // Include all errors in the thrown error for better context
-          throw new Error(`Failed to retrieve list entries: ${JSON.stringify(allErrors)}`);
+          // Let upstream handlers create specific, rich error objects from the lastError.
+          throw lastError;
         }
       }
     }
@@ -762,11 +742,7 @@ export async function addRecordToList(
       });
       return response.data.data || response.data;
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error(`Failed to add record: ${error.response.data.message || 'Invalid parameters'}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`List with ID ${listId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -793,9 +769,7 @@ export async function removeRecordFromList(
       await api.delete(path);
       return true;
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`List entry ${entryId} in list ${listId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -836,13 +810,7 @@ export async function createRecord<T extends AttioRecord>(
       
       return response.data.data;
     } catch (error: any) {
-      // Enhance error message with more context
-      if (error.response?.status === 400) {
-        const errorMsg = error.response.data?.message || 'Invalid parameters';
-        throw new Error(`Failed to create record: ${errorMsg}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -880,9 +848,7 @@ export async function getRecord<T extends AttioRecord>(
       const response = await api.get<AttioSingleResponse<T>>(path);
       return response.data.data;
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -911,13 +877,7 @@ export async function updateRecord<T extends AttioRecord>(
       
       return response.data.data;
     } catch (error: any) {
-      // Enhance error message with more context
-      if (error.response?.status === 400) {
-        const errorMsg = error.response.data?.message || 'Invalid parameters';
-        throw new Error(`Failed to update record: ${errorMsg}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`Record with ID ${params.recordId} not found in ${params.objectSlug}`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -947,9 +907,7 @@ export async function deleteRecord(
       await api.delete(path);
       return true;
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(`Record with ID ${recordId} not found in ${objectSlug}`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -1003,11 +961,7 @@ export async function listRecords<T extends AttioRecord>(
       const response = await api.get<AttioListResponse<T>>(path);
       return response.data.data || [];
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error(`Invalid parameters when listing ${params.objectSlug} records`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -1036,13 +990,7 @@ export async function batchCreateRecords<T extends AttioRecord>(
       
       return response.data.data || [];
     } catch (error: any) {
-      // Enhance error message with more context
-      if (error.response?.status === 400) {
-        const errorMsg = error.response.data?.message || 'Invalid parameters';
-        throw new Error(`Failed to batch create records: ${errorMsg}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`Object type ${params.objectSlug || params.objectId} not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
@@ -1074,13 +1022,7 @@ export async function batchUpdateRecords<T extends AttioRecord>(
       
       return response.data.data || [];
     } catch (error: any) {
-      // Enhance error message with more context
-      if (error.response?.status === 400) {
-        const errorMsg = error.response.data?.message || 'Invalid parameters';
-        throw new Error(`Failed to batch update records: ${errorMsg}`);
-      } else if (error.response?.status === 404) {
-        throw new Error(`Object type ${params.objectSlug || params.objectId} not found or one of the records was not found`);
-      }
+      // Let upstream handlers create specific, rich error objects.
       throw error;
     }
   }, retryConfig);
