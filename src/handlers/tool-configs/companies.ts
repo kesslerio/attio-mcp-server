@@ -4,7 +4,14 @@
 import { ResourceType, AttioRecord, Company } from "../../types/attio.js";
 import { 
   searchCompanies, 
-  getCompanyDetails, 
+  getCompanyDetails,
+  getCompanyBasicInfo,
+  getCompanyContactInfo,
+  getCompanyBusinessInfo,
+  getCompanySocialInfo,
+  getCompanyFields,
+  getCompanyCustomFields,
+  discoverCompanyAttributes,
   getCompanyNotes, 
   createCompanyNote,
   advancedSearchCompanies,
@@ -187,75 +194,195 @@ For full details, use get-company-json with this ID: ${companyId}`;
       }
     }
   } as DetailsToolConfig,
-  attributes: {
-    name: "get-company-attributes",
-    handler: async (companyId: string, attributeName?: string) => {
-      const company = await getCompanyDetails(companyId);
+  // New specialized company info tools
+  basicInfo: {
+    name: "get-company-basic-info",
+    handler: getCompanyBasicInfo,
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unnamed';
+      const website = company.values?.website?.[0]?.value || 'Not available';
+      const industry = company.values?.industry?.[0]?.value || 'Not available';
+      const type = company.values?.type?.[0]?.option?.title || 'Not available';
+      const typePersona = company.values?.type_persona?.[0]?.option?.title || 'Not available';
+      const employees = company.values?.employee_range?.[0]?.option?.title || 'Not available';
+      const founded = company.values?.foundation_date?.[0]?.value || 'Not available';
+      const location = company.values?.primary_location?.[0];
+      const locationStr = location ? 
+        `${location.locality || ''}, ${location.region || ''} ${location.country_code || ''}`.trim() : 
+        'Not available';
+      const description = company.values?.description?.[0]?.value || 'No description available';
       
-      if (!attributeName) {
-        // Return list of available attributes
-        const attributes = Object.keys(company.values || {}).map(key => ({
-          name: key,
-          type: Array.isArray(company.values?.[key]) && company.values[key].length > 0
-            ? company.values[key][0].attribute_type
-            : "unknown",
-          hasValue: Array.isArray(company.values?.[key]) && company.values[key].length > 0
-        }));
-        
-        return {
-          companyId: company.id?.record_id,
-          companyName: company.values?.name?.[0]?.value,
-          attributeCount: attributes.length,
-          attributes: attributes.sort((a, b) => a.name.localeCompare(b.name))
-        };
-      }
+      return `Company: ${name}
+Website: ${website}
+Industry: ${industry}
+Type: ${type}
+Type Persona: ${typePersona}
+Location: ${locationStr}
+Employees: ${employees}
+Founded: ${founded}
+
+Description:
+${description}`;
+    }
+  } as DetailsToolConfig,
+  
+  contactInfo: {
+    name: "get-company-contact-info",
+    handler: getCompanyContactInfo,
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unnamed';
+      const website = company.values?.website?.[0]?.value || 'Not available';
+      const phone = company.values?.company_phone_5?.[0]?.phone_number || 'Not available';
+      const location = company.values?.primary_location?.[0];
+      const streetAddress = company.values?.street_address?.[0]?.value || '';
+      const streetAddress2 = company.values?.street_address_2?.[0]?.value || '';
+      const city = company.values?.city?.[0]?.value || '';
+      const state = company.values?.state?.[0]?.value || '';
+      const postalCode = company.values?.postal_code?.[0]?.value || '';
+      const country = company.values?.country?.[0]?.value || '';
       
-      // Return specific attribute value
-      const attributeData = company.values?.[attributeName];
+      let address = streetAddress;
+      if (streetAddress2) address += `, ${streetAddress2}`;
+      if (city) address += `, ${city}`;
+      if (state) address += `, ${state}`;
+      if (postalCode) address += ` ${postalCode}`;
+      if (country) address += `, ${country}`;
       
-      return {
-        companyId: company.id?.record_id,
-        companyName: company.values?.name?.[0]?.value,
-        attribute: attributeName,
-        value: attributeData || null,
-        exists: attributeData !== undefined
-      };
-    },
-    formatResult: (result: any) => {
-      if (result.attributes) {
-        // List of attributes
-        const grouped = result.attributes.reduce((acc: any, attr: any) => {
-          if (!acc[attr.type]) acc[attr.type] = [];
-          acc[attr.type].push(attr);
-          return acc;
-        }, {});
-        
-        let output = `Company: ${result.companyName} (ID: ${result.companyId})\n`;
-        output += `Total attributes: ${result.attributeCount}\n\n`;
-        
-        Object.entries(grouped).forEach(([type, attrs]: [string, any]) => {
-          output += `${type.toUpperCase()} attributes:\n`;
-          attrs.forEach((attr: any) => {
-            output += `  - ${attr.name}${!attr.hasValue ? ' (empty)' : ''}\n`;
-          });
-          output += '\n';
-        });
-        
-        return output;
-      } else {
-        // Specific attribute value
-        let output = `Company: ${result.companyName} (ID: ${result.companyId})\n`;
-        output += `Attribute: ${result.attribute}\n`;
-        output += `Exists: ${result.exists}\n`;
-        
-        if (result.value) {
-          output += `Value:\n${JSON.stringify(result.value, null, 2)}`;
-        } else {
-          output += 'Value: null';
+      return `Company: ${name}
+Website: ${website}
+Phone: ${phone}
+
+Address:
+${address || 'Not available'}`;
+    }
+  } as DetailsToolConfig,
+  
+  businessInfo: {
+    name: "get-company-business-info",
+    handler: getCompanyBusinessInfo,
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unnamed';
+      const type = company.values?.type?.[0]?.option?.title || 'Not available';
+      const typePersona = company.values?.type_persona?.[0]?.option?.title || 'Not available';
+      const services = company.values?.services || [];
+      const categories = company.values?.categories?.map((cat: any) => cat.option?.title) || [];
+      const industry = company.values?.industry?.[0]?.value || 'Not available';
+      const revenue = company.values?.estimated_arr_usd?.[0]?.option?.title || 'Not available';
+      const funding = company.values?.funding_raised_usd?.[0]?.value || 'Not available';
+      const employees = company.values?.employee_range?.[0]?.option?.title || 'Not available';
+      const founded = company.values?.foundation_date?.[0]?.value || 'Not available';
+      
+      return `Company: ${name}
+Industry: ${industry}
+Type: ${type}
+Type Persona: ${typePersona}
+Employees: ${employees}
+Founded: ${founded}
+Estimated Revenue: ${revenue}
+Funding Raised: ${funding}
+
+Categories:
+${categories.join(', ') || 'None'}
+
+Services:
+${services.length > 0 ? JSON.stringify(services, null, 2) : 'None'}`;
+    }
+  } as DetailsToolConfig,
+  
+  socialInfo: {
+    name: "get-company-social-info",
+    handler: getCompanySocialInfo,
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unnamed';
+      const website = company.values?.website?.[0]?.value || 'Not available';
+      const linkedin = company.values?.linkedin?.[0]?.value || 'Not available';
+      const twitter = company.values?.twitter?.[0]?.value || 'Not available';
+      const facebook = company.values?.facebook?.[0]?.value || 'Not available';
+      const instagram = company.values?.instagram?.[0]?.value || 'Not available';
+      const angellist = company.values?.angellist?.[0]?.value || 'Not available';
+      const twitterFollowers = company.values?.twitter_follower_count?.[0]?.value || 'Not available';
+      
+      return `Company: ${name}
+Website: ${website}
+
+Social Media:
+LinkedIn: ${linkedin}
+Twitter: ${twitter}
+Facebook: ${facebook}
+Instagram: ${instagram}
+AngelList: ${angellist}
+
+Twitter Followers: ${twitterFollowers}`;
+    }
+  } as DetailsToolConfig,
+  
+  fields: {
+    name: "get-company-fields",
+    handler: getCompanyFields,
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unknown';
+      const id = company.id?.record_id || 'Unknown';
+      const fieldCount = Object.keys(company.values || {}).length;
+      
+      return `Company: ${name} (ID: ${id})
+Fields retrieved: ${fieldCount}
+
+${JSON.stringify(company.values, null, 2)}`;
+    }
+  } as ToolConfig,
+  
+  customFields: {
+    name: "get-company-custom-fields",
+    handler: async (companyId: string, customFieldNames?: string[] | string) => {
+      // Support both array of field names and comma-separated string
+      let fields: string[] | undefined;
+      
+      if (customFieldNames) {
+        if (typeof customFieldNames === 'string') {
+          fields = customFieldNames.split(',').map((f: string) => f.trim());
+        } else if (Array.isArray(customFieldNames)) {
+          fields = customFieldNames;
         }
-        
-        return output;
       }
+      
+      return await getCompanyCustomFields(companyId, fields);
+    },
+    formatResult: (company: Partial<Company>) => {
+      const name = company.values?.name?.[0]?.value || 'Unknown';
+      const id = company.id?.record_id || 'Unknown';
+      const customFields = { ...company.values };
+      delete customFields.name;
+      
+      const fieldCount = Object.keys(customFields).length;
+      
+      return `Company: ${name} (ID: ${id})
+Custom fields: ${fieldCount}
+
+${fieldCount > 0 ? JSON.stringify(customFields, null, 2) : 'No custom fields found'}`;
+    }
+  } as ToolConfig,
+  
+  discoverAttributes: {
+    name: "discover-company-attributes",
+    handler: discoverCompanyAttributes,
+    formatResult: (result: any) => {
+      let output = `Company Attributes Discovery\n`;
+      output += `Total attributes: ${result.all.length}\n`;
+      output += `Standard fields: ${result.standard.length}\n`;
+      output += `Custom fields: ${result.custom.length}\n\n`;
+      
+      output += `STANDARD FIELDS:\n`;
+      result.standard.forEach((field: string) => {
+        output += `  - ${field}\n`;
+      });
+      
+      output += `\nCUSTOM FIELDS:\n`;
+      result.custom.forEach((field: string) => {
+        const fieldInfo = result.all.find((f: any) => f.name === field);
+        output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
+      });
+      
+      return output;
     }
   } as ToolConfig
 };
@@ -637,6 +764,136 @@ export const companyToolDefinitions = [
         }
       },
       required: ["companyId"]
+    }
+  },
+  {
+    name: "get-company-basic-info",
+    description: "Get basic company information (limited fields for performance)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "get-company-contact-info",
+    description: "Get company contact information including phone, address, etc.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "get-company-business-info",
+    description: "Get company business information including services, categories, revenue, etc.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "get-company-social-info",
+    description: "Get company social media presence information",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        uri: {
+          type: "string",
+          description: "URI of the company in the format 'attio://companies/{id}'"
+        }
+      },
+      oneOf: [
+        { required: ["companyId"] },
+        { required: ["uri"] }
+      ]
+    }
+  },
+  {
+    name: "get-company-fields",
+    description: "Get specific fields from a company by field names",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        fields: {
+          type: "array",
+          items: { type: "string" },
+          description: "Array of field names to retrieve"
+        }
+      },
+      required: ["companyId", "fields"]
+    }
+  },
+  {
+    name: "get-company-custom-fields",
+    description: "Get custom fields for a company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        customFieldNames: {
+          type: ["string", "array"],
+          items: { type: "string" },
+          description: "Optional: specific custom field names to retrieve (comma-separated string or array). If omitted, returns all custom fields."
+        }
+      },
+      required: ["companyId"]
+    }
+  },
+  {
+    name: "discover-company-attributes",
+    description: "Discover all available company attributes in the workspace",
+    inputSchema: {
+      type: "object",
+      properties: {}
     }
   }
 ];
