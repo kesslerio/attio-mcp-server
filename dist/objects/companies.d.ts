@@ -15,7 +15,7 @@ export declare function searchCompanies(query: string): Promise<Company[]>;
  */
 export declare function listCompanies(limit?: number): Promise<Company[]>;
 /**
- * Gets details for a specific company
+ * Gets full details for a specific company (all fields)
  *
  * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
  * @returns Company details
@@ -39,6 +39,76 @@ export declare function getCompanyNotes(companyIdOrUri: string, limit?: number, 
  * @returns The created note
  */
 export declare function createCompanyNote(companyIdOrUri: string, title: string, content: string): Promise<AttioNote>;
+/**
+ * Gets specific fields for a company (field selection)
+ *
+ * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
+ * @param fields - Array of field names to retrieve
+ * @returns Company with only specified fields
+ */
+export declare function getCompanyFields(companyIdOrUri: string, fields: string[]): Promise<Partial<Company>>;
+/**
+ * Gets basic company information (limited fields for performance)
+ *
+ * @param companyIdOrUri - The ID of the company or its URI
+ * @returns Basic company information
+ */
+export declare function getCompanyBasicInfo(companyIdOrUri: string): Promise<Partial<Company>>;
+/**
+ * Gets company contact information
+ *
+ * @param companyIdOrUri - The ID of the company or its URI
+ * @returns Company contact information
+ */
+export declare function getCompanyContactInfo(companyIdOrUri: string): Promise<Partial<Company>>;
+/**
+ * Gets company business information
+ *
+ * @param companyIdOrUri - The ID of the company or its URI
+ * @returns Company business information
+ */
+export declare function getCompanyBusinessInfo(companyIdOrUri: string): Promise<Partial<Company>>;
+/**
+ * Gets company social media and online presence
+ *
+ * @param companyIdOrUri - The ID of the company or its URI
+ * @returns Company social media information
+ */
+export declare function getCompanySocialInfo(companyIdOrUri: string): Promise<Partial<Company>>;
+/**
+ * Gets custom fields for a company
+ *
+ * @param companyIdOrUri - The ID of the company or its URI
+ * @param customFieldNames - Optional array of specific custom field names to retrieve
+ * @returns Company with custom fields
+ */
+export declare function getCompanyCustomFields(companyIdOrUri: string, customFieldNames?: string[]): Promise<Partial<Company>>;
+/**
+ * Discovers all available attributes for companies in the workspace
+ *
+ * @returns List of all company attributes with metadata
+ */
+export declare function discoverCompanyAttributes(): Promise<{
+    standard: string[];
+    custom: string[];
+    all: Array<{
+        name: string;
+        type: string;
+        isCustom: boolean;
+    }>;
+}>;
+/**
+ * Gets specific attributes for a company or lists available attributes
+ *
+ * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
+ * @param attributeName - Optional name of specific attribute to retrieve
+ * @returns If attributeName provided: specific attribute value, otherwise list of available attributes
+ */
+export declare function getCompanyAttributes(companyIdOrUri: string, attributeName?: string): Promise<{
+    attributes?: string[];
+    value?: any;
+    company: string;
+}>;
 /**
  * Helper function to extract company ID from a URI or direct ID
  *
@@ -122,4 +192,43 @@ export declare function searchCompaniesByPeopleList(listId: string, limit?: numb
  * @returns Array of matching companies
  */
 export declare function searchCompaniesByNotes(searchText: string, limit?: number | string, offset?: number | string): Promise<Company[]>;
+/**
+ * Creates a new company
+ *
+ * @param attributes - Company attributes as key-value pairs
+ * @returns Created company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if creation fails
+ */
+export declare function createCompany(attributes: any): Promise<Company>;
+/**
+ * Updates an existing company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributes - Company attributes to update
+ * @returns Updated company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if update fails
+ */
+export declare function updateCompany(companyId: string, attributes: any): Promise<Company>;
+/**
+ * Updates a specific attribute of a company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributeName - Name of the attribute to update
+ * @param attributeValue - New value for the attribute
+ * @returns Updated company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if update fails
+ */
+export declare function updateCompanyAttribute(companyId: string, attributeName: string, attributeValue: any): Promise<Company>;
+/**
+ * Deletes a company
+ *
+ * @param companyId - ID of the company to delete
+ * @returns True if deletion was successful
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if deletion fails
+ */
+export declare function deleteCompany(companyId: string): Promise<boolean>;
 //# sourceMappingURL=companies.d.ts.map
