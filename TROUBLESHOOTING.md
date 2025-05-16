@@ -249,21 +249,33 @@ The `get-company-details` tool was returning raw JSON with thousands of lines, w
    - Shows key fields like name, website, industry, location, etc.
    - Provides company ID for further queries if needed
 
-2. **For Full JSON Data:**
-   - Use the new `get-company-json` tool when you specifically need the complete JSON data
-   - This tool also fixes known data issues (e.g., corrects "typpe" to "type")
-   - Still returns JSON but with cleaner formatting
+2. **For JSON Data:**
+   - The `get-company-json` tool now returns a JSON summary instead of full data
+   - This prevents crashes from extremely large JSON responses
+   - Full data access is available through the new `get-company-attributes` tool
+
+3. **For Specific Attributes:**
+   - Use the new `get-company-attributes` tool to safely access specific fields
+   - Can list all available attributes or get a specific attribute value
+   - No risk of crashes from large data volumes
 
 **Example Usage:**
 ```bash
 # Get a human-readable summary
 get-company-details --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
 
-# Get the full JSON data when needed
+# Get a JSON summary (safe, won't crash)
 get-company-json --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# List all available attributes
+get-company-attributes --companyId "49b11210-df4c-5246-9eda-2add14964eb4"
+
+# Get a specific attribute value
+get-company-attributes --companyId "49b11210-df4c-5246-9eda-2add14964eb4" --attributeName "services"
 ```
 
 **Prevention:**
 - Always use the formatted `get-company-details` for general queries
-- Only use `get-company-json` when you specifically need the raw data
-- Be cautious with companies that have extensive attribute data
+- Use `get-company-json` for a safe JSON summary
+- Use `get-company-attributes` when you need specific field values
+- Never attempt to retrieve the full raw JSON for companies with extensive data
