@@ -16,11 +16,17 @@ import {
   ListEntryFilters,
   ListEntryFilter
 } from "../api/attio-operations.js";
+import {
+  createObjectRecord,
+  updateObjectRecord,
+  deleteObjectRecord
+} from "./records.js";
 import { 
   ResourceType, 
   Company, 
   AttioNote,
-  FilterConditionType
+  FilterConditionType,
+  RecordAttributes
 } from "../types/attio.js";
 import {
   createCompaniesByPeopleFilter,
@@ -796,5 +802,81 @@ export async function searchCompaniesByNotes(
     throw new FilterValidationError(
       `Failed to search companies by notes: ${error instanceof Error ? error.message : String(error)}`
     );
+  }
+}
+
+/**
+ * Creates a new company
+ * 
+ * @param attributes - Company attributes as key-value pairs
+ * @returns Created company record
+ */
+export async function createCompany(attributes: RecordAttributes): Promise<Company> {
+  try {
+    return await createObjectRecord<Company>(ResourceType.COMPANIES, attributes);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to create company: ${String(error)}`);
+  }
+}
+
+/**
+ * Updates an existing company
+ * 
+ * @param companyId - ID of the company to update
+ * @param attributes - Company attributes to update
+ * @returns Updated company record
+ */
+export async function updateCompany(companyId: string, attributes: RecordAttributes): Promise<Company> {
+  try {
+    return await updateObjectRecord<Company>(ResourceType.COMPANIES, companyId, attributes);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to update company: ${String(error)}`);
+  }
+}
+
+/**
+ * Updates a specific attribute of a company
+ * 
+ * @param companyId - ID of the company to update
+ * @param attributeName - Name of the attribute to update
+ * @param attributeValue - New value for the attribute
+ * @returns Updated company record
+ */
+export async function updateCompanyAttribute(
+  companyId: string, 
+  attributeName: string, 
+  attributeValue: any
+): Promise<Company> {
+  try {
+    const attributes = { [attributeName]: attributeValue };
+    return await updateCompany(companyId, attributes);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to update company attribute: ${String(error)}`);
+  }
+}
+
+/**
+ * Deletes a company
+ * 
+ * @param companyId - ID of the company to delete
+ * @returns True if deletion was successful
+ */
+export async function deleteCompany(companyId: string): Promise<boolean> {
+  try {
+    return await deleteObjectRecord(ResourceType.COMPANIES, companyId);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to delete company: ${String(error)}`);
   }
 }

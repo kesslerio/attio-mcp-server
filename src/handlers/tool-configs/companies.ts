@@ -1,7 +1,7 @@
 /**
  * Company-related tool configurations
  */
-import { ResourceType, AttioRecord } from "../../types/attio.js";
+import { ResourceType, AttioRecord, Company } from "../../types/attio.js";
 import { 
   searchCompanies, 
   getCompanyDetails, 
@@ -10,14 +10,19 @@ import {
   advancedSearchCompanies,
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
-  searchCompaniesByNotes
+  searchCompaniesByNotes,
+  createCompany,
+  updateCompany,
+  updateCompanyAttribute,
+  deleteCompany
 } from "../../objects/companies.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
   NotesToolConfig, 
   CreateNoteToolConfig,
-  AdvancedSearchToolConfig
+  AdvancedSearchToolConfig,
+  ToolConfig
 } from "../tool-types.js";
 
 // Company tool configurations
@@ -78,7 +83,30 @@ export const companyToolConfigs = {
     name: "create-company-note",
     handler: createCompanyNote,
     idParam: "companyId"
-  } as CreateNoteToolConfig
+  } as CreateNoteToolConfig,
+  create: {
+    name: "create-company",
+    handler: createCompany,
+    formatResult: (result: Company) => 
+      `Company created: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+  } as ToolConfig,
+  update: {
+    name: "update-company",
+    handler: updateCompany,
+    formatResult: (result: Company) => 
+      `Company updated: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+  } as ToolConfig,
+  updateAttribute: {
+    name: "update-company-attribute",
+    handler: updateCompanyAttribute,
+    formatResult: (result: Company) => 
+      `Company attribute updated for: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+  } as ToolConfig,
+  delete: {
+    name: "delete-company",
+    handler: deleteCompany,
+    formatResult: (result: boolean) => result ? "Company deleted successfully" : "Failed to delete company"
+  } as ToolConfig
 };
 
 // Company tool definitions
@@ -335,6 +363,90 @@ export const companyToolDefinitions = [
         }
       },
       required: ["searchText"]
+    }
+  },
+  {
+    name: "create-company",
+    description: "Create a new company in Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        attributes: {
+          type: "object",
+          description: "Company attributes (name, website, etc.)",
+          properties: {
+            name: {
+              type: "string",
+              description: "Company name"
+            },
+            website: {
+              type: "string",
+              description: "Company website URL"
+            },
+            industry: {
+              type: "string",
+              description: "Company industry"
+            }
+          },
+          additionalProperties: true
+        }
+      },
+      required: ["attributes"]
+    }
+  },
+  {
+    name: "update-company",
+    description: "Update an existing company in Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to update"
+        },
+        attributes: {
+          type: "object",
+          description: "Company attributes to update",
+          additionalProperties: true
+        }
+      },
+      required: ["companyId", "attributes"]
+    }
+  },
+  {
+    name: "update-company-attribute",
+    description: "Update a specific attribute of a company",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to update"
+        },
+        attributeName: {
+          type: "string",
+          description: "Name of the attribute to update"
+        },
+        attributeValue: {
+          type: ["string", "number", "boolean", "object", "array"],
+          description: "New value for the attribute"
+        }
+      },
+      required: ["companyId", "attributeName", "attributeValue"]
+    }
+  },
+  {
+    name: "delete-company",
+    description: "Delete a company from Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to delete"
+        }
+      },
+      required: ["companyId"]
     }
   }
 ];

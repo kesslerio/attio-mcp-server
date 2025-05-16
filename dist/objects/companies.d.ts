@@ -1,5 +1,5 @@
 import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
-import { Company, AttioNote, FilterConditionType } from "../types/attio.js";
+import { Company, AttioNote, FilterConditionType, RecordAttributes } from "../types/attio.js";
 /**
  * Searches for companies by name
  *
@@ -95,4 +95,62 @@ export declare function createWebsiteFilter(website: string, condition?: FilterC
  * @returns ListEntryFilters object configured for industry search
  */
 export declare function createIndustryFilter(industry: string, condition?: FilterConditionType): ListEntryFilters;
+/**
+ * Search for companies based on attributes of their associated people
+ *
+ * @param peopleFilter - Filter to apply to people
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export declare function searchCompaniesByPeople(peopleFilter: ListEntryFilters | string | any, limit?: number | string, offset?: number | string): Promise<Company[]>;
+/**
+ * Search for companies that have employees in a specific list
+ *
+ * @param listId - ID of the list containing people
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export declare function searchCompaniesByPeopleList(listId: string, limit?: number | string, offset?: number | string): Promise<Company[]>;
+/**
+ * Search for companies that have notes containing specific text
+ *
+ * @param searchText - Text to search for in notes
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export declare function searchCompaniesByNotes(searchText: string, limit?: number | string, offset?: number | string): Promise<Company[]>;
+/**
+ * Creates a new company
+ *
+ * @param attributes - Company attributes as key-value pairs
+ * @returns Created company record
+ */
+export declare function createCompany(attributes: RecordAttributes): Promise<Company>;
+/**
+ * Updates an existing company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributes - Company attributes to update
+ * @returns Updated company record
+ */
+export declare function updateCompany(companyId: string, attributes: RecordAttributes): Promise<Company>;
+/**
+ * Updates a specific attribute of a company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributeName - Name of the attribute to update
+ * @param attributeValue - New value for the attribute
+ * @returns Updated company record
+ */
+export declare function updateCompanyAttribute(companyId: string, attributeName: string, attributeValue: any): Promise<Company>;
+/**
+ * Deletes a company
+ *
+ * @param companyId - ID of the company to delete
+ * @returns True if deletion was successful
+ */
+export declare function deleteCompany(companyId: string): Promise<boolean>;
 //# sourceMappingURL=companies.d.ts.map

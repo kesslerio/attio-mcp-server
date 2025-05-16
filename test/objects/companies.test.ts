@@ -1,9 +1,22 @@
-import { searchCompanies, listCompanies, getCompanyDetails, getCompanyNotes, createCompanyNote } from '../../src/objects/companies.js';
+import { 
+  searchCompanies, 
+  listCompanies, 
+  getCompanyDetails, 
+  getCompanyNotes, 
+  createCompanyNote,
+  createCompany,
+  updateCompany,
+  updateCompanyAttribute,
+  deleteCompany
+} from '../../src/objects/companies.js';
 import * as attioClient from '../../src/api/attio-client.js';
+import * as records from '../../src/objects/records.js';
 
-// Mock the API client
+// Mock the API client and records module
 jest.mock('../../src/api/attio-client.js');
+jest.mock('../../src/objects/records.js');
 const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
+const mockedRecords = records as jest.Mocked<typeof records>;
 
 describe('companies', () => {
   let mockAxiosInstance: any;
@@ -204,6 +217,155 @@ describe('companies', () => {
         }
       );
       expect(result).toEqual(mockResponse.data);
+    });
+  });
+
+  describe('createCompany', () => {
+    it('should create a new company', async () => {
+      // Arrange
+      const attributes = {
+        name: 'New Company',
+        website: 'https://newcompany.com',
+        industry: 'Technology'
+      };
+      const mockResponse = {
+        id: { record_id: 'newcompany1' },
+        values: {
+          name: [{ value: 'New Company' }],
+          website: [{ value: 'https://newcompany.com' }],
+          industry: [{ value: 'Technology' }]
+        }
+      };
+      mockedRecords.createObjectRecord.mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await createCompany(attributes);
+
+      // Assert
+      expect(mockedRecords.createObjectRecord).toHaveBeenCalledWith(
+        'companies',
+        attributes
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle errors when creating a company', async () => {
+      // Arrange
+      const attributes = { name: 'Test Company' };
+      const error = new Error('API Error');
+      mockedRecords.createObjectRecord.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(createCompany(attributes)).rejects.toThrow('API Error');
+    });
+  });
+
+  describe('updateCompany', () => {
+    it('should update an existing company', async () => {
+      // Arrange
+      const companyId = 'company123';
+      const attributes = {
+        name: 'Updated Company',
+        industry: 'Finance'
+      };
+      const mockResponse = {
+        id: { record_id: companyId },
+        values: {
+          name: [{ value: 'Updated Company' }],
+          industry: [{ value: 'Finance' }]
+        }
+      };
+      mockedRecords.updateObjectRecord.mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await updateCompany(companyId, attributes);
+
+      // Assert
+      expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
+        'companies',
+        companyId,
+        attributes
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle errors when updating a company', async () => {
+      // Arrange
+      const companyId = 'company123';
+      const attributes = { name: 'Updated Company' };
+      const error = new Error('Update failed');
+      mockedRecords.updateObjectRecord.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(updateCompany(companyId, attributes)).rejects.toThrow('Update failed');
+    });
+  });
+
+  describe('updateCompanyAttribute', () => {
+    it('should update a specific company attribute', async () => {
+      // Arrange
+      const companyId = 'company123';
+      const attributeName = 'industry';
+      const attributeValue = 'Healthcare';
+      const mockResponse = {
+        id: { record_id: companyId },
+        values: {
+          industry: [{ value: 'Healthcare' }]
+        }
+      };
+      mockedRecords.updateObjectRecord.mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await updateCompanyAttribute(companyId, attributeName, attributeValue);
+
+      // Assert
+      expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
+        'companies',
+        companyId,
+        { [attributeName]: attributeValue }
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle errors when updating a company attribute', async () => {
+      // Arrange
+      const companyId = 'company123';
+      const attributeName = 'industry';
+      const attributeValue = 'Healthcare';
+      const error = new Error('Attribute update failed');
+      mockedRecords.updateObjectRecord.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(updateCompanyAttribute(companyId, attributeName, attributeValue))
+        .rejects.toThrow('Attribute update failed');
+    });
+  });
+
+  describe('deleteCompany', () => {
+    it('should delete a company', async () => {
+      // Arrange
+      const companyId = 'company123';
+      mockedRecords.deleteObjectRecord.mockResolvedValue(true);
+
+      // Act
+      const result = await deleteCompany(companyId);
+
+      // Assert
+      expect(mockedRecords.deleteObjectRecord).toHaveBeenCalledWith(
+        'companies',
+        companyId
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should handle errors when deleting a company', async () => {
+      // Arrange
+      const companyId = 'company123';
+      const error = new Error('Delete failed');
+      mockedRecords.deleteObjectRecord.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(deleteCompany(companyId)).rejects.toThrow('Delete failed');
     });
   });
 });

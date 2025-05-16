@@ -1,8 +1,10 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
+import { ValueMatchError } from "../errors/value-match-error.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
 import { ResourceType } from "../types/attio.js";
 import { processListEntries } from "../utils/record-utils.js";
+import axios from "axios";
 // Import tool configurations and definitions
 import { companyToolConfigs, companyToolDefinitions, peopleToolConfigs, peopleToolDefinitions, listsToolConfigs, listsToolDefinitions, recordToolConfigs, recordToolDefinitions } from "./tool-configs/index.js";
 // Consolidated tool configurations from modular files
@@ -672,7 +674,15 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(dateRange, limit, offset);
+                        // Create a properly typed filter object if it's not already one
+                        let filter = { filters: [] };
+                        if (typeof dateRange === 'object' && dateRange !== null) {
+                            filter = dateRange;
+                        }
+                        else {
+                            filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: dateRange }] };
+                        }
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     else if (toolType === 'searchByLastInteraction') {
@@ -691,7 +701,16 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(dateRange, interactionType, limit, offset);
+                        // Create a properly typed filter object
+                        let filter = { filters: [] };
+                        // Construct proper filter based on date range and interaction type
+                        filter = {
+                            filters: [
+                                { attribute: { slug: 'last_interaction' }, condition: 'equals', value: dateRange },
+                                ...(interactionType ? [{ attribute: { slug: 'interaction_type' }, condition: 'equals', value: interactionType }] : [])
+                            ]
+                        };
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     else if (toolType === 'searchByActivity') {
@@ -709,7 +728,19 @@ export function registerToolHandlers(server) {
                                 // Continue with the string, the handler will need to handle it
                             }
                         }
-                        const response = await advancedSearchConfig.handler(activityFilter, limit, offset);
+                        // Create a properly typed filter object
+                        let filter = { filters: [] };
+                        if (typeof activityFilter === 'object' && activityFilter !== null) {
+                            filter = {
+                                filters: [
+                                    { attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }
+                                ]
+                            };
+                        }
+                        else {
+                            filter = { filters: [{ attribute: { slug: 'created_at' }, condition: 'equals', value: activityFilter }] };
+                        }
+                        const response = await advancedSearchConfig.handler(filter, limit, offset);
                         results = response || [];
                     }
                     // Format and return results
@@ -725,7 +756,29 @@ export function registerToolHandlers(server) {
                     };
                 }
                 catch (error) {
-                    return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), `/objects/${resourceType}/records/query`, "POST", error.response?.data || {});
+                    let errorDetailsForCreateResult = {};
+                    if (error instanceof ValueMatchError) {
+                        // If it's a ValueMatchError, its message is already enhanced.
+                        // We want to pass the original error's response data if available for full context in createErrorResult
+                        if (axios.isAxiosError(error.originalError) && error.originalError.response) {
+                            errorDetailsForCreateResult = error.originalError.response.data;
+                        }
+                        else {
+                            // Fallback if originalError is not an Axios error or has no response data
+                            errorDetailsForCreateResult = error.details || {};
+                        }
+                    }
+                    else if (axios.isAxiosError(error) && error.response) {
+                        errorDetailsForCreateResult = error.response.data;
+                    }
+                    else if (error instanceof Error && error.details) {
+                        errorDetailsForCreateResult = error.details;
+                    }
+                    else {
+                        // Minimal fallback
+                        errorDetailsForCreateResult = { message: error?.message || 'Unknown error details' };
+                    }
+                    return createErrorResult(error instanceof Error ? error : new Error("Unknown error caught in advancedSearch"), `/objects/${resourceType}/records/query`, "POST", errorDetailsForCreateResult);
                 }
             }
             // Handle batch record updates
@@ -766,16 +819,22 @@ export function registerToolHandlers(server) {
                 if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
                     offset = Number(request.params.arguments.offset);
                 }
+                // Import the attribute mapping utility
+                const { translateAttributeNamesInFilters } = await import("../utils/attribute-mapping/index.js");
+                // Translate any human-readable attribute names to their slug equivalents
+                // Pass resourceType for object-specific mappings
+                const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
                 if (process.env.NODE_ENV === 'development') {
                     console.log(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
-                        filters: JSON.stringify(filters),
+                        originalFilters: JSON.stringify(filters),
+                        translatedFilters: JSON.stringify(translatedFilters),
                         limit,
                         offset
                     });
                 }
                 try {
                     const advancedSearchToolConfig = toolConfig;
-                    const results = await advancedSearchToolConfig.handler(filters, limit, offset);
+                    const results = await advancedSearchToolConfig.handler(translatedFilters, limit, offset);
                     const formattedResults = advancedSearchToolConfig.formatResult(results);
                     return {
                         content: [
@@ -788,7 +847,29 @@ export function registerToolHandlers(server) {
                     };
                 }
                 catch (error) {
-                    return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), `/objects/${resourceType}/records/query`, "POST", error.response?.data || {});
+                    let errorDetailsForCreateResult = {};
+                    if (error instanceof ValueMatchError) {
+                        // If it's a ValueMatchError, its message is already enhanced.
+                        // We want to pass the original error's response data if available for full context in createErrorResult
+                        if (axios.isAxiosError(error.originalError) && error.originalError.response) {
+                            errorDetailsForCreateResult = error.originalError.response.data;
+                        }
+                        else {
+                            // Fallback if originalError is not an Axios error or has no response data
+                            errorDetailsForCreateResult = error.details || {};
+                        }
+                    }
+                    else if (axios.isAxiosError(error) && error.response) {
+                        errorDetailsForCreateResult = error.response.data;
+                    }
+                    else if (error instanceof Error && error.details) {
+                        errorDetailsForCreateResult = error.details;
+                    }
+                    else {
+                        // Minimal fallback
+                        errorDetailsForCreateResult = { message: error?.message || 'Unknown error details' };
+                    }
+                    return createErrorResult(error instanceof Error ? error : new Error("Unknown error caught in advancedSearch"), `/objects/${resourceType}/records/query`, "POST", errorDetailsForCreateResult);
                 }
             }
             throw new Error(`Tool handler not implemented for tool type: ${toolType}`);

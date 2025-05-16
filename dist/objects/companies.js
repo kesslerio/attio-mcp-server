@@ -3,7 +3,11 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { searchObject, advancedSearchObject, listObjects, getObjectDetails, getObjectNotes, createObjectNote, batchSearchObjects, batchGetObjectDetails } from "../api/attio-operations.js";
+import { createObjectRecord, updateObjectRecord, deleteObjectRecord } from "./records.js";
 import { ResourceType, FilterConditionType } from "../types/attio.js";
+import { createCompaniesByPeopleFilter, createCompaniesByPeopleListFilter, createRecordsByNotesFilter } from "../utils/relationship-utils.js";
+import { validateNumericParam } from "../utils/filter-validation.js";
+import { FilterValidationError } from "../errors/api-errors.js";
 /**
  * Searches for companies by name
  *
@@ -588,5 +592,167 @@ export function createIndustryFilter(industry, condition = FilterConditionType.C
             }
         ]
     };
+}
+/**
+ * Search for companies based on attributes of their associated people
+ *
+ * @param peopleFilter - Filter to apply to people
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export async function searchCompaniesByPeople(peopleFilter, limit = 20, offset = 0) {
+    try {
+        // Ensure peopleFilter is a properly structured filter object
+        if (typeof peopleFilter !== 'object' || !peopleFilter || !peopleFilter.filters) {
+            throw new FilterValidationError('People filter must be a valid ListEntryFilters object with at least one filter');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createCompaniesByPeopleFilter(peopleFilter);
+        const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search companies by people: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Search for companies that have employees in a specific list
+ *
+ * @param listId - ID of the list containing people
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export async function searchCompaniesByPeopleList(listId, limit = 20, offset = 0) {
+    try {
+        // Validate listId
+        if (!listId || typeof listId !== 'string' || listId.trim() === '') {
+            throw new FilterValidationError('List ID must be a non-empty string');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createCompaniesByPeopleListFilter(listId);
+        const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search companies by people list: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Search for companies that have notes containing specific text
+ *
+ * @param searchText - Text to search for in notes
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching companies
+ */
+export async function searchCompaniesByNotes(searchText, limit = 20, offset = 0) {
+    try {
+        // Validate searchText
+        if (!searchText || typeof searchText !== 'string' || searchText.trim() === '') {
+            throw new FilterValidationError('Search text must be a non-empty string');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createRecordsByNotesFilter(ResourceType.COMPANIES, searchText);
+        const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search companies by notes: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Creates a new company
+ *
+ * @param attributes - Company attributes as key-value pairs
+ * @returns Created company record
+ */
+export async function createCompany(attributes) {
+    try {
+        return await createObjectRecord(ResourceType.COMPANIES, attributes);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error(`Failed to create company: ${String(error)}`);
+    }
+}
+/**
+ * Updates an existing company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributes - Company attributes to update
+ * @returns Updated company record
+ */
+export async function updateCompany(companyId, attributes) {
+    try {
+        return await updateObjectRecord(ResourceType.COMPANIES, companyId, attributes);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error(`Failed to update company: ${String(error)}`);
+    }
+}
+/**
+ * Updates a specific attribute of a company
+ *
+ * @param companyId - ID of the company to update
+ * @param attributeName - Name of the attribute to update
+ * @param attributeValue - New value for the attribute
+ * @returns Updated company record
+ */
+export async function updateCompanyAttribute(companyId, attributeName, attributeValue) {
+    try {
+        const attributes = { [attributeName]: attributeValue };
+        return await updateCompany(companyId, attributes);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error(`Failed to update company attribute: ${String(error)}`);
+    }
+}
+/**
+ * Deletes a company
+ *
+ * @param companyId - ID of the company to delete
+ * @returns True if deletion was successful
+ */
+export async function deleteCompany(companyId) {
+    try {
+        return await deleteObjectRecord(ResourceType.COMPANIES, companyId);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error(`Failed to delete company: ${String(error)}`);
+    }
 }
 //# sourceMappingURL=companies.js.map
