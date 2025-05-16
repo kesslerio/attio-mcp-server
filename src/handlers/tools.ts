@@ -127,10 +127,29 @@ export function registerToolHandlers(server: Server): void {
       // Handle search tools
       if (toolType === 'search') {
         const query = request.params.arguments?.query as string;
+        
+        // Debug log the incoming request
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[tools.search] Starting search for ${resourceType} with:`, {
+            toolName,
+            resourceType,
+            query,
+            fullArguments: request.params.arguments
+          });
+        }
+        
         try {
           const searchToolConfig = toolConfig as SearchToolConfig;
           const results = await searchToolConfig.handler(query);
           const formattedResults = searchToolConfig.formatResult(results);
+          
+          // Debug log the results
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[tools.search] Search completed:`, {
+              resultCount: results.length,
+              resourceType
+            });
+          }
           
           return {
             content: [
