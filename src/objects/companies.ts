@@ -28,6 +28,17 @@ import {
   FilterConditionType,
   RecordAttributes
 } from "../types/attio.js";
+import { 
+  CompanyCreateInput, 
+  CompanyUpdateInput,
+  CompanyAttributeUpdate 
+} from "../types/company-types.js";
+import { CompanyValidator } from "../validators/company-validator.js";
+import { 
+  CompanyNotFoundError, 
+  CompanyOperationError,
+  InvalidCompanyDataError 
+} from "../errors/company-errors.js";
 import {
   createCompaniesByPeopleFilter,
   createCompaniesByPeopleListFilter,
@@ -810,15 +821,21 @@ export async function searchCompaniesByNotes(
  * 
  * @param attributes - Company attributes as key-value pairs
  * @returns Created company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if creation fails
  */
-export async function createCompany(attributes: RecordAttributes): Promise<Company> {
+export async function createCompany(attributes: any): Promise<Company> {
   try {
-    return await createObjectRecord<Company>(ResourceType.COMPANIES, attributes);
+    // Validate input
+    const validatedAttributes: CompanyCreateInput = CompanyValidator.validateCreate(attributes);
+    
+    // Create the company
+    return await createObjectRecord<Company>(ResourceType.COMPANIES, validatedAttributes);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
-    throw new Error(`Failed to create company: ${String(error)}`);
+    throw new CompanyOperationError('create', undefined, error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -828,15 +845,21 @@ export async function createCompany(attributes: RecordAttributes): Promise<Compa
  * @param companyId - ID of the company to update
  * @param attributes - Company attributes to update
  * @returns Updated company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if update fails
  */
-export async function updateCompany(companyId: string, attributes: RecordAttributes): Promise<Company> {
+export async function updateCompany(companyId: string, attributes: any): Promise<Company> {
   try {
-    return await updateObjectRecord<Company>(ResourceType.COMPANIES, companyId, attributes);
+    // Validate input
+    const validatedAttributes: CompanyUpdateInput = CompanyValidator.validateUpdate(companyId, attributes);
+    
+    // Update the company
+    return await updateObjectRecord<Company>(ResourceType.COMPANIES, companyId, validatedAttributes);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
-    throw new Error(`Failed to update company: ${String(error)}`);
+    throw new CompanyOperationError('update', companyId, error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -847,6 +870,8 @@ export async function updateCompany(companyId: string, attributes: RecordAttribu
  * @param attributeName - Name of the attribute to update
  * @param attributeValue - New value for the attribute
  * @returns Updated company record
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if update fails
  */
 export async function updateCompanyAttribute(
   companyId: string, 
@@ -854,13 +879,17 @@ export async function updateCompanyAttribute(
   attributeValue: any
 ): Promise<Company> {
   try {
+    // Validate input
+    CompanyValidator.validateAttributeUpdate(companyId, attributeName, attributeValue);
+    
+    // Update the specific attribute
     const attributes = { [attributeName]: attributeValue };
     return await updateCompany(companyId, attributes);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof InvalidCompanyDataError || error instanceof CompanyOperationError) {
       throw error;
     }
-    throw new Error(`Failed to update company attribute: ${String(error)}`);
+    throw new CompanyOperationError('update attribute', companyId, error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -869,14 +898,20 @@ export async function updateCompanyAttribute(
  * 
  * @param companyId - ID of the company to delete
  * @returns True if deletion was successful
+ * @throws InvalidCompanyDataError if validation fails
+ * @throws CompanyOperationError if deletion fails
  */
 export async function deleteCompany(companyId: string): Promise<boolean> {
   try {
+    // Validate input
+    CompanyValidator.validateDelete(companyId);
+    
+    // Delete the company
     return await deleteObjectRecord(ResourceType.COMPANIES, companyId);
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
-    throw new Error(`Failed to delete company: ${String(error)}`);
+    throw new CompanyOperationError('delete', companyId, error instanceof Error ? error.message : String(error));
   }
 }

@@ -1,1 +1,0 @@
-{"version":3,"file":"attio-client.d.ts","sourceRoot":"","sources":["../../src/api/attio-client.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,OAAc,EAAE,aAAa,EAAE,MAAM,OAAO,CAAC;AAM7C;;;;;GAKG;AACH,wBAAgB,iBAAiB,CAAC,MAAM,EAAE,MAAM,GAAG,aAAa,CAmB/D;AAED;;;;GAIG;AACH,wBAAgB,qBAAqB,CAAC,MAAM,EAAE,MAAM,GAAG,IAAI,CAE1D;AAED;;;;;GAKG;AACH,wBAAgB,cAAc,IAAI,aAAa,CAK9C"}

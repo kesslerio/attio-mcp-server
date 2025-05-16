@@ -11,6 +11,10 @@ import {
 } from '../../src/objects/companies.js';
 import * as attioClient from '../../src/api/attio-client.js';
 import * as records from '../../src/objects/records.js';
+import { 
+  InvalidCompanyDataError, 
+  CompanyOperationError 
+} from '../../src/errors/company-errors.js';
 
 // Mock the API client and records module
 jest.mock('../../src/api/attio-client.js');
@@ -249,6 +253,33 @@ describe('companies', () => {
       expect(result).toEqual(mockResponse);
     });
 
+    it('should validate required fields', async () => {
+      // Arrange
+      const attributes = { website: 'https://test.com' }; // Missing required name
+
+      // Act & Assert
+      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+    });
+
+    it('should validate field types', async () => {
+      // Arrange
+      const attributes = { name: 123 }; // Name should be string
+
+      // Act & Assert
+      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+    });
+
+    it('should validate URL fields', async () => {
+      // Arrange
+      const attributes = { 
+        name: 'Test Company',
+        website: 'not-a-valid-url' 
+      };
+
+      // Act & Assert
+      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+    });
+
     it('should handle errors when creating a company', async () => {
       // Arrange
       const attributes = { name: 'Test Company' };
@@ -256,7 +287,7 @@ describe('companies', () => {
       mockedRecords.createObjectRecord.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(createCompany(attributes)).rejects.toThrow('API Error');
+      await expect(createCompany(attributes)).rejects.toThrow(CompanyOperationError);
     });
   });
 
