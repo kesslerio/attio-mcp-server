@@ -9,3 +9,6 @@ node_modules/
 
 # Keep examples
 !.env.example
+
+# PID files
+.health_server.pid
