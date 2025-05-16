@@ -323,11 +323,31 @@ Twitter Followers: ${twitterFollowers}`;
       const name = company.values?.name?.[0]?.value || 'Unknown';
       const id = company.id?.record_id || 'Unknown';
       const fieldCount = Object.keys(company.values || {}).length;
+      const fields = Object.keys(company.values || {});
+      
+      // Create a simplified version of the values for display
+      const simplifiedValues: Record<string, any> = {};
+      for (const [key, value] of Object.entries(company.values || {})) {
+        if (Array.isArray(value) && value.length > 0) {
+          // Extract just the actual value from the array structure
+          const firstItem = value[0];
+          if (firstItem && firstItem.value !== undefined) {
+            simplifiedValues[key] = firstItem.value;
+          } else if (firstItem && firstItem.target_record_id) {
+            // Handle reference fields
+            simplifiedValues[key] = `Reference: ${firstItem.target_record_id}`;
+          } else {
+            simplifiedValues[key] = firstItem;
+          }
+        } else {
+          simplifiedValues[key] = value;
+        }
+      }
       
       return `Company: ${name} (ID: ${id})
-Fields retrieved: ${fieldCount}
+Fields retrieved: ${fieldCount} (${fields.join(', ')})
 
-${JSON.stringify(company.values, null, 2)}`;
+${JSON.stringify(simplifiedValues, null, 2)}`;
     }
   } as ToolConfig,
   

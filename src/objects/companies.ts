@@ -448,17 +448,31 @@ export async function getCompanyFields(companyIdOrUri: string, fields: string[])
       console.log(`[getCompanyFields] Fetching fields for company ${companyId}:`, fields);
     }
     
-    // Use the getRecord function which supports field selection
-    const { getRecord } = await import("../api/attio-operations.js");
+    // Fetch all company data first
+    const fullCompany = await getCompanyDetails(companyIdOrUri);
     
-    const result = await getRecord<Company>(
-      ResourceType.COMPANIES,
-      companyId,
-      fields
-    );
+    // Filter to only requested fields
+    const filteredValues: Record<string, any> = {};
+    const allValues = fullCompany.values || {};
+    
+    for (const field of fields) {
+      if (field in allValues) {
+        filteredValues[field] = allValues[field];
+      }
+    }
+    
+    // Always include basic identifiers
+    if (!('name' in filteredValues) && 'name' in allValues) {
+      filteredValues.name = allValues.name;
+    }
+    
+    const result: Partial<Company> = {
+      id: fullCompany.id,
+      values: filteredValues
+    };
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[getCompanyFields] Received ${Object.keys(result.values || {}).length} fields`);
+      console.log(`[getCompanyFields] Filtered to ${Object.keys(filteredValues).length} fields`);
     }
     
     return result;
