@@ -3,8 +3,11 @@
  */
 import { getAttioClient } from "../api/attio-client.js";
 import { listObjects, getObjectDetails, getObjectNotes, createObjectNote, batchSearchObjects, batchGetObjectDetails } from "../api/attio-operations.js";
-import { ResourceType } from "../types/attio.js";
-import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../utils/record-utils.js";
+import { ResourceType, InteractionType } from "../types/attio.js";
+import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../utils/filter-utils.js";
+import { createPeopleByCompanyFilter, createPeopleByCompanyListFilter, createRecordsByNotesFilter } from "../utils/relationship-utils.js";
+import { FilterValidationError } from "../errors/api-errors.js";
+import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filter-validation.js";
 /**
  * Searches for people by name, email, or phone number
  *
@@ -338,17 +341,31 @@ export async function batchGetPeopleDetails(personIds, batchConfig) {
  * @param filters - Filters to apply to the search
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
- * @returns Array of matching people
+ * @param returnPaginated - Whether to return paginated results (default: false)
+ * @param page - Current page number, used when returnPaginated is true (default: 1)
+ * @returns Array of matching people or paginated response
  */
-export async function advancedSearchPeople(filters, limit = 20, offset = 0) {
+export async function advancedSearchPeople(filters, limit = 20, offset = 0, returnPaginated = false, page = 1) {
     const api = getAttioClient();
     const path = "/objects/people/records/query";
+    // Debug logging for incoming filters
+    if (process.env.NODE_ENV === 'development') {
+        console.log('[advancedSearchPeople] Started with filters:', JSON.stringify(filters, null, 2));
+    }
     try {
         // Use the filters if provided, applying any transformations needed
         let transformedFilters = {};
         if (filters && filters.filters && filters.filters.length > 0) {
-            const { filter } = require("../utils/record-utils.js").transformFiltersToApiFormat(filters);
+            // Debug log before transformation
+            if (process.env.NODE_ENV === 'development') {
+                console.log('[advancedSearchPeople] Before transformation:', JSON.stringify(filters.filters, null, 2));
+            }
+            const { filter } = require("../utils/filter-utils.js").transformFiltersToApiFormat(filters);
             transformedFilters = { filter };
+            // Debug log after transformation
+            if (process.env.NODE_ENV === 'development') {
+                console.log('[advancedSearchPeople] After transformation:', JSON.stringify(transformedFilters, null, 2));
+            }
         }
         // Construct request with filters, limit, offset
         const requestBody = {
@@ -356,6 +373,10 @@ export async function advancedSearchPeople(filters, limit = 20, offset = 0) {
             limit,
             offset
         };
+        // Debug log the final request body
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[advancedSearchPeople] Final API request body:', JSON.stringify(requestBody, null, 2));
+        }
         const response = await api.post(path, requestBody);
         // Handle special case for email/phone filtering which might need client-side processing
         let results = response.data.data || [];
@@ -435,8 +456,24 @@ export async function advancedSearchPeople(filters, limit = 20, offset = 0) {
  * @returns Array of matching people
  */
 export async function searchPeopleByCreationDate(dateRange, limit = 20, offset = 0) {
-    const filters = createCreatedDateFilter(dateRange);
-    return advancedSearchPeople(filters, limit, offset);
+    try {
+        // Validate and normalize the dateRange parameter
+        const validatedDateRange = validateDateRange(dateRange);
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the filter and perform the search
+        const filters = createCreatedDateFilter(validatedDateRange);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 /**
  * Search for people by last modification date
@@ -447,8 +484,24 @@ export async function searchPeopleByCreationDate(dateRange, limit = 20, offset =
  * @returns Array of matching people
  */
 export async function searchPeopleByModificationDate(dateRange, limit = 20, offset = 0) {
-    const filters = createModifiedDateFilter(dateRange);
-    return advancedSearchPeople(filters, limit, offset);
+    try {
+        // Validate and normalize the dateRange parameter
+        const validatedDateRange = validateDateRange(dateRange);
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the filter and perform the search
+        const filters = createModifiedDateFilter(validatedDateRange);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 /**
  * Search for people by last interaction date
@@ -460,8 +513,37 @@ export async function searchPeopleByModificationDate(dateRange, limit = 20, offs
  * @returns Array of matching people
  */
 export async function searchPeopleByLastInteraction(dateRange, interactionType, limit = 20, offset = 0) {
-    const filters = createLastInteractionFilter(dateRange, interactionType);
-    return advancedSearchPeople(filters, limit, offset);
+    try {
+        // Validate and normalize the dateRange parameter
+        const validatedDateRange = validateDateRange(dateRange);
+        // Validate interactionType if provided
+        let validatedInteractionType = undefined;
+        if (interactionType !== undefined) {
+            // Convert to string if not already
+            const typeString = String(interactionType).toLowerCase();
+            // Validate against enum values
+            const validTypes = Object.values(InteractionType);
+            if (!validTypes.includes(typeString)) {
+                throw new FilterValidationError(`Invalid interaction type: "${interactionType}". ` +
+                    `Valid types are: ${validTypes.join(', ')}`);
+            }
+            validatedInteractionType = typeString;
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the filter and perform the search
+        const filters = createLastInteractionFilter(validatedDateRange, validatedInteractionType);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 /**
  * Search for people by activity history
@@ -473,7 +555,113 @@ export async function searchPeopleByLastInteraction(dateRange, interactionType, 
  * @returns Array of matching people
  */
 export async function searchPeopleByActivity(activityFilter, limit = 20, offset = 0) {
-    const filters = createActivityFilter(activityFilter);
-    return advancedSearchPeople(filters, limit, offset);
+    try {
+        // Validate and normalize the activityFilter parameter
+        const validatedActivityFilter = validateActivityFilter(activityFilter);
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the filter and perform the search
+        const filters = createActivityFilter(validatedActivityFilter);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Search for people based on attributes of their associated companies
+ *
+ * @param companyFilter - Filter to apply to companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByCompany(companyFilter, limit = 20, offset = 0) {
+    try {
+        // Ensure companyFilter is a properly structured filter object
+        if (typeof companyFilter !== 'object' || !companyFilter || !companyFilter.filters) {
+            throw new FilterValidationError('Company filter must be a valid ListEntryFilters object with at least one filter');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createPeopleByCompanyFilter(companyFilter);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by company: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Search for people who work at companies in a specific list
+ *
+ * @param listId - ID of the list containing companies
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByCompanyList(listId, limit = 20, offset = 0) {
+    try {
+        // Validate listId
+        if (!listId || typeof listId !== 'string' || listId.trim() === '') {
+            throw new FilterValidationError('List ID must be a non-empty string');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createPeopleByCompanyListFilter(listId);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by company list: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Search for people that have notes containing specific text
+ *
+ * @param searchText - Text to search for in notes
+ * @param limit - Maximum number of results to return (default: 20)
+ * @param offset - Number of results to skip (default: 0)
+ * @returns Array of matching people
+ */
+export async function searchPeopleByNotes(searchText, limit = 20, offset = 0) {
+    try {
+        // Validate searchText
+        if (!searchText || typeof searchText !== 'string' || searchText.trim() === '') {
+            throw new FilterValidationError('Search text must be a non-empty string');
+        }
+        // Validate and normalize limit and offset parameters
+        const validatedLimit = validateNumericParam(limit, 'limit', 20);
+        const validatedOffset = validateNumericParam(offset, 'offset', 0);
+        // Create the relationship-based filter and perform the search
+        const filters = createRecordsByNotesFilter(ResourceType.PEOPLE, searchText);
+        const results = await advancedSearchPeople(filters, validatedLimit, validatedOffset);
+        return Array.isArray(results) ? results : [];
+    }
+    catch (error) {
+        // Convert all errors to FilterValidationErrors for consistent handling
+        if (error instanceof FilterValidationError) {
+            throw error;
+        }
+        throw new FilterValidationError(`Failed to search people by notes: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 //# sourceMappingURL=people.js.map

@@ -422,13 +422,28 @@ export async function advancedSearchPeople(
   const api = getAttioClient();
   const path = "/objects/people/records/query";
   
+  // Debug logging for incoming filters
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[advancedSearchPeople] Started with filters:', JSON.stringify(filters, null, 2));
+  }
+  
   try {
     // Use the filters if provided, applying any transformations needed
     let transformedFilters = {};
     
     if (filters && filters.filters && filters.filters.length > 0) {
+      // Debug log before transformation
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[advancedSearchPeople] Before transformation:', JSON.stringify(filters.filters, null, 2));
+      }
+      
       const { filter } = require("../utils/filter-utils.js").transformFiltersToApiFormat(filters);
       transformedFilters = { filter };
+      
+      // Debug log after transformation
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[advancedSearchPeople] After transformation:', JSON.stringify(transformedFilters, null, 2));
+      }
     }
     
     // Construct request with filters, limit, offset
@@ -437,6 +452,11 @@ export async function advancedSearchPeople(
       limit,
       offset
     };
+    
+    // Debug log the final request body
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[advancedSearchPeople] Final API request body:', JSON.stringify(requestBody, null, 2));
+    }
     
     const response = await api.post(path, requestBody);
     

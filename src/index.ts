@@ -13,7 +13,7 @@ import { initializeAttioClient } from "./api/attio-client.js";
 import { registerResourceHandlers } from "./handlers/resources.js";
 import { registerToolHandlers } from "./handlers/tools.js";
 import { registerPromptHandlers } from "./prompts/handlers.js";
-import { startHealthServer } from "./health/http-server.js";
+import { startAutoDiscovery, stopAutoDiscovery } from "./utils/auto-discovery.js";
 
 // Use /tmp directory for PID file, which is generally writable
 const PID_FILE_PATH = '/tmp/attio-mcp-server.pid'; // Define PID file path

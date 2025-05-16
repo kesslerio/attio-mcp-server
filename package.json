@@ -7,7 +7,8 @@
   "type": "module",
   "access": "public",
   "bin": {
-    "attio-mcp-server": "dist/index.js"
+    "attio-mcp-server": "dist/index.js",
+    "attio-discover": "dist/cli/discover.js"
   },
   "scripts": {
     "clean": "shx rm -rf dist",
@@ -27,7 +28,16 @@
     "docker:run": "docker run -p 3000:3000 -e ATTIO_API_KEY=${ATTIO_API_KEY} -e ATTIO_WORKSPACE_ID=${ATTIO_WORKSPACE_ID} attio-mcp-server:latest",
     "docker:compose": "docker-compose up -d",
     "docker:logs": "docker-compose logs -f",
-    "docker:stop": "docker-compose down"
+    "docker:stop": "docker-compose down",
+    "discover": "node dist/cli/discover.js",
+    "discover:attributes": "node dist/cli/discover.js attributes",
+    "discover:all-attributes": "node dist/cli/discover.js attributes --all",
+    "discover:high-memory": "NODE_OPTIONS='--max-old-space-size=4096' node -r dotenv/config dist/cli/discover.js",
+    "discover:attributes:high-memory": "NODE_OPTIONS='--max-old-space-size=4096' node -r dotenv/config dist/cli/discover.js attributes",
+    "discover:all-attributes:high-memory": "NODE_OPTIONS='--max-old-space-size=4096' node -r dotenv/config dist/cli/discover.js attributes --all",
+    "discover:robust": "./scripts/run-discover.sh",
+    "discover:attributes:robust": "./scripts/run-discover.sh attributes",
+    "discover:all-attributes:robust": "./scripts/run-discover.sh attributes --all"
   },
   "files": [
     "dist"
@@ -36,14 +46,18 @@
     "@modelcontextprotocol/sdk": "^1.4.1",
     "@types/handlebars": "^4.0.40",
     "axios": "^1.7.9",
+    "chalk": "^5.3.0",
     "dotenv": "^16.5.0",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.8",
+    "ora": "^7.0.1",
+    "yargs": "^17.7.2"
   },
   "author": "@hmk",
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
+    "@types/yargs": "^17.0.32",
     "jest": "^29.7.0",
     "shx": "^0.4.0",
     "ts-jest": "^29.2.5",

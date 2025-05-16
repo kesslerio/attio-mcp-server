@@ -35,6 +35,13 @@ export declare function resolveDateRange(dateRange: DateRange): {
     end?: string;
 };
 /**
+ * Helper function to check if a string is a valid ISO date string
+ *
+ * @param dateString - The string to validate
+ * @returns True if the string is a valid ISO date, false otherwise
+ */
+export declare function isValidISODateString(dateString: string): boolean;
+/**
  * Creates a date range for a specific time period (last X days, weeks, etc.)
  *
  * @param value - The number of units (e.g., 7 for "last 7 days")

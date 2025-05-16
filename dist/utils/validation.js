@@ -184,4 +184,49 @@ export function validateRequest(input, schema, errorFormatter) {
     }
     return null;
 }
+/**
+ * Validates that an ID string is valid and secure to use
+ *
+ * @param id - The ID to validate
+ * @returns True if the ID is valid, false otherwise
+ */
+export function isValidId(id) {
+    // Basic check for non-empty string
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+        return false;
+    }
+    // Check that the ID has a reasonable length
+    if (id.length < 3 || id.length > 100) {
+        return false;
+    }
+    // Check that the ID only contains valid characters
+    // Allowing alphanumeric, hyphens, and underscores
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+        return false;
+    }
+    return true;
+}
+/**
+ * Validates that a list ID is valid and safe to use
+ * Contains additional validation specific to Attio list IDs
+ *
+ * @param listId - The list ID to validate
+ * @returns True if the list ID is valid, false otherwise
+ */
+export function isValidListId(listId) {
+    // First apply general ID validation
+    if (!isValidId(listId)) {
+        return false;
+    }
+    // Additional validation specific to list IDs
+    // Attio list IDs typically start with "list_" followed by alphanumeric characters
+    if (!/^list_[a-zA-Z0-9]+$/.test(listId)) {
+        return false;
+    }
+    // Ensure the ID isn't suspiciously long
+    if (listId.length > 50) {
+        return false;
+    }
+    return true;
+}
 //# sourceMappingURL=validation.js.map

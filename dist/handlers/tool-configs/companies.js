@@ -1,4 +1,4 @@
-import { searchCompanies, getCompanyDetails, getCompanyNotes, createCompanyNote, advancedSearchCompanies } from "../../objects/companies.js";
+import { searchCompanies, getCompanyDetails, getCompanyNotes, createCompanyNote, advancedSearchCompanies, searchCompaniesByPeople, searchCompaniesByPeopleList, searchCompaniesByNotes } from "../../objects/companies.js";
 // Company tool configurations
 export const companyToolConfigs = {
     search: {
@@ -6,6 +6,28 @@ export const companyToolConfigs = {
         handler: searchCompanies,
         formatResult: (results) => {
             return `Found ${results.length} companies:\n${results.map((company) => `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
+        }
+    },
+    // Relationship-based search tools
+    searchByPeople: {
+        name: "search-companies-by-people",
+        handler: searchCompaniesByPeople,
+        formatResult: (results) => {
+            return `Found ${results.length} companies matching the people filter:\n${results.map((company) => `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
+        }
+    },
+    searchByPeopleList: {
+        name: "search-companies-by-people-list",
+        handler: searchCompaniesByPeopleList,
+        formatResult: (results) => {
+            return `Found ${results.length} companies that have employees in the specified list:\n${results.map((company) => `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
+        }
+    },
+    searchByNotes: {
+        name: "search-companies-by-notes",
+        handler: searchCompaniesByNotes,
+        formatResult: (results) => {
+            return `Found ${results.length} companies with matching notes:\n${results.map((company) => `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
         }
     },
     advancedSearch: {
@@ -117,10 +139,7 @@ export const companyToolDefinitions = [
                     description: "URI of the company in the format 'attio://companies/{id}'"
                 }
             },
-            oneOf: [
-                { required: ["companyId"] },
-                { required: ["uri"] }
-            ]
+            required: []
         }
     },
     {
@@ -146,10 +165,7 @@ export const companyToolDefinitions = [
                     description: "Number of notes to skip for pagination (default: 0)"
                 }
             },
-            oneOf: [
-                { required: ["companyId"] },
-                { required: ["uri"] }
-            ]
+            required: []
         }
     },
     {
@@ -175,11 +191,109 @@ export const companyToolDefinitions = [
                     description: "Content of the note"
                 }
             },
-            required: ["content"],
-            oneOf: [
-                { required: ["companyId"] },
-                { required: ["uri"] }
-            ]
+            required: ["content"]
+        }
+    },
+    // Relationship-based tools
+    {
+        name: "search-companies-by-people",
+        description: "Search for companies based on attributes of their associated people",
+        inputSchema: {
+            type: "object",
+            properties: {
+                peopleFilter: {
+                    type: "object",
+                    description: "Filter conditions to apply to people",
+                    properties: {
+                        filters: {
+                            type: "array",
+                            description: "Array of filter conditions",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    attribute: {
+                                        type: "object",
+                                        properties: {
+                                            slug: {
+                                                type: "string",
+                                                description: "Person attribute to filter on (e.g., 'name', 'email', 'phone')"
+                                            }
+                                        },
+                                        required: ["slug"]
+                                    },
+                                    condition: {
+                                        type: "string",
+                                        description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                                    },
+                                    value: {
+                                        type: ["string", "number", "boolean"],
+                                        description: "Value to filter by"
+                                    }
+                                },
+                                required: ["attribute", "condition", "value"]
+                            }
+                        },
+                        matchAny: {
+                            type: "boolean",
+                            description: "When true, matches any filter (OR logic). When false, matches all filters (AND logic)"
+                        }
+                    },
+                    required: ["filters"]
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["peopleFilter"]
+        }
+    },
+    {
+        name: "search-companies-by-people-list",
+        description: "Search for companies that have employees in a specific list",
+        inputSchema: {
+            type: "object",
+            properties: {
+                listId: {
+                    type: "string",
+                    description: "ID of the list containing people"
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["listId"]
+        }
+    },
+    {
+        name: "search-companies-by-notes",
+        description: "Search for companies that have notes containing specific text",
+        inputSchema: {
+            type: "object",
+            properties: {
+                searchText: {
+                    type: "string",
+                    description: "Text to search for in notes"
+                },
+                limit: {
+                    type: "number",
+                    description: "Maximum number of results to return (default: 20)"
+                },
+                offset: {
+                    type: "number",
+                    description: "Number of results to skip (default: 0)"
+                }
+            },
+            required: ["searchText"]
         }
     }
 ];
