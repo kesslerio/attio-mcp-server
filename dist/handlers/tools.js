@@ -7,6 +7,8 @@ import { processListEntries } from "../utils/record-utils.js";
 import axios from "axios";
 // Import tool configurations and definitions
 import { companyToolConfigs, companyToolDefinitions, peopleToolConfigs, peopleToolDefinitions, listsToolConfigs, listsToolDefinitions, recordToolConfigs, recordToolDefinitions } from "./tool-configs/index.js";
+// Import resource-specific tool configuration
+import { RESOURCE_SPECIFIC_CREATE_TOOLS, RESOURCE_TYPE_MAP, VALIDATION_RULES } from "./tool-configs/resource-specific-tools.js";
 // Consolidated tool configurations from modular files
 const TOOL_CONFIGS = {
     [ResourceType.COMPANIES]: companyToolConfigs,
@@ -800,9 +802,15 @@ export function registerToolHandlers(server) {
             }
             // Handle record creation
             if (toolType === 'create') {
-                // Special handling for resource-specific create tools like create-company
-                if (toolName === 'create-company' || toolName === 'create-person') {
+                // Resource-specific create tools like create-company don't use objectSlug
+                // They have a predefined resource type built into their implementation
+                if (RESOURCE_SPECIFIC_CREATE_TOOLS.includes(toolName)) {
                     const attributes = request.params.arguments?.attributes || {};
+                    // Validate required attributes for specific tools
+                    const validationError = VALIDATION_RULES[toolName]?.(attributes);
+                    if (validationError) {
+                        throw new Error(validationError);
+                    }
                     try {
                         const result = await toolConfig.handler(attributes);
                         const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : JSON.stringify(result, null, 2);
@@ -817,7 +825,7 @@ export function registerToolHandlers(server) {
                         };
                     }
                     catch (error) {
-                        const errorResource = toolName === 'create-company' ? 'companies' : 'people';
+                        const errorResource = RESOURCE_TYPE_MAP[toolName];
                         return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), `objects/${errorResource}/records`, "POST", error.response?.data || {});
                     }
                 }

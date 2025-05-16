@@ -25,6 +25,14 @@ import {
   recordToolDefinitions
 } from "./tool-configs/index.js";
 
+// Import resource-specific tool configuration
+import {
+  RESOURCE_SPECIFIC_CREATE_TOOLS,
+  ResourceSpecificCreateTool,
+  RESOURCE_TYPE_MAP,
+  VALIDATION_RULES
+} from "./tool-configs/resource-specific-tools.js";
+
 // Import tool types
 import { 
   ToolConfig,
@@ -1089,9 +1097,16 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle record creation
       if (toolType === 'create') {
-        // Special handling for resource-specific create tools like create-company
-        if (toolName === 'create-company' || toolName === 'create-person') {
+        // Resource-specific create tools like create-company don't use objectSlug
+        // They have a predefined resource type built into their implementation
+        if (RESOURCE_SPECIFIC_CREATE_TOOLS.includes(toolName as ResourceSpecificCreateTool)) {
           const attributes = request.params.arguments?.attributes || {};
+          
+          // Validate required attributes for specific tools
+          const validationError = VALIDATION_RULES[toolName as ResourceSpecificCreateTool]?.(attributes);
+          if (validationError) {
+            throw new Error(validationError);
+          }
           
           try {
             const result = await toolConfig.handler(attributes);
@@ -1107,7 +1122,7 @@ export function registerToolHandlers(server: Server): void {
               isError: false,
             };
           } catch (error) {
-            const errorResource = toolName === 'create-company' ? 'companies' : 'people';
+            const errorResource = RESOURCE_TYPE_MAP[toolName as ResourceSpecificCreateTool];
             return createErrorResult(
               error instanceof Error ? error : new Error("Unknown error"),
               `objects/${errorResource}/records`,
