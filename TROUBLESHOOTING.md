@@ -181,3 +181,50 @@ export function formatResourceUri(type: ResourceType, id: string): string {
   ```
 - Apply your changes to this new branch.
 - Push to your fork and create a PR.
+
+## Client-Side JSON Parsing Errors (e.g., "Unexpected token ... is not valid JSON")
+
+**Symptoms:**
+
+- The client application (e.g., Claude.app, a web browser console) reports errors like `SyntaxError: Unexpected token ... is not valid JSON`, `JSON.parse: unexpected character at line 1 column 1 of the JSON data`, or similar.
+- These errors often appear to happen *before* an expected API response or error is fully processed by the client.
+- The snippets of "invalid JSON" shown in the error message might look like parts of server-side log messages, stack traces, or other non-JSON text.
+
+**Cause:**
+
+This issue commonly arises when server-side `console.log`, `console.error`, or other direct standard output/error stream messages are inadvertently mixed with the JSON-RPC (or any JSON) response stream being sent to the client. The client expects a pure JSON string, but if the server prints debug information directly to the output that forms the body of the HTTP response, it contaminates the JSON string, making it unparsable.
+
+**Example of Problematic Server-Side Code (within an API handler):**
+
+```typescript
+// Inside an Express.js route or similar handler
+try {
+  // ... some operation ...
+  const result = await someAsyncOperation();
+  // This log might break the client if it's part of the response stream
+  console.log("Operation successful, result object:", result); 
+  res.json({ data: result });
+} catch (error) {
+  // These logs are very likely to break the JSON response if not handled carefully
+  console.error("An error occurred:", error);
+  console.error("Error stack:", error.stack);
+  // Even if you send a JSON error response, the console logs might have already been sent
+  res.status(500).json({ error: "Internal server error" }); 
+}
+```
+
+**Solution:**
+
+1.  **Identify and Remove/Comment Out Offending Logs:**
+    *   Carefully review the server-side code paths that handle the requests leading to the JSON parsing errors.
+    *   Temporarily comment out or remove `console.log`, `console.error`, and similar statements, especially those that print complex objects or multi-line strings (like stack traces).
+    *   Pay close attention to error handling blocks (`catch` clauses) and middleware.
+
+2.  **Use a Proper Server-Side Logging Mechanism:**
+    *   Instead of logging directly to `console.log` in a way that might interfere with the HTTP response, use a dedicated logging library (e.g., Winston, Pino, Bunyan) that writes to files, a logging service, or the console in a controlled manner, separate from the response stream.
+    *   Ensure your application framework (e.g., Express.js) is configured so that only the intended JSON response is written to the HTTP response body.
+
+3.  **Isolate Debugging:**
+    *   If you must use `console.log` for quick debugging, ensure it's done in a context where it won't be mixed with client responses (e.g., in standalone scripts, unit tests, or very early in the request lifecycle before any response headers/body are sent, and remove them afterward).
+
+**Key Takeaway:** The data stream for a JSON API response must contain *only* valid JSON. Any extraneous text, including server-side debug logs, will likely cause parsing failures on the client.
