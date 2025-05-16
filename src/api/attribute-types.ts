@@ -284,15 +284,52 @@ export async function formatAttributeValue(
       }
       
     case 'text':
-    case 'email':
-    case 'url':
-    case 'phone-number':
-      // Text-like fields need wrapped values
+      // Text fields for people object don't need wrapping
+      if (objectSlug === 'people' && (attributeSlug === 'name' || attributeSlug === 'job_title')) {
+        return value;
+      }
+      // Other text fields need wrapped values
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map(v => ({ value: v }));
       } else {
         return { value };
+      }
+      
+    case 'personal-name':
+      // Personal name fields don't need value wrapping
+      return value;
+      
+    case 'url':
+      // URL fields need wrapped values
+      if (typeInfo.isArray) {
+        const arrayValue = Array.isArray(value) ? value : [value];
+        return arrayValue.map(v => ({ value: v }));
+      } else {
+        return { value };
+      }
+      
+    case 'phone-number':
+      // Phone fields are like email - array but no value wrapping
+      if (typeInfo.isArray) {
+        const arrayValue = Array.isArray(value) ? value : [value];
+        return arrayValue;
+      } else {
+        return value;
+      }
+      
+    case 'email-address':
+      // Email is an array field but doesn't need value wrapping
+      const emails = Array.isArray(value) ? value : [value];
+      return emails;
+      
+    case 'domain':
+      // Domain fields are like email - array but no value wrapping
+      if (typeInfo.isArray) {
+        const arrayValue = Array.isArray(value) ? value : [value];
+        return arrayValue;
+      } else {
+        return value;
       }
       
     case 'number':

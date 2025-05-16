@@ -38,12 +38,12 @@ export class CompanyValidator {
     // Validate field types dynamically
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
-        await this.validateFieldType(field, value);
+        await CompanyValidator.validateFieldType(field, value);
       }
     }
     
     // Special validation for specific field types
-    await this.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(attributes);
 
     return attributes as CompanyCreateInput;
   }
@@ -66,12 +66,12 @@ export class CompanyValidator {
     // Validate field types dynamically
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
-        await this.validateFieldType(field, value);
+        await CompanyValidator.validateFieldType(field, value);
       }
     }
     
     // Special validation for specific field types
-    await this.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(attributes);
 
     return attributes as CompanyUpdateInput;
   }
@@ -96,7 +96,7 @@ export class CompanyValidator {
     }
 
     // Validate the attribute value based on dynamic type detection
-    await this.validateFieldType(attributeName, attributeValue);
+    await CompanyValidator.validateFieldType(attributeName, attributeValue);
     
     // Special validation for specific attributes
     if (attributeName === 'name' && (!attributeValue || typeof attributeValue !== 'string')) {
@@ -136,17 +136,17 @@ export class CompanyValidator {
     
     try {
       // Check cache first
-      if (this.fieldTypeCache.has(field)) {
-        expectedType = this.fieldTypeCache.get(field)!;
+      if (CompanyValidator.fieldTypeCache.has(field)) {
+        expectedType = CompanyValidator.fieldTypeCache.get(field)!;
       } else {
         // Detect field type from API
         expectedType = await detectFieldType(ResourceType.COMPANIES, field);
-        this.fieldTypeCache.set(field, expectedType);
+        CompanyValidator.fieldTypeCache.set(field, expectedType);
       }
     } catch (error) {
       // If API call fails, fall back to basic type inference
       console.warn(`Failed to detect field type for ${field}, using fallback`);
-      expectedType = this.inferFieldType(field);
+      expectedType = CompanyValidator.inferFieldType(field);
     }
 
     // Validate based on detected type

@@ -50,6 +50,12 @@ import {
   formatAllAttributes, 
   formatAttributeValue 
 } from "../api/attribute-types.js";
+import {
+  createObjectWithDynamicFields,
+  updateObjectWithDynamicFields,
+  updateObjectAttributeWithDynamicFields,
+  deleteObjectWithValidation
+} from "./base-operations.js";
 
 /**
  * Searches for companies by name
@@ -1164,14 +1170,11 @@ export async function searchCompaniesByNotes(
  */
 export async function createCompany(attributes: any): Promise<Company> {
   try {
-    // Validate input with dynamic field type detection
-    const validatedAttributes: CompanyCreateInput = await CompanyValidator.validateCreate(attributes);
-    
-    // Use dynamic field type detection to format attributes correctly
-    const transformedAttributes = await formatAllAttributes(ResourceType.COMPANIES, validatedAttributes);
-    
-    // Create the company
-    return await createObjectRecord<Company>(ResourceType.COMPANIES, transformedAttributes);
+    return await createObjectWithDynamicFields<Company>(
+      ResourceType.COMPANIES,
+      attributes,
+      CompanyValidator.validateCreate
+    );
   } catch (error) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
@@ -1191,19 +1194,12 @@ export async function createCompany(attributes: any): Promise<Company> {
  */
 export async function updateCompany(companyId: string, attributes: any): Promise<Company> {
   try {
-    // Validate input with dynamic field type detection
-    const validatedAttributes: CompanyUpdateInput = await CompanyValidator.validateUpdate(companyId, attributes);
-    
-    // Use dynamic field type detection to format attributes correctly
-    const transformedAttributes = await formatAllAttributes(ResourceType.COMPANIES, validatedAttributes);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[updateCompany] Original attributes:', JSON.stringify(validatedAttributes, null, 2));
-      console.log('[updateCompany] Transformed attributes:', JSON.stringify(transformedAttributes, null, 2));
-    }
-    
-    // Update the company - pass ResourceType.COMPANIES as objectSlug and companyId as recordId
-    return await updateObjectRecord<Company>(ResourceType.COMPANIES, companyId, transformedAttributes);
+    return await updateObjectWithDynamicFields<Company>(
+      ResourceType.COMPANIES,
+      companyId,
+      attributes,
+      CompanyValidator.validateUpdate
+    );
   } catch (error) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
@@ -1228,12 +1224,16 @@ export async function updateCompanyAttribute(
   attributeValue: any
 ): Promise<Company> {
   try {
-    // Validate input with dynamic field type detection
+    // Validate attribute update
     await CompanyValidator.validateAttributeUpdate(companyId, attributeName, attributeValue);
     
-    // Update the specific attribute
-    const attributes = { [attributeName]: attributeValue };
-    return await updateCompany(companyId, attributes);
+    return await updateObjectAttributeWithDynamicFields<Company>(
+      ResourceType.COMPANIES,
+      companyId,
+      attributeName,
+      attributeValue,
+      updateCompany
+    );
   } catch (error) {
     if (error instanceof InvalidCompanyDataError || error instanceof CompanyOperationError) {
       throw error;
@@ -1252,11 +1252,11 @@ export async function updateCompanyAttribute(
  */
 export async function deleteCompany(companyId: string): Promise<boolean> {
   try {
-    // Validate input
-    CompanyValidator.validateDelete(companyId);
-    
-    // Delete the company
-    return await deleteObjectRecord(ResourceType.COMPANIES, companyId);
+    return await deleteObjectWithValidation(
+      ResourceType.COMPANIES,
+      companyId,
+      CompanyValidator.validateDelete
+    );
   } catch (error) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
