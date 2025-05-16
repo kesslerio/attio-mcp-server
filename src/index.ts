@@ -9,6 +9,7 @@ import path from 'path'; // Added for PID file path
 import { AddressInfo } from 'net'; // Import AddressInfo for type checking
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { startHealthServer } from './health/http-server.js';
 import { initializeAttioClient } from "./api/attio-client.js";
 import { registerResourceHandlers } from "./handlers/resources.js";
 import { registerToolHandlers } from "./handlers/tools.js";
