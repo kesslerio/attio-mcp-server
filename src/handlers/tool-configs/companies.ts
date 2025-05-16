@@ -141,13 +141,32 @@ For full details, use get-company-json with this ID: ${companyId}`;
     name: "get-company-json",
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
-      const cleanedCompany = JSON.parse(JSON.stringify(company));
-      // Fix the typo in the response data
-      if (cleanedCompany.values?.typpe) {
-        cleanedCompany.values.type = cleanedCompany.values.typpe;
-        delete cleanedCompany.values.typpe;
+      try {
+        const cleanedCompany = JSON.parse(JSON.stringify(company));
+        
+        // Fix the typo in the response data
+        if (cleanedCompany.values?.typpe) {
+          cleanedCompany.values.type = cleanedCompany.values.typpe;
+          delete cleanedCompany.values.typpe;
+        }
+        
+        // Safely handle the services field if it exists
+        if (cleanedCompany.values?.services !== undefined) {
+          // Ensure services is an array
+          if (!Array.isArray(cleanedCompany.values.services)) {
+            cleanedCompany.values.services = cleanedCompany.values.services ? [cleanedCompany.values.services] : [];
+          }
+        }
+        
+        return JSON.stringify(cleanedCompany, null, 2);
+      } catch (error) {
+        // If any error occurs during JSON processing, return a safe error message
+        return JSON.stringify({
+          error: "Failed to process company data",
+          message: error instanceof Error ? error.message : "Unknown error",
+          companyId: company.id?.record_id || 'unknown'
+        }, null, 2);
       }
-      return JSON.stringify(cleanedCompany, null, 2);
     }
   } as DetailsToolConfig
 };

@@ -285,6 +285,84 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle json tools (same as details but with json tool type)
+      if (toolType === 'json') {
+        let id: string;
+        let uri: string;
+        
+        // Check which parameter is provided
+        const directId = resourceType === ResourceType.COMPANIES 
+          ? request.params.arguments?.companyId as string 
+          : request.params.arguments?.personId as string;
+          
+        uri = request.params.arguments?.uri as string;
+        
+        // Use either direct ID or URI, with priority to URI if both are provided
+        if (uri) {
+          try {
+            const [uriType, uriId] = parseResourceUri(uri);
+            if (uriType !== resourceType) {
+              throw new Error(`URI type mismatch: Expected ${resourceType}, got ${uriType}`);
+            }
+            id = uriId;
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Invalid URI format"),
+              uri,
+              "GET",
+              { status: 400, message: "Invalid URI format" }
+            );
+          }
+        } else if (directId) {
+          id = directId;
+          // For logging purposes
+          uri = `attio://${resourceType}/${directId}`;
+        } else {
+          return createErrorResult(
+            new Error("Missing required parameter: uri or direct ID"),
+            `${resourceType}/json`,
+            "GET",
+            { status: 400, message: "Missing required parameter: uri or companyId/personId" }
+          );
+        }
+        
+        try {
+          const details = await toolConfig.handler(id);
+          
+          // If a formatResult function exists, use it
+          if ('formatResult' in toolConfig && typeof toolConfig.formatResult === 'function') {
+            const formattedResult = toolConfig.formatResult(details);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          }
+          
+          // Otherwise, fall back to JSON stringification
+          return {
+            content: [
+              {
+                type: "text",
+                text: `${resourceType.slice(0, -1).charAt(0).toUpperCase() + resourceType.slice(1, -1)} JSON for ${id}:\n${JSON.stringify(details, null, 2)}`,
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            uri,
+            "GET",
+            (error as any).response?.data || {}
+          );
+        }
+      }
+      
       // Handle notes tools
       if (toolType === 'notes') {
         let id: string;
