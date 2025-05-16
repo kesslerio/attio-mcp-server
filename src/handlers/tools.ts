@@ -25,6 +25,14 @@ import {
   recordToolDefinitions
 } from "./tool-configs/index.js";
 
+// Import resource-specific tool configuration
+import {
+  RESOURCE_SPECIFIC_CREATE_TOOLS,
+  ResourceSpecificCreateTool,
+  RESOURCE_TYPE_MAP,
+  VALIDATION_RULES
+} from "./tool-configs/resource-specific-tools.js";
+
 // Import tool types
 import { 
   ToolConfig,
@@ -1089,30 +1097,66 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle record creation
       if (toolType === 'create') {
-        const objectSlug = request.params.arguments?.objectSlug as string;
-        const objectId = request.params.arguments?.objectId as string;
-        const attributes = request.params.arguments?.attributes || {};
-        
-        try {
-          const recordCreateConfig = toolConfig as RecordCreateToolConfig;
-          const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+        // Resource-specific create tools like create-company don't use objectSlug
+        // They have a predefined resource type built into their implementation
+        if (RESOURCE_SPECIFIC_CREATE_TOOLS.includes(toolName as ResourceSpecificCreateTool)) {
+          const attributes = request.params.arguments?.attributes || {};
           
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
-              },
-            ],
-            isError: false,
-          };
-        } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
-            `objects/${objectSlug}/records`,
-            "POST",
-            (error as any).response?.data || {}
-          );
+          // Validate required attributes for specific tools
+          const validationError = VALIDATION_RULES[toolName as ResourceSpecificCreateTool]?.(attributes);
+          if (validationError) {
+            throw new Error(validationError);
+          }
+          
+          try {
+            const result = await toolConfig.handler(attributes);
+            const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : JSON.stringify(result, null, 2);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            const errorResource = RESOURCE_TYPE_MAP[toolName as ResourceSpecificCreateTool];
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${errorResource}/records`,
+              "POST",
+              (error as any).response?.data || {}
+            );
+          }
+        } else {
+          // Generic record creation that requires objectSlug
+          const objectSlug = request.params.arguments?.objectSlug as string;
+          const objectId = request.params.arguments?.objectId as string;
+          const attributes = request.params.arguments?.attributes || {};
+          
+          try {
+            const recordCreateConfig = toolConfig as RecordCreateToolConfig;
+            const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${objectSlug}/records`,
+              "POST",
+              (error as any).response?.data || {}
+            );
+          }
         }
       }
       
