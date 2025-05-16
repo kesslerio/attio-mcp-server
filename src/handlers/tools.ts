@@ -285,6 +285,36 @@ export function registerToolHandlers(server: Server): void {
         }
       }
       
+      // Handle getAttributes tools
+      if (toolType === 'getAttributes') {
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributeName = request.params.arguments?.attributeName as string | undefined;
+          
+          try {
+            const result = await toolConfig.handler(companyId, attributeName);
+            const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : JSON.stringify(result, null, 2);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `companies/${companyId}/attributes`,
+              "GET",
+              (error as any).response?.data || {}
+            );
+          }
+        }
+      }
+      
       // Handle json tools (same as details but with json tool type)
       if (toolType === 'json') {
         let id: string;

@@ -12,6 +12,7 @@ import {
   getCompanyFields,
   getCompanyCustomFields,
   discoverCompanyAttributes,
+  getCompanyAttributes,
   getCompanyNotes, 
   createCompanyNote,
   advancedSearchCompanies,
@@ -403,6 +404,20 @@ ${fieldCount > 0 ? JSON.stringify(customFields, null, 2) : 'No custom fields fou
       });
       
       return output;
+    }
+  } as ToolConfig,
+  
+  getAttributes: {
+    name: "get-company-attributes",
+    handler: getCompanyAttributes,
+    formatResult: (result: any) => {
+      if (result.value !== undefined) {
+        // Return specific attribute value
+        return `Company: ${result.company}\nAttribute value: ${typeof result.value === 'object' ? JSON.stringify(result.value, null, 2) : result.value}`;
+      } else {
+        // Return list of attributes
+        return `Company: ${result.company}\nAvailable attributes (${result.attributes.length}):\n${result.attributes.map((attr: string) => `  - ${attr}`).join('\n')}`;
+      }
     }
   } as ToolConfig
 };
@@ -914,6 +929,24 @@ export const companyToolDefinitions = [
     inputSchema: {
       type: "object",
       properties: {}
+    }
+  },
+  {
+    name: "get-company-attributes",
+    description: "Get all available attributes for a company or the value of a specific attribute",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        attributeName: {
+          type: "string",
+          description: "Optional name of specific attribute to retrieve (if not provided, lists all attributes)"
+        }
+      },
+      required: ["companyId"]
     }
   }
 ];
