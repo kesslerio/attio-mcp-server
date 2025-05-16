@@ -5,24 +5,11 @@
 import fs from 'fs';
 import path from 'path';
 /**
- * Get the project root directory
- */
-function getProjectRoot() {
-    // First try to use import.meta.url for ES modules
-    if (import.meta.url) {
-        const currentDir = path.dirname(new URL(import.meta.url).pathname);
-        // Navigate up from utils directory to project root
-        return path.resolve(currentDir, '../..');
-    }
-    // Fallback to process.cwd()
-    return process.cwd();
-}
-/**
  * Default paths for configuration files
  */
 const CONFIG_PATHS = {
-    default: path.join(getProjectRoot(), 'config', 'mappings', 'default.json'),
-    user: path.join(getProjectRoot(), 'config', 'mappings', 'user.json'),
+    default: path.resolve(process.cwd(), 'config/mappings/default.json'),
+    user: path.resolve(process.cwd(), 'config/mappings/user.json'),
 };
 /**
  * Deep merges two objects, with values from the source object taking precedence
@@ -125,14 +112,8 @@ export async function writeMappingConfig(config, filePath = CONFIG_PATHS.user) {
     try {
         // Ensure the directory exists
         const dir = path.dirname(filePath);
-        try {
-            await fs.promises.mkdir(dir, { recursive: true });
-        }
-        catch (error) {
-            // Ignore EEXIST errors as directory already exists
-            if (error.code !== 'EEXIST') {
-                throw error;
-            }
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
         }
         // Update metadata
         if (!config.metadata) {
