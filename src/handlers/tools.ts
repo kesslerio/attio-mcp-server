@@ -1089,30 +1089,59 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle record creation
       if (toolType === 'create') {
-        const objectSlug = request.params.arguments?.objectSlug as string;
-        const objectId = request.params.arguments?.objectId as string;
-        const attributes = request.params.arguments?.attributes || {};
-        
-        try {
-          const recordCreateConfig = toolConfig as RecordCreateToolConfig;
-          const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+        // Special handling for resource-specific create tools like create-company
+        if (toolName === 'create-company' || toolName === 'create-person') {
+          const attributes = request.params.arguments?.attributes || {};
           
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
-              },
-            ],
-            isError: false,
-          };
-        } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
-            `objects/${objectSlug}/records`,
-            "POST",
-            (error as any).response?.data || {}
-          );
+          try {
+            const result = await toolConfig.handler(attributes);
+            const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : JSON.stringify(result, null, 2);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: formattedResult,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            const errorResource = toolName === 'create-company' ? 'companies' : 'people';
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${errorResource}/records`,
+              "POST",
+              (error as any).response?.data || {}
+            );
+          }
+        } else {
+          // Generic record creation that requires objectSlug
+          const objectSlug = request.params.arguments?.objectSlug as string;
+          const objectId = request.params.arguments?.objectId as string;
+          const attributes = request.params.arguments?.attributes || {};
+          
+          try {
+            const recordCreateConfig = toolConfig as RecordCreateToolConfig;
+            const record = await recordCreateConfig.handler(objectSlug, attributes, objectId);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Record created successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${objectSlug}/records`,
+              "POST",
+              (error as any).response?.data || {}
+            );
+          }
         }
       }
       
