@@ -4,10 +4,12 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
+import { ValueMatchError } from "../errors/value-match-error.js";
 import { parseResourceUri } from "../utils/uri-parser.js";
 import { ResourceType, AttioListEntry, AttioRecord } from "../types/attio.js";
 import { ListEntryFilters } from "../api/attio-operations.js";
 import { processListEntries } from "../utils/record-utils.js";
+import axios from "axios";
 
 // Import tool configurations and definitions
 import {
@@ -1018,11 +1020,30 @@ export function registerToolHandlers(server: Server): void {
             isError: false,
           };
         } catch (error) {
+          let errorDetailsForCreateResult: any = {};
+          if (error instanceof ValueMatchError) {
+            // If it's a ValueMatchError, its message is already enhanced.
+            // We want to pass the original error's response data if available for full context in createErrorResult
+            if (axios.isAxiosError(error.originalError) && error.originalError.response) {
+              errorDetailsForCreateResult = error.originalError.response.data;
+            } else {
+              // Fallback if originalError is not an Axios error or has no response data
+              errorDetailsForCreateResult = error.details || {}; 
+            }
+          } else if (axios.isAxiosError(error) && error.response) {
+            errorDetailsForCreateResult = error.response.data;
+          } else if (error instanceof Error && (error as any).details) {
+            errorDetailsForCreateResult = (error as any).details;
+          } else {
+            // Minimal fallback
+            errorDetailsForCreateResult = { message: (error as Error)?.message || 'Unknown error details' };
+          }
+
           return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
+            error instanceof Error ? error : new Error("Unknown error caught in advancedSearch"),
             `/objects/${resourceType}/records/query`,
             "POST",
-            (error as any).response?.data || {}
+            errorDetailsForCreateResult
           );
         }
       }
@@ -1109,25 +1130,31 @@ export function registerToolHandlers(server: Server): void {
             isError: false,
           };
         } catch (error) {
-          // const errorObj = error as any;
-          // console.log('[advancedSearch] Caught error:', error);
-          // console.log('[advancedSearch] Error type:', errorObj.constructor?.name);
-          // console.log('[advancedSearch] Error message:', errorObj.message);
-          // console.log('[advancedSearch] Error response data:', errorObj.response?.data);
-          
-          // Import error enhancement utilities
-          const { interceptAndEnhanceError } = await import("./error-interceptor.js");
-          
-          // Try to enhance the error with value suggestions
-          const enhancedResult = interceptAndEnhanceError(
-            error,
+          let errorDetailsForCreateResult: any = {};
+          if (error instanceof ValueMatchError) {
+            // If it's a ValueMatchError, its message is already enhanced.
+            // We want to pass the original error's response data if available for full context in createErrorResult
+            if (axios.isAxiosError(error.originalError) && error.originalError.response) {
+              errorDetailsForCreateResult = error.originalError.response.data;
+            } else {
+              // Fallback if originalError is not an Axios error or has no response data
+              errorDetailsForCreateResult = error.details || {}; 
+            }
+          } else if (axios.isAxiosError(error) && error.response) {
+            errorDetailsForCreateResult = error.response.data;
+          } else if (error instanceof Error && (error as any).details) {
+            errorDetailsForCreateResult = (error as any).details;
+          } else {
+            // Minimal fallback
+            errorDetailsForCreateResult = { message: (error as Error)?.message || 'Unknown error details' };
+          }
+
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error caught in advancedSearch"),
             `/objects/${resourceType}/records/query`,
-            "POST"
+            "POST",
+            errorDetailsForCreateResult
           );
-          
-          // console.log('[advancedSearch] Enhanced result:', JSON.stringify(enhancedResult, null, 2));
-          
-          return enhancedResult;
         }
       }
       
