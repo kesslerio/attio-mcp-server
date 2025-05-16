@@ -72,9 +72,15 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && retriesLeft > 0) {
         console.error(`Port ${currentPort} is already in use, trying port ${currentPort + 1}`);
-        server.close();
         
-        // Clear previous timeout if it exists
+        // Clean up listeners from the current attempt before retrying
+        server.removeAllListeners('listening');
+        server.removeAllListeners('error');
+        // server.close(); // Ensure server is closed before trying again or new listeners are added.
+                       // Note: close is async. The critical part is removing listeners to prevent leaks for the SAME server instance.
+                       // If we create a NEW server instance on each retry, this close would be vital.
+                       // Since we reuse the `server` instance, removing listeners is key.
+
         if (retryTimeout) clearTimeout(retryTimeout);
         
         // Try the next port with an exponential backoff
@@ -96,9 +102,23 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
   tryListen(config.port, config.maxRetries);
   
   // Add graceful shutdown method to server
-  const shutdownServer = () => {
-    if (retryTimeout) clearTimeout(retryTimeout);
-    server.close();
+  const shutdownServer = (callback?: (err?: Error) => void) => {
+    console.error('Health check server: Initiating shutdown...');
+    if (retryTimeout) {
+      clearTimeout(retryTimeout);
+      retryTimeout = null;
+      console.error('Health check server: Cleared retry timeout.');
+    }
+    server.close((err) => {
+      if (err) {
+        console.error('Health check server: Error during close:', err);
+      } else {
+        console.error('Health check server: Successfully closed.');
+      }
+      if (callback) {
+        callback(err);
+      }
+    });
   };
   
   // Add shutdown method to server
