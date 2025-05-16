@@ -876,12 +876,21 @@ export async function updateRecord<T extends AttioRecord>(
   
   return callWithRetry(async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[updateRecord] Request path:', path);
+        console.log('[updateRecord] Attributes:', JSON.stringify(params.attributes, null, 2));
+      }
+      
       const response = await api.patch<AttioSingleResponse<T>>(path, {
         attributes: params.attributes
       });
       
       return response.data.data;
     } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[updateRecord] Error:', error.message);
+        console.error('[updateRecord] Response:', error.response?.data);
+      }
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }

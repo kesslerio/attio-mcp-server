@@ -1183,7 +1183,7 @@ export function registerToolHandlers(server: Server): void {
           } catch (error) {
             return createErrorResult(
               error instanceof Error ? error : new Error("Unknown error"),
-              `companies/${companyId}`,
+              `/objects/companies/records/${companyId}`,
               "PATCH",
               (error as any).response?.data || {}
             );
@@ -1256,7 +1256,7 @@ export function registerToolHandlers(server: Server): void {
           } catch (error) {
             return createErrorResult(
               error instanceof Error ? error : new Error("Unknown error"),
-              `companies/${companyId}/attributes/${attributeName}`,
+              `/objects/companies/records/${companyId}`,
               "PATCH",
               (error as any).response?.data || {}
             );
