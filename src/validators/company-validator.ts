@@ -131,6 +131,11 @@ export class CompanyValidator {
    * @throws InvalidCompanyFieldTypeError if type is invalid
    */
   private static async validateFieldType(field: string, value: any): Promise<void> {
+    // Allow null/undefined values for any field
+    if (value === null || value === undefined) {
+      return;
+    }
+    
     // First, try to get the expected type from Attio metadata
     let expectedType: string;
     
