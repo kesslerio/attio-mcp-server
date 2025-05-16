@@ -274,3 +274,96 @@ The error handling system includes comprehensive test coverage for:
 - Retry logic
 
 Use these tests as examples when implementing error handling in new features.
+
+# API Client Error Handling Best Practices
+
+When interacting with external APIs, such as the Attio API via client modules (e.g., `src/api/attio-operations.ts`), it's crucial to handle errors in a way that preserves detailed information for upstream processing and user feedback.
+
+## Key Principle: Preserve Original Error Context
+
+The most common pitfall is catching an error from an API client library (like an `AxiosError`) and then throwing a new, generic `Error` object. This practice strips away valuable context from the original error, such as:
+
+- HTTP status code
+- API-specific error codes (e.g., `responseData.code` from Attio)
+- API-specific error messages and details (e.g., `responseData.path`, `responseData.detail`)
+
+This loss of information prevents centralized error handlers (like those in `src/utils/error-handler.ts` or `src/handlers/tools.ts`) from creating rich, informative error messages for the end-user or for detailed logging.
+
+## Recommended Pattern: Re-throw Original API Errors
+
+When a function in an API client module (like `src/api/attio-operations.ts`) catches an error from an API call (typically an `AxiosError` or similar), it should **re-throw the original error object**.
+
+**Rationale:**
+
+- **Centralized Enhancement:** Allows a single, higher-level error handler to inspect the original error (including its `response.data` or similar properties) and create a specific, user-friendly `AttioApiError` or a well-structured error response.
+- **Detailed Logging:** Ensures that all available details from the API provider are available for logging and debugging.
+- **Consistent Error Structure:** Promotes a consistent error structure throughout the application, as the centralized handler can normalize different API errors into a standard format.
+
+### Example
+
+Consider a function in `src/api/attio-operations.ts` that makes an API call:
+
+**BAD:** Masking the original error.
+
+```typescript
+// In src/api/attio-operations.ts
+import axios from 'axios';
+
+async function fetchSomeData(id: string): Promise<any> {
+  try {
+    const response = await axios.get(`https://api.attio.com/v2/some-endpoint/${id}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      // PROBLEM: Creates a new generic error, losing original Attio details.
+      if (error.response.status === 404) {
+        throw new Error(`Resource with ID ${id} not found.`);
+      } else if (error.response.status === 400) {
+        throw new Error(`Bad request for resource ${id}: ${error.response.data.message}`);
+      }
+    }
+    // PROBLEM: Generic fallback, losing all specific API error info.
+    throw new Error('An unexpected error occurred while fetching data.');
+  }
+}
+```
+
+**GOOD:** Re-throwing the original error for upstream handling.
+
+```typescript
+// In src/api/attio-operations.ts
+import axios from 'axios';
+
+async function fetchSomeData(id: string): Promise<any> {
+  try {
+    const response = await axios.get(`https://api.attio.com/v2/some-endpoint/${id}`);
+    return response.data;
+  } catch (error) {
+    // BEST PRACTICE: Re-throw the original error (or a minimally wrapped one if necessary,
+    // ensuring the original error is attached for inspection).
+    // The AxiosError object itself contains response.status, response.data, etc.
+    throw error;
+  }
+}
+
+// Upstream handler (e.g., in src/handlers/tools.ts or called by it)
+// This handler can now access error.response.data from Attio.
+
+/*
+import { createAttioError } from '../utils/error-handler';
+sync function handleFetchData(id: string) {
+  try {
+    return await fetchSomeData(id);
+  } catch (error) {
+    // createAttioError (or similar) can inspect the full AxiosError
+    // and its error.response.data to create a detailed AttioApiError.
+    const enhancedError = createAttioError(error);
+    // Log enhancedError, return it as a structured JSON-RPC error, etc.
+    console.error(enhancedError);
+    throw enhancedError; // Or return a formatted error response
+  }
+}
+*/
+```
+
+By consistently re-throwing original API errors, the application can leverage centralized error handling logic to provide more precise feedback and better diagnostic information.
