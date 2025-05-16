@@ -1131,7 +1131,7 @@ export async function updateCompany(companyId: string, attributes: any): Promise
     // Validate input
     const validatedAttributes: CompanyUpdateInput = CompanyValidator.validateUpdate(companyId, attributes);
     
-    // Update the company
+    // Update the company - pass ResourceType.COMPANIES as objectSlug and companyId as recordId
     return await updateObjectRecord<Company>(ResourceType.COMPANIES, companyId, validatedAttributes);
   } catch (error) {
     if (error instanceof InvalidCompanyDataError) {

@@ -1118,31 +1118,119 @@ export function registerToolHandlers(server: Server): void {
       
       // Handle record update
       if (toolType === 'update') {
-        const objectSlug = request.params.arguments?.objectSlug as string;
-        const objectId = request.params.arguments?.objectId as string;
-        const recordId = request.params.arguments?.recordId as string;
-        const attributes = request.params.arguments?.attributes || {};
-        
-        try {
-          const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
-          const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+        // For company resources, handle the specific company parameters
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributes = request.params.arguments?.attributes || {};
           
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
-              },
-            ],
-            isError: false,
-          };
-        } catch (error) {
-          return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
-            `objects/${objectSlug}/records/${recordId}`,
-            "PATCH",
-            (error as any).response?.data || {}
-          );
+          try {
+            const updateConfig = toolConfig as ToolConfig;
+            const record = await updateConfig.handler(companyId, attributes);
+            
+            // Check for formatResult function
+            if ('formatResult' in updateConfig && typeof updateConfig.formatResult === 'function') {
+              const formattedResult = updateConfig.formatResult(record);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: formattedResult,
+                  },
+                ],
+                isError: false,
+              };
+            }
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Company updated successfully: ${record.values?.name?.[0]?.value || 'Unknown'} (ID: ${record.id?.record_id})`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `companies/${companyId}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
+        } else {
+          // Default record update for other resource types
+          const objectSlug = request.params.arguments?.objectSlug as string;
+          const objectId = request.params.arguments?.objectId as string;
+          const recordId = request.params.arguments?.recordId as string;
+          const attributes = request.params.arguments?.attributes || {};
+          
+          try {
+            const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
+            const record = await recordUpdateConfig.handler(objectSlug, recordId, attributes, objectId);
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Record updated successfully in ${objectSlug}:\nID: ${record.id?.record_id || 'unknown'}\n${JSON.stringify(record, null, 2)}`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `objects/${objectSlug}/records/${recordId}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
+        }
+      }
+      
+      // Handle company attribute update
+      if (toolType === 'updateAttribute') {
+        if (resourceType === ResourceType.COMPANIES) {
+          const companyId = request.params.arguments?.companyId as string;
+          const attributeName = request.params.arguments?.attributeName as string;
+          const attributeValue = request.params.arguments?.attributeValue;
+          
+          try {
+            const updateAttributeConfig = toolConfig as ToolConfig;
+            const record = await updateAttributeConfig.handler(companyId, attributeName, attributeValue);
+            
+            // Check for formatResult function
+            if ('formatResult' in updateAttributeConfig && typeof updateAttributeConfig.formatResult === 'function') {
+              const formattedResult = updateAttributeConfig.formatResult(record);
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: formattedResult,
+                  },
+                ],
+                isError: false,
+              };
+            }
+            
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Company attribute updated: ${attributeName} for ${record.values?.name?.[0]?.value || 'Unknown'} (ID: ${record.id?.record_id})`,
+                },
+              ],
+              isError: false,
+            };
+          } catch (error) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error("Unknown error"),
+              `companies/${companyId}/attributes/${attributeName}`,
+              "PATCH",
+              (error as any).response?.data || {}
+            );
+          }
         }
       }
       

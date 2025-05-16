@@ -92,6 +92,14 @@ export class CompanyValidator {
         throw new InvalidCompanyFieldTypeError(field, 'string', typeof attributes[field]);
       }
     }
+    
+    // Validate array fields
+    const optionalArrayFields = ['services', 'products', 'categories'];
+    for (const field of optionalArrayFields) {
+      if (attributes[field] !== undefined && !Array.isArray(attributes[field])) {
+        throw new InvalidCompanyFieldTypeError(field, 'array', typeof attributes[field]);
+      }
+    }
 
     // Validate website URL if provided
     if (attributes.website) {
@@ -143,6 +151,18 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Attribute name must be a non-empty string');
     }
 
+    // Validate attribute value based on known field types
+    const stringFields = ['name', 'website', 'industry', 'description', 'domain', 'size', 'linkedin_url', 'type', 'type_persona'];
+    const arrayFields = ['services', 'products', 'categories'];
+    
+    if (stringFields.includes(attributeName) && attributeValue !== undefined && typeof attributeValue !== 'string') {
+      throw new InvalidCompanyFieldTypeError(attributeName, 'string', typeof attributeValue);
+    }
+    
+    if (arrayFields.includes(attributeName) && attributeValue !== undefined && !Array.isArray(attributeValue)) {
+      throw new InvalidCompanyFieldTypeError(attributeName, 'array', typeof attributeValue);
+    }
+    
     // Special validation for specific attributes
     if (attributeName === 'name' && (!attributeValue || typeof attributeValue !== 'string')) {
       throw new InvalidCompanyDataError('Company name must be a non-empty string');
