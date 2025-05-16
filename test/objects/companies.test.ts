@@ -11,6 +11,7 @@ import {
 } from '../../src/objects/companies.js';
 import * as attioClient from '../../src/api/attio-client.js';
 import * as records from '../../src/objects/records.js';
+import * as attributeTypes from '../../src/api/attribute-types.js';
 import { 
   InvalidCompanyDataError, 
   CompanyOperationError 
@@ -19,8 +20,10 @@ import {
 // Mock the API client and records module
 jest.mock('../../src/api/attio-client.js');
 jest.mock('../../src/objects/records.js');
+jest.mock('../../src/api/attribute-types.js');
 const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
 const mockedRecords = records as jest.Mocked<typeof records>;
+const mockedAttributeTypes = attributeTypes as jest.Mocked<typeof attributeTypes>;
 
 describe('companies', () => {
   let mockAxiosInstance: any;
@@ -33,8 +36,26 @@ describe('companies', () => {
     mockAxiosInstance = {
       get: jest.fn(),
       post: jest.fn(),
+      patch: jest.fn(),
     };
     mockedAttioClient.getAttioClient.mockReturnValue(mockAxiosInstance);
+    
+    // Mock attribute type detection to avoid API calls during tests
+    mockedAttributeTypes.detectFieldType.mockImplementation((objectSlug: string, field: string) => {
+      // Return the expected type for known fields
+      if (field === 'services') return Promise.resolve('string');
+      if (field === 'name') return Promise.resolve('string');
+      if (field === 'industry') return Promise.resolve('string');
+      // Default to string for unknown fields
+      return Promise.resolve('string');
+    });
+    
+    // Mock getObjectAttributeMetadata if it's called
+    mockedAttributeTypes.getObjectAttributeMetadata.mockResolvedValue(new Map([
+      ['name', { api_slug: 'name', type: 'text', id: 'name', title: 'Name' }],
+      ['services', { api_slug: 'services', type: 'text', id: 'services', title: 'Services' }],
+      ['industry', { api_slug: 'industry', type: 'text', id: 'industry', title: 'Industry' }]
+    ]));
   });
 
   describe('searchCompanies', () => {
@@ -315,7 +336,10 @@ describe('companies', () => {
       expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
         'companies',
         companyId,
-        attributes
+        {
+          name: { value: 'Updated Company' },
+          industry: { value: 'Finance' }
+        }
       );
       expect(result).toEqual(mockResponse);
     });
@@ -353,7 +377,7 @@ describe('companies', () => {
       expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
         'companies',
         companyId,
-        { [attributeName]: attributeValue }
+        { [attributeName]: { value: attributeValue } }
       );
       expect(result).toEqual(mockResponse);
     });
