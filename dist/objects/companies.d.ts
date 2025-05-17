@@ -1,4 +1,4 @@
-import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/attio-operations.js";
 import { Company, AttioNote, FilterConditionType } from "../types/attio.js";
 /**
  * Searches for companies by name
@@ -117,22 +117,6 @@ export declare function getCompanyAttributes(companyIdOrUri: string, attributeNa
  */
 export declare function extractCompanyId(companyIdOrUri: string): string;
 /**
- * Performs batch searches for companies by name
- *
- * @param queries - Array of search query strings
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with search results for each query
- */
-export declare function batchSearchCompanies(queries: string[], batchConfig?: Partial<BatchConfig>): Promise<BatchResponse<Company[]>>;
-/**
- * Gets details for multiple companies in batch
- *
- * @param companyIdsOrUris - Array of company IDs or URIs to fetch
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with company details for each ID
- */
-export declare function batchGetCompanyDetails(companyIdsOrUris: string[], batchConfig?: Partial<BatchConfig>): Promise<BatchResponse<Company>>;
-/**
  * Search for companies using advanced filtering capabilities
  *
  * @param filters - Filter conditions to apply
@@ -231,4 +215,5 @@ export declare function updateCompanyAttribute(companyId: string, attributeName:
  * @throws CompanyOperationError if deletion fails
  */
 export declare function deleteCompany(companyId: string): Promise<boolean>;
+export { batchCreateCompanies, batchUpdateCompanies, batchDeleteCompanies, batchSearchCompanies, batchGetCompanyDetails } from './batch-companies.js';
 //# sourceMappingURL=companies.d.ts.map

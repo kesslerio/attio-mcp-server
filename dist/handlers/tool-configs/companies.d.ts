@@ -21,6 +21,11 @@ export declare const companyToolConfigs: {
     customFields: ToolConfig;
     discoverAttributes: ToolConfig;
     getAttributes: ToolConfig;
+    batchCreate: ToolConfig;
+    batchUpdate: ToolConfig;
+    batchDelete: ToolConfig;
+    batchSearch: ToolConfig;
+    batchGetDetails: ToolConfig;
 };
 export declare const companyToolDefinitions: ({
     name: string;
@@ -47,6 +52,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -117,6 +127,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -149,6 +164,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         oneOf: {
             required: string[];
@@ -189,6 +209,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         oneOf: {
             required: string[];
@@ -229,6 +254,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf: {
@@ -301,6 +331,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -336,6 +371,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -371,6 +411,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -415,6 +460,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -449,6 +499,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -484,6 +539,11 @@ export declare const companyToolDefinitions: ({
             attributes?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -513,6 +573,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -545,6 +610,11 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -580,6 +650,11 @@ export declare const companyToolDefinitions: ({
             attributeName?: undefined;
             attributeValue?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -615,6 +690,11 @@ export declare const companyToolDefinitions: ({
             attributeName?: undefined;
             attributeValue?: undefined;
             fields?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required: string[];
         oneOf?: undefined;
@@ -641,8 +721,216 @@ export declare const companyToolDefinitions: ({
             attributeValue?: undefined;
             fields?: undefined;
             customFieldNames?: undefined;
+            companies?: undefined;
+            config?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
         };
         required?: undefined;
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companies: {
+                type: string;
+                description: string;
+                items: {
+                    type: string;
+                    properties: {
+                        name: {
+                            type: string;
+                            description: string;
+                        };
+                        website: {
+                            type: string;
+                            description: string;
+                        };
+                        description: {
+                            type: string;
+                            description: string;
+                        };
+                        industry: {
+                            type: string;
+                            description: string;
+                        };
+                    };
+                    required: string[];
+                };
+            };
+            config: {
+                type: string;
+                description: string;
+                properties: {
+                    maxBatchSize: {
+                        type: string;
+                        description: string;
+                    };
+                    continueOnError: {
+                        type: string;
+                        description: string;
+                    };
+                };
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            updates: {
+                type: string;
+                description: string;
+                items: {
+                    type: string;
+                    properties: {
+                        id: {
+                            type: string;
+                            description: string;
+                        };
+                        attributes: {
+                            type: string;
+                            description: string;
+                        };
+                    };
+                    required: string[];
+                };
+            };
+            config: {
+                type: string;
+                description: string;
+                properties?: undefined;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+            companies?: undefined;
+            companyIds?: undefined;
+            queries?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            companyIds: {
+                type: string;
+                description: string;
+                items: {
+                    type: string;
+                };
+            };
+            config: {
+                type: string;
+                description: string;
+                properties?: undefined;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+            companies?: undefined;
+            updates?: undefined;
+            queries?: undefined;
+        };
+        required: string[];
+        oneOf?: undefined;
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
+            queries: {
+                type: string;
+                description: string;
+                items: {
+                    type: string;
+                };
+            };
+            config: {
+                type: string;
+                description: string;
+                properties?: undefined;
+            };
+            query?: undefined;
+            filters?: undefined;
+            limit?: undefined;
+            offset?: undefined;
+            companyId?: undefined;
+            uri?: undefined;
+            title?: undefined;
+            content?: undefined;
+            peopleFilter?: undefined;
+            listId?: undefined;
+            searchText?: undefined;
+            attributes?: undefined;
+            attributeName?: undefined;
+            attributeValue?: undefined;
+            fields?: undefined;
+            customFieldNames?: undefined;
+            companies?: undefined;
+            updates?: undefined;
+            companyIds?: undefined;
+        };
+        required: string[];
         oneOf?: undefined;
     };
 })[];
