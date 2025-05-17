@@ -6,7 +6,7 @@
  */
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
-import { advancedSearchObject } from '../../src/api/attio-operations.js';
+import { advancedSearchObject } from '../../src/api/operations/index.js';
 import { 
   advancedSearchPeople, 
   createNameFilter,
