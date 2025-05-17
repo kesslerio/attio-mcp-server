@@ -15,7 +15,7 @@ import {
   createCompaniesByPeopleListFilter
 } from '../../src/utils/relationship-utils';
 import { FilterConditionType, ResourceType } from '../../src/types/attio';
-import { ListEntryFilters } from '../../src/api/attio-operations';
+import { ListEntryFilters } from '../../src/api/operations/index';
 import { AttioClient } from '../../src/api/attio-client';
 
 // Skip tests if no API key is provided

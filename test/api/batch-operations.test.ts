@@ -7,7 +7,7 @@ import {
   BatchResponse,
   BatchItemResult,
   BatchConfig
-} from '../../src/api/attio-operations';
+} from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { ResourceType, Person, Company, AttioRecord } from '../../src/types/attio';
 

@@ -9,12 +9,12 @@ import {
   formatRecordAttribute,
   formatRecordAttributes
 } from '../../src/objects/records';
-import * as attioOperations from '../../src/api/attio-operations';
+import * as attioOperations from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { AttioRecord, RecordAttributes } from '../../src/types/attio';
 
 // Mock the attio-operations module
-jest.mock('../../src/api/attio-operations');
+jest.mock('../../src/api/operations/index');
 jest.mock('../../src/api/attio-client', () => ({
   getAttioClient: jest.fn(),
 }));

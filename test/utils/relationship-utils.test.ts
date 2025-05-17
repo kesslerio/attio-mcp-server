@@ -11,7 +11,7 @@ import {
   createRecordsByNotesFilter
 } from '../../src/utils/relationship-utils';
 import { ResourceType, FilterConditionType } from '../../src/types/attio';
-import { ListEntryFilters } from '../../src/api/attio-operations';
+import { ListEntryFilters } from '../../src/api/operations/index';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
 describe('Relationship Utilities', () => {

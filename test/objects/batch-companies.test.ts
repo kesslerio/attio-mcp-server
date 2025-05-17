@@ -10,7 +10,7 @@ import * as companies from '../../src/objects/companies';
 
 // Mock the individual operations
 vi.mock('../../src/objects/companies');
-vi.mock('../../src/api/attio-operations', () => ({
+vi.mock('../../src/api/operations/index', () => ({
   executeBatchOperations: vi.fn(async (items, fn, config) => {
     const results = [];
     let succeeded = 0;
