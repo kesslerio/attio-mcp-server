@@ -1,9 +1,7 @@
 /**
  * Relationship-based tool configurations for companies
  */
-import { AttioRecord } from "../../../types/attio.js";
-
-type CompanyRecord = AttioRecord;
+import { CompanyRecord } from "./types.js";
 import { 
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,

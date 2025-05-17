@@ -1,5 +1,16 @@
 /**
- * Aggregated exports for company tool configurations
+ * Company tool configurations module index
+ *
+ * This module provides tool configurations for company-related operations:
+ * - Search: Basic and advanced company searches
+ * - CRUD: Create, read, update, delete operations
+ * - Attributes: Field and attribute management
+ * - Notes: Note operations on companies
+ * - Relationships: Search by related entities
+ * - Batch: Bulk operations
+ * - Formatters: Result formatting utilities
+ *
+ * @module companies
  */
 import { searchToolConfigs, searchToolDefinitions } from "./search.js";
 import { crudToolConfigs, crudToolDefinitions } from "./crud.js";
@@ -8,6 +19,10 @@ import { notesToolConfigs, notesToolDefinitions } from "./notes.js";
 import { relationshipToolConfigs, relationshipToolDefinitions } from "./relationships.js";
 import { batchToolConfigs, batchToolDefinitions } from "./batch.js";
 import { formatterConfigs, formatterToolDefinitions } from "./formatters.js";
+/**
+ * Aggregated company tool configurations
+ * Maintains backward compatibility by exporting all tool configs in a single object
+ */
 export declare const companyToolConfigs: {
     details: import("../../tool-types.js").DetailsToolConfig;
     json: import("../../tool-types.js").DetailsToolConfig;
@@ -36,6 +51,10 @@ export declare const companyToolConfigs: {
     search: import("../../tool-types.js").SearchToolConfig;
     advancedSearch: import("../../tool-types.js").AdvancedSearchToolConfig;
 };
+/**
+ * Aggregated company tool definitions
+ * Maintains backward compatibility by exporting all tool definitions in a single array
+ */
 export declare const companyToolDefinitions: ({
     name: string;
     description: string;

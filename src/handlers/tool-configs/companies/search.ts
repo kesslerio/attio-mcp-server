@@ -1,9 +1,7 @@
 /**
  * Search-related company tool configurations
  */
-import { AttioRecord } from "../../../types/attio.js";
-
-type CompanyRecord = AttioRecord;
+import { CompanyRecord } from "./types.js";
 import { 
   searchCompanies,
   advancedSearchCompanies
