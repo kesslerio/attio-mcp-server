@@ -829,123 +829,9 @@ export function extractCompanyId(companyIdOrUri: string): string {
   }
 }
 
-/**
- * Performs batch searches for companies by name
- * 
- * @param queries - Array of search query strings
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with search results for each query
- */
-export async function batchSearchCompanies(
-  queries: string[],
-  batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company[]>> {
-  try {
-    // Use the generic batch search objects operation
-    return await batchSearchObjects<Company>(ResourceType.COMPANIES, queries, batchConfig);
-  } catch (error) {
-    // If the error is serious enough to abort the batch, rethrow it
-    if (error instanceof Error) {
-      throw error;
-    }
-    
-    // Fallback implementation - execute each search individually and combine results
-    const results: BatchResponse<Company[]> = {
-      results: [],
-      summary: {
-        total: queries.length,
-        succeeded: 0,
-        failed: 0
-      }
-    };
-    
-    // Process each query individually
-    await Promise.all(queries.map(async (query, index) => {
-      try {
-        const companies = await searchCompanies(query);
-        results.results.push({
-          id: `search_companies_${index}`,
-          success: true,
-          data: companies
-        });
-        results.summary.succeeded++;
-      } catch (searchError) {
-        results.results.push({
-          id: `search_companies_${index}`,
-          success: false,
-          error: searchError
-        });
-        results.summary.failed++;
-      }
-    }));
-    
-    return results;
-  }
-}
+// Batch operations moved to batch-companies.ts
 
-/**
- * Gets details for multiple companies in batch
- * 
- * @param companyIdsOrUris - Array of company IDs or URIs to fetch
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with company details for each ID
- */
-export async function batchGetCompanyDetails(
-  companyIdsOrUris: string[],
-  batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company>> {
-  try {
-    // Extract company IDs from URIs if necessary
-    const companyIds = companyIdsOrUris.map(idOrUri => {
-      try {
-        return extractCompanyId(idOrUri);
-      } catch (error) {
-        // If extraction fails, return the original string and let the API handle the error
-        return idOrUri;
-      }
-    });
-    
-    // Use the generic batch get object details operation
-    return await batchGetObjectDetails<Company>(ResourceType.COMPANIES, companyIds, batchConfig);
-  } catch (error) {
-    // If the error is serious enough to abort the batch, rethrow it
-    if (error instanceof Error) {
-      throw error;
-    }
-    
-    // Fallback implementation - execute each get operation individually and combine results
-    const results: BatchResponse<Company> = {
-      results: [],
-      summary: {
-        total: companyIdsOrUris.length,
-        succeeded: 0,
-        failed: 0
-      }
-    };
-    
-    // Process each company ID or URI individually
-    await Promise.all(companyIdsOrUris.map(async (companyIdOrUri, index) => {
-      try {
-        const company = await getCompanyDetails(companyIdOrUri);
-        results.results.push({
-          id: `get_companies_${index}`,
-          success: true,
-          data: company
-        });
-        results.summary.succeeded++;
-      } catch (getError) {
-        results.results.push({
-          id: `get_companies_${index}`,
-          success: false,
-          error: getError
-        });
-        results.summary.failed++;
-      }
-    }));
-    
-    return results;
-  }
-}
+// Batch operations moved to batch-companies.ts
 
 /**
  * Search for companies using advanced filtering capabilities
@@ -1264,3 +1150,12 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
     throw new CompanyOperationError('delete', companyId, error instanceof Error ? error.message : String(error));
   }
 }
+
+// Re-export batch operations
+export {
+  batchCreateCompanies,
+  batchUpdateCompanies,
+  batchDeleteCompanies,
+  batchSearchCompanies,
+  batchGetCompanyDetails
+} from './batch-companies.js';
