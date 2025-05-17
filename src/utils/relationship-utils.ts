@@ -5,7 +5,7 @@
 import { 
   ListEntryFilter, 
   ListEntryFilters 
-} from "../api/attio-operations.js";
+} from "../api/operations/index.js";
 import { 
   ResourceType,
   FilterConditionType,

@@ -3,7 +3,7 @@
  */
 import { Request, Response } from "express";
 import { AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
-import { ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/operations/index.js";
 
 // Base tool configuration interface
 export interface ToolConfig {

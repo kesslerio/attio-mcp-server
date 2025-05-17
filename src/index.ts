@@ -12,7 +12,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { startHealthServer } from './health/http-server.js';
 import { initializeAttioClient } from "./api/attio-client.js";
 import { registerResourceHandlers } from "./handlers/resources.js";
-import { registerToolHandlers } from "./handlers/tools.js";
+import { registerToolHandlers } from "./handlers/tools/index.js";
 import { registerPromptHandlers } from "./prompts/handlers.js";
 import { startAutoDiscovery, stopAutoDiscovery } from "./utils/auto-discovery.js";
 
