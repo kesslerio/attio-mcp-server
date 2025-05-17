@@ -1,17 +1,54 @@
 /**
- * Validation utilities for filter inputs
- * Provides functions to validate and normalize filter parameters from user input
+ * @module validators
+ * 
+ * Consolidated filter validation utilities
+ * Provides functions to validate and normalize filter parameters
+ * 
+ * This module provides:
+ * - Structure validation for filter objects
+ * - Date range validation and normalization
+ * - Numeric range validation
+ * - Activity filter validation
+ * - Filter condition validation
+ * - Parameter type validation and conversion
  */
+
+// External dependencies
+import { DateRangePreset, isValidFilterCondition } from "../../types/attio.js";
+import { FilterValidationError } from "../../errors/api-errors.js";
+import { isValidISODateString } from "../date-utils.js";
+
+// Internal module dependencies
 import { 
   DateRange, 
-  DateRangePreset, 
   ActivityFilter, 
   InteractionType, 
   NumericRange,
-  FilterConditionType
-} from "../types/attio.js";
-import { FilterValidationError } from "../errors/api-errors.js";
-import { isValidISODateString } from "./date-utils.js";
+  FilterConditionType,
+  ListEntryFilter
+} from "./types.js";
+
+/**
+ * Validates a filter structure for basic required properties
+ * 
+ * @param filter - The filter to validate
+ * @returns True if filter is valid, false otherwise
+ */
+export function validateFilterStructure(filter: ListEntryFilter): boolean {
+  if (!filter) {
+    return false;
+  }
+  
+  if (!filter.attribute || !filter.attribute.slug) {
+    return false;
+  }
+  
+  if (!filter.condition) {
+    return false;
+  }
+  
+  return true;
+}
 
 /**
  * Validates a date range object
@@ -281,8 +318,9 @@ export function validateFilterCondition(condition: string): FilterConditionType 
     throw new FilterValidationError('Filter condition is required');
   }
   
-  const validConditions = Object.values(FilterConditionType);
-  if (!validConditions.includes(condition as FilterConditionType)) {
+  // Use the isValidFilterCondition from types/attio.js
+  if (!isValidFilterCondition(condition)) {
+    const validConditions = Object.values(FilterConditionType);
     throw new FilterValidationError(
       `Invalid filter condition: "${condition}". ` +
       `Valid conditions are: ${validConditions.join(', ')}`
@@ -319,4 +357,30 @@ export function validateNumericParam(
   }
   
   return num;
+}
+
+/**
+ * Validates filter structure and conditions
+ * 
+ * @param filter - The filter to validate
+ * @param validateConditions - Whether to validate condition types (default: true)
+ * @throws FilterValidationError if validation fails
+ */
+export function validateFilterWithConditions(
+  filter: ListEntryFilter,
+  validateConditions: boolean = true
+): void {
+  if (!validateFilterStructure(filter)) {
+    const slugInfo = filter?.attribute?.slug ? ` ${filter.attribute.slug}` : '';
+    throw new FilterValidationError(`Invalid filter: Incomplete filter structure for${slugInfo}`);
+  }
+  
+  const { slug } = filter.attribute;
+  
+  if (validateConditions && !isValidFilterCondition(filter.condition)) {
+    throw new FilterValidationError(
+      `Invalid filter condition '${filter.condition}' for attribute '${slug}'. ` +
+      `Valid conditions are: ${Object.values(FilterConditionType).join(', ')}`
+    );
+  }
 }

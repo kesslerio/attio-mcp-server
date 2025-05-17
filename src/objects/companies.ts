@@ -44,7 +44,7 @@ import {
   createCompaniesByPeopleListFilter,
   createRecordsByNotesFilter
 } from "../utils/relationship-utils.js";
-import { validateNumericParam } from "../utils/filter-validation.js";
+import { validateNumericParam } from "../utils/filters/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 import { 
   formatAllAttributes, 
