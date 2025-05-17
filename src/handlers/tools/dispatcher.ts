@@ -6,7 +6,7 @@ import { createErrorResult } from "../../utils/error-handler.js";
 import { ValueMatchError } from "../../errors/value-match-error.js";
 import { parseResourceUri } from "../../utils/uri-parser.js";
 import { ResourceType, AttioListEntry, AttioRecord } from "../../types/attio.js";
-import { ListEntryFilters } from "../../api/attio-operations.js";
+import { ListEntryFilters } from "../../api/operations/index.js";
 import { processListEntries } from "../../utils/record-utils.js";
 import { ApiError, isApiError, hasResponseData } from "./error-types.js";
 

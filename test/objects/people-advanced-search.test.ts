@@ -2,7 +2,7 @@
  * Tests for advanced search functionality for people
  */
 import { advancedSearchPeople } from '../../src/objects/people';
-import { ListEntryFilters, ListEntryFilter } from '../../src/api/attio-operations';
+import { ListEntryFilters, ListEntryFilter } from '../../src/api/operations/index';
 import { FilterConditionType } from '../../src/types/attio';
 
 // Mock the Attio client

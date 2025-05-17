@@ -12,7 +12,7 @@ import {
   RelationshipType,
   ResourceType
 } from "../../types/attio.js";
-import { ListEntryFilter, ListEntryFilters } from "../../api/attio-operations.js";
+import { ListEntryFilter, ListEntryFilters } from "../../api/operations/index.js";
 import { 
   FilterValidationError,
   RelationshipFilterError,

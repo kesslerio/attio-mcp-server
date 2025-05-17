@@ -13,7 +13,7 @@ import {
   executeBatchOperations,
   BatchRequestItem,
   ListEntryFilters
-} from "../api/attio-operations.js";
+} from "../api/operations/index.js";
 import { 
   AttioList, 
   AttioListEntry,
