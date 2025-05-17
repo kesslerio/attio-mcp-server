@@ -5,7 +5,7 @@ import {
   getObjectNotes,
   createObjectNote,
   getListEntries
-} from '../../src/api/attio-operations';
+} from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { ResourceType, Person, Company, AttioListEntry } from '../../src/types/attio';
 
@@ -102,8 +102,8 @@ describe('Attio Operations', () => {
       });
 
       // Mock the retry functionality to immediately return to avoid timeouts
-      jest.mock('../../src/api/attio-operations', () => {
-        const actual = jest.requireActual('../../src/api/attio-operations');
+      jest.mock('../../src/api/operations/index', () => {
+        const actual = jest.requireActual('../../src/api/operations/index');
         return {
           ...actual,
           callWithRetry: (fn: any) => fn()

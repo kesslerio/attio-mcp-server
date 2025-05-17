@@ -14,7 +14,7 @@ import {
   BatchConfig,
   BatchResponse,
   ListEntryFilters
-} from "../api/attio-operations.js";
+} from "../api/operations/index.js";
 import { 
   ResourceType, 
   Person, 

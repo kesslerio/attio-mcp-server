@@ -12,7 +12,7 @@ import {
   executeBatchOperations,
   batchCreateRecords,
   batchUpdateRecords
-} from '../api/attio-operations.js';
+} from '../api/operations/index.js';
 import {
   createCompany,
   updateCompany,

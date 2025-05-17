@@ -15,7 +15,7 @@ import {
   paginatedSearchPeopleByLastInteraction,
   paginatedSearchPeopleByActivity
 } from "../../objects/paginated-people.js";
-import { ListEntryFilters } from "../../api/attio-operations.js";
+import { ListEntryFilters } from "../../api/operations/index.js";
 import { PaginatedResponse } from "../../utils/pagination.js";
 
 /**
