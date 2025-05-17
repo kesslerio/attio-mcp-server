@@ -8,11 +8,14 @@ import { parseResourceUri } from "../../utils/uri-parser.js";
 import { ResourceType, AttioListEntry, AttioRecord } from "../../types/attio.js";
 import { ListEntryFilters } from "../../api/attio-operations.js";
 import { processListEntries } from "../../utils/record-utils.js";
-// Axios will be imported from main project
+import { ApiError, isApiError, hasResponseData } from "./error-types.js";
 
 // Import tool configurations
 import { findToolConfig } from "./registry.js";
 import { formatResponse, formatSearchResults, formatRecordDetails, formatListEntries, formatBatchResults } from "./formatters.js";
+
+// Import attribute mapping upfront to avoid dynamic import
+import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/index.js";
 
 // Import tool type definitions
 import { 
@@ -48,6 +51,40 @@ import {
 } from "../tool-configs/resource-specific-tools.js";
 
 /**
+ * Handle common search operations
+ * 
+ * @param toolType - The type of search tool
+ * @param searchConfig - The search tool configuration
+ * @param searchParam - The search parameter
+ * @param resourceType - The resource type being searched
+ * @returns Formatted response
+ */
+async function handleSearchOperation(
+  toolType: string,
+  searchConfig: SearchToolConfig,
+  searchParam: string,
+  resourceType: ResourceType
+) {
+  try {
+    const results = await searchConfig.handler(searchParam);
+    const formattedResults = searchConfig.formatResult(results);
+    
+    if (toolType === 'search') {
+      return formatResponse(`Found ${results.length} ${resourceType}:\n${formattedResults}`);
+    }
+    
+    return formatResponse(formattedResults);
+  } catch (error) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error("Unknown error"),
+      `/objects/${resourceType}/records/query`,
+      "POST",
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
+
+/**
  * Execute a tool request and return formatted results
  * 
  * @param request - The tool request to execute
@@ -68,60 +105,19 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle search tools
     if (toolType === 'search') {
       const query = request.params.arguments?.query as string;
-      try {
-        const searchToolConfig = toolConfig as SearchToolConfig;
-        const results = await searchToolConfig.handler(query);
-        const formattedResults = searchToolConfig.formatResult(results);
-        
-        return formatResponse(
-          `Found ${results.length} ${resourceType}:\n${formattedResults}`
-        );
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/objects/${resourceType}/records/query`,
-          "POST",
-          (error as any).response?.data || {}
-        );
-      }
+      return handleSearchOperation(toolType, toolConfig as SearchToolConfig, query, resourceType);
     }
     
     // Handle searchByEmail tools
     if (toolType === 'searchByEmail') {
       const email = request.params.arguments?.email as string;
-      try {
-        const searchToolConfig = toolConfig as SearchToolConfig;
-        const results = await searchToolConfig.handler(email);
-        const formattedResults = searchToolConfig.formatResult(results);
-        
-        return formatResponse(formattedResults);
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/objects/${resourceType}/records/query`,
-          "POST",
-          (error as any).response?.data || {}
-        );
-      }
+      return handleSearchOperation(toolType, toolConfig as SearchToolConfig, email, resourceType);
     }
     
     // Handle searchByPhone tools
     if (toolType === 'searchByPhone') {
       const phone = request.params.arguments?.phone as string;
-      try {
-        const searchToolConfig = toolConfig as SearchToolConfig;
-        const results = await searchToolConfig.handler(phone);
-        const formattedResults = searchToolConfig.formatResult(results);
-        
-        return formatResponse(formattedResults);
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/objects/${resourceType}/records/query`,
-          "POST",
-          (error as any).response?.data || {}
-        );
-      }
+      return handleSearchOperation(toolType, toolConfig as SearchToolConfig, phone, resourceType);
     }
     
     // Handle details tools
@@ -176,7 +172,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           uri,
           "GET",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -224,7 +220,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           uri || `/${resourceType}/${notesId}/notes`,
           "GET",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -283,7 +279,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           uri || `/${resourceType}/${notesId}/notes`,
           "POST",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -301,7 +297,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           "/lists",
           "GET",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -333,7 +329,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}/entries`,
           "GET",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -377,7 +373,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}/entries/query`,
           "POST",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -398,7 +394,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}/entries`,
           "POST",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -422,7 +418,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}/entries/${entryId}`,
           "DELETE",
-          (error as any).response?.data || {}
+          hasResponseData(error) ? error.response.data : {}
         );
       }
     }
@@ -568,8 +564,7 @@ async function executeAdvancedSearch(
         offset = Number(request.params.arguments.offset);
       }
       
-      // Import the attribute mapping utility
-      const { translateAttributeNamesInFilters } = await import("../../utils/attribute-mapping/index.js");
+      // Use the imported attribute mapping utility
       
       // Translate any human-readable attribute names to their slug equivalents
       const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
@@ -585,13 +580,13 @@ async function executeAdvancedSearch(
   } catch (error) {
     let errorDetailsForCreateResult: any = {};
     if (error instanceof ValueMatchError) {
-      if (error.originalError && (error.originalError as any).response) {
-        errorDetailsForCreateResult = (error.originalError as any).response.data;
+      if (error.originalError && hasResponseData(error.originalError)) {
+        errorDetailsForCreateResult = error.originalError.response.data;
       } else {
         errorDetailsForCreateResult = error.details || {};
       }
-    } else if ((error as any).response) {
-      errorDetailsForCreateResult = (error as any).response.data;
+    } else if (hasResponseData(error)) {
+      errorDetailsForCreateResult = error.response.data;
     } else if (error instanceof Error && (error as any).details) {
       errorDetailsForCreateResult = (error as any).details;
     } else {
