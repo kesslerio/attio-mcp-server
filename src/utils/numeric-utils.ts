@@ -3,7 +3,7 @@
  * Provides functions for handling numeric ranges and comparison operations.
  */
 import { FilterConditionType } from "../types/attio.js";
-import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilter, ListEntryFilters } from "../api/operations/index.js";
 
 /**
  * Interface for numeric range

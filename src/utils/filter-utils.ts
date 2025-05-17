@@ -11,7 +11,7 @@ import {
   InteractionType,
   ActivityFilter
 } from "../types/attio.js";
-import { ListEntryFilter, ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilter, ListEntryFilters } from "../api/operations/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 import { resolveDateRange } from "./date-utils.js";
 import { createNumericRangeFilter } from "./numeric-utils.js";

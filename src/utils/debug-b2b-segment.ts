@@ -3,7 +3,7 @@
  */
 import { translateAttributeNamesInFilters } from "./attribute-mapping/index.js";
 import { ResourceType } from "../types/attio.js";
-import { ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/operations/index.js";
 import { FilterConditionType } from "../types/attio.js";
 import { advancedSearchCompanies } from "../objects/companies.js";
 

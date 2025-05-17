@@ -14,7 +14,7 @@ import {
   ActivityFilter, 
   Person
 } from "../types/attio.js";
-import { ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/operations/index.js";
 import { 
   PaginatedResponse, 
   createPaginatedResponse,

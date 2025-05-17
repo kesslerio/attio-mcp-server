@@ -2,7 +2,7 @@
  * Additional filter utilities for date and numeric ranges
  * To be added to the existing filter-utils.ts file
  */
-import { ListEntryFilters, ListEntryFilter } from "../api/attio-operations.js";
+import { ListEntryFilters, ListEntryFilter } from "../api/operations/index.js";
 import { FilterConditionType, DateRange, NumericRange } from "../types/attio.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 
