@@ -383,8 +383,13 @@ export async function formatAllAttributes(
   const formatted: Record<string, any> = {};
   
   for (const [key, value] of Object.entries(attributes)) {
-    if (value !== undefined && value !== null) {
-      formatted[key] = await formatAttributeValue(objectSlug, key, value);
+    if (value !== undefined) {
+      // Handle null values explicitly - format them according to Attio's expected structure
+      if (value === null) {
+        formatted[key] = null;
+      } else {
+        formatted[key] = await formatAttributeValue(objectSlug, key, value);
+      }
     }
   }
   
