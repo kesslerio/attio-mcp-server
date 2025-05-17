@@ -15,7 +15,7 @@ import {
   BatchResponse,
   ListEntryFilters,
   ListEntryFilter
-} from "../api/attio-operations.js";
+} from "../api/operations/index.js";
 import {
   createObjectRecord,
   updateObjectRecord,

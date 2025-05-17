@@ -2,7 +2,7 @@
  * Caching layer for filters, especially relationship-based filters
  * Provides an in-memory LRU cache for expensive filter operations
  */
-import { ListEntryFilters } from "../../api/attio-operations.js";
+import { ListEntryFilters } from "../../api/operations/index.js";
 import { ResourceType, RelationshipType } from "../../types/attio.js";
 
 /**
