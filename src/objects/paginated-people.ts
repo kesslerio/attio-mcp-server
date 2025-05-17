@@ -24,7 +24,7 @@ import {
   validateDateRange,
   validateActivityFilter,
   validateNumericParam
-} from "../utils/filter-validation.js";
+} from "../utils/filters/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 
 /**
