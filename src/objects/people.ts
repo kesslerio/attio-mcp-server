@@ -28,7 +28,7 @@ import {
   createModifiedDateFilter,
   createLastInteractionFilter,
   createActivityFilter
-} from "../utils/filter-utils.js";
+} from "../utils/filters/index.js";
 import {
   createPeopleByCompanyFilter,
   createPeopleByCompanyListFilter,
@@ -39,7 +39,7 @@ import {
   validateDateRange,
   validateActivityFilter,
   validateNumericParam
-} from "../utils/filter-validation.js";
+} from "../utils/filters/index.js";
 import { PaginatedResponse, createPaginatedResponse } from "../utils/pagination.js";
 
 /**

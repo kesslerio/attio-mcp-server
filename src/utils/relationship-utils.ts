@@ -16,7 +16,7 @@ import {
   RelationshipFilterError,
   ListRelationshipError
 } from "../errors/api-errors.js";
-import { combineFiltersWithAnd, createEqualsFilter } from "./filter-utils.js";
+import { combineFiltersWithAnd, createEqualsFilter } from "./filters/index.js";
 
 /**
  * Configuration for a relationship-based filter

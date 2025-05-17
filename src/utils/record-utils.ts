@@ -15,7 +15,7 @@ import {
   createActivityFilter,
   createNumericFilter,
   FILTER_ATTRIBUTES
-} from "./filter-utils.js";
+} from "./filters/index.js";
 
 // Re-export filter utilities for backwards compatibility
 export { 
