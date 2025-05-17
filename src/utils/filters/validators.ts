@@ -1,8 +1,24 @@
 /**
+ * @module validators
+ * 
  * Consolidated filter validation utilities
  * Provides functions to validate and normalize filter parameters
+ * 
+ * This module provides:
+ * - Structure validation for filter objects
+ * - Date range validation and normalization
+ * - Numeric range validation
+ * - Activity filter validation
+ * - Filter condition validation
+ * - Parameter type validation and conversion
  */
 
+// External dependencies
+import { DateRangePreset, isValidFilterCondition } from "../../types/attio.js";
+import { FilterValidationError } from "../../errors/api-errors.js";
+import { isValidISODateString } from "../date-utils.js";
+
+// Internal module dependencies
 import { 
   DateRange, 
   ActivityFilter, 
@@ -11,10 +27,6 @@ import {
   FilterConditionType,
   ListEntryFilter
 } from "./types.js";
-import { DateRangePreset } from "../../types/attio.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { isValidISODateString } from "../date-utils.js";
-import { isValidFilterCondition } from "../../types/attio.js";
 
 /**
  * Validates a filter structure for basic required properties

@@ -3,6 +3,14 @@
  * These utilities help create filters based on relationships between records
  */
 
+// External dependencies
+import { 
+  FilterValidationError,
+  RelationshipFilterError,
+  ListRelationshipError 
+} from "../../errors/api-errors.js";
+
+// Internal module dependencies
 import {
   ListEntryFilters,
   ListEntryFilter,
@@ -13,11 +21,6 @@ import {
   ATTRIBUTES,
   RelationshipRateLimitError
 } from "./types.js";
-import { 
-  FilterValidationError,
-  RelationshipFilterError,
-  ListRelationshipError 
-} from "../../errors/api-errors.js";
 import { createEqualsFilter } from "./builders.js";
 import { 
   getCachedRelationshipFilter,

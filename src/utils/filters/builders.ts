@@ -1,8 +1,22 @@
 /**
+ * @module builders
+ * 
  * Filter builder functions for constructing filter objects
  * Provides utilities for creating various types of filters
+ * 
+ * This module provides:
+ * - Simple filter builders (equals, contains)
+ * - Complex filter builders (date ranges, numeric ranges)
+ * - Specialized builders (phone, email, industry)
+ * - Activity and interaction filters
+ * - Combination utilities (AND/OR filters)
  */
 
+// External dependencies
+import { FilterValidationError } from "../../errors/api-errors.js";
+import { resolveDateRange } from "../date-utils.js";
+
+// Internal module dependencies
 import {
   FilterConditionType,
   ListEntryFilters,
@@ -19,8 +33,6 @@ import {
   validateActivityFilter,
   validateNumericRange 
 } from "./validators.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { resolveDateRange } from "../date-utils.js";
 
 /**
  * Creates a simple equals filter for any attribute

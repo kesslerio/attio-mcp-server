@@ -1,8 +1,22 @@
 /**
+ * @module translators
+ * 
  * Filter translation utilities for converting between formats
  * Handles transformation between MCP filter format and Attio API format
+ * 
+ * This module provides:
+ * - MCP to Attio API format transformation
+ * - Support for AND/OR logical operators
+ * - Operator conversion utilities
+ * - Attribute name transformations
+ * - Reverse transformation (API to MCP)
  */
 
+// External dependencies
+import { isValidFilterCondition } from "../../types/attio.js";
+import { FilterValidationError } from "../../errors/api-errors.js";
+
+// Internal module dependencies
 import {
   ListEntryFilters,
   ListEntryFilter,
@@ -11,8 +25,6 @@ import {
   FIELD_SPECIAL_HANDLING
 } from "./types.js";
 import { validateFilterStructure } from "./validators.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { isValidFilterCondition } from "../../types/attio.js";
 
 /**
  * Transforms list entry filters to the format expected by the Attio API

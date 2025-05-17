@@ -1,6 +1,14 @@
 /**
+ * @module types
+ * 
  * Consolidated filter type definitions for Attio API
  * Central location for all filter-related interfaces, types, enums, and constants
+ * 
+ * This module provides:
+ * - Type definitions for filters and filter configurations
+ * - Attribute constants for consistent field references
+ * - Error types specific to filter operations
+ * - Enums and interfaces from external dependencies
  */
 
 import { 
