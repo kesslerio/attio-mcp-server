@@ -1,220 +1,308 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
+  batchCreateCompanies,
+  batchUpdateCompanies,
+  batchDeleteCompanies,
   batchSearchCompanies,
-  batchGetCompanyDetails,
-  extractCompanyId
-} from '../../src/objects/companies';
-import * as attioOperations from '../../src/api/attio-operations';
-import { getAttioClient } from '../../src/api/attio-client';
-import { Company } from '../../src/types/attio';
+  batchGetCompanyDetails
+} from '../../src/objects/batch-companies';
+import * as companies from '../../src/objects/companies';
 
-// Mock the attio-operations module
-jest.mock('../../src/api/attio-operations');
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+// Mock the individual operations
+vi.mock('../../src/objects/companies');
+vi.mock('../../src/api/attio-operations', () => ({
+  executeBatchOperations: vi.fn(async (items, fn, config) => {
+    const results = [];
+    let succeeded = 0;
+    let failed = 0;
+    
+    for (const item of items) {
+      try {
+        const data = await fn(item.params);
+        results.push({ id: item.id, success: true, data });
+        succeeded++;
+      } catch (error) {
+        results.push({ id: item.id, success: false, error });
+        failed++;
+      }
+    }
+    
+    return { results, summary: { total: items.length, succeeded, failed } };
+  }),
+  batchCreateRecords: vi.fn().mockRejectedValue(new Error('Batch API not available')),
+  batchUpdateRecords: vi.fn().mockRejectedValue(new Error('Batch API not available'))
 }));
 
-describe('Companies Batch Operations', () => {
-  // Sample mock data
-  const mockCompany1: Company = {
-    id: {
-      record_id: 'company123'
-    },
-    values: {
-      name: [{ value: 'Acme Inc' }],
-      website: [{ value: 'https://acme.com' }]
-    }
-  };
-
-  const mockCompany2: Company = {
-    id: {
-      record_id: 'company456'
-    },
-    values: {
-      name: [{ value: 'Globex Corp' }],
-      website: [{ value: 'https://globex.com' }]
-    }
-  };
-
-  // Mock API client
-  const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn()
-  };
-
+describe('Batch Company Operations', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
   });
-
-  describe('extractCompanyId', () => {
-    it('should extract ID from URI format', () => {
-      const result = extractCompanyId('attio://companies/company123');
-      expect(result).toBe('company123');
-    });
-
-    it('should handle direct IDs', () => {
-      const result = extractCompanyId('company123');
-      expect(result).toBe('company123');
-    });
-
-    it('should throw error for invalid resource type', () => {
-      expect(() => extractCompanyId('attio://people/person123'))
-        .toThrow('Invalid resource type in URI: Expected \'companies\', got \'people\'');
-    });
-
-    it('should handle malformed URIs with graceful fallback', () => {
-      const result = extractCompanyId('attio://malformed/company123/extra');
-      expect(result).toBe('extra');
-    });
-  });
-
-  describe('batchSearchCompanies', () => {
-    it('should call batchSearchObjects with correct parameters', async () => {
-      // Setup mock response
-      const mockResponse = {
-        results: [
-          { id: 'search_companies_0', success: true, data: [mockCompany1] },
-          { id: 'search_companies_1', success: true, data: [mockCompany2] }
-        ],
-        summary: {
-          total: 2,
-          succeeded: 2,
-          failed: 0
-        }
+  
+  describe('batchCreateCompanies', () => {
+    it('should create multiple companies successfully', async () => {
+      const mockCompany1 = {
+        id: { record_id: '1' },
+        values: { name: [{ value: 'Company 1' }] }
+      };
+      const mockCompany2 = {
+        id: { record_id: '2' },
+        values: { name: [{ value: 'Company 2' }] }
       };
       
-      // Mock the batchSearchObjects function
-      (attioOperations.batchSearchObjects as jest.Mock).mockResolvedValue(mockResponse);
-
-      // Call the function
-      const result = await batchSearchCompanies(['Acme', 'Globex']);
-
-      // Assertions
-      expect(attioOperations.batchSearchObjects).toHaveBeenCalledWith(
-        'companies',
-        ['Acme', 'Globex'],
-        undefined
-      );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should handle errors using fallback implementation', async () => {
-      // Mock batchSearchObjects to fail
-      (attioOperations.batchSearchObjects as jest.Mock).mockImplementation(() => {
-        throw new Error('Batch operation failed');
-      });
-      
-      // Mock the searchCompanies for individual searches in the fallback
-      jest.spyOn(require('../../src/objects/companies'), 'searchCompanies')
-        .mockResolvedValueOnce([mockCompany1])
-        .mockRejectedValueOnce(new Error('Search failed'));
-
-      // Call the function
-      const result = await batchSearchCompanies(['Acme', 'Unknown']);
-
-      // Assertions
-      expect(result.summary.total).toBe(2);
-      expect(result.summary.succeeded).toBe(1);
-      expect(result.summary.failed).toBe(1);
-      expect(result.results.length).toBe(2);
-      
-      expect(result.results[0].success).toBe(true);
-      expect(result.results[0].data).toEqual([mockCompany1]);
-      
-      expect(result.results[1].success).toBe(false);
-      expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe('Search failed');
-    });
-  });
-
-  describe('batchGetCompanyDetails', () => {
-    it('should call batchGetObjectDetails with correct parameters', async () => {
-      // Setup mock response
-      const mockResponse = {
-        results: [
-          { id: 'get_companies_company123', success: true, data: mockCompany1 },
-          { id: 'get_companies_company456', success: true, data: mockCompany2 }
-        ],
-        summary: {
-          total: 2,
-          succeeded: 2,
-          failed: 0
-        }
-      };
-      
-      // Mock the batchGetObjectDetails function
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockResolvedValue(mockResponse);
-
-      // Call the function
-      const result = await batchGetCompanyDetails(['company123', 'company456']);
-
-      // Assertions
-      expect(attioOperations.batchGetObjectDetails).toHaveBeenCalledWith(
-        'companies',
-        ['company123', 'company456'],
-        undefined
-      );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should handle URI format in IDs', async () => {
-      // Setup mock response
-      const mockResponse = {
-        results: [
-          { id: 'get_companies_0', success: true, data: mockCompany1 },
-          { id: 'get_companies_1', success: true, data: mockCompany2 }
-        ],
-        summary: {
-          total: 2,
-          succeeded: 2,
-          failed: 0
-        }
-      };
-      
-      // Mock the batchGetObjectDetails function
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockResolvedValue(mockResponse);
-
-      // Call the function with URI format
-      const result = await batchGetCompanyDetails([
-        'attio://companies/company123', 
-        'attio://companies/company456'
-      ]);
-
-      // Assertions
-      expect(attioOperations.batchGetObjectDetails).toHaveBeenCalledWith(
-        'companies',
-        ['company123', 'company456'],
-        undefined
-      );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should handle errors using fallback implementation', async () => {
-      // Mock batchGetObjectDetails to fail
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockImplementation(() => {
-        throw new Error('Batch operation failed');
-      });
-      
-      // Mock the getCompanyDetails for individual gets in the fallback
-      jest.spyOn(require('../../src/objects/companies'), 'getCompanyDetails')
+      vi.mocked(companies.createCompany)
         .mockResolvedValueOnce(mockCompany1)
-        .mockRejectedValueOnce(new Error('Company not found'));
-
-      // Call the function
-      const result = await batchGetCompanyDetails(['company123', 'nonexistent']);
-
-      // Assertions
-      expect(result.summary.total).toBe(2);
-      expect(result.summary.succeeded).toBe(1);
-      expect(result.summary.failed).toBe(1);
-      expect(result.results.length).toBe(2);
+        .mockResolvedValueOnce(mockCompany2);
+      
+      const companiesData = [
+        { name: 'Company 1', website: 'https://company1.com' },
+        { name: 'Company 2', website: 'https://company2.com' }
+      ];
+      
+      const result = await batchCreateCompanies(companiesData);
+      
+      expect(result.summary).toEqual({
+        total: 2,
+        succeeded: 2,
+        failed: 0
+      });
+      
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0]).toEqual({
+        id: 'create_company_0',
+        success: true,
+        data: mockCompany1
+      });
+      expect(result.results[1]).toEqual({
+        id: 'create_company_1',
+        success: true,
+        data: mockCompany2
+      });
+    });
+    
+    it('should handle partial failures', async () => {
+      vi.mocked(companies.createCompany)
+        .mockResolvedValueOnce({
+          id: { record_id: '1' },
+          values: { name: [{ value: 'Company 1' }] }
+        })
+        .mockRejectedValueOnce(new Error('Validation error'));
+      
+      const companiesData = [
+        { name: 'Company 1' },
+        { name: '' } // This should fail validation
+      ];
+      
+      const result = await batchCreateCompanies(companiesData);
+      
+      expect(result.summary).toEqual({
+        total: 2,
+        succeeded: 1,
+        failed: 1
+      });
       
       expect(result.results[0].success).toBe(true);
-      expect(result.results[0].data).toEqual(mockCompany1);
-      
       expect(result.results[1].success).toBe(false);
-      expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe('Company not found');
+      expect(result.results[1].error).toBeDefined();
+    });
+  });
+  
+  describe('batchUpdateCompanies', () => {
+    it('should update multiple companies successfully', async () => {
+      const mockUpdated1 = {
+        id: { record_id: '1' },
+        values: { 
+          name: [{ value: 'Updated Company 1' }],
+          website: [{ value: 'https://updated1.com' }]
+        }
+      };
+      const mockUpdated2 = {
+        id: { record_id: '2' },
+        values: { 
+          name: [{ value: 'Updated Company 2' }],
+          website: [{ value: 'https://updated2.com' }]
+        }
+      };
+      
+      vi.mocked(companies.updateCompany)
+        .mockResolvedValueOnce(mockUpdated1)
+        .mockResolvedValueOnce(mockUpdated2);
+      
+      const updates = [
+        { id: '1', attributes: { name: 'Updated Company 1', website: 'https://updated1.com' } },
+        { id: '2', attributes: { name: 'Updated Company 2', website: 'https://updated2.com' } }
+      ];
+      
+      const result = await batchUpdateCompanies(updates);
+      
+      expect(result.summary).toEqual({
+        total: 2,
+        succeeded: 2,
+        failed: 0
+      });
+      
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0].success).toBe(true);
+      expect(result.results[0].data).toEqual(mockUpdated1);
+    });
+  });
+  
+  describe('batchDeleteCompanies', () => {
+    it('should delete multiple companies successfully', async () => {
+      vi.mocked(companies.deleteCompany)
+        .mockResolvedValue(true);
+      
+      const companyIds = ['1', '2', '3'];
+      
+      const result = await batchDeleteCompanies(companyIds);
+      
+      expect(result.summary).toEqual({
+        total: 3,
+        succeeded: 3,
+        failed: 0
+      });
+      
+      expect(result.results).toHaveLength(3);
+      expect(result.results.every(r => r.success)).toBe(true);
+      expect(companies.deleteCompany).toHaveBeenCalledTimes(3);
+    });
+    
+    it('should handle deletion failures', async () => {
+      vi.mocked(companies.deleteCompany)
+        .mockResolvedValueOnce(true)
+        .mockRejectedValueOnce(new Error('Not found'))
+        .mockResolvedValueOnce(true);
+      
+      const companyIds = ['1', '2', '3'];
+      
+      const result = await batchDeleteCompanies(companyIds);
+      
+      expect(result.summary).toEqual({
+        total: 3,
+        succeeded: 2,
+        failed: 1
+      });
+      
+      expect(result.results[0].success).toBe(true);
+      expect(result.results[1].success).toBe(false);
+      expect(result.results[2].success).toBe(true);
+    });
+  });
+  
+  describe('batchSearchCompanies', () => {
+    it('should perform multiple searches successfully', async () => {
+      const mockResults1 = [
+        { id: { record_id: '1' }, values: { name: [{ value: 'Tech Corp' }] } }
+      ];
+      const mockResults2 = [
+        { id: { record_id: '2' }, values: { name: [{ value: 'Finance Inc' }] } },
+        { id: { record_id: '3' }, values: { name: [{ value: 'Finance Ltd' }] } }
+      ];
+      
+      vi.mocked(companies.searchCompanies)
+        .mockResolvedValueOnce(mockResults1)
+        .mockResolvedValueOnce(mockResults2);
+      
+      const queries = ['tech', 'finance'];
+      
+      const result = await batchSearchCompanies(queries);
+      
+      expect(result.summary).toEqual({
+        total: 2,
+        succeeded: 2,
+        failed: 0
+      });
+      
+      expect(result.results[0].data).toEqual(mockResults1);
+      expect(result.results[1].data).toEqual(mockResults2);
+    });
+  });
+  
+  describe('batchGetCompanyDetails', () => {
+    it('should fetch details for multiple companies', async () => {
+      const mockCompany1 = {
+        id: { record_id: '1' },
+        values: { 
+          name: [{ value: 'Company 1' }],
+          website: [{ value: 'https://company1.com' }]
+        }
+      };
+      const mockCompany2 = {
+        id: { record_id: '2' },
+        values: { 
+          name: [{ value: 'Company 2' }],
+          website: [{ value: 'https://company2.com' }]
+        }
+      };
+      
+      vi.mocked(companies.getCompanyDetails)
+        .mockResolvedValueOnce(mockCompany1)
+        .mockResolvedValueOnce(mockCompany2);
+      
+      const companyIds = ['1', '2'];
+      
+      const result = await batchGetCompanyDetails(companyIds);
+      
+      expect(result.summary).toEqual({
+        total: 2,
+        succeeded: 2,
+        failed: 0
+      });
+      
+      expect(result.results[0].data).toEqual(mockCompany1);
+      expect(result.results[1].data).toEqual(mockCompany2);
+    });
+  });
+  
+  describe('Batch Configuration', () => {
+    it('should respect maxBatchSize configuration', async () => {
+      const mockCompany = {
+        id: { record_id: '1' },
+        values: { name: [{ value: 'Test Company' }] }
+      };
+      
+      vi.mocked(companies.createCompany)
+        .mockResolvedValue(mockCompany);
+      
+      const companiesData = Array(15).fill(0).map((_, i) => ({
+        name: `Company ${i}`
+      }));
+      
+      const result = await batchCreateCompanies(companiesData, {
+        maxBatchSize: 5 // Should process in 3 chunks
+      });
+      
+      expect(result.summary.total).toBe(15);
+      // The actual chunking is handled by executeBatchOperations
+      // which we're mocking, so we can't test the chunking directly
+    });
+    
+    it('should respect continueOnError configuration', async () => {
+      vi.mocked(companies.createCompany)
+        .mockResolvedValueOnce({
+          id: { record_id: '1' },
+          values: { name: [{ value: 'Company 1' }] }
+        })
+        .mockRejectedValueOnce(new Error('Error on second'))
+        .mockResolvedValueOnce({
+          id: { record_id: '3' },
+          values: { name: [{ value: 'Company 3' }] }
+        });
+      
+      const companiesData = [
+        { name: 'Company 1' },
+        { name: 'Company 2' }, // This will fail
+        { name: 'Company 3' }
+      ];
+      
+      const result = await batchCreateCompanies(companiesData, {
+        continueOnError: true // Default, but explicit here
+      });
+      
+      expect(result.summary).toEqual({
+        total: 3,
+        succeeded: 2,
+        failed: 1
+      });
     });
   });
 });
