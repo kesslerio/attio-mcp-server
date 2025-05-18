@@ -439,6 +439,11 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await executeAdvancedSearch(toolType, toolConfig, request, resourceType);
     }
     
+    // Handle relationship-based search tools (searchByCompany, searchByCompanyList, searchByNotes)
+    if (['searchByCompany', 'searchByCompanyList', 'searchByNotes'].includes(toolType)) {
+      return await executeRelationshipSearch(toolType, toolConfig, request, resourceType);
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     return formatResponse(
@@ -519,6 +524,45 @@ async function executeRecordOperation(
   
   // Add handlers for get, update, delete, list operations...
   throw new Error(`Record operation handler not implemented for tool type: ${toolType}`);
+}
+
+/**
+ * Execute relationship-based search operations
+ */
+async function executeRelationshipSearch(
+  toolType: string,
+  toolConfig: ToolConfig,
+  request: CallToolRequest,
+  resourceType: ResourceType
+) {
+  try {
+    let results: AttioRecord[] = [];
+    
+    if (toolType === 'searchByCompany') {
+      const companyFilter = request.params.arguments;
+      results = await toolConfig.handler(companyFilter);
+    } else if (toolType === 'searchByCompanyList') {
+      const listId = request.params.arguments?.listId as string;
+      results = await toolConfig.handler(listId);
+    } else if (toolType === 'searchByNotes') {
+      const searchText = request.params.arguments?.searchText as string;
+      results = await toolConfig.handler(searchText);
+    } else {
+      throw new Error(`Unknown relationship search type: ${toolType}`);
+    }
+    
+    // Format and return results
+    const formattedResults = toolConfig.formatResult ? toolConfig.formatResult(results) : JSON.stringify(results, null, 2);
+    
+    return formatResponse(formattedResults);
+  } catch (error) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error("Unknown error"),
+      `/objects/${resourceType}/records/query`,
+      "POST",
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
 }
 
 /**
