@@ -2,12 +2,12 @@
  * Company-related functionality
  */
 import { getAttioClient } from "../api/attio-client.js";
-import { searchObject, advancedSearchObject, listObjects, getObjectDetails, getObjectNotes, createObjectNote } from "../api/attio-operations.js";
+import { searchObject, advancedSearchObject, listObjects, getObjectDetails, getObjectNotes, createObjectNote } from "../api/operations/index.js";
 import { ResourceType, FilterConditionType } from "../types/attio.js";
 import { CompanyValidator } from "../validators/company-validator.js";
 import { CompanyOperationError, InvalidCompanyDataError } from "../errors/company-errors.js";
 import { createCompaniesByPeopleFilter, createCompaniesByPeopleListFilter, createRecordsByNotesFilter } from "../utils/relationship-utils.js";
-import { validateNumericParam } from "../utils/filter-validation.js";
+import { validateNumericParam } from "../utils/filters/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 import { createObjectWithDynamicFields, updateObjectWithDynamicFields, updateObjectAttributeWithDynamicFields, deleteObjectWithValidation } from "./base-operations.js";
 /**

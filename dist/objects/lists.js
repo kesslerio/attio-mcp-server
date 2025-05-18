@@ -2,7 +2,7 @@
  * Lists-related functionality
  */
 import { getAttioClient } from "../api/attio-client.js";
-import { getAllLists as getGenericLists, getListDetails as getGenericListDetails, getListEntries as getGenericListEntries, addRecordToList as addGenericRecordToList, removeRecordFromList as removeGenericRecordFromList, executeBatchOperations } from "../api/attio-operations.js";
+import { getAllLists as getGenericLists, getListDetails as getGenericListDetails, getListEntries as getGenericListEntries, addRecordToList as addGenericRecordToList, removeRecordFromList as removeGenericRecordFromList, executeBatchOperations } from "../api/operations/index.js";
 import { processListEntries, transformFiltersToApiFormat } from "../utils/record-utils.js";
 /**
  * Gets all lists in the workspace

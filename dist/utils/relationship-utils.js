@@ -1,6 +1,6 @@
 import { ResourceType, FilterConditionType, RelationshipType } from "../types/attio.js";
 import { FilterValidationError, RelationshipFilterError, ListRelationshipError } from "../errors/api-errors.js";
-import { createEqualsFilter } from "./filter-utils.js";
+import { createEqualsFilter } from "./filters/index.js";
 /**
  * Creates a filter for people based on their associated company attributes
  *

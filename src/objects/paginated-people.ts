@@ -7,7 +7,7 @@ import {
   searchPeopleByLastInteraction,
   searchPeopleByActivity,
   advancedSearchPeople
-} from "./people.js";
+} from "./people/index.js";
 import { 
   DateRange, 
   InteractionType,

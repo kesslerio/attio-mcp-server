@@ -1,11 +1,11 @@
 import { registerToolHandlers } from '../../src/handlers/tools.js';
 import * as companiesModule from '../../src/objects/companies.js';
-import * as peopleModule from '../../src/objects/people.js';
+import * as peopleModule from '../../src/objects/people/index.js';
 import * as attributeMappingModule from '../../src/utils/attribute-mapping.js';
 
 // Mock dependencies
 jest.mock('../../src/objects/companies.js');
-jest.mock('../../src/objects/people.js');
+jest.mock('../../src/objects/people/index.js');
 jest.mock('../../src/utils/attribute-mapping.js');
 jest.mock('../../src/utils/error-handler.js');
 

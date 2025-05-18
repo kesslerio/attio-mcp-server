@@ -1,4 +1,4 @@
-import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
+import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/operations/index.js";
 import { AttioList, AttioListEntry } from "../types/attio.js";
 /**
  * Gets all lists in the workspace

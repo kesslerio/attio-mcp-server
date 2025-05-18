@@ -1,0 +1,128 @@
+/**
+ * Relationship queries for People
+ */
+import { getAttioClient } from "../../api/attio-client.js";
+import { advancedSearchObject, ListEntryFilters } from "../../api/operations/index.js";
+import { ResourceType, Person } from "../../types/attio.js";
+import {
+  createPeopleByCompanyFilter,
+  createPeopleByCompanyListFilter,
+  createRecordsByNotesFilter
+} from "../../utils/relationship-utils.js";
+import { createEqualsFilter } from "../../utils/filters/index.js";
+import { FilterValidationError } from "../../errors/api-errors.js";
+
+/**
+ * Searches for people associated with a specific company
+ * 
+ * @param companyId - ID of the company to search for
+ * @returns Array of people associated with the company
+ */
+export async function searchPeopleByCompany(companyId: string): Promise<Person[]> {
+  try {
+    const api = getAttioClient();
+    const validationError = await api.validateObjectId(ResourceType.COMPANIES, companyId);
+    if (validationError) {
+      throw new FilterValidationError(`Invalid company ID: ${validationError}`);
+    }
+
+    // Create a filter to find people by company ID
+    const companyFilter = createEqualsFilter('id', { record_id: companyId });
+    const filters = createPeopleByCompanyFilter(companyFilter);
+    const response = await advancedSearchObject<Person>(
+      ResourceType.PEOPLE,
+      filters
+    );
+    
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('validation')) {
+      throw new FilterValidationError(`Company relationship validation failed: ${errorMessage}`);
+    }
+    throw new Error(`Failed to search people by company: ${errorMessage}`);
+  }
+}
+
+/**
+ * Searches for people in specific company lists
+ * 
+ * @param listIds - Array of list IDs to search within
+ * @returns Array of people in the specified lists
+ */
+export async function searchPeopleByCompanyList(listIds: string[]): Promise<Person[]> {
+  try {
+    if (!Array.isArray(listIds) || listIds.length === 0) {
+      throw new FilterValidationError('Must provide at least one list ID');
+    }
+
+    // Validate list IDs
+    const api = getAttioClient();
+    for (const listId of listIds) {
+      const error = await api.validateListId(listId);
+      if (error) {
+        throw new FilterValidationError(`Invalid list ID '${listId}': ${error}`);
+      }
+    }
+
+    // Handle multiple lists by combining filters
+    let filters: ListEntryFilters;
+    if (listIds.length === 1) {
+      filters = createPeopleByCompanyListFilter(listIds[0]);
+    } else {
+      // Create OR filter for multiple lists
+      const listFilters = listIds.map(listId => createPeopleByCompanyListFilter(listId));
+      filters = {
+        filters: [],
+        matchAny: true,
+        ...listFilters[0]
+      };
+      // Merge all filters
+      for (const filter of listFilters) {
+        if (filter.filters) {
+          filters.filters!.push(...filter.filters);
+        }
+      }
+    }
+    const response = await advancedSearchObject<Person>(
+      ResourceType.PEOPLE,
+      filters
+    );
+    
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('validation')) {
+      throw new FilterValidationError(`List relationship validation failed: ${errorMessage}`);
+    }
+    throw new Error(`Failed to search people by company list: ${errorMessage}`);
+  }
+}
+
+/**
+ * Searches for people with notes containing specific text
+ * 
+ * @param searchText - Text to search for in notes
+ * @returns Array of people with matching notes
+ */
+export async function searchPeopleByNotes(searchText: string): Promise<Person[]> {
+  try {
+    if (!searchText || searchText.trim().length === 0) {
+      throw new FilterValidationError('Search text cannot be empty');
+    }
+
+    const filters = createRecordsByNotesFilter(ResourceType.PEOPLE, searchText);
+    const response = await advancedSearchObject<Person>(
+      ResourceType.PEOPLE,
+      filters
+    );
+    
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('validation')) {
+      throw new FilterValidationError(`Notes search validation failed: ${errorMessage}`);
+    }
+    throw new Error(`Failed to search people by notes: ${errorMessage}`);
+  }
+}
