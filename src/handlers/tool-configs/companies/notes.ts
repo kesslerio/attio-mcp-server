@@ -5,7 +5,7 @@ import { Company } from "../../../types/attio.js";
 import { 
   getCompanyNotes, 
   createCompanyNote
-} from "../../../objects/companies.js";
+} from "../../../objects/companies/index.js";
 import { 
   NotesToolConfig, 
   CreateNoteToolConfig

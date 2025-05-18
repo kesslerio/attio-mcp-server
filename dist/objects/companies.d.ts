@@ -1,4 +1,4 @@
-import { ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/operations/index.js";
 import { Company, AttioNote, FilterConditionType } from "../types/attio.js";
 /**
  * Searches for companies by name

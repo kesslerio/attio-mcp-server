@@ -1,4 +1,4 @@
-import { getCompanyNotes, createCompanyNote } from "../../../objects/companies.js";
+import { getCompanyNotes, createCompanyNote } from "../../../objects/companies/index.js";
 // Company notes tool configurations
 export const notesToolConfigs = {
     notes: {

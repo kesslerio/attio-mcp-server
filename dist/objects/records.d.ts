@@ -1,4 +1,4 @@
-import { BatchConfig, BatchResponse } from "../api/attio-operations.js";
+import { BatchConfig, BatchResponse } from "../api/operations/index.js";
 import { AttioRecord, RecordAttributes, RecordListParams } from "../types/attio.js";
 /**
  * Creates a new record for a specific object type
