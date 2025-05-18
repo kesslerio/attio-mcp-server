@@ -26,8 +26,22 @@ export async function searchPeopleByCompany(companyId: string): Promise<Person[]
     }
 
     // Create a filter to find people by company ID
-    const companyFilter = createEqualsFilter('id', { record_id: companyId });
-    const filters = createPeopleByCompanyFilter(companyFilter);
+    // In Attio, people have a 'companies' attribute that links to associated companies
+    const filters: ListEntryFilters = {
+      filters: [
+        {
+          attribute: {
+            slug: 'companies'
+          },
+          condition: 'equals',
+          value: {
+            record_id: companyId
+          }
+        }
+      ],
+      matchAny: false
+    };
+    
     const response = await advancedSearchObject<Person>(
       ResourceType.PEOPLE,
       filters
