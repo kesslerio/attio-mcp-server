@@ -1,5 +1,5 @@
-import { parseResourceUri, formatResourceUri } from '../../src/utils/uri-parser.js';
-import { ResourceType } from '../../src/types/attio.js';
+import { parseResourceUri, formatResourceUri } from '../../src/utils/uri-parser';
+import { ResourceType } from '../../src/types/attio';
 
 describe('uri-parser', () => {
   describe('parseResourceUri', () => {

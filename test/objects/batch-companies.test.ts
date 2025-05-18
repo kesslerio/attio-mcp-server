@@ -6,7 +6,7 @@ import {
   batchSearchCompanies,
   batchGetCompanyDetails
 } from '../../src/objects/batch-companies';
-import * as companies from '../../src/objects/companies';
+import * as companies from '../../src/objects/companies/index';
 
 // Mock the individual operations
 vi.mock('../../src/objects/companies');

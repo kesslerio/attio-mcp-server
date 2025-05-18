@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Simple test script to verify that People object functionality works
-import { searchPeople, getPersonDetails, getPersonNotes, createPersonNote } from '../dist/objects/people.js';
+const { searchPeople, getPersonDetails, getPersonNotes, createPersonNote } = require('../dist/objects/people');
 
 async function testPeopleAPIs() {
   try {

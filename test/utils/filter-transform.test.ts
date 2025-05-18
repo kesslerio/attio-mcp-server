@@ -2,9 +2,9 @@
  * Tests for filter transformation utilities
  */
 import { describe, expect, test } from '@jest/globals';
-import { FilterConditionType } from '../../src/types/attio.js';
-import { transformFiltersToApiFormat } from '../../src/utils/record-utils.js';
-import { FilterValidationError } from '../../src/errors/api-errors.js';
+import { FilterConditionType } from '../../src/types/attio';
+import { transformFiltersToApiFormat } from '../../src/utils/record-utils';
+import { FilterValidationError } from '../../src/errors/api-errors';
 
 describe('transformFiltersToApiFormat', () => {
   // Test basic filter transformation

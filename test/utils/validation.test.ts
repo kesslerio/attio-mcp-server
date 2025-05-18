@@ -1,5 +1,5 @@
-import { validateInput, validateRequest, ValidationSchema } from '../../src/utils/validation.js';
-import { ErrorType } from '../../src/utils/error-handler.js';
+import { validateInput, validateRequest, ValidationSchema } from '../../src/utils/validation';
+import { ErrorType } from '../../src/utils/error-handler';
 
 describe('validation', () => {
   describe('validateInput', () => {

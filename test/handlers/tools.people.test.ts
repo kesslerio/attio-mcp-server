@@ -1,11 +1,11 @@
-import { registerToolHandlers } from '../../src/handlers/tools.js';
-import * as peopleModule from '../../src/objects/people/index.js';
-import * as errorHandler from '../../src/utils/error-handler.js';
+import { registerToolHandlers } from '../../src/handlers/tools/index';
+import * as peopleModule from '../../src/objects/people/index';
+import * as errorHandler from '../../src/utils/error-handler';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies.js');
-jest.mock('../../src/objects/people/index.js');
-jest.mock('../../src/utils/error-handler.js');
+jest.mock('../../src/objects/companies/index');
+jest.mock('../../src/objects/people/index');
+jest.mock('../../src/utils/error-handler');
 
 describe('tools-people', () => {
   describe('registerToolHandlers - People Tools', () => {

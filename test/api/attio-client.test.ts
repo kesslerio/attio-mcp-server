@@ -1,4 +1,4 @@
-import { createAttioClient, initializeAttioClient, getAttioClient } from '../../src/api/attio-client.js';
+import { createAttioClient, initializeAttioClient, getAttioClient } from '../../src/api/attio-client';
 import axios from 'axios';
 
 // Mock axios

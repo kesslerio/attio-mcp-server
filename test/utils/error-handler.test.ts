@@ -5,7 +5,7 @@ import {
   createAttioError,
   ErrorType,
   formatErrorResponse
-} from '../../src/utils/error-handler.js';
+} from '../../src/utils/error-handler';
 
 describe('error-handler', () => {
   describe('createAttioError', () => {

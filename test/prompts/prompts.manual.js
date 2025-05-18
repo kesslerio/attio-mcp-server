@@ -7,7 +7,7 @@
  * by sending MCP requests to a running instance of the attio-mcp-server.
  */
 
-import { spawn } from 'child_process';
+const { spawn } = require('child_process');
 
 /**
  * Waits for the server to be ready by watching for the health server startup message

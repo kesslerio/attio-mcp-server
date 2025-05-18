@@ -8,19 +8,19 @@ import {
   updateCompany,
   updateCompanyAttribute,
   deleteCompany
-} from '../../src/objects/companies.js';
-import * as attioClient from '../../src/api/attio-client.js';
-import * as records from '../../src/objects/records.js';
-import * as attributeTypes from '../../src/api/attribute-types.js';
+} from '../../src/objects/companies/index';
+import * as attioClient from '../../src/api/attio-client';
+import * as records from '../../src/objects/records';
+import * as attributeTypes from '../../src/api/attribute-types';
 import { 
   InvalidCompanyDataError, 
   CompanyOperationError 
-} from '../../src/errors/company-errors.js';
+} from '../../src/errors/company-errors';
 
 // Mock the API client and records module
-jest.mock('../../src/api/attio-client.js');
-jest.mock('../../src/objects/records.js');
-jest.mock('../../src/api/attribute-types.js');
+jest.mock('../../src/api/attio-client');
+jest.mock('../../src/objects/records');
+jest.mock('../../src/api/attribute-types');
 const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
 const mockedRecords = records as jest.Mocked<typeof records>;
 const mockedAttributeTypes = attributeTypes as jest.Mocked<typeof attributeTypes>;

@@ -1,13 +1,13 @@
-import { registerToolHandlers } from '../../src/handlers/tools.js';
-import * as companiesModule from '../../src/objects/companies.js';
-import * as peopleModule from '../../src/objects/people/index.js';
-import * as attributeMappingModule from '../../src/utils/attribute-mapping.js';
+import { registerToolHandlers } from '../../src/handlers/tools/index';
+import * as companiesModule from '../../src/objects/companies/index';
+import * as peopleModule from '../../src/objects/people/index';
+import * as attributeMappingModule from '../../src/utils/attribute-mapping';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies.js');
-jest.mock('../../src/objects/people/index.js');
-jest.mock('../../src/utils/attribute-mapping.js');
-jest.mock('../../src/utils/error-handler.js');
+jest.mock('../../src/objects/companies/index');
+jest.mock('../../src/objects/people/index');
+jest.mock('../../src/utils/attribute-mapping');
+jest.mock('../../src/utils/error-handler');
 
 describe('tools attribute mapping integration', () => {
   describe('Advanced search with attribute mapping', () => {

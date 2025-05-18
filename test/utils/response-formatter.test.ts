@@ -7,7 +7,7 @@ import {
   formatMultiPartResponse,
   formatEmptyResponse,
   formatErrorResponse
-} from '../../src/utils/response-formatter.js';
+} from '../../src/utils/response-formatter';
 
 describe('response-formatter', () => {
   describe('formatSuccessResponse', () => {
