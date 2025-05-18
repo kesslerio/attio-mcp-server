@@ -24,6 +24,7 @@ import {
   searchPeopleByNotes,
   advancedSearchPeople
 } from "../../objects/people/index.js";
+import { searchCompanies } from "../../objects/companies/index.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
@@ -130,7 +131,69 @@ export const peopleToolConfigs = {
   // Relationship-based filtering tools
   searchByCompany: {
     name: "search-people-by-company",
-    handler: searchPeopleByCompany,
+    /**
+     * Handler for searching people by company affiliation
+     * 
+     * Expected filter format:
+     * {
+     *   companyFilter: {
+     *     filters: [{
+     *       attribute: { slug: 'companies.id' | 'companies.name' },
+     *       condition: 'equals',
+     *       value: string | { record_id: string }
+     *     }]
+     *   }
+     * }
+     */
+    handler: async (args: any) => {
+      // Extract companyFilter from arguments
+      const { companyFilter } = args;
+      
+      // Log the incoming request for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[search-people-by-company] Received filter:', JSON.stringify(companyFilter, null, 2));
+      }
+      
+      // Validate filter structure
+      if (!companyFilter?.filters || !Array.isArray(companyFilter.filters) || companyFilter.filters.length === 0) {
+        throw new Error('Invalid companyFilter format. Expected filters array with at least one filter');
+      }
+      
+      // Handle multiple filters if provided (use the first valid one)
+      for (const filter of companyFilter.filters) {
+        // Check if this is a filter by company ID
+        if (filter.attribute?.slug === 'companies.id' && filter.value?.record_id) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[search-people-by-company] Searching by company ID: ${filter.value.record_id}`);
+          }
+          // Call searchPeopleByCompany with just the company ID
+          return searchPeopleByCompany(filter.value.record_id);
+        }
+        
+        // Check if this is a filter by company name
+        if (filter.attribute?.slug === 'companies.name' && filter.value) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[search-people-by-company] Searching by company name: ${filter.value}`);
+          }
+          // First search for the company by name
+          const companies = await searchCompanies(filter.value);
+          if (companies.length > 0) {
+            // Use the first matching company's ID
+            const companyId = companies[0].id?.record_id;
+            if (companyId) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`[search-people-by-company] Found company ID: ${companyId}`);
+              }
+              return searchPeopleByCompany(companyId);
+            }
+          }
+          throw new Error(`No company found with name: ${filter.value}`);
+        }
+      }
+      
+      // If no valid filter is found, throw error
+      throw new Error('Invalid companyFilter format. Expected filter by companies.id or companies.name');
+    },
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people matching the company filter:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
@@ -472,16 +535,41 @@ export const peopleToolDefinitions = [
   {
     name: "search-people-by-company",
     description: "Search for people based on attributes of their associated companies",
+    /**
+     * @example
+     * Search by company ID:
+     * {
+     *   companyFilter: {
+     *     filters: [{
+     *       attribute: { slug: 'companies.id' },
+     *       condition: 'equals',
+     *       value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' }
+     *     }]
+     *   }
+     * }
+     * 
+     * @example
+     * Search by company name:
+     * {
+     *   companyFilter: {
+     *     filters: [{
+     *       attribute: { slug: 'companies.name' },
+     *       condition: 'equals',
+     *       value: 'Oakwood Precision Medicine'
+     *     }]
+     *   }
+     * }
+     */
     inputSchema: {
       type: "object",
       properties: {
         companyFilter: {
           type: "object",
-          description: "Filter conditions to apply to companies",
+          description: "Filter conditions to apply to companies. Supported slugs: 'companies.id', 'companies.name'",
           properties: {
             filters: {
               type: "array",
-              description: "Array of filter conditions",
+              description: "Array of filter conditions. The handler processes filters in order and uses the first valid one.",
               items: {
                 type: "object",
                 properties: {
@@ -490,7 +578,7 @@ export const peopleToolDefinitions = [
                     properties: {
                       slug: {
                         type: "string",
-                        description: "Company attribute to filter on (e.g., 'name', 'industry', 'website')"
+                        description: "Company attribute to filter on. Currently supports: 'companies.id', 'companies.name'"
                       }
                     },
                     required: ["slug"]
@@ -500,8 +588,8 @@ export const peopleToolDefinitions = [
                     description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
                   },
                   value: {
-                    type: ["string", "number", "boolean"],
-                    description: "Value to filter by"
+                    type: ["string", "number", "boolean", "object"],
+                    description: "Value to filter by. For company ID, use { record_id: 'id' }. For company name, use a string."
                   }
                 },
                 required: ["attribute", "condition", "value"]
