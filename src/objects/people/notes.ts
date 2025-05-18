@@ -8,6 +8,7 @@ import {
 } from "../../api/operations/index.js";
 import { ResourceType, AttioNote } from "../../types/attio.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
+import { isValidId } from "../../utils/validation.js";
 
 /**
  * Gets notes for a specific person
@@ -19,10 +20,8 @@ import { FilterValidationError } from "../../errors/api-errors.js";
  */
 export async function getPersonNotes(personId: string, limit: number = 10, offset: number = 0): Promise<AttioNote[]> {
   try {
-    const api = getAttioClient();
-    const validationError = await api.validateObjectId(ResourceType.PEOPLE, personId);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid person ID: ${validationError}`);
+    if (!isValidId(personId)) {
+      throw new FilterValidationError(`Invalid person ID: ${personId}`);
     }
 
     return await getObjectNotes(ResourceType.PEOPLE, personId, limit, offset);
@@ -45,10 +44,8 @@ export async function getPersonNotes(personId: string, limit: number = 10, offse
  */
 export async function createPersonNote(personId: string, title: string, content: string): Promise<AttioNote> {
   try {
-    const api = getAttioClient();
-    const validationError = await api.validateObjectId(ResourceType.PEOPLE, personId);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid person ID: ${validationError}`);
+    if (!isValidId(personId)) {
+      throw new FilterValidationError(`Invalid person ID: ${personId}`);
     }
 
     if (!title || title.trim().length === 0) {

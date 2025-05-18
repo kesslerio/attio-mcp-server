@@ -4,6 +4,7 @@
 import { getAttioClient } from "../../api/attio-client.js";
 import { listObjects, getObjectDetails } from "../../api/operations/index.js";
 import { ResourceType, Person } from "../../types/attio.js";
+import { isValidId } from "../../utils/validation.js";
 import { 
   createObjectWithDynamicFields,
   updateObjectWithDynamicFields,
@@ -156,10 +157,8 @@ export async function deletePerson(personId: string): Promise<boolean> {
  */
 export async function getPersonDetails(personId: string): Promise<Person> {
   try {
-    const api = getAttioClient();
-    const apiError = await api.validateObjectId(ResourceType.PEOPLE, personId);
-    if (apiError) {
-      throw new Error(apiError);
+    if (!isValidId(personId)) {
+      throw new Error(`Invalid person ID: ${personId}`);
     }
 
     return await getObjectDetails(ResourceType.PEOPLE, personId) as Person;

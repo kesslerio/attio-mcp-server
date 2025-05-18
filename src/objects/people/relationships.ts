@@ -4,6 +4,7 @@
 import { getAttioClient } from "../../api/attio-client.js";
 import { advancedSearchObject, ListEntryFilters } from "../../api/operations/index.js";
 import { ResourceType, Person } from "../../types/attio.js";
+import { isValidId, isValidListId } from "../../utils/validation.js";
 import {
   createPeopleByCompanyFilter,
   createPeopleByCompanyListFilter,
@@ -20,10 +21,8 @@ import { FilterValidationError } from "../../errors/api-errors.js";
  */
 export async function searchPeopleByCompany(companyId: string): Promise<Person[]> {
   try {
-    const api = getAttioClient();
-    const validationError = await api.validateObjectId(ResourceType.COMPANIES, companyId);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid company ID: ${validationError}`);
+    if (!isValidId(companyId)) {
+      throw new FilterValidationError(`Invalid company ID: ${companyId}`);
     }
 
     // Create a filter to find people by company ID
@@ -57,11 +56,9 @@ export async function searchPeopleByCompanyList(listIds: string[]): Promise<Pers
     }
 
     // Validate list IDs
-    const api = getAttioClient();
     for (const listId of listIds) {
-      const error = await api.validateListId(listId);
-      if (error) {
-        throw new FilterValidationError(`Invalid list ID '${listId}': ${error}`);
+      if (!isValidListId(listId)) {
+        throw new FilterValidationError(`Invalid list ID '${listId}'`);
       }
     }
 

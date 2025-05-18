@@ -36,10 +36,11 @@ import { PaginatedResponse, createPaginatedResponse } from "../../utils/paginati
  */
 export async function searchPeople(query: string): Promise<Person[]> {
   try {
-    const api = getAttioClient();
-    const validationError = api.validateQuery(query);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid search query: ${validationError}`);
+    if (!query || query.trim().length === 0) {
+      throw new FilterValidationError('Search query cannot be empty');
+    }
+    if (query.length > 1000) {
+      throw new FilterValidationError('Search query too long');
     }
 
     const response = await searchObject<Person>(
@@ -65,10 +66,11 @@ export async function searchPeople(query: string): Promise<Person[]> {
  */
 export async function searchPeopleByQuery(query: string): Promise<Person[]> {
   try {
-    const api = getAttioClient();
-    const validationError = api.validateQuery(query);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid search query: ${validationError}`);
+    if (!query || query.trim().length === 0) {
+      throw new FilterValidationError('Search query cannot be empty');
+    }
+    if (query.length > 1000) {
+      throw new FilterValidationError('Search query too long');
     }
 
     const response = await searchObject<Person>(
@@ -94,10 +96,12 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
  */
 export async function searchPeopleByEmail(email: string): Promise<Person[]> {
   try {
-    const api = getAttioClient();
-    const validationError = api.validateEmail(email);
-    if (validationError) {
-      throw new FilterValidationError(`Invalid email: ${validationError}`);
+    if (!email || email.trim().length === 0) {
+      throw new FilterValidationError('Email cannot be empty');
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new FilterValidationError(`Invalid email format: ${email}`);
     }
 
     const response = await searchObject<Person>(
