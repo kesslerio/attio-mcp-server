@@ -16,6 +16,14 @@ export const notesToolConfigs = {
   notes: {
     name: "get-company-notes",
     handler: getCompanyNotes,
+    formatResult: (notes: any) => {
+      if (!notes || notes.length === 0) {
+        return 'No notes found for this company.';
+      }
+      return `Found ${notes.length} notes:\n${notes.map((note: any) => 
+        `- ${note.title || 'Untitled'} (Created: ${note.timestamp || 'unknown'})\n  ${note.content ? note.content.substring(0, 100) + '...' : 'No content'}`
+      ).join('\n\n')}`;
+    }
   } as NotesToolConfig,
   
   createNote: {

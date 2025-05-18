@@ -17,7 +17,7 @@ export async function createObjectWithDynamicFields(objectType, attributes, vali
     // Use dynamic field type detection to format attributes correctly
     const transformedAttributes = await formatAllAttributes(objectType, validatedAttributes);
     // Create the object
-    return await createObjectRecord(objectType, transformedAttributes);
+    return await createObjectRecord(objectType, transformedAttributes, undefined);
 }
 /**
  * Updates an existing object record with dynamic field formatting

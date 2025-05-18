@@ -179,22 +179,25 @@ export async function executeToolRequest(request: CallToolRequest) {
     
     // Handle notes tools
     if (toolType === 'notes') {
-      const notesId = request.params.arguments?.notesId as string;
+      const directId = resourceType === ResourceType.COMPANIES 
+        ? request.params.arguments?.companyId as string 
+        : request.params.arguments?.personId as string;
       const uri = request.params.arguments?.uri as string;
       
-      if (!notesId && !uri) {
+      if (!directId && !uri) {
+        const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
         return createErrorResult(
-          new Error("Either notesId or uri parameter is required"),
+          new Error(`Either ${idParamName} or uri parameter is required`),
           `/${resourceType}/notes`,
           "GET",
           { status: 400, message: "Missing required parameter" }
         );
       }
       
+      let notesTargetId = directId;
+      let notesResourceType = resourceType;
+      
       try {
-        let notesTargetId = notesId;
-        let notesResourceType = resourceType;
-        
         if (uri) {
           try {
             const [uriType, uriId] = parseResourceUri(uri);
@@ -218,7 +221,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       } catch (error) {
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
-          uri || `/${resourceType}/${notesId}/notes`,
+          uri || `/${resourceType}/${notesTargetId}/notes`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
         );
@@ -227,7 +230,9 @@ export async function executeToolRequest(request: CallToolRequest) {
     
     // Handle createNote tools
     if (toolType === 'createNote') {
-      const notesId = request.params.arguments?.notesId as string;
+      const directId = resourceType === ResourceType.COMPANIES 
+        ? request.params.arguments?.companyId as string 
+        : request.params.arguments?.personId as string;
       const uri = request.params.arguments?.uri as string;
       const title = request.params.arguments?.title as string;
       const content = request.params.arguments?.content as string;
@@ -241,19 +246,20 @@ export async function executeToolRequest(request: CallToolRequest) {
         );
       }
       
-      if (!notesId && !uri) {
+      if (!directId && !uri) {
+        const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
         return createErrorResult(
-          new Error("Either notesId or uri parameter is required"),
+          new Error(`Either ${idParamName} or uri parameter is required`),
           `/${resourceType}/notes`,
           "POST",
           { status: 400, message: "Missing required parameter" }
         );
       }
       
+      let noteTargetId = directId;
+      let noteResourceType = resourceType;
+      
       try {
-        let noteTargetId = notesId;
-        let noteResourceType = resourceType;
-        
         if (uri) {
           try {
             const [uriType, uriId] = parseResourceUri(uri);
@@ -277,7 +283,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       } catch (error) {
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
-          uri || `/${resourceType}/${notesId}/notes`,
+          uri || `/${resourceType}/${noteTargetId}/notes`,
           "POST",
           hasResponseData(error) ? error.response.data : {}
         );

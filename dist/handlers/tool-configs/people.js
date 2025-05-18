@@ -37,6 +37,12 @@ export const peopleToolConfigs = {
     notes: {
         name: "get-person-notes",
         handler: getPersonNotes,
+        formatResult: (notes) => {
+            if (!notes || notes.length === 0) {
+                return 'No notes found for this person.';
+            }
+            return `Found ${notes.length} notes:\n${notes.map((note) => `- ${note.title || 'Untitled'} (Created: ${note.timestamp || 'unknown'})\n  ${note.content ? note.content.substring(0, 100) + '...' : 'No content'}`).join('\n\n')}`;
+        }
     },
     createNote: {
         name: "create-person-note",

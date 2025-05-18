@@ -102,14 +102,17 @@ export async function executeToolRequest(request) {
         }
         // Handle notes tools
         if (toolType === 'notes') {
-            const notesId = request.params.arguments?.notesId;
+            const directId = resourceType === ResourceType.COMPANIES
+                ? request.params.arguments?.companyId
+                : request.params.arguments?.personId;
             const uri = request.params.arguments?.uri;
-            if (!notesId && !uri) {
-                return createErrorResult(new Error("Either notesId or uri parameter is required"), `/${resourceType}/notes`, "GET", { status: 400, message: "Missing required parameter" });
+            if (!directId && !uri) {
+                const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+                return createErrorResult(new Error(`Either ${idParamName} or uri parameter is required`), `/${resourceType}/notes`, "GET", { status: 400, message: "Missing required parameter" });
             }
+            let notesTargetId = directId;
+            let notesResourceType = resourceType;
             try {
-                let notesTargetId = notesId;
-                let notesResourceType = resourceType;
                 if (uri) {
                     try {
                         const [uriType, uriId] = parseResourceUri(uri);
@@ -126,24 +129,27 @@ export async function executeToolRequest(request) {
                 return formatResponse(formattedResult);
             }
             catch (error) {
-                return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), uri || `/${resourceType}/${notesId}/notes`, "GET", hasResponseData(error) ? error.response.data : {});
+                return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), uri || `/${resourceType}/${notesTargetId}/notes`, "GET", hasResponseData(error) ? error.response.data : {});
             }
         }
         // Handle createNote tools
         if (toolType === 'createNote') {
-            const notesId = request.params.arguments?.notesId;
+            const directId = resourceType === ResourceType.COMPANIES
+                ? request.params.arguments?.companyId
+                : request.params.arguments?.personId;
             const uri = request.params.arguments?.uri;
             const title = request.params.arguments?.title;
             const content = request.params.arguments?.content;
             if (!title || !content) {
                 return createErrorResult(new Error("Both title and content are required"), `/${resourceType}/notes`, "POST", { status: 400, message: "Missing required parameters" });
             }
-            if (!notesId && !uri) {
-                return createErrorResult(new Error("Either notesId or uri parameter is required"), `/${resourceType}/notes`, "POST", { status: 400, message: "Missing required parameter" });
+            if (!directId && !uri) {
+                const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+                return createErrorResult(new Error(`Either ${idParamName} or uri parameter is required`), `/${resourceType}/notes`, "POST", { status: 400, message: "Missing required parameter" });
             }
+            let noteTargetId = directId;
+            let noteResourceType = resourceType;
             try {
-                let noteTargetId = notesId;
-                let noteResourceType = resourceType;
                 if (uri) {
                     try {
                         const [uriType, uriId] = parseResourceUri(uri);
@@ -160,7 +166,7 @@ export async function executeToolRequest(request) {
                 return formatResponse(formattedResult);
             }
             catch (error) {
-                return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), uri || `/${resourceType}/${notesId}/notes`, "POST", hasResponseData(error) ? error.response.data : {});
+                return createErrorResult(error instanceof Error ? error : new Error("Unknown error"), uri || `/${resourceType}/${noteTargetId}/notes`, "POST", hasResponseData(error) ? error.response.data : {});
             }
         }
         // Handle getLists tool
