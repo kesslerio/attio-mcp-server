@@ -132,4 +132,37 @@ describe('People-Company Search Tool Fix', () => {
     
     expect(result.content).toContain('Invalid companyFilter format');
   });
+
+  it('should handle multiple filters and use the first valid one', async () => {
+    // Mock searchPeopleByCompany function
+    (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
+
+    const request: CallToolRequest = {
+      method: 'tools/call',
+      params: {
+        name: 'search-people-by-company',
+        arguments: {
+          companyFilter: {
+            filters: [
+              {
+                attribute: { slug: 'companies.unrecognized' },
+                condition: 'equals',
+                value: 'some value'
+              },
+              {
+                attribute: { slug: 'companies.id' },
+                condition: 'equals',
+                value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' }
+              }
+            ]
+          }
+        }
+      }
+    };
+
+    const result = await executeToolRequest(request);
+    
+    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith('0c472146-9c7b-5fde-96cd-5df8e5cf9575');
+    expect(result.content).toContain('Found 2 people matching the company filter');
+  });
 });
