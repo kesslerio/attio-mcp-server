@@ -5,7 +5,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
 import { listCompanies, getCompanyDetails } from "../objects/companies/index.js";
-import { listPeople, getPersonDetails } from "../objects/people.js";
+import { listPeople, getPersonDetails } from "../objects/people/index.js";
 import { parseResourceUri, formatResourceUri } from "../utils/uri-parser.js";
 import { ResourceType, AttioRecord } from "../types/attio.js";
 

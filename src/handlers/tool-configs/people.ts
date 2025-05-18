@@ -23,7 +23,7 @@ import {
   searchPeopleByCompanyList,
   searchPeopleByNotes,
   advancedSearchPeople
-} from "../../objects/people.js";
+} from "../../objects/people/index.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
