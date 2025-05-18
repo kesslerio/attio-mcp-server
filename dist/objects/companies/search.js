@@ -5,10 +5,15 @@ import { getAttioClient } from "../../api/attio-client.js";
 import { searchObject, advancedSearchObject } from "../../api/operations/index.js";
 import { ResourceType, FilterConditionType } from "../../types/attio.js";
 /**
- * Searches for companies by name
+ * Searches for companies by name using a simple text search
  *
- * @param query - Search query string
- * @returns Array of company results
+ * @param query - Search query string to match against company names
+ * @returns Array of matching company objects
+ * @example
+ * ```typescript
+ * const companies = await searchCompanies("acme");
+ * // Returns all companies with names containing "acme"
+ * ```
  */
 export async function searchCompanies(query) {
     // Use the unified operation if available, with fallback to direct implementation

@@ -1,9 +1,6 @@
-/**
- * Relationship queries for People
- */
-import { getAttioClient } from "../../api/attio-client.js";
 import { advancedSearchObject } from "../../api/operations/index.js";
 import { ResourceType } from "../../types/attio.js";
+import { isValidId, isValidListId } from "../../utils/validation.js";
 import { createPeopleByCompanyFilter, createPeopleByCompanyListFilter, createRecordsByNotesFilter } from "../../utils/relationship-utils.js";
 import { createEqualsFilter } from "../../utils/filters/index.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
@@ -15,10 +12,8 @@ import { FilterValidationError } from "../../errors/api-errors.js";
  */
 export async function searchPeopleByCompany(companyId) {
     try {
-        const api = getAttioClient();
-        const validationError = await api.validateObjectId(ResourceType.COMPANIES, companyId);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid company ID: ${validationError}`);
+        if (!isValidId(companyId)) {
+            throw new FilterValidationError(`Invalid company ID: ${companyId}`);
         }
         // Create a filter to find people by company ID
         const companyFilter = createEqualsFilter('id', { record_id: companyId });
@@ -46,11 +41,9 @@ export async function searchPeopleByCompanyList(listIds) {
             throw new FilterValidationError('Must provide at least one list ID');
         }
         // Validate list IDs
-        const api = getAttioClient();
         for (const listId of listIds) {
-            const error = await api.validateListId(listId);
-            if (error) {
-                throw new FilterValidationError(`Invalid list ID '${listId}': ${error}`);
+            if (!isValidListId(listId)) {
+                throw new FilterValidationError(`Invalid list ID '${listId}'`);
             }
         }
         // Handle multiple lists by combining filters

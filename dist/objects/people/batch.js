@@ -1,10 +1,7 @@
-/**
- * Batch operations for People
- */
-import { getAttioClient } from "../../api/attio-client.js";
 import { batchSearchObjects, batchGetObjectDetails } from "../../api/operations/index.js";
 import { ResourceType } from "../../types/attio.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
+import { isValidId } from "../../utils/validation.js";
 /**
  * Performs batch search operations on people
  * Searches for multiple people using different queries
@@ -19,11 +16,12 @@ export async function batchSearchPeople(queries, config) {
         if (!Array.isArray(queries) || queries.length === 0) {
             throw new FilterValidationError('Must provide at least one search query');
         }
-        const api = getAttioClient();
         for (const query of queries) {
-            const error = api.validateQuery(query);
-            if (error) {
-                throw new FilterValidationError(`Invalid query '${query}': ${error}`);
+            if (!query || query.trim().length === 0) {
+                throw new FilterValidationError(`Invalid query: cannot be empty`);
+            }
+            if (query.length > 1000) {
+                throw new FilterValidationError(`Invalid query '${query}': too long`);
             }
         }
         return await batchSearchObjects(ResourceType.PEOPLE, queries, config);
@@ -50,11 +48,9 @@ export async function batchGetPeopleDetails(personIds, config) {
         if (!Array.isArray(personIds) || personIds.length === 0) {
             throw new FilterValidationError('Must provide at least one person ID');
         }
-        const api = getAttioClient();
         for (const personId of personIds) {
-            const error = await api.validateObjectId(ResourceType.PEOPLE, personId);
-            if (error) {
-                throw new FilterValidationError(`Invalid person ID '${personId}': ${error}`);
+            if (!isValidId(personId)) {
+                throw new FilterValidationError(`Invalid person ID '${personId}'`);
             }
         }
         return await batchGetObjectDetails(ResourceType.PEOPLE, personIds, config);
