@@ -27,11 +27,11 @@ export const notesToolDefinitions = [
             properties: {
                 companyId: {
                     type: "string",
-                    description: "ID of the company to get notes for"
+                    description: "ID of the company to get notes for (provide either this or uri)"
                 },
                 uri: {
                     type: "string",
-                    description: "URI of the company in the format 'attio://companies/{id}'"
+                    description: "URI of the company in the format 'attio://companies/{id}' (provide either this or companyId)"
                 },
                 limit: {
                     type: "number",
@@ -41,11 +41,7 @@ export const notesToolDefinitions = [
                     type: "number",
                     description: "Number of notes to skip for pagination (default: 0)"
                 }
-            },
-            oneOf: [
-                { required: ["companyId"] },
-                { required: ["uri"] }
-            ]
+            }
         }
     },
     {
@@ -56,11 +52,11 @@ export const notesToolDefinitions = [
             properties: {
                 companyId: {
                     type: "string",
-                    description: "ID of the company to create a note for"
+                    description: "ID of the company to create a note for (provide either this or uri)"
                 },
                 uri: {
                     type: "string",
-                    description: "URI of the company in the format 'attio://companies/{id}'"
+                    description: "URI of the company in the format 'attio://companies/{id}' (provide either this or companyId)"
                 },
                 title: {
                     type: "string",
@@ -71,11 +67,7 @@ export const notesToolDefinitions = [
                     description: "Content of the note"
                 }
             },
-            required: ["content"],
-            oneOf: [
-                { required: ["companyId"] },
-                { required: ["uri"] }
-            ]
+            required: ["content"]
         }
     }
 ];

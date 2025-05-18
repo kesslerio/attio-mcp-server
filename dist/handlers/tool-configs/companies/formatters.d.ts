@@ -22,9 +22,6 @@ export declare const formatterToolDefinitions: ({
                 description: string;
             };
         };
-        oneOf: {
-            required: string[];
-        }[];
         required?: undefined;
     };
 } | {
@@ -40,7 +37,6 @@ export declare const formatterToolDefinitions: ({
             uri?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 })[];
 //# sourceMappingURL=formatters.d.ts.map

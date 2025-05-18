@@ -28,9 +28,6 @@ export declare const notesToolDefinitions: ({
             title?: undefined;
             content?: undefined;
         };
-        oneOf: {
-            required: string[];
-        }[];
         required?: undefined;
     };
 } | {
@@ -59,9 +56,6 @@ export declare const notesToolDefinitions: ({
             offset?: undefined;
         };
         required: string[];
-        oneOf: {
-            required: string[];
-        }[];
     };
 })[];
 //# sourceMappingURL=notes.d.ts.map

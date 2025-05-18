@@ -324,9 +324,6 @@ export declare const companyToolDefinitions: ({
             offset?: undefined;
         };
         required: string[];
-        oneOf: {
-            required: string[];
-        }[];
     };
 } | {
     name: string;
@@ -582,9 +579,6 @@ export declare const companyToolDefinitions: ({
                 description: string;
             };
         };
-        oneOf: {
-            required: string[];
-        }[];
         required?: undefined;
     };
 } | {
@@ -600,7 +594,6 @@ export declare const companyToolDefinitions: ({
             uri?: undefined;
         };
         required: string[];
-        oneOf?: undefined;
     };
 })[];
 export { searchToolConfigs, searchToolDefinitions, crudToolConfigs, crudToolDefinitions, attributeToolConfigs, attributeToolDefinitions, notesToolConfigs, notesToolDefinitions, relationshipToolConfigs, relationshipToolDefinitions, batchToolConfigs, batchToolDefinitions, formatterConfigs, formatterToolDefinitions };

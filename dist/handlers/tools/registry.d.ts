@@ -343,9 +343,6 @@ export declare const TOOL_DEFINITIONS: {
                 offset?: undefined;
             };
             required: string[];
-            oneOf: {
-                required: string[];
-            }[];
         };
     } | {
         name: string;
@@ -601,9 +598,6 @@ export declare const TOOL_DEFINITIONS: {
                     description: string;
                 };
             };
-            oneOf: {
-                required: string[];
-            }[];
             required?: undefined;
         };
     } | {
@@ -619,7 +613,6 @@ export declare const TOOL_DEFINITIONS: {
                 uri?: undefined;
             };
             required: string[];
-            oneOf?: undefined;
         };
     })[];
     people: ({
