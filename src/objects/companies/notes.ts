@@ -116,9 +116,15 @@ export async function getCompanyNotes(companyIdOrUri: string, limit: number = 10
  * Creates a note for a specific company
  * 
  * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
- * @param title - The title of the note
- * @param content - The content of the note
- * @returns The created note
+ * @param title - The title of the note (will be prefixed with "[AI]")
+ * @param content - The text content of the note
+ * @returns The created note object
+ * @throws Error if company ID cannot be parsed or note creation fails
+ * @example
+ * ```typescript
+ * const note = await createCompanyNote("comp_123", "Meeting Notes", 
+ *   "Discussed Q4 strategy with the team...");
+ * ```
  */
 export async function createCompanyNote(companyIdOrUri: string, title: string, content: string): Promise<AttioNote> {
   let companyId: string;
