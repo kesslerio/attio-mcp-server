@@ -1,7 +1,3 @@
-/**
- * Search functionality for People
- */
-import { getAttioClient } from "../../api/attio-client.js";
 import { searchObject, advancedSearchObject } from "../../api/operations/index.js";
 import { ResourceType } from "../../types/attio.js";
 import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../../utils/filters/index.js";
@@ -16,10 +12,11 @@ import { createPaginatedResponse } from "../../utils/pagination.js";
  */
 export async function searchPeople(query) {
     try {
-        const api = getAttioClient();
-        const validationError = api.validateQuery(query);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid search query: ${validationError}`);
+        if (!query || query.trim().length === 0) {
+            throw new FilterValidationError('Search query cannot be empty');
+        }
+        if (query.length > 1000) {
+            throw new FilterValidationError('Search query too long');
         }
         const response = await searchObject(ResourceType.PEOPLE, query);
         return response;
@@ -40,10 +37,11 @@ export async function searchPeople(query) {
  */
 export async function searchPeopleByQuery(query) {
     try {
-        const api = getAttioClient();
-        const validationError = api.validateQuery(query);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid search query: ${validationError}`);
+        if (!query || query.trim().length === 0) {
+            throw new FilterValidationError('Search query cannot be empty');
+        }
+        if (query.length > 1000) {
+            throw new FilterValidationError('Search query too long');
         }
         const response = await searchObject(ResourceType.PEOPLE, query);
         return response;
@@ -64,10 +62,12 @@ export async function searchPeopleByQuery(query) {
  */
 export async function searchPeopleByEmail(email) {
     try {
-        const api = getAttioClient();
-        const validationError = api.validateEmail(email);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid email: ${validationError}`);
+        if (!email || email.trim().length === 0) {
+            throw new FilterValidationError('Email cannot be empty');
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            throw new FilterValidationError(`Invalid email format: ${email}`);
         }
         const response = await searchObject(ResourceType.PEOPLE, email);
         return response;

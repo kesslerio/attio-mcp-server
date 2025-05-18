@@ -152,12 +152,20 @@ export async function getCompanyDetails(companyIdOrUri) {
     }
 }
 /**
- * Creates a new company
+ * Creates a new company with the specified attributes
  *
- * @param attributes - Company attributes
- * @returns Created company record
+ * @param attributes - Company attributes to set
+ * @returns The created company object
  * @throws InvalidCompanyDataError if validation fails
  * @throws CompanyOperationError if creation fails
+ * @example
+ * ```typescript
+ * const company = await createCompany({
+ *   name: "Acme Corp",
+ *   website: "https://acme.com",
+ *   industry: "Technology"
+ * });
+ * ```
  */
 export async function createCompany(attributes) {
     try {
@@ -171,13 +179,20 @@ export async function createCompany(attributes) {
     }
 }
 /**
- * Updates an existing company
+ * Updates an existing company with new attributes
  *
  * @param companyId - ID of the company to update
- * @param attributes - Company attributes to update
- * @returns Updated company record
+ * @param attributes - Company attributes to update (partial update supported)
+ * @returns The updated company object
  * @throws InvalidCompanyDataError if validation fails
  * @throws CompanyOperationError if update fails
+ * @example
+ * ```typescript
+ * const updated = await updateCompany("comp_123", {
+ *   industry: "Healthcare",
+ *   employee_range: "100-500"
+ * });
+ * ```
  */
 export async function updateCompany(companyId, attributes) {
     try {
@@ -214,12 +229,19 @@ export async function updateCompanyAttribute(companyId, attributeName, attribute
     }
 }
 /**
- * Deletes a company
+ * Deletes a company permanently from the system
  *
  * @param companyId - ID of the company to delete
  * @returns True if deletion was successful
  * @throws InvalidCompanyDataError if validation fails
  * @throws CompanyOperationError if deletion fails
+ * @example
+ * ```typescript
+ * const success = await deleteCompany("comp_123");
+ * if (success) {
+ *   console.log("Company deleted successfully");
+ * }
+ * ```
  */
 export async function deleteCompany(companyId) {
     try {

@@ -3,7 +3,7 @@
  */
 import { ResourceType } from "../../types/attio.js";
 // Import consolidated tool configurations from modular files
-import { companyToolConfigs, companyToolDefinitions } from "../tool-configs/companies.js";
+import { companyToolConfigs, companyToolDefinitions } from "../tool-configs/companies/index.js";
 import { peopleToolConfigs, peopleToolDefinitions } from "../tool-configs/people.js";
 import { listsToolConfigs, listsToolDefinitions } from "../tool-configs/lists.js";
 import { recordToolConfigs, recordToolDefinitions } from "../tool-configs/records.js";

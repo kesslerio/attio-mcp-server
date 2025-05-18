@@ -1,10 +1,7 @@
-/**
- * Note operations for People
- */
-import { getAttioClient } from "../../api/attio-client.js";
 import { getObjectNotes, createObjectNote } from "../../api/operations/index.js";
 import { ResourceType } from "../../types/attio.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
+import { isValidId } from "../../utils/validation.js";
 /**
  * Gets notes for a specific person
  *
@@ -15,10 +12,8 @@ import { FilterValidationError } from "../../errors/api-errors.js";
  */
 export async function getPersonNotes(personId, limit = 10, offset = 0) {
     try {
-        const api = getAttioClient();
-        const validationError = await api.validateObjectId(ResourceType.PEOPLE, personId);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid person ID: ${validationError}`);
+        if (!isValidId(personId)) {
+            throw new FilterValidationError(`Invalid person ID: ${personId}`);
         }
         return await getObjectNotes(ResourceType.PEOPLE, personId, limit, offset);
     }
@@ -40,10 +35,8 @@ export async function getPersonNotes(personId, limit = 10, offset = 0) {
  */
 export async function createPersonNote(personId, title, content) {
     try {
-        const api = getAttioClient();
-        const validationError = await api.validateObjectId(ResourceType.PEOPLE, personId);
-        if (validationError) {
-            throw new FilterValidationError(`Invalid person ID: ${validationError}`);
+        if (!isValidId(personId)) {
+            throw new FilterValidationError(`Invalid person ID: ${personId}`);
         }
         if (!title || title.trim().length === 0) {
             throw new FilterValidationError('Note title cannot be empty');
