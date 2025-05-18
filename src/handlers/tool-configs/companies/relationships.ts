@@ -6,7 +6,7 @@ import {
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
   searchCompaniesByNotes
-} from "../../../objects/companies.js";
+} from "../../../objects/companies/index.js";
 import { ToolConfig } from "../../tool-types.js";
 
 // Company relationship tool configurations

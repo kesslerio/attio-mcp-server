@@ -2,12 +2,12 @@
  * People-related functionality
  */
 import { getAttioClient } from "../api/attio-client.js";
-import { listObjects, getObjectDetails, getObjectNotes, createObjectNote, batchSearchObjects, batchGetObjectDetails } from "../api/attio-operations.js";
+import { listObjects, getObjectDetails, getObjectNotes, createObjectNote, batchSearchObjects, batchGetObjectDetails } from "../api/operations/index.js";
 import { ResourceType, InteractionType } from "../types/attio.js";
-import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../utils/filter-utils.js";
+import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../utils/filters/index.js";
 import { createPeopleByCompanyFilter, createPeopleByCompanyListFilter, createRecordsByNotesFilter } from "../utils/relationship-utils.js";
 import { FilterValidationError } from "../errors/api-errors.js";
-import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filter-validation.js";
+import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filters/index.js";
 /**
  * Searches for people by name, email, or phone number
  *

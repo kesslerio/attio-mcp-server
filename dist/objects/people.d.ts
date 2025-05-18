@@ -1,4 +1,4 @@
-import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/attio-operations.js";
+import { BatchConfig, BatchResponse, ListEntryFilters } from "../api/operations/index.js";
 import { Person, AttioNote, DateRange, InteractionType, ActivityFilter } from "../types/attio.js";
 import { PaginatedResponse } from "../utils/pagination.js";
 /**

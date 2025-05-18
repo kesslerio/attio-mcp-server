@@ -5,7 +5,7 @@ import { CompanyRecord } from "./types.js";
 import { 
   searchCompanies,
   advancedSearchCompanies
-} from "../../../objects/companies.js";
+} from "../../../objects/companies/index.js";
 import { 
   SearchToolConfig, 
   AdvancedSearchToolConfig
