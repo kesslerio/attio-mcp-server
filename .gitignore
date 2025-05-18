@@ -12,3 +12,6 @@ node_modules/
 
 # PID files
 .health_server.pid
+
+# Build output
+dist/

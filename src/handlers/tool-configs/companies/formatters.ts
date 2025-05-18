@@ -234,17 +234,13 @@ export const formatterToolDefinitions = [
       properties: {
         companyId: {
           type: "string",
-          description: "ID of the company to get details for"
+          description: "ID of the company to get details for (provide either this or uri)"
         },
         uri: {
           type: "string",
-          description: "URI of the company in the format 'attio://companies/{id}'"
+          description: "URI of the company in the format 'attio://companies/{id}' (provide either this or companyId)"
         }
-      },
-      oneOf: [
-        { required: ["companyId"] },
-        { required: ["uri"] }
-      ]
+      }
     }
   },
   {

@@ -88,16 +88,14 @@ export async function paginatedSearchPeopleByCreationDate(
     const results = await searchPeopleByCreationDate(validatedDateRange);
     
     // Apply pagination to the results
-    const { paginatedResults, totalCount } = getPaginationParams(
-      results,
-      validPage,
-      validPageSize
-    );
+    const startIndex = (validPage - 1) * validPageSize;
+    const endIndex = startIndex + validPageSize;
+    const paginatedResults = results.slice(startIndex, endIndex);
     
     // Return paginated response
     return createPaginatedResponse(
       paginatedResults,
-      totalCount,
+      results.length,
       validPage,
       validPageSize
     );
@@ -132,15 +130,13 @@ export async function paginatedSearchPeopleByModificationDate(
     const results = await searchPeopleByModificationDate(validatedDateRange);
     
     // Apply pagination to the results
-    const { paginatedResults, totalCount } = getPaginationParams(
-      results,
-      validPage,
-      validPageSize
-    );
+    const startIndex = (validPage - 1) * validPageSize;
+    const endIndex = startIndex + validPageSize;
+    const paginatedResults = results.slice(startIndex, endIndex);
     
     return createPaginatedResponse(
       paginatedResults,
-      totalCount,
+      results.length,
       validPage,
       validPageSize
     );
@@ -198,15 +194,13 @@ export async function paginatedSearchPeopleByLastInteraction(
     );
     
     // Apply pagination to the results
-    const { paginatedResults, totalCount } = getPaginationParams(
-      results,
-      validPage,
-      validPageSize
-    );
+    const startIndex = (validPage - 1) * validPageSize;
+    const endIndex = startIndex + validPageSize;
+    const paginatedResults = results.slice(startIndex, endIndex);
     
     return createPaginatedResponse(
       paginatedResults,
-      totalCount,
+      results.length,
       validPage,
       validPageSize
     );
@@ -241,15 +235,13 @@ export async function paginatedSearchPeopleByActivity(
     const results = await searchPeopleByActivity(validatedActivityFilter);
     
     // Apply pagination to the results
-    const { paginatedResults, totalCount } = getPaginationParams(
-      results,
-      validPage,
-      validPageSize
-    );
+    const startIndex = (validPage - 1) * validPageSize;
+    const endIndex = startIndex + validPageSize;
+    const paginatedResults = results.slice(startIndex, endIndex);
     
     return createPaginatedResponse(
       paginatedResults,
-      totalCount,
+      results.length,
       validPage,
       validPageSize
     );
