@@ -1,11 +1,11 @@
 /**
  * Test the complete API call flow to find where untranslated filter is used
  */
-import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
-import { advancedSearchObject } from './dist/api/attio-operations.js';
-import { ResourceType, FilterConditionType } from './dist/types/attio.js';
-import { getAttioClient } from './dist/api/attio-client.js';
-import { transformFiltersToApiFormat } from './dist/utils/filter-utils.js';
+const { translateAttributeNamesInFilters } = require('./dist/utils/attribute-mapping/index.js');
+const { advancedSearchObject } = require('./dist/api/attio-operations.js');
+const { ResourceType, FilterConditionType } = require('./dist/types/attio.js');
+const { getAttioClient } = require('./dist/api/attio-client.js');
+const { transformFiltersToApiFormat } = require('./dist/utils/filter-utils.js');
 
 // Create a proxy to intercept the actual HTTP calls
 const originalFetch = globalThis.fetch;
@@ -109,7 +109,14 @@ async function testCompleteFlow() {
     
   } catch (error) {
     console.error('Test error:', error);
+    console.error('Stack trace:', error.stack);
+    process.exit(1);
   }
 }
 
-testCompleteFlow();
+// Run the test with proper error handling
+testCompleteFlow().catch(error => {
+  console.error('Fatal error:', error);
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});

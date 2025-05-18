@@ -33,6 +33,12 @@ CODE STYLE/STRUCTURE
   * Use Jest for TypeScript tests (*.test.ts)
   * Manual test scripts should be named with `-test.js` suffix
   * Test files should mirror the structure of the source code they test
+- Integration Tests:
+  * Set up API key: export ATTIO_API_KEY=your_key_here
+  * Run integration tests: npm test -- integration/real-api-integration.test.ts
+  * Tests use real API calls with 30s timeout
+  * Tests clean up test data automatically
+  * Skip tests if no API key: SKIP_INTEGRATION_TESTS=true
 
 GITHUB WORKFLOW
 
