@@ -24,6 +24,7 @@ import {
   searchPeopleByNotes,
   advancedSearchPeople
 } from "../../objects/people/index.js";
+import { searchCompanies } from "../../objects/companies/index.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
@@ -130,7 +131,38 @@ export const peopleToolConfigs = {
   // Relationship-based filtering tools
   searchByCompany: {
     name: "search-people-by-company",
-    handler: searchPeopleByCompany,
+    handler: async (args: any) => {
+      // Extract companyFilter from arguments
+      const { companyFilter } = args;
+      
+      // If the filter has filters array with a company ID, extract it
+      if (companyFilter?.filters?.length > 0) {
+        const filter = companyFilter.filters[0];
+        
+        // Check if this is a filter by company ID
+        if (filter.attribute?.slug === 'companies.id' && filter.value?.record_id) {
+          // Call searchPeopleByCompany with just the company ID
+          return searchPeopleByCompany(filter.value.record_id);
+        }
+        
+        // Check if this is a filter by company name
+        if (filter.attribute?.slug === 'companies.name' && filter.value) {
+          // First search for the company by name
+          const companies = await searchCompanies(filter.value);
+          if (companies.length > 0) {
+            // Use the first matching company's ID
+            const companyId = companies[0].id?.record_id;
+            if (companyId) {
+              return searchPeopleByCompany(companyId);
+            }
+          }
+          throw new Error(`No company found with name: ${filter.value}`);
+        }
+      }
+      
+      // If no valid filter is found, throw error
+      throw new Error('Invalid companyFilter format. Expected filter by companies.id or companies.name');
+    },
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people matching the company filter:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
