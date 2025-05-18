@@ -24,6 +24,7 @@ import {
   searchPeopleByNotes,
   advancedSearchPeople
 } from "../../objects/people/index.js";
+import { searchCompanies } from "../../objects/companies/index.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
