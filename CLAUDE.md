@@ -40,6 +40,13 @@ CODE STYLE/STRUCTURE
   * Tests clean up test data automatically
   * Skip tests if no API key: SKIP_INTEGRATION_TESTS=true
 
+MCP TOOL SCHEMA GUIDELINES
+- NEVER use oneOf, allOf, or anyOf at the top level of tool input schemas
+- The MCP protocol does NOT support these JSON Schema features at the root level
+- Using them will cause connection errors: "input_schema does not support oneOf, allOf, or anyOf at the top level"
+- See docs/mcp-schema-guidelines.md for detailed guidelines and examples
+- Handle either/or parameter validation in runtime code, not in schemas
+
 GITHUB WORKFLOW
 
 ⚠️ CRITICAL: PR TARGETING

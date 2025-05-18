@@ -2,6 +2,14 @@
 
 This guide describes how to extend the Attio MCP server to handle additional object types like People and Lists, beyond the currently implemented Companies functionality.
 
+## ⚠️ Important Schema Restrictions
+
+Before creating any new tools, be aware that the MCP protocol has specific schema limitations:
+
+- **NO `oneOf`, `allOf`, or `anyOf` at the top level** of tool input schemas
+- These JSON Schema features will cause MCP connection errors
+- See the [MCP Schema Guidelines](./mcp-schema-guidelines.md) for detailed information
+
 ## Current Architecture
 
 The current Attio MCP server has the following capabilities:
