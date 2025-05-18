@@ -25,7 +25,7 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
   const transformedAttributes = await formatAllAttributes(objectType, validatedAttributes);
   
   // Create the object
-  return await createObjectRecord<T>(objectType, transformedAttributes, undefined);
+  return await createObjectRecord<T>(objectType, transformedAttributes);
 }
 
 /**
