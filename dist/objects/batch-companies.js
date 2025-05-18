@@ -3,7 +3,7 @@
  */
 import { ResourceType } from '../types/attio.js';
 import { executeBatchOperations, batchCreateRecords, batchUpdateRecords } from '../api/operations/index.js';
-import { createCompany, updateCompany, deleteCompany, searchCompanies, getCompanyDetails } from './companies/index.js';
+import { createCompany, updateCompany, deleteCompany, searchCompanies, getCompanyDetails } from './companies.js';
 import { CompanyValidator } from '../validators/company-validator.js';
 /**
  * Creates multiple company records in batch

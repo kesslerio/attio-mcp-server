@@ -1,7 +1,7 @@
 /**
  * Enhanced people search functions with pagination support
  */
-import { searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, advancedSearchPeople } from "./people.js";
+import { searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, advancedSearchPeople } from "./people/index.js";
 import { InteractionType } from "../types/attio.js";
 import { createPaginatedResponse } from "../utils/pagination.js";
 import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filters/index.js";
