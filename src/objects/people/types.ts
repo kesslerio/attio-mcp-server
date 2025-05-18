@@ -2,6 +2,29 @@
  * Shared types for people module
  */
 
+/**
+ * Interface for attributes when creating or updating a person
+ */
+export interface PersonAttributes {
+  /** Person's full name */
+  name?: string;
+  
+  /** Email addresses (array of strings) */
+  email_addresses?: string[];
+  
+  /** Phone numbers (array of strings) */
+  phone_numbers?: string[];
+  
+  /** Job title */
+  job_title?: string;
+  
+  /** Associated company ID */
+  company?: { record_id: string };
+  
+  /** Custom attributes */
+  [key: string]: any;
+}
+
 // Error classes for people operations
 export class PersonOperationError extends Error {
   constructor(
@@ -23,7 +46,7 @@ export class InvalidPersonDataError extends Error {
 
 // Validator for person data
 export class PersonValidator {
-  static async validateCreate(attributes: any): Promise<any> {
+  static async validateCreate(attributes: PersonAttributes): Promise<PersonAttributes> {
     // Basic validation - ensure we have at least an email or name
     if (!attributes.email_addresses && !attributes.name) {
       throw new InvalidPersonDataError('Must provide at least an email address or name');
@@ -37,7 +60,7 @@ export class PersonValidator {
     return attributes;
   }
   
-  static async validateUpdate(personId: string, attributes: any): Promise<any> {
+  static async validateUpdate(personId: string, attributes: PersonAttributes): Promise<PersonAttributes> {
     if (!personId || typeof personId !== 'string') {
       throw new InvalidPersonDataError('Person ID must be a non-empty string');
     }
