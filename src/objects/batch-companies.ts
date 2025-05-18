@@ -19,7 +19,7 @@ import {
   deleteCompany,
   searchCompanies,
   getCompanyDetails
-} from './companies.js';
+} from './companies/index.js';
 import { CompanyValidator } from '../validators/company-validator.js';
 
 /**

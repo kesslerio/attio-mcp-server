@@ -1,5 +1,5 @@
 import { DateRange, InteractionType, ActivityFilter, Person } from "../types/attio.js";
-import { ListEntryFilters } from "../api/attio-operations.js";
+import { ListEntryFilters } from "../api/operations/index.js";
 import { PaginatedResponse } from "../utils/pagination.js";
 /**
  * Advanced search for people with built-in pagination
