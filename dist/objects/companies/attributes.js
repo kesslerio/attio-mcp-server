@@ -130,11 +130,19 @@ export async function getCompanySocialInfo(companyIdOrUri) {
     return getCompanyFields(companyIdOrUri, socialFields);
 }
 /**
- * Gets custom fields for a company
+ * Gets custom fields for a company, filtering out standard fields
  *
  * @param companyIdOrUri - The ID of the company or its URI
  * @param customFieldNames - Optional array of specific custom field names to retrieve
- * @returns Company with custom fields
+ * @returns Company object with only custom fields populated
+ * @example
+ * ```typescript
+ * // Get all custom fields
+ * const custom = await getCompanyCustomFields("comp_123");
+ *
+ * // Get specific custom fields
+ * const selected = await getCompanyCustomFields("comp_123", ["contract_value", "lead_source"]);
+ * ```
  */
 export async function getCompanyCustomFields(companyIdOrUri, customFieldNames) {
     // If specific custom fields are requested, fetch only those

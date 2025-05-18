@@ -7,7 +7,7 @@ import {
   getListSlug,
   translateAttributeNamesInFilters,
   COMMON_ATTRIBUTE_MAP
-} from '../../src/utils/attribute-mapping';
+} from '../../src/utils/attribute-mapping/index';
 import * as configLoader from '../../src/utils/config-loader';
 
 // Mock the config-loader

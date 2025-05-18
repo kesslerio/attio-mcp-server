@@ -3,7 +3,7 @@
  */
 import { searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, advancedSearchPeople } from "./people/index.js";
 import { InteractionType } from "../types/attio.js";
-import { createPaginatedResponse } from "../utils/pagination.js";
+import { createPaginatedResponse, getPaginationParams } from "../utils/pagination.js";
 import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filters/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 /**
@@ -22,16 +22,13 @@ export async function paginatedSearchPeople(filters, page = 1, pageSize = 20) {
         // Calculate offset from page and page size
         const offset = (validPage - 1) * validPageSize;
         // Perform the search
-        const results = await advancedSearchPeople(filters, validPageSize, offset);
-        // In a real implementation, we would get totalCount from the API
-        // For now, we'll estimate it based on results and current page
-        const resultArray = Array.isArray(results) ? results : [];
-        const hasMore = resultArray.length === validPageSize;
-        const totalCount = hasMore
-            ? validPage * validPageSize + validPageSize // Estimate more records
-            : ((validPage - 1) * validPageSize) + resultArray.length; // Current count
-        // Return paginated response
-        return createPaginatedResponse(resultArray, totalCount, validPage, validPageSize);
+        const results = await advancedSearchPeople(filters, {
+            limit: validPageSize,
+            offset
+        });
+        // advancedSearchPeople now returns a PaginatedResponse
+        // So we can use its data directly
+        return results;
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -54,19 +51,12 @@ export async function paginatedSearchPeopleByCreationDate(dateRange, page = 1, p
         const validatedDateRange = validateDateRange(dateRange);
         const validPage = validateNumericParam(page, 'page', 1);
         const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-        // Calculate offset from page and page size
-        const offset = (validPage - 1) * validPageSize;
         // Perform the search
-        const results = await searchPeopleByCreationDate(validatedDateRange, validPageSize, offset);
-        // In a real implementation, we would get totalCount from the API
-        // For now, we'll estimate it based on results and current page
-        const resultArray = Array.isArray(results) ? results : [];
-        const hasMore = resultArray.length === validPageSize;
-        const totalCount = hasMore
-            ? validPage * validPageSize + validPageSize // Estimate more records
-            : ((validPage - 1) * validPageSize) + resultArray.length; // Current count
+        const results = await searchPeopleByCreationDate(validatedDateRange);
+        // Apply pagination to the results
+        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
         // Return paginated response
-        return createPaginatedResponse(resultArray, totalCount, validPage, validPageSize);
+        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -89,16 +79,11 @@ export async function paginatedSearchPeopleByModificationDate(dateRange, page = 
         const validatedDateRange = validateDateRange(dateRange);
         const validPage = validateNumericParam(page, 'page', 1);
         const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-        // Calculate offset from page and page size
-        const offset = (validPage - 1) * validPageSize;
         // Perform the search
-        const results = await searchPeopleByModificationDate(validatedDateRange, validPageSize, offset);
-        // Create paginated response
-        const hasMore = results.length === validPageSize;
-        const totalCount = hasMore
-            ? validPage * validPageSize + validPageSize
-            : ((validPage - 1) * validPageSize) + results.length;
-        return createPaginatedResponse(results, totalCount, validPage, validPageSize);
+        const results = await searchPeopleByModificationDate(validatedDateRange);
+        // Apply pagination to the results
+        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
+        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -135,16 +120,11 @@ export async function paginatedSearchPeopleByLastInteraction(dateRange, interact
             }
             validatedInteractionType = typeString;
         }
-        // Calculate offset from page and page size
-        const offset = (validPage - 1) * validPageSize;
         // Perform the search
-        const results = await searchPeopleByLastInteraction(validatedDateRange, validatedInteractionType, validPageSize, offset);
-        // Create paginated response
-        const hasMore = results.length === validPageSize;
-        const totalCount = hasMore
-            ? validPage * validPageSize + validPageSize
-            : ((validPage - 1) * validPageSize) + results.length;
-        return createPaginatedResponse(results, totalCount, validPage, validPageSize);
+        const results = await searchPeopleByLastInteraction(validatedDateRange, validatedInteractionType);
+        // Apply pagination to the results
+        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
+        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -167,16 +147,11 @@ export async function paginatedSearchPeopleByActivity(activityFilter, page = 1, 
         const validatedActivityFilter = validateActivityFilter(activityFilter);
         const validPage = validateNumericParam(page, 'page', 1);
         const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-        // Calculate offset from page and page size
-        const offset = (validPage - 1) * validPageSize;
         // Perform the search
-        const results = await searchPeopleByActivity(validatedActivityFilter, validPageSize, offset);
-        // Create paginated response
-        const hasMore = results.length === validPageSize;
-        const totalCount = hasMore
-            ? validPage * validPageSize + validPageSize
-            : ((validPage - 1) * validPageSize) + results.length;
-        return createPaginatedResponse(results, totalCount, validPage, validPageSize);
+        const results = await searchPeopleByActivity(validatedActivityFilter);
+        // Apply pagination to the results
+        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
+        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
