@@ -62,11 +62,12 @@ export const peopleToolConfigs = {
   advancedSearch: {
     name: "advanced-search-people",
     handler: advancedSearchPeople,
-    formatResult: (results: AttioRecord[]) => {
+    formatResult: (response: any) => {
+      const results = response.results || response;
       return `Found ${results.length} people with specified filters:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig,
+  } as any,
   details: {
     name: "get-person-details",
     handler: getPersonDetails,
@@ -74,6 +75,14 @@ export const peopleToolConfigs = {
   notes: {
     name: "get-person-notes",
     handler: getPersonNotes,
+    formatResult: (notes: any) => {
+      if (!notes || notes.length === 0) {
+        return 'No notes found for this person.';
+      }
+      return `Found ${notes.length} notes:\n${notes.map((note: any) => 
+        `- ${note.title || 'Untitled'} (Created: ${note.timestamp || 'unknown'})\n  ${note.content ? note.content.substring(0, 100) + '...' : 'No content'}`
+      ).join('\n\n')}`;
+    }
   } as NotesToolConfig,
   createNote: {
     name: "create-person-note",
@@ -126,7 +135,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people matching the company filter:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
     }
-  } as AdvancedSearchToolConfig,
+  } as any,
 
   searchByCompanyList: {
     name: "search-people-by-company-list",
@@ -135,7 +144,7 @@ export const peopleToolConfigs = {
       return `Found ${results.length} people who work at companies in the specified list:\n${results.map((person: any) => 
         `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
     }
-  } as SearchToolConfig,
+  } as any,
 
   searchByNotes: {
     name: "search-people-by-notes",

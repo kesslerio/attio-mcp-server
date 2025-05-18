@@ -2,6 +2,8 @@
 
 This guide explains how to integrate the Attio MCP server with Claude to enable AI-assisted CRM interactions.
 
+> **⚠️ Important**: If you encounter connection errors like "input_schema does not support oneOf, allOf, or anyOf at the top level", see the [MCP Schema Guidelines](../mcp-schema-guidelines.md).
+
 ## Prerequisites
 
 - A valid Attio API key

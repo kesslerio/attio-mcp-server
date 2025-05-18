@@ -16,21 +16,21 @@ export const crudToolConfigs = {
     name: "create-company",
     handler: createCompany,
     formatResult: (result: Company) => 
-      `Company created: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+      `Company created: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
   } as ToolConfig,
   
   update: {
     name: "update-company",
     handler: updateCompany,
     formatResult: (result: Company) => 
-      `Company updated: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+      `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
   } as ToolConfig,
   
   updateAttribute: {
     name: "update-company-attribute",
     handler: updateCompanyAttribute,
     formatResult: (result: Company) => 
-      `Company attribute updated for: ${result.values?.name?.[0]?.value || 'Unnamed'} (ID: ${result.id?.record_id || 'unknown'})`
+      `Company attribute updated for: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
   } as ToolConfig,
   
   delete: {
