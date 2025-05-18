@@ -1,4 +1,4 @@
-import { getCompanyDetails, getCompanyBasicInfo, getCompanyContactInfo, getCompanyBusinessInfo, getCompanySocialInfo } from "../../../objects/companies.js";
+import { getCompanyDetails, getCompanyBasicInfo, getCompanyContactInfo, getCompanyBusinessInfo, getCompanySocialInfo } from "../../../objects/companies/index.js";
 // Company formatter configurations
 export const formatterConfigs = {
     details: {

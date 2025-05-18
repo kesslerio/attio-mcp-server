@@ -1,4 +1,4 @@
-import { searchCompaniesByPeople, searchCompaniesByPeopleList, searchCompaniesByNotes } from "../../../objects/companies.js";
+import { searchCompaniesByPeople, searchCompaniesByPeopleList, searchCompaniesByNotes } from "../../../objects/companies/index.js";
 // Company relationship tool configurations
 export const relationshipToolConfigs = {
     searchByPeople: {

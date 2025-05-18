@@ -8,7 +8,7 @@ import { ToolConfig } from "../tool-types.js";
 import {
   companyToolConfigs,
   companyToolDefinitions
-} from "../tool-configs/companies.js";
+} from "../tool-configs/companies/index.js";
 import {
   peopleToolConfigs,
   peopleToolDefinitions

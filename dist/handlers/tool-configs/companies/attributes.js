@@ -1,4 +1,4 @@
-import { getCompanyFields, getCompanyCustomFields, discoverCompanyAttributes, getCompanyAttributes } from "../../../objects/companies.js";
+import { getCompanyFields, getCompanyCustomFields, discoverCompanyAttributes, getCompanyAttributes } from "../../../objects/companies/index.js";
 // Company attribute tool configurations
 export const attributeToolConfigs = {
     fields: {

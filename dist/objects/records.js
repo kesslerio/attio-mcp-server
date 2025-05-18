@@ -2,7 +2,7 @@
  * Record-related functionality
  */
 import { getAttioClient } from "../api/attio-client.js";
-import { createRecord, getRecord, updateRecord, deleteRecord, listRecords, batchCreateRecords, batchUpdateRecords } from "../api/attio-operations.js";
+import { createRecord, getRecord, updateRecord, deleteRecord, listRecords, batchCreateRecords, batchUpdateRecords } from "../api/operations/index.js";
 /**
  * Creates a new record for a specific object type
  *

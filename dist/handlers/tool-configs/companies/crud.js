@@ -1,4 +1,4 @@
-import { createCompany, updateCompany, updateCompanyAttribute, deleteCompany } from "../../../objects/companies.js";
+import { createCompany, updateCompany, updateCompanyAttribute, deleteCompany } from "../../../objects/companies/index.js";
 // Company CRUD tool configurations
 export const crudToolConfigs = {
     create: {
