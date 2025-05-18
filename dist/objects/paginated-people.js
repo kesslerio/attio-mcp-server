@@ -3,7 +3,7 @@
  */
 import { searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, advancedSearchPeople } from "./people/index.js";
 import { InteractionType } from "../types/attio.js";
-import { createPaginatedResponse, getPaginationParams } from "../utils/pagination.js";
+import { createPaginatedResponse } from "../utils/pagination.js";
 import { validateDateRange, validateActivityFilter, validateNumericParam } from "../utils/filters/index.js";
 import { FilterValidationError } from "../errors/api-errors.js";
 /**
@@ -54,9 +54,11 @@ export async function paginatedSearchPeopleByCreationDate(dateRange, page = 1, p
         // Perform the search
         const results = await searchPeopleByCreationDate(validatedDateRange);
         // Apply pagination to the results
-        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
+        const startIndex = (validPage - 1) * validPageSize;
+        const endIndex = startIndex + validPageSize;
+        const paginatedResults = results.slice(startIndex, endIndex);
         // Return paginated response
-        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
+        return createPaginatedResponse(paginatedResults, results.length, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -82,8 +84,10 @@ export async function paginatedSearchPeopleByModificationDate(dateRange, page = 
         // Perform the search
         const results = await searchPeopleByModificationDate(validatedDateRange);
         // Apply pagination to the results
-        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
-        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
+        const startIndex = (validPage - 1) * validPageSize;
+        const endIndex = startIndex + validPageSize;
+        const paginatedResults = results.slice(startIndex, endIndex);
+        return createPaginatedResponse(paginatedResults, results.length, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -123,8 +127,10 @@ export async function paginatedSearchPeopleByLastInteraction(dateRange, interact
         // Perform the search
         const results = await searchPeopleByLastInteraction(validatedDateRange, validatedInteractionType);
         // Apply pagination to the results
-        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
-        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
+        const startIndex = (validPage - 1) * validPageSize;
+        const endIndex = startIndex + validPageSize;
+        const paginatedResults = results.slice(startIndex, endIndex);
+        return createPaginatedResponse(paginatedResults, results.length, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {
@@ -150,8 +156,10 @@ export async function paginatedSearchPeopleByActivity(activityFilter, page = 1, 
         // Perform the search
         const results = await searchPeopleByActivity(validatedActivityFilter);
         // Apply pagination to the results
-        const { paginatedResults, totalCount } = getPaginationParams(results, validPage, validPageSize);
-        return createPaginatedResponse(paginatedResults, totalCount, validPage, validPageSize);
+        const startIndex = (validPage - 1) * validPageSize;
+        const endIndex = startIndex + validPageSize;
+        const paginatedResults = results.slice(startIndex, endIndex);
+        return createPaginatedResponse(paginatedResults, results.length, validPage, validPageSize);
     }
     catch (error) {
         if (error instanceof FilterValidationError) {

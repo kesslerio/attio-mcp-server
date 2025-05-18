@@ -9,14 +9,14 @@ import { DateRange, NumericRange, FilterConditionType } from "./types.js";
  * @param dateRange - Date range specification
  * @returns Configured filter object
  */
-export declare function createCreatedDateFilter(dateRange: DateRange): ListEntryFilters;
+export declare function createCreatedDateFilter(dateRange: DateRange): import("./types.js").ListEntryFilters;
 /**
  * Creates a filter for records based on their last modification date
  *
  * @param dateRange - Date range specification
  * @returns Configured filter object
  */
-export declare function createModifiedDateFilter(dateRange: DateRange): ListEntryFilters;
+export declare function createModifiedDateFilter(dateRange: DateRange): import("./types.js").ListEntryFilters;
 /**
  * Creates a filter for B2B Segment (type_persona)
  *

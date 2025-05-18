@@ -25,7 +25,8 @@ export const peopleToolConfigs = {
     advancedSearch: {
         name: "advanced-search-people",
         handler: advancedSearchPeople,
-        formatResult: (results) => {
+        formatResult: (response) => {
+            const results = response.results || response;
             return `Found ${results.length} people with specified filters:\n${results.map((person) => `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
         }
     },

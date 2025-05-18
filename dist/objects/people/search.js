@@ -1,3 +1,7 @@
+/**
+ * Search functionality for People
+ */
+import { getAttioClient } from "../../api/attio-client.js";
 import { searchObject, advancedSearchObject } from "../../api/operations/index.js";
 import { ResourceType } from "../../types/attio.js";
 import { createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter } from "../../utils/filters/index.js";
@@ -18,8 +22,21 @@ export async function searchPeople(query) {
         if (query.length > 1000) {
             throw new FilterValidationError('Search query too long');
         }
-        const response = await searchObject(ResourceType.PEOPLE, query);
-        return response;
+        // Use the API directly to avoid the phone field issue
+        const api = getAttioClient();
+        const path = `/objects/people/records/query`;
+        // Search only by name and email, not phone
+        const filter = {
+            "$or": [
+                { name: { "$contains": query } },
+                { email_addresses: { "$contains": query } }
+            ]
+        };
+        const response = await api.post(path, {
+            filter,
+            limit: 50
+        });
+        return response.data.data || [];
     }
     catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

@@ -1,9 +1,9 @@
-import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, AdvancedSearchToolConfig, DateBasedSearchToolConfig } from "../tool-types.js";
+import { SearchToolConfig, DetailsToolConfig, NotesToolConfig, CreateNoteToolConfig, DateBasedSearchToolConfig } from "../tool-types.js";
 export declare const peopleToolConfigs: {
     search: SearchToolConfig;
     searchByEmail: SearchToolConfig;
     searchByPhone: SearchToolConfig;
-    advancedSearch: AdvancedSearchToolConfig;
+    advancedSearch: any;
     details: DetailsToolConfig;
     notes: NotesToolConfig;
     createNote: CreateNoteToolConfig;
@@ -11,8 +11,8 @@ export declare const peopleToolConfigs: {
     searchByModificationDate: DateBasedSearchToolConfig;
     searchByLastInteraction: DateBasedSearchToolConfig;
     searchByActivity: DateBasedSearchToolConfig;
-    searchByCompany: AdvancedSearchToolConfig;
-    searchByCompanyList: SearchToolConfig;
+    searchByCompany: any;
+    searchByCompanyList: any;
     searchByNotes: SearchToolConfig;
 };
 export declare const peopleToolDefinitions: ({

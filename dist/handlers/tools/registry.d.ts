@@ -39,7 +39,7 @@ export declare const TOOL_CONFIGS: {
         search: import("../tool-types.js").SearchToolConfig;
         searchByEmail: import("../tool-types.js").SearchToolConfig;
         searchByPhone: import("../tool-types.js").SearchToolConfig;
-        advancedSearch: import("../tool-types.js").AdvancedSearchToolConfig;
+        advancedSearch: any;
         details: import("../tool-types.js").DetailsToolConfig;
         notes: import("../tool-types.js").NotesToolConfig;
         createNote: import("../tool-types.js").CreateNoteToolConfig;
@@ -47,8 +47,8 @@ export declare const TOOL_CONFIGS: {
         searchByModificationDate: import("../tool-types.js").DateBasedSearchToolConfig;
         searchByLastInteraction: import("../tool-types.js").DateBasedSearchToolConfig;
         searchByActivity: import("../tool-types.js").DateBasedSearchToolConfig;
-        searchByCompany: import("../tool-types.js").AdvancedSearchToolConfig;
-        searchByCompanyList: import("../tool-types.js").SearchToolConfig;
+        searchByCompany: any;
+        searchByCompanyList: any;
         searchByNotes: import("../tool-types.js").SearchToolConfig;
     };
     lists: {

@@ -1,4 +1,3 @@
-// Re-export any company-specific types as needed
-EOF < /dev/null;
 export {};
+// Re-export any company-specific types as needed
 //# sourceMappingURL=types.js.map

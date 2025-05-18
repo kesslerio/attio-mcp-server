@@ -39,4 +39,3 @@ export interface CompanyFieldUpdate {
 }
 
 // Re-export any company-specific types as needed
-EOF < /dev/null
