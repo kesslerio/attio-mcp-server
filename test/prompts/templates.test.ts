@@ -6,8 +6,8 @@ import {
   getPromptById, 
   getPromptsByCategory, 
   getAllCategories
-} from '../../src/prompts/templates/index.js';
-import { PromptTemplate } from '../../src/prompts/types.js';
+} from '../../src/prompts/templates/index';
+import { PromptTemplate } from '../../src/prompts/types';
 
 describe('Prompt Templates', () => {
   // Test getAllPrompts

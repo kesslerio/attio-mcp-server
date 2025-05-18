@@ -6,8 +6,8 @@ import {
   ListPromptsRequestSchema, 
   GetPromptRequestSchema 
 } from "@modelcontextprotocol/sdk/types.js";
-import { registerPromptHandlers } from '../../src/prompts/handlers.js';
-import { getAllPrompts } from '../../src/prompts/templates/index.js';
+import { registerPromptHandlers } from '../../src/prompts/handlers';
+import { getAllPrompts } from '../../src/prompts/templates/index';
 
 // Mock the server
 jest.mock('@modelcontextprotocol/sdk/server/index.js', () => ({

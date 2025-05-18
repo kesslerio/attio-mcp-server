@@ -6,7 +6,7 @@ import {
   deleteCompany,
   searchCompanies,
   getCompanyDetails
-} from '../../src/objects/companies';
+} from '../../src/objects/companies/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
 import { config } from 'dotenv';
 

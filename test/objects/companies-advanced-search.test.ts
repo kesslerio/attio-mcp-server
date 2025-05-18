@@ -1,7 +1,7 @@
 /**
  * Test for companies advanced search functionality
  */
-import { advancedSearchCompanies } from '../../src/objects/companies';
+import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { FilterConditionType } from '../../src/types/attio';
 
 // Define mock filters to search with

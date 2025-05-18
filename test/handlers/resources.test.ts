@@ -1,15 +1,15 @@
-import { registerResourceHandlers } from '../../src/handlers/resources.js';
-import * as companiesModule from '../../src/objects/companies.js';
-import * as peopleModule from '../../src/objects/people/index.js';
-import * as errorHandler from '../../src/utils/error-handler.js';
-import { ResourceType } from '../../src/types/attio.js';
-import { parseResourceUri } from '../../src/utils/uri-parser.js';
+import { registerResourceHandlers } from '../../src/handlers/resources';
+import * as companiesModule from '../../src/objects/companies/index';
+import * as peopleModule from '../../src/objects/people/index';
+import * as errorHandler from '../../src/utils/error-handler';
+import { ResourceType } from '../../src/types/attio';
+import { parseResourceUri } from '../../src/utils/uri-parser';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies.js');
-jest.mock('../../src/objects/people/index.js');
-jest.mock('../../src/utils/error-handler.js');
-jest.mock('../../src/utils/uri-parser.js');
+jest.mock('../../src/objects/companies/index');
+jest.mock('../../src/objects/people/index');
+jest.mock('../../src/utils/error-handler');
+jest.mock('../../src/utils/uri-parser');
 
 describe('resources', () => {
   describe('registerResourceHandlers', () => {

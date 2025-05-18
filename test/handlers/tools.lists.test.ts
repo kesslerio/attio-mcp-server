@@ -1,8 +1,8 @@
-import { listsToolConfigs } from '../../src/handlers/tool-configs/lists.js';
-import * as listsModule from '../../src/objects/lists.js';
+import { listsToolConfigs } from '../../src/handlers/tool-configs/lists';
+import * as listsModule from '../../src/objects/lists';
 
 // Mock dependencies
-jest.mock('../../src/objects/lists.js');
+jest.mock('../../src/objects/lists');
 
 describe('Lists Tool Configurations', () => {
   const mockedLists = listsModule as jest.Mocked<typeof listsModule>;

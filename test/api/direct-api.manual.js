@@ -1,4 +1,4 @@
-import axios from 'axios';
+const axios = require('axios');
 
 async function testDirectAPI() {
   const apiKey = process.env.ATTIO_API_KEY;

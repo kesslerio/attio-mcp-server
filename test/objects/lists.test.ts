@@ -1,10 +1,10 @@
-import { getLists, getListDetails, getListEntries, addRecordToList, removeRecordFromList } from '../../src/objects/lists.js';
-import * as attioClient from '../../src/api/attio-client.js';
-import * as attioOperations from '../../src/api/attio-operations.js';
+import { getLists, getListDetails, getListEntries, addRecordToList, removeRecordFromList } from '../../src/objects/lists';
+import * as attioClient from '../../src/api/attio-client';
+import * as attioOperations from '../../src/api/attio-operations';
 
 // Mock the API client and operations
-jest.mock('../../src/api/attio-client.js');
-jest.mock('../../src/api/attio-operations.js');
+jest.mock('../../src/api/attio-client');
+jest.mock('../../src/api/operations/index');
 
 const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
 const mockedAttioOperations = attioOperations as jest.Mocked<typeof attioOperations>;

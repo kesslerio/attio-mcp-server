@@ -5,10 +5,10 @@
  */
 
 // Load environment variables from .env file
-import * as dotenv from 'dotenv';
+const dotenv = require('dotenv');
 dotenv.config();
 
-import { getLists, getListDetails, getListEntries, addRecordToList, removeRecordFromList } from '../dist/objects/lists.js';
+const { getLists, getListDetails, getListEntries, addRecordToList, removeRecordFromList } = require('../dist/objects/lists');
 
 // Check for ATTIO_API_KEY
 if (!process.env.ATTIO_API_KEY) {
