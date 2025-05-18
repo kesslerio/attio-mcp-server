@@ -8,7 +8,7 @@ import {
   getCompanyContactInfo,
   getCompanyBusinessInfo,
   getCompanySocialInfo
-} from "../../../objects/companies.js";
+} from "../../../objects/companies/index.js";
 import { 
   DetailsToolConfig,
   ToolConfig

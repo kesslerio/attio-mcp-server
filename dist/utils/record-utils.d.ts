@@ -4,7 +4,7 @@
  * and interacting with the Attio API.
  */
 import { AttioListEntry } from "../types/attio.js";
-import { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter } from "./filter-utils.js";
+import { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter } from "./filters/index.js";
 export { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter };
 export declare const API_PARAMS: {
     EXPAND: string;
@@ -25,6 +25,9 @@ export declare const ATTRIBUTE_SLUGS: {
     INDUSTRY: string;
     REVENUE: string;
     EMPLOYEE_COUNT: string;
+    LIST_ID: string;
+    NOTE_CONTENT: string;
+    RELATIONSHIP: string;
 };
 /**
  * Extracts and ensures record_id is properly populated in list entries

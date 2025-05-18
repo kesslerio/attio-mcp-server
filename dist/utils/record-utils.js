@@ -1,4 +1,4 @@
-import { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter, FILTER_ATTRIBUTES } from "./filter-utils.js";
+import { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter, FILTER_ATTRIBUTES } from "./filters/index.js";
 // Re-export filter utilities for backwards compatibility
 export { transformFiltersToApiFormat, createDateRangeFilter, createCreatedDateFilter, createModifiedDateFilter, createLastInteractionFilter, createActivityFilter, createNumericFilter };
 // API parameter constants for better maintainability

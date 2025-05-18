@@ -1,7 +1,7 @@
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createErrorResult } from "../utils/error-handler.js";
 import { listCompanies, getCompanyDetails } from "../objects/companies.js";
-import { listPeople, getPersonDetails } from "../objects/people.js";
+import { listPeople, getPersonDetails } from "../objects/people/index.js";
 import { parseResourceUri, formatResourceUri } from "../utils/uri-parser.js";
 import { ResourceType } from "../types/attio.js";
 /**

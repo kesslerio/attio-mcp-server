@@ -1,4 +1,4 @@
-import { searchPeople, searchPeopleByEmail, searchPeopleByPhone, getPersonDetails, getPersonNotes, createPersonNote, searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, searchPeopleByCompany, searchPeopleByCompanyList, searchPeopleByNotes, advancedSearchPeople } from "../../objects/people.js";
+import { searchPeople, searchPeopleByEmail, searchPeopleByPhone, getPersonDetails, getPersonNotes, createPersonNote, searchPeopleByCreationDate, searchPeopleByModificationDate, searchPeopleByLastInteraction, searchPeopleByActivity, searchPeopleByCompany, searchPeopleByCompanyList, searchPeopleByNotes, advancedSearchPeople } from "../../objects/people/index.js";
 // People tool configurations
 export const peopleToolConfigs = {
     search: {

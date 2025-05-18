@@ -1,4 +1,4 @@
-import { searchCompanies, advancedSearchCompanies } from "../../../objects/companies.js";
+import { searchCompanies, advancedSearchCompanies } from "../../../objects/companies/index.js";
 // Company search tool configurations
 export const searchToolConfigs = {
     search: {
