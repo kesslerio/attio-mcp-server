@@ -8,7 +8,7 @@ import {
   ServerError,
   createApiErrorFromStatus,
   createApiErrorFromAxiosError
-} from '../../src/errors/api-errors.js';
+} from '../../src/errors/api-errors';
 
 describe('api-errors', () => {
   describe('AttioApiError', () => {

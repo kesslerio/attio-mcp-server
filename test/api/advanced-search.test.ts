@@ -5,20 +5,20 @@
  * ensuring that the implementation meets the requirements specified in Issue #57.
  */
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
-import { advancedSearchObject } from '../../src/api/operations/index.js';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import { advancedSearchObject } from '../../src/api/operations/index';
 import { 
   advancedSearchPeople, 
   createNameFilter,
   createEmailFilter,
   createPhoneFilter
-} from '../../src/objects/people.js';
+} from '../../src/objects/people';
 import { 
   advancedSearchCompanies,
   createWebsiteFilter,
   createIndustryFilter
-} from '../../src/objects/companies.js';
-import * as attioClient from '../../src/api/attio-client.js';
+} from '../../src/objects/companies/index';
+import * as attioClient from '../../src/api/attio-client';
 
 // Mock the Axios client
 jest.mock('../../src/api/attio-client.js', () => {

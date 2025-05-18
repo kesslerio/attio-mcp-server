@@ -1,5 +1,5 @@
-import { updateCompany, getCompanyDetails } from '../dist/objects/companies.js';
-import { initializeAttioClient } from '../dist/api/attio-client.js';
+const { updateCompany, getCompanyDetails } = require('../dist/objects/companies');
+const { initializeAttioClient } = require('../dist/api/attio-client');
 
 // Set debug mode
 process.env.NODE_ENV = 'development';

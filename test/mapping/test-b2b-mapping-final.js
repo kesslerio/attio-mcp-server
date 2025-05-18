@@ -3,9 +3,9 @@
  */
 
 // Import the necessary modules
-import { getAttributeSlug } from './dist/utils/attribute-mapping/index.js';
-import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
-import { ResourceType, FilterConditionType } from './dist/types/attio.js';
+const { getAttributeSlug } = require('./dist/utils/attribute-mapping/index.js');
+const { translateAttributeNamesInFilters } = require('./dist/utils/attribute-mapping/index.js');
+const { ResourceType, FilterConditionType } = require('./dist/types/attio.js');
 
 console.log('=== B2B Segment Mapping Test ===\n');
 

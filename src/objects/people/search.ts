@@ -43,12 +43,24 @@ export async function searchPeople(query: string): Promise<Person[]> {
       throw new FilterValidationError('Search query too long');
     }
 
-    const response = await searchObject<Person>(
-      ResourceType.PEOPLE,
-      query
-    );
+    // Use the API directly to avoid the phone field issue
+    const api = getAttioClient();
+    const path = `/objects/people/records/query`;
     
-    return response;
+    // Search only by name and email, not phone
+    const filter = {
+      "$or": [
+        { name: { "$contains": query } },
+        { email_addresses: { "$contains": query } }
+      ]
+    };
+
+    const response = await api.post(path, {
+      filter,
+      limit: 50
+    });
+    
+    return response.data.data || [];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
