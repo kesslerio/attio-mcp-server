@@ -24,8 +24,20 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
   // Use dynamic field type detection to format attributes correctly
   const transformedAttributes = await formatAllAttributes(objectType, validatedAttributes);
   
-  // Create the object
-  return await createObjectRecord<T>(objectType, transformedAttributes);
+  // Debug log to help diagnose issues
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[createObjectWithDynamicFields:${objectType}] Attributes after transformation:`, 
+      JSON.stringify(transformedAttributes, null, 2));
+  }
+  
+  try {
+    // Create the object
+    return await createObjectRecord<T>(objectType, transformedAttributes);
+  } catch (error) {
+    console.error(`[createObjectWithDynamicFields:${objectType}] Error creating record:`, 
+      error instanceof Error ? error.message : String(error));
+    throw error;
+  }
 }
 
 /**
