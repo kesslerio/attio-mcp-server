@@ -824,12 +824,20 @@ async function executeRecordOperation(
   request: CallToolRequest,
   resourceType: ResourceType
 ) {
-  const objectSlug = request.params.arguments?.objectSlug as string;
+  // Get object slug from request or use resourceType if it's a known resource
+  const objectSlug = request.params.arguments?.objectSlug as string || resourceType;
   const objectId = request.params.arguments?.objectId as string;
+  
+  // For debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[executeRecordOperation] Processing ${toolType} operation for ${resourceType}`);
+    console.log(`[executeRecordOperation] Object slug: ${objectSlug}`);
+    console.log(`[executeRecordOperation] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+  }
   
   // Handle tool types based on specific operation
   if (toolType === 'create') {
-    const recordData = request.params.arguments?.recordData;
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
     
     try {
       const recordCreateConfig = toolConfig as RecordCreateToolConfig;
@@ -849,52 +857,348 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'batchCreate') {
-    const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
-    
+    /**
+     * Handle batch create operations
+     * 
+     * Note on parameter structure differences:
+     * - Company-specific batch operations: Expects {companies, config} structure from MCP tool schema
+     * - Generic record batch operations: Expects (objectSlug, records, objectId) parameters
+     * 
+     * This difference in parameter structure is due to how the MCP tools are defined in the schema.
+     * Company-specific tools use a more domain-specific parameter naming ('companies' instead of 'records')
+     * to provide a more intuitive API for clients.
+     */
     try {
-      const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
-      const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
+      // Log request parameters for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[batchCreate] Processing request for ${resourceType || objectSlug}:`, {
+          resourceType,
+          objectSlug,
+          arguments: request.params.arguments
+        });
+      }
       
-      return formatResponse(formatBatchResults(result, 'create'));
+      // Check if we're dealing with companies batch create (special case)
+      if (resourceType === ResourceType.COMPANIES) {
+        // Extract parameters with basic validation
+        const companies = request.params.arguments?.companies;
+        const config = request.params.arguments?.config;
+        
+        // Enhanced validation
+        if (!companies) {
+          return createErrorResult(
+            new Error("'companies' parameter is required"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing 'companies' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(companies)) {
+          return createErrorResult(
+            new Error("'companies' parameter must be an array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'companies' parameter: expected array" }
+          );
+        }
+        
+        if (companies.length === 0) {
+          return createErrorResult(
+            new Error("'companies' parameter must be a non-empty array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'companies' parameter: array cannot be empty" }
+          );
+        }
+        
+        // Call the handler with the correct parameter structure
+        const result = await toolConfig.handler({ companies, config });
+        
+        // Format the response based on success/failure
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      } else {
+        // Handle generic record batch create
+        const records = request.params.arguments?.records;
+        
+        // Enhanced validation
+        if (!records) {
+          return createErrorResult(
+            new Error("'records' parameter is required"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing 'records' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(records)) {
+          return createErrorResult(
+            new Error("'records' parameter must be an array"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'records' parameter: expected array" }
+          );
+        }
+        
+        if (records.length === 0) {
+          return createErrorResult(
+            new Error("'records' parameter must be a non-empty array"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'records' parameter: array cannot be empty" }
+          );
+        }
+        
+        const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
+        const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
+        
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      }
     } catch (error) {
+      // Enhanced error handling for batch operations
+      console.error(`[batchCreate] Error executing batch create for ${resourceType || objectSlug}:`, error);
+      
+      // Include more context in the error message
+      const errorMessage = error instanceof Error 
+        ? `Batch create operation failed: ${error.message}`
+        : `Batch create operation failed: ${String(error)}`;
+      
+      const errorDetails = {
+        resourceType: resourceType || objectSlug,
+        operation: 'batchCreate',
+        message: errorMessage,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
+      };
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error("Unknown error"),
-        `objects/${objectSlug}/records/batch`,
+        error instanceof Error ? error : new Error(errorMessage),
+        `objects/${resourceType || objectSlug}/records/batch`,
         "POST",
-        (error as any).response?.data || {}
+        (error as any).response?.data || errorDetails
       );
     }
   }
   
   if (toolType === 'batchUpdate') {
-    const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
-    
+    /**
+     * Handle batch update operations
+     * 
+     * Note on parameter structure differences:
+     * - Company-specific batch operations: Expects {updates, config} structure from MCP tool schema
+     * - Generic record batch operations: Expects (objectSlug, records, objectId) parameters
+     * 
+     * This difference in parameter structure is due to how the MCP tools are defined in the schema.
+     * Company-specific tools use a more domain-specific parameter naming ('updates' instead of 'records')
+     * to provide a more intuitive API for clients.
+     */
     try {
-      const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
-      const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
+      // Log request parameters for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[batchUpdate] Processing request for ${resourceType || objectSlug}:`, {
+          resourceType,
+          objectSlug,
+          arguments: request.params.arguments
+        });
+      }
       
-      return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      // Check if we're dealing with companies batch update (special case)
+      if (resourceType === ResourceType.COMPANIES) {
+        // Extract parameters with basic validation
+        const updates = request.params.arguments?.updates;
+        const config = request.params.arguments?.config;
+        
+        // Enhanced validation
+        if (!updates) {
+          return createErrorResult(
+            new Error("'updates' parameter is required"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing 'updates' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(updates)) {
+          return createErrorResult(
+            new Error("'updates' parameter must be an array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'updates' parameter: expected array" }
+          );
+        }
+        
+        if (updates.length === 0) {
+          return createErrorResult(
+            new Error("'updates' parameter must be a non-empty array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'updates' parameter: array cannot be empty" }
+          );
+        }
+        
+        // Additional validation of array contents
+        for (let i = 0; i < updates.length; i++) {
+          const update = updates[i];
+          if (!update || typeof update !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: must be a non-null object`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: must be a non-null object` }
+            );
+          }
+          
+          if (!update.id) {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: 'id' is required`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: 'id' is required` }
+            );
+          }
+          
+          if (!update.attributes || typeof update.attributes !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: 'attributes' must be a non-null object`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: 'attributes' must be a non-null object` }
+            );
+          }
+        }
+        
+        // Call the handler with the correct parameter structure
+        const result = await toolConfig.handler({ updates, config });
+        
+        // Format the response based on success/failure
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      } else {
+        // Handle generic record batch update
+        const records = request.params.arguments?.records;
+        
+        // Enhanced validation
+        if (!records) {
+          return createErrorResult(
+            new Error("'records' parameter is required"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing 'records' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(records)) {
+          return createErrorResult(
+            new Error("'records' parameter must be an array"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'records' parameter: expected array" }
+          );
+        }
+        
+        if (records.length === 0) {
+          return createErrorResult(
+            new Error("'records' parameter must be a non-empty array"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'records' parameter: array cannot be empty" }
+          );
+        }
+        
+        const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
+        const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
+        
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      }
     } catch (error) {
+      // Enhanced error handling for batch operations
+      console.error(`[batchUpdate] Error executing batch update for ${resourceType || objectSlug}:`, error);
+      
+      // Include more context in the error message
+      const errorMessage = error instanceof Error 
+        ? `Batch update operation failed: ${error.message}`
+        : `Batch update operation failed: ${String(error)}`;
+      
+      const errorDetails = {
+        resourceType: resourceType || objectSlug,
+        operation: 'batchUpdate',
+        message: errorMessage,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
+      };
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error("Unknown error"),
-        `objects/${objectSlug}/records/batch`,
+        error instanceof Error ? error : new Error(errorMessage),
+        `objects/${resourceType || objectSlug}/records/batch`,
         "PATCH",
-        (error as any).response?.data || {}
+        (error as any).response?.data || errorDetails
       );
     }
   }
   
   // Add handlers for get, update, delete, list operations...
   if (toolType === 'get') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string || request.params.arguments?.recordId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:get:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:get:company] Extracted companyId: ${recordId}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string || request.params.arguments?.recordId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:get] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/get`,
+        "GET",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:get] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:get] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordGetConfig = toolConfig as RecordGetToolConfig;
       const record = await recordGetConfig.handler(objectSlug, recordId);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:get] Retrieval successful for ID: ${recordId}`);
+        console.log(`[executeRecordOperation:get] Response:`, 
+          JSON.stringify(record, (key, value) => 
+            key === 'values' ? Object.keys(value).length + ' fields retrieved' : value, 2));
+      }
+      
       return formatResponse(
         `Successfully retrieved ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:get] Retrieval failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:get] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to get ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
@@ -905,16 +1209,90 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'update') {
-    const recordId = request.params.arguments?.recordId as string;
-    const recordData = request.params.arguments?.recordData;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:update:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:update:company] Extracted companyId: ${recordId}`);
+        console.log(`[executeRecordOperation:update:company] Tool name: ${request.params.name}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/update`,
+        "PATCH",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    // For company-specific tools, check for attributes instead of generic recordData
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
+    
+    // Validate recordData exists and is an object
+    if (!recordData || typeof recordData !== 'object' || Array.isArray(recordData)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Missing or invalid record data:`, 
+          { resourceType, recordId, recordData });
+      }
+      
+      return createErrorResult(
+        new Error(`Record data parameter is required and must be a non-empty object`),
+        `objects/${objectSlug}/records/${recordId}`,
+        "PATCH",
+        { status: 400, message: `Missing or invalid record data` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:update] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:update] Record data:`, JSON.stringify(recordData, null, 2));
+      console.log(`[executeRecordOperation:update] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
       const record = await recordUpdateConfig.handler(objectSlug, recordId, recordData);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:update] Update successful for ID: ${recordId}`);
+        console.log(`[executeRecordOperation:update] Response:`, 
+          JSON.stringify(record, (key, value) => 
+            key === 'values' ? Object.keys(value).length + ' fields updated' : value, 2));
+      }
+      
       return formatResponse(
         `Successfully updated ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Update failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:update] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to update ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
@@ -925,15 +1303,67 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'delete') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:delete:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:delete:company] Extracted companyId: ${recordId}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:delete] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/delete`,
+        "DELETE",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:delete] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:delete] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
       const success = await recordDeleteConfig.handler(objectSlug, recordId);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:delete] Deletion ${success ? 'successful' : 'unsuccessful'} for ID: ${recordId}`);
+      }
+      
       return formatResponse(
         `Successfully deleted ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:delete] Deletion failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:delete] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to delete ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
