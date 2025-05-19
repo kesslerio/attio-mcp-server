@@ -69,11 +69,22 @@ async function handleSearchOperation(
     const results = await searchConfig.handler(searchParam);
     const formattedResults = searchConfig.formatResult(results);
     
-    if (toolType === 'search') {
-      return formatResponse(`Found ${results.length} ${resourceType}:\n${formattedResults}`);
+    // Check if the formatter already includes a header
+    const hasHeader = formattedResults.startsWith('Found ');
+    
+    // Format the response based on the tool type and formatted results
+    let responseText = "";
+    
+    if (hasHeader) {
+      // If the formatter already includes a "Found" header, use it as is
+      responseText = formattedResults;
+    } else {
+      // Add a contextual header based on the tool type
+      const searchType = toolType.replace('searchBy', '').toLowerCase();
+      responseText = `Found ${String(results.length)} ${resourceType} matching ${searchType} "${searchParam}":\n${formattedResults}`;
     }
     
-    return formatResponse(formattedResults);
+    return formatResponse(responseText);
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error : new Error("Unknown error"),
@@ -105,7 +116,30 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle search tools
     if (toolType === 'search') {
       const query = request.params.arguments?.query as string;
-      return handleSearchOperation(toolType, toolConfig as SearchToolConfig, query, resourceType);
+      try {
+        const searchConfig = toolConfig as SearchToolConfig;
+        const results = await searchConfig.handler(query);
+        const formattedResults = searchConfig.formatResult(results);
+        
+        // Check if the formatter already includes a header to avoid duplication
+        const hasHeader = typeof formattedResults === 'string' && formattedResults.startsWith('Found ');
+        
+        if (hasHeader) {
+          // If the formatter already includes a "Found" header, use it as is
+          return formatResponse(formattedResults);
+        } else {
+          // For basic search tools, we need to add the header
+          const header = `Found ${results.length} ${resourceType}:`;
+          return formatResponse(`${header}\n${formattedResults}`);
+        }
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/${resourceType}/records/query`,
+          "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
     }
     
     // Handle searchByEmail tools
@@ -751,7 +785,7 @@ async function executeRecordOperation(
     
     try {
       const recordListConfig = toolConfig as RecordListToolConfig;
-      const records = await recordListConfig.handler(objectSlug, limit, offset);
+      const records = await recordListConfig.handler(objectSlug, String(limit), String(offset));
       return formatResponse(
         `Successfully retrieved ${records.length.toString()} ${objectSlug} records`
       );
@@ -796,6 +830,10 @@ async function executeRelationshipSearch(
     // Format and return results
     const formattedResults = toolConfig.formatResult ? toolConfig.formatResult(results) : JSON.stringify(results, null, 2);
     
+    // Check if the formatter already includes a header to avoid duplication
+    const hasHeader = typeof formattedResults === 'string' && formattedResults.startsWith('Found ');
+    
+    // Return the formatted result directly if it already has a header
     return formatResponse(formattedResults);
   } catch (error) {
     return createErrorResult(
@@ -868,6 +906,10 @@ async function executeAdvancedSearch(
     // Format and return results
     const formattedResults = advancedSearchConfig.formatResult(results);
     
+    // Check if the formatter already includes a header to avoid duplication
+    const hasHeader = typeof formattedResults === 'string' && formattedResults.startsWith('Found ');
+    
+    // Return the formatted result directly - the formatters now include appropriate headers
     return formatResponse(formattedResults);
   } catch (error) {
     let errorDetailsForCreateResult: any = {};
