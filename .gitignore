@@ -15,3 +15,14 @@ node_modules/
 
 # Build output
 dist/
+
+# Log files
+*.log
+
+# Temporary directories
+/temp/
+/scripts/fix/
+
+# Temporary markdown files
+comment.md
+issue_body.md
