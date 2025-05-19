@@ -331,6 +331,64 @@ describe('Batch Company Operations', () => {
       expect(result.results[1].data.values.name[0].value).toBe('Test Company Beta');
       expect(result.results[2].data.values.name[0].value).toBe('Test Company Gamma');
     });
+    
+    // Edge case tests for input validation
+    describe('Edge Cases', () => {
+      it('should reject null params object', async () => {
+        await expect(batchCreateCompanies(null as any))
+          .rejects.toThrow("Invalid request: params object is required");
+      });
+      
+      it('should reject undefined companies array', async () => {
+        await expect(batchCreateCompanies({} as any))
+          .rejects.toThrow("Invalid request: 'companies' parameter is required");
+      });
+      
+      it('should reject non-array companies parameter', async () => {
+        await expect(batchCreateCompanies({ companies: 'not an array' as any }))
+          .rejects.toThrow("Invalid request: 'companies' parameter must be an array");
+      });
+      
+      it('should reject empty companies array', async () => {
+        await expect(batchCreateCompanies({ companies: [] }))
+          .rejects.toThrow("Invalid request: 'companies' array cannot be empty");
+      });
+      
+      it('should reject companies array with null items', async () => {
+        await expect(batchCreateCompanies({ companies: [null] as any }))
+          .rejects.toThrow("Invalid company data at index 0: must be a non-null object");
+      });
+      
+      it('should reject companies array with items missing name', async () => {
+        await expect(batchCreateCompanies({ 
+          companies: [{ description: 'Missing name' }] 
+        }))
+          .rejects.toThrow("Invalid company data at index 0: 'name' is required");
+      });
+      
+      // Similar tests for batch update
+      it('should reject null params object for update', async () => {
+        await expect(batchUpdateCompanies(null as any))
+          .rejects.toThrow("Invalid request: params object is required");
+      });
+      
+      it('should reject undefined updates array', async () => {
+        await expect(batchUpdateCompanies({} as any))
+          .rejects.toThrow("Invalid request: 'updates' parameter is required");
+      });
+      
+      it('should reject companies array with items missing required properties', async () => {
+        await expect(batchUpdateCompanies({ 
+          updates: [{ /* missing id and attributes */ }] as any
+        }))
+          .rejects.toThrow("Invalid update data at index 0: 'id' is required");
+        
+        await expect(batchUpdateCompanies({ 
+          updates: [{ id: '123' /* missing attributes */ }] as any
+        }))
+          .rejects.toThrow("Invalid update data at index 0: 'attributes' must be a non-null object");
+      });
+    });
   });
   
   describe('Batch Configuration', () => {

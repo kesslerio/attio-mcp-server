@@ -815,37 +815,95 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'batchCreate') {
-    // Handle generic record batch create or company-specific batch create
+    /**
+     * Handle batch create operations
+     * 
+     * Note on parameter structure differences:
+     * - Company-specific batch operations: Expects {companies, config} structure from MCP tool schema
+     * - Generic record batch operations: Expects (objectSlug, records, objectId) parameters
+     * 
+     * This difference in parameter structure is due to how the MCP tools are defined in the schema.
+     * Company-specific tools use a more domain-specific parameter naming ('companies' instead of 'records')
+     * to provide a more intuitive API for clients.
+     */
     try {
+      // Log request parameters for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[batchCreate] Processing request for ${resourceType || objectSlug}:`, {
+          resourceType,
+          objectSlug,
+          arguments: request.params.arguments
+        });
+      }
+      
       // Check if we're dealing with companies batch create (special case)
       if (resourceType === ResourceType.COMPANIES) {
-        // Handle batch-create-companies tool with companies array
+        // Extract parameters with basic validation
         const companies = request.params.arguments?.companies;
         const config = request.params.arguments?.config;
         
-        // Validate companies parameter
-        if (!companies || !Array.isArray(companies)) {
+        // Enhanced validation
+        if (!companies) {
+          return createErrorResult(
+            new Error("'companies' parameter is required"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing 'companies' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(companies)) {
+          return createErrorResult(
+            new Error("'companies' parameter must be an array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'companies' parameter: expected array" }
+          );
+        }
+        
+        if (companies.length === 0) {
           return createErrorResult(
             new Error("'companies' parameter must be a non-empty array"),
             `objects/${ResourceType.COMPANIES}/records/batch`,
             "POST",
-            { status: 400, message: "Missing or invalid 'companies' parameter" }
+            { status: 400, message: "Invalid 'companies' parameter: array cannot be empty" }
           );
         }
         
         // Call the handler with the correct parameter structure
         const result = await toolConfig.handler({ companies, config });
+        
+        // Format the response based on success/failure
         return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
       } else {
         // Handle generic record batch create
-        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        const records = request.params.arguments?.records;
+        
+        // Enhanced validation
+        if (!records) {
+          return createErrorResult(
+            new Error("'records' parameter is required"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing 'records' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(records)) {
+          return createErrorResult(
+            new Error("'records' parameter must be an array"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Invalid 'records' parameter: expected array" }
+          );
+        }
         
         if (records.length === 0) {
           return createErrorResult(
             new Error("'records' parameter must be a non-empty array"),
             `objects/${objectSlug}/records/batch`,
             "POST",
-            { status: 400, message: "Missing or invalid 'records' parameter" }
+            { status: 400, message: "Invalid 'records' parameter: array cannot be empty" }
           );
         }
         
@@ -858,47 +916,148 @@ async function executeRecordOperation(
       // Enhanced error handling for batch operations
       console.error(`[batchCreate] Error executing batch create for ${resourceType || objectSlug}:`, error);
       
+      // Include more context in the error message
+      const errorMessage = error instanceof Error 
+        ? `Batch create operation failed: ${error.message}`
+        : `Batch create operation failed: ${String(error)}`;
+      
+      const errorDetails = {
+        resourceType: resourceType || objectSlug,
+        operation: 'batchCreate',
+        message: errorMessage,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
+      };
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error(`Batch create operation failed: ${String(error)}`),
+        error instanceof Error ? error : new Error(errorMessage),
         `objects/${resourceType || objectSlug}/records/batch`,
         "POST",
-        (error as any).response?.data || {}
+        (error as any).response?.data || errorDetails
       );
     }
   }
   
   if (toolType === 'batchUpdate') {
-    // Handle generic record batch update or company-specific batch update
+    /**
+     * Handle batch update operations
+     * 
+     * Note on parameter structure differences:
+     * - Company-specific batch operations: Expects {updates, config} structure from MCP tool schema
+     * - Generic record batch operations: Expects (objectSlug, records, objectId) parameters
+     * 
+     * This difference in parameter structure is due to how the MCP tools are defined in the schema.
+     * Company-specific tools use a more domain-specific parameter naming ('updates' instead of 'records')
+     * to provide a more intuitive API for clients.
+     */
     try {
+      // Log request parameters for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[batchUpdate] Processing request for ${resourceType || objectSlug}:`, {
+          resourceType,
+          objectSlug,
+          arguments: request.params.arguments
+        });
+      }
+      
       // Check if we're dealing with companies batch update (special case)
       if (resourceType === ResourceType.COMPANIES) {
-        // Handle batch-update-companies tool with updates array
+        // Extract parameters with basic validation
         const updates = request.params.arguments?.updates;
         const config = request.params.arguments?.config;
         
-        // Validate updates parameter
-        if (!updates || !Array.isArray(updates)) {
+        // Enhanced validation
+        if (!updates) {
+          return createErrorResult(
+            new Error("'updates' parameter is required"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing 'updates' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(updates)) {
+          return createErrorResult(
+            new Error("'updates' parameter must be an array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'updates' parameter: expected array" }
+          );
+        }
+        
+        if (updates.length === 0) {
           return createErrorResult(
             new Error("'updates' parameter must be a non-empty array"),
             `objects/${ResourceType.COMPANIES}/records/batch`,
             "PATCH",
-            { status: 400, message: "Missing or invalid 'updates' parameter" }
+            { status: 400, message: "Invalid 'updates' parameter: array cannot be empty" }
           );
+        }
+        
+        // Additional validation of array contents
+        for (let i = 0; i < updates.length; i++) {
+          const update = updates[i];
+          if (!update || typeof update !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: must be a non-null object`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: must be a non-null object` }
+            );
+          }
+          
+          if (!update.id) {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: 'id' is required`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: 'id' is required` }
+            );
+          }
+          
+          if (!update.attributes || typeof update.attributes !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: 'attributes' must be a non-null object`),
+              `objects/${ResourceType.COMPANIES}/records/batch`,
+              "PATCH",
+              { status: 400, message: `Invalid update data at index ${i}: 'attributes' must be a non-null object` }
+            );
+          }
         }
         
         // Call the handler with the correct parameter structure
         const result = await toolConfig.handler({ updates, config });
+        
+        // Format the response based on success/failure
         return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
       } else {
         // Handle generic record batch update
-        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        const records = request.params.arguments?.records;
+        
+        // Enhanced validation
+        if (!records) {
+          return createErrorResult(
+            new Error("'records' parameter is required"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing 'records' parameter" }
+          );
+        }
+        
+        if (!Array.isArray(records)) {
+          return createErrorResult(
+            new Error("'records' parameter must be an array"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Invalid 'records' parameter: expected array" }
+          );
+        }
         
         if (records.length === 0) {
           return createErrorResult(
             new Error("'records' parameter must be a non-empty array"),
             `objects/${objectSlug}/records/batch`,
             "PATCH",
-            { status: 400, message: "Missing or invalid 'records' parameter" }
+            { status: 400, message: "Invalid 'records' parameter: array cannot be empty" }
           );
         }
         
@@ -911,11 +1070,23 @@ async function executeRecordOperation(
       // Enhanced error handling for batch operations
       console.error(`[batchUpdate] Error executing batch update for ${resourceType || objectSlug}:`, error);
       
+      // Include more context in the error message
+      const errorMessage = error instanceof Error 
+        ? `Batch update operation failed: ${error.message}`
+        : `Batch update operation failed: ${String(error)}`;
+      
+      const errorDetails = {
+        resourceType: resourceType || objectSlug,
+        operation: 'batchUpdate',
+        message: errorMessage,
+        ...(error instanceof Error && error.stack ? { stack: error.stack } : {})
+      };
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error(`Batch update operation failed: ${String(error)}`),
+        error instanceof Error ? error : new Error(errorMessage),
         `objects/${resourceType || objectSlug}/records/batch`,
         "PATCH",
-        (error as any).response?.data || {}
+        (error as any).response?.data || errorDetails
       );
     }
   }
