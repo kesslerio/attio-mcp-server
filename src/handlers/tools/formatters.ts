@@ -95,12 +95,43 @@ export function formatBatchResults(result: any, operation: string): string {
  * @param isError - Whether this is an error response
  * @returns Formatted response object
  */
-export function formatResponse(content: string, isError: boolean = false) {
+export function formatResponse(content: string | any, isError: boolean = false) {
+  // Handle non-string content by converting it to a string
+  let formattedContent: string;
+  
+  if (typeof content === 'string') {
+    formattedContent = content;
+  } else if (content === undefined || content === null) {
+    // Prevent "undefined" or "null" from being returned as response content
+    formattedContent = isError 
+      ? 'An unknown error occurred' 
+      : 'Operation completed successfully, but no content was returned';
+  } else {
+    try {
+      // Try to convert the content to a string representation
+      formattedContent = typeof content === 'object' 
+        ? JSON.stringify(content, null, 2) 
+        : String(content);
+    } catch (error) {
+      if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+        console.error('[formatResponse] Error converting content to string:', error);
+      }
+      formattedContent = 'Error: Content could not be serialized';
+    }
+  }
+  
+  // Ensure we never return empty content
+  if (!formattedContent) {
+    formattedContent = isError 
+      ? 'An unknown error occurred' 
+      : 'Operation completed successfully';
+  }
+  
   return {
     content: [
       {
         type: "text",
-        text: content,
+        text: formattedContent,
       },
     ],
     isError,
