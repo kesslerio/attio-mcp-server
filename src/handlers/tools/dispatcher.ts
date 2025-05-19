@@ -17,6 +17,29 @@ import { formatResponse, formatSearchResults, formatRecordDetails, formatListEnt
 // Import attribute mapping upfront to avoid dynamic import
 import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/index.js";
 
+/**
+ * Logs tool execution errors in a consistent format
+ * 
+ * @param toolType - The type of tool where the error occurred
+ * @param error - The error that was caught
+ * @param additionalInfo - Optional additional information about the context
+ */
+function logToolError(toolType: string, error: unknown, additionalInfo: Record<string, any> = {}) {
+  console.error(`[${toolType}] Execution error:`, error);
+  console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
+  console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
+  
+  if (error instanceof Error && error.stack) {
+    console.error(`- Stack trace: ${error.stack}`);
+  } else {
+    console.error('- No stack trace available');
+  }
+  
+  if (Object.keys(additionalInfo).length > 0) {
+    console.error('- Additional context:', additionalInfo);
+  }
+}
+
 // Import tool type definitions
 import { 
   ToolConfig,
@@ -610,9 +633,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         // Enhanced error handling with more details
-        console.error('[discoverAttributes] Execution error:', error);
-        console.error('- Error type:', error instanceof Error ? error.constructor.name : typeof error);
-        console.error('- Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+        logToolError('discoverAttributes', error);
         
         return createErrorResult(
           error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
