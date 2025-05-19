@@ -25,12 +25,19 @@ import { CompanyValidator } from '../validators/company-validator.js';
 /**
  * Helper function to execute a batch operation with improved error handling
  * 
+ * This function centralizes batch operations for companies, providing consistent
+ * error handling, proper object type setting, and fallback to individual operations
+ * when the batch API is unavailable.
+ * 
+ * @template T - The type of input records (e.g., RecordAttributes for create, {id, attributes} for update)
+ * @template R - The type of output records (typically Company)
  * @param operationType - The type of operation (create, update, delete, etc.)
  * @param records - The records to process
  * @param batchFunction - The batch API function to call
  * @param singleFunction - The single-record fallback function
  * @param batchConfig - Optional batch configuration
- * @returns Batch response 
+ * @returns Batch response with results for each record and summary statistics
+ * @throws Error if records is not an array or validation fails
  */
 async function executeBatchCompanyOperation<T, R>(
   operationType: 'create' | 'update' | 'delete' | 'search' | 'get',
@@ -86,9 +93,26 @@ async function executeBatchCompanyOperation<T, R>(
 /**
  * Creates multiple company records in batch
  * 
- * @param companies - Array of company attributes to create
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with created companies
+ * This function creates multiple company records in a single API call, with automatic
+ * fallback to individual operations if the batch API is unavailable. All input data
+ * is validated before processing.
+ * 
+ * @example
+ * ```typescript
+ * // Create multiple companies
+ * const companies = [
+ *   { name: "Acme Corp", website: "https://acme.com", industry: "Technology" },
+ *   { name: "Umbrella Inc", website: "https://umbrella.com", industry: "Manufacturing" }
+ * ];
+ * 
+ * const result = await batchCreateCompanies(companies);
+ * console.log(`Created ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * ```
+ * 
+ * @param companies - Array of company attributes to create, each must include at least a name
+ * @param batchConfig - Optional batch configuration (maxBatchSize, continueOnError, etc.)
+ * @returns Batch response containing created companies and operation summary
+ * @throws Error if companies is not an array or validation fails
  */
 export async function batchCreateCompanies(
   companies: RecordAttributes[],
@@ -128,9 +152,26 @@ export async function batchCreateCompanies(
 /**
  * Updates multiple company records in batch
  * 
- * @param updates - Array of company updates (id + attributes)
- * @param batchConfig - Optional batch configuration
- * @returns Batch response with updated companies
+ * This function updates multiple company records in a single API call, with automatic
+ * fallback to individual operations if the batch API is unavailable. It performs extensive
+ * validation to ensure all required fields are present and properly formatted.
+ * 
+ * @example
+ * ```typescript
+ * // Update multiple companies
+ * const updates = [
+ *   { id: "3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e", attributes: { industry: "New Industry" } },
+ *   { id: "e252e8df-d6b6-4909-a03c-6c9f144c4580", attributes: { website: "https://new-site.com" } }
+ * ];
+ * 
+ * const result = await batchUpdateCompanies(updates);
+ * console.log(`Updated ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * ```
+ * 
+ * @param updates - Array of company updates, each containing an id and attributes to update
+ * @param batchConfig - Optional batch configuration (maxBatchSize, continueOnError, etc.)
+ * @returns Batch response containing updated companies and operation summary
+ * @throws Error if updates is not an array, has missing ids or attributes, or if API calls fail
  */
 export async function batchUpdateCompanies(
   updates: Array<{ id: string; attributes: RecordAttributes }>,
