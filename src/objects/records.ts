@@ -33,14 +33,25 @@ import {
  * @returns Created record
  */
 export async function createObjectRecord<T extends AttioRecord>(
-  objectSlug: string,
+  objectSlug: string | ResourceType,
   attributes: RecordAttributes,
   objectId?: string
 ): Promise<T> {
+  // Ensure objectSlug is a string value, not undefined
+  if (!objectSlug) {
+    throw new Error('Object slug is required for creating records');
+  }
+
+  // Add debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[createObjectRecord] Creating record for object type: ${objectSlug}`);
+    console.log(`[createObjectRecord] Attributes:`, JSON.stringify(attributes, null, 2));
+  }
+  
   try {
     // Use the core API function
     return await createRecord<T>({
-      objectSlug,
+      objectSlug: String(objectSlug), // Ensure it's a string
       objectId,
       attributes
     });
@@ -57,8 +68,20 @@ export async function createObjectRecord<T extends AttioRecord>(
       const api = getAttioClient();
       const path = `/objects/${objectId || objectSlug}/records`;
       
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[createObjectRecord:fallback] API path: ${path}`);
+        console.log(`[createObjectRecord:fallback] Sending payload:`, {
+          data: {
+            values: attributes
+          }
+        });
+      }
+      
+      // Use the same payload format as the main implementation
       const response = await api.post(path, {
-        attributes
+        data: {
+          values: attributes
+        }
       });
       
       return response.data.data;
