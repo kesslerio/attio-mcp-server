@@ -486,7 +486,109 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle record operations
+    // Handle specific batch operations for companies
+    if (toolType === 'batchCreate' && toolName === 'batch-create-companies') {
+      const companies = request.params.arguments?.companies || [];
+      
+      try {
+        const result = await toolConfig.handler(companies);
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('batchCreateCompanies', error, { companies });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/batch`,
+          "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle specific batch operations for companies
+    if (toolType === 'batchUpdate' && toolName === 'batch-update-companies') {
+      const updates = request.params.arguments?.updates || [];
+      
+      try {
+        const result = await toolConfig.handler(updates);
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('batchUpdateCompanies', error, { updates });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/batch`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle create-company tool specifically
+    if (toolType === 'create' && toolName === 'create-company') {
+      const attributes = request.params.arguments?.attributes || request.params.arguments || {};
+      
+      try {
+        const result = await toolConfig.handler(attributes);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('createCompany', error, { attributes });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records`,
+          "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle update-company tool specifically
+    if (toolType === 'update' && toolName === 'update-company') {
+      const companyId = request.params.arguments?.companyId;
+      const attributes = request.params.arguments?.attributes || {};
+      
+      if (!companyId) {
+        return createErrorResult(
+          new Error("companyId parameter is required"),
+          `/objects/companies/records/undefined`,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: companyId" }
+        );
+      }
+      
+      try {
+        const result = await toolConfig.handler(companyId, attributes);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('updateCompany', error, { companyId, attributes });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/${companyId}`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle generic record operations
     if (['create', 'get', 'update', 'delete', 'list', 'batchCreate', 'batchUpdate'].includes(toolType)) {
       return await executeRecordOperation(toolType, toolConfig, request, resourceType);
     }
@@ -739,6 +841,51 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle fields tool - retrieves specific fields from a company
     if (toolType === 'fields') {
       return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request, { requireFields: true });
+    }
+    
+    // Handle updateAttribute tool - updates a specific attribute of a company
+    if (toolType === 'updateAttribute') {
+      const apiPath = `/${resourceType}/attributes`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      const attributeName = request.params.arguments?.attributeName as string;
+      const value = request.params.arguments?.value;
+      
+      if (!attributeName) {
+        return createErrorResult(
+          new Error("attributeName parameter is required"),
+          apiPath,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: attributeName" }
+        );
+      }
+      
+      try {
+        // Execute handler with attribute name and value
+        const result = await toolConfig.handler(id, attributeName, value);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError(toolType, error, { id, attributeName, value });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/${resourceType}/${id}/attributes/${attributeName}`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
     }
     
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
