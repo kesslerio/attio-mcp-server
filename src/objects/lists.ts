@@ -237,8 +237,13 @@ export async function addRecordToList(
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
     
+    // Note: Attio API requires a 'data' object wrapper around the record_id
+    // for the lists endpoints as per API requirements
     const response = await api.post(path, {
-      record_id: recordId
+      data: {
+        record_id: recordId
+        // record_type could also be included here if needed for specific record types
+      }
     });
     return response.data.data || response.data;
   }
