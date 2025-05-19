@@ -26,6 +26,25 @@ import { formatterConfigs, formatterToolDefinitions } from "./formatters.js";
  * Aggregated company tool configurations
  * Maintains backward compatibility by exporting all tool configs in a single object
  */
+
+// Import utility function for verifying tool configs
+import { verifyToolConfigsWithRequiredTools } from '../../tools/config-verifier.js';
+
+// Run the verification function with required tool check
+verifyToolConfigsWithRequiredTools(
+  'company',
+  {
+    ...searchToolConfigs,
+    ...crudToolConfigs,
+    ...attributeToolConfigs,
+    ...notesToolConfigs,
+    ...relationshipToolConfigs,
+    ...batchToolConfigs,
+    ...formatterConfigs
+  },
+  ['discoverAttributes', 'basicInfo', 'getAttributes', 'json']
+);
+
 export const companyToolConfigs = {
   ...searchToolConfigs,
   ...crudToolConfigs,

@@ -9,6 +9,29 @@ import { getCompanyDetails, extractCompanyId } from "./basic.js";
 import { listCompanies } from "./basic.js";
 
 /**
+ * Logs attribute operation errors in a consistent format
+ * 
+ * @param functionName - The name of the function where the error occurred
+ * @param error - The error that was caught
+ * @param context - Optional additional context about the operation
+ */
+function logAttributeError(functionName: string, error: unknown, context: Record<string, any> = {}) {
+  console.error(`[${functionName}] Error:`, error);
+  console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
+  console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
+  
+  if (error instanceof Error && error.stack) {
+    console.error(`- Stack trace: ${error.stack}`);
+  } else {
+    console.error('- No stack trace available');
+  }
+  
+  if (Object.keys(context).length > 0) {
+    console.error('- Context:', context);
+  }
+}
+
+/**
  * Gets specific company fields based on a field list
  * 
  * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
@@ -236,15 +259,44 @@ export async function discoverCompanyAttributes(): Promise<{
   // to list all available attributes for an object type
   // For now, we'll fetch a sample company and examine its fields
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[discoverCompanyAttributes] Starting attribute discovery...');
+  }
+  
   try {
     // Get a sample company to see what fields are available
     const companies = await listCompanies(1);
+    
     if (companies.length === 0) {
-      throw new Error("No companies found to discover attributes");
+      console.warn('[discoverCompanyAttributes] No companies found to discover attributes');
+      // Return an empty structure rather than throwing an error
+      return {
+        standard: [],
+        custom: [],
+        all: []
+      };
     }
     
-    const sampleCompany = await getCompanyDetails(companies[0].id?.record_id || '');
+    const sampleCompanyId = companies[0].id?.record_id;
+    if (!sampleCompanyId) {
+      console.warn('[discoverCompanyAttributes] Sample company has no record ID');
+      return {
+        standard: [],
+        custom: [],
+        all: []
+      };
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Using sample company ID: ${sampleCompanyId}`);
+    }
+    
+    const sampleCompany = await getCompanyDetails(sampleCompanyId);
     const values = sampleCompany.values || {};
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Retrieved ${Object.keys(values).length} fields from sample company`);
+    }
     
     const standardFields = new Set([
       'name', 'website', 'industry', 'domains', 'description',
@@ -284,13 +336,26 @@ export async function discoverCompanyAttributes(): Promise<{
       });
     }
     
-    return {
+    const result = {
       standard: standard.sort(),
       custom: custom.sort(),
       all: all.sort((a, b) => a.name.localeCompare(b.name))
     };
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Discovery complete. Found ${standard.length} standard fields and ${custom.length} custom fields.`);
+    }
+    
+    return result;
   } catch (error) {
-    throw new Error(`Failed to discover company attributes: ${error}`);
+    // Use consistent error logging pattern
+    logAttributeError('discoverCompanyAttributes', error, {
+      operation: 'attribute discovery',
+      context: 'company attributes'
+    });
+    
+    // Throw with more context
+    throw new Error(`Failed to discover company attributes: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
