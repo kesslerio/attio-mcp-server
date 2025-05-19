@@ -58,40 +58,50 @@ export function findToolConfig(toolName: string): {
   // Debug logging for tool lookup in development
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
   
-  // Special case for debugging issues with discover-company-attributes
-  if (toolName === 'discover-company-attributes' && debugMode) {
-    console.log('[findToolConfig] Looking for discover-company-attributes tool');
+  // Debug logging for all tool lookups in development
+  if (debugMode) {
+    console.log(`[findToolConfig] Looking for tool: ${toolName}`);
   }
   
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
-      if (debugMode && toolName === 'discover-company-attributes') {
+      if (debugMode) {
         console.log(`[findToolConfig] No config found for resource type: ${resourceType}`);
       }
       continue;
     }
     
-    // If debugging the discover-company-attributes tool, log all available tools
-    if (toolName === 'discover-company-attributes' && debugMode && resourceType === ResourceType.COMPANIES) {
-      console.log(`[findToolConfig] Available tool types for ${resourceType}:`, Object.keys(resourceConfig));
+    // For debugging, log all available tools for a resource type
+    if (debugMode) {
+      const toolTypes = Object.keys(resourceConfig);
+      if (toolTypes.includes(toolName.replace(/-/g, ''))) {
+        console.log(`[findToolConfig] Tool might be found under a different name. Available tool types:`, toolTypes);
+      }
       
-      // Check if discoverAttributes exists and has correct properties
-      if ('discoverAttributes' in resourceConfig) {
-        const config = resourceConfig['discoverAttributes'];
-        console.log('[findToolConfig] Found discoverAttributes config:', {
-          name: config.name,
-          hasHandler: typeof config.handler === 'function',
-          hasFormatter: typeof config.formatResult === 'function'
-        });
-      } else {
-        console.log('[findToolConfig] discoverAttributes not found in company configs');
+      // Specific logging for commonly problematic tools
+      const commonProblematicTools = ['discover-company-attributes', 'get-company-basic-info'];
+      if (commonProblematicTools.includes(toolName) && resourceType === ResourceType.COMPANIES) {
+        const toolTypeKey = toolName === 'discover-company-attributes' ? 'discoverAttributes' : 'basicInfo';
+        
+        // Use a type-safe way to check for existence
+        const hasToolType = Object.keys(resourceConfig).includes(toolTypeKey);
+        if (hasToolType) {
+          const config = resourceConfig[toolTypeKey as keyof typeof resourceConfig];
+          console.log(`[findToolConfig] Found ${toolTypeKey} config:`, {
+            name: (config as any).name,
+            hasHandler: typeof (config as any).handler === 'function',
+            hasFormatter: typeof (config as any).formatResult === 'function'
+          });
+        } else {
+          console.warn(`[findToolConfig] ${toolTypeKey} not found in ${resourceType} configs!`);
+        }
       }
     }
     
     for (const [toolType, config] of Object.entries(resourceConfig)) {
       if (config && config.name === toolName) {
-        if (toolName === 'discover-company-attributes' && debugMode) {
+        if (debugMode) {
           console.log(`[findToolConfig] Found tool: ${toolName}, type: ${toolType}, resource: ${resourceType}`);
         }
         

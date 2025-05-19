@@ -9,6 +9,29 @@ import { getCompanyDetails, extractCompanyId } from "./basic.js";
 import { listCompanies } from "./basic.js";
 
 /**
+ * Logs attribute operation errors in a consistent format
+ * 
+ * @param functionName - The name of the function where the error occurred
+ * @param error - The error that was caught
+ * @param context - Optional additional context about the operation
+ */
+function logAttributeError(functionName: string, error: unknown, context: Record<string, any> = {}) {
+  console.error(`[${functionName}] Error:`, error);
+  console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
+  console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
+  
+  if (error instanceof Error && error.stack) {
+    console.error(`- Stack trace: ${error.stack}`);
+  } else {
+    console.error('- No stack trace available');
+  }
+  
+  if (Object.keys(context).length > 0) {
+    console.error('- Context:', context);
+  }
+}
+
+/**
  * Gets specific company fields based on a field list
  * 
  * @param companyIdOrUri - The ID of the company or its URI (attio://companies/{id})
@@ -325,11 +348,11 @@ export async function discoverCompanyAttributes(): Promise<{
     
     return result;
   } catch (error) {
-    // Enhanced error reporting
-    console.error('[discoverCompanyAttributes] Error during attribute discovery:', error);
-    if (error instanceof Error) {
-      console.error('- Stack trace:', error.stack);
-    }
+    // Use consistent error logging pattern
+    logAttributeError('discoverCompanyAttributes', error, {
+      operation: 'attribute discovery',
+      context: 'company attributes'
+    });
     
     // Throw with more context
     throw new Error(`Failed to discover company attributes: ${error instanceof Error ? error.message : String(error)}`);
