@@ -238,7 +238,9 @@ export async function addRecordToList(
     const path = `/lists/${listId}/entries`;
     
     const response = await api.post(path, {
-      record_id: recordId
+      data: {
+        record_id: recordId
+      }
     });
     return response.data.data || response.data;
   }

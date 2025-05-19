@@ -215,7 +215,9 @@ export async function addRecordToList(
   return callWithRetry(async () => {
     try {
       const response = await api.post<AttioSingleResponse<AttioListEntry>>(path, {
-        record_id: recordId
+        data: {
+          record_id: recordId
+        }
       });
       return response.data.data || response.data;
     } catch (error: any) {
