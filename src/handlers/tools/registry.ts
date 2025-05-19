@@ -55,12 +55,46 @@ export function findToolConfig(toolName: string): {
   toolConfig: ToolConfig; 
   toolType: string;
 } | undefined {
+  // Debug logging for tool lookup in development
+  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
+  
+  // Special case for debugging issues with discover-company-attributes
+  if (toolName === 'discover-company-attributes' && debugMode) {
+    console.log('[findToolConfig] Looking for discover-company-attributes tool');
+  }
+  
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
-    if (!resourceConfig) continue;
+    if (!resourceConfig) {
+      if (debugMode && toolName === 'discover-company-attributes') {
+        console.log(`[findToolConfig] No config found for resource type: ${resourceType}`);
+      }
+      continue;
+    }
+    
+    // If debugging the discover-company-attributes tool, log all available tools
+    if (toolName === 'discover-company-attributes' && debugMode && resourceType === ResourceType.COMPANIES) {
+      console.log(`[findToolConfig] Available tool types for ${resourceType}:`, Object.keys(resourceConfig));
+      
+      // Check if discoverAttributes exists and has correct properties
+      if ('discoverAttributes' in resourceConfig) {
+        const config = resourceConfig['discoverAttributes'];
+        console.log('[findToolConfig] Found discoverAttributes config:', {
+          name: config.name,
+          hasHandler: typeof config.handler === 'function',
+          hasFormatter: typeof config.formatResult === 'function'
+        });
+      } else {
+        console.log('[findToolConfig] discoverAttributes not found in company configs');
+      }
+    }
     
     for (const [toolType, config] of Object.entries(resourceConfig)) {
       if (config && config.name === toolName) {
+        if (toolName === 'discover-company-attributes' && debugMode) {
+          console.log(`[findToolConfig] Found tool: ${toolName}, type: ${toolType}, resource: ${resourceType}`);
+        }
+        
         return {
           resourceType: resourceType as ResourceType,
           toolConfig: config as ToolConfig,
@@ -68,6 +102,10 @@ export function findToolConfig(toolName: string): {
         };
       }
     }
+  }
+  
+  if (debugMode) {
+    console.warn(`[findToolConfig] Tool not found: ${toolName}`);
   }
   
   return undefined;

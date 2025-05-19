@@ -26,6 +26,41 @@ import { formatterConfigs, formatterToolDefinitions } from "./formatters.js";
  * Aggregated company tool configurations
  * Maintains backward compatibility by exporting all tool configs in a single object
  */
+
+// Debug function to check tool configs before exporting
+function verifyToolConfigs() {
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.log('[companyToolConfigs] Verifying tool configs during initialization');
+    
+    // Check if attributeToolConfigs has discoverAttributes
+    if ('discoverAttributes' in attributeToolConfigs) {
+      console.log('[companyToolConfigs] attributeToolConfigs has discoverAttributes with name:', attributeToolConfigs.discoverAttributes.name);
+    } else {
+      console.warn('[companyToolConfigs] attributeToolConfigs is missing discoverAttributes!');
+    }
+    
+    // Verify the combined configs will have discoverAttributes
+    const combined = {
+      ...searchToolConfigs,
+      ...crudToolConfigs,
+      ...attributeToolConfigs,
+      ...notesToolConfigs,
+      ...relationshipToolConfigs,
+      ...batchToolConfigs,
+      ...formatterConfigs
+    };
+    
+    if ('discoverAttributes' in combined) {
+      console.log('[companyToolConfigs] Combined configs include discoverAttributes');
+    } else {
+      console.warn('[companyToolConfigs] Combined configs are missing discoverAttributes!');
+    }
+  }
+}
+
+// Run the verification function
+verifyToolConfigs();
+
 export const companyToolConfigs = {
   ...searchToolConfigs,
   ...crudToolConfigs,

@@ -236,15 +236,44 @@ export async function discoverCompanyAttributes(): Promise<{
   // to list all available attributes for an object type
   // For now, we'll fetch a sample company and examine its fields
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[discoverCompanyAttributes] Starting attribute discovery...');
+  }
+  
   try {
     // Get a sample company to see what fields are available
     const companies = await listCompanies(1);
+    
     if (companies.length === 0) {
-      throw new Error("No companies found to discover attributes");
+      console.warn('[discoverCompanyAttributes] No companies found to discover attributes');
+      // Return an empty structure rather than throwing an error
+      return {
+        standard: [],
+        custom: [],
+        all: []
+      };
     }
     
-    const sampleCompany = await getCompanyDetails(companies[0].id?.record_id || '');
+    const sampleCompanyId = companies[0].id?.record_id;
+    if (!sampleCompanyId) {
+      console.warn('[discoverCompanyAttributes] Sample company has no record ID');
+      return {
+        standard: [],
+        custom: [],
+        all: []
+      };
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Using sample company ID: ${sampleCompanyId}`);
+    }
+    
+    const sampleCompany = await getCompanyDetails(sampleCompanyId);
     const values = sampleCompany.values || {};
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Retrieved ${Object.keys(values).length} fields from sample company`);
+    }
     
     const standardFields = new Set([
       'name', 'website', 'industry', 'domains', 'description',
@@ -284,13 +313,26 @@ export async function discoverCompanyAttributes(): Promise<{
       });
     }
     
-    return {
+    const result = {
       standard: standard.sort(),
       custom: custom.sort(),
       all: all.sort((a, b) => a.name.localeCompare(b.name))
     };
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[discoverCompanyAttributes] Discovery complete. Found ${standard.length} standard fields and ${custom.length} custom fields.`);
+    }
+    
+    return result;
   } catch (error) {
-    throw new Error(`Failed to discover company attributes: ${error}`);
+    // Enhanced error reporting
+    console.error('[discoverCompanyAttributes] Error during attribute discovery:', error);
+    if (error instanceof Error) {
+      console.error('- Stack trace:', error.stack);
+    }
+    
+    // Throw with more context
+    throw new Error(`Failed to discover company attributes: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
