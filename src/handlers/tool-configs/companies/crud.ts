@@ -6,12 +6,20 @@ import {
   createCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany
+  deleteCompany,
+  getCompanyBasicInfo
 } from "../../../objects/companies/index.js";
 import { ToolConfig } from "../../tool-types.js";
+import { formatterConfigs } from "./formatters.js";
 
 // Company CRUD tool configurations
 export const crudToolConfigs = {
+  basicInfo: {
+    name: "get-company-basic-info",
+    handler: getCompanyBasicInfo,
+    formatResult: formatterConfigs.basicInfo.formatResult
+  } as ToolConfig,
+  
   create: {
     name: "create-company",
     handler: createCompany,
@@ -42,6 +50,20 @@ export const crudToolConfigs = {
 
 // CRUD tool definitions
 export const crudToolDefinitions = [
+  {
+    name: "get-company-basic-info",
+    description: "Get basic information about a company in Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company to retrieve"
+        }
+      },
+      required: ["companyId"]
+    }
+  },
   {
     name: "create-company",
     description: "Create a new company in Attio",
