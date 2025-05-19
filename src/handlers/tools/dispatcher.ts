@@ -486,7 +486,41 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle record operations
+    // Handle specific batch operations for companies
+    if (toolType === 'batchUpdate' && toolName === 'batch-update-companies') {
+      const updates = request.params.arguments?.updates || [];
+      
+      try {
+        const result = await toolConfig.handler(updates);
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/batch`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle specific batch operations for companies
+    if (toolType === 'batchCreate' && toolName === 'batch-create-companies') {
+      const companies = request.params.arguments?.companies || [];
+      
+      try {
+        const result = await toolConfig.handler(companies);
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/batch`,
+          "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle generic record operations
     if (['create', 'get', 'update', 'delete', 'list', 'batchCreate', 'batchUpdate'].includes(toolType)) {
       return await executeRecordOperation(toolType, toolConfig, request, resourceType);
     }
