@@ -611,6 +611,37 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
+    // Handle basicInfo tool - retrieves basic information about a company
+    if (toolType === 'basicInfo') {
+      const apiPath = `/${resourceType}/basic-info`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
