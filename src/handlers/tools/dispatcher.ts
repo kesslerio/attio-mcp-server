@@ -590,8 +590,16 @@ export async function executeToolRequest(request: CallToolRequest) {
     if (toolType === 'discoverAttributes') {
       const apiPath = `/${resourceType}/attributes`;
       
+      // Debug logging to help diagnose issues
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[discoverAttributes] Handler execution:');
+        console.log('- Resource type:', resourceType);
+        console.log('- Tool handler exists:', typeof toolConfig.handler === 'function');
+        console.log('- Tool formatter exists:', typeof toolConfig.formatResult === 'function');
+      }
+      
       try {
-        // Execute attribute discovery
+        // Execute attribute discovery - explicitly call without args to avoid undefined params
         const result = await toolConfig.handler();
         
         // Format result using the tool's formatter if available
@@ -601,9 +609,13 @@ export async function executeToolRequest(request: CallToolRequest) {
         
         return formatResponse(formattedResult);
       } catch (error) {
-        // Handle and format errors
+        // Enhanced error handling with more details
+        console.error('[discoverAttributes] Execution error:', error);
+        console.error('- Error type:', error instanceof Error ? error.constructor.name : typeof error);
+        console.error('- Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+        
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
           apiPath,
           "GET",
           hasResponseData(error) ? error.response.data : {}
