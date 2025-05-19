@@ -33,39 +33,30 @@ CODE STYLE/STRUCTURE
   * Use Jest for TypeScript tests (*.test.ts)
   * Manual test scripts should be named with `-test.js` suffix
   * Test files should mirror the structure of the source code they test
+- Integration Tests:
+  * Set up API key: export ATTIO_API_KEY=your_key_here
+  * Run integration tests: npm test -- integration/real-api-integration.test.ts
+  * Tests use real API calls with 30s timeout
+  * Tests clean up test data automatically
+  * Skip tests if no API key: SKIP_INTEGRATION_TESTS=true
+
+MCP TOOL SCHEMA GUIDELINES
+- NEVER use oneOf, allOf, or anyOf at the top level of tool input schemas
+- The MCP protocol does NOT support these JSON Schema features at the root level
+- Using them will cause connection errors: "input_schema does not support oneOf, allOf, or anyOf at the top level"
+- See docs/mcp-schema-guidelines.md for detailed guidelines and examples
+- Handle either/or parameter validation in runtime code, not in schemas
 
 GITHUB WORKFLOW
 
-Repository Setup & PRs
-- `origin`: Primary repo (kesslerio/attio-mcp-server)
-- `upstream`: Original repo (hmk/attio-mcp-server)
-
 ⚠️ CRITICAL: PR TARGETING
-ALWAYS create PRs to kesslerio/attio-mcp-server unless explicitly told to target hmk/attio-mcp-server.
+ALWAYS create PRs to kesslerio/attio-mcp-server unless EXPLICITLY told to target hmk/attio-mcp-server.
+NEVER create PRs to hmk/attio-mcp-server without explicit instructions.
+NEVER assume PR should go to upstream repository.
+ALWAYS check all config files and templates use kesslerio URLs, not hmk URLs.
 
-Typical Workflow
-```bash
-# 1. Create feature branch
-git checkout -b feature/descriptive-name
-
-# 2. Make changes and commit
-git add relevant-files
-git commit -m "Feature: Clear description"
-
-# 3. Push branch
-git push origin feature/descriptive-name
-
-# 4. Create PR (to kesslerio/attio-mcp-server)
-gh pr create --repo kesslerio/attio-mcp-server --title "Feature: Description" --body "Details here"
-```
-
-Keep in Sync with Upstream
-```bash
-git fetch upstream
-git checkout main
-git merge upstream/main
-git push origin main
-```
+git checkout -b feature/<name> && git add . && git commit -m "Feature: <desc>" && git push -u origin HEAD && gh pr create -R kesslerio/attio-mcp-server -t "Feature: <desc>" -b "<details>"
+git fetch upstream && git checkout main && git merge upstream/main && git push origin main
 
 Best Practices for Clean PRs
 1. Focus on a single feature or fix per PR
@@ -81,38 +72,21 @@ Best Practices for Clean PRs
    - Make sure your changes work with the current upstream code
 6. Update documentation
    - Add or update documentation to reflect your changes
+7. For refactoring work
+   - Follow guidelines in @docs/refactoring-guidelines.md
+   - Use checklists in issues to track progress
+   - Reference related commits in PR descriptions
 
-Troubleshooting
-If you accidentally included unwanted files in your PR:
-```bash
-# Remove the file from git tracking without deleting it
-git rm --cached path/to/file
-
-# Amend the commit
-git commit --amend
-
-# Force push to your repository
-git push -f origin feature/your-feature-name
-```
-
-If upstream has changed since you created your branch
-```bash
-# Fetch latest changes from upstream
-git fetch upstream
-
-# Rebase your branch on the latest upstream main
-git rebase upstream/main
-
-# Force push to your repository
-git push -f origin feature/your-feature-name
-```
+Troubleshooting:
+git rm --cached <path> && git commit --amend && git push -f origin <branch>
+git fetch upstream && git rebase upstream/main && git push -f origin <branch>
 
 ISSUE MANAGEMENT
-
 1. Issue Creation
 - Create issues before starting work
 - Use descriptive titles: type: Description (clear, concise)
 - Search first: gh issue list --repo kesslerio/attio-mcp-server --search "keyword" to avoid duplication
+- For refactoring issues: Follow template in @docs/refactoring-guidelines.md using checklists
 
 Required Labels:
 - Priority Labels:
@@ -177,3 +151,19 @@ When closing issues, always include:
   - Challenges/solutions
   - Future considerations
 - Verification statement: "✅ VERIFICATION: I have completed all GitHub documentation requirements including: [list requirements]"
+
+AVAILABLE DOCUMENTATION SOURCES
+Indexed: docs.cognee.ai (Cognee.ai official documentation)
+Indexed: docs.falkordb.com (FalkorDB graph database documentation)
+Indexed: modelcontextprotocol.io (MCP protocol documentation)
+Indexed: github.com (MCP Python SDK, Brave Search, Tavily MCP)
+Indexed: yourls.org (YOURLS URL shortener documentation)
+Indexed: docs.attio.com (Attio's official API documentation)
+Namespace mcp__crawl4ai-rag__:
+- get_available_sources()
+- crawl_single_page(url)
+- smart_crawl_url(url)
+- perform_rag_query(q, source?, match_count?)
+Examples:
+perform_rag_query("authentication bearer token","docs.attio.com")
+perform_rag_query("webhooks configuration",null,10)
