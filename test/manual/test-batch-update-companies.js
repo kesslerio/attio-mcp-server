@@ -1,6 +1,18 @@
 /**
  * Manual test for batch-update-companies tool
- * Tests the fix for issue #154
+ * Tests the fix for issue #154: "batch-update-companies tool error"
+ * 
+ * This test file validates that the fixes made for issue #154 are working correctly.
+ * Specifically, it tests:
+ * 1. Proper handling of the 'updates' parameter
+ * 2. Correct URL construction with 'companies' as the object type
+ * 3. Accurate processing of the batch update operation
+ * 
+ * We use mocks to avoid hitting the actual API while still testing the critical
+ * logic of the function. The mocks verify that:
+ * - The objectSlug is correctly set to 'companies'
+ * - The records parameter is properly passed and processed
+ * - Error handling works as expected
  */
 const { batchUpdateCompanies } = require('../../build/objects/batch-companies.js');
 
