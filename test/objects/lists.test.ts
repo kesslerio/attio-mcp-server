@@ -350,7 +350,7 @@ describe('lists', () => {
       expect(mockedAttioOperations.addRecordToList).toHaveBeenCalledWith(listId, recordId);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries`,
-        { record_id: recordId }
+        { data: { record_id: recordId } }
       );
       expect(result).toEqual(mockResponse.data.data);
     });
