@@ -18,6 +18,22 @@ import { formatResponse, formatSearchResults, formatRecordDetails, formatListEnt
 import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/index.js";
 
 /**
+ * Logs tool execution requests in a consistent format (for development mode)
+ * 
+ * @param toolType - The type of tool being executed
+ * @param toolName - The name of the tool
+ * @param request - The request data
+ */
+function logToolRequest(toolType: string, toolName: string, request: any) {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  console.log(`[${toolName}] Tool execution request:`);
+  console.log(`- Tool type: ${toolType}`);
+  console.log(`- Arguments:`, request.params.arguments ? 
+    JSON.stringify(request.params.arguments, null, 2) : 'No arguments provided');
+}
+
+/**
  * Logs tool execution errors in a consistent format
  * 
  * @param toolType - The type of tool where the error occurred
@@ -38,6 +54,28 @@ function logToolError(toolType: string, error: unknown, additionalInfo: Record<s
   if (Object.keys(additionalInfo).length > 0) {
     console.error('- Additional context:', additionalInfo);
   }
+}
+
+/**
+ * Validates attribute parameters for company operations
+ * 
+ * @param attributes - The attributes object to validate
+ * @returns Validation result or error message
+ */
+function validateAttributes(attributes: any): true | string {
+  if (!attributes) {
+    return "Attributes parameter is required";
+  }
+  
+  if (typeof attributes !== 'object' || Array.isArray(attributes)) {
+    return "Attributes parameter must be an object";
+  }
+  
+  if (Object.keys(attributes).length === 0) {
+    return "Attributes parameter cannot be empty";
+  }
+  
+  return true;
 }
 
 // Import tool type definitions
@@ -486,64 +524,191 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle specific batch operations for companies
-    if (toolType === 'batchUpdate' && toolName === 'batch-update-companies') {
-      const updates = request.params.arguments?.updates || [];
+        /**
+     * Helper function to handle company batch operations consistently
+     * 
+     * @param operation - The batch operation type (create or update)
+     * @param request - The request object
+     * @param toolConfig - The tool configuration
+     * @returns Formatted response
+     */
+    async function handleCompanyBatchOperation(
+      operation: 'create' | 'update',
+      request: CallToolRequest,
+      toolConfig: ToolConfig
+    ) {
+      // Extract the appropriate parameter based on operation type
+      const paramName = operation === 'create' ? 'companies' : 'updates';
+      const logName = operation === 'create' ? 'batchCreateCompanies' : 'batchUpdateCompanies';
+      const httpMethod = operation === 'create' ? 'POST' : 'PATCH';
+      
+      // Log the request in development mode
+      logToolRequest(operation === 'create' ? 'batchCreate' : 'batchUpdate', 
+                    operation === 'create' ? 'batch-create-companies' : 'batch-update-companies', 
+                    request);
+      
+      // Extract and validate parameters
+      const records = request.params.arguments?.[paramName] || [];
+      
+      if (!Array.isArray(records)) {
+        return createErrorResult(
+          new Error(`${paramName} parameter must be an array`),
+          `/objects/companies/records/batch`,
+          httpMethod,
+          { status: 400, message: `Invalid parameter: ${paramName} must be an array` }
+        );
+      }
+      
+      if (records.length === 0) {
+        return createErrorResult(
+          new Error(`${paramName} parameter cannot be empty`),
+          `/objects/companies/records/batch`,
+          httpMethod,
+          { status: 400, message: `Invalid parameter: ${paramName} cannot be empty` }
+        );
+      }
+      
+      // Validate each record in the array
+      if (operation === 'update') {
+        // For updates, check id and attributes
+        for (let i = 0; i < records.length; i++) {
+          const record = records[i];
+          if (!record || typeof record !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: must be a non-null object`),
+              `/objects/companies/records/batch`,
+              httpMethod,
+              { status: 400, message: `Invalid update data at index ${i}: must be a non-null object` }
+            );
+          }
+          
+          if (!record.id) {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: 'id' is required`),
+              `/objects/companies/records/batch`,
+              httpMethod,
+              { status: 400, message: `Invalid update data at index ${i}: 'id' is required` }
+            );
+          }
+          
+          const attributesValidation = validateAttributes(record.attributes);
+          if (attributesValidation !== true) {
+            return createErrorResult(
+              new Error(`Invalid update data at index ${i}: ${attributesValidation}`),
+              `/objects/companies/records/batch`,
+              httpMethod,
+              { status: 400, message: `Invalid update data at index ${i}: ${attributesValidation}` }
+            );
+          }
+        }
+      } else {
+        // For creates, validate required fields
+        for (let i = 0; i < records.length; i++) {
+          const record = records[i];
+          if (!record || typeof record !== 'object') {
+            return createErrorResult(
+              new Error(`Invalid company data at index ${i}: must be a non-null object`),
+              `/objects/companies/records/batch`,
+              httpMethod,
+              { status: 400, message: `Invalid company data at index ${i}: must be a non-null object` }
+            );
+          }
+          
+          if (!record.name) {
+            return createErrorResult(
+              new Error(`Invalid company data at index ${i}: 'name' is required`),
+              `/objects/companies/records/batch`,
+              httpMethod,
+              { status: 400, message: `Invalid company data at index ${i}: 'name' is required` }
+            );
+          }
+        }
+      }
       
       try {
-        const result = await toolConfig.handler(updates);
-        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+        const result = await toolConfig.handler(records);
+        return formatResponse(formatBatchResults(result, operation), result.summary.failed > 0);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError('batchUpdateCompanies', error, { updates });
+          logToolError(logName, error, { [paramName]: records });
         }
         
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
           `/objects/companies/records/batch`,
-          "PATCH",
+          httpMethod,
           hasResponseData(error) ? error.response.data : {}
         );
       }
+    }
+    
+    // Handle specific batch operations for companies
+    if (toolType === 'batchUpdate' && toolName === 'batch-update-companies') {
+      return await handleCompanyBatchOperation('update', request, toolConfig);
     }
     
     // Handle specific batch operations for companies
     if (toolType === 'batchCreate' && toolName === 'batch-create-companies') {
-      const companies = request.params.arguments?.companies || [];
-      
-      try {
-        const result = await toolConfig.handler(companies);
-        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          logToolError('batchCreateCompanies', error, { companies });
-        }
-        
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/objects/companies/records/batch`,
-          "POST",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
+      return await handleCompanyBatchOperation('create', request, toolConfig);
     }
     
-    // Handle update-company tool specifically
-    if (toolType === 'update' && toolName === 'update-company') {
-      const companyId = request.params.arguments?.companyId;
-      const attributes = request.params.arguments?.attributes || {};
+    /**
+     * Helper function to handle individual company operations consistently
+     * 
+     * @param operation - The operation type (create or update)
+     * @param request - The request object
+     * @param toolConfig - The tool configuration
+     * @returns Formatted response
+     */
+    async function handleCompanyOperation(
+      operation: 'create' | 'update',
+      request: CallToolRequest,
+      toolConfig: ToolConfig
+    ) {
+      // Extract parameters based on operation type
+      const logName = operation === 'create' ? 'createCompany' : 'updateCompany';
+      const httpMethod = operation === 'create' ? 'POST' : 'PATCH';
       
-      if (!companyId) {
+      // Log the request in development mode
+      logToolRequest(operation, 
+                    operation === 'create' ? 'create-company' : 'update-company', 
+                    request);
+      
+      // For updates, extract and validate companyId
+      let companyId: string | undefined;
+      if (operation === 'update') {
+        companyId = request.params.arguments?.companyId as string | undefined;
+        if (!companyId) {
+          return createErrorResult(
+            new Error("companyId parameter is required"),
+            `/objects/companies/records/undefined`,
+            httpMethod,
+            { status: 400, message: "Missing required parameter: companyId" }
+          );
+        }
+      }
+      
+      // Extract and validate attributes
+      const attributes = operation === 'create' 
+        ? (request.params.arguments?.attributes || request.params.arguments || {})
+        : (request.params.arguments?.attributes || {});
+      
+      const attributesValidation = validateAttributes(attributes);
+      if (attributesValidation !== true) {
         return createErrorResult(
-          new Error("companyId parameter is required"),
-          `/objects/companies/records/undefined`,
-          "PATCH",
-          { status: 400, message: "Missing required parameter: companyId" }
+          new Error(attributesValidation),
+          `/objects/companies/records${operation === 'update' ? `/${companyId}` : ''}`,
+          httpMethod,
+          { status: 400, message: attributesValidation }
         );
       }
       
       try {
-        const result = await toolConfig.handler(companyId, attributes);
+        // Call appropriate handler based on operation type
+        const result = operation === 'create'
+          ? await toolConfig.handler(attributes)
+          : await toolConfig.handler(companyId, attributes);
+        
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
           : safeJsonStringify(result);
@@ -551,16 +716,26 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError('updateCompany', error, { companyId, attributes });
+          logToolError(logName, error, { companyId, attributes });
         }
         
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
-          `/objects/companies/records/${companyId}`,
-          "PATCH",
+          `/objects/companies/records${operation === 'update' ? `/${companyId}` : ''}`,
+          httpMethod,
           hasResponseData(error) ? error.response.data : {}
         );
       }
+    }
+    
+    // Handle create-company tool specifically
+    if (toolType === 'create' && toolName === 'create-company') {
+      return await handleCompanyOperation('create', request, toolConfig);
+    }
+    
+    // Handle update-company tool specifically
+    if (toolType === 'update' && toolName === 'update-company') {
+      return await handleCompanyOperation('update', request, toolConfig);
     }
     
     // Handle generic record operations
@@ -818,9 +993,23 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request, { requireFields: true });
     }
     
-    // Handle updateAttribute tool - updates a specific attribute of a company
-    if (toolType === 'updateAttribute') {
+    /**
+     * Helper function to handle update-company-attribute operation consistently
+     * 
+     * @param resourceType - The resource type being updated
+     * @param request - The request object
+     * @param toolConfig - The tool configuration
+     * @returns Formatted response
+     */
+    async function handleCompanyAttributeUpdate(
+      resourceType: ResourceType,
+      request: CallToolRequest,
+      toolConfig: ToolConfig
+    ) {
       const apiPath = `/${resourceType}/attributes`;
+      
+      // Log the request in development mode
+      logToolRequest('updateAttribute', 'update-company-attribute', request);
       
       // Validate and extract resource ID
       const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
@@ -846,7 +1035,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
       
       // Check if value exists in the arguments (null is a valid value for clearing attributes)
-      if (!('value' in request.params.arguments)) {
+      if (request.params.arguments && !('value' in request.params.arguments)) {
         return createErrorResult(
           new Error("value parameter is required (use null to clear an attribute)"),
           apiPath,
@@ -888,7 +1077,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError(toolType, error, { id, attributeName, value });
+          logToolError('updateAttribute', error, { id, attributeName, value });
         }
         
         // Enhanced error response with more context
@@ -912,6 +1101,11 @@ export async function executeToolRequest(request: CallToolRequest) {
           }
         );
       }
+    }
+    
+    // Handle updateAttribute tool - updates a specific attribute of a company
+    if (toolType === 'updateAttribute' && toolName === 'update-company-attribute') {
+      return await handleCompanyAttributeUpdate(ResourceType.COMPANIES, request, toolConfig);
     }
     
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
