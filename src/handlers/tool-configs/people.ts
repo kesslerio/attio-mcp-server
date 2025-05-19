@@ -6,7 +6,8 @@ import {
   AttioRecord, 
   DateRange, 
   InteractionType,
-  ActivityFilter 
+  ActivityFilter,
+  Person
 } from "../../types/attio.js";
 import {
   searchPeople,
@@ -73,6 +74,84 @@ export const peopleToolConfigs = {
   details: {
     name: "get-person-details",
     handler: getPersonDetails,
+    formatResult: (person: Person) => {
+      if (!person || !person.id || !person.values) {
+        return 'No person details found.';
+      }
+
+      const personId = person.id.record_id || 'unknown';
+      const name = person.values.name?.[0]?.value || 'Unnamed';
+      
+      // Build sections of the output
+      const sections = [];
+      
+      // Basic information section
+      sections.push(`# Person Details: ${name} (ID: ${personId})`);
+      
+      // Contact information section
+      const contactInfo = [];
+      if (person.values.email_addresses?.length) {
+        contactInfo.push(`Email: ${person.values.email_addresses.map((e: any) => e.value).join(', ')}`);
+      }
+      if (person.values.phone_numbers?.length) {
+        contactInfo.push(`Phone: ${person.values.phone_numbers.map((p: any) => p.value).join(', ')}`);
+      }
+      if (contactInfo.length) {
+        sections.push(`## Contact Information\n${contactInfo.join('\n')}`);
+      }
+      
+      // Professional information section
+      const professionalInfo = [];
+      if (person.values.job_title?.[0]?.value) {
+        professionalInfo.push(`Job Title: ${person.values.job_title[0].value}`);
+      }
+      if (person.values.company?.[0]?.value) {
+        professionalInfo.push(`Company: ${person.values.company[0].value}`);
+      }
+      if (professionalInfo.length) {
+        sections.push(`## Professional Information\n${professionalInfo.join('\n')}`);
+      }
+      
+      // Additional attributes section - show all other attributes
+      const additionalAttributes = [];
+      for (const [key, values] of Object.entries(person.values)) {
+        // Skip already displayed attributes
+        if (['name', 'email_addresses', 'phone_numbers', 'job_title', 'company'].includes(key)) {
+          continue;
+        }
+        
+        if (Array.isArray(values) && values.length > 0) {
+          // Format different value types appropriately
+          const formattedValues = values.map((v: any) => {
+            if (v.value === undefined) return 'N/A';
+            if (typeof v.value === 'object') return JSON.stringify(v.value);
+            return v.value;
+          }).join(', ');
+          
+          // Convert snake_case to Title Case for display
+          const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          additionalAttributes.push(`${displayKey}: ${formattedValues}`);
+        }
+      }
+      
+      if (additionalAttributes.length) {
+        sections.push(`## Additional Attributes\n${additionalAttributes.join('\n')}`);
+      }
+      
+      // Timestamps section
+      const timestamps = [];
+      if (person.values.created_at?.[0]?.value) {
+        timestamps.push(`Created: ${person.values.created_at[0].value}`);
+      }
+      if (person.values.updated_at?.[0]?.value) {
+        timestamps.push(`Updated: ${person.values.updated_at[0].value}`);
+      }
+      if (timestamps.length) {
+        sections.push(`## Timestamps\n${timestamps.join('\n')}`);
+      }
+      
+      return sections.join('\n\n');
+    }
   } as DetailsToolConfig,
   notes: {
     name: "get-person-notes",
