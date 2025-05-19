@@ -6,6 +6,9 @@ import {
   batchSearchCompanies,
   batchGetCompanyDetails
 } from '../../src/objects/batch-companies';
+
+// New test to validate the dispatch function's handling of the batch-create-companies tool
+// Add this test to verify the fix for issue #153
 import * as companies from '../../src/objects/companies/index';
 
 // Mock the individual operations
@@ -58,7 +61,8 @@ describe('Batch Company Operations', () => {
         { name: 'Company 2', website: 'https://company2.com' }
       ];
       
-      const result = await batchCreateCompanies(companiesData);
+      // Call the function with the new parameter structure
+      const result = await batchCreateCompanies({ companies: companiesData });
       
       expect(result.summary).toEqual({
         total: 2,
@@ -92,7 +96,7 @@ describe('Batch Company Operations', () => {
         { name: '' } // This should fail validation
       ];
       
-      const result = await batchCreateCompanies(companiesData);
+      const result = await batchCreateCompanies({ companies: companiesData });
       
       expect(result.summary).toEqual({
         total: 2,
@@ -132,7 +136,7 @@ describe('Batch Company Operations', () => {
         { id: '2', attributes: { name: 'Updated Company 2', website: 'https://updated2.com' } }
       ];
       
-      const result = await batchUpdateCompanies(updates);
+      const result = await batchUpdateCompanies({ updates });
       
       expect(result.summary).toEqual({
         total: 2,
@@ -253,6 +257,140 @@ describe('Batch Company Operations', () => {
     });
   });
   
+  describe('Issue #153 Validation', () => {
+    it('should correctly handle the exact example request from issue #153', async () => {
+      // Mock implementation for batch create
+      const mockCompanies = [
+        { 
+          id: { record_id: 'alpha123' }, 
+          values: { 
+            name: [{ value: 'Test Company Alpha' }],
+            description: [{ value: 'A test company for batch operations' }],
+            industry: [{ value: 'Technology' }]
+          } 
+        },
+        { 
+          id: { record_id: 'beta456' }, 
+          values: { 
+            name: [{ value: 'Test Company Beta' }],
+            description: [{ value: 'Another test company for batch operations' }],
+            industry: [{ value: 'Consulting' }]
+          } 
+        },
+        { 
+          id: { record_id: 'gamma789' }, 
+          values: { 
+            name: [{ value: 'Test Company Gamma' }],
+            description: [{ value: 'A third test company for batch operations' }],
+            industry: [{ value: 'Manufacturing' }]
+          } 
+        }
+      ];
+      
+      // Mock the createCompany function since the batch API will fail in test
+      vi.mocked(companies.createCompany)
+        .mockResolvedValueOnce(mockCompanies[0])
+        .mockResolvedValueOnce(mockCompanies[1])
+        .mockResolvedValueOnce(mockCompanies[2]);
+        
+      // This is the exact request payload from issue #153
+      const exampleRequest = {
+        companies: [
+          {
+            name: "Test Company Alpha",
+            description: "A test company for batch operations",
+            industry: "Technology"
+          },
+          {
+            name: "Test Company Beta",
+            description: "Another test company for batch operations",
+            industry: "Consulting"
+          },
+          {
+            name: "Test Company Gamma",
+            description: "A third test company for batch operations",
+            industry: "Manufacturing"
+          }
+        ]
+      };
+      
+      // Call the function with the example request
+      const result = await batchCreateCompanies(exampleRequest);
+      
+      // Verify results
+      expect(result.summary).toEqual({
+        total: 3,
+        succeeded: 3,
+        failed: 0
+      });
+      
+      // Verify each company was created with correct data
+      expect(result.results).toHaveLength(3);
+      expect(result.results[0].success).toBe(true);
+      expect(result.results[0].data.values.name[0].value).toBe('Test Company Alpha');
+      expect(result.results[1].data.values.name[0].value).toBe('Test Company Beta');
+      expect(result.results[2].data.values.name[0].value).toBe('Test Company Gamma');
+    });
+    
+    // Edge case tests for input validation
+    describe('Edge Cases', () => {
+      it('should reject null params object', async () => {
+        await expect(batchCreateCompanies(null as any))
+          .rejects.toThrow("Invalid request: params object is required");
+      });
+      
+      it('should reject undefined companies array', async () => {
+        await expect(batchCreateCompanies({} as any))
+          .rejects.toThrow("Invalid request: 'companies' parameter is required");
+      });
+      
+      it('should reject non-array companies parameter', async () => {
+        await expect(batchCreateCompanies({ companies: 'not an array' as any }))
+          .rejects.toThrow("Invalid request: 'companies' parameter must be an array");
+      });
+      
+      it('should reject empty companies array', async () => {
+        await expect(batchCreateCompanies({ companies: [] }))
+          .rejects.toThrow("Invalid request: 'companies' array cannot be empty");
+      });
+      
+      it('should reject companies array with null items', async () => {
+        await expect(batchCreateCompanies({ companies: [null] as any }))
+          .rejects.toThrow("Invalid company data at index 0: must be a non-null object");
+      });
+      
+      it('should reject companies array with items missing name', async () => {
+        await expect(batchCreateCompanies({ 
+          companies: [{ description: 'Missing name' }] 
+        }))
+          .rejects.toThrow("Invalid company data at index 0: 'name' is required");
+      });
+      
+      // Similar tests for batch update
+      it('should reject null params object for update', async () => {
+        await expect(batchUpdateCompanies(null as any))
+          .rejects.toThrow("Invalid request: params object is required");
+      });
+      
+      it('should reject undefined updates array', async () => {
+        await expect(batchUpdateCompanies({} as any))
+          .rejects.toThrow("Invalid request: 'updates' parameter is required");
+      });
+      
+      it('should reject companies array with items missing required properties', async () => {
+        await expect(batchUpdateCompanies({ 
+          updates: [{ /* missing id and attributes */ }] as any
+        }))
+          .rejects.toThrow("Invalid update data at index 0: 'id' is required");
+        
+        await expect(batchUpdateCompanies({ 
+          updates: [{ id: '123' /* missing attributes */ }] as any
+        }))
+          .rejects.toThrow("Invalid update data at index 0: 'attributes' must be a non-null object");
+      });
+    });
+  });
+  
   describe('Batch Configuration', () => {
     it('should respect maxBatchSize configuration', async () => {
       const mockCompany = {
@@ -267,8 +405,9 @@ describe('Batch Company Operations', () => {
         name: `Company ${i}`
       }));
       
-      const result = await batchCreateCompanies(companiesData, {
-        maxBatchSize: 5 // Should process in 3 chunks
+      const result = await batchCreateCompanies({ 
+        companies: companiesData, 
+        config: { maxBatchSize: 5 } // Should process in 3 chunks 
       });
       
       expect(result.summary.total).toBe(15);
@@ -294,8 +433,9 @@ describe('Batch Company Operations', () => {
         { name: 'Company 3' }
       ];
       
-      const result = await batchCreateCompanies(companiesData, {
-        continueOnError: true // Default, but explicit here
+      const result = await batchCreateCompanies({
+        companies: companiesData,
+        config: { continueOnError: true } // Default, but explicit here
       });
       
       expect(result.summary).toEqual({

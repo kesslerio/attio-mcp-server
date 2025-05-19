@@ -23,98 +23,248 @@ import {
 import { CompanyValidator } from '../validators/company-validator.js';
 
 /**
- * Creates multiple company records in batch
+ * Helper function to execute a batch operation with improved error handling
  * 
- * @param companies - Array of company attributes to create
+ * This function centralizes batch operations for companies, providing consistent
+ * error handling, proper object type setting, and fallback to individual operations
+ * when the batch API is unavailable.
+ * 
+ * @template T - The type of input records (e.g., RecordAttributes for create, {id, attributes} for update)
+ * @template R - The type of output records (typically Company)
+ * @param operationType - The type of operation (create, update, delete, etc.)
+ * @param records - The records to process
+ * @param batchFunction - The batch API function to call
+ * @param singleFunction - The single-record fallback function
  * @param batchConfig - Optional batch configuration
- * @returns Batch response with created companies
+ * @returns Batch response with results for each record and summary statistics
+ * @throws Error if records is not an array or validation fails
  */
-export async function batchCreateCompanies(
-  companies: RecordAttributes[],
+async function executeBatchCompanyOperation<T, R>(
+  operationType: 'create' | 'update' | 'delete' | 'search' | 'get',
+  records: T[],
+  batchFunction: (params: any) => Promise<R[]>,
+  singleFunction: (params: T) => Promise<R>,
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company>> {
+): Promise<BatchResponse<R>> {
+  // Validation check
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new Error(`Invalid ${operationType} parameters: records must be a non-empty array`);
+  }
+  
   try {
-    // Option 1: Use the generic batch create with validation
-    const validatedCompanies = await Promise.all(
-      companies.map(company => CompanyValidator.validateCreate(company))
-    );
-    
-    const results = await batchCreateRecords<Company>({
-      objectSlug: ResourceType.COMPANIES,
-      records: validatedCompanies.map((attributes: any) => ({ attributes }))
+    // Attempt to use the batch API
+    const results = await batchFunction({
+      objectSlug: ResourceType.COMPANIES, // Always explicitly set the resource type
+      records: operationType === 'create' 
+        ? records.map((r: any) => ({ attributes: r }))
+        : records
     });
     
-    // Convert to BatchResponse format
-    const response: BatchResponse<Company> = {
-      results: results.map((company, index) => ({
-        id: `create_company_${index}`,
+    // Format the response
+    return {
+      results: results.map((result, index) => ({
+        id: `${operationType}_company_${index}`,
         success: true,
-        data: company
+        data: result
       })),
       summary: {
-        total: companies.length,
+        total: records.length,
         succeeded: results.length,
-        failed: companies.length - results.length
+        failed: records.length - results.length
       }
     };
-    
-    return response;
   } catch (error) {
-    // Fallback to individual operations if batch API fails
-    return executeBatchOperations<RecordAttributes, Company>(
-      companies.map((attrs, index) => ({
-        id: `create_company_${index}`,
-        params: attrs
+    // Log the error for debugging
+    console.error(`[batchCompany${operationType.charAt(0).toUpperCase() + operationType.slice(1)}] ` +
+      `Batch API failed with error: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // Fall back to individual operations
+    return executeBatchOperations<T, R>(
+      records.map((record, index) => ({
+        id: `${operationType}_company_${index}`,
+        params: record
       })),
-      (params) => createCompany(params),
+      singleFunction,
       batchConfig
     );
   }
 }
 
 /**
- * Updates multiple company records in batch
+ * Creates multiple company records in batch operation
  * 
- * @param updates - Array of company updates (id + attributes)
- * @param batchConfig - Optional batch configuration
+ * This function creates multiple company records in a single API call, with automatic
+ * fallback to individual operations if the batch API is unavailable. All input data
+ * is validated before processing.
+ * 
+ * @example
+ * ```typescript
+ * // Create multiple companies
+ * const companies = [
+ *   { name: "Acme Corp", website: "https://acme.com", industry: "Technology" },
+ *   { name: "Umbrella Inc", website: "https://umbrella.com", industry: "Manufacturing" }
+ * ];
+ * 
+ * const result = await batchCreateCompanies({ companies });
+ * console.log(`Created ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * ```
+ * 
+ * Note on parameter structure:
+ * This function expects a different parameter structure compared to generic record batch operations.
+ * While generic batch operations take (objectSlug, records, objectId), company-specific batch operations
+ * expect an object with {companies, config} to match the structure expected by the MCP tool schema.
+ * 
+ * @param params - Object containing array of companies and optional config
+ * @returns Batch response with created companies
+ */
+export async function batchCreateCompanies(
+  params: { companies: RecordAttributes[], config?: Partial<BatchConfig> }
+): Promise<BatchResponse<Company>> {
+  // Early validation of parameters - fail fast
+  if (!params) {
+    throw new Error("Invalid request: params object is required");
+  }
+  
+  // Extract and validate companies array
+  const { companies, config: batchConfig } = params;
+  
+  if (!companies) {
+    throw new Error("Invalid request: 'companies' parameter is required");
+  }
+  
+  if (!Array.isArray(companies)) {
+    throw new Error("Invalid request: 'companies' parameter must be an array");
+  }
+  
+  if (companies.length === 0) {
+    throw new Error("Invalid request: 'companies' array cannot be empty");
+  }
+  
+  // Validate array contents - ensure each item is a valid object
+  companies.forEach((company, index) => {
+    if (!company || typeof company !== 'object') {
+      throw new Error(`Invalid company data at index ${index}: must be a non-null object`);
+    }
+    if (!company.name) {
+      throw new Error(`Invalid company data at index ${index}: 'name' is required`);
+    }
+  });
+  
+  try {
+    // Use the generic batch create with validation
+    const validatedCompanies = await Promise.all(
+      companies.map(company => CompanyValidator.validateCreate(company))
+    );
+    
+    // Use the shared helper function for consistent handling
+    return executeBatchCompanyOperation<RecordAttributes, Company>(
+      'create',
+      validatedCompanies,
+      batchCreateRecords,
+      createCompany,
+      batchConfig
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('validation')) {
+      // Re-throw validation errors with more context
+      throw new Error(`Company validation failed: ${error.message}`);
+    }
+    
+    // For other errors, log and then rethrow
+    console.error('[batchCreateCompanies] Error creating companies:', error);
+    throw error;
+  }
+}
+
+/**
+ * Updates multiple company records in batch operation
+ * 
+ * This function updates multiple company records in a single API call, with automatic
+ * fallback to individual operations if the batch API is unavailable. It performs extensive
+ * validation to ensure all required fields are present and properly formatted.
+ * 
+ * @example
+ * ```typescript
+ * // Update multiple companies
+ * const updates = [
+ *   { id: "3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e", attributes: { industry: "New Industry" } },
+ *   { id: "e252e8df-d6b6-4909-a03c-6c9f144c4580", attributes: { website: "https://new-site.com" } }
+ * ];
+ * 
+ * const result = await batchUpdateCompanies({ updates });
+ * console.log(`Updated ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * ```
+ * 
+ * Note on parameter structure:
+ * This function expects a different parameter structure compared to generic record batch operations.
+ * While generic batch operations take (objectSlug, records, objectId), company-specific batch operations
+ * expect an object with {updates, config} to match the structure expected by the MCP tool schema.
+ * 
+ * @param params - Object containing array of updates and optional config
  * @returns Batch response with updated companies
  */
 export async function batchUpdateCompanies(
-  updates: Array<{ id: string; attributes: RecordAttributes }>,
-  batchConfig?: Partial<BatchConfig>
+  params: { updates: Array<{ id: string; attributes: RecordAttributes }>, config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
+  // Early validation of parameters - fail fast
+  if (!params) {
+    throw new Error("Invalid request: params object is required");
+  }
+  
+  // Extract and validate updates array
+  const { updates, config: batchConfig } = params;
+  
+  if (!updates) {
+    throw new Error("Invalid request: 'updates' parameter is required");
+  }
+  
+  if (!Array.isArray(updates)) {
+    throw new Error("Invalid request: 'updates' parameter must be an array");
+  }
+  
+  if (updates.length === 0) {
+    throw new Error("Invalid request: 'updates' array cannot be empty");
+  }
+  
+  // Validate array contents - ensure each item has required fields
+  updates.forEach((update, index) => {
+    if (!update || typeof update !== 'object') {
+      throw new Error(`Invalid update data at index ${index}: must be a non-null object`);
+    }
+    if (!update.id) {
+      throw new Error(`Invalid update data at index ${index}: 'id' is required`);
+    }
+    if (!update.attributes || typeof update.attributes !== 'object') {
+      throw new Error(`Invalid update data at index ${index}: 'attributes' must be a non-null object`);
+    }
+  });
+  
   try {
-    // Use the generic batch update API
-    const results = await batchUpdateRecords<Company>({
-      objectSlug: ResourceType.COMPANIES,
-      records: updates
-    });
-    
-    // Convert to BatchResponse format
-    const response: BatchResponse<Company> = {
-      results: results.map((company, index) => ({
-        id: `update_company_${index}`,
-        success: true,
-        data: company
-      })),
-      summary: {
-        total: updates.length,
-        succeeded: results.length,
-        failed: updates.length - results.length
-      }
-    };
-    
-    return response;
-  } catch (error) {
-    // Fallback to individual operations if batch API fails
-    return executeBatchOperations<{ id: string; attributes: RecordAttributes }, Company>(
-      updates.map((update, index) => ({
-        id: `update_company_${index}`,
-        params: update
-      })),
+    // Use the shared helper function for consistent handling
+    return executeBatchCompanyOperation<
+      { id: string; attributes: RecordAttributes }, 
+      Company
+    >(
+      'update',
+      updates,
+      batchUpdateRecords,
       (params) => updateCompany(params.id, params.attributes),
       batchConfig
     );
+  } catch (error) {
+    // Enhanced error handling with more context
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        throw new Error(`Company update failed: One or more company IDs do not exist`);
+      } else {
+        // Provide more detailed error
+        throw new Error(`Company batch update failed: ${error.message}`);
+      }
+    }
+    
+    // For other errors, log and then rethrow
+    console.error('[batchUpdateCompanies] Error updating companies:', error);
+    throw error;
   }
 }
 
