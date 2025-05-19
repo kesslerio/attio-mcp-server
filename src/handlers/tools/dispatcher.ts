@@ -644,9 +644,26 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle basicInfo tool - retrieves basic information about a company
-    if (toolType === 'basicInfo') {
-      const apiPath = `/${resourceType}/basic-info`;
+    /**
+     * Helper function to handle company information tools with consistent error handling
+     * 
+     * @param resourceType - The resource type (e.g., companies)
+     * @param toolType - The specific tool type (e.g., basicInfo, businessInfo)
+     * @param toolConfig - The tool configuration
+     * @param request - The tool request
+     * @param extraParams - Optional parameters specific to certain tool types
+     * @returns Formatted response or error
+     */
+    async function handleCompanyInfoTool(
+      resourceType: ResourceType, 
+      toolType: string, 
+      toolConfig: ToolConfig,
+      request: CallToolRequest,
+      extraParams?: Record<string, any>
+    ) {
+      // Construct API path from tool type (convert camelCase to kebab-case)
+      const formattedToolType = toolType.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+      const apiPath = `/${resourceType}/${formattedToolType}`;
       
       // Validate and extract resource ID
       const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
@@ -656,8 +673,43 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       const id = idOrError;
       
+      // Process any extra parameters if provided
+      if (extraParams?.requireFields) {
+        const fields = request.params.arguments?.fields;
+        
+        if (!fields || !Array.isArray(fields) || fields.length === 0) {
+          return createErrorResult(
+            new Error("fields parameter is required and must be a non-empty array"),
+            apiPath,
+            "GET",
+            { status: 400, message: "Missing or invalid fields parameter" }
+          );
+        }
+        
+        try {
+          // Execute handler with fields parameter
+          const result = await toolConfig.handler(id, fields);
+          const formattedResult = toolConfig.formatResult 
+            ? toolConfig.formatResult(result)
+            : safeJsonStringify(result);
+          
+          return formatResponse(formattedResult);
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            logToolError(toolType, error, { id, fields });
+          }
+          
+          return createErrorResult(
+            error instanceof Error ? error : new Error("Unknown error"),
+            apiPath,
+            "GET",
+            hasResponseData(error) ? error.response.data : {}
+          );
+        }
+      }
+      
+      // Standard case without extra parameters
       try {
-        // Execute the handler and format the result
         const result = await toolConfig.handler(id);
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
@@ -665,7 +717,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         
         return formatResponse(formattedResult);
       } catch (error) {
-        // Handle and format errors
+        if (process.env.NODE_ENV === 'development') {
+          logToolError(toolType, error, { id });
+        }
+        
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
           apiPath,
@@ -675,138 +730,15 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle businessInfo tool - retrieves business information about a company
-    if (toolType === 'businessInfo') {
-      const apiPath = `/${resourceType}/business-info`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      
-      try {
-        // Execute the handler and format the result
-        const result = await toolConfig.handler(id);
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          apiPath,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
-    
-    // Handle contactInfo tool - retrieves contact information about a company
-    if (toolType === 'contactInfo') {
-      const apiPath = `/${resourceType}/contact-info`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      
-      try {
-        // Execute the handler and format the result
-        const result = await toolConfig.handler(id);
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          apiPath,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
-    
-    // Handle socialInfo tool - retrieves social media information about a company
-    if (toolType === 'socialInfo') {
-      const apiPath = `/${resourceType}/social-info`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      
-      try {
-        // Execute the handler and format the result
-        const result = await toolConfig.handler(id);
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          apiPath,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
+    // Handle company information tools with a consistent pattern
+    const companyInfoTools = ['basicInfo', 'businessInfo', 'contactInfo', 'socialInfo'];
+    if (companyInfoTools.includes(toolType)) {
+      return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request);
     }
     
     // Handle fields tool - retrieves specific fields from a company
     if (toolType === 'fields') {
-      const apiPath = `/${resourceType}/fields`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      const fields = request.params.arguments?.fields;
-      
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        return createErrorResult(
-          new Error("fields parameter is required and must be a non-empty array"),
-          apiPath,
-          "GET",
-          { status: 400, message: "Missing or invalid fields parameter" }
-        );
-      }
-      
-      try {
-        // Execute the handler and format the result
-        const result = await toolConfig.handler(id, fields);
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          apiPath,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
+      return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request, { requireFields: true });
     }
     
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
