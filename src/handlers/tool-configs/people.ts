@@ -223,7 +223,7 @@ export const peopleToolConfigs = {
     },
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people matching the company filter:\n${results.map((person: any) => 
-        `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
+        `- ${person.values?.name?.[0]?.full_name || person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`).join('\n')}`;
     }
   } as any,
 
