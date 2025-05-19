@@ -815,17 +815,52 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'batchCreate') {
-    const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
-    
+    // Handle generic record batch create or company-specific batch create
     try {
-      const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
-      const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
-      
-      return formatResponse(formatBatchResults(result, 'create'));
+      // Check if we're dealing with companies batch create (special case)
+      if (resourceType === ResourceType.COMPANIES) {
+        // Handle batch-create-companies tool with companies array
+        const companies = request.params.arguments?.companies;
+        const config = request.params.arguments?.config;
+        
+        // Validate companies parameter
+        if (!companies || !Array.isArray(companies)) {
+          return createErrorResult(
+            new Error("'companies' parameter must be a non-empty array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing or invalid 'companies' parameter" }
+          );
+        }
+        
+        // Call the handler with the correct parameter structure
+        const result = await toolConfig.handler({ companies, config });
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      } else {
+        // Handle generic record batch create
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        if (records.length === 0) {
+          return createErrorResult(
+            new Error("'records' parameter must be a non-empty array"),
+            `objects/${objectSlug}/records/batch`,
+            "POST",
+            { status: 400, message: "Missing or invalid 'records' parameter" }
+          );
+        }
+        
+        const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
+        const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
+        
+        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+      }
     } catch (error) {
+      // Enhanced error handling for batch operations
+      console.error(`[batchCreate] Error executing batch create for ${resourceType || objectSlug}:`, error);
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error("Unknown error"),
-        `objects/${objectSlug}/records/batch`,
+        error instanceof Error ? error : new Error(`Batch create operation failed: ${String(error)}`),
+        `objects/${resourceType || objectSlug}/records/batch`,
         "POST",
         (error as any).response?.data || {}
       );
@@ -833,17 +868,52 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'batchUpdate') {
-    const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
-    
+    // Handle generic record batch update or company-specific batch update
     try {
-      const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
-      const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
-      
-      return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      // Check if we're dealing with companies batch update (special case)
+      if (resourceType === ResourceType.COMPANIES) {
+        // Handle batch-update-companies tool with updates array
+        const updates = request.params.arguments?.updates;
+        const config = request.params.arguments?.config;
+        
+        // Validate updates parameter
+        if (!updates || !Array.isArray(updates)) {
+          return createErrorResult(
+            new Error("'updates' parameter must be a non-empty array"),
+            `objects/${ResourceType.COMPANIES}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing or invalid 'updates' parameter" }
+          );
+        }
+        
+        // Call the handler with the correct parameter structure
+        const result = await toolConfig.handler({ updates, config });
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      } else {
+        // Handle generic record batch update
+        const records = Array.isArray(request.params.arguments?.records) ? request.params.arguments?.records : [];
+        
+        if (records.length === 0) {
+          return createErrorResult(
+            new Error("'records' parameter must be a non-empty array"),
+            `objects/${objectSlug}/records/batch`,
+            "PATCH",
+            { status: 400, message: "Missing or invalid 'records' parameter" }
+          );
+        }
+        
+        const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
+        const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
+        
+        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+      }
     } catch (error) {
+      // Enhanced error handling for batch operations
+      console.error(`[batchUpdate] Error executing batch update for ${resourceType || objectSlug}:`, error);
+      
       return createErrorResult(
-        error instanceof Error ? error : new Error("Unknown error"),
-        `objects/${objectSlug}/records/batch`,
+        error instanceof Error ? error : new Error(`Batch update operation failed: ${String(error)}`),
+        `objects/${resourceType || objectSlug}/records/batch`,
         "PATCH",
         (error as any).response?.data || {}
       );

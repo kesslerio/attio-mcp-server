@@ -25,15 +25,21 @@ import { CompanyValidator } from '../validators/company-validator.js';
 /**
  * Creates multiple company records in batch
  * 
- * @param companies - Array of company attributes to create
- * @param batchConfig - Optional batch configuration
+ * @param params - Object containing array of companies and optional config
  * @returns Batch response with created companies
  */
 export async function batchCreateCompanies(
-  companies: RecordAttributes[],
-  batchConfig?: Partial<BatchConfig>
+  params: { companies: RecordAttributes[], config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
   try {
+    // Extract companies array and config from params
+    const { companies, config: batchConfig } = params;
+    
+    // Validate that companies is an array
+    if (!companies || !Array.isArray(companies)) {
+      throw new Error("Invalid request: 'companies' parameter must be an array");
+    }
+    
     // Option 1: Use the generic batch create with validation
     const validatedCompanies = await Promise.all(
       companies.map(company => CompanyValidator.validateCreate(company))
@@ -60,6 +66,10 @@ export async function batchCreateCompanies(
     
     return response;
   } catch (error) {
+    // Extract companies array and config from params, with safe fallbacks
+    const companies = params?.companies || [];
+    const batchConfig = params?.config;
+    
     // Fallback to individual operations if batch API fails
     return executeBatchOperations<RecordAttributes, Company>(
       companies.map((attrs, index) => ({
@@ -75,15 +85,21 @@ export async function batchCreateCompanies(
 /**
  * Updates multiple company records in batch
  * 
- * @param updates - Array of company updates (id + attributes)
- * @param batchConfig - Optional batch configuration
+ * @param params - Object containing array of updates and optional config
  * @returns Batch response with updated companies
  */
 export async function batchUpdateCompanies(
-  updates: Array<{ id: string; attributes: RecordAttributes }>,
-  batchConfig?: Partial<BatchConfig>
+  params: { updates: Array<{ id: string; attributes: RecordAttributes }>, config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
   try {
+    // Extract updates array and config from params
+    const { updates, config: batchConfig } = params;
+    
+    // Validate that updates is an array
+    if (!updates || !Array.isArray(updates)) {
+      throw new Error("Invalid request: 'updates' parameter must be an array");
+    }
+    
     // Use the generic batch update API
     const results = await batchUpdateRecords<Company>({
       objectSlug: ResourceType.COMPANIES,
@@ -106,6 +122,10 @@ export async function batchUpdateCompanies(
     
     return response;
   } catch (error) {
+    // Extract updates array and config from params, with safe fallbacks
+    const updates = params?.updates || [];
+    const batchConfig = params?.config;
+    
     // Fallback to individual operations if batch API fails
     return executeBatchOperations<{ id: string; attributes: RecordAttributes }, Company>(
       updates.map((update, index) => ({
