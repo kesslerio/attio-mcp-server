@@ -25,6 +25,7 @@ import {
   advancedSearchPeople
 } from "../../objects/people/index.js";
 import { searchCompanies } from "../../objects/companies/index.js";
+import { getAttioClient } from "../../api/attio-client.js";
 import { 
   SearchToolConfig, 
   DetailsToolConfig, 
@@ -134,9 +135,8 @@ export const peopleToolConfigs = {
     /**
      * Handler for searching people by company affiliation
      * 
-     * This handler directly passes the filter to the search API
-     * without transformation, as Attio expects filters on the
-     * actual attributes (e.g., 'companies' attribute on people)
+     * This handler transforms the filter to match Attio API expectations
+     * for record reference attributes (company.target_record_id)
      */
     handler: async (args: any) => {
       // Extract companyFilter from arguments
@@ -152,31 +152,74 @@ export const peopleToolConfigs = {
         throw new Error('Invalid companyFilter format. Expected filters array with at least one filter');
       }
       
-      // For people-company relationships, we need to use the 'companies' attribute directly
-      // Transform the incoming filter to the correct format
-      const transformedFilter = {
-        filters: companyFilter.filters.map((filter: any) => {
-          // Transform companies.id or companies.name to just 'companies'
-          if (filter.attribute?.slug === 'companies.id' || filter.attribute?.slug === 'companies.name') {
-            return {
-              attribute: { slug: 'companies' },
-              condition: filter.condition || 'equals',
-              value: filter.value
-            };
-          }
-          // Pass through other filters unchanged
-          return filter;
-        }),
-        matchAny: companyFilter.matchAny || false
-      };
+      // Process filters to handle company ID and name lookups
+      const filters = [];
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[search-people-by-company] Transformed filter:', JSON.stringify(transformedFilter, null, 2));
+      for (const filter of companyFilter.filters) {
+        const slug = filter.attribute?.slug;
+        
+        if (slug === 'companies.id') {
+          // Direct company ID filter - use correct Attio structure
+          const recordId = filter.value?.record_id || filter.value;
+          
+          // Transform to Attio API structure for record reference
+          // API expects shorthand format: { company: { target_record_id: { $eq: "id" } } }
+          filters.push({
+            company: {
+              target_record_id: {
+                $eq: recordId
+              }
+            }
+          });
+        } else if (slug === 'companies.name') {
+          // Company name filter - need to look up company ID first
+          try {
+            const companies = await searchCompanies(filter.value);
+            
+            if (companies.length === 0) {
+              throw new Error(`No company found with name: ${filter.value}`);
+            }
+            
+            // Use the first matching company's ID
+            const companyId = companies[0].id?.record_id;
+            
+            filters.push({
+              company: {
+                target_record_id: {
+                  $eq: companyId
+                }
+              }
+            });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to find company by name: ${errorMessage}`);
+          }
+        } else {
+          // Unknown filter type - pass through as-is
+          filters.push({
+            [filter.attribute.slug]: {
+              [`$${filter.condition}`]: filter.value
+            }
+          });
+        }
       }
       
-      // Use advanced search with the transformed filter
-      const results = await advancedSearchPeople(transformedFilter);
-      return results;
+      // Create the final filter structure
+      const apiFilter = filters.length === 1 ? filters[0] : 
+        (companyFilter.matchAny ? { $or: filters } : { $and: filters });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[search-people-by-company] Final API filter:', JSON.stringify(apiFilter, null, 2));
+      }
+      
+      // Use the Attio API directly to avoid filter transformation issues
+      const api = getAttioClient();
+      const response = await api.post('/objects/people/records/query', {
+        filter: apiFilter,
+        limit: 50
+      });
+      
+      return response.data.data || [];
     },
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people matching the company filter:\n${results.map((person: any) => 
