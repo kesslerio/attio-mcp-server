@@ -741,6 +741,51 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request, { requireFields: true });
     }
     
+    // Handle updateAttribute tool - updates a specific attribute of a company
+    if (toolType === 'updateAttribute') {
+      const apiPath = `/${resourceType}/attributes`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      const attributeName = request.params.arguments?.attributeName as string;
+      const value = request.params.arguments?.value;
+      
+      if (!attributeName) {
+        return createErrorResult(
+          new Error("attributeName parameter is required"),
+          apiPath,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: attributeName" }
+        );
+      }
+      
+      try {
+        // Execute handler with attribute name and value
+        const result = await toolConfig.handler(id, attributeName, value);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError(toolType, error, { id, attributeName, value });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/${resourceType}/${id}/attributes/${attributeName}`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
