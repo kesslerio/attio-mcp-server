@@ -39,19 +39,24 @@ export async function createObjectRecord<T extends AttioRecord>(
 ): Promise<T> {
   // Ensure objectSlug is a string value, not undefined
   if (!objectSlug) {
-    throw new Error('Object slug is required for creating records');
+    throw new Error('[createObjectRecord] Object slug is required for creating records');
   }
+
+  // Normalize objectSlug to ensure proper type handling
+  const normalizedSlug = typeof objectSlug === 'string' 
+    ? objectSlug 
+    : String(objectSlug);
 
   // Add debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[createObjectRecord] Creating record for object type: ${objectSlug}`);
+    console.log(`[createObjectRecord] Creating record for object type: ${normalizedSlug}`);
     console.log(`[createObjectRecord] Attributes:`, JSON.stringify(attributes, null, 2));
   }
   
   try {
     // Use the core API function
     return await createRecord<T>({
-      objectSlug: String(objectSlug), // Ensure it's a string
+      objectSlug: normalizedSlug,
       objectId,
       attributes
     });

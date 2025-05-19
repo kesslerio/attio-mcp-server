@@ -7,15 +7,17 @@ import {
   updateCompany,
   updateCompanyAttribute,
   deleteCompany,
-  getCompanyDetails
+  getCompanyBasicInfo
 } from "../../../objects/companies/index.js";
 import { ToolConfig } from "../../tool-types.js";
+import { formatterConfigs } from "./formatters.js";
 
 // Company CRUD tool configurations
 export const crudToolConfigs = {
   basicInfo: {
     name: "get-company-basic-info",
-    handler: getCompanyDetails
+    handler: getCompanyBasicInfo,
+    formatResult: formatterConfigs.basicInfo.formatResult
   } as ToolConfig,
   
   create: {
