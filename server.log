@@ -1,6 +1,0 @@
-Error starting server: Error: ATTIO_API_KEY environment variable not found
-    at main (file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/dist/index.js:22:19)
-    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/dist/index.js:49:1
-    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
