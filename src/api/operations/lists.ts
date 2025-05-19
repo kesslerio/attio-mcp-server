@@ -214,8 +214,14 @@ export async function addRecordToList(
   
   return callWithRetry(async () => {
     try {
+      // Attio API expects a specific structure with a 'data' object wrapper
+      // for adding records to lists. The 'data' object is required by the API
+      // and contains the record_id and potentially a record_type field.
       const response = await api.post<AttioSingleResponse<AttioListEntry>>(path, {
-        record_id: recordId
+        data: {
+          record_id: recordId
+          // record_type could be included here if needed for specific record types
+        }
       });
       return response.data.data || response.data;
     } catch (error: any) {

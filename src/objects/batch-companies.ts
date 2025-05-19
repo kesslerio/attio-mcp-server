@@ -23,18 +23,51 @@ import {
 import { CompanyValidator } from '../validators/company-validator.js';
 
 /**
- * Creates multiple company records in batch
+ * Creates multiple company records in batch operation
  * 
- * @param companies - Array of company attributes to create
- * @param batchConfig - Optional batch configuration
+ * Note on parameter structure:
+ * This function expects a different parameter structure compared to generic record batch operations.
+ * While generic batch operations take (objectSlug, records, objectId), company-specific batch operations
+ * expect an object with {companies, config} to match the structure expected by the MCP tool schema.
+ * 
+ * @param params - Object containing array of companies and optional config
  * @returns Batch response with created companies
  */
 export async function batchCreateCompanies(
-  companies: RecordAttributes[],
-  batchConfig?: Partial<BatchConfig>
+  params: { companies: RecordAttributes[], config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
+  // Early validation of parameters - fail fast
+  if (!params) {
+    throw new Error("Invalid request: params object is required");
+  }
+  
+  // Extract and validate companies array
+  const { companies, config: batchConfig } = params;
+  
+  if (!companies) {
+    throw new Error("Invalid request: 'companies' parameter is required");
+  }
+  
+  if (!Array.isArray(companies)) {
+    throw new Error("Invalid request: 'companies' parameter must be an array");
+  }
+  
+  if (companies.length === 0) {
+    throw new Error("Invalid request: 'companies' array cannot be empty");
+  }
+  
+  // Validate array contents - ensure each item is a valid object
+  companies.forEach((company, index) => {
+    if (!company || typeof company !== 'object') {
+      throw new Error(`Invalid company data at index ${index}: must be a non-null object`);
+    }
+    if (!company.name) {
+      throw new Error(`Invalid company data at index ${index}: 'name' is required`);
+    }
+  });
+  
   try {
-    // Option 1: Use the generic batch create with validation
+    // Use the generic batch create with validation
     const validatedCompanies = await Promise.all(
       companies.map(company => CompanyValidator.validateCreate(company))
     );
@@ -60,6 +93,10 @@ export async function batchCreateCompanies(
     
     return response;
   } catch (error) {
+    // Log error details for debugging
+    console.error('[batchCreateCompanies] Error in batch API, falling back to individual operations:', 
+      error instanceof Error ? error.message : String(error));
+    
     // Fallback to individual operations if batch API fails
     return executeBatchOperations<RecordAttributes, Company>(
       companies.map((attrs, index) => ({
@@ -73,16 +110,52 @@ export async function batchCreateCompanies(
 }
 
 /**
- * Updates multiple company records in batch
+ * Updates multiple company records in batch operation
  * 
- * @param updates - Array of company updates (id + attributes)
- * @param batchConfig - Optional batch configuration
+ * Note on parameter structure:
+ * This function expects a different parameter structure compared to generic record batch operations.
+ * While generic batch operations take (objectSlug, records, objectId), company-specific batch operations
+ * expect an object with {updates, config} to match the structure expected by the MCP tool schema.
+ * 
+ * @param params - Object containing array of updates and optional config
  * @returns Batch response with updated companies
  */
 export async function batchUpdateCompanies(
-  updates: Array<{ id: string; attributes: RecordAttributes }>,
-  batchConfig?: Partial<BatchConfig>
+  params: { updates: Array<{ id: string; attributes: RecordAttributes }>, config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
+  // Early validation of parameters - fail fast
+  if (!params) {
+    throw new Error("Invalid request: params object is required");
+  }
+  
+  // Extract and validate updates array
+  const { updates, config: batchConfig } = params;
+  
+  if (!updates) {
+    throw new Error("Invalid request: 'updates' parameter is required");
+  }
+  
+  if (!Array.isArray(updates)) {
+    throw new Error("Invalid request: 'updates' parameter must be an array");
+  }
+  
+  if (updates.length === 0) {
+    throw new Error("Invalid request: 'updates' array cannot be empty");
+  }
+  
+  // Validate array contents - ensure each item has required fields
+  updates.forEach((update, index) => {
+    if (!update || typeof update !== 'object') {
+      throw new Error(`Invalid update data at index ${index}: must be a non-null object`);
+    }
+    if (!update.id) {
+      throw new Error(`Invalid update data at index ${index}: 'id' is required`);
+    }
+    if (!update.attributes || typeof update.attributes !== 'object') {
+      throw new Error(`Invalid update data at index ${index}: 'attributes' must be a non-null object`);
+    }
+  });
+  
   try {
     // Use the generic batch update API
     const results = await batchUpdateRecords<Company>({
@@ -106,6 +179,10 @@ export async function batchUpdateCompanies(
     
     return response;
   } catch (error) {
+    // Log error details for debugging
+    console.error('[batchUpdateCompanies] Error in batch API, falling back to individual operations:', 
+      error instanceof Error ? error.message : String(error));
+    
     // Fallback to individual operations if batch API fails
     return executeBatchOperations<{ id: string; attributes: RecordAttributes }, Company>(
       updates.map((update, index) => ({
