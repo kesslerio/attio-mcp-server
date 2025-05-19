@@ -444,6 +444,139 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await executeRelationshipSearch(toolType, toolConfig, request, resourceType);
     }
     
+    /**
+     * Helper function to validate and extract resource ID based on resource type
+     * 
+     * @param resourceType - The type of resource (companies, people, etc.)
+     * @param args - The request arguments containing the ID
+     * @param apiPath - The API path for error reporting
+     * @returns The validated ID or an error response
+     */
+    function validateResourceId(
+      resourceType: ResourceType, 
+      args: any,
+      apiPath: string
+    ): string | { error: ReturnType<typeof createErrorResult> } {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      const id = args?.[idParamName] as string;
+      
+      if (!id) {
+        return {
+          error: createErrorResult(
+            new Error(`${idParamName} parameter is required`),
+            apiPath,
+            "GET",
+            { status: 400, message: `Missing required parameter: ${idParamName}` }
+          )
+        };
+      }
+      
+      return id;
+    }
+    
+    /**
+     * Safely formats an object as JSON string, handling potential circular references
+     * 
+     * @param obj - The object to stringify
+     * @returns Formatted JSON string or fallback error message
+     */
+    function safeJsonStringify(obj: any): string {
+      try {
+        return JSON.stringify(obj, null, 2);
+      } catch (error) {
+        console.warn('Failed to stringify object:', error);
+        return `[Object could not be converted to JSON: ${error instanceof Error ? error.message : 'Unknown error'}]`;
+      }
+    }
+    
+    // Handle getAttributes tool
+    if (toolType === 'getAttributes') {
+      const apiPath = `/${resourceType}/attributes`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      const attributeName = request.params.arguments?.attributeName as string;
+      
+      try {
+        // Execute the handler with provided parameters
+        const result = await toolConfig.handler(id, attributeName);
+        
+        // Format result using the tool's formatter if available
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/${resourceType}/${id}/attributes`,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle json tool - returns raw JSON representation of a resource
+    if (toolType === 'json') {
+      const apiPath = `/${resourceType}/json`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and return formatted JSON result
+        const result = await toolConfig.handler(id);
+        
+        // Format result as pretty-printed JSON with safety check
+        return formatResponse(safeJsonStringify(result));
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/${resourceType}/${id}/json`,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle discoverAttributes tool - discovers available attributes for a resource type
+    if (toolType === 'discoverAttributes') {
+      const apiPath = `/${resourceType}/attributes`;
+      
+      try {
+        // Execute attribute discovery
+        const result = await toolConfig.handler();
+        
+        // Format result using the tool's formatter if available
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     return formatResponse(
