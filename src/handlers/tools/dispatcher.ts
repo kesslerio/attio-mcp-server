@@ -494,6 +494,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         const result = await toolConfig.handler(updates);
         return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
       } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('batchUpdateCompanies', error, { updates });
+        }
+        
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
           `/objects/companies/records/batch`,
@@ -511,10 +515,49 @@ export async function executeToolRequest(request: CallToolRequest) {
         const result = await toolConfig.handler(companies);
         return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
       } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('batchCreateCompanies', error, { companies });
+        }
+        
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
           `/objects/companies/records/batch`,
           "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle update-company tool specifically
+    if (toolType === 'update' && toolName === 'update-company') {
+      const companyId = request.params.arguments?.companyId;
+      const attributes = request.params.arguments?.attributes || {};
+      
+      if (!companyId) {
+        return createErrorResult(
+          new Error("companyId parameter is required"),
+          `/objects/companies/records/undefined`,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: companyId" }
+        );
+      }
+      
+      try {
+        const result = await toolConfig.handler(companyId, attributes);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError('updateCompany', error, { companyId, attributes });
+        }
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/objects/companies/records/${companyId}`,
+          "PATCH",
           hasResponseData(error) ? error.response.data : {}
         );
       }
