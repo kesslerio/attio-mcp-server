@@ -74,6 +74,17 @@ export const peopleToolConfigs = {
   details: {
     name: "get-person-details",
     handler: getPersonDetails,
+    /**
+     * Formats a person record into a human-readable string representation
+     * 
+     * This function takes a Person object from the Attio API and formats it into a
+     * well-structured, human-readable markdown text. It organizes person details into
+     * logical sections (basic info, contact, professional, additional attributes) and
+     * handles edge cases like missing or empty values.
+     * 
+     * @param person - The person record to format
+     * @returns A formatted string with person details in markdown format
+     */
     formatResult: (person: Person) => {
       if (!person || !person.id || !person.values) {
         return 'No person details found.';
@@ -81,6 +92,9 @@ export const peopleToolConfigs = {
 
       const personId = person.id.record_id || 'unknown';
       const name = person.values.name?.[0]?.value || 'Unnamed';
+      
+      // Define fields that are displayed in specific sections to avoid duplicating them
+      const DISPLAYED_FIELDS = ['name', 'email_addresses', 'phone_numbers', 'job_title', 'company'];
       
       // Build sections of the output
       const sections = [];
@@ -91,10 +105,12 @@ export const peopleToolConfigs = {
       // Contact information section
       const contactInfo = [];
       if (person.values.email_addresses?.length) {
-        contactInfo.push(`Email: ${person.values.email_addresses.map((e: any) => e.value).join(', ')}`);
+        contactInfo.push(`Email: ${person.values.email_addresses.map((e: AttioValue<string>) => 
+          e.email_address || e.value || 'N/A').join(', ')}`);
       }
       if (person.values.phone_numbers?.length) {
-        contactInfo.push(`Phone: ${person.values.phone_numbers.map((p: any) => p.value).join(', ')}`);
+        contactInfo.push(`Phone: ${person.values.phone_numbers.map((p: AttioValue<string>) => 
+          p.phone_number || p.value || 'N/A').join(', ')}`);
       }
       if (contactInfo.length) {
         sections.push(`## Contact Information\n${contactInfo.join('\n')}`);
@@ -116,16 +132,16 @@ export const peopleToolConfigs = {
       const additionalAttributes = [];
       for (const [key, values] of Object.entries(person.values)) {
         // Skip already displayed attributes
-        if (['name', 'email_addresses', 'phone_numbers', 'job_title', 'company'].includes(key)) {
+        if (DISPLAYED_FIELDS.includes(key)) {
           continue;
         }
         
         if (Array.isArray(values) && values.length > 0) {
           // Format different value types appropriately
-          const formattedValues = values.map((v: any) => {
+          const formattedValues = values.map((v: AttioValue<unknown>) => {
             if (v.value === undefined) return 'N/A';
             if (typeof v.value === 'object') return JSON.stringify(v.value);
-            return v.value;
+            return String(v.value);
           }).join(', ');
           
           // Convert snake_case to Title Case for display
