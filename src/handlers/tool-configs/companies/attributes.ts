@@ -82,21 +82,34 @@ ${fieldCount > 0 ? JSON.stringify(customFields, null, 2) : 'No custom fields fou
     name: "discover-company-attributes",
     handler: discoverCompanyAttributes,
     formatResult: (result: any) => {
+      // Sanity check for empty or invalid results
+      if (!result || (!result?.all?.length && !result?.standard?.length && !result?.custom?.length)) {
+        return "No company attributes found. This may occur if there are no companies in the workspace.";
+      }
+      
       let output = `Company Attributes Discovery\n`;
-      output += `Total attributes: ${result.all.length}\n`;
-      output += `Standard fields: ${result.standard.length}\n`;
-      output += `Custom fields: ${result.custom.length}\n\n`;
+      output += `Total attributes: ${result?.all?.length || 0}\n`;
+      output += `Standard fields: ${result?.standard?.length || 0}\n`;
+      output += `Custom fields: ${result?.custom?.length || 0}\n\n`;
       
       output += `STANDARD FIELDS:\n`;
-      result.standard.forEach((field: string) => {
-        output += `  - ${field}\n`;
-      });
+      if (result?.standard?.length > 0) {
+        result.standard.forEach((field: string) => {
+          output += `  - ${field}\n`;
+        });
+      } else {
+        output += "  None found\n";
+      }
       
       output += `\nCUSTOM FIELDS:\n`;
-      result.custom.forEach((field: string) => {
-        const fieldInfo = result.all.find((f: any) => f.name === field);
-        output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
-      });
+      if (result.custom?.length > 0) {
+        result.custom.forEach((field: string) => {
+          const fieldInfo = result.all.find((f: any) => f.name === field);
+          output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
+        });
+      } else {
+        output += "  None found\n";
+      }
       
       return output;
     }

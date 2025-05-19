@@ -17,6 +17,29 @@ import { formatResponse, formatSearchResults, formatRecordDetails, formatListEnt
 // Import attribute mapping upfront to avoid dynamic import
 import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/index.js";
 
+/**
+ * Logs tool execution errors in a consistent format
+ * 
+ * @param toolType - The type of tool where the error occurred
+ * @param error - The error that was caught
+ * @param additionalInfo - Optional additional information about the context
+ */
+function logToolError(toolType: string, error: unknown, additionalInfo: Record<string, any> = {}) {
+  console.error(`[${toolType}] Execution error:`, error);
+  console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
+  console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
+  
+  if (error instanceof Error && error.stack) {
+    console.error(`- Stack trace: ${error.stack}`);
+  } else {
+    console.error('- No stack trace available');
+  }
+  
+  if (Object.keys(additionalInfo).length > 0) {
+    console.error('- Additional context:', additionalInfo);
+  }
+}
+
 // Import tool type definitions
 import { 
   ToolConfig,
@@ -590,11 +613,52 @@ export async function executeToolRequest(request: CallToolRequest) {
     if (toolType === 'discoverAttributes') {
       const apiPath = `/${resourceType}/attributes`;
       
+      // Debug logging to help diagnose issues
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[discoverAttributes] Handler execution:');
+        console.log('- Resource type:', resourceType);
+        console.log('- Tool handler exists:', typeof toolConfig.handler === 'function');
+        console.log('- Tool formatter exists:', typeof toolConfig.formatResult === 'function');
+      }
+      
       try {
-        // Execute attribute discovery
+        // Execute attribute discovery - explicitly call without args to avoid undefined params
         const result = await toolConfig.handler();
         
         // Format result using the tool's formatter if available
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Enhanced error handling with more details
+        logToolError('discoverAttributes', error);
+        
+        return createErrorResult(
+          error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle basicInfo tool - retrieves basic information about a company
+    if (toolType === 'basicInfo') {
+      const apiPath = `/${resourceType}/basic-info`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id);
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
           : safeJsonStringify(result);
