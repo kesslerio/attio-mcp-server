@@ -790,12 +790,20 @@ async function executeRecordOperation(
   request: CallToolRequest,
   resourceType: ResourceType
 ) {
-  const objectSlug = request.params.arguments?.objectSlug as string;
+  // Get object slug from request or use resourceType if it's a known resource
+  const objectSlug = request.params.arguments?.objectSlug as string || resourceType;
   const objectId = request.params.arguments?.objectId as string;
+  
+  // For debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[executeRecordOperation] Processing ${toolType} operation for ${resourceType}`);
+    console.log(`[executeRecordOperation] Object slug: ${objectSlug}`);
+    console.log(`[executeRecordOperation] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+  }
   
   // Handle tool types based on specific operation
   if (toolType === 'create') {
-    const recordData = request.params.arguments?.recordData;
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
     
     try {
       const recordCreateConfig = toolConfig as RecordCreateToolConfig;
@@ -1093,15 +1101,70 @@ async function executeRecordOperation(
   
   // Add handlers for get, update, delete, list operations...
   if (toolType === 'get') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string || request.params.arguments?.recordId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:get:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:get:company] Extracted companyId: ${recordId}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string || request.params.arguments?.recordId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:get] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/get`,
+        "GET",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:get] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:get] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordGetConfig = toolConfig as RecordGetToolConfig;
       const record = await recordGetConfig.handler(objectSlug, recordId);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:get] Retrieval successful for ID: ${recordId}`);
+        console.log(`[executeRecordOperation:get] Response:`, 
+          JSON.stringify(record, (key, value) => 
+            key === 'values' ? Object.keys(value).length + ' fields retrieved' : value, 2));
+      }
+      
       return formatResponse(
         `Successfully retrieved ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:get] Retrieval failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:get] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to get ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
@@ -1112,16 +1175,90 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'update') {
-    const recordId = request.params.arguments?.recordId as string;
-    const recordData = request.params.arguments?.recordData;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:update:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:update:company] Extracted companyId: ${recordId}`);
+        console.log(`[executeRecordOperation:update:company] Tool name: ${request.params.name}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/update`,
+        "PATCH",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    // For company-specific tools, check for attributes instead of generic recordData
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
+    
+    // Validate recordData exists and is an object
+    if (!recordData || typeof recordData !== 'object' || Array.isArray(recordData)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Missing or invalid record data:`, 
+          { resourceType, recordId, recordData });
+      }
+      
+      return createErrorResult(
+        new Error(`Record data parameter is required and must be a non-empty object`),
+        `objects/${objectSlug}/records/${recordId}`,
+        "PATCH",
+        { status: 400, message: `Missing or invalid record data` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:update] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:update] Record data:`, JSON.stringify(recordData, null, 2));
+      console.log(`[executeRecordOperation:update] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
       const record = await recordUpdateConfig.handler(objectSlug, recordId, recordData);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:update] Update successful for ID: ${recordId}`);
+        console.log(`[executeRecordOperation:update] Response:`, 
+          JSON.stringify(record, (key, value) => 
+            key === 'values' ? Object.keys(value).length + ' fields updated' : value, 2));
+      }
+      
       return formatResponse(
         `Successfully updated ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:update] Update failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:update] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to update ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
@@ -1132,15 +1269,67 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'delete') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    let recordId: string | undefined;
+    
+    if (resourceType === ResourceType.COMPANIES) {
+      recordId = request.params.arguments?.companyId as string;
+      
+      // Enhanced debug logging for company-specific operation
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:delete:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.log(`[executeRecordOperation:delete:company] Extracted companyId: ${recordId}`);
+      }
+    } else if (resourceType === ResourceType.PEOPLE) {
+      recordId = request.params.arguments?.personId as string;
+    } else {
+      recordId = request.params.arguments?.recordId as string;
+    }
+    
+    // Validate recordId exists before proceeding
+    if (!recordId || typeof recordId !== 'string') {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 
+                         resourceType === ResourceType.PEOPLE ? 'personId' : 'recordId';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:delete] Missing or invalid ${idParamName} parameter:`, 
+          { resourceType, toolType, requestArgs: request.params.arguments });
+      }
+      
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required and must be a non-empty string`),
+        `objects/${objectSlug}/records/delete`,
+        "DELETE",
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:delete] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:delete] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+    }
     
     try {
       const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
       const success = await recordDeleteConfig.handler(objectSlug, recordId);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[executeRecordOperation:delete] Deletion ${success ? 'successful' : 'unsuccessful'} for ID: ${recordId}`);
+      }
+      
       return formatResponse(
         `Successfully deleted ${objectSlug} record with ID: ${recordId}`
       );
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[executeRecordOperation:delete] Deletion failed for ID: ${recordId}:`, 
+          error instanceof Error ? error.message : String(error));
+        
+        if (error instanceof Error && error.stack) {
+          console.error(`[executeRecordOperation:delete] Stack trace:`, error.stack);
+        }
+      }
+      
       return createErrorResult(
         error instanceof Error ? error : new Error(`Failed to delete ${objectSlug} record: ${String(error)}`),
         `objects/${objectSlug}/records/${recordId}`,
