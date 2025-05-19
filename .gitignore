@@ -1,5 +1,9 @@
-**/.claude/settings.local.json
-CLAUDE.md
+# IDE/Tool-specific files
+.windsurfrules
+.claude/
+.DS_Store
+
+# CLAUDE.md should be tracked (project instructions)
 node_modules/
 
 # Environment files
