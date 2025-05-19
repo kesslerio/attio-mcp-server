@@ -790,12 +790,20 @@ async function executeRecordOperation(
   request: CallToolRequest,
   resourceType: ResourceType
 ) {
-  const objectSlug = request.params.arguments?.objectSlug as string;
+  // Get object slug from request or use resourceType if it's a known resource
+  const objectSlug = request.params.arguments?.objectSlug as string || resourceType;
   const objectId = request.params.arguments?.objectId as string;
+  
+  // For debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[executeRecordOperation] Processing ${toolType} operation for ${resourceType}`);
+    console.log(`[executeRecordOperation] Object slug: ${objectSlug}`);
+    console.log(`[executeRecordOperation] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+  }
   
   // Handle tool types based on specific operation
   if (toolType === 'create') {
-    const recordData = request.params.arguments?.recordData;
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
     
     try {
       const recordCreateConfig = toolConfig as RecordCreateToolConfig;
@@ -852,7 +860,10 @@ async function executeRecordOperation(
   
   // Add handlers for get, update, delete, list operations...
   if (toolType === 'get') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    const recordId = resourceType === ResourceType.COMPANIES
+      ? request.params.arguments?.companyId as string || request.params.arguments?.recordId as string
+      : request.params.arguments?.recordId as string;
     
     try {
       const recordGetConfig = toolConfig as RecordGetToolConfig;
@@ -871,8 +882,20 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'update') {
-    const recordId = request.params.arguments?.recordId as string;
-    const recordData = request.params.arguments?.recordData;
+    // For company-specific tools, check for companyId instead of generic recordId
+    const recordId = resourceType === ResourceType.COMPANIES
+      ? request.params.arguments?.companyId as string
+      : resourceType === ResourceType.PEOPLE
+        ? request.params.arguments?.personId as string
+        : request.params.arguments?.recordId as string;
+        
+    // For company-specific tools, check for attributes instead of generic recordData
+    const recordData = request.params.arguments?.recordData || request.params.arguments?.attributes;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[executeRecordOperation:update] Record ID: ${recordId}`);
+      console.log(`[executeRecordOperation:update] Record data:`, recordData);
+    }
     
     try {
       const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
@@ -891,7 +914,12 @@ async function executeRecordOperation(
   }
   
   if (toolType === 'delete') {
-    const recordId = request.params.arguments?.recordId as string;
+    // For company-specific tools, check for companyId instead of generic recordId
+    const recordId = resourceType === ResourceType.COMPANIES
+      ? request.params.arguments?.companyId as string
+      : resourceType === ResourceType.PEOPLE
+        ? request.params.arguments?.personId as string
+        : request.params.arguments?.recordId as string;
     
     try {
       const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
