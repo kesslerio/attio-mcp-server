@@ -195,12 +195,11 @@ export const peopleToolConfigs = {
             throw new Error(`Failed to find company by name: ${errorMessage}`);
           }
         } else {
-          // Unknown filter type - pass through as-is
-          filters.push({
-            [filter.attribute.slug]: {
-              [`$${filter.condition}`]: filter.value
-            }
-          });
+          // Unknown filter type - throw error for better debugging
+          throw new Error(
+            `Unsupported filter type: '${slug}'. ` +
+            `Supported filters are: 'companies.id' and 'companies.name'`
+          );
         }
       }
       

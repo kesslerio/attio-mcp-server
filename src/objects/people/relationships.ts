@@ -25,29 +25,24 @@ export async function searchPeopleByCompany(companyId: string): Promise<Person[]
       throw new FilterValidationError(`Invalid company ID: ${companyId}`);
     }
 
-    // Create a filter to find people by company ID
-    // In Attio, people have a 'companies' attribute that links to associated companies
-    const filters: ListEntryFilters = {
-      filters: [
-        {
-          attribute: {
-            slug: 'companies'
-          },
-          condition: 'equals',
-          value: {
-            record_id: companyId
-          }
+    // Use direct API call with correct Attio filter structure for record references
+    // Attio expects company.target_record_id.$eq format for filtering people by company
+    const api = getAttioClient();
+    
+    const filter = {
+      company: {
+        target_record_id: {
+          $eq: companyId
         }
-      ],
-      matchAny: false
+      }
     };
     
-    const response = await advancedSearchObject<Person>(
-      ResourceType.PEOPLE,
-      filters
-    );
+    const response = await api.post<{ data: Person[] }>('/objects/people/records/query', {
+      filter,
+      limit: 50
+    });
     
-    return response;
+    return response.data.data || [];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
