@@ -675,6 +675,140 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
+    // Handle businessInfo tool - retrieves business information about a company
+    if (toolType === 'businessInfo') {
+      const apiPath = `/${resourceType}/business-info`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle contactInfo tool - retrieves contact information about a company
+    if (toolType === 'contactInfo') {
+      const apiPath = `/${resourceType}/contact-info`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle socialInfo tool - retrieves social media information about a company
+    if (toolType === 'socialInfo') {
+      const apiPath = `/${resourceType}/social-info`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle fields tool - retrieves specific fields from a company
+    if (toolType === 'fields') {
+      const apiPath = `/${resourceType}/fields`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      const fields = request.params.arguments?.fields;
+      
+      if (!fields || !Array.isArray(fields) || fields.length === 0) {
+        return createErrorResult(
+          new Error("fields parameter is required and must be a non-empty array"),
+          apiPath,
+          "GET",
+          { status: 400, message: "Missing or invalid fields parameter" }
+        );
+      }
+      
+      try {
+        // Execute the handler and format the result
+        const result = await toolConfig.handler(id, fields);
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        // Handle and format errors
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          apiPath,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
