@@ -42,7 +42,16 @@ verifyToolConfigsWithRequiredTools(
     ...batchToolConfigs,
     ...formatterConfigs
   },
-  ['discoverAttributes', 'basicInfo', 'getAttributes', 'json']
+  [
+    'discoverAttributes', 
+    'basicInfo', 
+    'businessInfo', 
+    'contactInfo', 
+    'socialInfo', 
+    'fields',
+    'getAttributes', 
+    'json'
+  ]
 );
 
 export const companyToolConfigs = {
