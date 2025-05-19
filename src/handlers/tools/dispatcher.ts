@@ -20,9 +20,9 @@ import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/
 /**
  * Logs tool execution requests in a consistent format (for development mode)
  * 
- * @param toolType - The type of tool being executed
- * @param toolName - The name of the tool
- * @param request - The request data
+ * @param toolType - The type of tool being executed (e.g., 'search', 'create', 'update')
+ * @param toolName - The name of the tool as defined in the MCP configuration
+ * @param request - The request data containing parameters and arguments
  */
 function logToolRequest(toolType: string, toolName: string, request: any) {
   if (process.env.NODE_ENV !== 'development') return;
@@ -36,9 +36,9 @@ function logToolRequest(toolType: string, toolName: string, request: any) {
 /**
  * Logs tool execution errors in a consistent format
  * 
- * @param toolType - The type of tool where the error occurred
- * @param error - The error that was caught
- * @param additionalInfo - Optional additional information about the context
+ * @param toolType - The type of tool where the error occurred (e.g., 'search', 'create', 'update')
+ * @param error - The error that was caught during execution
+ * @param additionalInfo - Optional additional information about the execution context, such as parameters
  */
 function logToolError(toolType: string, error: unknown, additionalInfo: Record<string, any> = {}) {
   console.error(`[${toolType}] Execution error:`, error);
@@ -59,10 +59,10 @@ function logToolError(toolType: string, error: unknown, additionalInfo: Record<s
 /**
  * Validates attribute parameters for company operations
  * 
- * @param attributes - The attributes object to validate
- * @returns Validation result or error message
+ * @param attributes - The attributes object to validate (key-value pairs of company attributes)
+ * @returns True if validation passes, or an error message string if validation fails
  */
-function validateAttributes(attributes: any): true | string {
+function validateAttributes(attributes: Record<string, any> | null | undefined): true | string {
   if (!attributes) {
     return "Attributes parameter is required";
   }
@@ -76,6 +76,34 @@ function validateAttributes(attributes: any): true | string {
   }
   
   return true;
+}
+
+/**
+ * Formats a company operation success response in a consistent manner
+ * 
+ * @param operation - The operation type (e.g., 'create', 'update', 'delete')
+ * @param resourceType - The resource type (e.g., 'companies')
+ * @param resourceId - The ID of the affected resource
+ * @param details - Additional details to include in the response
+ * @returns Formatted success message
+ */
+function formatSuccessResponse(
+  operation: string,
+  resourceType: string,
+  resourceId: string,
+  details?: Record<string, any>
+): string {
+  let message = `Successfully ${operation}d ${resourceType} record with ID: ${resourceId}`;
+  
+  if (details && Object.keys(details).length > 0) {
+    const detailsText = Object.entries(details)
+      .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
+      .join(', ');
+    
+    message += ` (${detailsText})`;
+  }
+  
+  return message;
 }
 
 // Import tool type definitions
@@ -527,10 +555,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         /**
      * Helper function to handle company batch operations consistently
      * 
-     * @param operation - The batch operation type (create or update)
-     * @param request - The request object
-     * @param toolConfig - The tool configuration
-     * @returns Formatted response
+     * @param operation - The batch operation type ('create' for new records or 'update' for existing records)
+     * @param request - The MCP tool request object containing parameters and arguments
+     * @param toolConfig - The tool configuration with handler and formatter functions
+     * @returns Formatted MCP response with operation results or error details
      */
     async function handleCompanyBatchOperation(
       operation: 'create' | 'update',
@@ -655,14 +683,14 @@ export async function executeToolRequest(request: CallToolRequest) {
     /**
      * Helper function to handle individual company operations consistently
      * 
-     * @param operation - The operation type (create or update)
-     * @param request - The request object
-     * @param toolConfig - The tool configuration
-     * @returns Formatted response
+     * @param operation - The operation type ('create' for new company or 'update' for existing company)
+     * @param request - The MCP tool request object containing parameters and arguments
+     * @param toolConfig - The tool configuration with handler and formatter functions
+     * @returns Formatted MCP response with operation results or error details
      */
     async function handleCompanyOperation(
       operation: 'create' | 'update',
-      request: CallToolRequest,
+      request: CallToolRequest, 
       toolConfig: ToolConfig
     ) {
       // Extract parameters based on operation type
@@ -709,11 +737,30 @@ export async function executeToolRequest(request: CallToolRequest) {
           ? await toolConfig.handler(attributes)
           : await toolConfig.handler(companyId, attributes);
         
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
+        // Use success formatter if no custom formatter is provided
+        if (toolConfig.formatResult) {
+          const formattedResult = toolConfig.formatResult(result);
+          return formatResponse(formattedResult);
+        } else {
+          // For create operations, extract the ID from the result
+          const resultId = operation === 'create' 
+            ? (result.id?.record_id || 'Unknown') 
+            : companyId as string;
+            
+          // Format a standard success message
+          const details = {
+            attributeCount: Object.keys(attributes).length
+          };
+          
+          const successMessage = formatSuccessResponse(
+            operation, 
+            'company', 
+            resultId, 
+            details
+          );
+          
+          return formatResponse(successMessage);
+        }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           logToolError(logName, error, { companyId, attributes });
@@ -996,10 +1043,10 @@ export async function executeToolRequest(request: CallToolRequest) {
     /**
      * Helper function to handle update-company-attribute operation consistently
      * 
-     * @param resourceType - The resource type being updated
-     * @param request - The request object
-     * @param toolConfig - The tool configuration
-     * @returns Formatted response
+     * @param resourceType - The resource type being updated (typically ResourceType.COMPANIES)
+     * @param request - The MCP tool request object containing parameters and arguments
+     * @param toolConfig - The tool configuration with handler and formatter functions
+     * @returns Formatted MCP response with operation results or error details
      */
     async function handleCompanyAttributeUpdate(
       resourceType: ResourceType,
@@ -1062,13 +1109,14 @@ export async function executeToolRequest(request: CallToolRequest) {
         // Execute handler with attribute name and value
         const result = await toolConfig.handler(id, attributeName, value);
         
-        // Enhance response with information about the update
-        let successMessage = '';
-        if (value === null) {
-          successMessage = `Successfully cleared attribute '${attributeName}' for ${resourceType} with ID: ${id}`;
-        } else {
-          successMessage = `Successfully updated attribute '${attributeName}' for ${resourceType} with ID: ${id}`;
-        }
+        // Enhance response with information about the update using the formatter
+        const operation = value === null ? 'clear' : 'update';
+        const details = {
+          attribute: attributeName,
+          action: value === null ? 'cleared' : 'updated'
+        };
+        
+        const successMessage = formatSuccessResponse(operation, resourceType, id, details);
         
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
