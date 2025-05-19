@@ -259,7 +259,9 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
   }
   
   // Log the error for debugging purposes
-  console.error(`[formatErrorResponse] Formatted error [${type}]:`, errorMessage);
+  if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+    console.error(`[formatErrorResponse] Formatted error [${type}]:`, errorMessage);
+  }
   
   // Return properly formatted MCP error response
   return {
@@ -294,7 +296,9 @@ export function createErrorResult(error: Error | any, url: string, method: strin
     ? error 
     : new Error(typeof error === 'string' ? error : 'Unknown error');
   
-  console.error(`[createErrorResult] Processing error for ${method} ${url}:`, normalizedError.message);
+  if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+    console.error(`[createErrorResult] Processing error for ${method} ${url}:`, normalizedError.message);
+  }
   
   // If it's already an AttioApiError, use it directly
   if (error instanceof AttioApiError) {

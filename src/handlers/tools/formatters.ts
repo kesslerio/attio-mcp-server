@@ -113,7 +113,9 @@ export function formatResponse(content: string | any, isError: boolean = false) 
         ? JSON.stringify(content, null, 2) 
         : String(content);
     } catch (error) {
-      console.error('[formatResponse] Error converting content to string:', error);
+      if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+        console.error('[formatResponse] Error converting content to string:', error);
+      }
       formattedContent = 'Error: Content could not be serialized';
     }
   }

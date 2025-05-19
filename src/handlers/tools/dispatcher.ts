@@ -461,7 +461,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       additionalInfo: error && typeof error === 'object' && 'details' in error ? (error as any).details : undefined
     };
     
-    console.error(`[executeToolRequest] Error executing tool '${toolName}':`, errorMessage, errorDetails);
+    if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+      console.error(`[executeToolRequest] Error executing tool '${toolName}':`, errorMessage, errorDetails);
+    }
     
     // Create properly formatted MCP response with detailed error information
     return {
