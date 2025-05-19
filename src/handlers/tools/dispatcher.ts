@@ -741,6 +741,102 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleCompanyInfoTool(resourceType, toolType, toolConfig, request, { requireFields: true });
     }
     
+    // Handle updateAttribute tool - updates a specific attribute of a company
+    if (toolType === 'updateAttribute') {
+      const apiPath = `/${resourceType}/attributes`;
+      
+      // Validate and extract resource ID
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      
+      const id = idOrError;
+      const attributeName = request.params.arguments?.attributeName as string;
+      const value = request.params.arguments?.value;
+      
+      // Enhanced parameter validation
+      if (!attributeName || typeof attributeName !== 'string' || attributeName.trim() === '') {
+        return createErrorResult(
+          new Error("attributeName parameter is required and must be a non-empty string"),
+          apiPath,
+          "PATCH",
+          { 
+            status: 400, 
+            message: "Missing or invalid required parameter: attributeName must be a non-empty string" 
+          }
+        );
+      }
+      
+      // Check if value exists in the arguments (null is a valid value for clearing attributes)
+      if (!('value' in request.params.arguments)) {
+        return createErrorResult(
+          new Error("value parameter is required (use null to clear an attribute)"),
+          apiPath,
+          "PATCH",
+          { 
+            status: 400, 
+            message: "Missing required parameter: value (use null to clear an attribute)" 
+          }
+        );
+      }
+      
+      // Debug logging in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[updateAttribute] Updating attribute for ${resourceType} ${id}:`, {
+          attributeName,
+          valueType: value === null ? 'null' : typeof value,
+          value: value === null ? 'null' : 
+                Array.isArray(value) ? `Array with ${value.length} items` : 
+                typeof value === 'object' ? JSON.stringify(value).substring(0, 100) : String(value)
+        });
+      }
+      
+      try {
+        // Execute handler with attribute name and value
+        const result = await toolConfig.handler(id, attributeName, value);
+        
+        // Enhance response with information about the update
+        let successMessage = '';
+        if (value === null) {
+          successMessage = `Successfully cleared attribute '${attributeName}' for ${resourceType} with ID: ${id}`;
+        } else {
+          successMessage = `Successfully updated attribute '${attributeName}' for ${resourceType} with ID: ${id}`;
+        }
+        
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : successMessage;
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logToolError(toolType, error, { id, attributeName, value });
+        }
+        
+        // Enhanced error response with more context
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : `Failed to update attribute '${attributeName}' on ${resourceType} ${id}`;
+          
+        return createErrorResult(
+          error instanceof Error ? error : new Error(errorMessage),
+          `/${resourceType}/${id}/attributes/${attributeName}`,
+          "PATCH",
+          hasResponseData(error) ? error.response.data : {
+            status: 500,
+            message: errorMessage,
+            details: {
+              resourceType,
+              resourceId: id,
+              attributeName,
+              valueType: value === null ? 'null' : typeof value
+            }
+          }
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
