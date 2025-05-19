@@ -579,10 +579,41 @@ export async function executeToolRequest(request: CallToolRequest) {
     
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
-    return formatResponse(
-      `Error executing tool '${toolName}': ${(error as Error).message}`,
-      true
-    );
+    // Enhanced error handling with detailed information
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : typeof error === 'string' 
+        ? error 
+        : 'Unknown error';
+        
+    // Get additional error details for better debugging
+    const errorDetails = {
+      tool: toolName,
+      errorType: error && typeof error === 'object' ? error.constructor.name : typeof error,
+      stack: error instanceof Error ? error.stack : undefined,
+      additionalInfo: error && typeof error === 'object' && 'details' in error ? (error as any).details : undefined
+    };
+    
+    if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+      console.error(`[executeToolRequest] Error executing tool '${toolName}':`, errorMessage, errorDetails);
+    }
+    
+    // Create properly formatted MCP response with detailed error information
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error executing tool '${toolName}': ${errorMessage}`,
+        },
+      ],
+      isError: true,
+      error: {
+        code: 500,
+        message: errorMessage,
+        type: 'tool_execution_error',
+        details: errorDetails
+      }
+    };
   }
 }
 
@@ -656,6 +687,84 @@ async function executeRecordOperation(
   }
   
   // Add handlers for get, update, delete, list operations...
+  if (toolType === 'get') {
+    const recordId = request.params.arguments?.recordId as string;
+    
+    try {
+      const recordGetConfig = toolConfig as RecordGetToolConfig;
+      const record = await recordGetConfig.handler(objectSlug, recordId);
+      return formatResponse(
+        `Successfully retrieved ${objectSlug} record with ID: ${recordId}`
+      );
+    } catch (error) {
+      return createErrorResult(
+        error instanceof Error ? error : new Error(`Failed to get ${objectSlug} record: ${String(error)}`),
+        `objects/${objectSlug}/records/${recordId}`,
+        "GET",
+        (error as any).response?.data || {}
+      );
+    }
+  }
+  
+  if (toolType === 'update') {
+    const recordId = request.params.arguments?.recordId as string;
+    const recordData = request.params.arguments?.recordData;
+    
+    try {
+      const recordUpdateConfig = toolConfig as RecordUpdateToolConfig;
+      const record = await recordUpdateConfig.handler(objectSlug, recordId, recordData);
+      return formatResponse(
+        `Successfully updated ${objectSlug} record with ID: ${recordId}`
+      );
+    } catch (error) {
+      return createErrorResult(
+        error instanceof Error ? error : new Error(`Failed to update ${objectSlug} record: ${String(error)}`),
+        `objects/${objectSlug}/records/${recordId}`,
+        "PATCH",
+        (error as any).response?.data || {}
+      );
+    }
+  }
+  
+  if (toolType === 'delete') {
+    const recordId = request.params.arguments?.recordId as string;
+    
+    try {
+      const recordDeleteConfig = toolConfig as RecordDeleteToolConfig;
+      const success = await recordDeleteConfig.handler(objectSlug, recordId);
+      return formatResponse(
+        `Successfully deleted ${objectSlug} record with ID: ${recordId}`
+      );
+    } catch (error) {
+      return createErrorResult(
+        error instanceof Error ? error : new Error(`Failed to delete ${objectSlug} record: ${String(error)}`),
+        `objects/${objectSlug}/records/${recordId}`,
+        "DELETE",
+        (error as any).response?.data || {}
+      );
+    }
+  }
+  
+  if (toolType === 'list') {
+    const limit = Number(request.params.arguments?.limit) || 20;
+    const offset = Number(request.params.arguments?.offset) || 0;
+    
+    try {
+      const recordListConfig = toolConfig as RecordListToolConfig;
+      const records = await recordListConfig.handler(objectSlug, limit, offset);
+      return formatResponse(
+        `Successfully retrieved ${records.length.toString()} ${objectSlug} records`
+      );
+    } catch (error) {
+      return createErrorResult(
+        error instanceof Error ? error : new Error(`Failed to list ${objectSlug} records: ${String(error)}`),
+        `objects/${objectSlug}/records`,
+        "GET",
+        (error as any).response?.data || {}
+      );
+    }
+  }
+  
   throw new Error(`Record operation handler not implemented for tool type: ${toolType}`);
 }
 

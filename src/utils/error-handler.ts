@@ -200,6 +200,15 @@ export function createApiError(status: number, path: string, method: string, res
  * @returns Formatted error response
  */
 export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UNKNOWN_ERROR, details?: any) {
+  // Ensure we have a valid error object
+  const normalizedError = error instanceof Error 
+    ? error 
+    : new Error(typeof error === 'string' ? error : 'Unknown error');
+  
+  // Prevent "undefined" from being returned as an error message
+  const errorMessage = normalizedError.message || 'An unknown error occurred';
+  
+  // Determine appropriate status code based on error type
   const errorCode = 
     type === ErrorType.VALIDATION_ERROR ? 400 :
     type === ErrorType.AUTHENTICATION_ERROR ? 401 :
@@ -221,19 +230,53 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
     helpfulTip = '\n\nTIP: Verify objects are properly serialized to strings where needed.';
   }
   
+  // Create a safe copy of details to prevent circular reference issues during JSON serialization
+  let safeDetails: any = null;
+  
+  if (details) {
+    try {
+      // Create a safer version of details by converting to JSON and back
+      // This eliminates functions, circular references, etc.
+      safeDetails = JSON.parse(JSON.stringify(details));
+    } catch (err) {
+      console.error('[formatErrorResponse] Error stringifying details:', err);
+      // Create a simpler version if JSON.stringify fails
+      safeDetails = { 
+        note: 'Error details could not be fully serialized',
+        error: String(err),
+        partial: typeof details === 'object' ? Object.keys(details).reduce((acc, key) => {
+          try {
+            // Try to stringify each property individually
+            const val = details[key];
+            acc[key] = typeof val === 'object' ? '[Complex Object]' : String(val);
+          } catch (e) {
+            acc[key] = '[Unstringifiable]';
+          }
+          return acc;
+        }, {} as Record<string, string>) : String(details)
+      };
+    }
+  }
+  
+  // Log the error for debugging purposes
+  if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+    console.error(`[formatErrorResponse] Formatted error [${type}]:`, errorMessage);
+  }
+  
+  // Return properly formatted MCP error response
   return {
     content: [
       {
         type: "text",
-        text: `ERROR [${type}]: ${error.message}${helpfulTip}${details ? '\n\nDetails: ' + JSON.stringify(details, null, 2) : ''}`,
+        text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${safeDetails ? '\n\nDetails: ' + JSON.stringify(safeDetails, null, 2) : ''}`,
       },
     ],
     isError: true,
     error: {
       code: errorCode,
-      message: error.message,
+      message: errorMessage,
       type,
-      details,
+      details: safeDetails,
     },
   };
 }
@@ -247,7 +290,16 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
  * @param responseData - Any response data received
  * @returns Formatted error result
  */
-export function createErrorResult(error: Error, url: string, method: string, responseData: AttioErrorResponse = {}) {
+export function createErrorResult(error: Error | any, url: string, method: string, responseData: AttioErrorResponse = {}) {
+  // Ensure we have a valid error object to work with
+  const normalizedError = error instanceof Error 
+    ? error 
+    : new Error(typeof error === 'string' ? error : 'Unknown error');
+  
+  if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
+    console.error(`[createErrorResult] Processing error for ${method} ${url}:`, normalizedError.message);
+  }
+  
   // If it's already an AttioApiError, use it directly
   if (error instanceof AttioApiError) {
     const errorDetails = {
@@ -278,7 +330,7 @@ export function createErrorResult(error: Error, url: string, method: string, res
         path: apiError.path,
         detail: apiError.detail,
         responseData: apiError.responseData,
-        originalError: error instanceof Error ? error.message : String(error)
+        originalError: normalizedError.message
       };
       
       return formatErrorResponse(apiError, apiError.type, errorDetails);
@@ -289,11 +341,12 @@ export function createErrorResult(error: Error, url: string, method: string, res
         url,
         method,
         status: responseData.status,
-        originalError: error instanceof Error ? error.message : String(error)
+        originalError: normalizedError.message,
+        formattingError: formattingError instanceof Error ? formattingError.message : 'Unknown formatting error'
       };
       
       return formatErrorResponse(
-        error instanceof Error ? error : new Error(String(error)), 
+        normalizedError, 
         ErrorType.UNKNOWN_ERROR, 
         originalErrorDetails
       );
@@ -304,9 +357,9 @@ export function createErrorResult(error: Error, url: string, method: string, res
   let errorType = ErrorType.UNKNOWN_ERROR;
   
   // Try to determine error type based on message or instance
-  if (error.message.includes('network') || error.message.includes('connection')) {
+  if (normalizedError.message.includes('network') || normalizedError.message.includes('connection')) {
     errorType = ErrorType.NETWORK_ERROR;
-  } else if (error.message.includes('timeout')) {
+  } else if (normalizedError.message.includes('timeout')) {
     errorType = ErrorType.NETWORK_ERROR;
   }
   
@@ -315,8 +368,9 @@ export function createErrorResult(error: Error, url: string, method: string, res
     url,
     status: responseData.status || 'Unknown',
     headers: responseData.headers || {},
-    data: responseData.data || {}
+    data: responseData.data || {},
+    rawError: typeof error === 'object' ? JSON.stringify(error) : String(error)
   };
   
-  return formatErrorResponse(error, errorType, errorDetails);
+  return formatErrorResponse(normalizedError, errorType, errorDetails);
 }
