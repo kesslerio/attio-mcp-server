@@ -383,18 +383,14 @@ export const peopleToolDefinitions = [
               description: "Person name"
             },
             email_addresses: {
-              oneOf: [
-                { type: "string" },
-                { type: "array", items: { type: "string" } }
-              ],
-              description: "Email address(es) - string or array of strings"
+              type: "array",
+              items: { type: "string" },
+              description: "Email address(es) - array of email strings. For single email, provide as single-item array."
             },
             phone_numbers: {
-              oneOf: [
-                { type: "string" },
-                { type: "array", items: { type: "string" } }
-              ],
-              description: "Phone number(s) - string or array of strings"
+              type: "array", 
+              items: { type: "string" },
+              description: "Phone number(s) - array of phone strings. For single phone, provide as single-item array."
             },
             job_title: {
               type: "string",
