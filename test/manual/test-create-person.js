@@ -31,8 +31,8 @@ async function testCreatePerson() {
       arguments: {
         attributes: {
           name: `Test Person ${uniqueId}`,
-          email_addresses: `test.person.${uniqueId}@example.com`,
-          phone_numbers: "+1234567890",
+          email_addresses: [`test.person.${uniqueId}@example.com`],
+          phone_numbers: ["+1234567890"],
           job_title: "Software Engineer",
           company: "Acme Inc"
         }
@@ -56,11 +56,16 @@ async function testCreatePerson() {
 
 /**
  * Test the create-person tool with invalid parameters (missing required field)
+ * 
+ * Based on PersonValidator.validateCreate in people-write.ts:
+ * - Must provide at least an email_addresses OR name field
+ * - This test provides neither, so should fail validation
  */
 async function testCreatePersonInvalid() {
   console.log('\n=== Testing create-person with invalid parameters ===');
+  console.log('Note: PersonValidator requires at least email_addresses OR name to be provided');
   
-  // Invalid request missing name and email (both required by validator)
+  // Invalid request missing name and email_addresses (validation requires at least one)
   const invalidRequest = {
     params: {
       name: 'create-person',
