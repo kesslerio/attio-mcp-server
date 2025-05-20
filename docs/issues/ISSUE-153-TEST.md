@@ -1,67 +1,29 @@
 # Claude Desktop Prompt for Testing Issue #153 (batch-create-companies)
 
-I need to test and diagnose the batch-create-companies tool which is still failing with the error "Cannot read properties of undefined (reading 'map')".
+I need to test if your batch-create-companies tool is working correctly. Previously it was failing with a "Cannot read properties of undefined (reading 'map')" error.
 
-When you try to use this tool, it's showing URLs like "objects/undefined/records/batch", suggesting the object type isn't being properly passed.
+Please create multiple test companies for me with the following details:
 
-Please help me diagnose by:
+Company 1:
+- Name: Test Company Alpha 
+- Industry: Technology
+- Website: https://alpha-test.example.com
+- Description: This is a test company for batch creation
 
-1. First, checking the specific response URLs for these requests:
-   - Create a single company with create-company
-   - Use batch-create-companies
-   
-   In both cases, note what appears in place of "undefined" in the URL path.
+Company 2:
+- Name: Test Company Beta
+- Industry: Healthcare
+- Website: https://beta-test.example.com
+- Description: Another test company for batch operations
 
-2. Try creating an array of companies with the batch-create-companies tool using this exact format:
-```
-{
-  "companies": [
-    {
-      "name": "API Debug Company A",
-      "industry": "Technology"
-    },
-    {
-      "name": "API Debug Company B",
-      "industry": "Finance"
-    }
-  ]
-}
-```
+Company 3:
+- Name: Test Company Gamma
+- Industry: Finance
+- Website: https://gamma-test.example.com
+- Description: Third test company for verification
 
-3. Then try directly passing the companies array without the "companies" key wrapper:
-```
-[
-  {
-    "name": "Direct Array Company A",
-    "industry": "Technology"
-  },
-  {
-    "name": "Direct Array Company B",
-    "industry": "Finance"
-  }
-]
-```
+After creating these companies, please show me the full response from the batch-create-companies tool so I can verify it worked correctly.
 
-4. If both of those fail, try this format explicitly specifying the resource type:
-```
-{
-  "objectSlug": "companies",
-  "companies": [
-    {
-      "name": "Resource Type Company A",
-      "industry": "Technology"
-    },
-    {
-      "name": "Resource Type Company B",
-      "industry": "Finance"
-    }
-  ]
-}
-```
+Then please try creating an empty array of companies and show me how the tool handles this edge case.
 
-For each attempt, show me:
-- The exact API URL that shows in the error
-- The complete error message
-- The request format you used
-
-This will help identify if this is a parameter format issue, a resource type issue, or something deeper in the handler implementation.
+Finally, can you also try creating a company with a missing required field (like name) to see if proper validation is happening?
