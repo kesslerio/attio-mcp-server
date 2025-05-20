@@ -34,6 +34,7 @@ export const notesToolConfigs = {
       if (!note) {
         return 'Failed to create note.';
       }
+      // Truncate content at 100 chars for readability in console output
       return `Successfully created note: ${note.title || 'Untitled'}\nContent: ${note.content ? (note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content) : 'No content'}\nCreated at: ${note.timestamp || 'unknown'}`;
     }
   } as CreateNoteToolConfig
