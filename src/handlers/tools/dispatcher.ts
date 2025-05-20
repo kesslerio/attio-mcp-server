@@ -654,7 +654,13 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
       
       try {
-        const result = await toolConfig.handler(records);
+        // Create the proper parameter object structure expected by the handler
+        const params = {
+          [paramName]: records,
+          config: request.params.arguments?.config
+        };
+        
+        const result = await toolConfig.handler(params);
         return formatResponse(formatBatchResults(result, operation), result.summary.failed > 0);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
