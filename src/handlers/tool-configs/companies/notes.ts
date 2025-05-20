@@ -29,7 +29,13 @@ export const notesToolConfigs = {
   createNote: {
     name: "create-company-note",
     handler: createCompanyNote,
-    idParam: "companyId"
+    idParam: "companyId",
+    formatResult: (note: any) => {
+      if (!note) {
+        return 'Failed to create note.';
+      }
+      return `Successfully created note: ${note.title || 'Untitled'}\nContent: ${note.content ? (note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content) : 'No content'}\nCreated at: ${note.timestamp || 'unknown'}`;
+    }
   } as CreateNoteToolConfig
 };
 
