@@ -212,8 +212,24 @@ export async function addRecordToList(
   const api = getAttioClient();
   const path = `/lists/${listId}/entries`;
   
+  // Input validation to ensure required parameters
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+  
+  if (!recordId || typeof recordId !== 'string') {
+    throw new Error('Invalid record ID: Must be a non-empty string');
+  }
+  
   return callWithRetry(async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[addRecordToList] Adding record to list at ${path}`);
+        console.log(`- List ID: ${listId}`);
+        console.log(`- Record ID: ${recordId}`);
+        console.log(`- Request payload: ${JSON.stringify({ data: { record_id: recordId } })}`);
+      }
+      
       // Attio API expects a specific structure with a 'data' object wrapper
       // for adding records to lists. The 'data' object is required by the API
       // and contains the record_id and potentially a record_type field.
@@ -223,8 +239,20 @@ export async function addRecordToList(
           // record_type could be included here if needed for specific record types
         }
       });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[addRecordToList] Success: ${JSON.stringify(response.data)}`);
+      }
+      
       return response.data.data || response.data;
     } catch (error: any) {
+      // Enhanced error logging
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[addRecordToList] Error adding record ${recordId} to list ${listId}:`, 
+          error.message || 'Unknown error');
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', JSON.stringify(error.response?.data || {}));
+      }
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }
