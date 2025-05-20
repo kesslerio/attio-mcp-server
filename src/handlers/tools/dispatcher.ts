@@ -512,6 +512,32 @@ export async function executeToolRequest(request: CallToolRequest) {
       const listId = request.params.arguments?.listId as string;
       const recordId = request.params.arguments?.recordId as string;
       
+      // Validate required parameters
+      if (!listId) {
+        return createErrorResult(
+          new Error("listId parameter is required"),
+          `/lists/entries`,
+          "POST",
+          { status: 400, message: "Missing required parameter: listId" }
+        );
+      }
+      
+      if (!recordId) {
+        return createErrorResult(
+          new Error("recordId parameter is required"),
+          `/lists/${listId}/entries`,
+          "POST",
+          { status: 400, message: "Missing required parameter: recordId" }
+        );
+      }
+      
+      // Debug logging for the request in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[addRecordToList] Adding record to list:`);
+        console.log(`- List ID: ${listId}`);
+        console.log(`- Record ID: ${recordId}`);
+      }
+      
       try {
         const entry = await toolConfig.handler(listId, recordId);
         

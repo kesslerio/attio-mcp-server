@@ -226,25 +226,48 @@ export async function addRecordToList(
   listId: string, 
   recordId: string
 ): Promise<AttioListEntry> {
+  // Input validation to ensure required parameters
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+  
+  if (!recordId || typeof recordId !== 'string') {
+    throw new Error('Invalid record ID: Must be a non-empty string');
+  }
+  
   // Use the generic operation with fallback to direct implementation
   try {
     return await addGenericRecordToList(listId, recordId);
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`Generic addRecordToList failed: ${error.message || 'Unknown error'}`);
+      console.log(`Falling back to direct implementation for list ${listId} and record ${recordId}`);
     }
+    
     // Fallback implementation
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
     
-    // Note: Attio API requires a 'data' object wrapper around the record_id
-    // for the lists endpoints as per API requirements
-    const response = await api.post(path, {
+    // Construct the correct payload format
+    const payload = {
       data: {
         record_id: recordId
         // record_type could also be included here if needed for specific record types
       }
-    });
+    };
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[addRecordToList:fallback] Request to ${path} with payload:`, JSON.stringify(payload));
+    }
+    
+    // Note: Attio API requires a 'data' object wrapper around the record_id
+    // for the lists endpoints as per API requirements
+    const response = await api.post(path, payload);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[addRecordToList:fallback] Success response:`, JSON.stringify(response.data || {}));
+    }
+    
     return response.data.data || response.data;
   }
 }
