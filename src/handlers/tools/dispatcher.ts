@@ -575,6 +575,12 @@ export async function executeToolRequest(request: CallToolRequest) {
                     operation === 'create' ? 'batch-create-companies' : 'batch-update-companies', 
                     request);
       
+      // Enhanced debugging
+      console.log(`[handleCompanyBatchOperation:${operation}] Debug info:`);
+      console.log('- Parameter name:', paramName);
+      console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+      console.log('- Arguments has paramName:', request.params.arguments && paramName in request.params.arguments);
+      
       // Extract and validate parameters
       const records = request.params.arguments?.[paramName] || [];
       
@@ -660,6 +666,10 @@ export async function executeToolRequest(request: CallToolRequest) {
           config: request.params.arguments?.config
         };
         
+        // Debug the params object
+        console.log(`[handleCompanyBatchOperation:${operation}] Calling handler with params:`, JSON.stringify(params, null, 2));
+        console.log('- Handler function:', toolConfig.handler.name || 'anonymous');
+        
         const result = await toolConfig.handler(params);
         return formatResponse(formatBatchResults(result, operation), result.summary.failed > 0);
       } catch (error) {
@@ -683,6 +693,14 @@ export async function executeToolRequest(request: CallToolRequest) {
     
     // Handle specific batch operations for companies
     if (toolType === 'batchCreate' && toolName === 'batch-create-companies') {
+      // Add extra debugging
+      console.log('[batch-create-companies] Debug:');
+      console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+      console.log('- Tool type:', toolType);
+      console.log('- Tool name:', toolName);
+      console.log('- Tool config exists:', !!toolConfig);
+      console.log('- Handler exists:', toolConfig && typeof toolConfig.handler === 'function');
+      
       return await handleCompanyBatchOperation('create', request, toolConfig);
     }
     
