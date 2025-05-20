@@ -43,6 +43,7 @@ import {
   searchPeopleByNotes,
   advancedSearchPeople
 } from "../../objects/people/index.js";
+import { createPerson } from "../../objects/people-write.js";
 import { searchCompanies } from "../../objects/companies/index.js";
 import { getAttioClient } from "../../api/attio-client.js";
 import { 
@@ -56,6 +57,13 @@ import {
 
 // People tool configurations
 export const peopleToolConfigs = {
+  create: {
+    name: "create-person",
+    handler: createPerson,
+    formatResult: (result: Person) => 
+      `Person created: ${getPersonName(result)} (ID: ${result.id?.record_id || result.id || 'unknown'})`
+  } as ToolConfig,
+  
   search: {
     name: "search-people",
     handler: searchPeople,
@@ -360,6 +368,44 @@ export const peopleToolConfigs = {
 
 // People tool definitions
 export const peopleToolDefinitions = [
+  {
+    name: "create-person",
+    description: "Create a new person in Attio",
+    inputSchema: {
+      type: "object",
+      properties: {
+        attributes: {
+          type: "object",
+          description: "Person attributes to set",
+          properties: {
+            name: {
+              type: "string",
+              description: "Person name"
+            },
+            email_addresses: {
+              type: "array",
+              items: { type: "string" },
+              description: "Email address(es) - array of email strings. For single email, provide as single-item array."
+            },
+            phone_numbers: {
+              type: "array", 
+              items: { type: "string" },
+              description: "Phone number(s) - array of phone strings. For single phone, provide as single-item array."
+            },
+            job_title: {
+              type: "string",
+              description: "Job title"
+            },
+            company: {
+              type: "string",
+              description: "Company name"
+            }
+          }
+        }
+      },
+      required: ["attributes"]
+    }
+  },
   {
     name: "search-people",
     description: "Search for people in Attio",
