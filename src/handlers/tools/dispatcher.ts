@@ -1180,6 +1180,50 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleCompanyAttributeUpdate(ResourceType.COMPANIES, request, toolConfig);
     }
     
+    // Handle json tool - returns raw JSON representation of a resource
+    if (toolType === 'json') {
+      // Add debug logging for json tool processing
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[json] Processing JSON tool request for ${resourceType}:`);
+        console.log('- Tool name:', toolName);
+        console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+      }
+      
+      const apiPath = `/${resourceType}/json`;
+      
+      // Validate and extract resource ID
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      const id = request.params.arguments?.[idParamName] as string;
+      
+      if (!id) {
+        return createErrorResult(
+          new Error(`${idParamName} parameter is required`),
+          apiPath,
+          "GET",
+          { status: 400, message: `Missing required parameter: ${idParamName}` }
+        );
+      }
+      
+      try {
+        // Execute the handler and return formatted JSON result
+        const result = await toolConfig.handler(id);
+        
+        // Format result using the tool's formatResult function if available, or fall back to JSON.stringify
+        const formattedResult = toolConfig.formatResult ? 
+          toolConfig.formatResult(result) : 
+          safeJsonStringify(result);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/${resourceType}/${id}/json`,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
