@@ -56,14 +56,26 @@ This document provides a comprehensive guide to all Attio MCP tools available, t
 | `search-companies-by-creation-date` | Find companies created within a date range | When you need to find companies based on when they were created | `dateRange`: Date range object |
 | `search-companies-by-modification-date` | Find companies modified within a date range | When you need to find companies based on when they were last updated | `dateRange`: Date range object |
 
+### Relationship-Based Search Tools
+
+| Tool Name | Description | When to Use | Key Parameters |
+|-----------|-------------|------------|----------------|
+| `search-companies-by-people` | Find companies with employees matching criteria | When you need to find companies based on their people | `peopleFilter`: Filter criteria for people |
+| `search-companies-by-people-list` | Find companies with employees in a specific list | When you need to find companies with people in a list | `listId`: List ID containing people |
+| `search-companies-by-notes` | Find companies with notes containing specific text | When you need to find companies based on note content | `searchText`: Text to search for in notes |
+
 ### Company Details and Notes
 
 | Tool Name | Description | When to Use | Key Parameters |
 |-----------|-------------|------------|----------------|
 | `get-company-details` | Get comprehensive information about a company | When you need complete details for a specific company | `companyId`: Company record ID |
 | `get-company-basic-info` | Get basic information about a company | When you only need essential details for a company | `companyId`: Company record ID |
+| `get-company-business-info` | Get business information about a company | When you need industry, revenue, and employee data | `companyId`: Company record ID |
+| `get-company-contact-info` | Get contact information for a company | When you need address and phone details | `companyId`: Company record ID |
+| `get-company-social-info` | Get social media information for a company | When you need links to social profiles | `companyId`: Company record ID |
+| `get-company-json` | Get raw JSON representation of a company | When you need the complete data structure for a company | `companyId`: Company record ID |
 | `get-company-notes` | Get notes associated with a company | When you need to see the note history for a company | `companyId`: Company record ID |
-| `create-company-note` | Create a new note for a company | When you need to add a note to a company's record | `companyId`: Company ID, `content`: Note text |
+| `create-company-note` | Create a new note for a company | When you need to add a note to a company's record | `companyId`: Company ID, `title`: Optional note title, `content`: Note text |
 
 ## List Tools
 
@@ -101,7 +113,18 @@ This document provides a comprehensive guide to all Attio MCP tools available, t
 |-----------|-------------|------------|----------------|
 | `create-company` | Create a new company record | When you need to add a company to the system | `attributes`: Company attributes |
 | `update-company` | Update an existing company record | When you need to modify a company's information | `companyId`: Company ID, `attributes`: Updated attributes |
+| `update-company-attribute` | Update a specific attribute of a company | When you need to modify just one field | `companyId`: Company ID, `attributeName`: Name of attribute, `value`: New value |
 | `delete-company` | Delete a company record | When you need to remove a company | `companyId`: Company ID |
+
+### Batch Company Operations
+
+| Tool Name | Description | When to Use | Key Parameters |
+|-----------|-------------|------------|----------------|
+| `batch-create-companies` | Create multiple companies in a single operation | When you need to add many companies at once | `companies`: Array of company data |
+| `batch-update-companies` | Update multiple companies in a single operation | When you need to modify many companies at once | `updates`: Array of company updates with IDs |
+| `batch-delete-companies` | Delete multiple companies in a single operation | When you need to remove many companies at once | `companyIds`: Array of company IDs |
+| `batch-search-companies` | Perform multiple company searches at once | When you need to run multiple search queries | `queries`: Array of search terms |
+| `batch-get-company-details` | Get details for multiple companies at once | When you need details for many companies | `companyIds`: Array of company IDs |
 
 ## Search Tool Comparison
 
