@@ -239,6 +239,17 @@ export function createApiErrorFromAxiosError(error: any, endpoint: string, metho
 }
 
 /**
+ * Filter error categories for more targeted error handling
+ */
+export enum FilterErrorCategory {
+  STRUCTURE = 'structure',  // Basic structure issues (missing filters array)
+  ATTRIBUTE = 'attribute',  // Attribute-related issues
+  CONDITION = 'condition',  // Condition-related issues
+  VALUE = 'value',          // Value-related issues
+  TRANSFORMATION = 'transformation' // API format transformation issues
+}
+
+/**
  * Error class for filter validation issues
  * 
  * Used when validating filter conditions and structures to ensure they meet
@@ -249,11 +260,17 @@ export function createApiErrorFromAxiosError(error: any, endpoint: string, metho
  * try {
  *   // Validate filter conditions
  *   if (!isValidFilterCondition(condition)) {
- *     throw new FilterValidationError(`Invalid filter condition: ${condition}`);
+ *     throw new FilterValidationError(
+ *       `Invalid filter condition: ${condition}`,
+ *       FilterErrorCategory.CONDITION
+ *     );
  *   }
  * } catch (error) {
  *   if (error instanceof FilterValidationError) {
- *     // Handle filter validation error
+ *     // Handle filter validation error based on category
+ *     if (error.category === FilterErrorCategory.CONDITION) {
+ *       // Handle condition-specific error
+ *     }
  *   }
  * }
  * ```
@@ -263,8 +280,12 @@ export class FilterValidationError extends Error {
    * Create a new FilterValidationError
    * 
    * @param message - Detailed error message explaining the validation issue
+   * @param category - Error category for targeted handling (default: STRUCTURE)
    */
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly category: FilterErrorCategory = FilterErrorCategory.STRUCTURE
+  ) {
     super(message);
     this.name = 'FilterValidationError';
     
@@ -280,11 +301,16 @@ export class FilterValidationError extends Error {
  * ```typescript
  * try {
  *   if (!isValidRelationshipType(type)) {
- *     throw new RelationshipFilterError(`Invalid relationship type: ${type}`, 'people', 'companies');
+ *     throw new RelationshipFilterError(
+ *       `Invalid relationship type: ${type}`,
+ *       'people',
+ *       'companies'
+ *     );
  *   }
  * } catch (error) {
  *   if (error instanceof RelationshipFilterError) {
  *     // Handle relationship filter error
+ *     console.log(`Relationship error between ${error.sourceType} and ${error.targetType}`);
  *   }
  * }
  * ```
@@ -304,7 +330,8 @@ export class RelationshipFilterError extends FilterValidationError {
     public readonly targetType?: string,
     public readonly relationshipType?: string
   ) {
-    super(message);
+    // Relationships are a special type of filter condition
+    super(message, FilterErrorCategory.CONDITION);
     this.name = 'RelationshipFilterError';
     
     // This line is needed to properly capture the stack trace in derived classes
