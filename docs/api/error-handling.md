@@ -470,3 +470,26 @@ import { createAttioError } from '../utils/error-handler';
 ```
 
 By consistently re-throwing original API errors, the application can leverage centralized error handling logic to provide more precise feedback and better diagnostic information.
+
+## Recent Updates and Improvements
+
+### Enhanced Attribute Error Handling (Issue #183)
+
+The company attributes module has been updated with improved error handling to address issues when using the `get-company-attributes` tool. Key improvements include:
+
+1. **Try/Catch Blocks in Core Logic**
+   - Added structured `try/catch` blocks in the `getCompanyAttributes` function 
+   - Implemented consistent error logging using the `logAttributeError` helper
+   - Enhanced error messages with additional context (company ID, attribute name)
+
+2. **Robust Result Formatting**
+   - Improved error handling in the tool formatter with comprehensive checks
+   - Added fallback handling for unexpected result structures
+   - Better error messages for end users with clear guidance on issues
+
+3. **Error Detection and Prevention**
+   - Added type checking and validation for input parameters
+   - Improved validation for attribute existence before access attempts
+   - Implemented robust error propagation with context preservation
+
+These improvements ensure that the `get-company-attributes` tool now provides clear, actionable error messages rather than generic "[object Object]" errors, making it much easier to troubleshoot issues when working with company attributes.

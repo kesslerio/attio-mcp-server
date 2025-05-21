@@ -119,12 +119,25 @@ ${fieldCount > 0 ? JSON.stringify(customFields, null, 2) : 'No custom fields fou
     name: "get-company-attributes",
     handler: getCompanyAttributes,
     formatResult: (result: any) => {
+      // Enhanced error handling for unexpected result structure
+      if (!result || typeof result !== 'object') {
+        return `Error: Unable to process the response. Received: ${JSON.stringify(result)}`;
+      }
+      
+      // Handle case where the result contains an error object
+      if (result.error) {
+        return `Error retrieving attribute: ${result.error.message || JSON.stringify(result.error)}`;
+      }
+      
       if (result.value !== undefined) {
         // Return specific attribute value
         return `Company: ${result.company}\nAttribute value: ${typeof result.value === 'object' ? JSON.stringify(result.value, null, 2) : result.value}`;
-      } else {
+      } else if (result.attributes) {
         // Return list of attributes
         return `Company: ${result.company}\nAvailable attributes (${result.attributes.length}):\n${result.attributes.map((attr: string) => `  - ${attr}`).join('\n')}`;
+      } else {
+        // Fallback for unexpected result structure
+        return `Unexpected result format. Received: ${JSON.stringify(result)}`;
       }
     }
   } as ToolConfig
