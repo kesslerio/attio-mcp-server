@@ -3,6 +3,7 @@
  */
 import { AttioRecord, AttioListEntry } from "../../types/attio.js";
 import { processListEntries } from "../../utils/record-utils.js";
+import { safeJsonStringify, sanitizeMcpResponse } from "../../utils/json-serializer.js";
 
 /**
  * Format search results for display
@@ -108,9 +109,9 @@ export function formatResponse(content: string | any, isError: boolean = false) 
       : 'Operation completed successfully, but no content was returned';
   } else {
     try {
-      // Try to convert the content to a string representation
+      // Try to convert the content to a string representation using safe serialization
       formattedContent = typeof content === 'object' 
-        ? JSON.stringify(content, null, 2) 
+        ? safeJsonStringify(content, { maxDepth: 6, includeStackTraces: false })
         : String(content);
     } catch (error) {
       if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
@@ -127,7 +128,7 @@ export function formatResponse(content: string | any, isError: boolean = false) 
       : 'Operation completed successfully';
   }
   
-  return {
+  const response = {
     content: [
       {
         type: "text",
@@ -136,4 +137,7 @@ export function formatResponse(content: string | any, isError: boolean = false) 
     ],
     isError,
   };
+  
+  // Sanitize the final response to ensure it's MCP-compatible
+  return sanitizeMcpResponse(response);
 }
