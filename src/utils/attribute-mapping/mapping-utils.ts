@@ -151,6 +151,8 @@ export function handleSpecialCases(key: string): string | undefined {
     'company_segment': 'type_persona',
     'client_segment': 'type_persona',
     'customer_segment': 'type_persona',
+    'industry': 'categories',
+    'industry type': 'categories',
   };
   
   // Check for exact matches in the special cases
