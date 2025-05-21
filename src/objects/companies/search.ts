@@ -131,9 +131,10 @@ export async function advancedSearchCompanies(
   } catch (error) {
     // For FilterValidationError, add more context specific to companies
     if (error instanceof FilterValidationError) {
-      // Enhance with company-specific context but keep the original message
+      // Enhance with company-specific context but keep the original message and category
       throw new FilterValidationError(
-        `Advanced company search filter invalid: ${error.message}`
+        `Advanced company search filter invalid: ${error.message}`,
+        error.category
       );
     }
     

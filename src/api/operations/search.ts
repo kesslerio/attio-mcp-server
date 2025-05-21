@@ -114,10 +114,11 @@ export async function advancedSearchObject<T extends AttioRecord>(
       try {
         validateFilters(filters);
       } catch (validationError) {
-        // Enhance error with API operation context, but preserve original message
+        // Enhance error with API operation context, but preserve original message and category
         if (validationError instanceof FilterValidationError) {
           throw new FilterValidationError(
-            `Advanced search filter validation failed: ${validationError.message}`
+            `Advanced search filter validation failed: ${validationError.message}`,
+            validationError.category
           );
         }
         throw validationError;

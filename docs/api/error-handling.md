@@ -2,6 +2,109 @@
 
 This document describes the error handling system implemented in the Attio MCP server.
 
+## Filter Validation Error Categories
+
+As of version 0.0.2, the server implements a more granular categorization system for filter validation errors. This allows for more targeted error handling and better user feedback.
+
+| Category | Description | Example Error |
+|----------|-------------|---------------|
+| `STRUCTURE` | Basic structure issues with filters | Missing filters array, filters not an array |
+| `ATTRIBUTE` | Issues with attribute specification | Missing attribute object, missing attribute.slug |
+| `CONDITION` | Issues with filter conditions | Invalid condition value, unsupported condition |
+| `VALUE` | Issues with filter values | Invalid value type, incompatible value for condition |
+| `TRANSFORMATION` | Issues transforming filters to API format | API format transformation errors |
+
+### Working with Filter Error Categories
+
+When handling filter validation errors, you can use the error category to determine the type of issue:
+
+```typescript
+try {
+  const results = await advancedSearchCompanies(filters);
+} catch (error) {
+  if (error instanceof FilterValidationError) {
+    switch (error.category) {
+      case FilterErrorCategory.STRUCTURE:
+        console.error("Basic filter structure issue:", error.message);
+        // Show basic filter structure examples
+        break;
+      case FilterErrorCategory.ATTRIBUTE:
+        console.error("Issue with filter attributes:", error.message);
+        // Show attribute examples
+        break;
+      case FilterErrorCategory.CONDITION:
+        console.error("Issue with filter conditions:", error.message);
+        // Show condition examples
+        break;
+      case FilterErrorCategory.VALUE:
+        console.error("Issue with filter values:", error.message);
+        // Show value format examples
+        break;
+      case FilterErrorCategory.TRANSFORMATION:
+        console.error("Issue transforming filters to API format:", error.message);
+        // Show transformation examples
+        break;
+    }
+  } else {
+    console.error("Other error:", error.message);
+  }
+}
+```
+
+### Filter Error Examples
+
+#### Structure Error
+
+```
+Filter object is required but was undefined or null
+
+Example of valid filter structure: 
+{
+  "filters": [
+    {
+      "attribute": { "slug": "name" },
+      "condition": "contains",
+      "value": "Company Inc"
+    }
+  ]
+}
+```
+
+#### Attribute Error
+
+```
+Invalid filter structure at index 0: missing attribute.slug
+
+Example of valid filter structure: 
+{
+  "filters": [
+    {
+      "attribute": { "slug": "name" },
+      "condition": "contains",
+      "value": "Company Inc"
+    }
+  ]
+}
+```
+
+#### Condition Error
+
+```
+Invalid filter structure at index 0: invalid condition 'not_valid'. 
+Valid conditions are: equals, contains, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty
+
+Example of valid filter structure: 
+{
+  "filters": [
+    {
+      "attribute": { "slug": "name" },
+      "condition": "contains",
+      "value": "Company Inc"
+    }
+  ]
+}
+```
+
 ## MCP-Specific Error Handling
 
 When using Claude with the Attio MCP server, you may encounter errors that are specific to the MCP integration. Here's how these are handled:

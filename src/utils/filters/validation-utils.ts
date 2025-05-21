@@ -5,7 +5,7 @@
  * Provides consistent error message formatting and reusable validation functions
  */
 
-import { FilterValidationError } from "../../errors/api-errors.js";
+import { FilterValidationError, FilterErrorCategory } from "../../errors/api-errors.js";
 import { 
   FilterConditionType,
   ListEntryFilter,
@@ -79,23 +79,30 @@ export const FILTER_EXAMPLES = {
  * 
  * @param filters - The filters object to validate
  * @returns Validated filters object or throws descriptive error
- * @throws FilterValidationError with consistent error messages
+ * @throws FilterValidationError with consistent error messages and appropriate categories
  */
 export function validateFiltersObject(filters: ListEntryFilters | undefined): ListEntryFilters {
   // Check if filters is undefined or null
   if (!filters) {
-    throw new FilterValidationError(ERROR_MESSAGES.MISSING_FILTERS);
+    throw new FilterValidationError(
+      ERROR_MESSAGES.MISSING_FILTERS,
+      FilterErrorCategory.STRUCTURE
+    );
   }
   
   // Check if filters has a filters property
   if (!('filters' in filters)) {
-    throw new FilterValidationError(ERROR_MESSAGES.MISSING_FILTERS_PROPERTY);
+    throw new FilterValidationError(
+      ERROR_MESSAGES.MISSING_FILTERS_PROPERTY,
+      FilterErrorCategory.STRUCTURE
+    );
   }
   
   // Check if filters.filters is an array
   if (!Array.isArray(filters.filters)) {
     throw new FilterValidationError(
-      ERROR_MESSAGES.FILTERS_NOT_ARRAY(typeof filters.filters)
+      ERROR_MESSAGES.FILTERS_NOT_ARRAY(typeof filters.filters),
+      FilterErrorCategory.STRUCTURE
     );
   }
   
@@ -196,7 +203,7 @@ export function formatInvalidFiltersError(
  * @param filters - Filter object to validate
  * @param validateConditions - Whether to validate condition values
  * @returns The filters object if valid
- * @throws FilterValidationError with detailed messages and examples
+ * @throws FilterValidationError with detailed messages, examples, and appropriate categories
  */
 export function validateFilters(
   filters: ListEntryFilters | undefined, 
@@ -221,7 +228,23 @@ export function validateFilters(
     // Add examples to help the user fix their filters
     errorMessage += "\n\nExample of valid filter structure: \n" + FILTER_EXAMPLES.SIMPLE;
     
-    throw new FilterValidationError(errorMessage);
+    // Determine most appropriate error category based on invalid filters
+    let category = FilterErrorCategory.STRUCTURE;
+    
+    // If we have specific attribute issues
+    if (invalidFilters.some(f => f.reason.includes('attribute'))) {
+      category = FilterErrorCategory.ATTRIBUTE;
+    }
+    // If we have specific condition issues
+    else if (invalidFilters.some(f => f.reason.includes('condition'))) {
+      category = FilterErrorCategory.CONDITION;
+    }
+    // If we have specific value issues
+    else if (invalidFilters.some(f => f.reason.includes('value'))) {
+      category = FilterErrorCategory.VALUE;
+    }
+    
+    throw new FilterValidationError(errorMessage, category);
   }
   
   return validatedFilters;

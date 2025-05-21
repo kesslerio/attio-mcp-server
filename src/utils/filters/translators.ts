@@ -14,7 +14,7 @@
 
 // External dependencies
 import { isValidFilterCondition } from "../../types/attio.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
+import { FilterValidationError, FilterErrorCategory } from "../../errors/api-errors.js";
 
 // Internal module dependencies
 import {
@@ -152,7 +152,7 @@ function createOrFilterStructure(
     // Add example of valid OR filter structure
     errorMessage += "\n\nExample of valid OR filter structure: \n" + getFilterExample('or');
     
-    throw new FilterValidationError(errorMessage);
+    throw new FilterValidationError(errorMessage, FilterErrorCategory.TRANSFORMATION);
   }
   
   // Process valid filters
@@ -242,7 +242,7 @@ function createAndFilterStructure(
     // Add example of valid filter structure for AND logic (multiple conditions)
     errorMessage += "\n\nExample of valid filter structure with multiple conditions: \n" + getFilterExample('multiple');
     
-    throw new FilterValidationError(errorMessage);
+    throw new FilterValidationError(errorMessage, FilterErrorCategory.TRANSFORMATION);
   }
   
   // Process valid filters
@@ -354,7 +354,7 @@ export function processFilterValue(value: any, condition: FilterConditionType): 
  */
 export function transformSingleFilterToApi(filter: ListEntryFilter): AttioApiFilter {
   if (!validateFilterStructure(filter)) {
-    throw new FilterValidationError('Invalid filter structure');
+    throw new FilterValidationError('Invalid filter structure', FilterErrorCategory.STRUCTURE);
   }
   
   const { slug } = filter.attribute;

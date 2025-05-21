@@ -11,7 +11,7 @@ import {
   getFilterExample,
   ERROR_MESSAGES
 } from '../../../src/utils/filters/validation-utils.js';
-import { FilterValidationError } from '../../../src/errors/api-errors.js';
+import { FilterValidationError, FilterErrorCategory } from '../../../src/errors/api-errors.js';
 import { FilterConditionType, ListEntryFilter } from '../../../src/utils/filters/types.js';
 
 describe('Filter Validation Utilities', () => {
@@ -31,12 +31,15 @@ describe('Filter Validation Utilities', () => {
       expect(validateFiltersObject(filters)).toBe(filters);
     });
     
-    it('should throw error for undefined filters', () => {
-      expect(() => validateFiltersObject(undefined))
-        .toThrow(FilterValidationError);
-      
-      expect(() => validateFiltersObject(undefined))
-        .toThrow(ERROR_MESSAGES.MISSING_FILTERS);
+    it('should throw error for undefined filters with STRUCTURE category', () => {
+      try {
+        validateFiltersObject(undefined);
+        fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FilterValidationError);
+        expect((error as FilterValidationError).message).toContain(ERROR_MESSAGES.MISSING_FILTERS);
+        expect((error as FilterValidationError).category).toBe(FilterErrorCategory.STRUCTURE);
+      }
     });
     
     it('should throw error for filters missing filters property', () => {
@@ -202,7 +205,7 @@ describe('Filter Validation Utilities', () => {
       expect(validateFilters(filters)).toBe(filters);
     });
     
-    it('should throw detailed error when all filters are invalid', () => {
+    it('should throw detailed error when all filters are invalid with appropriate category', () => {
       const filters = {
         filters: [
           {
@@ -213,18 +216,35 @@ describe('Filter Validation Utilities', () => {
         ]
       };
       
-      expect(() => validateFilters(filters))
-        .toThrow(FilterValidationError);
-      
-      expect(() => validateFilters(filters))
-        .toThrow(ERROR_MESSAGES.ALL_FILTERS_INVALID);
-      
-      // Should include an example
+      // Attribute error should have ATTRIBUTE category
       try {
         validateFilters(filters);
+        fail('Should have thrown an error');
       } catch (error) {
-        expect(error instanceof FilterValidationError).toBe(true);
-        expect((error as Error).message).toContain('Example of valid filter structure');
+        expect(error).toBeInstanceOf(FilterValidationError);
+        expect((error as FilterValidationError).message).toContain(ERROR_MESSAGES.ALL_FILTERS_INVALID);
+        expect((error as FilterValidationError).message).toContain('Example of valid filter structure');
+        expect((error as FilterValidationError).category).toBe(FilterErrorCategory.ATTRIBUTE);
+      }
+      
+      // Condition error should have CONDITION category
+      const conditionFilters = {
+        filters: [
+          {
+            attribute: { slug: 'name' },
+            condition: 'invalid_condition' as FilterConditionType,
+            value: 'test'
+          }
+        ]
+      };
+      
+      try {
+        validateFilters(conditionFilters);
+        fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FilterValidationError);
+        expect((error as FilterValidationError).message).toContain(ERROR_MESSAGES.ALL_FILTERS_INVALID);
+        expect((error as FilterValidationError).category).toBe(FilterErrorCategory.CONDITION);
       }
     });
   });
