@@ -19,6 +19,7 @@ import {
 import { ResourceType } from '../types/attio.js';
 import { validateAttributeValue, ValidationResult, AttributeType } from './attribute-validator.js';
 import { InvalidRequestError } from '../errors/api-errors.js';
+import { convertToBoolean } from '../utils/attribute-mapping/attribute-mappers.js';
 
 /**
  * Interface for cached attribute type info
@@ -40,11 +41,109 @@ export class CompanyValidator {
   // Cache expiry time in milliseconds (30 minutes)
   private static CACHE_TTL = 30 * 60 * 1000;
   
+  // Additional boolean field name patterns for heuristic detection
+  private static booleanFieldPatterns = [
+    // Prefixes that strongly indicate boolean fields
+    'is_', 'has_', 'can_', 'should_', 'will_', 'was_', 'does_',
+    // Common terms that suggest boolean flags
+    'enabled', 'active', 'verified', 'published', 'approved', 'confirmed', 
+    'suspended', 'locked', 'flagged', 'premium', 'featured', 'hidden',
+    'allow', 'accept', 'available', 'eligible', 'complete', 'valid'
+  ];
+  
+  /**
+   * Determines if a field is likely to be a boolean based on its name
+   * 
+   * @param fieldName - Name of the field to check
+   * @returns True if the field name suggests it's a boolean
+   */
+  private static isBooleanFieldByName(fieldName: string): boolean {
+    const fieldNameLower = fieldName.toLowerCase();
+    
+    // Check prefixes (is_, has_, etc.)
+    for (const pattern of CompanyValidator.booleanFieldPatterns) {
+      if (fieldNameLower.startsWith(pattern) || fieldNameLower.includes('_' + pattern) || 
+          fieldNameLower === pattern || fieldNameLower.includes(pattern + '_')) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Processes and converts a value for a specific field based on field type
+   * 
+   * @param fieldName - Name of the field
+   * @param value - Value to process
+   * @returns Processed value (converted if needed)
+   */
+  private static async processFieldValue(fieldName: string, value: any): Promise<any> {
+    // Skip processing for null/undefined values
+    if (value === null || value === undefined) {
+      return value;
+    }
+    
+    // Look for boolean fields and convert string/number values to boolean
+    try {
+      // Check if this is a boolean field using API type detection or cached type
+      const fieldType = CompanyValidator.fieldTypeCache.get(fieldName) || 
+        await detectFieldType(ResourceType.COMPANIES, fieldName);
+        
+      // Store in cache for future use
+      if (!CompanyValidator.fieldTypeCache.has(fieldName)) {
+        CompanyValidator.fieldTypeCache.set(fieldName, fieldType);
+      }
+        
+      // Convert value if it's a boolean field but the value is a string or number
+      if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
+        return convertToBoolean(value);
+      }
+    } catch (error) {
+      // If field type detection fails, try a heuristic approach based on field naming
+      if (CompanyValidator.isBooleanFieldByName(fieldName) && 
+          (typeof value === 'string' || typeof value === 'number')) {
+        try {
+          return convertToBoolean(value);
+        } catch (conversionError) {
+          console.warn(`Failed to convert potential boolean value for field '${fieldName}':`, 
+            conversionError instanceof Error ? conversionError.message : String(conversionError));
+          // Return the original value if conversion fails
+        }
+      }
+    }
+    
+    // If we get here, return the original value (no conversion needed)
+    return value;
+  }
+  
+  /**
+   * Process all attributes in an object, converting values as needed
+   * 
+   * @param attributes - Object containing attribute key-value pairs
+   * @returns Processed attributes object with converted values
+   */
+  private static async processAttributeValues(attributes: Record<string, any>): Promise<Record<string, any>> {
+    const processedAttributes = { ...attributes };
+    
+    for (const [field, value] of Object.entries(attributes)) {
+      if (value !== undefined && value !== null) {
+        // First validate the field type
+        await CompanyValidator.validateFieldType(field, value);
+        
+        // Then process the value (convert if needed)
+        processedAttributes[field] = await CompanyValidator.processFieldValue(field, value);
+      }
+    }
+    
+    return processedAttributes;
+  }
+  
   /**
    * Validates data for creating a company using dynamic field type detection
    * 
    * @param attributes - Raw attributes for company creation
-   * @returns Validated company create input
+   * @returns Validated company create input with processed values
    * @throws MissingCompanyFieldError if required fields are missing
    * @throws InvalidCompanyFieldTypeError if field types are invalid
    */
@@ -54,19 +153,16 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    // First apply traditional field validation
-    for (const [field, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        await CompanyValidator.validateFieldType(field, value);
-      }
-    }
+    // First process values, including boolean conversion from the main branch
+    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
     
     // Special validation for specific field types
-    await CompanyValidator.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(processedAttributes);
     
-    // Then apply the new enhanced type validation and conversion
+    // Then apply the enhanced type validation and conversion from our feature branch
     try {
-      attributes = await CompanyValidator.validateAttributeTypes(attributes);
+      const validatedAttributes = await CompanyValidator.validateAttributeTypes(processedAttributes);
+      return validatedAttributes as CompanyCreateInput;
     } catch (error) {
       // If it's already a structured error, rethrow it
       if (error instanceof InvalidRequestError) {
@@ -75,8 +171,6 @@ export class CompanyValidator {
       // Otherwise, convert to an appropriate error
       throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
     }
-
-    return attributes as CompanyCreateInput;
   }
 
   /**
@@ -84,7 +178,7 @@ export class CompanyValidator {
    * 
    * @param companyId - ID of the company to update
    * @param attributes - Raw attributes for company update
-   * @returns Validated company update input
+   * @returns Validated company update input with processed values
    * @throws InvalidCompanyDataError if company ID is invalid
    * @throws InvalidCompanyFieldTypeError if field types are invalid
    */
@@ -94,19 +188,16 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
     }
 
-    // First apply traditional field validation
-    for (const [field, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        await CompanyValidator.validateFieldType(field, value);
-      }
-    }
+    // First process values, including boolean conversion from the main branch
+    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
     
     // Special validation for specific field types
-    await CompanyValidator.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(processedAttributes);
     
-    // Then apply the new enhanced type validation and conversion
+    // Then apply the enhanced type validation and conversion from our feature branch
     try {
-      attributes = await CompanyValidator.validateAttributeTypes(attributes);
+      const validatedAttributes = await CompanyValidator.validateAttributeTypes(processedAttributes);
+      return validatedAttributes as CompanyUpdateInput;
     } catch (error) {
       // If it's already a structured error, rethrow it
       if (error instanceof InvalidRequestError) {
@@ -115,8 +206,6 @@ export class CompanyValidator {
       // Otherwise, convert to an appropriate error
       throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
     }
-
-    return attributes as CompanyUpdateInput;
   }
 
   /**
@@ -126,6 +215,7 @@ export class CompanyValidator {
    * @param attributeName - Name of the attribute to update
    * @param attributeValue - Value to set for the attribute
    * @throws InvalidCompanyDataError if validation fails
+   * @returns The processed attribute value (converted if needed)
    */
   static async validateAttributeUpdate(companyId: string, attributeName: string, attributeValue: any): Promise<any> {
     // Validate company ID
@@ -141,22 +231,25 @@ export class CompanyValidator {
     // First run traditional validation
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
     
+    // Process the value (convert if needed) using boolean conversion from main branch
+    const processedValue = await CompanyValidator.processFieldValue(attributeName, attributeValue);
+    
     // Special validation for specific attributes
-    if (attributeName === 'name' && (!attributeValue || typeof attributeValue !== 'string')) {
+    if (attributeName === 'name' && (!processedValue || typeof processedValue !== 'string')) {
       throw new InvalidCompanyDataError('Company name must be a non-empty string');
     }
 
-    if (attributeName === 'website' && attributeValue) {
+    if (attributeName === 'website' && processedValue) {
       try {
-        new URL(attributeValue);
+        new URL(processedValue);
       } catch {
         throw new InvalidCompanyDataError('Website must be a valid URL');
       }
     }
 
-    if (attributeName === 'linkedin_url' && attributeValue) {
+    if (attributeName === 'linkedin_url' && processedValue) {
       try {
-        const url = new URL(attributeValue);
+        const url = new URL(processedValue);
         if (!url.hostname.includes('linkedin.com')) {
           throw new InvalidCompanyDataError('LinkedIn URL must be a valid LinkedIn URL');
         }
@@ -165,9 +258,9 @@ export class CompanyValidator {
       }
     }
     
-    // Then apply enhanced type validation with automatic conversion
+    // Then apply enhanced type validation from our feature branch
     // Create a single-attribute object for validation
-    const attributeObj = { [attributeName]: attributeValue };
+    const attributeObj = { [attributeName]: processedValue };
     
     try {
       const validatedObj = await CompanyValidator.validateAttributeTypes(attributeObj);
@@ -238,6 +331,10 @@ export class CompanyValidator {
         
       case 'boolean':
         if (typeof value !== 'boolean') {
+          // For boolean fields, try to convert string values to boolean
+          if (typeof value === 'string' || typeof value === 'number') {
+            return; // We'll handle conversion during the attribute processing
+          }
           throw new InvalidCompanyFieldTypeError(field, 'boolean', actualType);
         }
         break;
