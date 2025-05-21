@@ -12,6 +12,31 @@ import {
 import { ToolConfig } from "../../tool-types.js";
 import { formatterConfigs } from "./formatters.js";
 
+/**
+ * Helper function to safely extract company display information
+ * 
+ * Handles all the necessary null checks for nested properties
+ * 
+ * @param company - Company object from Attio API
+ * @returns Object with extracted name and ID with fallbacks
+ */
+function extractCompanyDisplayInfo(company: Company): { name: string; id: string } {
+  // Handle potentially missing or malformed data safely
+  const name = company?.values?.name?.[0]?.value || 'Unnamed';
+  
+  // Handle the id which could be a string or an object with record_id
+  let id: string = 'unknown';
+  if (company?.id) {
+    if (typeof company.id === 'string') {
+      id = company.id;
+    } else if (company.id.record_id) {
+      id = company.id.record_id;
+    }
+  }
+  
+  return { name, id };
+}
+
 // Company CRUD tool configurations
 export const crudToolConfigs = {
   basicInfo: {
@@ -24,10 +49,8 @@ export const crudToolConfigs = {
     name: "create-company",
     handler: createCompany,
     formatResult: (result: Company) => {
-      // Extract name safely, handling the array format correctly
-      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
-      const companyId = result.id?.record_id || result.id || 'unknown';
-      return `Company created: ${companyName} (ID: ${companyId})`;
+      const { name, id } = extractCompanyDisplayInfo(result);
+      return `Company created: ${name} (ID: ${id})`;
     }
   } as ToolConfig,
   
@@ -35,10 +58,8 @@ export const crudToolConfigs = {
     name: "update-company",
     handler: updateCompany,
     formatResult: (result: Company) => {
-      // Extract name safely, handling the array format correctly
-      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
-      const companyId = result.id?.record_id || result.id || 'unknown';
-      return `Company updated: ${companyName} (ID: ${companyId})`;
+      const { name, id } = extractCompanyDisplayInfo(result);
+      return `Company updated: ${name} (ID: ${id})`;
     }
   } as ToolConfig,
   
@@ -46,10 +67,8 @@ export const crudToolConfigs = {
     name: "update-company-attribute",
     handler: updateCompanyAttribute,
     formatResult: (result: Company) => {
-      // Extract name safely, handling the array format correctly
-      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
-      const companyId = result.id?.record_id || result.id || 'unknown';
-      return `Company attribute updated for: ${companyName} (ID: ${companyId})`;
+      const { name, id } = extractCompanyDisplayInfo(result);
+      return `Company attribute updated for: ${name} (ID: ${id})`;
     }
   } as ToolConfig,
   
