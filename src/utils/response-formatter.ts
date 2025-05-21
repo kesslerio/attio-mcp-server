@@ -1,6 +1,7 @@
 /**
  * Response formatting utilities for standardizing MCP tool responses
  */
+import { safeJsonStringify, sanitizeMcpResponse } from "./json-serializer.js";
 
 /**
  * Interface for a simple text content item
@@ -161,11 +162,11 @@ export function formatJsonResponse(
   data: any,
   metadata?: Record<string, any>
 ): ToolResponse {
-  return {
+  const response = {
     content: [
       {
         type: 'text',
-        text: `${title}:\n${JSON.stringify(data, null, 2)}`
+        text: `${title}:\n${safeJsonStringify(data, { maxDepth: 8 })}`
       }
     ],
     isError: false,
@@ -174,6 +175,8 @@ export function formatJsonResponse(
       ...metadata
     }
   };
+  
+  return sanitizeMcpResponse(response);
 }
 
 /**
@@ -258,11 +261,11 @@ export function formatErrorResponse(
   type: string = 'unknown_error',
   details?: any
 ): ToolResponse {
-  return {
+  const response = {
     content: [
       {
         type: 'text',
-        text: `ERROR [${type}]: ${message}${details ? '\n\nDetails: ' + JSON.stringify(details, null, 2) : ''}`
+        text: `ERROR [${type}]: ${message}${details ? '\n\nDetails: ' + safeJsonStringify(details, { maxDepth: 5 }) : ''}`
       }
     ],
     isError: true,
@@ -273,4 +276,6 @@ export function formatErrorResponse(
       details
     }
   };
+  
+  return sanitizeMcpResponse(response);
 }

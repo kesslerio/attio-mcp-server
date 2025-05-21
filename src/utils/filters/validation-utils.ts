@@ -11,6 +11,7 @@ import {
   ListEntryFilter,
   ListEntryFilters 
 } from "./types.js";
+import { ValidatedListEntryFilters } from "../../api/operations/types.js";
 import { isValidFilterCondition } from "../../types/attio.js";
 
 /**
@@ -75,13 +76,26 @@ export const FILTER_EXAMPLES = {
 };
 
 /**
- * Validates the basic filter structure
+ * Validates the basic filter structure ensuring filters object has required properties
  * 
- * @param filters - The filters object to validate
- * @returns Validated filters object or throws descriptive error
+ * This function performs structural validation to ensure:
+ * - The filters parameter is not null/undefined
+ * - The filters object has a 'filters' property
+ * - The 'filters' property is an array
+ * 
+ * @param filters - The filters object to validate (may be undefined/null from user input)
+ * @returns Validated filters object with guaranteed filters array
  * @throws FilterValidationError with consistent error messages and appropriate categories
+ * 
+ * @example
+ * ```typescript
+ * const validated = validateFiltersObject({
+ *   filters: [{ attribute: { slug: 'name' }, condition: 'equals', value: 'test' }]
+ * });
+ * // validated.filters is guaranteed to be an array
+ * ```
  */
-export function validateFiltersObject(filters: ListEntryFilters | undefined): ListEntryFilters {
+export function validateFiltersObject(filters: ListEntryFilters | undefined): ValidatedListEntryFilters {
   // Check if filters is undefined or null
   if (!filters) {
     throw new FilterValidationError(
@@ -106,7 +120,8 @@ export function validateFiltersObject(filters: ListEntryFilters | undefined): Li
     );
   }
   
-  return filters;
+  // Return the validated filters with the correct type
+  return filters as ValidatedListEntryFilters;
 }
 
 /**
@@ -200,20 +215,43 @@ export function formatInvalidFiltersError(
 /**
  * Full validation of filters with detailed error messages and examples
  * 
- * @param filters - Filter object to validate
- * @param validateConditions - Whether to validate condition values
- * @returns The filters object if valid
+ * This is the primary entry point for filter validation. It performs:
+ * 1. Structural validation using validateFiltersObject()
+ * 2. Individual filter validation for each filter in the array
+ * 3. Condition validation if enabled
+ * 4. Comprehensive error reporting with examples
+ * 
+ * @param filters - Filter object to validate (may have optional filters array)
+ * @param validateConditions - Whether to validate condition values against known operators
+ * @returns Validated filters with guaranteed filters array and valid structure
  * @throws FilterValidationError with detailed messages, examples, and appropriate categories
+ * 
+ * @example
+ * ```typescript
+ * // Valid usage
+ * const validated = validateFilters({
+ *   filters: [
+ *     { attribute: { slug: 'name' }, condition: 'equals', value: 'John' },
+ *     { attribute: { slug: 'age' }, condition: 'greater_than', value: 18 }
+ *   ],
+ *   matchAny: false
+ * }, true);
+ * 
+ * // validated.filters is guaranteed to exist and be valid
+ * ```
+ * 
+ * @see validateFiltersObject For structural validation
+ * @see collectInvalidFilters For individual filter validation logic
  */
 export function validateFilters(
   filters: ListEntryFilters | undefined, 
   validateConditions: boolean = true
-): ListEntryFilters {
+): ValidatedListEntryFilters {
   // First validate basic structure
   const validatedFilters = validateFiltersObject(filters);
   
-  // Handle empty filters array (valid but returns no results)
-  if (validatedFilters.filters.length === 0) {
+  // Handle empty or undefined filters array (valid but returns no results)
+  if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
     return validatedFilters;
   }
   

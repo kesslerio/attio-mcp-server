@@ -57,6 +57,17 @@ export interface ListEntryFilters {
 }
 
 /**
+ * Validated filter parameters where filters array is guaranteed to exist
+ * Used internally after validation to ensure type safety
+ */
+export interface ValidatedListEntryFilters extends ListEntryFilters {
+  /**
+   * Individual filter conditions to apply (guaranteed to exist after validation)
+   */
+  filters: ListEntryFilter[];
+}
+
+/**
  * Common types and interfaces shared across API operations
  */
 
