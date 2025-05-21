@@ -11,6 +11,7 @@ import {
   ListEntryFilter,
   ListEntryFilters 
 } from "./types.js";
+import { ValidatedListEntryFilters } from "../../api/operations/types.js";
 import { isValidFilterCondition } from "../../types/attio.js";
 
 /**
@@ -81,7 +82,7 @@ export const FILTER_EXAMPLES = {
  * @returns Validated filters object or throws descriptive error
  * @throws FilterValidationError with consistent error messages and appropriate categories
  */
-export function validateFiltersObject(filters: ListEntryFilters | undefined): ListEntryFilters {
+export function validateFiltersObject(filters: ListEntryFilters | undefined): ValidatedListEntryFilters {
   // Check if filters is undefined or null
   if (!filters) {
     throw new FilterValidationError(
@@ -106,7 +107,8 @@ export function validateFiltersObject(filters: ListEntryFilters | undefined): Li
     );
   }
   
-  return filters;
+  // Return the validated filters with the correct type
+  return filters as ValidatedListEntryFilters;
 }
 
 /**
@@ -208,12 +210,12 @@ export function formatInvalidFiltersError(
 export function validateFilters(
   filters: ListEntryFilters | undefined, 
   validateConditions: boolean = true
-): ListEntryFilters {
+): ValidatedListEntryFilters {
   // First validate basic structure
   const validatedFilters = validateFiltersObject(filters);
   
-  // Handle empty filters array (valid but returns no results)
-  if (validatedFilters.filters.length === 0) {
+  // Handle empty or undefined filters array (valid but returns no results)
+  if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
     return validatedFilters;
   }
   

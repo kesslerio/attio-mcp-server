@@ -24,6 +24,7 @@ import {
   FilterConditionType,
   FIELD_SPECIAL_HANDLING
 } from "./types.js";
+import { ValidatedListEntryFilters } from "../../api/operations/types.js";
 import { validateFilterStructure } from "./validators.js";
 import { 
   validateFilters, 
@@ -94,10 +95,10 @@ export function transformFiltersToApiFormat(
   // Use the central validation utility for consistent error messages
   const validatedFilters = validateFilters(filters, validateConditions);
   
-  // If filters array is empty, return empty object without error
-  if (validatedFilters.filters.length === 0) {
+  // Check if filters array exists and handle undefined case
+  if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[transformFiltersToApiFormat] Empty filters array provided, returning empty result');
+      console.log('[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result');
     }
     return {};
   }

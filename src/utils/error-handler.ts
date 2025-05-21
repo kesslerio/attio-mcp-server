@@ -2,6 +2,7 @@
  * Error handling utility for creating consistent error responses
  */
 import { AttioErrorResponse } from "../types/attio.js";
+import { safeJsonStringify, sanitizeMcpResponse } from "./json-serializer.js";
 
 /**
  * Enum for categorizing different types of errors
@@ -235,25 +236,19 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
   
   if (details) {
     try {
-      // Create a safer version of details by converting to JSON and back
-      // This eliminates functions, circular references, etc.
-      safeDetails = JSON.parse(JSON.stringify(details));
+      // Use safe JSON serialization that handles circular references and non-serializable values
+      const detailsString = safeJsonStringify(details, { 
+        maxDepth: 5, 
+        includeStackTraces: process.env.NODE_ENV === 'development' 
+      });
+      safeDetails = JSON.parse(detailsString);
     } catch (err) {
-      console.error('[formatErrorResponse] Error stringifying details:', err);
-      // Create a simpler version if JSON.stringify fails
+      console.error('[formatErrorResponse] Error with safe stringification:', err);
+      // Ultimate fallback
       safeDetails = { 
-        note: 'Error details could not be fully serialized',
+        note: 'Error details could not be serialized',
         error: String(err),
-        partial: typeof details === 'object' ? Object.keys(details).reduce((acc, key) => {
-          try {
-            // Try to stringify each property individually
-            const val = details[key];
-            acc[key] = typeof val === 'object' ? '[Complex Object]' : String(val);
-          } catch (e) {
-            acc[key] = '[Unstringifiable]';
-          }
-          return acc;
-        }, {} as Record<string, string>) : String(details)
+        detailsType: typeof details
       };
     }
   }
@@ -264,11 +259,11 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
   }
   
   // Return properly formatted MCP error response
-  return {
+  const errorResponse = {
     content: [
       {
         type: "text",
-        text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${safeDetails ? '\n\nDetails: ' + JSON.stringify(safeDetails, null, 2) : ''}`,
+        text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${safeDetails ? '\n\nDetails: ' + safeJsonStringify(safeDetails, { maxDepth: 3 }) : ''}`,
       },
     ],
     isError: true,
@@ -279,6 +274,9 @@ export function formatErrorResponse(error: Error, type: ErrorType = ErrorType.UN
       details: safeDetails,
     },
   };
+  
+  // Sanitize the final error response to ensure it's MCP-compatible
+  return sanitizeMcpResponse(errorResponse);
 }
 
 /**

@@ -9,6 +9,7 @@ import { ResourceType, AttioListEntry, AttioRecord } from "../../types/attio.js"
 import { ListEntryFilters } from "../../api/operations/index.js";
 import { processListEntries } from "../../utils/record-utils.js";
 import { ApiError, isApiError, hasResponseData } from "./error-types.js";
+import { safeJsonStringify } from "../../utils/json-serializer.js";
 
 // Import tool configurations
 import { findToolConfig } from "./registry.js";
@@ -924,17 +925,16 @@ export async function executeToolRequest(request: CallToolRequest) {
     
     /**
      * Safely formats an object as JSON string, handling potential circular references
+     * Uses the centralized safe JSON serializer for consistency
      * 
      * @param obj - The object to stringify
      * @returns Formatted JSON string or fallback error message
      */
-    function safeJsonStringify(obj: any): string {
-      try {
-        return JSON.stringify(obj, null, 2);
-      } catch (error) {
-        console.warn('Failed to stringify object:', error);
-        return `[Object could not be converted to JSON: ${error instanceof Error ? error.message : 'Unknown error'}]`;
-      }
+    function safeJsonStringifyLocal(obj: any): string {
+      return safeJsonStringify(obj, { 
+        maxDepth: 6, 
+        includeStackTraces: process.env.NODE_ENV === 'development' 
+      });
     }
     
     // Handle getAttributes tool
@@ -957,7 +957,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         // Format result using the tool's formatter if available
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
+          : safeJsonStringifyLocal(result);
         
         return formatResponse(formattedResult);
       } catch (error) {
@@ -1019,7 +1019,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         // Format result using the tool's formatter if available
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
-          : safeJsonStringify(result);
+          : safeJsonStringifyLocal(result);
         
         return formatResponse(formattedResult);
       } catch (error) {
