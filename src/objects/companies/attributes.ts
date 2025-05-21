@@ -377,40 +377,53 @@ export async function getCompanyAttributes(
   const companyId = extractCompanyId(companyIdOrUri);
   const fullCompany = await getCompanyDetails(companyIdOrUri);
   
-  if (attributeName) {
-    // Return specific attribute value
-    const values = fullCompany.values || {};
-    const value = values[attributeName];
-    
-    if (value === undefined) {
-      throw new Error(`Attribute '${attributeName}' not found for company ${fullCompany.values?.name?.[0]?.value || companyId}`);
-    }
-    
-    // Extract simple value from array structure if applicable
-    let simplifiedValue = value;
-    if (Array.isArray(value) && value.length > 0) {
-      const firstItem = value[0];
-      if (firstItem && firstItem.value !== undefined) {
-        simplifiedValue = firstItem.value;
-      } else if (firstItem && firstItem.option?.title) {
-        simplifiedValue = firstItem.option.title;
-      } else if (firstItem && firstItem.target_record_id) {
-        simplifiedValue = `Reference: ${firstItem.target_record_id}`;
+  try {
+    if (attributeName) {
+      // Return specific attribute value
+      const values = fullCompany.values || {};
+      const value = values[attributeName];
+      const companyName = fullCompany.values?.name?.[0]?.value || companyId;
+      
+      if (value === undefined) {
+        throw new Error(`Attribute '${attributeName}' not found for company ${companyName}`);
       }
+      
+      // Extract simple value from array structure if applicable
+      let simplifiedValue = value;
+      if (Array.isArray(value) && value.length > 0) {
+        const firstItem = value[0];
+        if (firstItem && firstItem.value !== undefined) {
+          simplifiedValue = firstItem.value;
+        } else if (firstItem && firstItem.option?.title) {
+          simplifiedValue = firstItem.option.title;
+        } else if (firstItem && firstItem.target_record_id) {
+          simplifiedValue = `Reference: ${firstItem.target_record_id}`;
+        }
+      }
+      
+      return {
+        value: simplifiedValue,
+        company: companyName
+      };
+    } else {
+      // Return list of available attributes
+      const values = fullCompany.values || {};
+      const attributes = Object.keys(values).sort();
+      
+      return {
+        attributes,
+        company: fullCompany.values?.name?.[0]?.value || companyId
+      };
     }
+  } catch (error) {
+    // Use consistent error logging pattern
+    logAttributeError('getCompanyAttributes', error, {
+      companyId,
+      attributeName,
+      operation: 'get attributes'
+    });
     
-    return {
-      value: simplifiedValue,
-      company: fullCompany.values?.name?.[0]?.value || companyId
-    };
-  } else {
-    // Return list of available attributes
-    const values = fullCompany.values || {};
-    const attributes = Object.keys(values).sort();
-    
-    return {
-      attributes,
-      company: fullCompany.values?.name?.[0]?.value || companyId
-    };
+    // Re-throw with enhanced context
+    throw new Error(`Failed to get company attribute: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
