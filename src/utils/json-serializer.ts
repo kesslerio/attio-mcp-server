@@ -38,6 +38,9 @@ export function safeJsonStringify(obj: any, options: SerializationOptions = {}):
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const seen = new WeakSet();
   let depth = 0;
+  
+  // Performance monitoring for large objects
+  const startTime = performance.now();
 
   const replacer = function(key: string, value: any): any {
     // Apply custom replacer first
@@ -126,6 +129,7 @@ export function safeJsonStringify(obj: any, options: SerializationOptions = {}):
           try {
             return replacer(index.toString(), item);
           } catch (error) {
+            console.error(`[safeJsonStringify] Array item serialization failed at index ${index} (depth ${depth}):`, error);
             return '[Serialization Error: ' + (error instanceof Error ? error.message : 'Unknown') + ']';
           }
         });
@@ -139,6 +143,7 @@ export function safeJsonStringify(obj: any, options: SerializationOptions = {}):
         try {
           result[objKey] = replacer(objKey, objValue);
         } catch (error) {
+          console.error(`[safeJsonStringify] Object property serialization failed for key '${objKey}' (depth ${depth}):`, error);
           result[objKey] = '[Serialization Error: ' + (error instanceof Error ? error.message : 'Unknown') + ']';
         }
       }
@@ -151,15 +156,26 @@ export function safeJsonStringify(obj: any, options: SerializationOptions = {}):
   };
 
   try {
-    return JSON.stringify(obj, replacer as any, 2);
+    const result = JSON.stringify(obj, replacer as any, 2);
+    
+    // Performance monitoring and logging
+    const duration = performance.now() - startTime;
+    if (duration > 100) {
+      console.warn(`[safeJsonStringify] Slow serialization detected: ${duration.toFixed(2)}ms for ${typeof obj} (${result.length} chars)`);
+    }
+    
+    return result;
   } catch (error) {
-    // Fallback for extreme cases
-    console.error('[safeJsonStringify] Serialization failed, using fallback:', error);
+    // Enhanced error context
+    const duration = performance.now() - startTime;
+    console.error(`[safeJsonStringify] Serialization failed after ${duration.toFixed(2)}ms for ${typeof obj}:`, error);
+    
     return JSON.stringify({
       error: 'Serialization failed',
       message: error instanceof Error ? error.message : String(error),
       originalType: typeof obj,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      duration: `${duration.toFixed(2)}ms`
     }, null, 2);
   }
 }

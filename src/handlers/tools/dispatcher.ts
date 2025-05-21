@@ -923,19 +923,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       return id;
     }
     
-    /**
-     * Safely formats an object as JSON string, handling potential circular references
-     * Uses the centralized safe JSON serializer for consistency
-     * 
-     * @param obj - The object to stringify
-     * @returns Formatted JSON string or fallback error message
-     */
-    function safeJsonStringifyLocal(obj: any): string {
-      return safeJsonStringify(obj, { 
-        maxDepth: 6, 
-        includeStackTraces: process.env.NODE_ENV === 'development' 
-      });
-    }
     
     // Handle getAttributes tool
     if (toolType === 'getAttributes') {
@@ -957,7 +944,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         // Format result using the tool's formatter if available
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
-          : safeJsonStringifyLocal(result);
+          : safeJsonStringify(result, { 
+              maxDepth: 6, 
+              includeStackTraces: process.env.NODE_ENV === 'development' 
+            });
         
         return formatResponse(formattedResult);
       } catch (error) {
@@ -1019,7 +1009,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         // Format result using the tool's formatter if available
         const formattedResult = toolConfig.formatResult 
           ? toolConfig.formatResult(result)
-          : safeJsonStringifyLocal(result);
+          : safeJsonStringify(result, { 
+              maxDepth: 6, 
+              includeStackTraces: process.env.NODE_ENV === 'development' 
+            });
         
         return formatResponse(formattedResult);
       } catch (error) {

@@ -36,12 +36,22 @@ import {
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
- * This function handles both simple filters and advanced filters with logical operators
  * 
- * @param filters - Filter configuration from the MCP API
- * @param validateConditions - Whether to validate condition types (default: true)
- * @returns Transformed filter object for Attio API
- * @throws FilterValidationError if validation fails with consistent error messages
+ * This is the main transformation function that converts MCP filter specifications
+ * into the format expected by the Attio API. It handles both AND and OR logical
+ * operators and provides comprehensive validation.
+ * 
+ * **Key Features:**
+ * - Validates filter structure using centralized validation utilities
+ * - Supports both AND logic (default) and OR logic (matchAny: true)
+ * - Handles empty filter arrays gracefully (returns empty object)
+ * - Preserves filter condition types and values
+ * - Provides detailed error messages with examples on validation failure
+ * 
+ * @param filters - Filter configuration from the MCP API (may have optional filters array)
+ * @param validateConditions - Whether to validate condition types against known Attio API operators
+ * @returns Transformed filter object for Attio API, or empty object if no valid filters
+ * @throws FilterValidationError if validation fails with consistent error messages and examples
  * 
  * @example
  * // Simple filter with a single condition
