@@ -9,6 +9,7 @@ import {
   ActivityFilter,
   Person
 } from "../../types/attio.js";
+import { ToolConfig } from "../tool-types.js";
 
 /**
  * Utility function to safely extract a person's name from Attio record format.
