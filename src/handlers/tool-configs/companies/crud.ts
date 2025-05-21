@@ -119,7 +119,7 @@ export const crudToolDefinitions = [
             },
             industry: {
               type: "string",
-              description: "Industry classification"
+              description: "Industry classification (maps to 'categories' in Attio API)"
             }
           }
         }

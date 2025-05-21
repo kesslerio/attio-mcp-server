@@ -126,6 +126,19 @@ describe('Attribute Mapping', () => {
       expect(getAttributeSlug('')).toBe('');
       expect(getAttributeSlug(undefined as any)).toBe(undefined);
     });
+    
+    it('should map industry to categories via special case handling', () => {
+      // Reset modules to ensure fresh state
+      jest.resetModules();
+      
+      // Industry should map to categories through special case handling
+      const result = getAttributeSlug('industry');
+      expect(result).toBe('categories');
+      
+      // Industry type should also map to categories
+      const resultType = getAttributeSlug('industry type');
+      expect(resultType).toBe('categories');
+    });
 
     it('should prioritize object-specific mappings over common mappings', () => {
       // Mock the config loader to return a test configuration with both common and object-specific mappings
