@@ -431,6 +431,37 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
+    // Handle getListDetails tool
+    if (toolType === 'getListDetails') {
+      const listId = request.params.arguments?.listId as string;
+      
+      if (!listId) {
+        return createErrorResult(
+          new Error("listId parameter is required"),
+          "/lists/details",
+          "GET",
+          { status: 400, message: "Missing required parameter: listId" }
+        );
+      }
+      
+      try {
+        const result = await toolConfig.handler(listId);
+        // Format the result
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : JSON.stringify(result, null, 2);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/lists/${listId}`,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     // Handle getListEntries tool
     if (toolType === 'getListEntries') {
       const listId = request.params.arguments?.listId as string;
