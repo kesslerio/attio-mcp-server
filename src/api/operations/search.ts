@@ -95,6 +95,26 @@ export async function advancedSearchObject<T extends AttioRecord>(
     };
     
     try {
+      // If filters is undefined, return body without filter
+      if (!filters) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[advancedSearchObject] No filters provided, using default parameters only');
+        }
+        return body;
+      }
+      
+      // Special handling for the common error case of non-array filters
+      if (filters.filters && !Array.isArray(filters.filters)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[advancedSearchObject] Invalid filters format: filters.filters is not an array', {
+            filtersType: typeof filters.filters
+          });
+        }
+        throw new FilterValidationError(
+          `Invalid filter structure: 'filters' property must be an array but got ${typeof filters.filters}`
+        );
+      }
+      
       // Use our shared utility to transform filters to API format
       const filterObject = transformFiltersToApiFormat(filters, true);
       
@@ -113,21 +133,37 @@ export async function advancedSearchObject<T extends AttioRecord>(
         }
       }
     } catch (err: any) {
-      const error = err as Error;
-      
-      if (error instanceof FilterValidationError) {
-        // Log the problematic filters for debugging
+      // Enhanced error handling with detailed context
+      if (err instanceof FilterValidationError) {
+        // Log the full details for debugging
         if (process.env.NODE_ENV === 'development') {
           console.error('[advancedSearchObject] Filter validation error:', {
-            error: error.message,
-            providedFilters: JSON.stringify(filters)
+            error: err.message,
+            providedFilters: JSON.stringify(filters, (key, value) => 
+              // Handle circular references in error logging
+              typeof value === 'object' && value !== null ? 
+                (Object.keys(value).length > 0 ? value : '[Empty Object]') : 
+                value
+            )
           });
         }
         
-        // Rethrow with more context
-        throw new Error(`Filter validation failed: ${error.message}`);
+        // Create a detailed error message with example
+        let errorMessage = `Advanced search filter validation failed: ${err.message}`;
+        
+        // Add example of valid filter structure
+        errorMessage += "\n\nExample of valid filter structure: " +
+          '{"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Company Inc"}]}';
+        
+        throw new FilterValidationError(errorMessage);
       }
-      throw error; // Rethrow other errors
+      
+      // For other error types
+      const errorMessage = err instanceof Error ? 
+        `Error processing search filters: ${err.message}` : 
+        'Unknown error processing search filters';
+      
+      throw new Error(errorMessage);
     }
     
     return body;

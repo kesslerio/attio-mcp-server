@@ -13,6 +13,7 @@ import {
   Company,
   FilterConditionType
 } from "../../types/attio.js";
+import { FilterValidationError } from "../../errors/api-errors.js";
 
 /**
  * Searches for companies by name using a simple text search
@@ -51,6 +52,37 @@ export async function searchCompanies(query: string): Promise<Company[]> {
  * @param offset - Number of results to skip (default: 0) 
  * @returns Array of company results
  * @throws Error if the search encounters any issues
+ * @example
+ * ```typescript
+ * // Search for companies with names containing "Tech"
+ * const filters = {
+ *   filters: [
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Tech'
+ *     }
+ *   ]
+ * };
+ * const companies = await advancedSearchCompanies(filters);
+ * 
+ * // Search with multiple conditions using OR logic
+ * const orFilters = {
+ *   filters: [
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Tech'
+ *     },
+ *     {
+ *       attribute: { slug: 'industry' },
+ *       condition: 'equals',
+ *       value: 'Software'
+ *     }
+ *   ],
+ *   matchAny: true // Use OR logic between conditions
+ * };
+ * ```
  */
 export async function advancedSearchCompanies(
   filters: ListEntryFilters,
@@ -58,6 +90,23 @@ export async function advancedSearchCompanies(
   offset?: number
 ): Promise<Company[]> {
   try {
+    // Validate filter structure before passing to core function
+    // This provides better error messages at the companies-specific level
+    if (!filters) {
+      throw new Error('Filters object is required for advanced search');
+    }
+    
+    if (!filters.filters) {
+      throw new Error('Filters must include a "filters" array property');
+    }
+    
+    if (!Array.isArray(filters.filters)) {
+      throw new Error(
+        `"filters" property must be an array, but got ${typeof filters.filters}`
+      );
+    }
+    
+    // Proceed with the search operation
     return await advancedSearchObject<Company>(
       ResourceType.COMPANIES,
       filters,
@@ -65,9 +114,25 @@ export async function advancedSearchCompanies(
       offset
     );
   } catch (error) {
-    // Handle specific API limitations for website/industry filtering if needed
+    // For FilterValidationError, add more context
+    if (error instanceof FilterValidationError) {
+      throw new FilterValidationError(
+        `Advanced company search filter invalid: ${error.message}`
+      );
+    }
+    
+    // For other errors, provide clear context
     if (error instanceof Error) {
-      throw error;
+      // Log the error in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[advancedSearchCompanies] Error details:', {
+          message: error.message,
+          stack: error.stack
+        });
+      }
+      
+      // Throw with enhanced context
+      throw new Error(`Error in advanced company search: ${error.message}`);
     }
     
     // If we reach here, it's an unexpected error
