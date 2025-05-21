@@ -103,16 +103,25 @@ export async function advancedSearchObject<T extends AttioRecord>(
         return body;
       }
       
-      // Special handling for the common error case of non-array filters
-      if (filters.filters && !Array.isArray(filters.filters)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[advancedSearchObject] Invalid filters format: filters.filters is not an array', {
-            filtersType: typeof filters.filters
-          });
+      // Import validation utilities dynamically to avoid circular dependencies
+      const { 
+        validateFilters, 
+        getFilterExample,
+        ERROR_MESSAGES 
+      } = require('../../utils/filters/validation-utils.js');
+      
+      // Use centralized validation with consistent error messages
+      try {
+        validateFilters(filters);
+      } catch (validationError) {
+        // Enhance error with API operation context, but preserve original message and category
+        if (validationError instanceof FilterValidationError) {
+          throw new FilterValidationError(
+            `Advanced search filter validation failed: ${validationError.message}`,
+            validationError.category
+          );
         }
-        throw new FilterValidationError(
-          `Invalid filter structure: 'filters' property must be an array but got ${typeof filters.filters}`
-        );
+        throw validationError;
       }
       
       // Use our shared utility to transform filters to API format
@@ -133,7 +142,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
         }
       }
     } catch (err: any) {
-      // Enhanced error handling with detailed context
+      // Enhanced error handling with detailed context and examples
       if (err instanceof FilterValidationError) {
         // Log the full details for debugging
         if (process.env.NODE_ENV === 'development') {
@@ -148,14 +157,8 @@ export async function advancedSearchObject<T extends AttioRecord>(
           });
         }
         
-        // Create a detailed error message with example
-        let errorMessage = `Advanced search filter validation failed: ${err.message}`;
-        
-        // Add example of valid filter structure
-        errorMessage += "\n\nExample of valid filter structure: " +
-          '{"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Company Inc"}]}';
-        
-        throw new FilterValidationError(errorMessage);
+        // The error message may already include examples, so just rethrow
+        throw err;
       }
       
       // For other error types
