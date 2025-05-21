@@ -124,6 +124,69 @@ export function invalidateConfigCache(): void {
 }
 
 /**
+ * Attempts snake case conversion and lookup for attribute mapping.
+ * This function safely converts snake_case attributes to Display Case format
+ * and looks them up in the mapping caches without causing infinite recursion.
+ * 
+ * @param attributeName - The snake_case attribute name to convert and lookup
+ * @returns The mapped slug if found, or undefined if no mapping exists
+ * 
+ * @example
+ * ```typescript
+ * // For input "b2b_segment", converts to "B2b Segment" and looks up mapping
+ * const result = trySnakeCaseConversion("b2b_segment"); // Returns "type_persona"
+ * ```
+ */
+function trySnakeCaseConversion(attributeName: string): string | undefined {
+  // Guard conditions to prevent infinite recursion
+  // Skip if name already contains spaces or has no underscores to convert
+  if (attributeName.includes(' ') || !attributeName.includes('_')) {
+    return undefined;
+  }
+  
+  try {
+    // Convert snake_case to Display Case (e.g., "b2b_segment" -> "B2b Segment")
+    const potentialDisplayName = attributeName
+      .replace(/_/g, ' ')
+      .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
+    
+    // Additional safety check: if conversion results in same string, avoid lookup
+    if (potentialDisplayName === attributeName) {
+      return undefined;
+    }
+    
+    // Use direct cache lookups to avoid recursive getAttributeSlug calls
+    // This prevents infinite recursion while maintaining mapping functionality
+    
+    // Try special cases first (highest priority)
+    let result = handleSpecialCases(potentialDisplayName);
+    if (result) return result;
+    
+    // Try cache lookups in order of priority
+    if (caseInsensitiveCaches.common) {
+      result = lookupCaseInsensitive(caseInsensitiveCaches.common, potentialDisplayName);
+      if (result) return result;
+    }
+    
+    if (caseInsensitiveCaches.custom) {
+      result = lookupCaseInsensitive(caseInsensitiveCaches.custom, potentialDisplayName);
+      if (result) return result;
+    }
+    
+    if (caseInsensitiveCaches.legacy) {
+      result = lookupCaseInsensitive(caseInsensitiveCaches.legacy, potentialDisplayName);
+      if (result) return result;
+    }
+    
+    return undefined;
+  } catch (err) {
+    // Graceful error handling: log warning but don't throw
+    console.warn(`[attribute-mappers] Error in snake case conversion for "${attributeName}": ${err}`);
+    return undefined;
+  }
+}
+
+/**
  * Looks up a human-readable attribute name and returns the corresponding slug
  * 
  * @param attributeName - The user-provided attribute name
@@ -272,16 +335,11 @@ export function getAttributeSlug(attributeName: string, objectType?: string): st
       return result;
     }
     
-    // If we got here, we need to check if it's a snake case conversion of a known attribute
-    // This handles cases where the input is already in snake case format (e.g., "b2b_segment")
-    const potentialDisplayName = attributeName
-      .replace(/_/g, ' ')
-      .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
-    
-    result = getAttributeSlug(potentialDisplayName, objectType);
-    if (result !== potentialDisplayName) {
+    // TIER 6: Snake case conversion fallback (last resort)
+    result = trySnakeCaseConversion(attributeName);
+    if (result && result !== attributeName) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${potentialDisplayName}" -> "${result}"`);
+        console.log(`[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${result}"`);
       }
       return result;
     }
