@@ -23,22 +23,34 @@ export const crudToolConfigs = {
   create: {
     name: "create-company",
     handler: createCompany,
-    formatResult: (result: Company) => 
-      `Company created: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
+    formatResult: (result: Company) => {
+      // Extract name safely, handling the array format correctly
+      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
+      const companyId = result.id?.record_id || result.id || 'unknown';
+      return `Company created: ${companyName} (ID: ${companyId})`;
+    }
   } as ToolConfig,
   
   update: {
     name: "update-company",
     handler: updateCompany,
-    formatResult: (result: Company) => 
-      `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
+    formatResult: (result: Company) => {
+      // Extract name safely, handling the array format correctly
+      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
+      const companyId = result.id?.record_id || result.id || 'unknown';
+      return `Company updated: ${companyName} (ID: ${companyId})`;
+    }
   } as ToolConfig,
   
   updateAttribute: {
     name: "update-company-attribute",
     handler: updateCompanyAttribute,
-    formatResult: (result: Company) => 
-      `Company attribute updated for: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`
+    formatResult: (result: Company) => {
+      // Extract name safely, handling the array format correctly
+      const companyName = result.values?.name?.[0]?.value || 'Unnamed';
+      const companyId = result.id?.record_id || result.id || 'unknown';
+      return `Company attribute updated for: ${companyName} (ID: ${companyId})`;
+    }
   } as ToolConfig,
   
   delete: {
