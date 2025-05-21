@@ -75,10 +75,19 @@ describe('Attribute Mappers', () => {
       });
       
       // This would cause infinite recursion without our fix
-      expect(getAttributeSlug('industry_type')).not.toThrow();
+      expect(() => getAttributeSlug('industry_type')).not.toThrow();
       
       // Restore original function
       (mappingUtils.handleSpecialCases as jest.Mock).mockRestore();
+    });
+
+    it('should handle edge cases in snake case conversion', () => {
+      // Test attribute names that should not trigger snake case conversion
+      expect(getAttributeSlug('already has spaces')).toBe('already has spaces');
+      expect(getAttributeSlug('nounderscores')).toBe('nounderscores');
+      
+      // Test valid snake case conversion
+      expect(getAttributeSlug('company_name')).toBe('name'); // Based on mock config
     });
   });
 });
