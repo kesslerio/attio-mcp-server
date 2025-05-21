@@ -431,6 +431,48 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
+    /**
+     * Handle getListDetails tool
+     * 
+     * This handler processes requests for the get-list-details tool, which retrieves
+     * information about a specific Attio list by ID.
+     * 
+     * The handler:
+     * 1. Validates the required listId parameter
+     * 2. Calls the getListDetails function with the list ID
+     * 3. Formats the response using the tool's formatResult function
+     * 4. Handles API errors with proper error formatting
+     */
+    if (toolType === 'getListDetails') {
+      const listId = request.params.arguments?.listId as string;
+      
+      if (!listId) {
+        return createErrorResult(
+          new Error("Missing required parameter: listId"),
+          "/lists/details",
+          "GET",
+          { status: 400, message: "Missing required parameter: listId" }
+        );
+      }
+      
+      try {
+        const result = await toolConfig.handler(listId);
+        // Format the result
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(result)
+          : JSON.stringify(result, null, 2);
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/lists/${listId}`,
+          "GET",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
     // Handle getListEntries tool
     if (toolType === 'getListEntries') {
       const listId = request.params.arguments?.listId as string;

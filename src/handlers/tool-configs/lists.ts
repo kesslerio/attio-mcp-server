@@ -33,6 +33,25 @@ export const listsToolConfigs = {
   getListDetails: {
     name: "get-list-details",
     handler: getListDetails,
+    formatResult: (result: AttioList) => {
+      // Extract list_id properly from id object
+      const listId = result.id?.list_id || result.id || 'unknown';
+      const listName = result.name || result.title || 'Unnamed List';
+      const objectType = result.object_slug || 'unknown';
+      const entryCount = result.entry_count !== undefined ? `${result.entry_count} entries` : 'Unknown entry count';
+      // Format dates in ISO format for consistency across environments
+      const createdAt = result.created_at ? new Date(result.created_at).toISOString().split('T')[0] : 'Unknown date';
+      const updatedAt = result.updated_at ? new Date(result.updated_at).toISOString().split('T')[0] : 'Unknown date';
+      
+      return `List Details:
+ID: ${listId}
+Name: ${listName}
+Object Type: ${objectType}
+${entryCount}
+Created: ${createdAt}
+Updated: ${updatedAt}
+${result.description ? `\nDescription: ${result.description}` : ''}`;
+    }
   } as ToolConfig,
   getListEntries: {
     name: "get-list-entries",
