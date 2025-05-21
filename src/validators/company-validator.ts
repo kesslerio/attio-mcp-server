@@ -16,6 +16,7 @@ import {
   detectFieldType
 } from '../api/attribute-types.js';
 import { ResourceType } from '../types/attio.js';
+import { convertToBoolean } from '../utils/attribute-mapping/attribute-mappers.js';
 
 export class CompanyValidator {
   // Cache for field types to avoid repeated API calls within a validation session
@@ -35,17 +36,42 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    // Validate field types dynamically
+    // Process boolean fields and validate field types dynamically
+    const processedAttributes = { ...attributes };
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
+        // First validate the field type
         await CompanyValidator.validateFieldType(field, value);
+        
+        // Convert string values to boolean for boolean fields
+        try {
+          // Check if this is a boolean field
+          const fieldType = CompanyValidator.fieldTypeCache.get(field) || 
+            await detectFieldType(ResourceType.COMPANIES, field);
+            
+          if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
+            processedAttributes[field] = convertToBoolean(value);
+          }
+        } catch (error) {
+          // If field type detection fails, check if the field name suggests it's a boolean
+          const fieldNameLower = field.toLowerCase();
+          const isBooleanField = fieldNameLower.startsWith('is_') || 
+                                fieldNameLower.startsWith('has_') || 
+                                ['enabled', 'active', 'verified', 'published'].some(
+                                  term => fieldNameLower.includes(term)
+                                );
+                                
+          if (isBooleanField && (typeof value === 'string' || typeof value === 'number')) {
+            processedAttributes[field] = convertToBoolean(value);
+          }
+        }
       }
     }
     
     // Special validation for specific field types
-    await CompanyValidator.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(processedAttributes);
 
-    return attributes as CompanyCreateInput;
+    return processedAttributes as CompanyCreateInput;
   }
 
   /**
@@ -63,17 +89,42 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
     }
 
-    // Validate field types dynamically
+    // Process boolean fields and validate field types dynamically
+    const processedAttributes = { ...attributes };
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
+        // First validate the field type
         await CompanyValidator.validateFieldType(field, value);
+        
+        // Convert string values to boolean for boolean fields
+        try {
+          // Check if this is a boolean field
+          const fieldType = CompanyValidator.fieldTypeCache.get(field) || 
+            await detectFieldType(ResourceType.COMPANIES, field);
+            
+          if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
+            processedAttributes[field] = convertToBoolean(value);
+          }
+        } catch (error) {
+          // If field type detection fails, check if the field name suggests it's a boolean
+          const fieldNameLower = field.toLowerCase();
+          const isBooleanField = fieldNameLower.startsWith('is_') || 
+                                fieldNameLower.startsWith('has_') || 
+                                ['enabled', 'active', 'verified', 'published'].some(
+                                  term => fieldNameLower.includes(term)
+                                );
+                                
+          if (isBooleanField && (typeof value === 'string' || typeof value === 'number')) {
+            processedAttributes[field] = convertToBoolean(value);
+          }
+        }
       }
     }
     
     // Special validation for specific field types
-    await CompanyValidator.performSpecialValidation(attributes);
+    await CompanyValidator.performSpecialValidation(processedAttributes);
 
-    return attributes as CompanyUpdateInput;
+    return processedAttributes as CompanyUpdateInput;
   }
 
   /**
@@ -83,8 +134,9 @@ export class CompanyValidator {
    * @param attributeName - Name of the attribute to update
    * @param attributeValue - Value to set for the attribute
    * @throws InvalidCompanyDataError if validation fails
+   * @returns The processed attribute value (converted if needed)
    */
-  static async validateAttributeUpdate(companyId: string, attributeName: string, attributeValue: any): Promise<void> {
+  static async validateAttributeUpdate(companyId: string, attributeName: string, attributeValue: any): Promise<any> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
@@ -98,22 +150,48 @@ export class CompanyValidator {
     // Validate the attribute value based on dynamic type detection
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
     
+    // Process the value if needed
+    let processedValue = attributeValue;
+    
+    // Convert string values to boolean for boolean fields
+    try {
+      // Check if this is a boolean field
+      const fieldType = CompanyValidator.fieldTypeCache.get(attributeName) || 
+        await detectFieldType(ResourceType.COMPANIES, attributeName);
+        
+      if (fieldType === 'boolean' && (typeof attributeValue === 'string' || typeof attributeValue === 'number')) {
+        processedValue = convertToBoolean(attributeValue);
+      }
+    } catch (error) {
+      // If field type detection fails, check if the field name suggests it's a boolean
+      const fieldNameLower = attributeName.toLowerCase();
+      const isBooleanField = fieldNameLower.startsWith('is_') || 
+                            fieldNameLower.startsWith('has_') || 
+                            ['enabled', 'active', 'verified', 'published'].some(
+                              term => fieldNameLower.includes(term)
+                            );
+                            
+      if (isBooleanField && (typeof attributeValue === 'string' || typeof attributeValue === 'number')) {
+        processedValue = convertToBoolean(attributeValue);
+      }
+    }
+    
     // Special validation for specific attributes
-    if (attributeName === 'name' && (!attributeValue || typeof attributeValue !== 'string')) {
+    if (attributeName === 'name' && (!processedValue || typeof processedValue !== 'string')) {
       throw new InvalidCompanyDataError('Company name must be a non-empty string');
     }
 
-    if (attributeName === 'website' && attributeValue) {
+    if (attributeName === 'website' && processedValue) {
       try {
-        new URL(attributeValue);
+        new URL(processedValue);
       } catch {
         throw new InvalidCompanyDataError('Website must be a valid URL');
       }
     }
 
-    if (attributeName === 'linkedin_url' && attributeValue) {
+    if (attributeName === 'linkedin_url' && processedValue) {
       try {
-        const url = new URL(attributeValue);
+        const url = new URL(processedValue);
         if (!url.hostname.includes('linkedin.com')) {
           throw new InvalidCompanyDataError('LinkedIn URL must be a valid LinkedIn URL');
         }
@@ -121,6 +199,8 @@ export class CompanyValidator {
         throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
       }
     }
+    
+    return processedValue;
   }
 
   /**
@@ -178,6 +258,10 @@ export class CompanyValidator {
         
       case 'boolean':
         if (typeof value !== 'boolean') {
+          // For boolean fields, try to convert string values to boolean
+          if (typeof value === 'string' || typeof value === 'number') {
+            return; // We'll handle conversion during the attribute processing
+          }
           throw new InvalidCompanyFieldTypeError(field, 'boolean', actualType);
         }
         break;
