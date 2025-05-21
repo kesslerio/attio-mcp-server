@@ -22,11 +22,109 @@ export class CompanyValidator {
   // Cache for field types to avoid repeated API calls within a validation session
   private static fieldTypeCache = new Map<string, string>();
   
+  // Additional boolean field name patterns for heuristic detection
+  private static booleanFieldPatterns = [
+    // Prefixes that strongly indicate boolean fields
+    'is_', 'has_', 'can_', 'should_', 'will_', 'was_', 'does_',
+    // Common terms that suggest boolean flags
+    'enabled', 'active', 'verified', 'published', 'approved', 'confirmed', 
+    'suspended', 'locked', 'flagged', 'premium', 'featured', 'hidden',
+    'allow', 'accept', 'available', 'eligible', 'complete', 'valid'
+  ];
+  
+  /**
+   * Determines if a field is likely to be a boolean based on its name
+   * 
+   * @param fieldName - Name of the field to check
+   * @returns True if the field name suggests it's a boolean
+   */
+  private static isBooleanFieldByName(fieldName: string): boolean {
+    const fieldNameLower = fieldName.toLowerCase();
+    
+    // Check prefixes (is_, has_, etc.)
+    for (const pattern of CompanyValidator.booleanFieldPatterns) {
+      if (fieldNameLower.startsWith(pattern) || fieldNameLower.includes('_' + pattern) || 
+          fieldNameLower === pattern || fieldNameLower.includes(pattern + '_')) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Processes and converts a value for a specific field based on field type
+   * 
+   * @param fieldName - Name of the field
+   * @param value - Value to process
+   * @returns Processed value (converted if needed)
+   */
+  private static async processFieldValue(fieldName: string, value: any): Promise<any> {
+    // Skip processing for null/undefined values
+    if (value === null || value === undefined) {
+      return value;
+    }
+    
+    // Look for boolean fields and convert string/number values to boolean
+    try {
+      // Check if this is a boolean field using API type detection or cached type
+      const fieldType = CompanyValidator.fieldTypeCache.get(fieldName) || 
+        await detectFieldType(ResourceType.COMPANIES, fieldName);
+        
+      // Store in cache for future use
+      if (!CompanyValidator.fieldTypeCache.has(fieldName)) {
+        CompanyValidator.fieldTypeCache.set(fieldName, fieldType);
+      }
+        
+      // Convert value if it's a boolean field but the value is a string or number
+      if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
+        return convertToBoolean(value);
+      }
+    } catch (error) {
+      // If field type detection fails, try a heuristic approach based on field naming
+      if (CompanyValidator.isBooleanFieldByName(fieldName) && 
+          (typeof value === 'string' || typeof value === 'number')) {
+        try {
+          return convertToBoolean(value);
+        } catch (conversionError) {
+          console.warn(`Failed to convert potential boolean value for field '${fieldName}':`, 
+            conversionError instanceof Error ? conversionError.message : String(conversionError));
+          // Return the original value if conversion fails
+        }
+      }
+    }
+    
+    // If we get here, return the original value (no conversion needed)
+    return value;
+  }
+  
+  /**
+   * Process all attributes in an object, converting values as needed
+   * 
+   * @param attributes - Object containing attribute key-value pairs
+   * @returns Processed attributes object with converted values
+   */
+  private static async processAttributeValues(attributes: Record<string, any>): Promise<Record<string, any>> {
+    const processedAttributes = { ...attributes };
+    
+    for (const [field, value] of Object.entries(attributes)) {
+      if (value !== undefined && value !== null) {
+        // First validate the field type
+        await CompanyValidator.validateFieldType(field, value);
+        
+        // Then process the value (convert if needed)
+        processedAttributes[field] = await CompanyValidator.processFieldValue(field, value);
+      }
+    }
+    
+    return processedAttributes;
+  }
+  
   /**
    * Validates data for creating a company using dynamic field type detection
    * 
    * @param attributes - Raw attributes for company creation
-   * @returns Validated company create input
+   * @returns Validated company create input with processed values
    * @throws MissingCompanyFieldError if required fields are missing
    * @throws InvalidCompanyFieldTypeError if field types are invalid
    */
@@ -36,37 +134,8 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    // Process boolean fields and validate field types dynamically
-    const processedAttributes = { ...attributes };
-    for (const [field, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        // First validate the field type
-        await CompanyValidator.validateFieldType(field, value);
-        
-        // Convert string values to boolean for boolean fields
-        try {
-          // Check if this is a boolean field
-          const fieldType = CompanyValidator.fieldTypeCache.get(field) || 
-            await detectFieldType(ResourceType.COMPANIES, field);
-            
-          if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
-            processedAttributes[field] = convertToBoolean(value);
-          }
-        } catch (error) {
-          // If field type detection fails, check if the field name suggests it's a boolean
-          const fieldNameLower = field.toLowerCase();
-          const isBooleanField = fieldNameLower.startsWith('is_') || 
-                                fieldNameLower.startsWith('has_') || 
-                                ['enabled', 'active', 'verified', 'published'].some(
-                                  term => fieldNameLower.includes(term)
-                                );
-                                
-          if (isBooleanField && (typeof value === 'string' || typeof value === 'number')) {
-            processedAttributes[field] = convertToBoolean(value);
-          }
-        }
-      }
-    }
+    // Process all field values, including boolean conversion
+    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(processedAttributes);
@@ -79,7 +148,7 @@ export class CompanyValidator {
    * 
    * @param companyId - ID of the company to update
    * @param attributes - Raw attributes for company update
-   * @returns Validated company update input
+   * @returns Validated company update input with processed values
    * @throws InvalidCompanyDataError if company ID is invalid
    * @throws InvalidCompanyFieldTypeError if field types are invalid
    */
@@ -89,37 +158,8 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
     }
 
-    // Process boolean fields and validate field types dynamically
-    const processedAttributes = { ...attributes };
-    for (const [field, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        // First validate the field type
-        await CompanyValidator.validateFieldType(field, value);
-        
-        // Convert string values to boolean for boolean fields
-        try {
-          // Check if this is a boolean field
-          const fieldType = CompanyValidator.fieldTypeCache.get(field) || 
-            await detectFieldType(ResourceType.COMPANIES, field);
-            
-          if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
-            processedAttributes[field] = convertToBoolean(value);
-          }
-        } catch (error) {
-          // If field type detection fails, check if the field name suggests it's a boolean
-          const fieldNameLower = field.toLowerCase();
-          const isBooleanField = fieldNameLower.startsWith('is_') || 
-                                fieldNameLower.startsWith('has_') || 
-                                ['enabled', 'active', 'verified', 'published'].some(
-                                  term => fieldNameLower.includes(term)
-                                );
-                                
-          if (isBooleanField && (typeof value === 'string' || typeof value === 'number')) {
-            processedAttributes[field] = convertToBoolean(value);
-          }
-        }
-      }
-    }
+    // Process all field values, including boolean conversion
+    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(processedAttributes);
@@ -150,31 +190,8 @@ export class CompanyValidator {
     // Validate the attribute value based on dynamic type detection
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
     
-    // Process the value if needed
-    let processedValue = attributeValue;
-    
-    // Convert string values to boolean for boolean fields
-    try {
-      // Check if this is a boolean field
-      const fieldType = CompanyValidator.fieldTypeCache.get(attributeName) || 
-        await detectFieldType(ResourceType.COMPANIES, attributeName);
-        
-      if (fieldType === 'boolean' && (typeof attributeValue === 'string' || typeof attributeValue === 'number')) {
-        processedValue = convertToBoolean(attributeValue);
-      }
-    } catch (error) {
-      // If field type detection fails, check if the field name suggests it's a boolean
-      const fieldNameLower = attributeName.toLowerCase();
-      const isBooleanField = fieldNameLower.startsWith('is_') || 
-                            fieldNameLower.startsWith('has_') || 
-                            ['enabled', 'active', 'verified', 'published'].some(
-                              term => fieldNameLower.includes(term)
-                            );
-                            
-      if (isBooleanField && (typeof attributeValue === 'string' || typeof attributeValue === 'number')) {
-        processedValue = convertToBoolean(attributeValue);
-      }
-    }
+    // Process the value (convert if needed)
+    const processedValue = await CompanyValidator.processFieldValue(attributeName, attributeValue);
     
     // Special validation for specific attributes
     if (attributeName === 'name' && (!processedValue || typeof processedValue !== 'string')) {
