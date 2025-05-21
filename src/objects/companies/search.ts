@@ -82,6 +82,30 @@ export async function searchCompanies(query: string): Promise<Company[]> {
  *   ],
  *   matchAny: true // Use OR logic between conditions
  * };
+ * 
+ * // Complex search with nested conditions
+ * const complexFilters = {
+ *   filters: [
+ *     // Company name condition
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Tech'
+ *     },
+ *     // Revenue condition - find companies with annual revenue > $10M
+ *     {
+ *       attribute: { slug: 'annual_revenue' },
+ *       condition: 'greater_than',
+ *       value: 10000000
+ *     },
+ *     // Industry condition
+ *     {
+ *       attribute: { slug: 'industry' },
+ *       condition: 'equals',
+ *       value: 'Software'
+ *     }
+ *   ]
+ * };
  * ```
  */
 export async function advancedSearchCompanies(
@@ -90,21 +114,12 @@ export async function advancedSearchCompanies(
   offset?: number
 ): Promise<Company[]> {
   try {
-    // Validate filter structure before passing to core function
-    // This provides better error messages at the companies-specific level
-    if (!filters) {
-      throw new Error('Filters object is required for advanced search');
-    }
+    // Import validation utilities only when needed to avoid circular dependencies
+    // This is a dynamic import that won't affect the module dependency graph
+    const { validateFilters, ERROR_MESSAGES } = await import('../../utils/filters/validation-utils.js');
     
-    if (!filters.filters) {
-      throw new Error('Filters must include a "filters" array property');
-    }
-    
-    if (!Array.isArray(filters.filters)) {
-      throw new Error(
-        `"filters" property must be an array, but got ${typeof filters.filters}`
-      );
-    }
+    // Use standardized validation with consistent error messages
+    validateFilters(filters);
     
     // Proceed with the search operation
     return await advancedSearchObject<Company>(
@@ -114,8 +129,9 @@ export async function advancedSearchCompanies(
       offset
     );
   } catch (error) {
-    // For FilterValidationError, add more context
+    // For FilterValidationError, add more context specific to companies
     if (error instanceof FilterValidationError) {
+      // Enhance with company-specific context but keep the original message
       throw new FilterValidationError(
         `Advanced company search filter invalid: ${error.message}`
       );

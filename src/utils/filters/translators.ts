@@ -25,6 +25,13 @@ import {
   FIELD_SPECIAL_HANDLING
 } from "./types.js";
 import { validateFilterStructure } from "./validators.js";
+import { 
+  validateFilters, 
+  collectInvalidFilters, 
+  formatInvalidFiltersError,
+  ERROR_MESSAGES,
+  getFilterExample
+} from "./validation-utils.js";
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -33,26 +40,62 @@ import { validateFilterStructure } from "./validators.js";
  * @param filters - Filter configuration from the MCP API
  * @param validateConditions - Whether to validate condition types (default: true)
  * @returns Transformed filter object for Attio API
- * @throws FilterValidationError if validation fails
+ * @throws FilterValidationError if validation fails with consistent error messages
+ * 
+ * @example
+ * // Simple filter with a single condition
+ * const simpleFilter = {
+ *   filters: [
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Company Inc'
+ *     }
+ *   ]
+ * };
+ * 
+ * // Filter with OR logic between conditions
+ * const orFilter = {
+ *   filters: [
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Inc'
+ *     },
+ *     {
+ *       attribute: { slug: 'industry' },
+ *       condition: 'equals',
+ *       value: 'Technology'
+ *     }
+ *   ],
+ *   matchAny: true  // Use OR logic
+ * };
+ * 
+ * // Filter with multiple conditions (AND logic by default)
+ * const multipleFilter = {
+ *   filters: [
+ *     {
+ *       attribute: { slug: 'name' },
+ *       condition: 'contains',
+ *       value: 'Inc'
+ *     },
+ *     {
+ *       attribute: { slug: 'website' },
+ *       condition: 'contains',
+ *       value: '.com'
+ *     }
+ *   ]
+ * };
  */
 export function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
   validateConditions: boolean = true
 ): { filter?: AttioApiFilter } {
-  // If filters is undefined or null, return empty object
-  if (!filters) {
-    throw new FilterValidationError('Filter object is required but was undefined or null');
-  }
-  
-  // If filters.filters is not an array, throw a specific error
-  if (!Array.isArray(filters.filters)) {
-    throw new FilterValidationError(
-      `Invalid filter structure: 'filters' property must be an array but got ${typeof filters.filters}`
-    );
-  }
+  // Use the central validation utility for consistent error messages
+  const validatedFilters = validateFilters(filters, validateConditions);
   
   // If filters array is empty, return empty object without error
-  if (filters.filters.length === 0) {
+  if (validatedFilters.filters.length === 0) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[transformFiltersToApiFormat] Empty filters array provided, returning empty result');
     }
@@ -61,20 +104,20 @@ export function transformFiltersToApiFormat(
   
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
-  const useOrLogic = filters.matchAny === true;
+  const useOrLogic = validatedFilters.matchAny === true;
   
   if (process.env.NODE_ENV === 'development') {
     console.log(`[transformFiltersToApiFormat] Using ${useOrLogic ? 'OR' : 'AND'} logic for filters`);
-    console.log(`[transformFiltersToApiFormat] Processing ${filters.filters.length} filter conditions`);
+    console.log(`[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`);
   }
   
   // For OR logic, we need a completely different structure with filter objects in an array
   if (useOrLogic) {
-    return createOrFilterStructure(filters.filters, validateConditions);
+    return createOrFilterStructure(validatedFilters.filters, validateConditions);
   }
   
   // Standard AND logic
-  return createAndFilterStructure(filters.filters, validateConditions);
+  return createAndFilterStructure(validatedFilters.filters, validateConditions);
 }
 
 /**
@@ -90,43 +133,9 @@ function createOrFilterStructure(
   validateConditions: boolean
 ): { filter?: AttioApiFilter } {
   const orConditions: any[] = [];
-  const invalidFilters: { index: number; reason: string; filter: any }[] = [];
   
-  // First pass: validate all filters and collect any invalid ones
-  filters.forEach((filter, index) => {
-    // Perform basic structure validation
-    if (!filter || typeof filter !== 'object') {
-      invalidFilters.push({
-        index,
-        reason: `Filter at index ${index} is ${filter === null ? 'null' : typeof filter}`,
-        filter
-      });
-      return; // Skip this filter
-    }
-    
-    if (!validateFilterStructure(filter)) {
-      const reason = !filter.attribute ? 'missing attribute' : 
-                     !filter.attribute.slug ? 'missing attribute.slug' : 
-                     !filter.condition ? 'missing condition' : 'unknown issue';
-      
-      invalidFilters.push({
-        index,
-        reason: `Invalid filter structure: ${reason}`,
-        filter
-      });
-      return; // Skip this filter
-    }
-    
-    // Validate condition if enabled
-    if (validateConditions && !isValidFilterCondition(filter.condition)) {
-      invalidFilters.push({
-        index, 
-        reason: `Invalid condition '${filter.condition}'`,
-        filter
-      });
-      return; // Skip this filter
-    }
-  });
+  // Use centralized validation utility to collect invalid filters with consistent messages
+  const invalidFilters = collectInvalidFilters(filters, validateConditions);
   
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
@@ -135,15 +144,18 @@ function createOrFilterStructure(
     );
   }
   
-  // If all filters are invalid, throw a descriptive error
+  // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
-    const errorDetails = invalidFilters.map(f => `Filter [${f.index}]: ${f.reason}`).join('; ');
-    throw new FilterValidationError(
-      `All filters in the OR condition are invalid. ${errorDetails}`
-    );
+    const errorDetails = formatInvalidFiltersError(invalidFilters);
+    let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
+    
+    // Add example of valid OR filter structure
+    errorMessage += "\n\nExample of valid OR filter structure: \n" + getFilterExample('or');
+    
+    throw new FilterValidationError(errorMessage);
   }
   
-  // Second pass: process valid filters
+  // Process valid filters
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
     if (invalidFilters.some(invalid => invalid.index === index)) {
@@ -211,43 +223,9 @@ function createAndFilterStructure(
   validateConditions: boolean
 ): { filter?: AttioApiFilter } {
   const apiFilter: AttioApiFilter = {};
-  const invalidFilters: { index: number; reason: string; filter: any }[] = [];
   
-  // First pass: validate all filters and collect any invalid ones
-  filters.forEach((filter, index) => {
-    // Perform basic structure validation
-    if (!filter || typeof filter !== 'object') {
-      invalidFilters.push({
-        index,
-        reason: `Filter at index ${index} is ${filter === null ? 'null' : typeof filter}`,
-        filter
-      });
-      return; // Skip this filter
-    }
-    
-    if (!validateFilterStructure(filter)) {
-      const reason = !filter.attribute ? 'missing attribute' : 
-                     !filter.attribute.slug ? 'missing attribute.slug' : 
-                     !filter.condition ? 'missing condition' : 'unknown issue';
-      
-      invalidFilters.push({
-        index,
-        reason: `Invalid filter structure: ${reason}`,
-        filter
-      });
-      return; // Skip this filter
-    }
-    
-    // Validate condition if enabled
-    if (validateConditions && !isValidFilterCondition(filter.condition)) {
-      invalidFilters.push({
-        index, 
-        reason: `Invalid condition '${filter.condition}'`,
-        filter
-      });
-      return; // Skip this filter
-    }
-  });
+  // Use centralized validation utility to collect invalid filters with consistent messages
+  const invalidFilters = collectInvalidFilters(filters, validateConditions);
   
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
@@ -256,15 +234,18 @@ function createAndFilterStructure(
     );
   }
   
-  // If all filters are invalid, throw a descriptive error
+  // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
-    const errorDetails = invalidFilters.map(f => `Filter [${f.index}]: ${f.reason}`).join('; ');
-    throw new FilterValidationError(
-      `All filters in the AND condition are invalid. ${errorDetails}`
-    );
+    const errorDetails = formatInvalidFiltersError(invalidFilters);
+    let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
+    
+    // Add example of valid filter structure for AND logic (multiple conditions)
+    errorMessage += "\n\nExample of valid filter structure with multiple conditions: \n" + getFilterExample('multiple');
+    
+    throw new FilterValidationError(errorMessage);
   }
   
-  // Second pass: process valid filters
+  // Process valid filters
   let hasValidFilters = false;
   
   filters.forEach((filter, index) => {
