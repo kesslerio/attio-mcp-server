@@ -43,8 +43,8 @@ describe('get-list-details integration test', () => {
           description: 'A list for integration testing',
           object_slug: 'companies',
           workspace_id: 'workspace789',
-          created_at: '2023-02-01T00:00:00Z',
-          updated_at: '2023-02-02T00:00:00Z',
+          created_at: '2023-02-01T00:00:00Z', // Will format to 2023-02-01 in ISO format
+          updated_at: '2023-02-02T00:00:00Z', // Will format to 2023-02-02 in ISO format
           entry_count: 25
         }
       }
@@ -82,6 +82,8 @@ describe('get-list-details integration test', () => {
     expect(textContent).toContain('Name: Integration Test List');
     expect(textContent).toContain('Object Type: companies');
     expect(textContent).toContain('25 entries');
+    expect(textContent).toContain('Created: 2023-02-01'); // ISO format date
+    expect(textContent).toContain('Updated: 2023-02-02'); // ISO format date
     expect(textContent).toContain('Description: A list for integration testing');
   });
 

@@ -39,8 +39,9 @@ export const listsToolConfigs = {
       const listName = result.name || result.title || 'Unnamed List';
       const objectType = result.object_slug || 'unknown';
       const entryCount = result.entry_count !== undefined ? `${result.entry_count} entries` : 'Unknown entry count';
-      const createdAt = result.created_at ? new Date(result.created_at).toLocaleDateString() : 'Unknown date';
-      const updatedAt = result.updated_at ? new Date(result.updated_at).toLocaleDateString() : 'Unknown date';
+      // Format dates in ISO format for consistency across environments
+      const createdAt = result.created_at ? new Date(result.created_at).toISOString().split('T')[0] : 'Unknown date';
+      const updatedAt = result.updated_at ? new Date(result.updated_at).toISOString().split('T')[0] : 'Unknown date';
       
       return `List Details:
 ID: ${listId}

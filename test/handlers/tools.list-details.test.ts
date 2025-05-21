@@ -92,7 +92,7 @@ describe('get-list-details tool', () => {
     expect(response).toBeDefined();
     expect(response.isError).toBeTruthy();
     expect(response.error).toBeDefined();
-    expect(response.error.message).toContain('listId parameter is required');
+    expect(response.error.message).toContain('Missing required parameter: listId');
     
     // Verify the handler was not called
     expect(getListDetails).not.toHaveBeenCalled();
