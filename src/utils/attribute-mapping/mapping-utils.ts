@@ -138,6 +138,7 @@ export function handleSpecialCases(key: string): string | undefined {
   
   // Map of special cases with their mappings
   const specialCases: Record<string, string> = {
+    // B2B segment mappings
     'b2b_segment': 'type_persona',
     'b2b segment': 'type_persona',
     'b2bsegment': 'type_persona',
@@ -151,6 +152,11 @@ export function handleSpecialCases(key: string): string | undefined {
     'company_segment': 'type_persona',
     'client_segment': 'type_persona',
     'customer_segment': 'type_persona',
+    
+    // Industry mappings
+    // Note: In Attio's API, the concept of 'industry' is represented through the 'categories' field.
+    // This mapping ensures compatibility between MCP tools that use 'industry' and the Attio API
+    // which uses 'categories' for industry classification. (Issue #176)
     'industry': 'categories',
     'industry type': 'categories',
   };
