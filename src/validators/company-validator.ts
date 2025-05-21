@@ -1,5 +1,6 @@
 /**
  * Validator for company data with dynamic field type detection
+ * Enhanced with attribute type validation
  */
 import { 
   MissingCompanyFieldError, 
@@ -16,6 +17,8 @@ import {
   detectFieldType
 } from '../api/attribute-types.js';
 import { ResourceType } from '../types/attio.js';
+import { validateAttributeValue, ValidationResult, AttributeType } from './attribute-validator.js';
+import { InvalidRequestError } from '../errors/api-errors.js';
 
 export class CompanyValidator {
   // Cache for field types to avoid repeated API calls within a validation session
@@ -35,7 +38,7 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    // Validate field types dynamically
+    // First apply traditional field validation
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
         await CompanyValidator.validateFieldType(field, value);
@@ -44,6 +47,18 @@ export class CompanyValidator {
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(attributes);
+    
+    // Then apply the new enhanced type validation and conversion
+    try {
+      attributes = await CompanyValidator.validateAttributeTypes(attributes);
+    } catch (error) {
+      // If it's already a structured error, rethrow it
+      if (error instanceof InvalidRequestError) {
+        throw error;
+      }
+      // Otherwise, convert to an appropriate error
+      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
+    }
 
     return attributes as CompanyCreateInput;
   }
@@ -63,7 +78,7 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
     }
 
-    // Validate field types dynamically
+    // First apply traditional field validation
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
         await CompanyValidator.validateFieldType(field, value);
@@ -72,6 +87,18 @@ export class CompanyValidator {
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(attributes);
+    
+    // Then apply the new enhanced type validation and conversion
+    try {
+      attributes = await CompanyValidator.validateAttributeTypes(attributes);
+    } catch (error) {
+      // If it's already a structured error, rethrow it
+      if (error instanceof InvalidRequestError) {
+        throw error;
+      }
+      // Otherwise, convert to an appropriate error
+      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
+    }
 
     return attributes as CompanyUpdateInput;
   }
@@ -84,7 +111,7 @@ export class CompanyValidator {
    * @param attributeValue - Value to set for the attribute
    * @throws InvalidCompanyDataError if validation fails
    */
-  static async validateAttributeUpdate(companyId: string, attributeName: string, attributeValue: any): Promise<void> {
+  static async validateAttributeUpdate(companyId: string, attributeName: string, attributeValue: any): Promise<any> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
       throw new InvalidCompanyDataError('Company ID must be a non-empty string');
@@ -95,7 +122,7 @@ export class CompanyValidator {
       throw new InvalidCompanyDataError('Attribute name must be a non-empty string');
     }
 
-    // Validate the attribute value based on dynamic type detection
+    // First run traditional validation
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
     
     // Special validation for specific attributes
@@ -120,6 +147,23 @@ export class CompanyValidator {
       } catch {
         throw new InvalidCompanyDataError('LinkedIn URL must be a valid URL');
       }
+    }
+    
+    // Then apply enhanced type validation with automatic conversion
+    // Create a single-attribute object for validation
+    const attributeObj = { [attributeName]: attributeValue };
+    
+    try {
+      const validatedObj = await CompanyValidator.validateAttributeTypes(attributeObj);
+      // Return the converted value
+      return validatedObj[attributeName];
+    } catch (error) {
+      // If it's already a structured error, rethrow it
+      if (error instanceof InvalidRequestError) {
+        throw error;
+      }
+      // Otherwise, convert to an appropriate error
+      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
     }
   }
 
@@ -313,5 +357,89 @@ export class CompanyValidator {
    */
   static clearFieldTypeCache(): void {
     this.fieldTypeCache.clear();
+  }
+
+  /**
+   * Validates and converts attribute values based on their expected types in Attio
+   * 
+   * @param attributes - Raw attributes to validate and convert
+   * @returns Object with validated and converted attributes
+   * @throws InvalidRequestError if validation fails with detailed error messages
+   */
+  static async validateAttributeTypes(attributes: Record<string, any>): Promise<Record<string, any>> {
+    const validatedAttributes: Record<string, any> = {};
+    const errors: Record<string, string> = {};
+    let hasErrors = false;
+
+    // Process each attribute
+    for (const [attributeName, value] of Object.entries(attributes)) {
+      if (value === undefined) continue;
+      
+      try {
+        // Skip validation for null values (they're valid for clearing fields)
+        if (value === null) {
+          validatedAttributes[attributeName] = null;
+          continue;
+        }
+        
+        // Get attribute type information from Attio API
+        const typeInfo = await getAttributeTypeInfo(ResourceType.COMPANIES, attributeName);
+        
+        // Map Attio type to our validator type
+        let validatorType: AttributeType;
+        switch (typeInfo.fieldType) {
+          case 'string':
+            validatorType = 'string';
+            break;
+          case 'number':
+            validatorType = 'number';
+            break;
+          case 'boolean':
+            validatorType = 'boolean';
+            break;
+          case 'array':
+            validatorType = 'array';
+            break;
+          case 'object':
+            if (typeInfo.attioType === 'record-reference') {
+              validatorType = 'record-reference';
+            } else {
+              validatorType = 'object';
+            }
+            break;
+          default:
+            // For unknown types, default to string
+            validatorType = 'string';
+        }
+        
+        // Validate and convert the attribute value
+        const result: ValidationResult = validateAttributeValue(attributeName, value, validatorType);
+        
+        if (result.valid) {
+          // Use the converted value, which might be different from the input value
+          validatedAttributes[attributeName] = result.convertedValue;
+        } else {
+          hasErrors = true;
+          errors[attributeName] = result.error || `Invalid value for ${attributeName}`;
+        }
+      } catch (error) {
+        // If we can't get the attribute type, default to allowing the value through
+        // This can happen for custom attributes that haven't been created yet
+        console.warn(`Could not determine type for attribute "${attributeName}", proceeding with original value:`, error);
+        validatedAttributes[attributeName] = value;
+      }
+    }
+    
+    // If validation failed, throw an error with details
+    if (hasErrors) {
+      throw new InvalidRequestError(
+        `Invalid attribute values: ${Object.values(errors).join(', ')}`,
+        'companies/update',
+        'POST',
+        { validationErrors: errors }
+      );
+    }
+    
+    return validatedAttributes;
   }
 }
