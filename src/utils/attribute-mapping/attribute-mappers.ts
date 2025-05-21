@@ -274,16 +274,53 @@ export function getAttributeSlug(attributeName: string, objectType?: string): st
     
     // If we got here, we need to check if it's a snake case conversion of a known attribute
     // This handles cases where the input is already in snake case format (e.g., "b2b_segment")
-    const potentialDisplayName = attributeName
-      .replace(/_/g, ' ')
-      .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
     
-    result = getAttributeSlug(potentialDisplayName, objectType);
-    if (result !== potentialDisplayName) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${potentialDisplayName}" -> "${result}"`);
+    // IMPORTANT: Skip snake case conversion if the attributeName already contains spaces
+    // or if it's identical to its snake case conversion (to prevent infinite recursion)
+    if (!attributeName.includes(' ') && attributeName !== attributeName.replace(/_/g, '')) {
+      const potentialDisplayName = attributeName
+        .replace(/_/g, ' ')
+        .replace(/(\w)(\w*)/g, (_, first, rest) => first.toUpperCase() + rest);
+      
+      // Skip recursive call if potentialDisplayName is the same as attributeName or 
+      // if we already processed this name (prevents circular reference)
+      if (potentialDisplayName !== attributeName) {
+        try {
+          // Set a recursion guard to prevent stack overflow
+          const isRecursiveCall = true;
+          
+          // We use special lookup methods directly instead of recursive getAttributeSlug call
+          // to avoid potential infinite recursion
+          
+          // First try special cases
+          result = handleSpecialCases(potentialDisplayName);
+          
+          // If no special case, check other mapping sources
+          if (!result) {
+            if (caseInsensitiveCaches.common) {
+              result = lookupCaseInsensitive(caseInsensitiveCaches.common, potentialDisplayName);
+            }
+            
+            if (!result && caseInsensitiveCaches.custom) {
+              result = lookupCaseInsensitive(caseInsensitiveCaches.custom, potentialDisplayName);
+            }
+            
+            if (!result && caseInsensitiveCaches.legacy) {
+              result = lookupCaseInsensitive(caseInsensitiveCaches.legacy, potentialDisplayName);
+            }
+          }
+          
+          if (result) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${potentialDisplayName}" -> "${result}"`);
+            }
+            return result;
+          }
+        } catch (err) {
+          // Silently continue if we encounter an error in snake case processing
+          console.warn(`[attribute-mappers] Error in snake case processing: ${err}`);
+        }
       }
-      return result;
     }
     
   } catch (error) {
