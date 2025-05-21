@@ -259,14 +259,15 @@ export async function updateCompanyAttribute(
   attributeValue: any
 ): Promise<Company> {
   try {
-    // Validate attribute update
-    await CompanyValidator.validateAttributeUpdate(companyId, attributeName, attributeValue);
+    // Validate attribute update and get processed value
+    // This will handle conversion of string values to boolean for boolean fields
+    const processedValue = await CompanyValidator.validateAttributeUpdate(companyId, attributeName, attributeValue);
     
     return await updateObjectAttributeWithDynamicFields<Company>(
       ResourceType.COMPANIES,
       companyId,
       attributeName,
-      attributeValue,
+      processedValue,
       updateCompany
     );
   } catch (error) {

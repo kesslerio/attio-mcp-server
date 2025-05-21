@@ -13,6 +13,25 @@ import {
   handleSpecialCases
 } from './mapping-utils.js';
 
+/**
+ * Converts a value to a boolean based on common string representations
+ * 
+ * @param value - The value to convert to boolean
+ * @returns Boolean representation of the value
+ */
+export function convertToBoolean(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lowerValue = value.toLowerCase();
+    if (['true', 'yes', 'y', '1'].includes(lowerValue)) return true;
+    if (['false', 'no', 'n', '0'].includes(lowerValue)) return false;
+  }
+  if (typeof value === 'number') return value !== 0;
+  
+  // If we can't determine, return the original value as boolean
+  return Boolean(value);
+}
+
 // Error class for attribute mapping errors
 export class AttributeMappingError extends Error {
   constructor(message: string, public details: Record<string, any> = {}) {
