@@ -39,7 +39,7 @@ export function resolveRelativeDate(relativeDate: RelativeDate): string {
   }
   
   const now = new Date();
-  let resultDate = new Date(now);
+  const resultDate = new Date(now);
   
   // Determine the operation based on direction
   const operation = relativeDate.direction === 'past' ? -1 : 1;
@@ -304,7 +304,7 @@ export function isValidISODateString(dateString: string): boolean {
  */
 export function createRelativeDateRange(value: number, unit: RelativeDateUnit): { start: string; end: string } {
   const now = new Date();
-  let startDate = new Date(now);
+  const startDate = new Date(now);
   
   // Configure start date based on unit and value
   switch (unit) {
