@@ -60,7 +60,11 @@ import {
 export const peopleToolConfigs = {
   create: {
     name: "create-person",
-    handler: createPerson,
+    handler: async (objectSlug: string, attributes: any, objectId?: string) => {
+      // Adapter function to match RecordCreateToolConfig interface
+      // The dispatcher passes (objectSlug, attributes, objectId) but createPerson only needs attributes
+      return await createPerson(attributes);
+    },
     formatResult: (result: Person) => 
       `Person created: ${getPersonName(result)} (ID: ${result.id?.record_id || result.id || 'unknown'})`
   } as ToolConfig,
