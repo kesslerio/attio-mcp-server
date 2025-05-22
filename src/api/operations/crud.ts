@@ -114,7 +114,7 @@ export async function getRecord<T extends AttioRecord>(
   return callWithRetry(async () => {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[getRecord] Final request path:', path);
+        console.error('[getRecord] Final request path:', path);
       }
       const response = await api.get<AttioSingleResponse<T>>(path);
       return response.data.data;
@@ -142,16 +142,12 @@ export async function updateRecord<T extends AttioRecord>(
   
   return callWithRetry(async () => {
     try {
-      console.log('[updateRecord] Request path:', path);
-      console.log('[updateRecord] Attributes:', JSON.stringify(params.attributes, null, 2));
-      
       // The API expects 'data.values' structure
       const payload = {
         data: {
           values: params.attributes
         }
       };
-      console.log('[updateRecord] Full payload:', JSON.stringify(payload, null, 2));
       
       const response = await api.patch<AttioSingleResponse<T>>(path, payload);
       
