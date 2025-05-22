@@ -2,11 +2,13 @@
  * Relationship-based tool configurations for companies
  */
 import { CompanyRecord } from "./types.js";
-import { 
+import {
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
-  searchCompaniesByNotes
+  searchCompaniesByNotes,
+  getCompanyLists
 } from "../../../objects/companies/index.js";
+import { AttioList } from "../../../types/attio.js";
 import { ToolConfig } from "../../tool-types.js";
 
 // Company relationship tool configurations
@@ -33,8 +35,17 @@ export const relationshipToolConfigs = {
     name: "search-companies-by-notes",
     handler: searchCompaniesByNotes,
     formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies with matching notes:\n${results.map((company: any) => 
+      return `Found ${results.length} companies with matching notes:\n${results.map((company: any) =>
         `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
+    }
+  } as ToolConfig,
+
+  listsForCompany: {
+    name: "get-company-lists",
+    handler: getCompanyLists,
+    formatResult: (results: AttioList[]) => {
+      return `Company belongs to ${results.length} lists:\n${results.map((list: any) =>
+        `- ${list.name || list.title} (ID: ${list.id?.list_id || list.id || 'unknown'})`).join('\n')}`;
     }
   } as ToolConfig
 };
@@ -140,6 +151,24 @@ export const relationshipToolDefinitions = [
         }
       },
       required: ["searchText"]
+    }
+  },
+  {
+    name: "get-company-lists",
+    description: "Get lists that a company belongs to",
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "ID of the company"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of list entries to check (default: 50)"
+        }
+      },
+      required: ["companyId"]
     }
   }
 ];

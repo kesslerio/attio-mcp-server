@@ -467,6 +467,21 @@ get-company-social-info(
 )
 ```
 
+#### 27. get-company-lists
+
+List the Attio lists that include a company.
+
+**Parameters**:
+- `companyId` (string, required): ID of the company
+- `limit` (number, optional): Maximum number of list entries to check (default: 50)
+
+**Example**:
+```
+get-company-lists(
+  companyId: "12345abc-6789-def0-1234-56789abcdef"
+)
+```
+
 ### People Tools
 
 #### 1. create-person
