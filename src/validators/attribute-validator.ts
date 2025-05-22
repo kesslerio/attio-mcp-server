@@ -140,7 +140,7 @@ function validateBooleanValue(attributeName: string, value: any): ValidationResu
     if (stringValue === '') {
       return {
         valid: false,
-        error: `Invalid boolean value for "${attributeName}". Empty string cannot be converted to boolean.`
+        error: `Invalid boolean value for "${attributeName}". Empty strings cannot be converted to boolean.`
       };
     }
     
@@ -209,7 +209,7 @@ function validateNumberValue(attributeName: string, value: any): ValidationResul
     if (trimmed === '') {
       return {
         valid: false,
-        error: `Invalid number value for "${attributeName}". Empty string cannot be converted to number.`
+        error: `Invalid number value for "${attributeName}". Empty strings cannot be converted to numbers.`
       };
     }
     

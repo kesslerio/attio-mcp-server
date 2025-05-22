@@ -7,7 +7,8 @@ import {
   DateRange, 
   InteractionType,
   ActivityFilter,
-  Person
+  Person,
+  PersonCreateAttributes
 } from "../../types/attio.js";
 import { ToolConfig } from "../tool-types.js";
 
@@ -60,7 +61,19 @@ import {
 export const peopleToolConfigs = {
   create: {
     name: "create-person",
-    handler: createPerson,
+    handler: async (objectSlug: string, attributes: PersonCreateAttributes, objectId?: string): Promise<Person> => {
+      // Adapter function to match RecordCreateToolConfig interface
+      // The dispatcher passes (objectSlug, attributes, objectId) but createPerson only needs attributes
+      try {
+        return await createPerson(attributes);
+      } catch (error) {
+        // Add context to errors for better debugging
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const contextualError = new Error(`Failed to create person via adapter: ${errorMessage}`);
+        contextualError.cause = error;
+        throw contextualError;
+      }
+    },
     formatResult: (result: Person) => 
       `Person created: ${getPersonName(result)} (ID: ${result.id?.record_id || result.id || 'unknown'})`
   } as ToolConfig,
