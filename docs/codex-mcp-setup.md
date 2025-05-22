@@ -84,18 +84,21 @@ Create `~/.codex/config.json`:
 
 ### Brave Search MCP Server
 
-1. Install the server:
+The Brave Search MCP Server is a Node.js/TypeScript application, not Python. Install using one of these methods:
+
+**Method 1: NPX (Recommended)**
 ```bash
-git clone https://github.com/modelcontextprotocol/servers.git mcp-servers
-cd mcp-servers/src/brave-search
-uv venv
-source .venv/bin/activate
-uv pip install -e .
+# The server is automatically installed when called via NPX
+npx -y @modelcontextprotocol/server-brave-search --help
 ```
 
-2. Start the server:
+**Method 2: Docker**
 ```bash
-python -m brave_search
+# Pull the Docker image
+docker pull mcp/brave-search
+
+# Run the server
+docker run -i --rm -e BRAVE_API_KEY=your-key mcp/brave-search
 ```
 
 ### Claude Desktop Integration
@@ -106,8 +109,8 @@ For Claude Desktop integration, update `~/Library/Application Support/Claude/cla
 {
   "mcpServers": {
     "brave-search": {
-      "command": "python",
-      "args": ["-m", "brave_search"],
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "${BRAVE_API_KEY}"
       }
