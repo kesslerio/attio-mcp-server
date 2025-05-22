@@ -15,13 +15,7 @@ else
     exit 1
 fi
 
-# Verify Brave Search MCP Server availability (no installation)
-echo "🔍 Verifying Brave Search MCP Server availability..."
-if npx -y @modelcontextprotocol/server-brave-search --help > /dev/null 2>&1; then
-    echo "✅ Brave Search MCP Server is available via NPX"
-else
-    echo "⚠️ Could not verify Brave Search MCP Server"
-fi
+# Skip MCP server setup (removed Brave Search dependency)
 
 # Create basic config
 echo "⚙️  Creating basic Codex configuration..."
@@ -40,9 +34,6 @@ cat > .env.example << EOF
 # OpenAI API Configuration
 OPENAI_API_KEY=your-openai-api-key-here
 
-# Brave Search API Configuration
-BRAVE_API_KEY=your-brave-search-api-key-here
-
 # Attio API Configuration (for this project)
 ATTIO_API_KEY=your-attio-api-key-here
 ATTIO_WORKSPACE_ID=your-workspace-id-here
@@ -58,7 +49,6 @@ echo "3. Test: codex --version"
 echo ""
 echo "Get API keys from:"
 echo "- OpenAI: https://platform.openai.com/api-keys"
-echo "- Brave Search: https://api.search.brave.com/app/keys"
 echo ""
 echo "For MCP integration with Claude Desktop, see docs/codex-mcp-setup.md"
 echo ""

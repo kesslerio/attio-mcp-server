@@ -1,6 +1,5 @@
 # MCP Server Requirements for Codex Integration
 # This file contains Python dependencies for custom MCP servers or development
-# Note: The Brave Search MCP Server is a Node.js application, not Python
 
 # Core MCP SDK for Python (only needed if developing custom Python MCP servers)
 mcp>=1.0.0
@@ -20,7 +19,5 @@ python-dotenv>=1.0.0
 click>=8.0.0
 rich>=13.0.0
 
-# IMPORTANT: Brave Search MCP Server Installation
-# The Brave Search server is NOT a Python package
-# Install via NPX: npx -y @modelcontextprotocol/server-brave-search
-# Or Docker: docker run -i --rm -e BRAVE_API_KEY mcp/brave-search
+# Note: This file is for custom Python server development only
+# The main Codex CLI setup uses Node.js and does not require these dependencies

@@ -1,15 +1,18 @@
-# OpenAI Codex CLI + MCP Brave Search Setup Guide
+# OpenAI Codex CLI Setup Guide
 
-This guide provides comprehensive setup instructions for integrating OpenAI Codex CLI with MCP (Model Context Protocol) servers, specifically Brave Search integration.
+This guide provides comprehensive setup instructions for OpenAI Codex CLI with optional MCP (Model Context Protocol) server integration.
 
 ## Quick Start
 
 ```bash
 # Run the automated setup script
-./scripts/setup-codex-mcp.sh
+./scripts/setup-codex.sh
 
 # Or use the quick setup for immediate usage
 ./scripts/quick-setup.sh
+
+# Or use the minimal setup (Node.js only)
+./scripts/minimal-setup.sh
 ```
 
 ## Manual Setup
@@ -35,14 +38,11 @@ npm install -g @openai/codex
 ### 3. Install MCP Dependencies
 
 ```bash
-# Install Python MCP requirements (optional, for custom servers)
+# Install Python MCP requirements (optional, for custom servers only)
 pip install -r requirements-mcp.txt
 
 # Or install individually
 pip install mcp httpx pydantic uvicorn fastapi python-dotenv
-
-# Note: Brave Search MCP Server is Node.js, install via NPX:
-npx -y @modelcontextprotocol/server-brave-search
 ```
 
 ### 4. Environment Configuration
@@ -52,9 +52,6 @@ Create a `.env` file in your project root:
 ```bash
 # OpenAI API Configuration
 OPENAI_API_KEY=your-openai-api-key-here
-
-# Brave Search API Configuration  
-BRAVE_API_KEY=your-brave-search-api-key-here
 
 # Attio API Configuration (for this project)
 ATTIO_API_KEY=your-attio-api-key-here
@@ -66,7 +63,6 @@ Set environment variables:
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
 export OPENAI_API_KEY="your-openai-api-key"
-export BRAVE_API_KEY="your-brave-search-api-key"
 ```
 
 ### 5. Configure Codex CLI
@@ -83,26 +79,9 @@ Create `~/.codex/config.json`:
 }
 ```
 
-## MCP Server Setup
+## MCP Server Setup (Optional)
 
-### Brave Search MCP Server
-
-The Brave Search MCP Server is a Node.js/TypeScript application, not Python. Install using one of these methods:
-
-**Method 1: NPX (Recommended)**
-```bash
-# The server is automatically installed when called via NPX
-npx -y @modelcontextprotocol/server-brave-search --help
-```
-
-**Method 2: Docker**
-```bash
-# Pull the Docker image
-docker pull mcp/brave-search
-
-# Run the server
-docker run -i --rm -e BRAVE_API_KEY=your-key mcp/brave-search
-```
+MCP server integration is optional and can be added later if needed. The main Codex CLI works independently.
 
 ### Claude Desktop Integration
 
@@ -111,13 +90,6 @@ For Claude Desktop integration, update `~/Library/Application Support/Claude/cla
 ```json
 {
   "mcpServers": {
-    "brave-search": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-      "env": {
-        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
-      }
-    },
     "attio": {
       "command": "node",
       "args": ["./dist/index.js"],
@@ -148,17 +120,14 @@ codex "Explain this JavaScript code" --file script.js
 codex "Debug this error" --file error.log
 ```
 
-### With MCP Integration
+### With MCP Integration (Optional)
 
 ```bash
-# Research + code generation
-codex "Search for latest React 18 features and create a component example"
+# When MCP servers are configured, you can use them for enhanced functionality
+codex "Create a React component with current best practices"
 
-# Current information lookup
-codex "Find recent TypeScript updates and show implementation examples"
-
-# API integration
-codex "Search for Attio API documentation and create a client example"
+# API integration with available MCP servers  
+codex "Create an Attio API client using the available documentation"
 ```
 
 ### Configuration Options
@@ -180,10 +149,7 @@ codex "Search for Attio API documentation and create a client example"
 2. Create a new API key
 3. Set as environment variable or in config
 
-### Brave Search API Key
-1. Visit https://api.search.brave.com/app/keys
-2. Create a free account
-3. Generate API key (2000 free queries/month)
+# Brave Search API key setup removed (no longer needed)
 
 ### Attio API Keys (for this project)
 1. Log into your Attio workspace
@@ -208,7 +174,6 @@ echo $PATH
 ```bash
 # Verify environment variables
 echo $OPENAI_API_KEY
-echo $BRAVE_API_KEY
 
 # Reload shell configuration
 source ~/.bashrc  # or ~/.zshrc
@@ -216,12 +181,8 @@ source ~/.bashrc  # or ~/.zshrc
 
 **"MCP server not responding"**
 ```bash
-# Check server status
-ps aux | grep brave_search
-
-# Restart MCP server
-pkill -f brave_search
-python -m brave_search
+# Check if MCP servers are configured properly in Claude Desktop
+# Restart Claude Desktop application if needed
 ```
 
 ### Debug Mode
@@ -281,7 +242,6 @@ codex --provider azure "your command"
 
 - **Codex CLI Documentation**: https://github.com/openai/codex
 - **MCP Protocol**: https://modelcontextprotocol.io/
-- **Brave Search API**: https://api.search.brave.com/
 - **Attio API**: https://docs.attio.com/
 
 For issues with this setup, check the troubleshooting section or create an issue in the repository.
