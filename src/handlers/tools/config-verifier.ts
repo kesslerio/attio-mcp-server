@@ -13,7 +13,7 @@
  * @param {string[]} requiredToolTypes - Array of tool types that must be present
  * @returns {boolean} - Whether all required tools are properly configured
  */
-export function verifyToolConfigsWithRequiredTools(resourceName, combinedConfigs, requiredToolTypes) {
+export function verifyToolConfigsWithRequiredTools(resourceName: string, combinedConfigs: any, requiredToolTypes: string[]): boolean {
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
   if (!debugMode) return true;
   
@@ -59,7 +59,7 @@ export function verifyToolConfigsWithRequiredTools(resourceName, combinedConfigs
  * @param {Object} subConfigs - Optional sub-configurations to check for the tool
  * @returns {boolean} - Whether the tool is properly configured
  */
-export function verifySpecificTool(resourceName, configs, toolType, subConfigs = null) {
+export function verifySpecificTool(resourceName: string, configs: any, toolType: string, subConfigs: any = null): boolean {
   const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
   if (!debugMode) return true;
   

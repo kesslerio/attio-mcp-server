@@ -48,6 +48,7 @@ describe('Update Company Tool', () => {
     it('should execute update-company tool with companyId and attributes', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -76,6 +77,7 @@ describe('Update Company Tool', () => {
     it('should support recordData parameter instead of attributes', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -101,6 +103,7 @@ describe('Update Company Tool', () => {
     it('should handle attributes with special characters', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -132,6 +135,7 @@ describe('Update Company Tool', () => {
     it('should handle missing companyId parameter', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -155,6 +159,7 @@ describe('Update Company Tool', () => {
     it('should handle missing attributes parameter', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -179,6 +184,7 @@ describe('Update Company Tool', () => {
       );
       
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -201,6 +207,7 @@ describe('Update Company Tool', () => {
     it('should handle non-object attributes parameter', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -221,6 +228,7 @@ describe('Update Company Tool', () => {
     it('should handle array attributes parameter', async () => {
       // Arrange
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
@@ -245,6 +253,7 @@ describe('Update Company Tool', () => {
       );
       
       const request = {
+      method: "tools/call" as const,
         params: {
           name: 'update-company',
           arguments: {
