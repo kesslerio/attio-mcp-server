@@ -28,9 +28,9 @@ import { translateAttributeNamesInFilters } from "../../utils/attribute-mapping/
 function logToolRequest(toolType: string, toolName: string, request: any) {
   if (process.env.NODE_ENV !== 'development') return;
   
-  console.log(`[${toolName}] Tool execution request:`);
-  console.log(`- Tool type: ${toolType}`);
-  console.log(`- Arguments:`, request.params.arguments ? 
+  console.error(`[${toolName}] Tool execution request:`);
+  console.error(`- Tool type: ${toolType}`);
+  console.error(`- Arguments:`, request.params.arguments ? 
     JSON.stringify(request.params.arguments, null, 2) : 'No arguments provided');
 }
 
@@ -524,7 +524,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('[advancedFilterListEntries] Processing request with parameters:', {
+        console.error('[advancedFilterListEntries] Processing request with parameters:', {
           listId,
           filters: JSON.stringify(filters),
           limit,
@@ -576,9 +576,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       // Debug logging for the request in development mode
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[addRecordToList] Adding record to list:`);
-        console.log(`- List ID: ${listId}`);
-        console.log(`- Record ID: ${recordId}`);
+        console.error(`[addRecordToList] Adding record to list:`);
+        console.error(`- List ID: ${listId}`);
+        console.error(`- Record ID: ${recordId}`);
       }
       
       try {
@@ -645,10 +645,12 @@ export async function executeToolRequest(request: CallToolRequest) {
                     request);
       
       // Enhanced debugging
-      console.log(`[handleCompanyBatchOperation:${operation}] Debug info:`);
-      console.log('- Parameter name:', paramName);
-      console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
-      console.log('- Arguments has paramName:', request.params.arguments && paramName in request.params.arguments);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[handleCompanyBatchOperation:${operation}] Debug info:`);
+        console.error('- Parameter name:', paramName);
+        console.error('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+        console.error('- Arguments has paramName:', request.params.arguments && paramName in request.params.arguments);
+      }
       
       // Extract and validate parameters
       const records = request.params.arguments?.[paramName] || [];
@@ -736,8 +738,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         };
         
         // Debug the params object
-        console.log(`[handleCompanyBatchOperation:${operation}] Calling handler with params:`, JSON.stringify(params, null, 2));
-        console.log('- Handler function:', toolConfig.handler.name || 'anonymous');
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`[handleCompanyBatchOperation:${operation}] Calling handler with params:`, JSON.stringify(params, null, 2));
+          console.error('- Handler function:', toolConfig.handler.name || 'anonymous');
+        }
         
         const result = await toolConfig.handler(params);
         return formatResponse(formatBatchResults(result, operation), result.summary.failed > 0);
@@ -763,12 +767,14 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle specific batch operations for companies
     if (toolType === 'batchCreate' && toolName === 'batch-create-companies') {
       // Add extra debugging
-      console.log('[batch-create-companies] Debug:');
-      console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
-      console.log('- Tool type:', toolType);
-      console.log('- Tool name:', toolName);
-      console.log('- Tool config exists:', !!toolConfig);
-      console.log('- Handler exists:', toolConfig && typeof toolConfig.handler === 'function');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[batch-create-companies] Debug:');
+        console.error('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+        console.error('- Tool type:', toolType);
+        console.error('- Tool name:', toolName);
+        console.error('- Tool config exists:', !!toolConfig);
+        console.error('- Handler exists:', toolConfig && typeof toolConfig.handler === 'function');
+      }
       
       return await handleCompanyBatchOperation('create', request, toolConfig);
     }
@@ -996,10 +1002,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       // Debug logging to help diagnose issues
       if (process.env.NODE_ENV === 'development') {
-        console.log('[discoverAttributes] Handler execution:');
-        console.log('- Resource type:', resourceType);
-        console.log('- Tool handler exists:', typeof toolConfig.handler === 'function');
-        console.log('- Tool formatter exists:', typeof toolConfig.formatResult === 'function');
+        console.error('[discoverAttributes] Handler execution:');
+        console.error('- Resource type:', resourceType);
+        console.error('- Tool handler exists:', typeof toolConfig.handler === 'function');
+        console.error('- Tool formatter exists:', typeof toolConfig.formatResult === 'function');
       }
       
       try {
@@ -1181,7 +1187,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       // Debug logging in development mode
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[updateAttribute] Updating attribute for ${resourceType} ${id}:`, {
+        console.error(`[updateAttribute] Updating attribute for ${resourceType} ${id}:`, {
           attributeName,
           valueType: value === null ? 'null' : typeof value,
           value: value === null ? 'null' : 
@@ -1245,9 +1251,9 @@ export async function executeToolRequest(request: CallToolRequest) {
     if (toolType === 'json') {
       // Add debug logging for json tool processing
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[json] Processing JSON tool request for ${resourceType}:`);
-        console.log('- Tool name:', toolName);
-        console.log('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
+        console.error(`[json] Processing JSON tool request for ${resourceType}:`);
+        console.error('- Tool name:', toolName);
+        console.error('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
       }
       
       const apiPath = `/${resourceType}/json`;
@@ -1340,9 +1346,9 @@ async function executeRecordOperation(
   
   // For debugging
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[executeRecordOperation] Processing ${toolType} operation for ${resourceType}`);
-    console.log(`[executeRecordOperation] Object slug: ${objectSlug}`);
-    console.log(`[executeRecordOperation] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+    console.error(`[executeRecordOperation] Processing ${toolType} operation for ${resourceType}`);
+    console.error(`[executeRecordOperation] Object slug: ${objectSlug}`);
+    console.error(`[executeRecordOperation] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
   }
   
   // Handle tool types based on specific operation
@@ -1381,7 +1387,7 @@ async function executeRecordOperation(
     try {
       // Log request parameters for debugging
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[batchCreate] Processing request for ${resourceType || objectSlug}:`, {
+        console.error(`[batchCreate] Processing request for ${resourceType || objectSlug}:`, {
           resourceType,
           objectSlug,
           arguments: request.params.arguments
@@ -1504,7 +1510,7 @@ async function executeRecordOperation(
     try {
       // Log request parameters for debugging
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[batchUpdate] Processing request for ${resourceType || objectSlug}:`, {
+        console.error(`[batchUpdate] Processing request for ${resourceType || objectSlug}:`, {
           resourceType,
           objectSlug,
           arguments: request.params.arguments
@@ -1653,8 +1659,8 @@ async function executeRecordOperation(
       
       // Enhanced debug logging for company-specific operation
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:get:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
-        console.log(`[executeRecordOperation:get:company] Extracted companyId: ${recordId}`);
+        console.error(`[executeRecordOperation:get:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.error(`[executeRecordOperation:get:company] Extracted companyId: ${recordId}`);
       }
     } else if (resourceType === ResourceType.PEOPLE) {
       recordId = request.params.arguments?.personId as string || request.params.arguments?.recordId as string;
@@ -1681,8 +1687,8 @@ async function executeRecordOperation(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[executeRecordOperation:get] Record ID: ${recordId}`);
-      console.log(`[executeRecordOperation:get] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+      console.error(`[executeRecordOperation:get] Record ID: ${recordId}`);
+      console.error(`[executeRecordOperation:get] API endpoint: /objects/${objectSlug}/records/${recordId}`);
     }
     
     try {
@@ -1690,8 +1696,8 @@ async function executeRecordOperation(
       const record = await recordGetConfig.handler(objectSlug, recordId);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:get] Retrieval successful for ID: ${recordId}`);
-        console.log(`[executeRecordOperation:get] Response:`, 
+        console.error(`[executeRecordOperation:get] Retrieval successful for ID: ${recordId}`);
+        console.error(`[executeRecordOperation:get] Response:`, 
           JSON.stringify(record, (key, value) => 
             key === 'values' ? Object.keys(value).length + ' fields retrieved' : value, 2));
       }
@@ -1727,9 +1733,9 @@ async function executeRecordOperation(
       
       // Enhanced debug logging for company-specific operation
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:update:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
-        console.log(`[executeRecordOperation:update:company] Extracted companyId: ${recordId}`);
-        console.log(`[executeRecordOperation:update:company] Tool name: ${request.params.name}`);
+        console.error(`[executeRecordOperation:update:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.error(`[executeRecordOperation:update:company] Extracted companyId: ${recordId}`);
+        console.error(`[executeRecordOperation:update:company] Tool name: ${request.params.name}`);
       }
     } else if (resourceType === ResourceType.PEOPLE) {
       recordId = request.params.arguments?.personId as string;
@@ -1774,9 +1780,9 @@ async function executeRecordOperation(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[executeRecordOperation:update] Record ID: ${recordId}`);
-      console.log(`[executeRecordOperation:update] Record data:`, JSON.stringify(recordData, null, 2));
-      console.log(`[executeRecordOperation:update] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+      console.error(`[executeRecordOperation:update] Record ID: ${recordId}`);
+      console.error(`[executeRecordOperation:update] Record data:`, JSON.stringify(recordData, null, 2));
+      console.error(`[executeRecordOperation:update] API endpoint: /objects/${objectSlug}/records/${recordId}`);
     }
     
     try {
@@ -1784,8 +1790,8 @@ async function executeRecordOperation(
       const record = await recordUpdateConfig.handler(objectSlug, recordId, recordData);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:update] Update successful for ID: ${recordId}`);
-        console.log(`[executeRecordOperation:update] Response:`, 
+        console.error(`[executeRecordOperation:update] Update successful for ID: ${recordId}`);
+        console.error(`[executeRecordOperation:update] Response:`, 
           JSON.stringify(record, (key, value) => 
             key === 'values' ? Object.keys(value).length + ' fields updated' : value, 2));
       }
@@ -1821,8 +1827,8 @@ async function executeRecordOperation(
       
       // Enhanced debug logging for company-specific operation
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:delete:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
-        console.log(`[executeRecordOperation:delete:company] Extracted companyId: ${recordId}`);
+        console.error(`[executeRecordOperation:delete:company] Request arguments:`, JSON.stringify(request.params.arguments, null, 2));
+        console.error(`[executeRecordOperation:delete:company] Extracted companyId: ${recordId}`);
       }
     } else if (resourceType === ResourceType.PEOPLE) {
       recordId = request.params.arguments?.personId as string;
@@ -1849,8 +1855,8 @@ async function executeRecordOperation(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[executeRecordOperation:delete] Record ID: ${recordId}`);
-      console.log(`[executeRecordOperation:delete] API endpoint: /objects/${objectSlug}/records/${recordId}`);
+      console.error(`[executeRecordOperation:delete] Record ID: ${recordId}`);
+      console.error(`[executeRecordOperation:delete] API endpoint: /objects/${objectSlug}/records/${recordId}`);
     }
     
     try {
@@ -1858,7 +1864,7 @@ async function executeRecordOperation(
       const success = await recordDeleteConfig.handler(objectSlug, recordId);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[executeRecordOperation:delete] Deletion ${success ? 'successful' : 'unsuccessful'} for ID: ${recordId}`);
+        console.error(`[executeRecordOperation:delete] Deletion ${success ? 'successful' : 'unsuccessful'} for ID: ${recordId}`);
       }
       
       return formatResponse(

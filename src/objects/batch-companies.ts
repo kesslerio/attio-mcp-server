@@ -106,7 +106,7 @@ async function executeBatchCompanyOperation<T, R>(
  * ];
  * 
  * const result = await batchCreateCompanies({ companies });
- * console.log(`Created ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * console.error(`Created ${result.summary.succeeded} of ${result.summary.total} companies`);
  * ```
  * 
  * Note on parameter structure:
@@ -121,23 +121,23 @@ export async function batchCreateCompanies(
   params: { companies: RecordAttributes[], config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
   // Debug logging for incoming parameters
-  console.log('[batchCreateCompanies] Received params:', JSON.stringify(params, null, 2));
-  console.log('[batchCreateCompanies] Params type:', typeof params);
-  console.log('[batchCreateCompanies] Is array?', Array.isArray(params));
+  console.error('[batchCreateCompanies] Received params:', JSON.stringify(params, null, 2));
+  console.error('[batchCreateCompanies] Params type:', typeof params);
+  console.error('[batchCreateCompanies] Is array?', Array.isArray(params));
   
   // Early validation of parameters - fail fast
   if (!params) {
-    console.log('[batchCreateCompanies] Error: params object is required');
+    console.error('[batchCreateCompanies] Error: params object is required');
     throw new Error("Invalid request: params object is required");
   }
   
   // Extract and validate companies array
   const { companies, config: batchConfig } = params;
   
-  console.log('[batchCreateCompanies] Extracted companies:', companies ? `Array of ${Array.isArray(companies) ? companies.length : 'non-array'}` : 'undefined');
+  console.error('[batchCreateCompanies] Extracted companies:', companies ? `Array of ${Array.isArray(companies) ? companies.length : 'non-array'}` : 'undefined');
   
   if (!companies) {
-    console.log('[batchCreateCompanies] Error: companies parameter is required');
+    console.error('[batchCreateCompanies] Error: companies parameter is required');
     throw new Error("Invalid request: 'companies' parameter is required");
   }
   
@@ -201,7 +201,7 @@ export async function batchCreateCompanies(
  * ];
  * 
  * const result = await batchUpdateCompanies({ updates });
- * console.log(`Updated ${result.summary.succeeded} of ${result.summary.total} companies`);
+ * console.error(`Updated ${result.summary.succeeded} of ${result.summary.total} companies`);
  * ```
  * 
  * Note on parameter structure:
