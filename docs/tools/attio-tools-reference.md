@@ -73,6 +73,7 @@ This document provides a comprehensive guide to all Attio MCP tools available, t
 | `get-company-business-info` | Get business information about a company | When you need industry, revenue, and employee data | `companyId`: Company record ID |
 | `get-company-contact-info` | Get contact information for a company | When you need address and phone details | `companyId`: Company record ID |
 | `get-company-social-info` | Get social media information for a company | When you need links to social profiles | `companyId`: Company record ID |
+| `get-company-lists` | List the Attio lists that include a company | When you need to know a company's list memberships | `companyId`: Company record ID |
 | `get-company-json` | Get raw JSON representation of a company | When you need the complete data structure for a company | `companyId`: Company record ID |
 | `get-company-notes` | Get notes associated with a company | When you need to see the note history for a company | `companyId`: Company record ID |
 | `create-company-note` | Create a new note for a company | When you need to add a note to a company's record | `companyId`: Company ID, `title`: Optional note title, `content`: Note text |

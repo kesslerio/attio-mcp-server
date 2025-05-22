@@ -269,7 +269,7 @@ These stages are likely used to track prospects through the sales process, thoug
 3. advanced-search-companies tool fails with API errors (Issue #182)
 4. get-company-attributes tool fails with API errors (Issue #183)
 5. Missing attribute validation before updates can cause errors (Issue #181)
-6. No tool to easily find which lists a company belongs to (Issue #184)
+6. Resolved: use the `get-company-lists` tool to see which lists a company belongs to (Issue #184)
 7. Type checking in the MCP server appears inconsistent
 8. Intermittent connectivity issues with certain tools
 
