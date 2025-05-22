@@ -1,9 +1,11 @@
 /**
  * Relationship-based queries for companies
  */
-import { 
-  ResourceType, 
-  Company 
+import {
+  ResourceType,
+  Company,
+  AttioList,
+  AttioListEntry
 } from "../../types/attio.js";
 import { ListEntryFilters } from "../../api/operations/index.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
@@ -171,8 +173,9 @@ export async function getCompanyLists(
       try {
         const detail = await getListDetails(listId);
         lists.push(detail);
-      } catch {
-        // ignore retrieval errors
+      } catch (error) {
+        // ignore retrieval errors but log for debugging
+        console.error(`Failed to retrieve list ${listId}:`, error);
       }
     }
   }
