@@ -324,6 +324,18 @@ export interface Person extends AttioRecord {
   };
 }
 
+/**
+ * Attributes for creating a person via MCP tools
+ */
+export interface PersonCreateAttributes {
+  name?: string;
+  email_addresses?: string[];
+  phone_numbers?: string[];
+  job_title?: string;
+  company?: string;
+  [key: string]: any;
+}
+
 export interface Company extends AttioRecord {
   values: {
     name?: Array<{value: string}>;

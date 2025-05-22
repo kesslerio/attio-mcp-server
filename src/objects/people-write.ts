@@ -1,7 +1,7 @@
 /**
  * Write operations for People with dynamic field detection
  */
-import { Person } from "../types/attio.js";
+import { Person, PersonCreateAttributes } from "../types/attio.js";
 import { ResourceType } from "../types/attio.js";
 import {
   createObjectWithDynamicFields,
@@ -34,7 +34,7 @@ export class InvalidPersonDataError extends Error {
  * Can be enhanced with more specific validation rules
  */
 export class PersonValidator {
-  static async validateCreate(attributes: any): Promise<any> {
+  static async validateCreate(attributes: PersonCreateAttributes): Promise<PersonCreateAttributes> {
     // Basic validation - ensure we have at least an email or name
     if (!attributes.email_addresses && !attributes.name) {
       throw new InvalidPersonDataError('Must provide at least an email address or name');
@@ -98,7 +98,7 @@ export class PersonValidator {
  * @throws InvalidPersonDataError if validation fails
  * @throws PersonOperationError if creation fails
  */
-export async function createPerson(attributes: any): Promise<Person> {
+export async function createPerson(attributes: PersonCreateAttributes): Promise<Person> {
   try {
     return await createObjectWithDynamicFields<Person>(
       ResourceType.PEOPLE,
