@@ -45,12 +45,22 @@ ATTIO_WORKSPACE_ID=your-workspace-id-here
 EOF
 
 echo ""
+# Setup Codex environment for offline use
+echo "🔧 Setting up Codex environment..."
+if [ -f "./scripts/codex-env-setup.sh" ]; then
+    ./scripts/codex-env-setup.sh
+else
+    echo "⚠️ Codex environment setup script not found (skipping)"
+fi
+
+echo ""
 echo "✅ Quick setup completed!"
 echo ""
 echo "Required actions:"
 echo "1. Copy .env.example to .env and fill in your API keys"
 echo "2. Run: source .env"
 echo "3. Test: codex --version"
+echo "4. Verify: npm run codex:verify"
 echo ""
 echo "Get API keys from:"
 echo "- OpenAI: https://platform.openai.com/api-keys"

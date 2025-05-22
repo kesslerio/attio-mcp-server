@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "noEmit": true,
+    "incremental": false,
+    "tsBuildInfoFile": null
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist", 
+    "build",
+    "test/integration/real-api*",
+    "test/manual",
+    "test/**/*.manual.*",
+    "**/*real-api*",
+    "**/*claude-desktop*"
+  ]
+}

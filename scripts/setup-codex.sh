@@ -269,6 +269,13 @@ main() {
     setup_claude_integration
     echo ""
     
+    # Setup Codex environment (for restricted environments)
+    if [ -f "./scripts/codex-env-setup.sh" ]; then
+        print_status "Setting up Codex environment for offline use..."
+        ./scripts/codex-env-setup.sh
+        echo ""
+    fi
+    
     create_examples
     echo ""
     
