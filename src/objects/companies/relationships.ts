@@ -3,7 +3,9 @@
  */
 import { 
   ResourceType, 
-  Company 
+  Company,
+  AttioList,
+  AttioListEntry
 } from "../../types/attio.js";
 import { ListEntryFilters } from "../../api/operations/index.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
