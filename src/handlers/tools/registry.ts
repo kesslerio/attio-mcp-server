@@ -60,14 +60,14 @@ export function findToolConfig(toolName: string): {
   
   // Debug logging for all tool lookups in development
   if (debugMode) {
-    console.log(`[findToolConfig] Looking for tool: ${toolName}`);
+    console.error(`[findToolConfig] Looking for tool: ${toolName}`);
   }
   
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
       if (debugMode) {
-        console.log(`[findToolConfig] No config found for resource type: ${resourceType}`);
+        console.error(`[findToolConfig] No config found for resource type: ${resourceType}`);
       }
       continue;
     }
@@ -76,7 +76,7 @@ export function findToolConfig(toolName: string): {
     if (debugMode) {
       const toolTypes = Object.keys(resourceConfig);
       if (toolTypes.includes(toolName.replace(/-/g, ''))) {
-        console.log(`[findToolConfig] Tool might be found under a different name. Available tool types:`, toolTypes);
+        console.error(`[findToolConfig] Tool might be found under a different name. Available tool types:`, toolTypes);
       }
       
       // Specific logging for commonly problematic tools
@@ -88,7 +88,7 @@ export function findToolConfig(toolName: string): {
         const hasToolType = Object.keys(resourceConfig).includes(toolTypeKey);
         if (hasToolType) {
           const config = resourceConfig[toolTypeKey as keyof typeof resourceConfig];
-          console.log(`[findToolConfig] Found ${toolTypeKey} config:`, {
+          console.error(`[findToolConfig] Found ${toolTypeKey} config:`, {
             name: (config as any).name,
             hasHandler: typeof (config as any).handler === 'function',
             hasFormatter: typeof (config as any).formatResult === 'function'
@@ -102,7 +102,7 @@ export function findToolConfig(toolName: string): {
     for (const [toolType, config] of Object.entries(resourceConfig)) {
       if (config && config.name === toolName) {
         if (debugMode) {
-          console.log(`[findToolConfig] Found tool: ${toolName}, type: ${toolType}, resource: ${resourceType}`);
+          console.error(`[findToolConfig] Found tool: ${toolName}, type: ${toolType}, resource: ${resourceType}`);
         }
         
         return {

@@ -121,7 +121,7 @@ export async function getListEntries(
         
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
-          console.log('[getListEntries] Transformed filters:', {
+          console.error('[getListEntries] Transformed filters:', {
             originalFilters: JSON.stringify(filters),
             transformedFilters: JSON.stringify(filterObject.filter),
             useOrLogic: filters?.matchAny === true,
@@ -154,7 +154,7 @@ export async function getListEntries(
   const logOperation = (stage: string, details: any, isError = false) => {
     if (process.env.NODE_ENV === 'development') {
       const prefix = isError ? 'ERROR' : (stage.includes('failed') ? 'WARNING' : 'INFO');
-      console.log(`[getListEntries] ${prefix} - ${stage}`, {
+      console.error(`[getListEntries] ${prefix} - ${stage}`, {
         ...details,
         listId,
         limit: safeLimit,
@@ -224,10 +224,10 @@ export async function addRecordToList(
   return callWithRetry(async () => {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[addRecordToList] Adding record to list at ${path}`);
-        console.log(`- List ID: ${listId}`);
-        console.log(`- Record ID: ${recordId}`);
-        console.log(`- Request payload: ${JSON.stringify({ data: { record_id: recordId } })}`);
+        console.error(`[addRecordToList] Adding record to list at ${path}`);
+        console.error(`- List ID: ${listId}`);
+        console.error(`- Record ID: ${recordId}`);
+        console.error(`- Request payload: ${JSON.stringify({ data: { record_id: recordId } })}`);
       }
       
       // Attio API expects a specific structure with a 'data' object wrapper
@@ -241,7 +241,7 @@ export async function addRecordToList(
       });
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[addRecordToList] Success: ${JSON.stringify(response.data)}`);
+        console.error(`[addRecordToList] Success: ${JSON.stringify(response.data)}`);
       }
       
       return response.data.data || response.data;

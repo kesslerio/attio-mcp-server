@@ -142,16 +142,12 @@ export async function updateRecord<T extends AttioRecord>(
   
   return callWithRetry(async () => {
     try {
-      console.log('[updateRecord] Request path:', path);
-      console.log('[updateRecord] Attributes:', JSON.stringify(params.attributes, null, 2));
-      
       // The API expects 'data.values' structure
       const payload = {
         data: {
           values: params.attributes
         }
       };
-      console.log('[updateRecord] Full payload:', JSON.stringify(payload, null, 2));
       
       const response = await api.patch<AttioSingleResponse<T>>(path, payload);
       
