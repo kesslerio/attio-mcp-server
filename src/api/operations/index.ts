@@ -54,6 +54,16 @@ export {
   removeRecordFromList
 } from './lists.js';
 
+export {
+  listTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+  linkRecordToTask,
+  unlinkRecordFromTask
+} from './tasks.js';
+
 // Re-export all batch operations
 export {
   batchCreateRecords,

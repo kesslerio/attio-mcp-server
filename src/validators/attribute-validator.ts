@@ -136,7 +136,7 @@ function validateBooleanValue(attributeName: string, value: any): ValidationResu
   if (typeof value === 'string') {
     const stringValue = value.toLowerCase().trim();
     
-    // Empty string should not be a valid boolean
+    // Reject empty strings explicitly
     if (stringValue === '') {
       return {
         valid: false,
@@ -205,7 +205,7 @@ function validateNumberValue(attributeName: string, value: any): ValidationResul
   if (typeof value === 'string') {
     const trimmed = value.trim();
     
-    // Empty string or whitespace-only string should not be valid numbers
+    // Reject empty strings explicitly
     if (trimmed === '') {
       return {
         valid: false,
