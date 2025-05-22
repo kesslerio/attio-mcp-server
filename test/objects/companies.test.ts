@@ -1,8 +1,9 @@
 import { 
   searchCompanies, 
   listCompanies, 
-  getCompanyDetails, 
-  getCompanyNotes, 
+  getCompanyDetails,
+  getCompanyNotes,
+  getCompanyLists,
   createCompanyNote,
   createCompany,
   updateCompany,
@@ -204,9 +205,33 @@ describe('companies', () => {
       await getCompanyNotes(companyId);
 
       // Assert
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
         `/notes?limit=10&offset=0&parent_object=companies&parent_record_id=${companyId}`
       );
+    });
+  });
+
+  describe('getCompanyLists', () => {
+    it('should fetch lists for a company', async () => {
+      const companyId = 'comp123';
+      const mockResponse = {
+        data: {
+          data: [
+            { list_id: 'list1', id: { entry_id: 'e1' }, list: { id: { list_id: 'list1' }, name: 'List A' } },
+            { list_id: 'list2', id: { entry_id: 'e2' }, list: { id: { list_id: 'list2' }, name: 'List B' } }
+          ]
+        }
+      };
+      mockAxiosInstance.post.mockResolvedValue(mockResponse);
+
+      const result = await getCompanyLists(companyId);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/lists-entries/query', {
+        filter: { record_id: { '$equals': companyId } },
+        expand: ['list'],
+        limit: 50
+      });
+      expect(result).toEqual([mockResponse.data.data[0].list, mockResponse.data.data[1].list]);
     });
   });
 

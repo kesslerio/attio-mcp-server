@@ -27,7 +27,8 @@ export {
 export {
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
-  searchCompaniesByNotes
+  searchCompaniesByNotes,
+  getCompanyLists
 } from "./relationships.js";
 
 // Note operations
