@@ -35,11 +35,14 @@ npm install -g @openai/codex
 ### 3. Install MCP Dependencies
 
 ```bash
-# Install Python MCP requirements
+# Install Python MCP requirements (optional, for custom servers)
 pip install -r requirements-mcp.txt
 
 # Or install individually
-pip install mcp httpx pydantic brave-search-mcp uvicorn fastapi python-dotenv
+pip install mcp httpx pydantic uvicorn fastapi python-dotenv
+
+# Note: Brave Search MCP Server is Node.js, install via NPX:
+npx -y @modelcontextprotocol/server-brave-search
 ```
 
 ### 4. Environment Configuration
