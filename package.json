@@ -16,6 +16,10 @@
     "postbuild": "shx chmod +x dist/*.js",
     "check": "tsc --noEmit",
     "build:watch": "tsc --watch",
+    "lint": "wireit",
+    "lint:fix": "wireit",
+    "format": "npx prettier --write --config .prettierrc packages/**/*.ts *.ts",
+    "check:format": "npx prettier --check --config .prettierrc packages/**/*.ts *.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:people": "node test/objects/people.test.js",
@@ -58,11 +62,25 @@
     "@types/jest": "^29.5.14",
     "@types/string-similarity": "^4.0.2",
     "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
     "axios": "^1.9.0",
+    "eslint": "^8.0.0",
     "jest": "^29.7.0",
     "shx": "^0.4.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3"
+  },
+  "wireit": {
+    "lint": {
+      "command": "npx eslint . --ext .ts,.js",
+      "files": ["**/*.ts", "**/*.js", ".eslintrc.js", ".eslintignore"],
+      "output": []
+    },
+    "lint:fix": {
+      "command": "npx eslint . --ext .ts,.js --fix",
+      "files": ["**/*.ts", "**/*.js", ".eslintrc.js", ".eslintignore"],
+      "output": []
+    }
   }
 }
