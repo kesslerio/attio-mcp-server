@@ -1,0 +1,23 @@
+# MCP Server Requirements for Codex Integration
+# Install with: pip install -r requirements-mcp.txt
+
+# Core MCP dependencies
+mcp>=1.0.0
+httpx>=0.25.0
+pydantic>=2.0.0
+
+# Brave Search MCP Server
+brave-search-mcp>=0.1.0
+
+# Optional: Additional MCP servers
+# tavily-mcp>=0.1.0
+# github-mcp>=0.1.0
+
+# Development dependencies
+uvicorn>=0.24.0
+fastapi>=0.104.0
+
+# Utility packages
+python-dotenv>=1.0.0
+click>=8.0.0
+rich>=13.0.0
