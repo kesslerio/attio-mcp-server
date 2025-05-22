@@ -14,8 +14,12 @@
     "clean": "shx rm -rf dist",
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
-    "check": "tsc --noEmit",
+    "check": "wireit",
     "build:watch": "tsc --watch",
+    "lint:check": "wireit",
+    "lint:fix": "wireit",
+    "format": "npx prettier --write --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
+    "check:format": "npx prettier --check --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:people": "node test/objects/people.test.js",
@@ -58,11 +62,51 @@
     "@types/jest": "^29.5.14",
     "@types/string-similarity": "^4.0.2",
     "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
     "axios": "^1.9.0",
+    "eslint": "^8.0.0",
     "jest": "^29.7.0",
     "shx": "^0.4.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3"
+  },
+  "wireit": {
+    "lint:check": {
+      "command": "npx eslint . --ext .ts,.js",
+      "files": [
+        "src/**/*.{ts,js}",
+        "test/**/*.{ts,js}",
+        "*.ts",
+        "*.js",
+        ".eslintrc.cjs",
+        ".eslintignore",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
+      "output": []
+    },
+    "lint:fix": {
+      "command": "npx eslint . --ext .ts,.js --fix",
+      "files": [
+        "src/**/*.{ts,js}",
+        "test/**/*.{ts,js}",
+        "*.ts",
+        "*.js",
+        ".eslintrc.cjs",
+        ".eslintignore",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
+      "output": []
+    },
+    "check": {
+      "dependencies": [
+        "syncpack:check",
+        "check:format",
+        "lint:check",
+        "test"
+      ]
+    }
   }
 }

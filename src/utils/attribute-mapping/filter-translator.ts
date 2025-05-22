@@ -93,7 +93,7 @@ function translateRemainingProperties(filter: any, objectType?: string): any {
   for (const key of Object.keys(filter)) {
     if (typeof filter[key] === 'object' && filter[key] !== null) {
       // Special handling for object-specific sections
-      let typeToUse = determineObjectTypeContext(key, filter, objectType);
+      const typeToUse = determineObjectTypeContext(key, filter, objectType);
       
       filter[key] = translateAttributeNamesInFilters(filter[key], typeToUse);
     }
