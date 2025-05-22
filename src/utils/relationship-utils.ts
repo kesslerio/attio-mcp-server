@@ -11,6 +11,9 @@ import {
   FilterConditionType,
   RelationshipType
 } from "../types/attio.js";
+
+// Re-export RelationshipType for convenience
+export { RelationshipType };
 import { 
   FilterValidationError,
   RelationshipFilterError,

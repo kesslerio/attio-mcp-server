@@ -135,6 +135,15 @@ function validateBooleanValue(attributeName: string, value: any): ValidationResu
   // Auto-conversion cases
   if (typeof value === 'string') {
     const stringValue = value.toLowerCase().trim();
+    
+    // Empty string should not be a valid boolean
+    if (stringValue === '') {
+      return {
+        valid: false,
+        error: `Invalid boolean value for "${attributeName}". Empty strings cannot be converted to boolean.`
+      };
+    }
+    
     if (stringValue === 'true' || stringValue === 'yes' || stringValue === '1' || stringValue === 'on') {
       return { valid: true, convertedValue: true };
     }
@@ -195,6 +204,15 @@ function validateNumberValue(attributeName: string, value: any): ValidationResul
   // Auto-conversion from string
   if (typeof value === 'string') {
     const trimmed = value.trim();
+    
+    // Empty string or whitespace-only string should not be valid numbers
+    if (trimmed === '') {
+      return {
+        valid: false,
+        error: `Invalid number value for "${attributeName}". Empty strings cannot be converted to numbers.`
+      };
+    }
+    
     const numericValue = Number(trimmed);
     
     if (!isNaN(numericValue)) {
