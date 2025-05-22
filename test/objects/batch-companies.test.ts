@@ -11,11 +11,35 @@ import {
 // Add this test to verify the fix for issue #153
 import * as companies from '../../src/objects/companies/index';
 
+// Define proper types for mock functions
+interface BatchItem {
+  id: string;
+  params: any;
+}
+
+interface BatchResult {
+  id: string;
+  success: boolean;
+  data?: any;
+  error?: any;
+}
+
+interface BatchSummary {
+  total: number;
+  succeeded: number;
+  failed: number;
+}
+
+interface BatchResponse {
+  results: BatchResult[];
+  summary: BatchSummary;
+}
+
 // Mock the individual operations
 jest.mock('../../src/objects/companies');
 jest.mock('../../src/api/operations/index', () => ({
-  executeBatchOperations: jest.fn(async (items: any[], fn: any, config: any) => {
-    const results = [];
+  executeBatchOperations: jest.fn(async (items: BatchItem[], fn: (params: any) => Promise<any>, config?: any): Promise<BatchResponse> => {
+    const results: BatchResult[] = [];
     let succeeded = 0;
     let failed = 0;
     
@@ -32,8 +56,8 @@ jest.mock('../../src/api/operations/index', () => ({
     
     return { results, summary: { total: items.length, succeeded, failed } };
   }),
-  batchCreateRecords: jest.fn<any, any>().mockRejectedValue(new Error('Batch API not available')),
-  batchUpdateRecords: jest.fn<any, any>().mockRejectedValue(new Error('Batch API not available'))
+  batchCreateRecords: jest.fn().mockRejectedValue(new Error('Batch API not available')),
+  batchUpdateRecords: jest.fn().mockRejectedValue(new Error('Batch API not available'))
 }));
 
 describe('Batch Company Operations', () => {

@@ -14,6 +14,19 @@ import { ResourceType, FilterConditionType } from '../../src/types/attio';
 import { ListEntryFilters } from '../../src/api/operations/index';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
+// Helper function to safely extract first filter with runtime validation
+function getFirstFilterSafely(result: any) {
+  expect(result).toBeDefined();
+  expect(result.filters).toBeDefined();
+  expect(result.filters).toHaveLength(1);
+  
+  if (!result.filters || result.filters.length === 0) {
+    throw new Error('Expected filters array to be defined and contain at least one filter');
+  }
+  
+  return result.filters[0];
+}
+
 describe('Relationship Utilities', () => {
   describe('createPeopleByCompanyFilter', () => {
     it('should create a valid relationship filter for people by company', () => {
@@ -34,9 +47,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -75,9 +86,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -107,9 +116,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -145,9 +152,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure is a nested relationship filter
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -190,9 +195,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure is a nested relationship filter
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -236,9 +239,7 @@ describe('Relationship Utilities', () => {
       
       // Verify the structure
       expect(result).toBeDefined();
-      expect(result.filters).toHaveLength(1);
-      
-      const relationshipFilter = result.filters![0];
+      const relationshipFilter = getFirstFilterSafely(result);
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
