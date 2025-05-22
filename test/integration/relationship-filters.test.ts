@@ -16,7 +16,9 @@ import {
 } from '../../src/utils/relationship-utils';
 import { FilterConditionType, ResourceType } from '../../src/types/attio';
 import { ListEntryFilters } from '../../src/api/operations/index';
-import { AttioClient } from '../../src/api/attio-client';
+import { getAttioClient } from '../../src/api/attio-client';
+import { advancedSearchPeople } from '../../src/objects/people/search';
+import { advancedSearchCompanies } from '../../src/objects/companies/search';
 
 // Skip tests if no API key is provided
 const runIntegrationTests = process.env.RUN_INTEGRATION_TESTS === 'true' && 
@@ -24,14 +26,10 @@ const runIntegrationTests = process.env.RUN_INTEGRATION_TESTS === 'true' &&
                             process.env.ATTIO_API_KEY !== 'development_api_key_placeholder';
 
 describe('Relationship Filter Integration Tests', () => {
-  // Setup
-  let client: AttioClient;
-  
+  // Setup  
   beforeAll(() => {
     if (runIntegrationTests) {
-      client = new AttioClient({
-        apiKey: process.env.ATTIO_API_KEY as string
-      });
+      // Client is initialized automatically when getAttioClient() is called
     }
   });
   
@@ -54,18 +52,17 @@ describe('Relationship Filter Integration Tests', () => {
       const peopleFilter = createPeopleByCompanyFilter(techCompanyFilter);
       
       // Make an actual API call
-      const response = await client.searchPeople({
-        filter: peopleFilter,
+      const response = await advancedSearchPeople(peopleFilter, {
         limit: 5
       });
       
       // Verify the response structure and content
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response.results)).toBe(true);
       
       // If any results are found, verify they have company relationships
-      if (response.data.length > 0) {
-        const firstPerson = response.data[0];
+      if (response.results.length > 0) {
+        const firstPerson = response.results[0];
         expect(firstPerson.id).toBeDefined();
         expect(firstPerson.id.record_id).toBeDefined();
       }
@@ -90,18 +87,15 @@ describe('Relationship Filter Integration Tests', () => {
       const companiesFilter = createCompaniesByPeopleFilter(executiveFilter);
       
       // Make an actual API call
-      const response = await client.searchCompanies({
-        filter: companiesFilter,
-        limit: 5
-      });
+      const response = await advancedSearchCompanies(companiesFilter, 5);
       
       // Verify the response structure and content
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response)).toBe(true);
       
       // If any results are found, verify they have the expected structure
-      if (response.data.length > 0) {
-        const firstCompany = response.data[0];
+      if (response.length > 0) {
+        const firstCompany = response[0];
         expect(firstCompany.id).toBeDefined();
         expect(firstCompany.id.record_id).toBeDefined();
       }
@@ -120,14 +114,13 @@ describe('Relationship Filter Integration Tests', () => {
       );
       
       // Make an actual API call
-      const response = await client.searchPeople({
-        filter: peopleInListFilter,
+      const response = await advancedSearchPeople(peopleInListFilter, {
         limit: 5
       });
       
       // Verify the response structure
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response.results)).toBe(true);
     });
     
     (runIntegrationTests ? it : it.skip)('should find companies in a specific list', async () => {
@@ -138,14 +131,11 @@ describe('Relationship Filter Integration Tests', () => {
       );
       
       // Make an actual API call
-      const response = await client.searchCompanies({
-        filter: companiesInListFilter,
-        limit: 5
-      });
+      const response = await advancedSearchCompanies(companiesInListFilter, 5);
       
       // Verify the response structure
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response)).toBe(true);
     });
   });
   
@@ -158,14 +148,13 @@ describe('Relationship Filter Integration Tests', () => {
       const peopleFilter = createPeopleByCompanyListFilter(testListId);
       
       // Make an actual API call
-      const response = await client.searchPeople({
-        filter: peopleFilter,
+      const response = await advancedSearchPeople(peopleFilter, {
         limit: 5
       });
       
       // Verify the response structure
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response.results)).toBe(true);
     });
     
     (runIntegrationTests ? it : it.skip)('should find companies that have people in a specific list', async () => {
@@ -173,14 +162,11 @@ describe('Relationship Filter Integration Tests', () => {
       const companiesFilter = createCompaniesByPeopleListFilter(testListId);
       
       // Make an actual API call
-      const response = await client.searchCompanies({
-        filter: companiesFilter,
-        limit: 5
-      });
+      const response = await advancedSearchCompanies(companiesFilter, 5);
       
       // Verify the response structure
       expect(response).toBeDefined();
-      expect(Array.isArray(response.data)).toBe(true);
+      expect(Array.isArray(response)).toBe(true);
     });
   });
   
