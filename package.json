@@ -14,12 +14,12 @@
     "clean": "shx rm -rf dist",
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
-    "check": "tsc --noEmit",
+    "check": "wireit",
     "build:watch": "tsc --watch",
-    "lint": "wireit",
+    "lint:check": "wireit",
     "lint:fix": "wireit",
-    "format": "npx prettier --write --config .prettierrc packages/**/*.ts *.ts",
-    "check:format": "npx prettier --check --config .prettierrc packages/**/*.ts *.ts",
+    "format": "npx prettier --write --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
+    "check:format": "npx prettier --check --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:people": "node test/objects/people.test.js",
@@ -72,15 +72,41 @@
     "typescript": "^5.8.3"
   },
   "wireit": {
-    "lint": {
+    "lint:check": {
       "command": "npx eslint . --ext .ts,.js",
-      "files": ["**/*.ts", "**/*.js", ".eslintrc.js", ".eslintignore"],
+      "files": [
+        "src/**/*.{ts,js}",
+        "test/**/*.{ts,js}",
+        "*.ts",
+        "*.js",
+        ".eslintrc.cjs",
+        ".eslintignore",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
       "output": []
     },
     "lint:fix": {
       "command": "npx eslint . --ext .ts,.js --fix",
-      "files": ["**/*.ts", "**/*.js", ".eslintrc.js", ".eslintignore"],
+      "files": [
+        "src/**/*.{ts,js}",
+        "test/**/*.{ts,js}",
+        "*.ts",
+        "*.js",
+        ".eslintrc.cjs",
+        ".eslintignore",
+        "tsconfig.json",
+        ".prettierrc"
+      ],
       "output": []
+    },
+    "check": {
+      "dependencies": [
+        "syncpack:check",
+        "check:format",
+        "lint:check",
+        "test"
+      ]
     }
   }
 }

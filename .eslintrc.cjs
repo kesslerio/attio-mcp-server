@@ -15,6 +15,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 12,
     sourceType: 'module',
+    project: './tsconfig.eslint.json',
   },
   rules: {
     // Add any project-specific rules here
