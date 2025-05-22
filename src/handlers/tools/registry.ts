@@ -18,6 +18,10 @@ import {
   listsToolDefinitions
 } from "../tool-configs/lists.js";
 import {
+  tasksToolConfigs,
+  tasksToolDefinitions
+} from "../tool-configs/tasks.js";
+import {
   recordToolConfigs,
   recordToolDefinitions
 } from "../tool-configs/records.js";
@@ -29,6 +33,7 @@ export const TOOL_CONFIGS = {
   [ResourceType.COMPANIES]: companyToolConfigs,
   [ResourceType.PEOPLE]: peopleToolConfigs,
   [ResourceType.LISTS]: listsToolConfigs,
+  [ResourceType.TASKS]: tasksToolConfigs,
   [ResourceType.RECORDS]: recordToolConfigs,
   // Add other resource types as needed
 };
@@ -40,6 +45,7 @@ export const TOOL_DEFINITIONS = {
   [ResourceType.COMPANIES]: companyToolDefinitions,
   [ResourceType.PEOPLE]: peopleToolDefinitions,
   [ResourceType.LISTS]: listsToolDefinitions,
+  [ResourceType.TASKS]: tasksToolDefinitions,
   [ResourceType.RECORDS]: recordToolDefinitions,
   // Add other resource types as needed
 };

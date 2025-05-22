@@ -258,13 +258,45 @@ export interface AttioListEntry {
 }
 
 /**
+ * Task record type
+ */
+export interface AttioTask {
+  id: {
+    task_id: string;
+    [key: string]: any;
+  };
+  content: string;
+  status: string;
+  assignee?: {
+    id: string;
+    type: string;
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+    [key: string]: any;
+  };
+  due_date?: string;
+  linked_records?: Array<{
+    id: string;
+    object_id?: string;
+    object_slug?: string;
+    title?: string;
+    [key: string]: any;
+  }>;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any;
+}
+
+/**
  * Resource type enum for better type safety
  */
 export enum ResourceType {
   PEOPLE = 'people',
   COMPANIES = 'companies',
   LISTS = 'lists',
-  RECORDS = 'records'
+  RECORDS = 'records',
+  TASKS = 'tasks'
 }
 
 /**

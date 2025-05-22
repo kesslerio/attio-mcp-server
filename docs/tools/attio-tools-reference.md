@@ -98,6 +98,16 @@ This document provides a comprehensive guide to all Attio MCP tools available, t
 | `delete-record` | Delete a generic record | When you need to remove a record | `objectSlug`: Object type, `recordId`: Record ID |
 | `list-records` | List records of a specific object type | When you need to list records of a specific type | `objectSlug`: Object type |
 
+## Task Tools
+
+| Tool Name | Description | When to Use | Key Parameters |
+|-----------|-------------|------------|----------------|
+| `list-tasks` | List tasks in the workspace | View existing tasks | Optional filters |
+| `create-task` | Create a new task | Add follow ups | `content`, optional assignee |
+| `update-task` | Update an existing task | Modify details or status | `taskId` plus fields |
+| `delete-task` | Delete a task | Remove obsolete task | `taskId` |
+| `link-record-to-task` | Link a record to a task | Associate records | `taskId`, `recordId` |
+
 ## Object-Specific Operations
 
 ### People Operations
