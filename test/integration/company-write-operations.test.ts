@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from '@jest/globals';
 import { 
   createCompany, 
   updateCompany, 
