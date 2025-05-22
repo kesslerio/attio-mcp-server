@@ -1,8 +1,8 @@
 /**
  * Relationship-based queries for companies
  */
-import { 
-  ResourceType, 
+import {
+  ResourceType,
   Company,
   AttioList,
   AttioListEntry

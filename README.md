@@ -11,7 +11,7 @@ A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-na
   - People: Search (with email/phone support), view details, manage notes
   - Lists: View, manage entries, add/remove records
   - Records: Create, read, update, delete (coming soon)
-  - Tasks: View and manage (coming soon)
+  - Tasks: Create, update, and link to records
 
 - **Enhanced Capabilities**
   - Robust error handling with helpful messages
