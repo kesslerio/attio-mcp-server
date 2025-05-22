@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Quick setup script for immediate Codex + MCP usage
+# Quick setup script for immediate Codex usage
 # Run with: ./scripts/quick-setup.sh
 
 # Note: Don't use 'set -e' to allow graceful handling of optional failures
 
-echo "⚡ Quick Setup: Codex CLI + MCP Brave Search"
-echo "==========================================="
+echo "⚡ Quick Setup: Codex CLI"
+echo "========================"
 
 # Install OpenAI Codex CLI
 echo "📦 Installing Codex CLI..."
@@ -20,13 +20,7 @@ else
     echo "⚠️ Python MCP dependencies installation failed (this is optional)"
 fi
 
-# Verify Brave Search MCP Server availability
-echo "🔍 Verifying Brave Search MCP Server..."
-if npx -y @modelcontextprotocol/server-brave-search --help > /dev/null 2>&1; then
-    echo "✅ Brave Search MCP Server is available via NPX"
-else
-    echo "⚠️ Could not verify Brave Search MCP Server"
-fi
+# Skip MCP server verification (removed Brave Search dependency)
 
 # Create basic config
 echo "⚙️  Creating basic configuration..."
@@ -45,9 +39,6 @@ cat > .env.example << EOF
 # OpenAI API Configuration
 OPENAI_API_KEY=your-openai-api-key-here
 
-# Brave Search API Configuration
-BRAVE_API_KEY=your-brave-search-api-key-here
-
 # Attio API Configuration (for this project)
 ATTIO_API_KEY=your-attio-api-key-here
 ATTIO_WORKSPACE_ID=your-workspace-id-here
@@ -63,5 +54,4 @@ echo "3. Test: codex --version"
 echo ""
 echo "Get API keys from:"
 echo "- OpenAI: https://platform.openai.com/api-keys"
-echo "- Brave Search: https://api.search.brave.com/app/keys"
 echo ""

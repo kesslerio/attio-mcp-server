@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Setup script for OpenAI Codex CLI with MCP Brave Search integration
-# This script sets up the complete environment for using Codex with MCP servers
+# Setup script for OpenAI Codex CLI
+# This script sets up the complete environment for using Codex CLI
 
 set -e
 
-echo "🚀 Setting up OpenAI Codex CLI with MCP Brave Search integration..."
+echo "🚀 Setting up OpenAI Codex CLI..."
 
 # Color codes for output
 RED='\033[0;31m'
@@ -106,56 +106,13 @@ setup_environment() {
         print_success "OpenAI API key is already configured."
     fi
     
-    # Check for Brave Search API key
-    if [ -z "$BRAVE_API_KEY" ]; then
-        echo ""
-        echo "⚠️  Brave Search API key is required for MCP Brave Search integration."
-        echo "You can get your API key from: https://api.search.brave.com/app/keys"
-        echo ""
-        read -p "Enter your Brave Search API key (or press Enter to skip): " brave_key
-        
-        if [ -n "$brave_key" ]; then
-            export BRAVE_API_KEY="$brave_key"
-            echo "export BRAVE_API_KEY='$brave_key'" >> ~/.bashrc
-            echo "export BRAVE_API_KEY='$brave_key'" >> ~/.zshrc
-            print_success "Brave Search API key configured."
-        else
-            print_warning "Skipped Brave API key setup. Remember to set BRAVE_API_KEY for search functionality."
-        fi
-    else
-        print_success "Brave Search API key is already configured."
-    fi
+    print_success "Environment setup completed."
 }
 
-# Setup MCP Brave Search server
-setup_mcp_brave_search() {
-    print_status "Setting up MCP Brave Search server..."
-    
-    # Install MCP Brave Search server via NPX (recommended method)
-    print_status "Installing MCP Brave Search server via NPX..."
-    
-    # Test if the server is available
-    if npx -y @modelcontextprotocol/server-brave-search --help > /dev/null 2>&1; then
-        print_success "MCP Brave Search server is available via NPX."
-    else
-        print_warning "Could not verify MCP Brave Search server via NPX."
-    fi
-    
-    # Alternative: Docker installation check
-    if command -v docker &> /dev/null; then
-        print_status "Docker is available for alternative installation method."
-        
-        # Pull the Docker image
-        if docker pull mcp/brave-search > /dev/null 2>&1; then
-            print_success "MCP Brave Search Docker image is available."
-        else
-            print_warning "Could not pull MCP Brave Search Docker image."
-        fi
-    else
-        print_warning "Docker not available. NPX method will be used."
-    fi
-    
-    print_success "MCP Brave Search server setup completed."
+# Setup MCP servers (placeholder for future MCP integrations)
+setup_mcp_servers() {
+    print_status "MCP server setup..."
+    print_success "MCP server setup completed (placeholder for future integrations)."
 }
 
 # Configure Codex CLI
@@ -211,13 +168,6 @@ setup_claude_integration() {
         cat > "$config_file" << EOF
 {
   "mcpServers": {
-    "brave-search": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-      "env": {
-        "BRAVE_API_KEY": "$BRAVE_API_KEY"
-      }
-    },
     "attio": {
       "command": "node",
       "args": ["$(pwd)/dist/index.js"],
@@ -297,8 +247,8 @@ EOF
 
 # Main setup function
 main() {
-    echo "🎯 OpenAI Codex CLI + MCP Brave Search Setup"
-    echo "============================================="
+    echo "🎯 OpenAI Codex CLI Setup"
+    echo "========================="
     echo ""
     
     check_requirements
@@ -310,7 +260,7 @@ main() {
     setup_environment
     echo ""
     
-    setup_mcp_brave_search
+    setup_mcp_servers
     echo ""
     
     configure_codex
