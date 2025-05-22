@@ -9,6 +9,10 @@ import { ListEntryFilters } from "../../api/operations/index.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
 import { validateNumericParam } from "../../utils/filters/index.js";
 import {
+  getAttioClient
+} from "../../api/attio-client.js";
+import { getListDetails } from "../lists.js";
+import {
   createCompaniesByPeopleFilter,
   createCompaniesByPeopleListFilter,
   createRecordsByNotesFilter
@@ -130,3 +134,49 @@ export async function searchCompaniesByNotes(
     );
   }
 }
+/**
+ * Gets lists that a company belongs to
+ *
+ * @param companyId - ID of the company
+ * @param limit - Maximum number of list entries to check (default: 50)
+ * @returns Array of unique lists containing the company
+ */
+export async function getCompanyLists(
+  companyId: string,
+  limit: number = 50
+): Promise<AttioList[]> {
+  const api = getAttioClient();
+
+  const response = await api.post<{ data: AttioListEntry[] }>(
+    '/lists-entries/query',
+    {
+      filter: { record_id: { '$equals': companyId } },
+      expand: ['list'],
+      limit
+    }
+  );
+
+  const entries = response.data.data || [];
+  const lists: AttioList[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of entries) {
+    const listId = (entry as any).list?.id?.list_id || entry.list_id;
+    if (!listId || seen.has(listId)) continue;
+    seen.add(listId);
+
+    if ((entry as any).list) {
+      lists.push((entry as any).list as AttioList);
+    } else {
+      try {
+        const detail = await getListDetails(listId);
+        lists.push(detail);
+      } catch {
+        // ignore retrieval errors
+      }
+    }
+  }
+
+  return lists;
+}
+
