@@ -36,7 +36,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -77,7 +77,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -109,7 +109,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -147,7 +147,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -192,7 +192,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
@@ -238,7 +238,7 @@ describe('Relationship Utilities', () => {
       expect(result).toBeDefined();
       expect(result.filters).toHaveLength(1);
       
-      const relationshipFilter = result.filters[0];
+      const relationshipFilter = result.filters![0];
       expect(relationshipFilter.attribute.slug).toBe('$relationship');
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
       
