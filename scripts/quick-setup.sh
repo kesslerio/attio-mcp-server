@@ -12,9 +12,17 @@ echo "==========================================="
 echo "📦 Installing Codex CLI..."
 npm install -g @openai/codex
 
-# Install Python MCP requirements
-echo "🐍 Installing Python MCP dependencies..."
+# Install Python MCP requirements (optional, for custom servers)
+echo "🐍 Installing Python MCP dependencies (optional)..."
 pip install -r requirements-mcp.txt
+
+# Verify Brave Search MCP Server availability
+echo "🔍 Verifying Brave Search MCP Server..."
+if npx -y @modelcontextprotocol/server-brave-search --help > /dev/null 2>&1; then
+    echo "✅ Brave Search MCP Server is available via NPX"
+else
+    echo "⚠️ Could not verify Brave Search MCP Server"
+fi
 
 # Create basic config
 echo "⚙️  Creating basic configuration..."

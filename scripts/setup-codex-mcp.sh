@@ -131,24 +131,31 @@ setup_environment() {
 setup_mcp_brave_search() {
     print_status "Setting up MCP Brave Search server..."
     
-    # Create MCP directory
-    mkdir -p ~/.mcp/servers
+    # Install MCP Brave Search server via NPX (recommended method)
+    print_status "Installing MCP Brave Search server via NPX..."
     
-    # Install MCP Brave Search server
-    if [ ! -d "~/.mcp/servers/brave-search" ]; then
-        cd ~/.mcp/servers
-        git clone https://github.com/modelcontextprotocol/servers.git mcp-servers
-        cd mcp-servers/src/brave-search
-        
-        # Create virtual environment and install
-        uv venv
-        source .venv/bin/activate
-        uv pip install -e .
-        
-        print_success "MCP Brave Search server installed."
+    # Test if the server is available
+    if npx -y @modelcontextprotocol/server-brave-search --help > /dev/null 2>&1; then
+        print_success "MCP Brave Search server is available via NPX."
     else
-        print_success "MCP Brave Search server already exists."
+        print_warning "Could not verify MCP Brave Search server via NPX."
     fi
+    
+    # Alternative: Docker installation check
+    if command -v docker &> /dev/null; then
+        print_status "Docker is available for alternative installation method."
+        
+        # Pull the Docker image
+        if docker pull mcp/brave-search > /dev/null 2>&1; then
+            print_success "MCP Brave Search Docker image is available."
+        else
+            print_warning "Could not pull MCP Brave Search Docker image."
+        fi
+    else
+        print_warning "Docker not available. NPX method will be used."
+    fi
+    
+    print_success "MCP Brave Search server setup completed."
 }
 
 # Configure Codex CLI
@@ -205,8 +212,8 @@ setup_claude_integration() {
 {
   "mcpServers": {
     "brave-search": {
-      "command": "python",
-      "args": ["-m", "brave_search"],
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "$BRAVE_API_KEY"
       }

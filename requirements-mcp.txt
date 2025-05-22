@@ -1,19 +1,16 @@
 # MCP Server Requirements for Codex Integration
-# Install with: pip install -r requirements-mcp.txt
+# This file contains Python dependencies for custom MCP servers or development
 
-# Core MCP dependencies
+# Core MCP SDK for Python (if developing custom servers)
 mcp>=1.0.0
+
+# HTTP client for API interactions
 httpx>=0.25.0
+
+# Data validation
 pydantic>=2.0.0
 
-# Brave Search MCP Server
-brave-search-mcp>=0.1.0
-
-# Optional: Additional MCP servers
-# tavily-mcp>=0.1.0
-# github-mcp>=0.1.0
-
-# Development dependencies
+# Development server dependencies (for custom servers)
 uvicorn>=0.24.0
 fastapi>=0.104.0
 
@@ -21,3 +18,7 @@ fastapi>=0.104.0
 python-dotenv>=1.0.0
 click>=8.0.0
 rich>=13.0.0
+
+# Note: Brave Search MCP Server is installed via NPX, not pip
+# Run: npx -y @modelcontextprotocol/server-brave-search
+# For Docker: docker run -i --rm -e BRAVE_API_KEY mcp/brave-search
