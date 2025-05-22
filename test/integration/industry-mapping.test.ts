@@ -2,7 +2,7 @@
  * Integration tests for industry-to-categories field mapping for companies
  * Tests issue #176 fix for the incorrect industry field mapping
  */
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import { createCompany, updateCompany } from '../../src/objects/companies/index';
 import { getAttributeSlug } from '../../src/utils/attribute-mapping/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
