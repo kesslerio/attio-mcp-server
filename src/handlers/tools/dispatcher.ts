@@ -10,6 +10,14 @@ import { ListEntryFilters } from '../../api/operations/index.js';
 import { processListEntries } from '../../utils/record-utils.js';
 import { ApiError, isApiError, hasResponseData } from './error-types.js';
 import { safeJsonStringify } from '../../utils/json-serializer.js';
+import {
+  ToolExecutionRequest,
+  ToolErrorContext,
+  AttributeValidationParams,
+  CompanyOperationResponse,
+  ValidationResult,
+  ToolRequestArguments
+} from '../../types/tool-types.js';
 
 // Import tool configurations
 import { findToolConfig } from './registry.js';
@@ -25,7 +33,7 @@ import { translateAttributeNamesInFilters } from '../../utils/attribute-mapping/
  * @param toolName - The name of the tool as defined in the MCP configuration
  * @param request - The request data containing parameters and arguments
  */
-function logToolRequest(toolType: string, toolName: string, request: any) {
+function logToolRequest(toolType: string, toolName: string, request: ToolExecutionRequest) {
   if (process.env.NODE_ENV !== 'development') return;
 
   console.error(`[${toolName}] Tool execution request:`);
@@ -48,7 +56,7 @@ function logToolRequest(toolType: string, toolName: string, request: any) {
 function logToolError(
   toolType: string,
   error: unknown,
-  additionalInfo: Record<string, any> = {}
+  additionalInfo: ToolErrorContext = {}
 ) {
   console.error(`[${toolType}] Execution error:`, error);
   console.error(
@@ -76,8 +84,8 @@ function logToolError(
  * @returns True if validation passes, or an error message string if validation fails
  */
 function validateAttributes(
-  attributes: Record<string, any> | null | undefined
-): true | string {
+  attributes: AttributeValidationParams | null | undefined
+): ValidationResult {
   if (!attributes) {
     return 'Attributes parameter is required';
   }
@@ -106,7 +114,7 @@ function formatSuccessResponse(
   operation: string,
   resourceType: string,
   resourceId: string,
-  details?: Record<string, any>
+  details?: ToolErrorContext
 ): string {
   let message = `Successfully ${operation}d ${resourceType} record with ID: ${resourceId}`;
 

@@ -5,6 +5,7 @@ import {
 import * as attioOperations from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { AttioList, AttioListEntry } from '../../src/types/attio';
+import * as listsModule from '../../src/objects/lists';
 
 // Mock the attio-operations module
 vi.mock('../../src/api/operations/index');
@@ -105,7 +106,7 @@ describe('Lists Batch Operations', () => {
 
       // Mock getListDetails to use in the test
       vi.spyOn(
-        require('../../src/objects/lists'),
+        listsModule,
         'getListDetails'
       ).mockImplementation(async (listId) => {
         if (listId === 'list123') return mockList1;
@@ -199,7 +200,7 @@ describe('Lists Batch Operations', () => {
 
       // Mock getListEntries to use in the test
       vi.spyOn(
-        require('../../src/objects/lists'),
+        listsModule,
         'getListEntries'
       ).mockImplementation(async (listId) => {
         if (listId === 'list123') return [mockListEntry1, mockListEntry2];

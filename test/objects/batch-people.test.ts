@@ -5,6 +5,7 @@ import {
 import * as attioOperations from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { Person } from '../../src/types/attio';
+import * as peopleModule from '../../src/objects/people';
 
 // Mock the attio-operations module
 vi.mock('../../src/api/operations/index');
@@ -86,7 +87,7 @@ describe('People Batch Operations', () => {
       });
 
       // Mock the searchPeople for individual searches in the fallback
-      vi.spyOn(require('../../src/objects/people'), 'searchPeople')
+      vi.spyOn(peopleModule, 'searchPeople')
         .mockResolvedValueOnce([mockPerson1])
         .mockRejectedValueOnce(new Error('Search failed'));
 
@@ -149,7 +150,7 @@ describe('People Batch Operations', () => {
       );
 
       // Mock the getPersonDetails for individual gets in the fallback
-      vi.spyOn(require('../../src/objects/people'), 'getPersonDetails')
+      vi.spyOn(peopleModule, 'getPersonDetails')
         .mockResolvedValueOnce(mockPerson1)
         .mockRejectedValueOnce(new Error('Person not found'));
 
