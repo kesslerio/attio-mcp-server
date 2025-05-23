@@ -53,6 +53,7 @@ describe('get-list-details API test', () => {
   conditionalTest('should format list details through MCP tool', async () => {
     // Create a mock request for the MCP tool
     const mockRequest = {
+      method: "tools/call" as const,
       params: {
         name: 'get-list-details',
         arguments: {
@@ -87,6 +88,7 @@ describe('get-list-details API test', () => {
     
     // Create a mock request
     const mockRequest = {
+      method: "tools/call" as const,
       params: {
         name: 'get-list-details',
         arguments: {

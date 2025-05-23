@@ -337,8 +337,11 @@ export async function executeToolRequest(request: CallToolRequest) {
           }
         }
         
+        const limit = request.params.arguments?.limit as number;
+        const offset = request.params.arguments?.offset as number;
+        
         const notesToolConfig = toolConfig as NotesToolConfig;
-        const notes = await notesToolConfig.handler(notesTargetId);
+        const notes = await notesToolConfig.handler(notesTargetId, limit, offset);
         const formattedResult = notesToolConfig.formatResult!(notes);
         
         return formatResponse(formattedResult);
@@ -358,8 +361,23 @@ export async function executeToolRequest(request: CallToolRequest) {
         ? request.params.arguments?.companyId as string 
         : request.params.arguments?.personId as string;
       const uri = request.params.arguments?.uri as string;
-      const title = request.params.arguments?.title as string;
-      const content = request.params.arguments?.content as string;
+      
+      /**
+       * Parameter Mapping Strategy for Note Creation
+       * 
+       * This function supports multiple parameter names for backward compatibility
+       * and to accommodate different API clients:
+       * 
+       * - title: Primary parameter name (preferred)
+       * - noteTitle: Legacy/alternative parameter name for title
+       * - content: Primary parameter name (preferred) 
+       * - noteText: Legacy/alternative parameter name for content
+       * 
+       * The fallback pattern (primary || legacy) ensures compatibility while
+       * encouraging use of the standardized parameter names.
+       */
+      const title = (request.params.arguments?.title || request.params.arguments?.noteTitle) as string;
+      const content = (request.params.arguments?.content || request.params.arguments?.noteText) as string;
       
       if (!title || !content) {
         return createErrorResult(
@@ -401,7 +419,9 @@ export async function executeToolRequest(request: CallToolRequest) {
         
         const createNoteToolConfig = toolConfig as CreateNoteToolConfig;
         const note = await createNoteToolConfig.handler(noteTargetId, title, content);
-        const formattedResult = createNoteToolConfig.formatResult!(note);
+        const formattedResult = createNoteToolConfig.formatResult 
+          ? createNoteToolConfig.formatResult(note)
+          : `Note added to ${resourceType.slice(0, -1)} ${noteTargetId}: ${note.title || 'Untitled'}`;
         
         return formatResponse(formattedResult);
       } catch (error) {
@@ -465,11 +485,15 @@ export async function executeToolRequest(request: CallToolRequest) {
         
         return formatResponse(formattedResult);
       } catch (error) {
+        const responseData = hasResponseData(error) ? error.response.data : {};
+        if (hasResponseData(error) && 'status' in error.response) {
+          (responseData as any).status = error.response.status;
+        }
         return createErrorResult(
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}`,
           "GET",
-          hasResponseData(error) ? error.response.data : {}
+          responseData
         );
       }
     }

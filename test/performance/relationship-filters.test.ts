@@ -209,7 +209,7 @@ describe('Relationship Filter Performance Tests', () => {
   describe('Cache efficiency', () => {
     it('should test cache hit rate for repeated similar queries', () => {
       const queryCount = 20;
-      const listIds = Array.from({ length: 5 }, (_, i) => `list_performance_${i + 25}`);
+      const listIds = Array.from({ length: 5 }, (_, i) => `list_performance${i + 25}`);
       
       let cacheHits = 0;
       let cacheMisses = 0;

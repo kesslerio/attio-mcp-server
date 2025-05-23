@@ -202,8 +202,14 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockEntries = [
-        { id: { entry_id: 'entry1' }, record_id: 'record1' },
-        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+        { 
+          id: { record_id: 'person123' },
+          values: {
+            name: [{ value: 'John Doe' }],
+            email: [{ value: 'john.doe@example.com' }],
+            phone: [{ value: '+1234567890' }]
+          }
+        }
       ];
       mockApiClient.post.mockResolvedValueOnce({
         data: { data: mockEntries }
@@ -225,7 +231,12 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockFilteredEntries = [
-        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+        { 
+          id: { record_id: 'company123' },
+          values: {
+            name: [{ value: 'Acme Inc' }]
+          }
+        }
       ];
       mockApiClient.post.mockResolvedValueOnce({
         data: { data: mockFilteredEntries }

@@ -102,16 +102,53 @@ export function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
   validateConditions: boolean = true
 ): { filter?: AttioApiFilter } {
-  // Use the central validation utility for consistent error messages
-  const validatedFilters = validateFilters(filters, validateConditions);
-  
-  // Check if filters array exists and handle undefined case
-  if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result');
-    }
+  // Handle undefined/null filters gracefully
+  if (!filters) {
     return {};
   }
+  
+  // Check if filters has a filters property and it's an array
+  if (!('filters' in filters) || !Array.isArray(filters.filters)) {
+    return {};
+  }
+  
+  // If filters array is empty, return empty result
+  if (filters.filters.length === 0) {
+    return {};
+  }
+  
+  try {
+    // Use the central validation utility for consistent error messages
+    const validatedFilters = validateFilters(filters, validateConditions);
+    
+    // Check if filters array exists and handle undefined case
+    if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result');
+      }
+      return {};
+    }
+  } catch (error) {
+    // Check if this is a FilterValidationError
+    if (error instanceof FilterValidationError) {
+      // For condition validation errors when validateConditions is true, re-throw
+      if (validateConditions && (error.message.includes("Invalid condition") || error.message.includes("Invalid filter condition"))) {
+        throw error;
+      }
+      
+      // For structure errors (missing properties), return empty result instead of throwing
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[transformFiltersToApiFormat] Validation failed, returning empty result:', error);
+      }
+      return {};
+    }
+    
+    // Re-throw non-FilterValidationError errors
+    throw error;
+  }
+  
+  // Re-validate for the actual processing (this should not throw since we already validated)
+  const validatedFilters = validateFilters(filters, validateConditions);
   
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic

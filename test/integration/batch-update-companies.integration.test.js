@@ -12,8 +12,8 @@
  * 4. Cleans up by deleting the test companies
  */
 
-import { batchCreateCompanies, batchUpdateCompanies, batchDeleteCompanies } from '../../src/objects/batch-companies.js';
-import { ResourceType } from '../../src/types/attio.js';
+const { batchCreateCompanies, batchUpdateCompanies, batchDeleteCompanies } = require('../../src/objects/batch-companies');
+const { ResourceType } = require('../../src/types/attio');
 
 // Skip tests if no API key is available or SKIP_INTEGRATION_TESTS is set
 const shouldRunTests = process.env.ATTIO_API_KEY && !process.env.SKIP_INTEGRATION_TESTS;

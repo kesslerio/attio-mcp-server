@@ -37,7 +37,7 @@ describe('People-Company Search Tool Fix', () => {
     (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
-      method: 'tools/call',
+      method: "tools/call" as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -67,7 +67,7 @@ describe('People-Company Search Tool Fix', () => {
     (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
-      method: 'tools/call',
+      method: "tools/call" as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -94,7 +94,7 @@ describe('People-Company Search Tool Fix', () => {
     (companiesModule.searchCompanies as jest.Mock).mockResolvedValue([]);
 
     const request: CallToolRequest = {
-      method: 'tools/call',
+      method: "tools/call" as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -117,7 +117,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle invalid filter format', async () => {
     const request: CallToolRequest = {
-      method: 'tools/call',
+      method: "tools/call" as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -138,7 +138,7 @@ describe('People-Company Search Tool Fix', () => {
     (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
-      method: 'tools/call',
+      method: "tools/call" as const,
       params: {
         name: 'search-people-by-company',
         arguments: {

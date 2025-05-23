@@ -20,7 +20,7 @@ import { initializeAttioClient } from '../../src/api/attio-client';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Skip tests if no API key or if explicitly disabled
-const SKIP_TESTS = \!process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+const SKIP_TESTS = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 // Increase timeout for API tests
 jest.setTimeout(30000);
@@ -28,7 +28,7 @@ jest.setTimeout(30000);
 describe('Advanced Search API Tests', () => {
   // Initialize API client if not skipping tests
   beforeAll(() => {
-    if (\!SKIP_TESTS) {
+    if (!SKIP_TESTS) {
       const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
       
@@ -212,4 +212,3 @@ describe('Advanced Search API Tests', () => {
     });
   });
 });
-EOL < /dev/null

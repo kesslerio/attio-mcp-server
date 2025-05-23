@@ -26,7 +26,7 @@ export function convertToBoolean(value: any): boolean {
     if (['true', 'yes', 'y', '1'].includes(lowerValue)) return true;
     if (['false', 'no', 'n', '0'].includes(lowerValue)) return false;
   }
-  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'number') return !isNaN(value) && value !== 0;
   
   // If we can't determine, return the original value as boolean
   return Boolean(value);

@@ -244,7 +244,7 @@ describe('Advanced Search Companies Integration', () => {
       
       await expect(advancedSearchCompanies(filters))
         .rejects
-        .toThrow(/error in advanced company search/i);
+        .toThrow(/Failed to search companies with advanced filters/i);
     });
     
     it('should handle unexpected errors', async () => {
@@ -264,7 +264,7 @@ describe('Advanced Search Companies Integration', () => {
       
       await expect(advancedSearchCompanies(filters))
         .rejects
-        .toThrow(/error in advanced company search/i);
+        .toThrow(/Failed to search companies with advanced filters/i);
     });
   });
 });

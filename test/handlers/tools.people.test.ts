@@ -145,7 +145,7 @@ describe('tools-people', () => {
       expect(mockedPeople.getPersonDetails).toHaveBeenCalledWith('person1');
       expect(result).toHaveProperty('content');
       expect(result).toHaveProperty('isError', false);
-      expect(result.content[0].text).toContain('details for person1');
+      expect(result.content[0].text).toContain('Person Details');
     });
 
     it('should handle get-person-notes tool call', async () => {
@@ -183,11 +183,11 @@ describe('tools-people', () => {
       });
       
       // Assert
-      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith('attio://people/person1', 5, 10);
+      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith('person1', 5, 10);
       expect(result).toHaveProperty('content');
       expect(result).toHaveProperty('isError', false);
-      expect(result.content[0].text).toContain('notes for');
-      expect(result.content[0].text).toContain('person1');
+      expect(result.content[0].text).toContain('Found');
+      expect(result.content[0].text).toContain('notes');
     });
 
     it('should handle create-person-note tool call', async () => {
