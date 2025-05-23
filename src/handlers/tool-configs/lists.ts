@@ -8,7 +8,8 @@ import {
   getListDetails,
   getListEntries,
   addRecordToList,
-  removeRecordFromList
+  removeRecordFromList,
+  updateListEntry
 } from "../../objects/lists.js";
 import { 
   GetListsToolConfig, 
@@ -155,7 +156,26 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     name: "remove-record-from-list",
     handler: removeRecordFromList,
     idParams: ["listId", "entryId"],
-  } as ListActionToolConfig
+  } as ListActionToolConfig,
+  updateListEntry: {
+    name: "update-list-entry",
+    handler: updateListEntry,
+    formatResult: (result: AttioListEntry) => {
+      const entryId = result.id?.entry_id || 'unknown';
+      const recordId = result.record_id || 'unknown';
+      
+      // Extract stage information if available
+      let stageInfo = '';
+      if (result.values && result.values.stage) {
+        const stageValue = Array.isArray(result.values.stage) 
+          ? result.values.stage[0]?.value || result.values.stage[0]
+          : result.values.stage.value || result.values.stage;
+        stageInfo = ` - Stage: ${stageValue}`;
+      }
+      
+      return `Successfully updated list entry ${entryId} for record ${recordId}${stageInfo}`;
+    }
+  } as ToolConfig
 };
 
 // Lists tool definitions
@@ -348,6 +368,35 @@ export const listsToolDefinitions = [
         }
       },
       required: ["listId", "entryId"]
+    }
+  },
+  {
+    name: "update-list-entry",
+    description: "Update a list entry (e.g., change stage from 'Interested' to 'Demo Scheduling')",
+    inputSchema: {
+      type: "object",
+      properties: {
+        listId: {
+          type: "string",
+          description: "ID of the list containing the entry"
+        },
+        entryId: {
+          type: "string",
+          description: "ID of the list entry to update"
+        },
+        attributes: {
+          type: "object",
+          description: "Attributes to update on the list entry",
+          properties: {
+            stage: {
+              type: "string",
+              description: "New stage value (e.g., 'Demo Scheduling', 'Interested', 'Won')"
+            }
+          },
+          additionalProperties: true
+        }
+      },
+      required: ["listId", "entryId", "attributes"]
     }
   }
 ];
