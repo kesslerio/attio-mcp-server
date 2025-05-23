@@ -1,6 +1,6 @@
 // Custom type definitions for cacheable-request to resolve the issue with ResponseLike
 declare module 'cacheable-request' {
-  import {ServerResponse, IncomingMessage} from 'http';
+  import {ServerResponse} from 'http';
   import {Readable} from 'stream';
   import {URL} from 'url';
   import {CachePolicy} from 'http-cache-semantics';
@@ -20,23 +20,28 @@ declare module 'cacheable-request' {
     body?: string | Buffer | Readable;
     cache?: string;
     signal?: AbortSignal;
-    retry?: Object;
+    retry?: object;
     maxRetryAfter?: number;
     throwHttpErrors?: boolean;
     followRedirect?: boolean;
     timeout?: number;
-    agent?: Object;
+    agent?: object;
     json?: boolean;
-    cookieJar?: Object;
+    cookieJar?: object;
   }
   
   interface Options {
-    cache?: any;
+    cache?: unknown;
     strictTtl?: boolean;
     automaticFailover?: boolean;
     forceRefresh?: boolean;
-    context?: Object;
+    context?: object;
   }
+
+  type RequestFunction = (
+    input: RequestInput,
+    callback?: (response: ServerResponse | ResponseLike) => void
+  ) => Promise<void>;
   
   interface CacheableRequest {
     (requestInput: RequestInput, options?: Options): Promise<{
@@ -50,60 +55,60 @@ declare module 'cacheable-request' {
       cb?: (response: ServerResponse | ResponseLike) => void
     ): Promise<void>;
     
-    on(event: 'request', listener: (request: Object) => void): this;
+    on(event: 'request', listener: (request: object) => void): this;
     on(event: 'response', listener: (response: ServerResponse | ResponseLike) => void): this;
     on(event: 'error', listener: (error: Error) => void): this;
     
-    once(event: 'request', listener: (request: Object) => void): this;
+    once(event: 'request', listener: (request: object) => void): this;
     once(event: 'response', listener: (response: ServerResponse | ResponseLike) => void): this;
     once(event: 'error', listener: (error: Error) => void): this;
     
-    addListener(event: 'request', listener: (request: Object) => void): this;
+    addListener(event: 'request', listener: (request: object) => void): this;
     addListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     addListener(event: 'error', listener: (error: Error) => void): this;
     
-    prependListener(event: 'request', listener: (request: Object) => void): this;
+    prependListener(event: 'request', listener: (request: object) => void): this;
     prependListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     prependListener(event: 'error', listener: (error: Error) => void): this;
     
-    prependOnceListener(event: 'request', listener: (request: Object) => void): this;
+    prependOnceListener(event: 'request', listener: (request: object) => void): this;
     prependOnceListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     prependOnceListener(event: 'error', listener: (error: Error) => void): this;
     
-    off(event: 'request', listener: (request: Object) => void): this;
+    off(event: 'request', listener: (request: object) => void): this;
     off(event: 'response', listener: (response: ServerResponse | ResponseLike) => void): this;
     off(event: 'error', listener: (error: Error) => void): this;
     
-    removeListener(event: 'request', listener: (request: Object) => void): this;
+    removeListener(event: 'request', listener: (request: object) => void): this;
     removeListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     removeListener(event: 'error', listener: (error: Error) => void): this;
     
-    listeners(event: 'request'): Array<(request: Object) => void>;
+    listeners(event: 'request'): Array<(request: object) => void>;
     listeners(event: 'response'): Array<(response: ServerResponse | ResponseLike) => void>;
     listeners(event: 'error'): Array<(error: Error) => void>;
     
-    rawListeners(event: 'request'): Array<(request: Object) => void>;
+    rawListeners(event: 'request'): Array<(request: object) => void>;
     rawListeners(event: 'response'): Array<(response: ServerResponse | ResponseLike) => void>;
     rawListeners(event: 'error'): Array<(error: Error) => void>;
     
-    emit(event: 'request', request: Object): boolean;
+    emit(event: 'request', request: object): boolean;
     emit(event: 'response', response: ServerResponse | ResponseLike): boolean;
     emit(event: 'error', error: Error): boolean;
   }
   
-  function CacheableRequest(request: Function): CacheableRequest;
+  function CacheableRequest(request: RequestFunction): CacheableRequest;
   
   export = CacheableRequest;
 }

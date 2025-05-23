@@ -8,7 +8,7 @@ import { ResourceType } from '../types/attio.js';
  * @throws Error if URI format is invalid
  */
 export function parseResourceUri(uri: string): [ResourceType, string] {
-  const match = uri.match(/^attio:\/\/([^\/]+)\/(.+)$/);
+  const match = uri.match(/^attio:\/\/([^/]+)\/(.+)$/);
 
   if (!match) {
     throw new Error(`Invalid resource URI format: ${uri}`);

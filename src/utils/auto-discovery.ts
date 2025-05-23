@@ -13,13 +13,13 @@ import {
 
 // Simple logging for auto-discovery - disabled for MCP protocol compatibility
 const log = {
-  info: (msg: string) => {
+  info: () => {
     /* Silent for MCP protocol compatibility */
   },
-  warn: (msg: string) => {
+  warn: () => {
     /* Silent for MCP protocol compatibility */
   },
-  error: (msg: string, error?: any) => {
+  error: (_: string, _error?: unknown) => {
     /* Silent for MCP protocol compatibility */
   },
 };
