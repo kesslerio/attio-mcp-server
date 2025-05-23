@@ -15,11 +15,12 @@ The search system automatically detects and extracts domains from various input 
 
 ### Enhanced Search Functions
 
-#### `searchCompanies(query)`
+#### `searchCompanies(query, options?)`
 The main search function now includes domain prioritization:
 - When a domain is detected in the query, it searches by domain first
 - Domain matches are returned before name-based matches
 - Falls back to name-based search when no domain is found
+- Supports configuration options for advanced control
 
 ```typescript
 // Domain-based search (prioritized)
@@ -27,7 +28,21 @@ const results = await searchCompanies("stripe.com");
 
 // Name-based search (fallback)
 const results = await searchCompanies("Technology Solutions");
+
+// Disable domain prioritization
+const results = await searchCompanies("stripe.com", { prioritizeDomains: false });
+
+// Limit results and enable debug logging
+const results = await searchCompanies("stripe.com", { 
+  maxResults: 10, 
+  debug: true 
+});
 ```
+
+**Search Options:**
+- `prioritizeDomains`: Enable/disable domain prioritization (default: `true`)
+- `maxResults`: Maximum number of results to return
+- `debug`: Enable debug logging (default: follows NODE_ENV)
 
 #### `searchCompaniesByDomain(domain)`
 Direct domain-only search for highest accuracy:

@@ -27,6 +27,11 @@ export {
   createDomainFilter
 } from "./search.js";
 
+// Search types
+export type {
+  CompanySearchOptions
+} from "./search.js";
+
 // Relationship-based queries
 export {
   searchCompaniesByPeople,

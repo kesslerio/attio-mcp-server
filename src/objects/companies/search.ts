@@ -22,9 +22,22 @@ import {
 } from "../../utils/domain-utils.js";
 
 /**
+ * Configuration options for company search
+ */
+export interface CompanySearchOptions {
+  /** Whether to prioritize domain matches over name matches (default: true) */
+  prioritizeDomains?: boolean;
+  /** Maximum number of results to return */
+  maxResults?: number;
+  /** Whether to include debug logging */
+  debug?: boolean;
+}
+
+/**
  * Searches for companies with domain prioritization when available
  * 
  * @param query - Search query string to match against company names or domains
+ * @param options - Optional search configuration
  * @returns Array of matching company objects, prioritized by domain matches
  * @example
  * ```typescript
@@ -33,13 +46,39 @@ import {
  * 
  * const companies = await searchCompanies("acme");
  * // Returns companies with names containing "acme"
+ * 
+ * const companies = await searchCompanies("acme.com", { prioritizeDomains: false });
+ * // Disables domain prioritization, uses name search only
  * ```
  */
-export async function searchCompanies(query: string): Promise<Company[]> {
-  // Check if query contains domain indicators
-  const extractedDomain = extractDomain(query);
+export async function searchCompanies(query: string, options: CompanySearchOptions = {}): Promise<Company[]> {
+  // Early return for empty or whitespace-only queries
+  if (!query || !query.trim()) {
+    return [];
+  }
+
+  // Extract default options
+  const { 
+    prioritizeDomains = true, 
+    maxResults,
+    debug = process.env.NODE_ENV === 'development' || process.env.DEBUG 
+  } = options;
+
+  // Check if query contains domain indicators (only if prioritization is enabled)
+  const extractedDomain = prioritizeDomains ? extractDomain(query) : null;
   
-  if (extractedDomain) {
+  // Debug logging for domain extraction
+  if (debug) {
+    if (extractedDomain) {
+      console.debug(`[searchCompanies] Extracted domain: "${extractedDomain}" from query: "${query}"`);
+    } else if (prioritizeDomains) {
+      console.debug(`[searchCompanies] No domain detected in query: "${query}", using name-based search`);
+    } else {
+      console.debug(`[searchCompanies] Domain prioritization disabled, using name-based search for: "${query}"`);
+    }
+  }
+  
+  if (extractedDomain && prioritizeDomains) {
     // Priority search by domain first
     try {
       const domainResults = await searchCompaniesByDomain(extractedDomain);
@@ -62,7 +101,9 @@ export async function searchCompanies(query: string): Promise<Company[]> {
           }
         }
         
-        return combinedResults;
+        // Apply maxResults limit if specified
+        const finalResults = maxResults ? combinedResults.slice(0, maxResults) : combinedResults;
+        return finalResults;
       }
     } catch (error) {
       // If domain search fails, fall back to name search
@@ -71,7 +112,10 @@ export async function searchCompanies(query: string): Promise<Company[]> {
   }
   
   // Fallback to name-based search
-  return await searchCompaniesByName(query);
+  const nameResults = await searchCompaniesByName(query);
+  
+  // Apply maxResults limit if specified
+  return maxResults ? nameResults.slice(0, maxResults) : nameResults;
 }
 
 /**
@@ -81,7 +125,17 @@ export async function searchCompanies(query: string): Promise<Company[]> {
  * @returns Array of matching company objects
  */
 export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
+  // Early return for empty domain
+  if (!domain || !domain.trim()) {
+    return [];
+  }
+
   const normalizedDomain = normalizeDomain(domain);
+  
+  // Debug logging for domain search
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.debug(`[searchCompaniesByDomain] Searching for domain: "${normalizedDomain}" (original: "${domain}")`);
+  }
   
   // Create filters for domain search
   const filters: ListEntryFilters = {
@@ -117,6 +171,16 @@ export async function searchCompaniesByDomain(domain: string): Promise<Company[]
  * @returns Array of matching company objects
  */
 export async function searchCompaniesByName(query: string): Promise<Company[]> {
+  // Early return for empty query
+  if (!query || !query.trim()) {
+    return [];
+  }
+
+  // Debug logging for name search
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.debug(`[searchCompaniesByName] Searching by name: "${query}"`);
+  }
+
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await searchObject<Company>(ResourceType.COMPANIES, query);
@@ -343,7 +407,17 @@ export function createDomainFilter(
  * @returns Array of matching company objects with domain matches prioritized
  */
 export async function smartSearchCompanies(query: string): Promise<Company[]> {
+  // Early return for empty query
+  if (!query || !query.trim()) {
+    return [];
+  }
+
   const domains = extractAllDomains(query);
+  
+  // Debug logging for smart search
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.debug(`[smartSearchCompanies] Smart search for: "${query}", extracted domains: [${domains.join(', ')}]`);
+  }
   
   if (domains.length > 0) {
     // Multi-domain search with prioritization
