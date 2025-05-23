@@ -4,18 +4,18 @@ import * as peopleModule from '../../src/objects/people/index';
 import * as attributeMappingModule from '../../src/utils/attribute-mapping';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies/index');
-jest.mock('../../src/objects/people/index');
-jest.mock('../../src/utils/attribute-mapping');
-jest.mock('../../src/utils/error-handler');
+vi.mock('../../src/objects/companies/index');
+vi.mock('../../src/objects/people/index');
+vi.mock('../../src/utils/attribute-mapping');
+vi.mock('../../src/utils/error-handler');
 
 describe('tools attribute mapping integration', () => {
   describe('Advanced search with attribute mapping', () => {
     let mockServer: any;
     let callToolHandler: Function;
-    const mockedCompanies = companiesModule as jest.Mocked<typeof companiesModule>;
-    const mockedPeople = peopleModule as jest.Mocked<typeof peopleModule>;
-    const mockedAttributeMapping = attributeMappingModule as jest.Mocked<typeof attributeMappingModule>;
+    const mockedCompanies = companiesModule as vi.Mocked<typeof companiesModule>;
+    const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
+    const mockedAttributeMapping = attributeMappingModule as vi.Mocked<typeof attributeMappingModule>;
 
     // Mock data
     const mockCompanySearchResults = [
@@ -42,11 +42,11 @@ describe('tools attribute mapping integration', () => {
 
     beforeEach(() => {
       // Reset all mocks before each test
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       
       // Setup mock server
       mockServer = {
-        setRequestHandler: jest.fn(),
+        setRequestHandler: vi.fn(),
       };
       
       // Register handlers

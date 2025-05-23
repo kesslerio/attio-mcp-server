@@ -11,8 +11,8 @@ import { ResourceType } from '../../src/types/attio.js';
 import { detectFieldType } from '../../src/api/attribute-types.js';
 
 // Mock the attio client
-jest.mock('../../src/api/attio-client.js');
-jest.mock('../../src/api/attribute-types.js');
+vi.mock('../../src/api/attio-client.js');
+vi.mock('../../src/api/attribute-types.js');
 
 describe('Boolean Attribute Updates Integration', () => {
   let mockApiClient: any;
@@ -20,25 +20,25 @@ describe('Boolean Attribute Updates Integration', () => {
   
   beforeEach(() => {
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset the field type cache
     CompanyValidator.clearFieldTypeCache();
     
     // Set up mock API client
     mockApiClient = {
-      get: jest.fn(),
-      post: jest.fn(),
-      patch: jest.fn(),
-      put: jest.fn(),
-      delete: jest.fn()
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
     };
     
     // Mock the getAttioClient to return our mock client
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
     
     // Mock the detectFieldType to return 'boolean' for specific fields
-    (detectFieldType as jest.Mock).mockImplementation((resourceType: string, fieldName: string) => {
+    (detectFieldType as vi.Mock).mockImplementation((resourceType: string, fieldName: string) => {
       if (fieldName === 'is_active' || fieldName === 'uses_body_composition') {
         return Promise.resolve('boolean');
       }

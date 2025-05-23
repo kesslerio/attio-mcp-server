@@ -5,14 +5,14 @@ import { ResourceType } from '../../src/types/attio';
 import { ToolConfig } from '../../src/handlers/tool-types';
 
 // Mock the registry and company attributes modules
-jest.mock('../../src/handlers/tools/registry');
-jest.mock('../../src/objects/companies/attributes');
-const mockedRegistry = registry as jest.Mocked<typeof registry>;
-const mockedCompanyAttributes = companyAttributes as jest.Mocked<typeof companyAttributes>;
+vi.mock('../../src/handlers/tools/registry');
+vi.mock('../../src/objects/companies/attributes');
+const mockedRegistry = registry as vi.Mocked<typeof registry>;
+const mockedCompanyAttributes = companyAttributes as vi.Mocked<typeof companyAttributes>;
 
 describe('Company Info Tools', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     
     // Mock the registry's findToolConfig function to return mock configurations
     mockedRegistry.findToolConfig.mockImplementation((toolName: string) => {
@@ -20,17 +20,17 @@ describe('Company Info Tools', () => {
         'get-company-basic-info': {
           name: 'get-company-basic-info',
           handler: mockedCompanyAttributes.getCompanyBasicInfo,
-          formatResult: jest.fn((result) => JSON.stringify(result))
+          formatResult: vi.fn((result) => JSON.stringify(result))
         },
         'get-company-business-info': {
           name: 'get-company-business-info',
           handler: mockedCompanyAttributes.getCompanyBusinessInfo,
-          formatResult: jest.fn((result) => JSON.stringify(result))
+          formatResult: vi.fn((result) => JSON.stringify(result))
         },
         'get-company-fields': {
           name: 'get-company-fields',
           handler: mockedCompanyAttributes.getCompanyFields,
-          formatResult: jest.fn((result) => JSON.stringify(result))
+          formatResult: vi.fn((result) => JSON.stringify(result))
         }
       };
       

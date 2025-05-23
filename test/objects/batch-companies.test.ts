@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from 'vitest';
 import { 
   batchCreateCompanies,
   batchUpdateCompanies,
@@ -36,9 +36,9 @@ interface BatchResponse {
 }
 
 // Mock the individual operations
-jest.mock('../../src/objects/companies');
-jest.mock('../../src/api/operations/index', () => ({
-  executeBatchOperations: jest.fn(async (items: BatchItem[], fn: (params: any) => Promise<any>, config?: any): Promise<BatchResponse> => {
+vi.mock('../../src/objects/companies');
+vi.mock('../../src/api/operations/index', () => ({
+  executeBatchOperations: vi.fn(async (items: BatchItem[], fn: (params: any) => Promise<any>, config?: any): Promise<BatchResponse> => {
     const results: BatchResult[] = [];
     let succeeded = 0;
     let failed = 0;
@@ -56,13 +56,13 @@ jest.mock('../../src/api/operations/index', () => ({
     
     return { results, summary: { total: items.length, succeeded, failed } };
   }),
-  batchCreateRecords: (jest.fn() as any).mockRejectedValue(new Error('Batch API not available')),
-  batchUpdateRecords: (jest.fn() as any).mockRejectedValue(new Error('Batch API not available'))
+  batchCreateRecords: (vi.fn() as any).mockRejectedValue(new Error('Batch API not available')),
+  batchUpdateRecords: (vi.fn() as any).mockRejectedValue(new Error('Batch API not available'))
 }));
 
 describe('Batch Company Operations', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   
   describe('batchCreateCompanies', () => {
@@ -76,7 +76,7 @@ describe('Batch Company Operations', () => {
         values: { name: [{ value: 'Company 2' }] }
       };
       
-      (companies.createCompany as jest.MockedFunction<typeof companies.createCompany>)
+      (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)
         .mockResolvedValueOnce(mockCompany1)
         .mockResolvedValueOnce(mockCompany2);
       
@@ -108,7 +108,7 @@ describe('Batch Company Operations', () => {
     });
     
     it('should handle partial failures', async () => {
-      (companies.createCompany as jest.MockedFunction<typeof companies.createCompany>)
+      (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)
         .mockResolvedValueOnce({
           id: { record_id: '1' },
           values: { name: [{ value: 'Company 1' }] }
@@ -151,7 +151,7 @@ describe('Batch Company Operations', () => {
         }
       };
       
-      (companies.updateCompany as jest.MockedFunction<typeof companies.updateCompany>)
+      (companies.updateCompany as vi.MockedFunction<typeof companies.updateCompany>)
         .mockResolvedValueOnce(mockUpdated1)
         .mockResolvedValueOnce(mockUpdated2);
       
@@ -176,7 +176,7 @@ describe('Batch Company Operations', () => {
   
   describe('batchDeleteCompanies', () => {
     it('should delete multiple companies successfully', async () => {
-      (companies.deleteCompany as jest.MockedFunction<typeof companies.deleteCompany>)
+      (companies.deleteCompany as vi.MockedFunction<typeof companies.deleteCompany>)
         .mockResolvedValue(true);
       
       const companyIds = ['1', '2', '3'];
@@ -195,7 +195,7 @@ describe('Batch Company Operations', () => {
     });
     
     it('should handle deletion failures', async () => {
-      (companies.deleteCompany as jest.MockedFunction<typeof companies.deleteCompany>)
+      (companies.deleteCompany as vi.MockedFunction<typeof companies.deleteCompany>)
         .mockResolvedValueOnce(true)
         .mockRejectedValueOnce(new Error('Not found'))
         .mockResolvedValueOnce(true);
@@ -226,7 +226,7 @@ describe('Batch Company Operations', () => {
         { id: { record_id: '3' }, values: { name: [{ value: 'Finance Ltd' }] } }
       ];
       
-      (companies.searchCompanies as jest.MockedFunction<typeof companies.searchCompanies>)
+      (companies.searchCompanies as vi.MockedFunction<typeof companies.searchCompanies>)
         .mockResolvedValueOnce(mockResults1)
         .mockResolvedValueOnce(mockResults2);
       
@@ -262,7 +262,7 @@ describe('Batch Company Operations', () => {
         }
       };
       
-      (companies.getCompanyDetails as jest.MockedFunction<typeof companies.getCompanyDetails>)
+      (companies.getCompanyDetails as vi.MockedFunction<typeof companies.getCompanyDetails>)
         .mockResolvedValueOnce(mockCompany1)
         .mockResolvedValueOnce(mockCompany2);
       
@@ -312,7 +312,7 @@ describe('Batch Company Operations', () => {
       ];
       
       // Mock the createCompany function since the batch API will fail in test
-      (companies.createCompany as jest.MockedFunction<typeof companies.createCompany>)
+      (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)
         .mockResolvedValueOnce(mockCompanies[0])
         .mockResolvedValueOnce(mockCompanies[1])
         .mockResolvedValueOnce(mockCompanies[2]);
@@ -422,7 +422,7 @@ describe('Batch Company Operations', () => {
         values: { name: [{ value: 'Test Company' }] }
       };
       
-      (companies.createCompany as jest.MockedFunction<typeof companies.createCompany>)
+      (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)
         .mockResolvedValue(mockCompany);
       
       const companiesData = Array(15).fill(0).map((_, i) => ({
@@ -440,7 +440,7 @@ describe('Batch Company Operations', () => {
     });
     
     it('should respect continueOnError configuration', async () => {
-      (companies.createCompany as jest.MockedFunction<typeof companies.createCompany>)
+      (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)
         .mockResolvedValueOnce({
           id: { record_id: '1' },
           values: { name: [{ value: 'Company 1' }] }

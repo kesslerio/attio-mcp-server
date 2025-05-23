@@ -7,9 +7,9 @@ import { getAttioClient } from '../../src/api/attio-client';
 import { AttioList, AttioListEntry } from '../../src/types/attio';
 
 // Mock the attio-operations module
-jest.mock('../../src/api/operations/index');
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/operations/index');
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('Lists Batch Operations', () => {
@@ -58,19 +58,19 @@ describe('Lists Batch Operations', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn()
+    post: vi.fn(),
+    get: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('batchGetListsDetails', () => {
     it('should use executeBatchOperations to get multiple lists details', async () => {
       // Setup executeBatchOperations mock to simulate success
-      (attioOperations.executeBatchOperations as jest.Mock).mockImplementation(
+      (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(operations.map(async (op: any) => {
@@ -102,7 +102,7 @@ describe('Lists Batch Operations', () => {
       );
       
       // Mock getListDetails to use in the test
-      jest.spyOn(require('../../src/objects/lists'), 'getListDetails')
+      vi.spyOn(require('../../src/objects/lists'), 'getListDetails')
         .mockImplementation(async (listId) => {
           if (listId === 'list123') return mockList1;
           if (listId === 'list456') return mockList2;
@@ -125,7 +125,7 @@ describe('Lists Batch Operations', () => {
 
     it('should handle errors in list details retrieval', async () => {
       // Setup executeBatchOperations mock to simulate mixed success/failure
-      (attioOperations.executeBatchOperations as jest.Mock).mockReturnValue({
+      (attioOperations.executeBatchOperations as vi.Mock).mockReturnValue({
         results: [
           { id: 'get_list_list123', success: true, data: mockList1 },
           { id: 'get_list_nonexistent', success: false, error: new Error('List not found') }
@@ -157,7 +157,7 @@ describe('Lists Batch Operations', () => {
   describe('batchGetListsEntries', () => {
     it('should use executeBatchOperations to get entries for multiple lists', async () => {
       // Setup executeBatchOperations mock
-      (attioOperations.executeBatchOperations as jest.Mock).mockImplementation(
+      (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(operations.map(async (op: any) => {
@@ -188,7 +188,7 @@ describe('Lists Batch Operations', () => {
       );
       
       // Mock getListEntries to use in the test
-      jest.spyOn(require('../../src/objects/lists'), 'getListEntries')
+      vi.spyOn(require('../../src/objects/lists'), 'getListEntries')
         .mockImplementation(async (listId) => {
           if (listId === 'list123') return [mockListEntry1, mockListEntry2];
           return [];
@@ -212,7 +212,7 @@ describe('Lists Batch Operations', () => {
 
     it('should handle errors in list entries retrieval', async () => {
       // Setup executeBatchOperations mock to simulate error
-      (attioOperations.executeBatchOperations as jest.Mock).mockReturnValue({
+      (attioOperations.executeBatchOperations as vi.Mock).mockReturnValue({
         results: [
           { id: 'get_list_entries_list123_0', success: true, data: [mockListEntry1, mockListEntry2] },
           { id: 'get_list_entries_invalid_1', success: false, error: new Error('Failed to retrieve list entries') }

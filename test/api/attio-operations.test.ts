@@ -8,10 +8,11 @@ import {
 } from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import { ResourceType, Person, Company, AttioListEntry } from '../../src/types/attio';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the axios client
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('Attio Operations', () => {
@@ -38,14 +39,14 @@ describe('Attio Operations', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn()
+    post: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('searchObject', () => {
@@ -102,8 +103,8 @@ describe('Attio Operations', () => {
       });
 
       // Mock the retry functionality to immediately return to avoid timeouts
-      jest.mock('../../src/api/operations/index', () => {
-        const actual = jest.requireActual('../../src/api/operations/index');
+      vi.mock('../../src/api/operations/index', () => {
+        const actual = vi.requireActual('../../src/api/operations/index');
         return {
           ...actual,
           callWithRetry: (fn: any) => fn()

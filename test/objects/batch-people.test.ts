@@ -7,9 +7,9 @@ import { getAttioClient } from '../../src/api/attio-client';
 import { Person } from '../../src/types/attio';
 
 // Mock the attio-operations module
-jest.mock('../../src/api/operations/index');
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/operations/index');
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('People Batch Operations', () => {
@@ -38,13 +38,13 @@ describe('People Batch Operations', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn()
+    post: vi.fn(),
+    get: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('batchSearchPeople', () => {
@@ -63,7 +63,7 @@ describe('People Batch Operations', () => {
       };
       
       // Mock the batchSearchObjects function
-      (attioOperations.batchSearchObjects as jest.Mock).mockResolvedValue(mockResponse);
+      (attioOperations.batchSearchObjects as vi.Mock).mockResolvedValue(mockResponse);
 
       // Call the function
       const result = await batchSearchPeople(['John', 'Jane']);
@@ -79,12 +79,12 @@ describe('People Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchSearchObjects to fail
-      (attioOperations.batchSearchObjects as jest.Mock).mockImplementation(() => {
+      (attioOperations.batchSearchObjects as vi.Mock).mockImplementation(() => {
         throw new Error('Batch operation failed');
       });
       
       // Mock the searchPeople for individual searches in the fallback
-      jest.spyOn(require('../../src/objects/people'), 'searchPeople')
+      vi.spyOn(require('../../src/objects/people'), 'searchPeople')
         .mockResolvedValueOnce([mockPerson1])
         .mockRejectedValueOnce(new Error('Search failed'));
 
@@ -122,7 +122,7 @@ describe('People Batch Operations', () => {
       };
       
       // Mock the batchGetObjectDetails function
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockResolvedValue(mockResponse);
+      (attioOperations.batchGetObjectDetails as vi.Mock).mockResolvedValue(mockResponse);
 
       // Call the function
       const result = await batchGetPeopleDetails(['person123', 'person456']);
@@ -138,12 +138,12 @@ describe('People Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchGetObjectDetails to fail
-      (attioOperations.batchGetObjectDetails as jest.Mock).mockImplementation(() => {
+      (attioOperations.batchGetObjectDetails as vi.Mock).mockImplementation(() => {
         throw new Error('Batch operation failed');
       });
       
       // Mock the getPersonDetails for individual gets in the fallback
-      jest.spyOn(require('../../src/objects/people'), 'getPersonDetails')
+      vi.spyOn(require('../../src/objects/people'), 'getPersonDetails')
         .mockResolvedValueOnce(mockPerson1)
         .mockRejectedValueOnce(new Error('Person not found'));
 

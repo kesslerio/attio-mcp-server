@@ -1,7 +1,7 @@
 /**
  * Tests for filter transformation utilities
  */
-import { describe, expect, test } from '@jest/globals';
+import { describe, expect, test } from 'vitest';
 import { FilterConditionType } from '../../src/types/attio';
 import { transformFiltersToApiFormat } from '../../src/utils/record-utils';
 import { FilterValidationError } from '../../src/errors/api-errors';

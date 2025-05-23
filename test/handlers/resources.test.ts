@@ -6,18 +6,18 @@ import { ResourceType } from '../../src/types/attio';
 import { parseResourceUri } from '../../src/utils/uri-parser';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies/index');
-jest.mock('../../src/objects/people/index');
-jest.mock('../../src/utils/error-handler');
-jest.mock('../../src/utils/uri-parser');
+vi.mock('../../src/objects/companies/index');
+vi.mock('../../src/objects/people/index');
+vi.mock('../../src/utils/error-handler');
+vi.mock('../../src/utils/uri-parser');
 
 describe('resources', () => {
   describe('registerResourceHandlers', () => {
     let mockServer: any;
-    const mockedCompanies = companiesModule as jest.Mocked<typeof companiesModule>;
-    const mockedPeople = peopleModule as jest.Mocked<typeof peopleModule>;
-    const mockedErrorHandler = errorHandler as jest.Mocked<typeof errorHandler>;
-    const mockedParseResourceUri = parseResourceUri as jest.MockedFunction<typeof parseResourceUri>;
+    const mockedCompanies = companiesModule as vi.Mocked<typeof companiesModule>;
+    const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
+    const mockedErrorHandler = errorHandler as vi.Mocked<typeof errorHandler>;
+    const mockedParseResourceUri = parseResourceUri as vi.MockedFunction<typeof parseResourceUri>;
 
     // Mock data
     const mockCompanies = [
@@ -62,11 +62,11 @@ describe('resources', () => {
 
     beforeEach(() => {
       // Reset all mocks before each test
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       
       // Setup mock server
       mockServer = {
-        setRequestHandler: jest.fn(),
+        setRequestHandler: vi.fn(),
       };
     });
 

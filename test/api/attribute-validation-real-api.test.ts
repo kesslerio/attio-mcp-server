@@ -92,7 +92,7 @@ describe(`Attribute Validation with Real Attio API (${SKIP_TESTS ? 'SKIPPED' : '
     clearAttributeCache();
     
     // Set longer timeout for API tests
-    jest.setTimeout(30000); // 30 seconds
+    vi.setTimeout(30000); // 30 seconds
   });
   
   // Clean up after tests if they ran

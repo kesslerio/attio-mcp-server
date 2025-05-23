@@ -272,6 +272,75 @@ These stages are likely used to track prospects through the sales process, thoug
 6. Resolved: use the `get-company-lists` tool to see which lists a company belongs to (Issue #184)
 7. Type checking in the MCP server appears inconsistent
 8. Intermittent connectivity issues with certain tools
+9. **Facilities Field Select Options Issue**: Using incorrect values for the `facilities` select field causes API errors
+
+### Facilities Field Select Options Issue
+
+**Issue**: The `facilities` field is a select field with specific predefined options. Using incorrect values causes API errors.
+
+**Error Example**:
+```
+Request
+
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5 locations in Kansas",  // ❌ INCORRECT - descriptive text
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+
+Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316-5453-ae0d-c7cb3ec29ef2: Bad Request: Cannot find select option with title "2-5 locations in Kansas".
+```
+
+**Solution**: Use only the predefined select options for the `facilities` field:
+
+#### Valid Facilities Options:
+- `"1"` - Single location
+- `"2-5"` - 2-5 locations  
+- `"6-10"` - 6-10 locations
+- `"11-25"` - 11-25 locations
+- `"26-50"` - 26-50 locations
+- `"51-100"` - 51-100 locations
+- `"101-250"` - 101-250 locations
+- `"251+"` - 251+ locations
+- `"Unknown"` - Unknown number of locations
+
+**Correct Usage**:
+```json
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5",  // ✅ CORRECT - use exact option value
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+```
+
+**Key Points**:
+1. Always use the exact option value, not descriptive text
+2. The `facilities` field expects a string value matching one of the predefined options
+3. Geographic information (like "in Kansas") should be stored in location fields, not the facilities count field
 
 ## ShapeScale-Specific Features
 

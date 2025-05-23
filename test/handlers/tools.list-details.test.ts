@@ -7,13 +7,13 @@ import { getListDetails } from '../../src/objects/lists';
 import { ResourceType } from '../../src/types/attio';
 
 // Mock the lists module
-jest.mock('../../src/objects/lists', () => ({
-  getListDetails: jest.fn()
+vi.mock('../../src/objects/lists', () => ({
+  getListDetails: vi.fn()
 }));
 
 describe('get-list-details tool', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should find the tool config correctly', () => {
@@ -41,7 +41,7 @@ describe('get-list-details tool', () => {
       entry_count: 10
     };
     
-    (getListDetails as jest.Mock).mockResolvedValue(mockList);
+    (getListDetails as vi.Mock).mockResolvedValue(mockList);
 
     // Create a mock request
     const mockRequest = {
@@ -108,7 +108,7 @@ describe('get-list-details tool', () => {
       data: { message: 'List not found' }
     };
     
-    (getListDetails as jest.Mock).mockRejectedValue(mockError);
+    (getListDetails as vi.Mock).mockRejectedValue(mockError);
 
     // Create a mock request
     const mockRequest = {
