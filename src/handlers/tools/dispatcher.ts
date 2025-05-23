@@ -274,6 +274,37 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
     }
 
+    // Handle smartSearch tools
+    if (toolType === 'smartSearch') {
+      const query = request.params.arguments?.query as string;
+      try {
+        const searchConfig = toolConfig as SearchToolConfig;
+        const results = await searchConfig.handler(query);
+        const formattedResults = searchConfig.formatResult(results);
+
+        // Check if the formatter already includes a header to avoid duplication
+        const hasHeader =
+          typeof formattedResults === 'string' &&
+          formattedResults.startsWith('Found ');
+
+        if (hasHeader) {
+          // If the formatter already includes a "Found" header, use it as is
+          return formatResponse(formattedResults);
+        } else {
+          // For smart search tools, we need to add the header
+          const header = `Found ${results.length} ${resourceType} (smart search):`;
+          return formatResponse(`${header}\n${formattedResults}`);
+        }
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error('Unknown error'),
+          `/objects/${resourceType}/records/query`,
+          'POST',
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+
     // Handle details tools
     if (toolType === 'details') {
       let id: string;
