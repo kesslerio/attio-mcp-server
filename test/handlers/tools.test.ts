@@ -146,7 +146,7 @@ describe('tools', () => {
     });
 
     describe('Tool handlers', () => {
-      let callToolHandler: Function;
+      let callToolHandler: (...args: any[]) => any;
 
       beforeEach(() => {
         // Register handlers

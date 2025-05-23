@@ -154,7 +154,7 @@ export interface ActivityFilter {
 export interface AttioRecord {
   id: {
     record_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   values: {
     name?: Array<AttioValue<string>>;
@@ -162,9 +162,9 @@ export interface AttioRecord {
     phone?: Array<AttioValue<string>>;
     industry?: Array<AttioValue<string>>;
     website?: Array<AttioValue<string>>;
-    [key: string]: any; // Other fields
+    [key: string]: unknown; // Other fields
   };
-  [key: string]: any; // Additional top-level fields
+  [key: string]: unknown; // Additional top-level fields
 }
 
 /**
@@ -214,7 +214,7 @@ export interface BatchConfig {
 export interface AttioNote {
   id: {
     note_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   title: string;
   content: string;
@@ -223,7 +223,7 @@ export interface AttioNote {
   parent_record_id: string;
   created_at: string;
   updated_at: string;
-  [key: string]: any; // Additional fields
+  [key: string]: unknown; // Additional fields
 }
 
 /**
@@ -232,7 +232,7 @@ export interface AttioNote {
 export interface AttioList {
   id: {
     list_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   title: string;
   name?: string; // Adding name property as it appears in some API responses
@@ -242,7 +242,7 @@ export interface AttioList {
   created_at: string;
   updated_at: string;
   entry_count?: number;
-  [key: string]: any; // Additional fields
+  [key: string]: unknown; // Additional fields
 }
 
 /**
@@ -251,14 +251,14 @@ export interface AttioList {
 export interface AttioListEntry {
   id: {
     entry_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   list_id: string;
   record_id?: string; // Making this optional to better match the API reality
   created_at: string;
   updated_at?: string;
   record?: AttioRecord; // Optional included record data
-  [key: string]: any; // Additional fields
+  [key: string]: unknown; // Additional fields
 }
 
 /**
@@ -267,7 +267,7 @@ export interface AttioListEntry {
 export interface AttioTask {
   id: {
     task_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   content: string;
   status: string;
@@ -277,7 +277,7 @@ export interface AttioTask {
     name?: string;
     email?: string;
     avatar_url?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   due_date?: string;
   linked_records?: Array<{
@@ -285,11 +285,11 @@ export interface AttioTask {
     object_id?: string;
     object_slug?: string;
     title?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   created_at: string;
   updated_at: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -335,11 +335,11 @@ export interface AttioListResponse<T> {
   pagination?: {
     total_count: number;
     next_cursor?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   has_more?: boolean;
   next_cursor?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -347,7 +347,7 @@ export interface AttioListResponse<T> {
  */
 export interface AttioSingleResponse<T> {
   data: T;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Specific record types
@@ -356,7 +356,7 @@ export interface Person extends AttioRecord {
     name?: Array<{ value: string }>;
     email?: Array<{ value: string }>;
     phone?: Array<{ value: string }>;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -377,7 +377,7 @@ export interface Company extends AttioRecord {
     name?: Array<{ value: string }>;
     website?: Array<{ value: string }>;
     industry?: Array<{ value: string }>;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -385,7 +385,7 @@ export interface Company extends AttioRecord {
  * Record attribute types
  */
 export interface RecordAttributes {
-  [key: string]: any; // Generic attribute map
+  [key: string]: unknown; // Generic attribute map
 }
 
 /**

@@ -20,14 +20,14 @@ declare module 'cacheable-request' {
     body?: string | Buffer | Readable;
     cache?: string;
     signal?: AbortSignal;
-    retry?: Object;
+    retry?: Record<string, unknown>;
     maxRetryAfter?: number;
     throwHttpErrors?: boolean;
     followRedirect?: boolean;
     timeout?: number;
-    agent?: Object;
+    agent?: Record<string, unknown>;
     json?: boolean;
-    cookieJar?: Object;
+    cookieJar?: Record<string, unknown>;
   }
 
   interface Options {
@@ -35,7 +35,7 @@ declare module 'cacheable-request' {
     strictTtl?: boolean;
     automaticFailover?: boolean;
     forceRefresh?: boolean;
-    context?: Object;
+    context?: Record<string, unknown>;
   }
 
   interface CacheableRequest {
@@ -53,21 +53,21 @@ declare module 'cacheable-request' {
       cb?: (response: ServerResponse | ResponseLike) => void
     ): Promise<void>;
 
-    on(event: 'request', listener: (request: Object) => void): this;
+    on(event: 'request', listener: (request: Record<string, unknown>) => void): this;
     on(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     on(event: 'error', listener: (error: Error) => void): this;
 
-    once(event: 'request', listener: (request: Object) => void): this;
+    once(event: 'request', listener: (request: Record<string, unknown>) => void): this;
     once(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     once(event: 'error', listener: (error: Error) => void): this;
 
-    addListener(event: 'request', listener: (request: Object) => void): this;
+    addListener(event: 'request', listener: (request: Record<string, unknown>) => void): this;
     addListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
@@ -76,7 +76,7 @@ declare module 'cacheable-request' {
 
     prependListener(
       event: 'request',
-      listener: (request: Object) => void
+      listener: (request: Record<string, unknown>) => void
     ): this;
     prependListener(
       event: 'response',
@@ -86,7 +86,7 @@ declare module 'cacheable-request' {
 
     prependOnceListener(
       event: 'request',
-      listener: (request: Object) => void
+      listener: (request: Record<string, unknown>) => void
     ): this;
     prependOnceListener(
       event: 'response',
@@ -94,38 +94,38 @@ declare module 'cacheable-request' {
     ): this;
     prependOnceListener(event: 'error', listener: (error: Error) => void): this;
 
-    off(event: 'request', listener: (request: Object) => void): this;
+    off(event: 'request', listener: (request: Record<string, unknown>) => void): this;
     off(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     off(event: 'error', listener: (error: Error) => void): this;
 
-    removeListener(event: 'request', listener: (request: Object) => void): this;
+    removeListener(event: 'request', listener: (request: Record<string, unknown>) => void): this;
     removeListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     removeListener(event: 'error', listener: (error: Error) => void): this;
 
-    listeners(event: 'request'): Array<(request: Object) => void>;
+    listeners(event: 'request'): Array<(request: Record<string, unknown>) => void>;
     listeners(
       event: 'response'
     ): Array<(response: ServerResponse | ResponseLike) => void>;
     listeners(event: 'error'): Array<(error: Error) => void>;
 
-    rawListeners(event: 'request'): Array<(request: Object) => void>;
+    rawListeners(event: 'request'): Array<(request: Record<string, unknown>) => void>;
     rawListeners(
       event: 'response'
     ): Array<(response: ServerResponse | ResponseLike) => void>;
     rawListeners(event: 'error'): Array<(error: Error) => void>;
 
-    emit(event: 'request', request: Object): boolean;
+    emit(event: 'request', request: Record<string, unknown>): boolean;
     emit(event: 'response', response: ServerResponse | ResponseLike): boolean;
     emit(event: 'error', error: Error): boolean;
   }
 
-  function CacheableRequest(request: Function): CacheableRequest;
+  function CacheableRequest(request: (...args: any[]) => any): CacheableRequest;
 
   export = CacheableRequest;
 }
