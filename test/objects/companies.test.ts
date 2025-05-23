@@ -423,13 +423,8 @@ describe('companies', () => {
         'companies',
         companyId,
         {
-<<<<<<< HEAD
-          name: { value: 'Updated Company' },
-          categories: { value: 'Finance' }
-=======
           name: 'Updated Company',
           categories: 'Finance' // Note: 'industry' is mapped to 'categories'
->>>>>>> 745a9c4 (\Fix: Resolve test failures in PR #235 for unused imports cleanup)
         }
       );
       expect(result).toEqual(mockResponse);
@@ -470,11 +465,7 @@ describe('companies', () => {
       expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
         'companies',
         companyId,
-<<<<<<< HEAD
-        { categories: { value: attributeValue } }
-=======
         { categories: 'Healthcare' } // Note: 'industry' is mapped to 'categories' 
->>>>>>> 745a9c4 (\Fix: Resolve test failures in PR #235 for unused imports cleanup)
       );
       expect(result).toEqual(mockResponse);
     });
