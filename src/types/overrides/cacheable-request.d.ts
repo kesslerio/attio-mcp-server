@@ -31,7 +31,7 @@ declare module 'cacheable-request' {
   }
   
   interface Options {
-    cache?: any;
+    cache?: unknown;
     strictTtl?: boolean;
     automaticFailover?: boolean;
     forceRefresh?: boolean;

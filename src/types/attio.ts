@@ -8,7 +8,7 @@ import { RetryConfig, ListEntryFilter } from "../api/operations/index.js";
  */
 export interface AttioValue<T> {
   value: T;
-  [key: string]: any; // Additional fields that might be present
+  [key: string]: unknown; // Additional fields that might be present
 }
 
 /**
@@ -178,7 +178,7 @@ export interface BatchItemResult<R> {
   id?: string;     // Optional ID matching the request ID if provided
   success: boolean; // Whether this specific operation succeeded
   data?: R;        // The result data if successful
-  error?: any;     // Error information if failed
+  error?: unknown;     // Error information if failed
 }
 
 /**
@@ -315,12 +315,12 @@ export enum RelationshipType {
  */
 export interface AttioErrorResponse {
   status?: number;
-  data?: any;
+  data?: unknown;
   headers?: Record<string, string>;
   error?: string;
   message?: string;
-  details?: any;
-  [key: string]: any;
+  details?: unknown;
+  [key: string]: unknown;
 }
 
 /**
@@ -365,7 +365,7 @@ export interface PersonCreateAttributes {
   phone_numbers?: string[];
   job_title?: string;
   company?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Company extends AttioRecord {

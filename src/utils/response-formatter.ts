@@ -34,9 +34,9 @@ export interface ToolResponse {
     code: number;
     message: string;
     type?: string;
-    details?: any;
+    details?: unknown;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -60,7 +60,7 @@ export interface ListResponse<T> {
  */
 export function formatSuccessResponse(
   message: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   return {
     content: [
@@ -89,7 +89,7 @@ export function formatListResponse<T>(
   items: T[],
   formatter: (item: T) => string,
   pagination?: { total?: number; hasMore?: boolean; nextCursor?: string },
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   const itemsText = items.length > 0
     ? items.map(formatter).join('\n')
@@ -132,7 +132,7 @@ export function formatRecordResponse<T>(
   title: string,
   record: T,
   formatter: (record: T) => string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   return {
     content: [
@@ -159,8 +159,8 @@ export function formatRecordResponse<T>(
  */
 export function formatJsonResponse(
   title: string,
-  data: any,
-  metadata?: Record<string, any>
+  data: unknown,
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   const response = {
     content: [
@@ -190,7 +190,7 @@ export function formatJsonResponse(
 export function formatMarkdownResponse(
   title: string,
   markdown: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   return {
     content: [
@@ -215,7 +215,7 @@ export function formatMarkdownResponse(
 export function formatMultiPartResponse(
   title: string,
   parts: ResponseContent[],
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   return {
     content: [
@@ -237,7 +237,7 @@ export function formatMultiPartResponse(
  * @returns Formatted tool response
  */
 export function formatEmptyResponse(
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): ToolResponse {
   return {
     content: [],
@@ -259,7 +259,7 @@ export function formatErrorResponse(
   message: string,
   code: number = 500,
   type: string = 'unknown_error',
-  details?: any
+  details?: unknown
 ): ToolResponse {
   const response = {
     content: [
