@@ -24,7 +24,7 @@ import {
 import {
   recordToolConfigs,
   recordToolDefinitions
-} from "../tool-configs/records.js";
+} from "../tool-configs/records/index.js";
 
 /**
  * Consolidated tool configurations from modular files

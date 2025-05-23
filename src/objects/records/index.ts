@@ -1,7 +1,7 @@
 /**
  * Record-related functionality
  */
-import { getAttioClient } from '../api/attio-client.js';
+import { getAttioClient } from '../../api/attio-client.js';
 import {
   createRecord,
   getRecord,
@@ -12,13 +12,13 @@ import {
   batchUpdateRecords,
   BatchConfig,
   BatchResponse,
-} from '../api/operations/index.js';
+} from '../../api/operations/index.js';
 import {
   ResourceType,
   AttioRecord,
   RecordAttributes,
   RecordListParams,
-} from '../types/attio.js';
+} from '../../types/attio.js';
 
 /**
  * Creates a new record for a specific object type
@@ -99,6 +99,7 @@ export async function createObjectRecord<T extends AttioRecord>(
     }
   }
 }
+
 
 /**
  * Gets details for a specific record
@@ -479,79 +480,9 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
   }
 }
 
-/**
- * Helper function to format record attribute values based on their type
- *
- * @param key - Attribute key
- * @param value - Attribute value to format
- * @returns Properly formatted attribute value for the API
- */
-export function formatRecordAttribute(key: string, value: any): any {
-  // If value is null or undefined, return it as is
-  if (value === null || value === undefined) {
-    return value;
-  }
 
-  // Handle Date objects
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  // Handle different attribute types based on common patterns
-
-  // Currency attributes
-  if (
-    typeof value === 'number' &&
-    (key.includes('price') || key.includes('revenue') || key.includes('cost'))
-  ) {
-    // Simple number format
-    return value;
-
-    // Alternative: Full currency object format
-    // return {
-    //   amount: value,
-    //   currency: 'USD' // Default currency
-    // };
-  }
-
-  // Address attributes
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    (key.includes('address') || key.includes('location'))
-  ) {
-    // Check if it's already in the expected format
-    if ('street' in value || 'city' in value || 'country' in value) {
-      return value;
-    }
-  }
-
-  // Link attributes (references to other records)
-  if (typeof value === 'string' && value.match(/^record_[a-z0-9]+$/)) {
-    return {
-      record_id: value,
-    };
-  }
-
-  // Default: return as is
-  return value;
-}
-
-/**
- * Formats a complete set of record attributes for API requests
- *
- * @param attributes - Raw attribute key-value pairs
- * @returns Formatted attributes object ready for API submission
- */
-export function formatRecordAttributes(
-  attributes: Record<string, any>
-): RecordAttributes {
-  const formattedAttributes: RecordAttributes = {};
-
-  for (const [key, value] of Object.entries(attributes)) {
-    formattedAttributes[key] = formatRecordAttribute(key, value);
-  }
-
-  return formattedAttributes;
-}
+// Re-export formatting utilities
+export {
+  formatRecordAttribute,
+  formatRecordAttributes,
+} from './formatters.js';
