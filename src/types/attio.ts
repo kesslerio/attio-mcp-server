@@ -1,7 +1,7 @@
 /**
  * Common type definitions for Attio API responses and entities
  */
-import { RetryConfig, ListEntryFilter } from "../api/operations/index.js";
+import { RetryConfig } from '../api/operations/index.js';
 
 /**
  * Base interface for Attio record values
@@ -18,45 +18,45 @@ export enum FilterConditionType {
   // Equality conditions
   EQUALS = 'equals',
   NOT_EQUALS = 'not_equals',
-  
+
   // String conditions
   CONTAINS = 'contains',
   NOT_CONTAINS = 'not_contains',
   STARTS_WITH = 'starts_with',
   ENDS_WITH = 'ends_with',
-  
+
   // Numeric/Date conditions
   GREATER_THAN = 'greater_than',
   LESS_THAN = 'less_than',
   GREATER_THAN_OR_EQUALS = 'greater_than_or_equals',
   LESS_THAN_OR_EQUALS = 'less_than_or_equals',
-  
+
   // Date range specific conditions
   BEFORE = 'before',
   AFTER = 'after',
   BETWEEN = 'between',
-  
+
   // Existence conditions
   IS_EMPTY = 'is_empty',
   IS_NOT_EMPTY = 'is_not_empty',
-  IS_SET = 'is_set', 
-  IS_NOT_SET = 'is_not_set'
+  IS_SET = 'is_set',
+  IS_NOT_SET = 'is_not_set',
 }
 
 /**
  * Type guard to check if a string is a valid filter condition
- * 
+ *
  * This function validates that a given string represents a valid filter condition
  * type as defined in the FilterConditionType enum. It provides type safety when
  * working with filter conditions from external input.
- * 
+ *
  * @param condition - The string condition to check
  * @returns True if the condition is a valid FilterConditionType, false otherwise
- * 
+ *
  * @example
  * ```typescript
  * const userCondition = "equals";
- * 
+ *
  * if (isValidFilterCondition(userCondition)) {
  *   // TypeScript knows userCondition is a FilterConditionType here
  *   // Safe to use in filter operations
@@ -66,8 +66,12 @@ export enum FilterConditionType {
  * }
  * ```
  */
-export function isValidFilterCondition(condition: string): condition is FilterConditionType {
-  return Object.values(FilterConditionType).includes(condition as FilterConditionType);
+export function isValidFilterCondition(
+  condition: string
+): condition is FilterConditionType {
+  return Object.values(FilterConditionType).includes(
+    condition as FilterConditionType
+  );
 }
 
 /**
@@ -78,7 +82,7 @@ export enum RelativeDateUnit {
   WEEK = 'week',
   MONTH = 'month',
   QUARTER = 'quarter',
-  YEAR = 'year'
+  YEAR = 'year',
 }
 
 /**
@@ -94,7 +98,7 @@ export enum DateRangePreset {
   THIS_QUARTER = 'this_quarter',
   LAST_QUARTER = 'last_quarter',
   THIS_YEAR = 'this_year',
-  LAST_YEAR = 'last_year'
+  LAST_YEAR = 'last_year',
 }
 
 /**
@@ -133,7 +137,7 @@ export enum InteractionType {
   CALENDAR = 'calendar',
   PHONE = 'phone',
   MEETING = 'meeting',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**
@@ -148,7 +152,7 @@ export interface ActivityFilter {
  * Base interface for Attio records (common between people and companies)
  */
 export interface AttioRecord {
-  id: { 
+  id: {
     record_id: string;
     [key: string]: any;
   };
@@ -167,29 +171,29 @@ export interface AttioRecord {
  * Interface for a batch request item
  */
 export interface BatchRequestItem<T> {
-  params: T;      // The parameters for this specific operation
-  id?: string;    // Optional ID to track this specific request
+  params: T; // The parameters for this specific operation
+  id?: string; // Optional ID to track this specific request
 }
 
 /**
  * Interface for a batch operation result item
  */
 export interface BatchItemResult<R> {
-  id?: string;     // Optional ID matching the request ID if provided
+  id?: string; // Optional ID matching the request ID if provided
   success: boolean; // Whether this specific operation succeeded
-  data?: R;        // The result data if successful
-  error?: unknown;     // Error information if failed
+  data?: R; // The result data if successful
+  error?: unknown; // Error information if failed
 }
 
 /**
  * Interface for a batch operation response
  */
 export interface BatchResponse<R> {
-  results: BatchItemResult<R>[];  // Individual results for each request
+  results: BatchItemResult<R>[]; // Individual results for each request
   summary: {
-    total: number;    // Total number of operations attempted
+    total: number; // Total number of operations attempted
     succeeded: number; // Number of successful operations
-    failed: number;    // Number of failed operations
+    failed: number; // Number of failed operations
   };
 }
 
@@ -197,7 +201,7 @@ export interface BatchResponse<R> {
  * Configuration options for batch operations
  */
 export interface BatchConfig {
-  maxBatchSize: number;     // Maximum number of operations in a single batch
+  maxBatchSize: number; // Maximum number of operations in a single batch
   continueOnError: boolean; // Whether to continue processing remaining items on error
   retryConfig?: RetryConfig; // Optional retry configuration for batch operations
 }
@@ -208,7 +212,7 @@ export interface BatchConfig {
  * Note record type
  */
 export interface AttioNote {
-  id: { 
+  id: {
     note_id: string;
     [key: string]: any;
   };
@@ -296,7 +300,7 @@ export enum ResourceType {
   COMPANIES = 'companies',
   LISTS = 'lists',
   RECORDS = 'records',
-  TASKS = 'tasks'
+  TASKS = 'tasks',
 }
 
 /**
@@ -304,10 +308,10 @@ export enum ResourceType {
  * Defines the types of relationships between different record types
  */
 export enum RelationshipType {
-  WORKS_AT = 'works_at',       // Person to Company relationship
-  EMPLOYS = 'employs',         // Company to Person relationship
-  BELONGS_TO_LIST = 'in_list',  // Any record to List relationship
-  HAS_NOTE = 'has_note'        // Any record to Note relationship
+  WORKS_AT = 'works_at', // Person to Company relationship
+  EMPLOYS = 'employs', // Company to Person relationship
+  BELONGS_TO_LIST = 'in_list', // Any record to List relationship
+  HAS_NOTE = 'has_note', // Any record to Note relationship
 }
 
 /**
@@ -349,9 +353,9 @@ export interface AttioSingleResponse<T> {
 // Specific record types
 export interface Person extends AttioRecord {
   values: {
-    name?: Array<{value: string}>;
-    email?: Array<{value: string}>;
-    phone?: Array<{value: string}>;
+    name?: Array<{ value: string }>;
+    email?: Array<{ value: string }>;
+    phone?: Array<{ value: string }>;
     [key: string]: any;
   };
 }
@@ -370,9 +374,9 @@ export interface PersonCreateAttributes {
 
 export interface Company extends AttioRecord {
   values: {
-    name?: Array<{value: string}>;
-    website?: Array<{value: string}>;
-    industry?: Array<{value: string}>;
+    name?: Array<{ value: string }>;
+    website?: Array<{ value: string }>;
+    industry?: Array<{ value: string }>;
     [key: string]: any;
   };
 }
@@ -388,8 +392,8 @@ export interface RecordAttributes {
  * Parameters for creating a record
  */
 export interface RecordCreateParams {
-  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
-  objectId?: string;         // Alternative to objectSlug - direct object ID
+  objectSlug: string; // Object slug (e.g., 'companies', 'people')
+  objectId?: string; // Alternative to objectSlug - direct object ID
   attributes: RecordAttributes; // Record attributes as key-value pairs
 }
 
@@ -397,9 +401,9 @@ export interface RecordCreateParams {
  * Parameters for updating a record
  */
 export interface RecordUpdateParams {
-  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
-  objectId?: string;         // Alternative to objectSlug - direct object ID
-  recordId: string;          // ID of the record to update
+  objectSlug: string; // Object slug (e.g., 'companies', 'people')
+  objectId?: string; // Alternative to objectSlug - direct object ID
+  recordId: string; // ID of the record to update
   attributes: RecordAttributes; // Record attributes to update
 }
 
@@ -407,13 +411,13 @@ export interface RecordUpdateParams {
  * Parameters for listing records
  */
 export interface RecordListParams {
-  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
-  objectId?: string;         // Alternative to objectSlug - direct object ID
-  page?: number;             // Page number to retrieve (starting at 1)
-  pageSize?: number;         // Number of items per page
-  query?: string;            // Search query to filter records
-  attributes?: string[];     // List of attribute slugs to include
-  sort?: string;             // Attribute slug to sort by
+  objectSlug: string; // Object slug (e.g., 'companies', 'people')
+  objectId?: string; // Alternative to objectSlug - direct object ID
+  page?: number; // Page number to retrieve (starting at 1)
+  pageSize?: number; // Number of items per page
+  query?: string; // Search query to filter records
+  attributes?: string[]; // List of attribute slugs to include
+  sort?: string; // Attribute slug to sort by
   direction?: 'asc' | 'desc'; // Sort direction
 }
 
@@ -421,7 +425,7 @@ export interface RecordListParams {
  * Record item for batch operations
  */
 export interface BatchRecordItem {
-  id?: string;               // Record ID for updates, omit for creation
+  id?: string; // Record ID for updates, omit for creation
   attributes: RecordAttributes; // Record attributes
 }
 
@@ -429,8 +433,8 @@ export interface BatchRecordItem {
  * Parameters for batch creating records
  */
 export interface RecordBatchCreateParams {
-  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
-  objectId?: string;         // Alternative to objectSlug - direct object ID
+  objectSlug: string; // Object slug (e.g., 'companies', 'people')
+  objectId?: string; // Alternative to objectSlug - direct object ID
   records: Omit<BatchRecordItem, 'id'>[]; // Array of records to create
 }
 
@@ -438,7 +442,7 @@ export interface RecordBatchCreateParams {
  * Parameters for batch updating records
  */
 export interface RecordBatchUpdateParams {
-  objectSlug: string;        // Object slug (e.g., 'companies', 'people')
-  objectId?: string;         // Alternative to objectSlug - direct object ID
+  objectSlug: string; // Object slug (e.g., 'companies', 'people')
+  objectId?: string; // Alternative to objectSlug - direct object ID
   records: BatchRecordItem[]; // Array of records to update with their IDs
 }

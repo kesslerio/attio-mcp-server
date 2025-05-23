@@ -4,51 +4,49 @@
  */
 
 // External dependencies
-import { 
+import {
   FilterValidationError,
   RelationshipFilterError,
-  ListRelationshipError 
-} from "../../errors/api-errors.js";
+  ListRelationshipError,
+} from '../../errors/api-errors.js';
 
 // Internal module dependencies
 import {
   ListEntryFilters,
-  ListEntryFilter,
   FilterConditionType,
   RelationshipType,
   ResourceType,
   RelationshipFilterConfig,
   ATTRIBUTES,
-  RelationshipRateLimitError
-} from "./types.js";
+  RelationshipRateLimitError,
+} from './types.js';
 // import { isValidListId } from "../../validation.js";
-import { createEqualsFilter } from "./builders.js";
-import { 
+import { createEqualsFilter } from './builders.js';
+import {
   getCachedRelationshipFilter,
   cacheRelationshipFilter,
   getCachedListFilter,
   cacheListFilter,
-  hashFilters 
-} from "./cache.js";
+  hashFilters,
+} from './cache.js';
 
 /**
  * Applies rate limiting to relationship queries
  * Throws RelationshipRateLimitError if the rate limit is exceeded
- * 
+ *
  * @param req - Request object
  * @param relationshipType - Type of relationship query
  * @param isNested - Whether this is a nested relationship query
  * @throws RelationshipRateLimitError if rate limit exceeded
  */
 export function applyRateLimit(
-  req: any, 
-  relationshipType: string, 
+  req: any,
+  relationshipType: string,
   isNested: boolean = false
 ): void {
   // Check the rate limit
   // TODO: Restore when checkRelationshipQueryRateLimit is available
   // const result = checkRelationshipQueryRateLimit(req, relationshipType, isNested);
-  
   // If not allowed, throw rate limit error
   // if (!result.allowed) {
   //   throw new RelationshipRateLimitError(
@@ -63,11 +61,13 @@ export function applyRateLimit(
 /**
  * Core function to create relationship-based filters
  * This translates our internal representation to the format expected by the Attio API
- * 
+ *
  * @param config - Relationship filter configuration
  * @returns Filter in the format expected by Attio API
  */
-function createRelationshipFilter(config: RelationshipFilterConfig): ListEntryFilters {
+function createRelationshipFilter(
+  config: RelationshipFilterConfig
+): ListEntryFilters {
   // Map our ResourceType to Attio API object names
   const getObjectName = (type: ResourceType): string => {
     switch (type) {
@@ -83,32 +83,32 @@ function createRelationshipFilter(config: RelationshipFilterConfig): ListEntryFi
         throw new Error(`Unsupported resource type: ${type}`);
     }
   };
-  
+
   // The relationship field should be a custom attribute in the filter
   return {
     filters: [
       {
         attribute: {
-          slug: ATTRIBUTES.RELATIONSHIP
+          slug: ATTRIBUTES.RELATIONSHIP,
         },
         condition: FilterConditionType.EQUALS,
         value: {
           type: config.relationshipType,
           target: {
             object: getObjectName(config.targetType),
-            filter: config.targetFilters
-          }
-        }
-      }
+            filter: config.targetFilters,
+          },
+        },
+      },
     ],
-    matchAny: false
+    matchAny: false,
   };
 }
 
 /**
  * Creates a filter for people based on their associated company attributes
  * Includes rate limiting for this resource-intensive operation
- * 
+ *
  * @param companyFilter - Filters to apply to the related companies
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
  * @returns Filter for finding people based on company attributes
@@ -123,9 +123,13 @@ export function createPeopleByCompanyFilter(
     if (req) {
       applyRateLimit(req, RelationshipType.WORKS_AT, false);
     }
-    
+
     // Validate company filters
-    if (!companyFilter || !companyFilter.filters || companyFilter.filters.length === 0) {
+    if (
+      !companyFilter ||
+      !companyFilter.filters ||
+      companyFilter.filters.length === 0
+    ) {
       throw new RelationshipFilterError(
         'Company filter must contain at least one valid filter condition',
         ResourceType.PEOPLE.toString(),
@@ -133,15 +137,15 @@ export function createPeopleByCompanyFilter(
         RelationshipType.WORKS_AT
       );
     }
-    
+
     // Create a relationship filter configuration
     const relationshipConfig: RelationshipFilterConfig = {
       sourceType: ResourceType.PEOPLE,
       targetType: ResourceType.COMPANIES,
       relationshipType: RelationshipType.WORKS_AT,
-      targetFilters: companyFilter
+      targetFilters: companyFilter,
     };
-    
+
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
@@ -149,22 +153,24 @@ export function createPeopleByCompanyFilter(
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     // Check if it's already another specialized error
     if (error instanceof RelationshipFilterError) {
       throw error;
     }
-    
+
     // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create people-by-company filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create people-by-company filter: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Creates a filter for companies based on their associated people attributes
  * Includes rate limiting for this resource-intensive operation
- * 
+ *
  * @param peopleFilter - Filters to apply to the related people
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
  * @returns Filter for finding companies based on people attributes
@@ -179,9 +185,13 @@ export function createCompaniesByPeopleFilter(
     if (req) {
       applyRateLimit(req, RelationshipType.EMPLOYS, false);
     }
-    
+
     // Validate people filters
-    if (!peopleFilter || !peopleFilter.filters || peopleFilter.filters.length === 0) {
+    if (
+      !peopleFilter ||
+      !peopleFilter.filters ||
+      peopleFilter.filters.length === 0
+    ) {
       throw new RelationshipFilterError(
         'People filter must contain at least one valid filter condition',
         ResourceType.COMPANIES.toString(),
@@ -189,15 +199,15 @@ export function createCompaniesByPeopleFilter(
         RelationshipType.EMPLOYS
       );
     }
-    
+
     // Create a relationship filter configuration
     const relationshipConfig: RelationshipFilterConfig = {
       sourceType: ResourceType.COMPANIES,
       targetType: ResourceType.PEOPLE,
       relationshipType: RelationshipType.EMPLOYS,
-      targetFilters: peopleFilter
+      targetFilters: peopleFilter,
     };
-    
+
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
@@ -205,22 +215,24 @@ export function createCompaniesByPeopleFilter(
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     // Check if it's already another specialized error
     if (error instanceof RelationshipFilterError) {
       throw error;
     }
-    
+
     // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create companies-by-people filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create companies-by-people filter: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Creates a filter for records that belong to a specific list
  * Includes rate limiting for this operation and caching for better performance
- * 
+ *
  * @param resourceType - The type of records to filter (people or companies)
  * @param listId - The ID of the list to filter by
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
@@ -242,14 +254,14 @@ export function createRecordsByListFilter(
         return cachedFilter;
       }
     }
-    
+
     // Apply rate limiting if request object is provided
     if (req) {
       applyRateLimit(req, RelationshipType.BELONGS_TO_LIST, false);
     }
-    
+
     // Validate list ID format and security using imported function
-    
+
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
     if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
@@ -259,45 +271,50 @@ export function createRecordsByListFilter(
         listId
       );
     }
-    
+
     // Create a relationship filter configuration
     const relationshipConfig: RelationshipFilterConfig = {
       sourceType: resourceType,
       targetType: ResourceType.LISTS,
       relationshipType: RelationshipType.BELONGS_TO_LIST,
-      targetFilters: createEqualsFilter(ATTRIBUTES.LIST_ID, listId)
+      targetFilters: createEqualsFilter(ATTRIBUTES.LIST_ID, listId),
     };
-    
+
     // Convert to an Attio API compatible filter
     const result = createRelationshipFilter(relationshipConfig);
-    
+
     // Cache the result if caching is enabled
     if (useCache) {
       cacheListFilter(listId, resourceType, result);
     }
-    
+
     return result;
   } catch (error) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     // Check if it's already another specialized error
-    if (error instanceof ListRelationshipError || error instanceof RelationshipFilterError) {
+    if (
+      error instanceof ListRelationshipError ||
+      error instanceof RelationshipFilterError
+    ) {
       throw error;
     }
-    
+
     // Otherwise, wrap in a FilterValidationError
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create records-by-list filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create records-by-list filter: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Creates a filter for finding people who work at companies in a specific list
  * This is a nested relationship query with rate limiting and caching applied
- * 
+ *
  * @param listId - The ID of the list that contains companies
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
  * @param useCache - Whether to use caching (default: true)
@@ -315,11 +332,11 @@ export function createPeopleByCompanyListFilter(
       relationshipType: RelationshipType.WORKS_AT,
       sourceType: ResourceType.PEOPLE,
       targetType: ResourceType.COMPANIES,
-      targetFilterHash: "",  // Will be set later
+      targetFilterHash: '', // Will be set later
       listId: listId,
-      isNested: true
+      isNested: true,
     };
-    
+
     // Check cache first if caching is enabled
     if (useCache) {
       const cachedFilter = getCachedRelationshipFilter(cacheKey);
@@ -327,20 +344,22 @@ export function createPeopleByCompanyListFilter(
         return cachedFilter;
       }
     }
-    
+
     // Apply rate limiting if request object is provided
     if (req) {
       applyRateLimit(req, RelationshipType.WORKS_AT, true);
     }
-    
+
     // Validate list ID format and security using imported function
-    
+
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
     if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
-      throw new Error('Invalid list ID format. Expected format: list_[alphanumeric]');
+      throw new Error(
+        'Invalid list ID format. Expected format: list_[alphanumeric]'
+      );
     }
-    
+
     // First, create a filter for companies in the list
     const companiesInListFilter = createRecordsByListFilter(
       ResourceType.COMPANIES,
@@ -348,34 +367,36 @@ export function createPeopleByCompanyListFilter(
       undefined,
       useCache
     );
-    
+
     // Update cache key with the hash of the target filter
     cacheKey.targetFilterHash = hashFilters(companiesInListFilter);
-    
+
     // Then, create a filter for people who work at those companies
     const result = createPeopleByCompanyFilter(companiesInListFilter);
-    
+
     // Cache the result if caching is enabled
     if (useCache) {
       cacheRelationshipFilter(cacheKey, result);
     }
-    
+
     return result;
   } catch (error) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create people-by-company-list filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create people-by-company-list filter: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Creates a filter for finding companies that have people in a specific list
  * This is a nested relationship query with rate limiting and caching applied
- * 
+ *
  * @param listId - The ID of the list that contains people
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
  * @param useCache - Whether to use caching (default: true)
@@ -393,11 +414,11 @@ export function createCompaniesByPeopleListFilter(
       relationshipType: RelationshipType.EMPLOYS,
       sourceType: ResourceType.COMPANIES,
       targetType: ResourceType.PEOPLE,
-      targetFilterHash: "",  // Will be set later
+      targetFilterHash: '', // Will be set later
       listId: listId,
-      isNested: true
+      isNested: true,
     };
-    
+
     // Check cache first if caching is enabled
     if (useCache) {
       const cachedFilter = getCachedRelationshipFilter(cacheKey);
@@ -405,20 +426,22 @@ export function createCompaniesByPeopleListFilter(
         return cachedFilter;
       }
     }
-    
+
     // Apply rate limiting if request object is provided
     if (req) {
       applyRateLimit(req, RelationshipType.EMPLOYS, true);
     }
-    
+
     // Validate list ID format and security using imported function
-    
+
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
     if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
-      throw new Error('Invalid list ID format. Expected format: list_[alphanumeric]');
+      throw new Error(
+        'Invalid list ID format. Expected format: list_[alphanumeric]'
+      );
     }
-    
+
     // First, create a filter for people in the list
     const peopleInListFilter = createRecordsByListFilter(
       ResourceType.PEOPLE,
@@ -426,34 +449,36 @@ export function createCompaniesByPeopleListFilter(
       undefined,
       useCache
     );
-    
+
     // Update cache key with the hash of the target filter
     cacheKey.targetFilterHash = hashFilters(peopleInListFilter);
-    
+
     // Then, create a filter for companies that have those people
     const result = createCompaniesByPeopleFilter(peopleInListFilter);
-    
+
     // Cache the result if caching is enabled
     if (useCache) {
       cacheRelationshipFilter(cacheKey, result);
     }
-    
+
     return result;
   } catch (error) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create companies-by-people-list filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create companies-by-people-list filter: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Creates a filter for records that have associated notes matching criteria
  * Includes rate limiting for text search operations
- * 
+ *
  * @param resourceType - The type of records to filter (people or companies)
  * @param textSearch - Text to search for in the notes
  * @param req - Optional request object for rate limiting (if not provided, rate limiting is skipped)
@@ -470,11 +495,11 @@ export function createRecordsByNotesFilter(
     if (req) {
       applyRateLimit(req, RelationshipType.HAS_NOTE, false);
     }
-    
+
     if (!textSearch || textSearch.trim() === '') {
       throw new Error('Text search query must be provided');
     }
-    
+
     // Create a relationship filter configuration
     const relationshipConfig: RelationshipFilterConfig = {
       sourceType: resourceType,
@@ -485,13 +510,13 @@ export function createRecordsByNotesFilter(
           {
             attribute: { slug: ATTRIBUTES.NOTE_CONTENT },
             condition: FilterConditionType.CONTAINS,
-            value: textSearch
-          }
+            value: textSearch,
+          },
         ],
-        matchAny: false
-      }
+        matchAny: false,
+      },
     };
-    
+
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
   } catch (error) {
@@ -499,8 +524,10 @@ export function createRecordsByNotesFilter(
     if (error instanceof RelationshipRateLimitError) {
       throw error;
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new FilterValidationError(`Failed to create records-by-notes filter: ${errorMessage}`);
+    throw new FilterValidationError(
+      `Failed to create records-by-notes filter: ${errorMessage}`
+    );
   }
 }
