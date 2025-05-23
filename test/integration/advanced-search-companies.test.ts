@@ -12,8 +12,8 @@ import { FilterConditionType } from '../../src/types/attio';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Mock axios for API calls
-jest.mock('axios');
-const mockAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockAxios = axios as vi.Mocked<typeof axios>;
 
 describe('Advanced Search Companies Integration', () => {
   // Set up mock API client
@@ -23,7 +23,7 @@ describe('Advanced Search Companies Integration', () => {
   });
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   
   // Mock response data

@@ -245,22 +245,43 @@ Here's an example of a company record in our CRM (The Plastics Doc):
 
 ## Pipeline and Sales Process
 
-Based on our analysis of the codebase, the Attio CRM appears to support a standard sales pipeline with the following stages:
+Based on our analysis of the codebase and the Attio API documentation, the Attio CRM supports tracking prospects through sales pipelines using list entries with stage attributes.
 
-- Lead
-- Prospect
-- Opportunity
-- Customer
-- Churned
-- Qualified
-- Engaged
-- Negotiation
+### Standard Stage Attribute
 
-These stages are likely used to track prospects through the sales process, though we haven't been able to directly verify their implementation in the current Prospecting list due to tool limitations. The system appears to support tracking pipeline stages through either:
+According to the Attio API documentation, "stage" is a **standard attribute type** for list entries. This is a built-in feature of Attio lists that allows tracking the progression of records through different stages of a process.
 
-1. A dedicated "stage" attribute on company or people records
-2. A separate "deals" object with its own stage progression
-3. Lists that might represent different stages in the pipeline
+### ShapeScale Prospecting List Stages
+
+The **Prospecting list** (ID: 88709359-01f6-478b-ba66-c07347891b6f) in our ShapeScale Attio instance uses a **custom stage configuration** with the following stage options:
+
+#### Current Stage Options:
+1. `"Unresponsive"` - Prospects who haven't responded to outreach
+2. `"Interested"` - Prospects who have shown initial interest
+3. `"Discovery Call"` - Scheduled or completed discovery calls
+4. `"On Demand Demo"` - Self-service demo requests
+5. `"Demo Scheduling"` - Actively scheduling product demonstrations
+6. `"Demo"` - Scheduled or completed product demonstrations
+7. `"Demo - No Shows"` - Prospects who missed their demo appointments
+8. `"No Shows - Followed Up"` - No-shows that have been re-contacted
+9. `"Post-Demo Follow Up"` - Following up after completed demos
+10. `"Negotiation"` - Active contract or pricing discussions
+11. `"Won"` - Successfully closed deals
+12. `"Pause/Nurture"` - Prospects in long-term nurturing
+13. `"Lost"` - Opportunities that didn't convert
+14. `"Not a fit"` - Prospects determined to be unsuitable
+
+**Note**: These are custom stage values specific to the ShapeScale Prospecting list and are **not** the standard Attio pipeline stages. Each list can have its own custom stage configuration.
+
+### Stage Management Challenges
+
+Currently, the Attio MCP server lacks the tools to:
+- Update list entry stage values (e.g., changing from "Interested" to "Demo Scheduling")
+- Read current stage values for list entries
+- Filter list entries by stage
+- Track stage progression history
+
+This represents a significant gap in CRM functionality, as stage management is essential for sales pipeline operations.
 
 ## Known Bugs and Issues
 
@@ -272,6 +293,285 @@ These stages are likely used to track prospects through the sales process, thoug
 6. Resolved: use the `get-company-lists` tool to see which lists a company belongs to (Issue #184)
 7. Type checking in the MCP server appears inconsistent
 8. Intermittent connectivity issues with certain tools
+9. **Facilities Field Select Options Issue**: Using incorrect values for the `facilities` select field causes API errors
+10. **Categories Field Array Type Issue**: The `categories` field must be an array, not a string
+11. **Postal Code Field Mapping Issue**: Using `postal_code` field causes "Cannot find attribute with slug/ID 'zip'" error
+12. **Invalid Category Options Issue**: Some documented category options don't actually exist, causing "Cannot find select option" errors
+
+### Facilities Field Select Options Issue
+
+**Issue**: The `facilities` field is a select field with specific predefined options. Using incorrect values causes API errors.
+
+**Error Example**:
+```
+Request
+
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5 locations in Kansas",  // ❌ INCORRECT - descriptive text
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+
+Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316-5453-ae0d-c7cb3ec29ef2: Bad Request: Cannot find select option with title "2-5 locations in Kansas".
+```
+
+**Solution**: Use only the predefined select options for the `facilities` field:
+
+#### Valid Facilities Options:
+- `"1"` - Single location
+- `"2-5"` - 2-5 locations  
+- `"6-10"` - 6-10 locations
+- `"11-25"` - 11-25 locations
+- `"26-50"` - 26-50 locations
+- `"51-100"` - 51-100 locations
+- `"101-250"` - 101-250 locations
+- `"251+"` - 251+ locations
+- `"Unknown"` - Unknown number of locations
+
+**Correct Usage**:
+```json
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5",  // ✅ CORRECT - use exact option value
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+```
+
+**Key Points**:
+1. Always use the exact option value, not descriptive text
+2. The `facilities` field expects a string value matching one of the predefined options
+3. Geographic information (like "in Kansas") should be stored in location fields, not the facilities count field
+
+### Categories Field Array Type Issue
+
+**Issue**: The `categories` field expects an array of strings, not a single string value. Using a string value causes a field type error.
+
+**Error Example**:
+```
+Request
+
+{
+  "attributes": {
+    "name": "The Plastics Doc",
+    "categories": "Medical Practice",  // ❌ INCORRECT - string value
+    "website": "https://www.theplasticsdoc.com"
+  }
+}
+
+Response: ERROR [unknown_error]: Invalid company data: Field 'categories' must be of type array, but got string
+```
+
+**Solution**: Always provide categories as an array of strings, even for single values:
+
+**Correct Usage**:
+```json
+{
+  "attributes": {
+    "name": "The Plastics Doc",
+    "categories": ["Medical Practice"],  // ✅ CORRECT - array with single value
+    "website": "https://www.theplasticsdoc.com"
+  }
+}
+```
+
+**Multiple Categories Example**:
+```json
+{
+  "attributes": {
+    "name": "The Plastics Doc",
+    "categories": [
+      "Health Care",
+      "Medical Practice", 
+      "B2C"
+    ],  // ✅ CORRECT - array with multiple values
+    "website": "https://www.theplasticsdoc.com"
+  }
+}
+```
+
+#### Valid Categories Options:
+- `"Health Care"`
+- `"B2C"` (Business to Consumer)
+- `"E-commerce"`
+- `"Sports & Fitness"`
+- `"Health & Wellness"`
+- `"Physical Therapy"`
+
+**Note**: ~~`"Medical Practice"`~~ was previously listed here but is NOT a valid option - this causes a "Cannot find select option" error.
+
+**Key Points**:
+1. Categories field type is **array**, not string
+2. Always wrap category values in square brackets `[]` 
+3. Single categories still need to be in an array format: `["Health Care"]`
+4. Multiple categories can be provided: `["Health Care", "B2C", "Sports & Fitness"]`
+5. This is one of the most common field type errors in company creation/updates
+6. **Invalid category options cause "Cannot find select option" errors** - validate options before use
+
+### Postal Code Field Mapping Issue
+
+**Issue**: The `postal_code` field causes an error claiming that the "zip" attribute cannot be found, suggesting there's a field mapping issue or the wrong field name is being used.
+
+**Error Example**:
+```
+Request
+
+{
+  "attributes": {
+    "city": "Corona",
+    "name": "The Plastics Doc",
+    "state": "CA",
+    "website": "https://www.theplasticsdoc.com",
+    "postal_code": "92584",  // ❌ User provides postal_code
+    "street_address": "4226 Green River Rd",
+    // ... other fields
+  }
+}
+
+Response: ERROR [unknown_error]: Company create failed: Bad Request: Cannot find attribute with slug/ID "zip".
+```
+
+**Problem Analysis**:
+The error indicates the system is looking for an attribute called "zip" when the user provides "postal_code". This suggests either:
+
+1. **Incorrect Field Name**: The correct field name should be "zip" instead of "postal_code"
+2. **Field Mapping Bug**: Internal mapping from "postal_code" to "zip" is failing
+3. **Missing Attribute**: The "zip" attribute doesn't exist in the schema but is being referenced
+
+**Possible Solutions** (need to be tested):
+
+**Option 1 - Use "zip" instead**:
+```json
+{
+  "attributes": {
+    "zip": "92584",  // ✅ Try using "zip" instead of "postal_code"
+    "city": "Corona",
+    "state": "CA"
+  }
+}
+```
+
+**Option 2 - Use structured location**:
+```json
+{
+  "attributes": {
+    "primary_location": {
+      "city": "Corona",
+      "state": "CA", 
+      "postal_code": "92584",
+      "street_address": "4226 Green River Rd"
+    }
+  }
+}
+```
+
+**Key Points**:
+1. Avoid using "postal_code" as a top-level attribute until this is resolved
+2. Test with "zip" field name instead
+3. Consider using structured location data in "primary_location"
+4. This appears to be a field mapping or schema definition bug
+
+### Invalid Category Options Issue
+
+**Issue**: Some category options that appear logical or were previously documented don't actually exist in the Attio schema, causing "Cannot find select option" errors.
+
+**Error Example**:
+```
+Request
+
+{
+  "attributes": {
+    "name": "The Plastics Doc",
+    "website": "https://www.theplasticsdoc.com", 
+    "categories": ["Medical Practice"],  // ❌ This option doesn't exist
+    "description": "Plastic surgery and medical spa practice..."
+  }
+}
+
+Response: ERROR [unknown_error]: Company create failed: Bad Request: Cannot find select option with title "Medical Practice".
+```
+
+**Problem Analysis**:
+This issue highlights several UX and system problems:
+
+1. **Documentation Can Be Wrong**: Even documented options may not exist in the actual schema
+2. **No Option Discovery**: Users can't easily discover what category options are available
+3. **Poor Error Messages**: Error doesn't suggest valid alternatives
+4. **No Fuzzy Matching**: Similar valid options aren't suggested (e.g., "Health Care" instead of "Medical Practice")
+5. **No Dynamic Creation**: Users can't create new category options when needed
+
+**Current Verified Valid Categories**:
+- `"Health Care"` ✅
+- `"B2C"` (Business to Consumer) ✅
+- `"E-commerce"` ✅
+- `"Sports & Fitness"` ✅ 
+- `"Health & Wellness"` ✅
+- `"Physical Therapy"` ✅
+
+**Invalid Categories** (cause errors):
+- ~~`"Medical Practice"`~~ ❌ - Use "Health Care" instead
+
+**Suggested User Experience Improvements**:
+
+1. **Fuzzy Matching**: When an invalid option is provided, suggest similar valid options
+   ```
+   Error: "Medical Practice" not found. Did you mean:
+   - "Health Care"
+   - "Health & Wellness"
+   ```
+
+2. **Dynamic Option Discovery**: API endpoint to list all valid category options
+   ```
+   GET /categories/options
+   ```
+
+3. **Option Creation**: Allow creating new category options through the API (if Attio supports it)
+   ```
+   POST /categories/options
+   { "title": "Medical Practice" }
+   ```
+
+4. **Better Error Messages**: Include valid options list in error responses
+
+**Workaround**: 
+Use "Health Care" instead of "Medical Practice" for medical businesses:
+```json
+{
+  "attributes": {
+    "categories": ["Health Care"],  // ✅ CORRECT - use valid option
+    "name": "The Plastics Doc"
+  }
+}
+```
+
+**Key Points**:
+1. Always validate category options against current schema before use
+2. When in doubt, use broader categories like "Health Care" instead of specific ones
+3. This issue exists for other select fields too (facilities, type_persona, etc.)
+4. Consider implementing fuzzy matching and option discovery tools
 
 ## ShapeScale-Specific Features
 

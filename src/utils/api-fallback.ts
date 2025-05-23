@@ -2,21 +2,22 @@
  * Utility functions for API fallback patterns
  */
 import type { AttioListResponse, AttioListEntry } from '../types/attio.js';
+import type { ListEntryFilters } from '../api/operations/index.js';
 
 export interface FallbackOptions {
   listId: string;
-  filters?: any;
+  filters?: ListEntryFilters;
   limit?: number;
   offset?: number;
 }
 
 export interface ApiClient {
-  post<T>(path: string, body: any): Promise<{ data: T }>;
+  post<T>(path: string, body: Record<string, unknown>): Promise<{ data: T }>;
   get<T>(path: string): Promise<{ data: T }>;
 }
 
 export interface FallbackLogger {
-  (message: string, context?: any, isError?: boolean): void;
+  (message: string, context?: Record<string, unknown>, isError?: boolean): void;
 }
 
 /**
@@ -37,7 +38,7 @@ export interface FallbackLogger {
 export async function executeWithListFallback<T>(
   api: ApiClient,
   options: FallbackOptions,
-  createRequestBody: () => any,
+  createRequestBody: () => Record<string, unknown>,
   processEntries: (entries: AttioListEntry[]) => T[],
   logger: FallbackLogger
 ): Promise<T[]> {
@@ -57,10 +58,11 @@ export async function executeWithListFallback<T>(
     });
     
     return processEntries(response.data.data || []);
-  } catch (primaryError: any) {
-    logger('Primary endpoint failed', { 
-      error: primaryError.message, 
-      status: primaryError.response?.status 
+  } catch (primaryError: unknown) {
+    const err = primaryError as { message?: string; response?: { status?: number } };
+    logger('Primary endpoint failed', {
+      error: err.message,
+      status: err.response?.status
     }, true);
     
     // Fallback endpoint attempt
@@ -83,10 +85,11 @@ export async function executeWithListFallback<T>(
       });
       
       return processEntries(response.data.data || []);
-    } catch (fallbackError: any) {
-      logger('Fallback endpoint failed', { 
-        error: fallbackError.message, 
-        status: fallbackError.response?.status 
+    } catch (fallbackError: unknown) {
+      const err = fallbackError as { message?: string; response?: { status?: number } };
+      logger('Fallback endpoint failed', {
+        error: err.message,
+        status: err.response?.status
       }, true);
       
       // GET endpoint as last resort (only if no filters)
@@ -109,10 +112,11 @@ export async function executeWithListFallback<T>(
           });
           
           return processEntries(response.data.data || []);
-        } catch (getError: any) {
-          logger('GET fallback failed', { 
-            error: getError.message, 
-            status: getError.response?.status 
+        } catch (getError: unknown) {
+          const err = getError as { message?: string; response?: { status?: number } };
+          logger('GET fallback failed', {
+            error: err.message,
+            status: err.response?.status
           }, true);
           
           // Throw the original primary error since it's most relevant

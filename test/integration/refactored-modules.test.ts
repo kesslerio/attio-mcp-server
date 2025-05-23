@@ -17,27 +17,27 @@ import * as attributeTypes from '../../src/api/attribute-types';
 import { ResourceType } from '../../src/types/attio';
 
 // Mock dependencies
-jest.mock('../../src/api/attio-client');
-jest.mock('../../src/objects/records');
-jest.mock('../../src/api/operations/index');
-jest.mock('../../src/api/attribute-types');
+vi.mock('../../src/api/attio-client');
+vi.mock('../../src/objects/records');
+vi.mock('../../src/api/operations/index');
+vi.mock('../../src/api/attribute-types');
 
 describe('Refactored Modules Integration', () => {
-  const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
-  const mockedRecords = records as jest.Mocked<typeof records>;
-  const mockedOperations = operations as jest.Mocked<typeof operations>;
-  const mockedAttributeTypes = attributeTypes as jest.Mocked<typeof attributeTypes>;
+  const mockedAttioClient = attioClient as vi.Mocked<typeof attioClient>;
+  const mockedRecords = records as vi.Mocked<typeof records>;
+  const mockedOperations = operations as vi.Mocked<typeof operations>;
+  const mockedAttributeTypes = attributeTypes as vi.Mocked<typeof attributeTypes>;
   
   let mockAxiosInstance: any;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     
     mockAxiosInstance = {
-      get: jest.fn(),
-      post: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn()
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn()
     };
     
     // Mock axios responses for direct API calls

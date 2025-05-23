@@ -10,14 +10,14 @@ import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
 import * as configLoader from '../../src/utils/config-loader';
 
 // Mock the config-loader
-jest.mock('../../src/utils/config-loader', () => ({
-  loadMappingConfig: jest.fn(),
+vi.mock('../../src/utils/config-loader', () => ({
+  loadMappingConfig: vi.fn(),
 }));
 
 describe('Enhanced Attribute Mapping', () => {
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     invalidateConfigCache();
   });
   
@@ -57,7 +57,7 @@ describe('Enhanced Attribute Mapping', () => {
     it('should first check for special cases', () => {
       // Mock configuration with a different mapping for B2B Segment
       // This shouldn't be used because special case handling has priority
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -77,13 +77,13 @@ describe('Enhanced Attribute Mapping', () => {
       expect(getAttributeSlug('B2B Segment')).toBe('type_persona');
       
       // Spy on handleSpecialCases to ensure it was called
-      const handleSpecialCasesSpy = jest.spyOn(mappingUtils, 'handleSpecialCases');
+      const handleSpecialCasesSpy = vi.spyOn(mappingUtils, 'handleSpecialCases');
       getAttributeSlug('B2B Segment');
       expect(handleSpecialCasesSpy).toHaveBeenCalledWith('B2B Segment');
     });
     
     it('should use case-insensitive lookup after special cases', () => {
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -105,7 +105,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
     
     it('should use normalized lookup when case-insensitive fails', () => {
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -129,7 +129,7 @@ describe('Enhanced Attribute Mapping', () => {
     it('should use aggressive normalization as a last resort', () => {
       // For this test, we'll spy on lookupAggressiveNormalized instead of trying 
       // to set up the full chain, which is difficult to mock completely
-      const lookupAggressiveNormalizedSpy = jest.spyOn(mappingUtils, 'lookupAggressiveNormalized')
+      const lookupAggressiveNormalizedSpy = vi.spyOn(mappingUtils, 'lookupAggressiveNormalized')
         .mockReturnValue('custom_slug');
         
       // Call the function to test the aggressive normalization path
@@ -144,7 +144,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
     
     it('should handle snake case conversion', () => {
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -159,15 +159,30 @@ describe('Enhanced Attribute Mapping', () => {
           relationships: {},
         },
       });
-      
+
       // Should convert snake case to display name and then look up
       expect(getAttributeSlug('account_manager')).toBe('account_manager');
+    });
+
+    it('should map postal code fields without converting to zip', () => {
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: { common: {}, objects: {}, custom: {} },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      expect(getAttributeSlug('postal_code')).toBe('postal_code');
+      expect(getAttributeSlug('ZIP')).toBe('postal_code');
     });
   });
   
   describe('Object-Specific Mappings', () => {
     it('should prioritize object-specific mappings over common mappings', () => {
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {

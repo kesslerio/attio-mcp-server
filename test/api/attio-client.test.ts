@@ -2,13 +2,13 @@ import { createAttioClient, initializeAttioClient, getAttioClient } from '../../
 import axios from 'axios';
 
 // Mock axios
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as vi.Mocked<typeof axios>;
 
 describe('attio-client', () => {
   beforeEach(() => {
     // Reset all mocks before each test
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('createAttioClient', () => {
@@ -19,7 +19,7 @@ describe('attio-client', () => {
         defaults: {},
         interceptors: {
           response: {
-            use: jest.fn()
+            use: vi.fn()
           }
         }
       };
@@ -49,7 +49,7 @@ describe('attio-client', () => {
         defaults: {},
         interceptors: {
           response: {
-            use: jest.fn()
+            use: vi.fn()
           }
         }
       };
@@ -70,7 +70,7 @@ describe('attio-client', () => {
 
     it('should throw an error if getAttioClient is called before initialization', () => {
       // Create a new module to reset the singleton API client
-      jest.resetModules();
+      vi.resetModules();
       
       // Import the module again to reset its state
       const { getAttioClient } = require('../../src/api/attio-client.js');

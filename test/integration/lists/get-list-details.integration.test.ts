@@ -6,8 +6,8 @@ import { initializeAttioClient } from '../../../src/api/attio-client';
 import { executeToolRequest } from '../../../src/handlers/tools/dispatcher';
 
 // Mock axios to simulate API responses
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as vi.Mocked<typeof axios>;
 
 describe('get-list-details integration test', () => {
   beforeAll(() => {
@@ -19,8 +19,8 @@ describe('get-list-details integration test', () => {
       delete: mockedAxios.delete,
       patch: mockedAxios.patch,
       interceptors: {
-        request: { use: jest.fn() },
-        response: { use: jest.fn() }
+        request: { use: vi.fn() },
+        response: { use: vi.fn() }
       }
     } as any);
     
@@ -29,7 +29,7 @@ describe('get-list-details integration test', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should fetch and format list details successfully', async () => {

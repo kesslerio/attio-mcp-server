@@ -12,8 +12,8 @@ import { getAttioClient } from '../../src/api/attio-client';
 import { ResourceType, Person, Company, AttioRecord } from '../../src/types/attio';
 
 // Mock the axios client
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('Batch Operations', () => {
@@ -60,20 +60,20 @@ describe('Batch Operations', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn()
+    post: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('executeBatchOperations', () => {
     it('should execute multiple operations and return results', async () => {
       // Use direct implementation instead of mocking
-      const mockOperation = jest.fn()
+      const mockOperation = vi.fn()
         .mockResolvedValueOnce('Result 1')
         .mockResolvedValueOnce('Result 2')
         .mockResolvedValueOnce('Result 3');
@@ -173,7 +173,7 @@ describe('Batch Operations', () => {
       };
       
       // Mock operation function with one failure
-      const mockOperation = jest.fn()
+      const mockOperation = vi.fn()
         .mockImplementation(async (param: string) => {
           if (param === 'param2') throw new Error('Operation 2 failed');
           return `Result for ${param}`;
@@ -263,7 +263,7 @@ describe('Batch Operations', () => {
       };
       
       // Mock operation function with one failure
-      const mockOperation = jest.fn()
+      const mockOperation = vi.fn()
         .mockImplementation(async (param: string) => {
           if (param === 'param2') throw new Error('Operation 2 failed');
           return `Result for ${param}`;
@@ -286,7 +286,7 @@ describe('Batch Operations', () => {
 
     it('should process operations in chunks based on maxBatchSize', async () => {
       // Mock operation function
-      const mockOperation = jest.fn()
+      const mockOperation = vi.fn()
         .mockImplementation((param) => Promise.resolve(`Result for ${param}`));
 
       // Create 10 batch request items

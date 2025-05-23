@@ -25,7 +25,7 @@ describe('Date Utils', () => {
   // our tests to verify functionality rather than exact date values
   beforeAll(() => {
     // Just mock Date.now to return a consistent timestamp
-    global.Date.now = jest.fn(() => new Date(2023, 0, 15, 12, 0, 0).getTime());
+    global.Date.now = vi.fn(() => new Date(2023, 0, 15, 12, 0, 0).getTime());
   });
   
   // Restore original Date implementation

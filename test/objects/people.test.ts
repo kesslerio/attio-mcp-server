@@ -3,8 +3,8 @@ import { getAttioClient } from '../../src/api/attio-client';
 import { Person } from '../../src/types/attio';
 
 // Mock the axios client
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('People API functions', () => {
@@ -22,13 +22,13 @@ describe('People API functions', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn()
+    post: vi.fn(),
+    get: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('searchPeople', () => {
@@ -103,7 +103,7 @@ describe('People API functions', () => {
         filter: {
           "$or": [
             { name: { "$contains": "john.doe@example.com" } },
-            { email: { "$contains": "john.doe@example.com" } },
+            { email_addresses: { "$contains": "john.doe@example.com" } },
             { phone: { "$contains": "john.doe@example.com" } }
           ]
         }
@@ -144,7 +144,7 @@ describe('People API functions', () => {
         filter: {
           "$or": [
             { name: { "$contains": "+1234567890" } },
-            { email: { "$contains": "+1234567890" } },
+            { email_addresses: { "$contains": "+1234567890" } },
             { phone: { "$contains": "+1234567890" } }
           ]
         }

@@ -7,9 +7,9 @@ import * as peopleModule from '../../src/objects/people/index';
 import * as companiesModule from '../../src/objects/companies/index';
 
 // Mock the modules
-jest.mock('../../src/objects/people/index');
-jest.mock('../../src/objects/companies/index');
-jest.mock('../../src/api/attio-client');
+vi.mock('../../src/objects/people/index');
+vi.mock('../../src/objects/companies/index');
+vi.mock('../../src/api/attio-client');
 
 describe('People-Company Search Tool Fix', () => {
   const mockPeople = [
@@ -29,12 +29,12 @@ describe('People-Company Search Tool Fix', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle search-people-by-company with company ID filter', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
@@ -62,9 +62,9 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle search-people-by-company with company name filter', async () => {
     // Mock searchCompanies to return a company
-    (companiesModule.searchCompanies as jest.Mock).mockResolvedValue([mockCompany]);
+    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([mockCompany]);
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
@@ -91,7 +91,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle error when company not found', async () => {
     // Mock searchCompanies to return empty array
-    (companiesModule.searchCompanies as jest.Mock).mockResolvedValue([]);
+    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([]);
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
@@ -135,7 +135,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle multiple filters and use the first valid one', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as jest.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
 
     const request: CallToolRequest = {
       method: "tools/call" as const,

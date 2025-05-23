@@ -16,7 +16,7 @@ The tests are organized as follows:
 
 ### Unit and Integration Tests
 
-Run all tests with Jest:
+Run all tests with Vitest:
 
 ```bash
 npm test
@@ -32,6 +32,18 @@ For example, to run only the list details tests:
 
 ```bash
 npm test -- handlers/tools.list-details.test.ts
+```
+
+Run tests with coverage:
+
+```bash
+npm test -- --coverage
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
 ```
 
 ### API Integration Tests

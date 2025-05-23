@@ -43,25 +43,19 @@ check_requirements() {
     fi
     
     local node_version=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$node_version" -lt 22 ]; then
-        print_error "Node.js ≥22 is required (Node 18 is EOL). Current version: $(node --version)"
-        exit 1
+    if [ "$node_version" -lt 18 ]; then
+        print_warning "Node.js version is $node_version. Recommended version is 22+."
     else
         print_success "Node.js version: $(node --version)"
     fi
     
     # Check Python version
     if ! command -v python3 &> /dev/null; then
-        print_error "Python 3 is not installed. Please install Python 3.11+."
+        print_error "Python 3 is not installed. Please install Python 3.12+."
         exit 1
     fi
     
-    local python_minor=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-    if [[ "$(echo $python_minor)" < "3.11" ]]; then
-        print_error "Python ≥3.11 required for uv. Current version: $(python3 --version)"
-        exit 1
-    fi
-    
+    local python_version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1-2)
     print_success "Python version: $(python3 --version)"
     
     # Check Git (recommended for safety)
@@ -110,54 +104,6 @@ install_codex_cli() {
     fi
 }
 
-# Install project dependencies
-install_project_dependencies() {
-    print_status "Installing project dependencies..."
-    
-    # Check if package.json exists
-    if [ ! -f "package.json" ]; then
-        print_warning "No package.json found in current directory. Skipping project dependency installation."
-        return
-    fi
-    
-    # Install npm dependencies
-    if [ -f "package-lock.json" ]; then
-        print_status "Found package-lock.json, running npm ci..."
-        npm ci
-    else
-        print_status "Running npm install..."
-        npm install
-    fi
-    
-    # Verify wireit installation (skip npx prompt)
-    if [ -f "package.json" ]; then
-        if npx --yes wireit --version &> /dev/null; then
-            print_success "Wireit build tool installed successfully."
-        else
-            print_warning "Wireit installation may have failed. Check npm install output."
-        fi
-    else
-        print_status "No package.json found, skipping Wireit verification."
-    fi
-    
-    # Verify project can build
-    if [ -f "tsconfig.json" ]; then
-        # Check if build script exists in package.json
-        if [ -f "package.json" ] && grep -q '"build"' package.json; then
-            print_status "Attempting to build project..."
-            if npm run build; then
-                print_success "Project built successfully."
-            else
-                print_warning "Project build failed. Check TypeScript configuration."
-            fi
-        else
-            print_status "No build script found in package.json, skipping build test."
-        fi
-    fi
-    
-    print_success "Project dependencies installation completed."
-}
-
 # Setup environment variables
 setup_environment() {
     print_status "Setting up environment variables..."
@@ -167,9 +113,9 @@ setup_environment() {
         echo ""
         echo "⚠️  OpenAI API key is required for Codex CLI."
         echo ""
-        echo "💰 Pricing Information (as of May 2025):"
-        echo "   - Input tokens: \$1.10 per 1M tokens"
-        echo "   - Output tokens: \$4.40 per 1M tokens"
+        echo "💰 Pricing Information (as of April 2025):"
+        echo "   - Input tokens: \$1.50 per 1M tokens"
+        echo "   - Output tokens: \$6.00 per 1M tokens"
         echo "   - Model: o4-mini (default)"
         echo ""
         echo "You can get your API key from: https://platform.openai.com/api-keys"
@@ -206,26 +152,31 @@ configure_codex() {
     mkdir -p ~/.codex
     
     # Create default config if it doesn't exist
-    if [ ! -f ~/.codex/config.yaml ]; then
-        cat > ~/.codex/config.yaml << 'EOF'
-model: o4-mini
-provider: openai
-approvalMode: suggest
-fullAutoErrorMode: ask-user
-notify: true
-maxTokens: 8192
-temperature: 0.1
-providers:
-  openai:
-    name: OpenAI
-    baseURL: https://api.openai.com/v1
-    envKey: OPENAI_API_KEY
-history:
-  maxSize: 1000
-  saveHistory: true
-  sensitivePatterns: []
+    if [ ! -f ~/.codex/config.json ]; then
+        cat > ~/.codex/config.json << EOF
+{
+  "model": "o4-mini",
+  "provider": "openai",
+  "approvalMode": "suggest",
+  "fullAutoErrorMode": "ask-user",
+  "notify": true,
+  "maxTokens": 4096,
+  "temperature": 0.1,
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "baseURL": "https://api.openai.com/v1",
+      "envKey": "OPENAI_API_KEY"
+    }
+  },
+  "history": {
+    "maxSize": 1000,
+    "saveHistory": true,
+    "sensitivePatterns": []
+  }
+}
 EOF
-        print_success "Codex configuration created at ~/.codex/config.yaml"
+        print_success "Codex configuration created at ~/.codex/config.json"
     else
         print_success "Codex configuration already exists."
     fi
@@ -344,8 +295,8 @@ codex --approval-mode full-auto "write unit tests"
 codex --model gpt-4.1 "complex refactoring task"
 codex --model o4-mini "simple code generation"
 
-# Change model in interactive mode
-codex  # then use /model inside the session
+# List available models
+codex /model
 ```
 
 ## Project Documentation (AGENTS.md)
@@ -410,8 +361,8 @@ codex "write comprehensive unit tests for the user service"
 
 ## Pricing Awareness
 
-- Input tokens: $1.10 per 1M tokens
-- Output tokens: $4.40 per 1M tokens
+- Input tokens: $1.50 per 1M tokens
+- Output tokens: $6.00 per 1M tokens
 - Monitor usage via OpenAI dashboard
 - Consider using shorter prompts for cost efficiency
 
@@ -484,17 +435,17 @@ EOF
 
 # Main setup function
 main() {
-    echo "🎯 OpenAI Codex CLI Setup (May 2025)"
+    echo "🎯 OpenAI Codex CLI Setup (April 2025)"
     echo "======================================"
+    echo ""
+    
+    show_disclaimer
     echo ""
     
     check_requirements
     echo ""
     
     install_codex_cli
-    echo ""
-    
-    install_project_dependencies
     echo ""
     
     setup_environment

@@ -38,7 +38,7 @@ export async function searchObject<T extends AttioRecord>(
     filter = {
       "$or": [
         { name: { "$contains": query } },
-        { email: { "$contains": query } },
+        { email_addresses: { "$contains": query } },
         { phone: { "$contains": query } }
       ]
     };
@@ -91,7 +91,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
   const safeOffset = typeof offset === 'number' ? offset : undefined;
   
   // Create request body with parameters and filters
-  const createRequestBody = () => {
+  const createRequestBody = async () => {
     // Start with base parameters
     const body: any = {
       "limit": safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
@@ -112,7 +112,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
         validateFilters, 
         getFilterExample,
         ERROR_MESSAGES 
-      } = require('../../utils/filters/validation-utils.js');
+      } = await import('../../utils/filters/validation-utils.js');
       
       // Use centralized validation with consistent error messages
       try {
@@ -178,7 +178,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
   
   return callWithRetry(async () => {
     try {
-      const requestBody = createRequestBody();
+      const requestBody = await createRequestBody();
       const response = await api.post<AttioListResponse<T>>(path, requestBody);
       return response.data.data || [];
     } catch (error: any) {

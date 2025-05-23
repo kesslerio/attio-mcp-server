@@ -6,23 +6,23 @@ import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
 
 // Mock the getAttributeTypeInfo function
-jest.mock('../../src/api/attribute-types.js', () => ({
-  getAttributeTypeInfo: jest.fn(),
-  getFieldValidationRules: jest.fn(),
-  detectFieldType: jest.fn()
+vi.mock('../../src/api/attribute-types.js', () => ({
+  getAttributeTypeInfo: vi.fn(),
+  getFieldValidationRules: vi.fn(),
+  detectFieldType: vi.fn()
 }));
 
 describe('Company Validator', () => {
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     CompanyValidator.clearFieldTypeCache();
   });
   
   describe('validateAttributeTypes', () => {
     it('should validate and convert attributes based on their types', async () => {
       // Mock type info for name (string), employees (number), and active (boolean)
-      (getAttributeTypeInfo as jest.Mock).mockImplementation(async (objectSlug, attributeName) => {
+      (getAttributeTypeInfo as vi.Mock).mockImplementation(async (objectSlug, attributeName) => {
         switch (attributeName) {
           case 'name':
             return {
@@ -87,7 +87,7 @@ describe('Company Validator', () => {
     
     it('should handle null values correctly', async () => {
       // Mock type info for a single attribute
-      (getAttributeTypeInfo as jest.Mock).mockResolvedValue({
+      (getAttributeTypeInfo as vi.Mock).mockResolvedValue({
         fieldType: 'string',
         isArray: false,
         isRequired: false,
@@ -115,7 +115,7 @@ describe('Company Validator', () => {
     
     it('should throw an error for invalid attribute values', async () => {
       // Mock type info for employees as number
-      (getAttributeTypeInfo as jest.Mock).mockResolvedValue({
+      (getAttributeTypeInfo as vi.Mock).mockResolvedValue({
         fieldType: 'number',
         isArray: false,
         isRequired: false,
@@ -136,7 +136,7 @@ describe('Company Validator', () => {
     
     it('should proceed with original value if type info cannot be determined', async () => {
       // Mock getAttributeTypeInfo to throw an error
-      (getAttributeTypeInfo as jest.Mock).mockRejectedValue(new Error('API error'));
+      (getAttributeTypeInfo as vi.Mock).mockRejectedValue(new Error('API error'));
       
       const attributes = {
         custom_field: 'test value'
@@ -154,7 +154,7 @@ describe('Company Validator', () => {
   describe('validateAttributeUpdate integration', () => {
     it('should validate and convert a single attribute value', async () => {
       // Mock the field type detection to return 'number'
-      (getAttributeTypeInfo as jest.Mock).mockResolvedValue({
+      (getAttributeTypeInfo as vi.Mock).mockResolvedValue({
         fieldType: 'number',
         isArray: false,
         isRequired: false,
@@ -164,8 +164,8 @@ describe('Company Validator', () => {
       });
       
       // Mock detectFieldType to avoid validation errors
-      jest.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(undefined);
-      jest.spyOn(CompanyValidator as any, 'performSpecialValidation').mockResolvedValue(undefined);
+      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(undefined);
+      vi.spyOn(CompanyValidator as any, 'performSpecialValidation').mockResolvedValue(undefined);
       
       // Test with a string value that should be converted to number
       const result = await CompanyValidator.validateAttributeUpdate('comp_123', 'revenue', '5000000');
@@ -176,7 +176,7 @@ describe('Company Validator', () => {
     
     it('should throw an error for invalid attribute value', async () => {
       // Mock the field type detection to return 'boolean'
-      (getAttributeTypeInfo as jest.Mock).mockResolvedValue({
+      (getAttributeTypeInfo as vi.Mock).mockResolvedValue({
         fieldType: 'boolean',
         isArray: false,
         isRequired: false,
@@ -186,8 +186,8 @@ describe('Company Validator', () => {
       });
       
       // Mock validateFieldType to avoid validation errors
-      jest.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(undefined);
-      jest.spyOn(CompanyValidator as any, 'performSpecialValidation').mockResolvedValue(undefined);
+      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(undefined);
+      vi.spyOn(CompanyValidator as any, 'performSpecialValidation').mockResolvedValue(undefined);
       
       // Test with an invalid boolean value
       await expect(CompanyValidator.validateAttributeUpdate('comp_123', 'is_active', 'invalid-boolean'))

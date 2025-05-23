@@ -9,14 +9,14 @@ import { ToolConfig } from '../../src/handlers/tool-types';
 import { InvalidCompanyDataError } from '../../src/errors/company-errors';
 
 // Mock the registry and company basic operations modules
-jest.mock('../../src/handlers/tools/registry');
-jest.mock('../../src/objects/companies/basic');
-const mockedRegistry = registry as jest.Mocked<typeof registry>;
-const mockedCompanyBasic = companyBasic as jest.Mocked<typeof companyBasic>;
+vi.mock('../../src/handlers/tools/registry');
+vi.mock('../../src/objects/companies/basic');
+const mockedRegistry = registry as vi.Mocked<typeof registry>;
+const mockedCompanyBasic = companyBasic as vi.Mocked<typeof companyBasic>;
 
 describe('Update Company Tool', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     
     // Mock the registry's findToolConfig function to return mock configurations
     mockedRegistry.findToolConfig.mockImplementation((toolName: string) => {
@@ -26,7 +26,7 @@ describe('Update Company Tool', () => {
           toolConfig: {
             name: 'update-company',
             handler: mockedCompanyBasic.updateCompany,
-            formatResult: jest.fn((result) => `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`)
+            formatResult: vi.fn((result) => `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`)
           },
           toolType: 'update'
         };

@@ -20,7 +20,7 @@ export interface CompanyCreateInput {
     postal_code?: string;
     country?: string;
   };
-  [key: string]: any; // Allow additional properties
+  [key: string]: unknown; // Allow additional properties
 }
 
 /**
@@ -41,7 +41,7 @@ export interface CompanyUpdateInput {
     postal_code?: string;
     country?: string;
   };
-  [key: string]: any; // Allow additional properties
+  [key: string]: unknown; // Allow additional properties
 }
 
 /**
