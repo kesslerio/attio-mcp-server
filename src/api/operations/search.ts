@@ -38,7 +38,7 @@ export async function searchObject<T extends AttioRecord>(
     filter = {
       "$or": [
         { name: { "$contains": query } },
-        { email: { "$contains": query } },
+        { email_addresses: { "$contains": query } },
         { phone: { "$contains": query } }
       ]
     };

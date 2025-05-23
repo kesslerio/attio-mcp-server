@@ -103,7 +103,7 @@ describe('People API functions', () => {
         filter: {
           "$or": [
             { name: { "$contains": "john.doe@example.com" } },
-            { email: { "$contains": "john.doe@example.com" } },
+            { email_addresses: { "$contains": "john.doe@example.com" } },
             { phone: { "$contains": "john.doe@example.com" } }
           ]
         }
@@ -144,7 +144,7 @@ describe('People API functions', () => {
         filter: {
           "$or": [
             { name: { "$contains": "+1234567890" } },
-            { email: { "$contains": "+1234567890" } },
+            { email_addresses: { "$contains": "+1234567890" } },
             { phone: { "$contains": "+1234567890" } }
           ]
         }
