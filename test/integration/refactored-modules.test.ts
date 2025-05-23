@@ -177,6 +177,7 @@ describe('Refactored Modules Integration', () => {
         {
           name: { value: 'Test Corp' },
           website: { value: 'https://test.com' },
+          domains: { value: '["test.com"]' },
         }
       );
 

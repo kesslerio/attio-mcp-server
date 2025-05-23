@@ -188,10 +188,11 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
 
       // Extract stage information if available
       let stageInfo = '';
-      if (result.values && result.values.stage) {
-        const stageValue = Array.isArray(result.values.stage)
-          ? result.values.stage[0]?.value || result.values.stage[0]
-          : result.values.stage.value || result.values.stage;
+      const values = result.values as any;
+      if (values && values.stage) {
+        const stageValue = Array.isArray(values.stage)
+          ? values.stage[0]?.value || values.stage[0]
+          : values.stage.value || values.stage;
         stageInfo = ` - Stage: ${stageValue}`;
       }
 

@@ -6,7 +6,7 @@
  */
 
 import { createPerson } from '../../dist/objects/people-write.js';
-import { peopleToolConfigs } from '../../dist/handlers/tool-configs/people.js';
+import { peopleToolConfigs } from '../../dist/handlers/tool-configs/people/index.js';
 
 async function testCreatePersonFix() {
   console.log('Testing create-person tool fix...\n');

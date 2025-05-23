@@ -38,12 +38,14 @@ export class CompanyValidator {
   private static async processAttributeValues(
     attributes: Record<string, CompanyFieldValue>
   ): Promise<Record<string, ProcessedFieldValue>> {
-    const processedAttributes = { ...attributes };
+    const processedAttributes: Record<string, ProcessedFieldValue> = {};
 
     for (const [field, value] of Object.entries(attributes)) {
       if (value !== undefined && value !== null) {
         await CompanyValidator.validateFieldType(field, value);
         processedAttributes[field] = await processFieldValue(field, value);
+      } else {
+        processedAttributes[field] = value;
       }
     }
 
@@ -56,7 +58,7 @@ export class CompanyValidator {
   static extractDomainFromWebsite(
     attributes: Record<string, CompanyFieldValue>
   ): Record<string, CompanyFieldValue> {
-    if (attributes.website && !attributes.domains) {
+    if (attributes.website && !attributes.domains && typeof attributes.website === 'string') {
       const extractedDomain = extractDomain(attributes.website);
 
       if (extractedDomain) {
@@ -156,7 +158,7 @@ export class CompanyValidator {
       );
     }
 
-    if (attributeName === 'website' && processedValue) {
+    if (attributeName === 'website' && processedValue && typeof processedValue === 'string') {
       try {
         new URL(processedValue);
       } catch {
@@ -164,7 +166,7 @@ export class CompanyValidator {
       }
     }
 
-    if (attributeName === 'linkedin_url' && processedValue) {
+    if (attributeName === 'linkedin_url' && processedValue && typeof processedValue === 'string') {
       try {
         const url = new URL(processedValue);
         if (!url.hostname.includes('linkedin.com')) {
@@ -265,7 +267,7 @@ export class CompanyValidator {
       }
     }
 
-    if (attributes.website) {
+    if (attributes.website && typeof attributes.website === 'string') {
       try {
         new URL(attributes.website);
       } catch {
@@ -273,7 +275,7 @@ export class CompanyValidator {
       }
     }
 
-    if (attributes.linkedin_url) {
+    if (attributes.linkedin_url && typeof attributes.linkedin_url === 'string') {
       try {
         const url = new URL(attributes.linkedin_url);
         if (!url.hostname.includes('linkedin.com')) {

@@ -83,5 +83,19 @@ export async function processFieldValue(
     }
   }
 
-  return value;
+  // Ensure we return a valid ProcessedFieldValue
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null || value === undefined) {
+    return value;
+  }
+  
+  // For arrays, ensure all elements are valid types
+  if (Array.isArray(value)) {
+    const processedArray = value.filter(item => 
+      typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+    );
+    return processedArray.length > 0 ? processedArray : undefined;
+  }
+  
+  // For other types, convert to string or return undefined
+  return typeof value === 'object' ? String(value) : undefined;
 }

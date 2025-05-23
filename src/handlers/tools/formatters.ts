@@ -1,9 +1,19 @@
 /**
  * Result formatting module - handles transformation and formatting of tool results
  */
-import { AttioRecord, AttioListEntry } from "../../types/attio.js";
+import { AttioRecord, AttioListEntry, AttioValue } from "../../types/attio.js";
 import { processListEntries } from "../../utils/record-utils.js";
 import { safeJsonStringify, sanitizeMcpResponse } from "../../utils/json-serializer.js";
+
+/**
+ * Safely extract value from record attributes
+ */
+function getAttributeValue(record: AttioRecord | undefined, fieldName: string): string {
+  if (!record?.values) return 'Unknown';
+  
+  const fieldValue = record.values[fieldName] as AttioValue<string>[] | undefined;
+  return fieldValue?.[0]?.value || 'Unknown';
+}
 
 /**
  * Format search results for display
@@ -18,9 +28,8 @@ export function formatSearchResults(results: AttioRecord[], resourceType: string
   }
   
   return results.map((record, index) => {
-    const attributes = record.attributes || ({} as Record<string, any>);
-    const name = attributes.name?.value ?? 'Unknown';
-    const id = record.id?.record_id || record.recordId || 'Unknown ID';
+    const name = getAttributeValue(record, 'name');
+    const id = record.id?.record_id || 'Unknown ID';
     return `${index + 1}. ${name} (ID: ${id})`;
   }).join('\n');
 }
@@ -60,9 +69,8 @@ export function formatListEntries(entries: AttioListEntry[]): string {
   
   return processedEntries.map((entry, index) => {
     const record = entry.record;
-    const attributes = record?.attributes || ({} as Record<string, any>);
-    const name = attributes.name?.value ?? 'Unknown';
-    const entryId = entry.entry_id;
+    const name = getAttributeValue(record, 'name');
+    const entryId = entry.id?.entry_id || 'Unknown Entry ID';
     const recordId = record?.id?.record_id || 'Unknown ID';
     
     return `${index + 1}. ${name} (Entry: ${entryId}, Record: ${recordId})`;
