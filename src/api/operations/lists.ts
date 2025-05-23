@@ -281,9 +281,12 @@ export async function updateListEntry(
         console.error(`- Attributes: ${JSON.stringify(attributes)}`);
       }
       
-      // Attio API expects updates to list entries in the 'data' field structure
+      // Attio API expects updates to list entries in the 'data.values' structure
+      // This follows the same pattern as record updates in crud.ts
       const response = await api.patch<AttioSingleResponse<AttioListEntry>>(path, {
-        data: attributes
+        data: {
+          values: attributes
+        }
       });
       
       if (process.env.NODE_ENV === 'development') {
@@ -292,13 +295,23 @@ export async function updateListEntry(
       
       return response.data.data || response.data;
     } catch (error: any) {
-      // Enhanced error logging
+      // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {
         console.error(`[updateListEntry] Error updating entry ${entryId} in list ${listId}:`, 
           error.message || 'Unknown error');
         console.error('Status:', error.response?.status);
         console.error('Response data:', JSON.stringify(error.response?.data || {}));
       }
+      
+      // Add more specific error types based on status codes
+      if (error.response?.status === 404) {
+        throw new Error(`List entry ${entryId} not found in list ${listId}`);
+      } else if (error.response?.status === 400) {
+        throw new Error(`Invalid attributes for list entry update: ${error.response?.data?.message || 'Bad request'}`);
+      } else if (error.response?.status === 403) {
+        throw new Error(`Insufficient permissions to update list entry ${entryId} in list ${listId}`);
+      }
+      
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }

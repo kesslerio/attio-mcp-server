@@ -316,9 +316,12 @@ export async function updateListEntry(
       console.log(`[updateListEntry:fallback] Request to ${path} with attributes:`, JSON.stringify(attributes));
     }
     
-    // Attio API expects updates to list entries in the 'data' field structure
+    // Attio API expects updates to list entries in the 'data.values' structure
+    // This follows the same pattern as record updates in crud.ts  
     const response = await api.patch(path, {
-      data: attributes
+      data: {
+        values: attributes
+      }
     });
     
     if (process.env.NODE_ENV === 'development') {
