@@ -45,6 +45,7 @@ describe('get-list-details tool', () => {
 
     // Create a mock request
     const mockRequest = {
+      method: "tools/call" as const,
       params: {
         name: 'get-list-details',
         arguments: {
@@ -79,6 +80,7 @@ describe('get-list-details tool', () => {
   it('should handle missing listId parameter', async () => {
     // Create a mock request without listId
     const mockRequest = {
+      method: "tools/call" as const,
       params: {
         name: 'get-list-details',
         arguments: {}
@@ -100,7 +102,7 @@ describe('get-list-details tool', () => {
 
   it('should handle API errors', async () => {
     // Mock the getListDetails function to throw an error
-    const mockError = new Error('API Error');
+    const mockError = new Error('API Error') as any;
     mockError.response = { 
       status: 404,
       data: { message: 'List not found' }
@@ -110,6 +112,7 @@ describe('get-list-details tool', () => {
 
     // Create a mock request
     const mockRequest = {
+      method: "tools/call" as const,
       params: {
         name: 'get-list-details',
         arguments: {

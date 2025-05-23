@@ -17,6 +17,7 @@ import {
   transformFiltersToApiFormat
 } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { executeWithListFallback } from '../../utils/api-fallback.js';
 
 /**
  * Gets all lists in the workspace
@@ -167,32 +168,13 @@ export async function getListEntries(
   
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
-    // Try the primary endpoint with expanded record data
-    try {
-      const path = `/lists/${listId}/entries/query`;
-      const requestBody = createRequestBody();
-      
-      logOperation('Attempt 1: Calling primary endpoint', { 
-        path, 
-        requestBody: JSON.stringify(requestBody) 
-      });
-      
-      const response = await api.post<AttioListResponse<AttioListEntry>>(path, requestBody);
-      
-      logOperation('Primary endpoint successful', { 
-        resultCount: response.data.data?.length || 0 
-      });
-      
-      // Process response to ensure record_id is correctly extracted
-      const entries = processListEntries(response.data.data || []);
-      return entries;
-    } catch (error: any) {
-      logOperation('Primary endpoint failed', { 
-        error: error.message, 
-        status: error.response?.status 
-      }, true);
-      throw error;
-    }
+    return executeWithListFallback(
+      api,
+      { listId, filters, limit: safeLimit, offset: safeOffset },
+      createRequestBody,
+      processListEntries,
+      logOperation
+    );
   }, retryConfig);
 }
 

@@ -3,6 +3,10 @@
  */
 import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { FilterConditionType } from '../../src/types/attio';
+import { initializeAttioClient } from '../../src/api/attio-client';
+
+// Skip tests if no API key
+const skipIntegrationTests = !process.env.ATTIO_API_KEY;
 
 // Define mock filters to search with
 const filters = {
@@ -15,7 +19,14 @@ const filters = {
   ]
 };
 
-describe('Companies Advanced Search', () => {
+const testSuite = skipIntegrationTests ? describe.skip : describe;
+testSuite('Companies Advanced Search', () => {
+  beforeAll(() => {
+    if (!skipIntegrationTests) {
+      initializeAttioClient(process.env.ATTIO_API_KEY!);
+    }
+  });
+
   test('should return either array or paginated results', async () => {
     const results = await advancedSearchCompanies(filters, 5);
     
@@ -33,16 +44,17 @@ describe('Companies Advanced Search', () => {
       }
     } else {
       // If it's a paginated response, check pagination structure
-      expect(results).toBeDefined();
-      expect(results).toHaveProperty('data');
-      expect(Array.isArray(results.data)).toBe(true);
+      const paginatedResults = results as any;
+      expect(paginatedResults).toBeDefined();
+      expect(paginatedResults).toHaveProperty('data');
+      expect(Array.isArray(paginatedResults.data)).toBe(true);
       
       // Check pagination info
-      expect(results).toHaveProperty('pagination');
+      expect(paginatedResults).toHaveProperty('pagination');
       
       // If we have results, check their structure
-      if (results.data && results.data.length > 0) {
-        const firstResult = results.data[0];
+      if (paginatedResults.data && paginatedResults.data.length > 0) {
+        const firstResult = paginatedResults.data[0];
         expect(firstResult).toHaveProperty('id.record_id');
       }
     }

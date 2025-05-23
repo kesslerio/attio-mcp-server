@@ -120,24 +120,15 @@ async function executeBatchCompanyOperation<T, R>(
 export async function batchCreateCompanies(
   params: { companies: RecordAttributes[], config?: Partial<BatchConfig> }
 ): Promise<BatchResponse<Company>> {
-  // Debug logging for incoming parameters
-  console.error('[batchCreateCompanies] Received params:', JSON.stringify(params, null, 2));
-  console.error('[batchCreateCompanies] Params type:', typeof params);
-  console.error('[batchCreateCompanies] Is array?', Array.isArray(params));
-  
   // Early validation of parameters - fail fast
   if (!params) {
-    console.error('[batchCreateCompanies] Error: params object is required');
     throw new Error("Invalid request: params object is required");
   }
   
   // Extract and validate companies array
   const { companies, config: batchConfig } = params;
   
-  console.error('[batchCreateCompanies] Extracted companies:', companies ? `Array of ${Array.isArray(companies) ? companies.length : 'non-array'}` : 'undefined');
-  
   if (!companies) {
-    console.error('[batchCreateCompanies] Error: companies parameter is required');
     throw new Error("Invalid request: 'companies' parameter is required");
   }
   
@@ -180,7 +171,7 @@ export async function batchCreateCompanies(
     }
     
     // For other errors, log and then rethrow
-    console.error('[batchCreateCompanies] Error creating companies:', error);
+    // Error occurred during batch creation
     throw error;
   }
 }

@@ -56,6 +56,10 @@ export async function searchObject<T extends AttioRecord>(
       });
       return response.data.data || [];
     } catch (error: any) {
+      // Handle 404 errors with custom message
+      if (error.response && error.response.status === 404) {
+        throw new Error(`No ${objectType} found matching '${query}'`);
+      }
       // Let upstream handlers create specific, rich error objects from the original Axios error.
       throw error;
     }
@@ -198,13 +202,20 @@ export async function listObjects<T extends AttioRecord>(
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
   const api = getAttioClient();
-  const path = `/objects/${objectType}/records`;
+  const path = `/objects/${objectType}/records/query`;
   
   return callWithRetry(async () => {
     try {
-      const response = await api.get<AttioListResponse<T>>(path, {
-        params: limit ? { limit } : undefined
-      });
+      const body: any = {
+        limit: limit || 20,
+        sorts: [{ 
+          attribute: 'last_interaction', 
+          field: 'interacted_at', 
+          direction: 'desc' 
+        }]
+      };
+      
+      const response = await api.post<AttioListResponse<T>>(path, body);
       return response.data.data || [];
     } catch (error: any) {
       throw error;

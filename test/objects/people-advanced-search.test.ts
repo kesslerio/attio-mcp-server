@@ -41,16 +41,20 @@ describe('Advanced People Search', () => {
     // Call the advanced search function
     const results = await advancedSearchPeople(filters);
     
-    // Check that results are returned
-    expect(Array.isArray(results)).toBe(true);
+    // Check that results are returned as a PaginatedResponse
+    expect(results).toBeDefined();
+    expect(results.results).toBeDefined();
+    expect(Array.isArray(results.results)).toBe(true);
+    expect(results.pagination).toBeDefined();
     
-    // Since the function returns either Person[] or PaginatedResponse<Person>
-    // we need to check if results is an array before accessing length
-    if (Array.isArray(results)) {
-      expect(results.length).toBeGreaterThan(0);
-      
-      // Check first result structure
-      const firstResult = results[0];
+    // Check pagination metadata
+    expect(results.pagination.totalCount).toBeGreaterThanOrEqual(0);
+    expect(results.pagination.currentPage).toBeGreaterThan(0);
+    expect(results.pagination.pageSize).toBeGreaterThan(0);
+    
+    // Check first result structure if we have results
+    if (results.results.length > 0) {
+      const firstResult = results.results[0];
       expect(firstResult).toHaveProperty('id.record_id');
       expect(firstResult).toHaveProperty('values.name');
     }

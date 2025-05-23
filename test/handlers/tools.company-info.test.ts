@@ -80,6 +80,7 @@ describe('Company Info Tools', () => {
     it('should execute get-company-basic-info tool successfully', async () => {
       // Arrange
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-basic-info',
           arguments: {
@@ -101,6 +102,7 @@ describe('Company Info Tools', () => {
     it('should handle missing companyId parameter', async () => {
       // Arrange
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-basic-info',
           arguments: {}
@@ -120,6 +122,7 @@ describe('Company Info Tools', () => {
     it('should execute get-company-business-info tool successfully', async () => {
       // Arrange
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-business-info',
           arguments: {
@@ -143,6 +146,7 @@ describe('Company Info Tools', () => {
     it('should execute get-company-fields tool successfully', async () => {
       // Arrange
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-fields',
           arguments: {
@@ -165,6 +169,7 @@ describe('Company Info Tools', () => {
     it('should validate fields parameter is an array', async () => {
       // Arrange
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-fields',
           arguments: {
@@ -189,6 +194,7 @@ describe('Company Info Tools', () => {
       mockedCompanyAttributes.getCompanyBasicInfo.mockRejectedValue(new Error('API Error'));
       
       const request = {
+        method: "tools/call" as const,
         params: {
           name: 'get-company-basic-info',
           arguments: {

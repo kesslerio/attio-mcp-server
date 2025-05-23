@@ -474,7 +474,7 @@ describe('Attribute Mapping', () => {
       
       // Check nested OR filters
       expect(translated.filters[0].filters[0].attribute.slug).toBe('name_companies');
-      expect(translated.filters[0].filters[1].attribute.slug).toBe('industry');
+      expect(translated.filters[0].filters[1].attribute.slug).toBe('categories'); // Industry maps to categories
       
       // Check object-specific sections
       expect(translated.filters[1].companies.attribute.slug).toBe('name_companies');

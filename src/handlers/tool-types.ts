@@ -31,7 +31,7 @@ export interface DetailsToolConfig extends ToolConfig {
 
 // Notes tool configuration
 export interface NotesToolConfig extends ToolConfig {
-  handler: (id: string) => Promise<AttioNote[]>;
+  handler: (id: string, limit?: number, offset?: number) => Promise<AttioNote[]>;
 }
 
 // Create note tool configuration

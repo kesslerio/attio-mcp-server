@@ -15,14 +15,15 @@ config({ path: '.env.test' });
 // Skip integration tests if no API key is available
 const skipIntegrationTests = !process.env.ATTIO_API_KEY;
 
-describe.skipIf(skipIntegrationTests)('Company Write Operations - Integration Tests', () => {
+// Use conditional describe instead of skipIf
+const testSuite = skipIntegrationTests ? describe.skip : describe;
+
+testSuite('Company Write Operations - Integration Tests', () => {
   const testCompanies: string[] = [];
   
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    initializeAttioClient({
-      apiKey: process.env.ATTIO_API_KEY!
-    });
+    initializeAttioClient(process.env.ATTIO_API_KEY!);
   });
   
   afterEach(async () => {
@@ -62,11 +63,7 @@ describe.skipIf(skipIntegrationTests)('Company Write Operations - Integration Te
         name: `Test Custom Company ${Date.now()}`,
         industry: 'Technology',
         employee_range: '51-200',
-        primary_location: {
-          locality: 'San Francisco',
-          region: 'CA',
-          country_code: 'US'
-        }
+        primary_location: 'San Francisco, CA, US'
       };
       
       const result = await createCompany(companyData);
@@ -114,9 +111,9 @@ describe.skipIf(skipIntegrationTests)('Company Write Operations - Integration Te
       });
       testCompanies.push(company.id.record_id);
       
-      // Update description to null
+      // Update description to undefined to clear it
       const result = await updateCompany(company.id.record_id, {
-        description: null
+        description: undefined
       });
       
       expect(result.values?.description).toBeNull();
