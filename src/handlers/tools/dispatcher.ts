@@ -434,7 +434,16 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
 
-    // Handle listsForCompany tool
+    /**
+     * Handle listsForCompany tool
+     * 
+     * Retrieves all lists that contain a specific company record.
+     * Supports optional limit parameter for controlling result count.
+     * 
+     * @param companyId - The ID of the company to find lists for
+     * @param limit - Optional maximum number of list entries to check (default: 50)
+     * @returns Array of list objects that contain the specified company
+     */
     if (toolType === 'listsForCompany') {
       const companyId = request.params.arguments?.companyId as string;
 
