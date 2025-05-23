@@ -320,7 +320,9 @@ describe('companies', () => {
       expect(mockedRecords.createObjectRecord).toHaveBeenCalledWith(
         'companies',
         {
+          // Note: 'industry' is automatically mapped to 'categories' by attribute mapping system
           categories: { value: 'Technology' },
+          // Note: domains array is automatically extracted from website and serialized
           domains: { value: '["newcompany.com"]' },
           name: { value: 'New Company' },
           website: { value: 'https://newcompany.com' }
