@@ -180,7 +180,7 @@ function createOrFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean
 ): { filter?: AttioApiFilter } {
-  const orConditions: any[] = [];
+  const orConditions: unknown[] = [];
   
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);

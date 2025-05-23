@@ -33,7 +33,7 @@ export async function searchCompaniesByPeople(
   peopleFilter: ListEntryFilters | string | any,
   limit: number | string = 20,
   offset: number | string = 0
-): Promise<Company[]> {
+): Promise<Compunknown[]> {
   try {
     // Ensure peopleFilter is a properly structured filter object
     if (typeof peopleFilter !== 'object' || !peopleFilter || !peopleFilter.filters) {
@@ -73,7 +73,7 @@ export async function searchCompaniesByPeopleList(
   listId: string,
   limit: number | string = 20,
   offset: number | string = 0
-): Promise<Company[]> {
+): Promise<Compunknown[]> {
   try {
     // Validate listId
     if (!listId || typeof listId !== 'string' || listId.trim() === '') {
@@ -111,7 +111,7 @@ export async function searchCompaniesByNotes(
   searchText: string,
   limit: number | string = 20,
   offset: number | string = 0
-): Promise<Company[]> {
+): Promise<Compunknown[]> {
   try {
     // Validate searchText
     if (!searchText || typeof searchText !== 'string' || searchText.trim() === '') {

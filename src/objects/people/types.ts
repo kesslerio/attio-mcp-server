@@ -22,7 +22,7 @@ export interface PersonAttributes {
   company?: { record_id: string };
   
   /** Custom attributes */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Error classes for people operations

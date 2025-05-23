@@ -15,7 +15,7 @@ import { listCompanies } from "./basic.js";
  * @param error - The error that was caught
  * @param context - Optional additional context about the operation
  */
-function logAttributeError(functionName: string, error: unknown, context: Record<string, any> = {}) {
+function logAttributeError(functionName: string, error: Error, context: Record<string, unknown> = {}) {
   console.error(`[${functionName}] Error:`, error);
   console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
   console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
@@ -53,7 +53,7 @@ export async function getCompanyFields(companyIdOrUri: string, fields: string[])
     const fullCompany = await getCompanyDetails(companyIdOrUri);
     
     // Filter to only requested fields
-    const filteredValues: Record<string, any> = {};
+    const filteredValues: Record<string, unknown> = {};
     const allValues = fullCompany.values || {};
     
     for (const field of fields) {
@@ -223,7 +223,7 @@ export async function getCompanyCustomFields(
   ]);
   
   // Extract custom fields
-  const customFields: Record<string, any> = {};
+  const customFields: Record<string, unknown> = {};
   const values = allData.values || {};
   
   for (const [fieldName, fieldValue] of Object.entries(values)) {

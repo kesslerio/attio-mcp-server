@@ -12,7 +12,7 @@ const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 // Enable logging temporarily
-console.log = (...args: any[]) => {
+console.log = (...args: unknown[]) => {
   if (
     args[0]?.includes?.('b2b_segment') ||
     args[0]?.includes?.('type_persona') ||
@@ -24,7 +24,7 @@ console.log = (...args: any[]) => {
   }
 };
 
-console.error = (...args: any[]) => {
+console.error = (...args: unknown[]) => {
   if (
     args[0]?.includes?.('b2b_segment') ||
     args[0]?.includes?.('type_persona') ||

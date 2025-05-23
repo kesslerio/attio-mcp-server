@@ -65,7 +65,7 @@ export interface GetListEntriesToolConfig extends ToolConfig {
 
 // List action tool configuration
 export interface ListActionToolConfig extends ToolConfig {
-  handler: (listId: string, recordId: string) => Promise<any>;
+  handler: (listId: string, recordId: string) => Promise<unknown>;
   idParams?: string[];
 }
 
@@ -76,6 +76,6 @@ export interface PromptsToolConfig extends ToolConfig {
 
 // Date-based search tool configuration
 export interface DateBasedSearchToolConfig extends ToolConfig {
-  handler: (...args: any[]) => Promise<AttioRecord[]>;
+  handler: (...args: unknown[]) => Promise<AttioRecord[]>;
   formatResult: (results: AttioRecord[]) => string;
 }

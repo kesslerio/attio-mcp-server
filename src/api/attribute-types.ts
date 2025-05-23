@@ -230,7 +230,7 @@ export async function getFieldValidationRules(
   pattern?: string;
   minLength?: number;
   maxLength?: number;
-  enum?: any[];
+  enum?: unknown[];
 }> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
@@ -277,7 +277,7 @@ export async function formatAttributeValue(
   objectSlug: string,
   attributeSlug: string,
   value: any
-): Promise<any> {
+): Promise<unknown> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
   // Handle null/undefined values
@@ -396,9 +396,9 @@ export async function formatAttributeValue(
  */
 export async function formatAllAttributes(
   objectSlug: string,
-  attributes: Record<string, any>
-): Promise<Record<string, any>> {
-  const formatted: Record<string, any> = {};
+  attributes: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const formatted: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(attributes)) {
     if (value !== undefined) {

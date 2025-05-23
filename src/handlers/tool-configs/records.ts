@@ -38,11 +38,11 @@ export interface RecordListToolConfig extends ToolConfig {
 }
 
 export interface RecordBatchCreateToolConfig extends ToolConfig {
-  handler: (objectSlug: string, records: any[], objectId?: string) => Promise<any>;
+  handler: (objectSlug: string, records: unknown[], objectId?: string) => Promise<unknown>;
 }
 
 export interface RecordBatchUpdateToolConfig extends ToolConfig {
-  handler: (objectSlug: string, records: any[], objectId?: string) => Promise<any>;
+  handler: (objectSlug: string, records: unknown[], objectId?: string) => Promise<unknown>;
 }
 
 // Record tool configurations

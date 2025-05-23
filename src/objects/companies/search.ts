@@ -51,7 +51,7 @@ export interface CompanySearchOptions {
  * // Disables domain prioritization, uses name search only
  * ```
  */
-export async function searchCompanies(query: string, options: CompanySearchOptions = {}): Promise<Company[]> {
+export async function searchCompanies(query: string, options: CompanySearchOptions = {}): Promise<Compunknown[]> {
   // Early return for empty or whitespace-only queries
   if (!query || !query.trim()) {
     return [];
@@ -124,7 +124,7 @@ export async function searchCompanies(query: string, options: CompanySearchOptio
  * @param domain - Domain to search for
  * @returns Array of matching company objects
  */
-export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
+export async function searchCompaniesByDomain(domain: string): Promise<Compunknown[]> {
   // Early return for empty domain
   if (!domain || !domain.trim()) {
     return [];
@@ -170,7 +170,7 @@ export async function searchCompaniesByDomain(domain: string): Promise<Company[]
  * @param query - Search query string to match against company names
  * @returns Array of matching company objects
  */
-export async function searchCompaniesByName(query: string): Promise<Company[]> {
+export async function searchCompaniesByName(query: string): Promise<Compunknown[]> {
   // Early return for empty query
   if (!query || !query.trim()) {
     return [];
@@ -266,7 +266,7 @@ export async function advancedSearchCompanies(
   filters: ListEntryFilters,
   limit?: number,
   offset?: number
-): Promise<Company[]> {
+): Promise<Compunknown[]> {
   try {
     // Import validation utilities only when needed to avoid circular dependencies
     // This is a dynamic import that won't affect the module dependency graph
@@ -406,7 +406,7 @@ export function createDomainFilter(
  * @param query - Search query that may contain domain, email, URL, or company name
  * @returns Array of matching company objects with domain matches prioritized
  */
-export async function smartSearchCompanies(query: string): Promise<Company[]> {
+export async function smartSearchCompanies(query: string): Promise<Compunknown[]> {
   // Early return for empty query
   if (!query || !query.trim()) {
     return [];
@@ -421,7 +421,7 @@ export async function smartSearchCompanies(query: string): Promise<Company[]> {
   
   if (domains.length > 0) {
     // Multi-domain search with prioritization
-    const allResults: Company[] = [];
+    const allResults: Compunknown[] = [];
     const seenIds = new Set<string>();
     
     // Search by each domain first

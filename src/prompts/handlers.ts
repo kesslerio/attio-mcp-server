@@ -229,7 +229,7 @@ export async function getPromptDetails(
  */
 function validateParameters(
   prompt: PromptTemplate,
-  parameters: Record<string, any>
+  parameters: Record<string, unknown>
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -307,8 +307,8 @@ function validateParameters(
  */
 function applyDefaultValues(
   prompt: PromptTemplate,
-  parameters: Record<string, any>
-): Record<string, any> {
+  parameters: Record<string, unknown>
+): Record<string, unknown> {
   const result = { ...parameters };
 
   prompt.parameters.forEach((param) => {

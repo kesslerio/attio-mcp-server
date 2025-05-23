@@ -10,7 +10,7 @@ import path from 'path';
  */
 export interface MappingConfig {
   version: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   mappings: {
     attributes: {
       common: Record<string, string>;
@@ -20,7 +20,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    [key: string]: any; // Allow other mapping types
+    [key: string]: unknown; // Allow other mapping types
   };
 }
 
@@ -178,7 +178,7 @@ export async function writeMappingConfig(
  */
 export async function updateMappingSection(
   section: string,
-  mappings: Record<string, any>,
+  mappings: Record<string, unknown>,
   merge: boolean = true,
   filePath: string = CONFIG_PATHS.user
 ): Promise<void> {

@@ -30,12 +30,12 @@ export interface CompanyAttributes {
   employee_range?: string;
   foundation_date?: string;
   primary_location?: string;
-  [key: string]: any; // Allow for custom fields
+  [key: string]: unknown; // Allow for custom fields
 }
 
 export interface CompanyFieldUpdate {
   name: string;
-  values: any[];
+  values: unknown[];
 }
 
 // Re-export any company-specific types as needed

@@ -32,10 +32,10 @@ interface ApiResponse<T> {
  * @param endpointName - Name of the endpoint for rate limiting tracking
  * @returns Rate-limited handler function
  */
-export function withRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+export function withRateLimiting<T extends unknown[]>(
+  handler: (...args: T) => Promise<unknown>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<unknown> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];
@@ -54,7 +54,7 @@ export function withRateLimiting<T extends any[]>(
       };
 
       // Format error for API response
-      const response: ApiResponse<any> = {
+      const response: ApiResponse<unknown> = {
         content: [
           {
             type: 'text',
@@ -74,7 +74,7 @@ export function withRateLimiting<T extends any[]>(
       // Format error for API response
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const response: ApiResponse<any> = {
+      const response: ApiResponse<unknown> = {
         content: [
           {
             type: 'text',
@@ -96,10 +96,10 @@ export function withRateLimiting<T extends any[]>(
  * @param endpointName - Name of the endpoint for rate limiting tracking
  * @returns Rate-limited handler function with headers
  */
-export function withSearchRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+export function withSearchRateLimiting<T extends unknown[]>(
+  handler: (...args: T) => Promise<unknown>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<unknown> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];
@@ -131,7 +131,7 @@ export function withSearchRateLimiting<T extends any[]>(
       });
 
       // Format error for API response
-      const response: ApiResponse<any> = {
+      const response: ApiResponse<unknown> = {
         content: [
           {
             type: 'text',
@@ -158,7 +158,7 @@ export function withSearchRateLimiting<T extends any[]>(
             ? `Unexpected error: ${error.message}`
             : `Unknown error: ${String(error)}`;
 
-      const response: ApiResponse<any> = {
+      const response: ApiResponse<unknown> = {
         content: [
           {
             type: 'text',

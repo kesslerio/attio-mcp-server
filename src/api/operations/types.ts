@@ -53,7 +53,7 @@ export interface ListEntryFilters {
     attributes: ListEntryFilter[];
     logicalOperator?: 'and' | 'or';
   }[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

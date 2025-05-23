@@ -35,7 +35,7 @@ interface AttioAttribute {
   title: string;       // Changed from 'display_name' to match Attio API response
   description?: string;
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

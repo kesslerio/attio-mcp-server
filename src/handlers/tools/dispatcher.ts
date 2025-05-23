@@ -41,7 +41,7 @@ function logToolRequest(toolType: string, toolName: string, request: any) {
  * @param error - The error that was caught during execution
  * @param additionalInfo - Optional additional information about the execution context, such as parameters
  */
-function logToolError(toolType: string, error: unknown, additionalInfo: Record<string, any> = {}) {
+function logToolError(toolType: string, error: Error, additionalInfo: Record<string, unknown> = {}) {
   console.error(`[${toolType}] Execution error:`, error);
   console.error(`- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`);
   console.error(`- Message: ${error instanceof Error ? error.message : String(error)}`);
@@ -63,7 +63,7 @@ function logToolError(toolType: string, error: unknown, additionalInfo: Record<s
  * @param attributes - The attributes object to validate (key-value pairs of company attributes)
  * @returns True if validation passes, or an error message string if validation fails
  */
-function validateAttributes(attributes: Record<string, any> | null | undefined): true | string {
+function validateAttributes(attributes: Record<string, unknown> | null | undefined): true | string {
   if (!attributes) {
     return "Attributes parameter is required";
   }
@@ -92,7 +92,7 @@ function formatSuccessResponse(
   operation: string,
   resourceType: string,
   resourceId: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): string {
   let message = `Successfully ${operation}d ${resourceType} record with ID: ${resourceId}`;
   
@@ -697,7 +697,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     if (toolType === 'updateListEntry') {
       const listId = request.params.arguments?.listId as string;
       const entryId = request.params.arguments?.entryId as string;
-      const attributes = request.params.arguments?.attributes as Record<string, any>;
+      const attributes = request.params.arguments?.attributes as Record<string, unknown>;
       
       // Validate required parameters
       if (!listId) {
@@ -1182,7 +1182,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       toolType: string, 
       toolConfig: ToolConfig,
       request: CallToolRequest,
-      extraParams?: Record<string, any>
+      extraParams?: Record<string, unknown>
     ) {
       // Construct API path from tool type (convert camelCase to kebab-case)
       const formattedToolType = toolType.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();

@@ -24,14 +24,14 @@ export interface ValueMatchApiError extends Error {
 /**
  * Type guard to check if error is an ApiError
  */
-export function isApiError(error: unknown): error is ApiError {
+export function isApiError(error: Error): error is ApiError {
   return error instanceof Error && 'response' in error;
 }
 
 /**
  * Type guard to check if error has response data
  */
-export function hasResponseData(error: unknown): error is { response: { data: any } } {
+export function hasResponseData(error: Error): error is { response: { data: any } } {
   return (
     error !== null &&
     typeof error === 'object' &&

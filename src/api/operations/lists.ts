@@ -253,7 +253,7 @@ export async function addRecordToList(
 export async function updateListEntry(
   listId: string, 
   entryId: string,
-  attributes: Record<string, any>,
+  attributes: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
   const api = getAttioClient();

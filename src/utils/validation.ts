@@ -17,9 +17,9 @@ export interface ValidationResult {
 export interface ValidationSchema {
   type: string;
   required?: string[];
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   items?: ValidationSchema;
-  enum?: any[];
+  enum?: unknown[];
   minLength?: number;
   maxLength?: number;
   minimum?: number;

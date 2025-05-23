@@ -34,7 +34,7 @@ export function convertToBoolean(value: any): boolean {
 
 // Error class for attribute mapping errors
 export class AttributeMappingError extends Error {
-  constructor(message: string, public details: Record<string, any> = {}) {
+  constructor(message: string, public details: Record<string, unknown> = {}) {
     super(message);
     this.name = 'AttributeMappingError';
   }

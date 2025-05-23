@@ -323,8 +323,8 @@ export async function batchDeleteCompanies(
 export async function batchSearchCompanies(
   queries: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<BatchResponse<Company[]>> {
-  return executeBatchOperations<string, Company[]>(
+): Promise<BatchResponse<Compunknown[]>> {
+  return executeBatchOperations<string, Compunknown[]>(
     queries.map((query, index) => ({
       id: `search_companies_${index}`,
       params: query,

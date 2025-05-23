@@ -59,7 +59,7 @@ export class PersonValidator {
     return attributes;
   }
 
-  static async validateUpdate(personId: string, attributes: any): Promise<any> {
+  static async validateUpdate(personId: string, attributes: any): Promise<unknown> {
     if (!personId || typeof personId !== 'string') {
       throw new InvalidPersonDataError('Person ID must be a non-empty string');
     }

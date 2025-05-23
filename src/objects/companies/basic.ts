@@ -30,7 +30,7 @@ import {
  * @param limit - Maximum number of companies to return (default: 20)
  * @returns Array of company results
  */
-export async function listCompanies(limit: number = 20): Promise<Company[]> {
+export async function listCompanies(limit: number = 20): Promise<Compunknown[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);

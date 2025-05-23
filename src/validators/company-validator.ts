@@ -111,7 +111,7 @@ export class CompanyValidator {
   private static async processFieldValue(
     fieldName: string,
     value: any
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Skip processing for null/undefined values
     if (value === null || value === undefined) {
       return value;
@@ -167,8 +167,8 @@ export class CompanyValidator {
    * @returns Processed attributes object with converted values
    */
   private static async processAttributeValues(
-    attributes: Record<string, any>
-  ): Promise<Record<string, any>> {
+    attributes: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     const processedAttributes = { ...attributes };
 
     for (const [field, value] of Object.entries(attributes)) {
@@ -332,7 +332,7 @@ export class CompanyValidator {
     companyId: string,
     attributeName: string,
     attributeValue: any
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
       throw new InvalidCompanyDataError(
@@ -775,15 +775,15 @@ export class CompanyValidator {
    * // validated = { name: 'Acme Corp', employees: 250, is_customer: true }
    */
   static async validateAttributeTypes(
-    attributes: Record<string, any>
-  ): Promise<Record<string, any>> {
-    const validatedAttributes: Record<string, any> = {};
+    attributes: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const validatedAttributes: Record<string, unknown> = {};
     const errors: Record<string, string> = {};
     let hasErrors = false;
 
     // First handle special cases: undefined and null values
     // Extract attributes that need validation
-    const attributesToValidate: Record<string, any> = {};
+    const attributesToValidate: Record<string, unknown> = {};
 
     Object.entries(attributes).forEach(([attributeName, value]) => {
       if (value === undefined) {
