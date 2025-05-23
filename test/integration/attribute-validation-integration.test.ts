@@ -57,6 +57,14 @@ const MOCK_ATTRIBUTE_METADATA = {
     attioType: 'url',
     metadata: { api_slug: 'website', type: 'url' }
   },
+  categories: {
+    fieldType: 'array',
+    isArray: true,
+    isRequired: false,
+    isUnique: false,
+    attioType: 'select',
+    metadata: { api_slug: 'categories', type: 'select', is_multiselect: true }
+  },
   tags: {
     fieldType: 'array',
     isArray: true,
@@ -114,6 +122,7 @@ describe('Attribute Validation Integration', () => {
         founded_date: '2020-01-15',
         website: 'https://acme.example.com',
         tags: 'enterprise',        // Single string that should be in array
+        categories: 'Health Care', // Single string to convert to array
         description: 'A test company'
       };
       
@@ -128,6 +137,7 @@ describe('Attribute Validation Integration', () => {
         founded_date: '2020-01-15',
         website: 'https://acme.example.com',
         tags: ['enterprise'],      // Converted to array
+        categories: ['Health Care'], // Converted to array
         description: 'A test company'
       });
       
@@ -137,6 +147,7 @@ describe('Attribute Validation Integration', () => {
       expect(result.company_size).toBe(250);        // String converted to number
       expect(result.is_customer).toBe(true);        // String converted to boolean
       expect(result.tags).toEqual(['enterprise']);  // String converted to array
+      expect(result.categories).toEqual(['Health Care']);
     });
     
     it('should validate and convert company update attributes', async () => {
@@ -144,7 +155,8 @@ describe('Attribute Validation Integration', () => {
       const companyData = {
         company_size: '500',        // String that should be converted to number
         is_customer: 0,             // Number that should be converted to boolean (false)
-        tags: ['enterprise', 'b2b'] // Array that remains array
+        tags: ['enterprise', 'b2b'],
+        categories: ['B2C']         // Array input should remain array
       };
       
       // Validate using the enhanced validator
@@ -154,7 +166,8 @@ describe('Attribute Validation Integration', () => {
       expect(result).toMatchObject({
         company_size: 500,          // Converted to number
         is_customer: false,         // Converted to boolean
-        tags: ['enterprise', 'b2b'] // Still an array
+        tags: ['enterprise', 'b2b'],
+        categories: ['B2C']
       });
       
       // Verify that validation occurred and data was processed correctly
