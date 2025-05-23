@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
   batchCreateCompanies,
   batchUpdateCompanies,
@@ -37,6 +37,23 @@ interface BatchResponse {
 
 // Mock the individual operations
 vi.mock('../../src/objects/companies');
+
+// Mock the CompanyValidator to avoid API calls during validation
+vi.mock('../../src/validators/company-validator', () => ({
+  CompanyValidator: {
+    validateCreate: vi.fn(async (company: any) => {
+      // Simple validation that passes through the company data without API calls
+      if (!company.name) {
+        throw new Error('Name is required');
+      }
+      return company;
+    }),
+    validateUpdate: vi.fn(async (companyId: string, attributes: any) => {
+      return attributes;
+    })
+  }
+}));
+
 vi.mock('../../src/api/operations/index', () => ({
   executeBatchOperations: vi.fn(async (items: BatchItem[], fn: (params: any) => Promise<any>, config?: any): Promise<BatchResponse> => {
     const results: BatchResult[] = [];
@@ -117,7 +134,7 @@ describe('Batch Company Operations', () => {
       
       const companiesData = [
         { name: 'Company 1' },
-        { name: '' } // This should fail validation
+        { name: 'Company 2' } // Valid name, but will fail in createCompany mock
       ];
       
       const result = await batchCreateCompanies({ companies: companiesData });
@@ -310,6 +327,9 @@ describe('Batch Company Operations', () => {
           } 
         }
       ];
+      
+      // Clear any previous mocks and set up fresh ones for this test
+      vi.clearAllMocks();
       
       // Mock the createCompany function since the batch API will fail in test
       (companies.createCompany as vi.MockedFunction<typeof companies.createCompany>)

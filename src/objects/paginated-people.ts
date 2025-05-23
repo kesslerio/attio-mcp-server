@@ -1,35 +1,34 @@
 /**
  * Enhanced people search functions with pagination support
  */
-import { 
+import {
   searchPeopleByCreationDate,
   searchPeopleByModificationDate,
   searchPeopleByLastInteraction,
   searchPeopleByActivity,
-  advancedSearchPeople
-} from "./people/index.js";
-import { 
-  DateRange, 
+  advancedSearchPeople,
+} from './people/index.js';
+import {
+  DateRange,
   InteractionType,
-  ActivityFilter, 
-  Person
-} from "../types/attio.js";
-import { ListEntryFilters } from "../api/operations/index.js";
-import { 
-  PaginatedResponse, 
+  ActivityFilter,
+  Person,
+} from '../types/attio.js';
+import { ListEntryFilters } from '../api/operations/index.js';
+import {
+  PaginatedResponse,
   createPaginatedResponse,
-  getPaginationParams
-} from "../utils/pagination.js";
-import { 
+} from '../utils/pagination.js';
+import {
   validateDateRange,
   validateActivityFilter,
-  validateNumericParam
-} from "../utils/filters/index.js";
-import { FilterValidationError } from "../errors/api-errors.js";
+  validateNumericParam,
+} from '../utils/filters/index.js';
+import { FilterValidationError } from '../errors/api-errors.js';
 
 /**
  * Advanced search for people with built-in pagination
- * 
+ *
  * @param filters - Filter configuration
  * @param page - Page number to return (default: 1)
  * @param pageSize - Number of results per page (default: 20)
@@ -44,16 +43,16 @@ export async function paginatedSearchPeople(
     // Validate pagination parameters
     const validPage = Math.max(1, page);
     const validPageSize = Math.min(100, Math.max(1, pageSize));
-    
+
     // Calculate offset from page and page size
     const offset = (validPage - 1) * validPageSize;
-    
+
     // Perform the search
-    const results = await advancedSearchPeople(filters, { 
-      limit: validPageSize, 
-      offset 
+    const results = await advancedSearchPeople(filters, {
+      limit: validPageSize,
+      offset,
     });
-    
+
     // advancedSearchPeople now returns a PaginatedResponse
     // So we can use its data directly
     return results;
@@ -61,13 +60,15 @@ export async function paginatedSearchPeople(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new Error(`Failed to search people with pagination: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search people with pagination: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Search for people by creation date with pagination
- * 
+ *
  * @param dateRange - Date range to filter by (when people were created)
  * @param page - Page number to return (default: 1)
  * @param pageSize - Number of results per page (default: 20)
@@ -83,15 +84,15 @@ export async function paginatedSearchPeopleByCreationDate(
     const validatedDateRange = validateDateRange(dateRange);
     const validPage = validateNumericParam(page, 'page', 1);
     const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-    
+
     // Perform the search
     const results = await searchPeopleByCreationDate(validatedDateRange);
-    
+
     // Apply pagination to the results
     const startIndex = (validPage - 1) * validPageSize;
     const endIndex = startIndex + validPageSize;
     const paginatedResults = results.slice(startIndex, endIndex);
-    
+
     // Return paginated response
     return createPaginatedResponse(
       paginatedResults,
@@ -103,13 +104,15 @@ export async function paginatedSearchPeopleByCreationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new Error(`Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Search for people by modification date with pagination
- * 
+ *
  * @param dateRange - Date range to filter by (when people were last modified)
  * @param page - Page number to return (default: 1)
  * @param pageSize - Number of results per page (default: 20)
@@ -125,15 +128,15 @@ export async function paginatedSearchPeopleByModificationDate(
     const validatedDateRange = validateDateRange(dateRange);
     const validPage = validateNumericParam(page, 'page', 1);
     const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-    
+
     // Perform the search
     const results = await searchPeopleByModificationDate(validatedDateRange);
-    
+
     // Apply pagination to the results
     const startIndex = (validPage - 1) * validPageSize;
     const endIndex = startIndex + validPageSize;
     const paginatedResults = results.slice(startIndex, endIndex);
-    
+
     return createPaginatedResponse(
       paginatedResults,
       results.length,
@@ -144,13 +147,15 @@ export async function paginatedSearchPeopleByModificationDate(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new Error(`Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Search for people by last interaction with pagination
- * 
+ *
  * @param dateRange - Date range to filter by (when the last interaction occurred)
  * @param interactionType - Optional type of interaction to filter by
  * @param page - Page number to return (default: 1)
@@ -168,36 +173,36 @@ export async function paginatedSearchPeopleByLastInteraction(
     const validatedDateRange = validateDateRange(dateRange);
     const validPage = validateNumericParam(page, 'page', 1);
     const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-    
+
     // Validate interactionType if provided
     let validatedInteractionType: InteractionType | undefined = undefined;
     if (interactionType !== undefined) {
       // Convert to string if not already
       const typeString = String(interactionType).toLowerCase();
-      
+
       // Validate against enum values
       const validTypes = Object.values(InteractionType);
       if (!validTypes.includes(typeString as InteractionType)) {
         throw new FilterValidationError(
           `Invalid interaction type: "${interactionType}". ` +
-          `Valid types are: ${validTypes.join(', ')}`
+            `Valid types are: ${validTypes.join(', ')}`
         );
       }
-      
+
       validatedInteractionType = typeString as InteractionType;
     }
-    
+
     // Perform the search
     const results = await searchPeopleByLastInteraction(
-      validatedDateRange, 
+      validatedDateRange,
       validatedInteractionType
     );
-    
+
     // Apply pagination to the results
     const startIndex = (validPage - 1) * validPageSize;
     const endIndex = startIndex + validPageSize;
     const paginatedResults = results.slice(startIndex, endIndex);
-    
+
     return createPaginatedResponse(
       paginatedResults,
       results.length,
@@ -208,13 +213,15 @@ export async function paginatedSearchPeopleByLastInteraction(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new Error(`Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Search for people by activity with pagination
- * 
+ *
  * @param activityFilter - Activity filter configuration
  * @param page - Page number to return (default: 1)
  * @param pageSize - Number of results per page (default: 20)
@@ -230,15 +237,15 @@ export async function paginatedSearchPeopleByActivity(
     const validatedActivityFilter = validateActivityFilter(activityFilter);
     const validPage = validateNumericParam(page, 'page', 1);
     const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
-    
+
     // Perform the search
     const results = await searchPeopleByActivity(validatedActivityFilter);
-    
+
     // Apply pagination to the results
     const startIndex = (validPage - 1) * validPageSize;
     const endIndex = startIndex + validPageSize;
     const paginatedResults = results.slice(startIndex, endIndex);
-    
+
     return createPaginatedResponse(
       paginatedResults,
       results.length,
@@ -249,6 +256,8 @@ export async function paginatedSearchPeopleByActivity(
     if (error instanceof FilterValidationError) {
       throw error;
     }
-    throw new Error(`Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }

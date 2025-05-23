@@ -1,25 +1,28 @@
 /**
  * Relationship queries for People
  */
-import { getAttioClient } from "../../api/attio-client.js";
-import { advancedSearchObject, ListEntryFilters } from "../../api/operations/index.js";
-import { ResourceType, Person } from "../../types/attio.js";
-import { isValidId, isValidListId } from "../../utils/validation.js";
+import { getAttioClient } from '../../api/attio-client.js';
 import {
-  createPeopleByCompanyFilter,
+  advancedSearchObject,
+  ListEntryFilters,
+} from '../../api/operations/index.js';
+import { ResourceType, Person } from '../../types/attio.js';
+import { isValidId, isValidListId } from '../../utils/validation.js';
+import {
   createPeopleByCompanyListFilter,
-  createRecordsByNotesFilter
-} from "../../utils/relationship-utils.js";
-import { createEqualsFilter } from "../../utils/filters/index.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
+  createRecordsByNotesFilter,
+} from '../../utils/relationship-utils.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
 
 /**
  * Searches for people associated with a specific company
- * 
+ *
  * @param companyId - ID of the company to search for
  * @returns Array of people associated with the company
  */
-export async function searchPeopleByCompany(companyId: string): Promise<Person[]> {
+export async function searchPeopleByCompany(
+  companyId: string
+): Promise<Person[]> {
   try {
     if (!isValidId(companyId)) {
       throw new FilterValidationError(`Invalid company ID: ${companyId}`);
@@ -28,25 +31,30 @@ export async function searchPeopleByCompany(companyId: string): Promise<Person[]
     // Use direct API call with correct Attio filter structure for record references
     // Attio expects company.target_record_id.$eq format for filtering people by company
     const api = getAttioClient();
-    
+
     const filter = {
       company: {
         target_record_id: {
-          $eq: companyId
-        }
-      }
+          $eq: companyId,
+        },
+      },
     };
-    
-    const response = await api.post<{ data: Person[] }>('/objects/people/records/query', {
-      filter,
-      limit: 50
-    });
-    
+
+    const response = await api.post<{ data: Person[] }>(
+      '/objects/people/records/query',
+      {
+        filter,
+        limit: 50,
+      }
+    );
+
     return response.data.data || [];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Company relationship validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Company relationship validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by company: ${errorMessage}`);
   }
@@ -54,11 +62,13 @@ export async function searchPeopleByCompany(companyId: string): Promise<Person[]
 
 /**
  * Searches for people in specific company lists
- * 
+ *
  * @param listIds - Array of list IDs to search within
  * @returns Array of people in the specified lists
  */
-export async function searchPeopleByCompanyList(listIds: string[]): Promise<Person[]> {
+export async function searchPeopleByCompanyList(
+  listIds: string[]
+): Promise<Person[]> {
   try {
     if (!Array.isArray(listIds) || listIds.length === 0) {
       throw new FilterValidationError('Must provide at least one list ID');
@@ -77,11 +87,13 @@ export async function searchPeopleByCompanyList(listIds: string[]): Promise<Pers
       filters = createPeopleByCompanyListFilter(listIds[0]);
     } else {
       // Create OR filter for multiple lists
-      const listFilters = listIds.map(listId => createPeopleByCompanyListFilter(listId));
+      const listFilters = listIds.map((listId) =>
+        createPeopleByCompanyListFilter(listId)
+      );
       filters = {
         filters: [],
         matchAny: true,
-        ...listFilters[0]
+        ...listFilters[0],
       };
       // Merge all filters
       for (const filter of listFilters) {
@@ -94,12 +106,14 @@ export async function searchPeopleByCompanyList(listIds: string[]): Promise<Pers
       ResourceType.PEOPLE,
       filters
     );
-    
+
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`List relationship validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `List relationship validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by company list: ${errorMessage}`);
   }
@@ -107,11 +121,13 @@ export async function searchPeopleByCompanyList(listIds: string[]): Promise<Pers
 
 /**
  * Searches for people with notes containing specific text
- * 
+ *
  * @param searchText - Text to search for in notes
  * @returns Array of people with matching notes
  */
-export async function searchPeopleByNotes(searchText: string): Promise<Person[]> {
+export async function searchPeopleByNotes(
+  searchText: string
+): Promise<Person[]> {
   try {
     if (!searchText || searchText.trim().length === 0) {
       throw new FilterValidationError('Search text cannot be empty');
@@ -122,12 +138,14 @@ export async function searchPeopleByNotes(searchText: string): Promise<Person[]>
       ResourceType.PEOPLE,
       filters
     );
-    
+
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Notes search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Notes search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by notes: ${errorMessage}`);
   }

@@ -1,9 +1,9 @@
 /**
  * @module translators
- * 
+ *
  * Filter translation utilities for converting between formats
  * Handles transformation between MCP filter format and Attio API format
- * 
+ *
  * This module provides:
  * - MCP to Attio API format transformation
  * - Support for AND/OR logical operators
@@ -13,8 +13,10 @@
  */
 
 // External dependencies
-import { isValidFilterCondition } from "../../types/attio.js";
-import { FilterValidationError, FilterErrorCategory } from "../../errors/api-errors.js";
+import {
+  FilterValidationError,
+  FilterErrorCategory,
+} from '../../errors/api-errors.js';
 
 // Internal module dependencies
 import {
@@ -22,37 +24,36 @@ import {
   ListEntryFilter,
   AttioApiFilter,
   FilterConditionType,
-  FIELD_SPECIAL_HANDLING
-} from "./types.js";
-import { ValidatedListEntryFilters } from "../../api/operations/types.js";
-import { validateFilterStructure } from "./validators.js";
-import { 
-  validateFilters, 
-  collectInvalidFilters, 
+  FIELD_SPECIAL_HANDLING,
+} from './types.js';
+import { validateFilterStructure } from './validators.js';
+import {
+  validateFilters,
+  collectInvalidFilters,
   formatInvalidFiltersError,
   ERROR_MESSAGES,
-  getFilterExample
-} from "./validation-utils.js";
+  getFilterExample,
+} from './validation-utils.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
- * 
+ *
  * This is the main transformation function that converts MCP filter specifications
  * into the format expected by the Attio API. It handles both AND and OR logical
  * operators and provides comprehensive validation.
- * 
+ *
  * **Key Features:**
  * - Validates filter structure using centralized validation utilities
  * - Supports both AND logic (default) and OR logic (matchAny: true)
  * - Handles empty filter arrays gracefully (returns empty object)
  * - Preserves filter condition types and values
  * - Provides detailed error messages with examples on validation failure
- * 
+ *
  * @param filters - Filter configuration from the MCP API (may have optional filters array)
  * @param validateConditions - Whether to validate condition types against known Attio API operators
  * @returns Transformed filter object for Attio API, or empty object if no valid filters
  * @throws FilterValidationError if validation fails with consistent error messages and examples
- * 
+ *
  * @example
  * // Simple filter with a single condition
  * const simpleFilter = {
@@ -64,7 +65,7 @@ import {
  *     }
  *   ]
  * };
- * 
+ *
  * // Filter with OR logic between conditions
  * const orFilter = {
  *   filters: [
@@ -81,7 +82,7 @@ import {
  *   ],
  *   matchAny: true  // Use OR logic
  * };
- * 
+ *
  * // Filter with multiple conditions (AND logic by default)
  * const multipleFilter = {
  *   filters: [
@@ -106,25 +107,27 @@ export function transformFiltersToApiFormat(
   if (!filters) {
     return {};
   }
-  
+
   // Check if filters has a filters property and it's an array
   if (!('filters' in filters) || !Array.isArray(filters.filters)) {
     return {};
   }
-  
+
   // If filters array is empty, return empty result
   if (filters.filters.length === 0) {
     return {};
   }
-  
+
   try {
     // Use the central validation utility for consistent error messages
     const validatedFilters = validateFilters(filters, validateConditions);
-    
+
     // Check if filters array exists and handle undefined case
     if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result');
+        console.log(
+          '[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result'
+        );
       }
       return {};
     }
@@ -132,45 +135,59 @@ export function transformFiltersToApiFormat(
     // Check if this is a FilterValidationError
     if (error instanceof FilterValidationError) {
       // For condition validation errors when validateConditions is true, re-throw
-      if (validateConditions && (error.message.includes("Invalid condition") || error.message.includes("Invalid filter condition"))) {
+      if (
+        validateConditions &&
+        (error.message.includes('Invalid condition') ||
+          error.message.includes('Invalid filter condition'))
+      ) {
         throw error;
       }
-      
+
       // For structure errors (missing properties), return empty result instead of throwing
       if (process.env.NODE_ENV === 'development') {
-        console.log('[transformFiltersToApiFormat] Validation failed, returning empty result:', error);
+        console.log(
+          '[transformFiltersToApiFormat] Validation failed, returning empty result:',
+          error
+        );
       }
       return {};
     }
-    
+
     // Re-throw non-FilterValidationError errors
     throw error;
   }
-  
+
   // Re-validate for the actual processing (this should not throw since we already validated)
   const validatedFilters = validateFilters(filters, validateConditions);
-  
+
   // Determine if we need to use the $or operator based on matchAny
   // matchAny: true = use $or logic, matchAny: false (or undefined) = use standard AND logic
   const useOrLogic = validatedFilters.matchAny === true;
-  
+
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[transformFiltersToApiFormat] Using ${useOrLogic ? 'OR' : 'AND'} logic for filters`);
-    console.log(`[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`);
+    console.log(
+      `[transformFiltersToApiFormat] Using ${useOrLogic ? 'OR' : 'AND'} logic for filters`
+    );
+    console.log(
+      `[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`
+    );
   }
-  
+
   // For OR logic, we need a completely different structure with filter objects in an array
   if (useOrLogic) {
-    return createOrFilterStructure(validatedFilters.filters, validateConditions);
+    return createOrFilterStructure(
+      validatedFilters.filters,
+      validateConditions
+    );
   }
-  
+
   // Standard AND logic
   return createAndFilterStructure(validatedFilters.filters, validateConditions);
 }
 
 /**
  * Creates an OR filter structure for the API
- * 
+ *
  * @param filters - Array of filters to combine with OR logic
  * @param validateConditions - Whether to validate condition types
  * @returns Filter object with $or structure
@@ -181,86 +198,96 @@ function createOrFilterStructure(
   validateConditions: boolean
 ): { filter?: AttioApiFilter } {
   const orConditions: any[] = [];
-  
+
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
-  
+
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn('[createOrFilterStructure] Found invalid filters:',
-      invalidFilters.map(f => `Index ${f.index}: ${f.reason}`)
+    console.warn(
+      '[createOrFilterStructure] Found invalid filters:',
+      invalidFilters.map((f) => `Index ${f.index}: ${f.reason}`)
     );
   }
-  
+
   // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
     const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
-    
+
     // Add example of valid OR filter structure
-    errorMessage += "\n\nExample of valid OR filter structure: \n" + getFilterExample('or');
-    
-    throw new FilterValidationError(errorMessage, FilterErrorCategory.TRANSFORMATION);
+    errorMessage +=
+      '\n\nExample of valid OR filter structure: \n' + getFilterExample('or');
+
+    throw new FilterValidationError(
+      errorMessage,
+      FilterErrorCategory.TRANSFORMATION
+    );
   }
-  
+
   // Process valid filters
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
-    if (invalidFilters.some(invalid => invalid.index === index)) {
+    if (invalidFilters.some((invalid) => invalid.index === index)) {
       return;
     }
-    
+
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
       console.log(`[createOrFilterStructure] Processing filter ${index}:`, {
         attribute: filter.attribute,
         condition: filter.condition,
-        value: filter.value
+        value: filter.value,
       });
     }
-    
+
     const { slug } = filter.attribute;
-    
+
     // Create a condition object for this individual filter
     const condition: any = {};
-    
+
     // Check for special case handling
-    if (FIELD_SPECIAL_HANDLING[slug] && FIELD_SPECIAL_HANDLING[slug].useShorthandFormat) {
+    if (
+      FIELD_SPECIAL_HANDLING[slug] &&
+      FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
+    ) {
       // For special fields that need shorthand format
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[OR Logic] Using shorthand filter format for field ${slug}`);
+        console.log(
+          `[OR Logic] Using shorthand filter format for field ${slug}`
+        );
       }
-      
+
       // Direct value assignment for shorthand format
       condition[slug] = filter.value;
     } else {
       // Standard operator handling for normal fields
       const operator = filter.condition;
-      
+
       // Create the condition with operator
       condition[slug] = {
-        [`$${operator}`]: filter.value
+        [`$${operator}`]: filter.value,
       };
     }
-    
+
     // Add to the OR conditions array
     orConditions.push(condition);
   });
-  
+
   // Return the $or structure with valid conditions
   if (orConditions.length > 0) {
     return {
-      filter: { "$or": orConditions }
+      filter: { $or: orConditions },
     };
   }
-  
+
   // This shouldn't happen given the earlier check, but just in case
-  return {}; 
+  return {};
 }
 
 /**
  * Creates an AND filter structure for the API
- * 
+ *
  * @param filters - Array of filters to combine with AND logic
  * @param validateConditions - Whether to validate condition types
  * @returns Filter object with standard AND structure
@@ -271,85 +298,98 @@ function createAndFilterStructure(
   validateConditions: boolean
 ): { filter?: AttioApiFilter } {
   const apiFilter: AttioApiFilter = {};
-  
+
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
-  
+
   // Log invalid filters in development mode
   if (invalidFilters.length > 0 && process.env.NODE_ENV === 'development') {
-    console.warn('[createAndFilterStructure] Found invalid filters:',
-      invalidFilters.map(f => `Index ${f.index}: ${f.reason}`)
+    console.warn(
+      '[createAndFilterStructure] Found invalid filters:',
+      invalidFilters.map((f) => `Index ${f.index}: ${f.reason}`)
     );
   }
-  
+
   // If all filters are invalid, throw a descriptive error with example
   if (invalidFilters.length === filters.length) {
     const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
-    
+
     // Add example of valid filter structure for AND logic (multiple conditions)
-    errorMessage += "\n\nExample of valid filter structure with multiple conditions: \n" + getFilterExample('multiple');
-    
-    throw new FilterValidationError(errorMessage, FilterErrorCategory.TRANSFORMATION);
+    errorMessage +=
+      '\n\nExample of valid filter structure with multiple conditions: \n' +
+      getFilterExample('multiple');
+
+    throw new FilterValidationError(
+      errorMessage,
+      FilterErrorCategory.TRANSFORMATION
+    );
   }
-  
+
   // Process valid filters
   let hasValidFilters = false;
-  
+
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
-    if (invalidFilters.some(invalid => invalid.index === index)) {
+    if (invalidFilters.some((invalid) => invalid.index === index)) {
       return;
     }
-    
+
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
       console.log(`[createAndFilterStructure] Processing filter ${index}:`, {
         attribute: filter.attribute,
         condition: filter.condition,
-        value: filter.value
+        value: filter.value,
       });
     }
-    
+
     const { slug } = filter.attribute;
-    
+
     // Check for special case handling
-    if (FIELD_SPECIAL_HANDLING[slug] && FIELD_SPECIAL_HANDLING[slug].useShorthandFormat) {
+    if (
+      FIELD_SPECIAL_HANDLING[slug] &&
+      FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
+    ) {
       // For special fields that need shorthand format
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[AND Logic] Using shorthand filter format for field ${slug}`);
+        console.log(
+          `[AND Logic] Using shorthand filter format for field ${slug}`
+        );
       }
-      
+
       // Direct value assignment for shorthand format
       if (!apiFilter[slug]) {
         apiFilter[slug] = filter.value;
       } else {
-        console.warn(`Multiple filters for ${slug} using shorthand format will overwrite previous values`);
+        console.warn(
+          `Multiple filters for ${slug} using shorthand format will overwrite previous values`
+        );
         apiFilter[slug] = filter.value;
       }
     } else {
       // Standard operator handling for normal fields
       const operator = filter.condition;
-      
+
       // Initialize attribute entry if needed for operator-based filtering
       if (!apiFilter[slug]) {
         apiFilter[slug] = {};
       }
-      
+
       // Add operator with $ prefix as required by Attio API
       apiFilter[slug][`$${operator}`] = filter.value;
     }
-    
+
     hasValidFilters = true;
   });
-  
+
   // Return the filter object only if valid filters were found
   return hasValidFilters ? { filter: apiFilter } : {};
 }
 
 /**
  * Converts a single filter operator to API format
- * 
+ *
  * @param operator - The operator to convert (e.g., 'equals', 'contains')
  * @returns The operator in API format (e.g., '$equals', '$contains')
  */
@@ -360,7 +400,7 @@ export function convertOperatorToApiFormat(operator: string): string {
 
 /**
  * Transforms attribute names if they require special handling
- * 
+ *
  * @param attributeSlug - The attribute slug to transform
  * @returns The transformed attribute name
  */
@@ -369,67 +409,82 @@ export function transformAttributeName(attributeSlug: string): string {
   if (attributeSlug === 'relationship') {
     return '$relationship';
   }
-  
+
   return attributeSlug;
 }
 
 /**
  * Processes a filter value for API submission
  * Handles any special value transformations needed
- * 
+ *
  * @param value - The value to process
  * @param condition - The filter condition being used
  * @returns The processed value
  */
-export function processFilterValue(value: any, condition: FilterConditionType): any {
+export function processFilterValue(
+  value: any,
+  condition: FilterConditionType
+): any {
   // Empty conditions should not have a value
-  if (condition === FilterConditionType.IS_EMPTY || 
-      condition === FilterConditionType.IS_NOT_EMPTY ||
-      condition === FilterConditionType.IS_SET ||
-      condition === FilterConditionType.IS_NOT_SET) {
+  if (
+    condition === FilterConditionType.IS_EMPTY ||
+    condition === FilterConditionType.IS_NOT_EMPTY ||
+    condition === FilterConditionType.IS_SET ||
+    condition === FilterConditionType.IS_NOT_SET
+  ) {
     return undefined;
   }
-  
+
   // Return value as-is for other conditions
   return value;
 }
 
 /**
  * Transforms a simple filter to API format
- * 
+ *
  * @param filter - The filter to transform
  * @returns API-formatted filter object
  */
-export function transformSingleFilterToApi(filter: ListEntryFilter): AttioApiFilter {
+export function transformSingleFilterToApi(
+  filter: ListEntryFilter
+): AttioApiFilter {
   if (!validateFilterStructure(filter)) {
-    throw new FilterValidationError('Invalid filter structure', FilterErrorCategory.STRUCTURE);
+    throw new FilterValidationError(
+      'Invalid filter structure',
+      FilterErrorCategory.STRUCTURE
+    );
   }
-  
+
   const { slug } = filter.attribute;
   const apiOperator = convertOperatorToApiFormat(filter.condition);
-  const value = processFilterValue(filter.value, filter.condition as FilterConditionType);
-  
+  const value = processFilterValue(
+    filter.value,
+    filter.condition as FilterConditionType
+  );
+
   return {
     [slug]: {
-      [apiOperator]: value
-    }
+      [apiOperator]: value,
+    },
   };
 }
 
 /**
  * Converts API filter format back to MCP filter format
  * Useful for debugging and reverse transformation
- * 
+ *
  * @param apiFilter - API format filter
  * @returns MCP format filters
  */
-export function transformApiFormatToFilters(apiFilter: AttioApiFilter): ListEntryFilters {
+export function transformApiFormatToFilters(
+  apiFilter: AttioApiFilter
+): ListEntryFilters {
   const filters: ListEntryFilter[] = [];
-  
+
   // Check for $or structure
   if (apiFilter.$or && Array.isArray(apiFilter.$or)) {
     // Handle OR logic
-    apiFilter.$or.forEach(condition => {
+    apiFilter.$or.forEach((condition) => {
       if (condition && typeof condition === 'object') {
         Object.entries(condition).forEach(([slug, conditions]) => {
           if (conditions && typeof conditions === 'object') {
@@ -437,20 +492,20 @@ export function transformApiFormatToFilters(apiFilter: AttioApiFilter): ListEntr
               filters.push({
                 attribute: { slug },
                 condition: operator.replace('$', '') as FilterConditionType,
-                value
+                value,
               });
             });
           }
         });
       }
     });
-    
+
     return {
       filters,
-      matchAny: true
+      matchAny: true,
     };
   }
-  
+
   // Handle standard AND logic
   Object.entries(apiFilter).forEach(([slug, conditions]) => {
     if (conditions && typeof conditions === 'object') {
@@ -458,14 +513,14 @@ export function transformApiFormatToFilters(apiFilter: AttioApiFilter): ListEntr
         filters.push({
           attribute: { slug },
           condition: operator.replace('$', '') as FilterConditionType,
-          value
+          value,
         });
       });
     }
   });
-  
+
   return {
     filters,
-    matchAny: false
+    matchAny: false,
   };
 }
