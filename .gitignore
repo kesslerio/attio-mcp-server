@@ -30,3 +30,4 @@ dist/
 # Temporary markdown files
 comment.md
 issue_body.md
+.wireit/

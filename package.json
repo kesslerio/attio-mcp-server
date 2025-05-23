@@ -45,7 +45,12 @@
     "discover:all-attributes:high-memory": "NODE_OPTIONS='--max-old-space-size=4096' node -r dotenv/config dist/cli/discover.js attributes --all",
     "discover:robust": "./scripts/run-discover.sh",
     "discover:attributes:robust": "./scripts/run-discover.sh attributes",
-    "discover:all-attributes:robust": "./scripts/run-discover.sh attributes --all"
+    "discover:all-attributes:robust": "./scripts/run-discover.sh attributes --all",
+    "syncpack:check": "syncpack list-mismatches",
+    "syncpack:fix": "syncpack fix-mismatches",
+    "check:all": "npm run check && npm run build && npm run test:offline",
+    "setup:dev": "npm install && npm run build",
+    "verify:env": "node -e \"console.log('Node:', process.version); console.log('NPM:', process.env.npm_version || 'unknown')\""
   },
   "files": [
     "dist"
@@ -72,6 +77,7 @@
     "eslint": "^8.0.0",
     "jest": "^29.7.0",
     "shx": "^0.4.0",
+    "syncpack": "^13.0.4",
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
