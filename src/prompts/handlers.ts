@@ -249,7 +249,7 @@ function validateParameters(
       const paramValue = parameters[param.name];
       let typeError = false;
       
-      switch (param.type) {
+      switch (param.type as string) {
         case 'string':
           typeError = typeof paramValue !== 'string';
           break;
