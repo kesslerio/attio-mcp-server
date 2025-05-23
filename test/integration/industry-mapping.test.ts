@@ -7,6 +7,7 @@ import { createCompany, updateCompany } from '../../src/objects/companies/index'
 import { getAttributeSlug } from '../../src/utils/attribute-mapping/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
 import * as attioClient from '../../src/api/attio-client';
+import { createMockApiClient, type MockCompanyUpdate } from '../types/test-types';
 
 // Mock the attioClient module
 jest.mock('../../src/api/attio-client', () => {
@@ -27,13 +28,12 @@ describe('Industry Field Mapping - Integration Tests', () => {
   
   beforeEach(() => {
     mockApiCall = jest.fn();
-    jest.mocked(attioClient.getAttioClient).mockReturnValue({
-      post: mockApiCall,
-      get: (jest.fn() as any).mockResolvedValue({ data: { data: [] } }),
-      put: mockApiCall,
-      patch: mockApiCall,
-      delete: jest.fn(),
-    } as any);
+    const mockClient = createMockApiClient();
+    mockClient.post = mockApiCall;
+    mockClient.put = mockApiCall;
+    mockClient.patch = mockApiCall;
+    
+    jest.mocked(attioClient.getAttioClient).mockReturnValue(mockClient as any);
   });
   
   afterEach(() => {

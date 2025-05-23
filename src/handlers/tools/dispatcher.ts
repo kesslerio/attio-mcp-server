@@ -361,6 +361,21 @@ export async function executeToolRequest(request: CallToolRequest) {
         ? request.params.arguments?.companyId as string 
         : request.params.arguments?.personId as string;
       const uri = request.params.arguments?.uri as string;
+      
+      /**
+       * Parameter Mapping Strategy for Note Creation
+       * 
+       * This function supports multiple parameter names for backward compatibility
+       * and to accommodate different API clients:
+       * 
+       * - title: Primary parameter name (preferred)
+       * - noteTitle: Legacy/alternative parameter name for title
+       * - content: Primary parameter name (preferred) 
+       * - noteText: Legacy/alternative parameter name for content
+       * 
+       * The fallback pattern (primary || legacy) ensures compatibility while
+       * encouraging use of the standardized parameter names.
+       */
       const title = (request.params.arguments?.title || request.params.arguments?.noteTitle) as string;
       const content = (request.params.arguments?.content || request.params.arguments?.noteText) as string;
       

@@ -133,6 +133,10 @@ describe('Attribute Validation Integration', () => {
       
       // Verify that validation occurred and data was processed correctly
       // The validator uses internal type detection, not external API calls
+      expect(result.name).toBe('Acme Corporation');
+      expect(result.company_size).toBe(250);        // String converted to number
+      expect(result.is_customer).toBe(true);        // String converted to boolean
+      expect(result.tags).toEqual(['enterprise']);  // String converted to array
     });
     
     it('should validate and convert company update attributes', async () => {
