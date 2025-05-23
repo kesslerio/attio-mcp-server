@@ -22,6 +22,15 @@ export default defineConfig({
     },
     silent: false,
     reporter: 'verbose',
+    watchExclude: [
+      'node_modules/**',
+      'dist/**',
+      '.git/**',
+      'coverage/**',
+      '**/*.d.ts',
+      'test/integration/real-api/**',
+      'test/manual/**',
+    ],
   },
   resolve: {
     alias: {
