@@ -1,12 +1,12 @@
 /**
  * Tests for the attribute mapping utilities
  */
-import { 
-  getAttributeSlug, 
-  getObjectSlug, 
+import {
+  getAttributeSlug,
+  getObjectSlug,
   getListSlug,
   translateAttributeNamesInFilters,
-  COMMON_ATTRIBUTE_MAP
+  COMMON_ATTRIBUTE_MAP,
 } from '../../src/utils/attribute-mapping/index';
 import * as configLoader from '../../src/utils/config-loader';
 
@@ -29,8 +29,8 @@ describe('Attribute Mapping', () => {
         mappings: {
           attributes: {
             common: {
-              'Name': 'name',
-              'Email': 'email',
+              Name: 'name',
+              Email: 'email',
             },
             objects: {
               companies: {
@@ -65,7 +65,7 @@ describe('Attribute Mapping', () => {
         mappings: {
           attributes: {
             common: {
-              'Name': 'name',
+              Name: 'name',
             },
             objects: {},
             custom: {},
@@ -126,18 +126,18 @@ describe('Attribute Mapping', () => {
       expect(getAttributeSlug('')).toBe('');
       expect(getAttributeSlug(undefined as any)).toBe(undefined);
     });
-    
-    it('should map industry to categories via special case handling', () => {
+
+    it('should map industry to the configured field via special case handling', () => {
       // Reset modules to ensure fresh state
       vi.resetModules();
-      
+
       // Industry should map to categories through special case handling
-      const result = getAttributeSlug('industry');
-      expect(result).toBe('categories');
-      
+      const result = getAttributeSlug('industry', 'companies');
+      expect(result).toBe('type_persona');
+
       // Industry type should also map to categories
-      const resultType = getAttributeSlug('industry type');
-      expect(resultType).toBe('categories');
+      const resultType = getAttributeSlug('industry type', 'companies');
+      expect(resultType).toBe('type_persona');
     });
 
     it('should prioritize object-specific mappings over common mappings', () => {
@@ -147,11 +147,11 @@ describe('Attribute Mapping', () => {
         mappings: {
           attributes: {
             common: {
-              'Name': 'name_common',
+              Name: 'name_common',
             },
             objects: {
               companies: {
-                'Name': 'name_companies',
+                Name: 'name_companies',
               },
             },
             custom: {},
@@ -164,11 +164,11 @@ describe('Attribute Mapping', () => {
 
       // Reset cached config first to ensure we use the mock
       vi.resetModules();
-      
+
       // Should use the company-specific mapping
       const companySlug = getAttributeSlug('Name', 'companies');
       expect(companySlug).toBe('name_companies');
-      
+
       // Should use the common mapping without object type
       const commonSlug = getAttributeSlug('Name');
       expect(commonSlug).toBe('name_common');
@@ -187,8 +187,8 @@ describe('Attribute Mapping', () => {
             custom: {},
           },
           objects: {
-            'Companies': 'companies',
-            'People': 'people',
+            Companies: 'companies',
+            People: 'people',
           },
           lists: {},
           relationships: {},
@@ -211,7 +211,7 @@ describe('Attribute Mapping', () => {
             custom: {},
           },
           objects: {
-            'Companies': 'companies',
+            Companies: 'companies',
           },
           lists: {},
           relationships: {},
@@ -266,11 +266,11 @@ describe('Attribute Mapping', () => {
 
       // Reset cached config to ensure we use the latest mock
       vi.resetModules();
-      
+
       // Test list mappings
       const importantLeadsSlug = getListSlug('Important Leads');
       expect(importantLeadsSlug).toBe('important_leads');
-      
+
       const vipContactsSlug = getListSlug('VIP Contacts');
       expect(vipContactsSlug).toBe('vip_contacts');
     });
@@ -293,7 +293,7 @@ describe('Attribute Mapping', () => {
 
       // Reset cached config to ensure we use the latest mock
       vi.resetModules();
-      
+
       // Test with an unknown list name
       expect(getListSlug('Unknown List')).toBe('Unknown List');
     });
@@ -303,25 +303,25 @@ describe('Attribute Mapping', () => {
     beforeEach(() => {
       // Reset modules before each test to ensure fresh state
       vi.resetModules();
-      
+
       // Mock the config loader with a comprehensive test configuration
       (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
             common: {
-              'Name': 'name',
-              'Email': 'email',
-              'Phone': 'phone',
+              Name: 'name',
+              Email: 'email',
+              Phone: 'phone',
             },
             objects: {
               companies: {
-                'Name': 'name_companies',
-                'Industry': 'industry',
+                Name: 'name_companies',
+                Industry: 'industry',
               },
               people: {
-                'Name': 'name_people',
-                'Phone': 'phone_number',
+                Name: 'name_people',
+                Phone: 'phone_number',
               },
             },
             custom: {
@@ -329,8 +329,8 @@ describe('Attribute Mapping', () => {
             },
           },
           objects: {
-            'Companies': 'companies',
-            'People': 'people',
+            Companies: 'companies',
+            People: 'people',
           },
           lists: {
             'Important Leads': 'important_leads',
@@ -471,13 +471,19 @@ describe('Attribute Mapping', () => {
       };
 
       const translated = translateAttributeNamesInFilters(complexFilter);
-      
+
       // Check nested OR filters
-      expect(translated.filters[0].filters[0].attribute.slug).toBe('name_companies');
-      expect(translated.filters[0].filters[1].attribute.slug).toBe('categories'); // Industry maps to categories
-      
+      expect(translated.filters[0].filters[0].attribute.slug).toBe(
+        'name_companies'
+      );
+      expect(translated.filters[0].filters[1].attribute.slug).toBe(
+        'type_persona'
+      ); // Industry maps to configured field
+
       // Check object-specific sections
-      expect(translated.filters[1].companies.attribute.slug).toBe('name_companies');
+      expect(translated.filters[1].companies.attribute.slug).toBe(
+        'name_companies'
+      );
       expect(translated.filters[2].people.attribute.slug).toBe('phone_number');
     });
   });

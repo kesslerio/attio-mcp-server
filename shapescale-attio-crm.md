@@ -2,48 +2,51 @@
 
 This document provides a detailed overview of our custom Attio CRM setup for ShapeScale, including available attributes, field types, and common issues when interacting with these fields.
 
+> **Note:** The MCP server uses `config/field-mappings.json` to map friendly attribute names to our custom fields. For example, `industry` inputs are mapped to the `type_persona` select field in this workspace.
+
 ## Custom Attributes
 
 Based on the API interactions, our Attio instance has the following custom attributes for company records:
 
 ### Custom Fields (28 total)
 
-| Field Name | Type | Notes |
-|------------|------|-------|
-| body_composition_technologies | text (string) | Describes what technologies a company uses for body composition analysis |
-| body_contouring | text (string) | Details about body contouring services offered |
-| company_phone_5 | text (string) | Phone number field, likely the fifth phone number for a company |
-| competitor_use | select | Information about competitors they use |
-| domain_confidence | number | Confidence level in the domain information (0-100%) |
-| facilities | select | Number of facilities (options include "1") |
-| google_business_name | text (string) | Business name on Google |
-| google_business_status | select | Business status on Google (e.g., "operational", "closed") |
-| google_credibility_score | number | Credibility score from Google |
-| google_maps_url | text (string) | Google Maps URL |
-| google_price_level | select | Price level indicator from Google (e.g., "$", "$$", "$$$") |
-| google_rating_1 | number | Google rating (usually 1-5) |
-| google_review_count_7 | number | Number of Google reviews |
-| google_website | text (string) | Website listed on Google |
-| has_before_after_photos | boolean | Whether they have before/after photos |
-| has_body_contouring | boolean | Whether they offer body contouring services |
-| has_weight_loss_program | boolean | Whether they have a weight loss program |
-| referrer | select | Referral source information (options include "Website", "Virtual Demo") |
-| referrer_notes | text (string) | Notes about referrals |
-| regions | text (string) | Geographic regions served |
-| services | text (string) | Comprehensive list of services offered |
-| strongest_connection_strength_legacy | number | Legacy field for connection strength |
-| trade_show_event_7 | select | Trade show/event information |
-| type_persona | select | Company persona type (options include "Plastic Surgeon") |
-| type_persona_5 | select | Alternative persona classification |
-| typpe | select | Company type classification (options include "Potential Customer") |
-| uses_body_composition | boolean | Whether they use body composition analysis |
-| uses_competitor_products | boolean | Whether they use competitor products |
+| Field Name                           | Type          | Notes                                                                    |
+| ------------------------------------ | ------------- | ------------------------------------------------------------------------ |
+| body_composition_technologies        | text (string) | Describes what technologies a company uses for body composition analysis |
+| body_contouring                      | text (string) | Details about body contouring services offered                           |
+| company_phone_5                      | text (string) | Phone number field, likely the fifth phone number for a company          |
+| competitor_use                       | select        | Information about competitors they use                                   |
+| domain_confidence                    | number        | Confidence level in the domain information (0-100%)                      |
+| facilities                           | select        | Number of facilities (options include "1")                               |
+| google_business_name                 | text (string) | Business name on Google                                                  |
+| google_business_status               | select        | Business status on Google (e.g., "operational", "closed")                |
+| google_credibility_score             | number        | Credibility score from Google                                            |
+| google_maps_url                      | text (string) | Google Maps URL                                                          |
+| google_price_level                   | select        | Price level indicator from Google (e.g., "$", "$$", "$$$")               |
+| google_rating_1                      | number        | Google rating (usually 1-5)                                              |
+| google_review_count_7                | number        | Number of Google reviews                                                 |
+| google_website                       | text (string) | Website listed on Google                                                 |
+| has_before_after_photos              | boolean       | Whether they have before/after photos                                    |
+| has_body_contouring                  | boolean       | Whether they offer body contouring services                              |
+| has_weight_loss_program              | boolean       | Whether they have a weight loss program                                  |
+| referrer                             | select        | Referral source information (options include "Website", "Virtual Demo")  |
+| referrer_notes                       | text (string) | Notes about referrals                                                    |
+| regions                              | text (string) | Geographic regions served                                                |
+| services                             | text (string) | Comprehensive list of services offered                                   |
+| strongest_connection_strength_legacy | number        | Legacy field for connection strength                                     |
+| trade_show_event_7                   | select        | Trade show/event information                                             |
+| type_persona                         | select        | Company persona type (options include "Plastic Surgeon")                 |
+| type_persona_5                       | select        | Alternative persona classification                                       |
+| typpe                                | select        | Company type classification (options include "Potential Customer")       |
+| uses_body_composition                | boolean       | Whether they use body composition analysis                               |
+| uses_competitor_products             | boolean       | Whether they use competitor products                                     |
 
 ### Key Field Values and Options
 
 Based on our analysis, we've identified some important field values used in the CRM:
 
 #### Company Type ("typpe")
+
 The "typpe" field is a select field used to categorize companies by their relationship with ShapeScale:
 
 - "Existing Customer" - Current users of ShapeScale products
@@ -63,9 +66,11 @@ The "typpe" field is a select field used to categorize companies by their relati
 The unusual spelling "typpe" (with double 'p') appears to be intentional to distinguish it from other "type" fields in the system.
 
 #### Type Persona
+
 The "type_persona" field categorizes companies by their business type or specialty:
 
 ##### Medical & Health Categories
+
 - "Plastic Surgeon" - Medical specialists offering cosmetic and reconstructive procedures
 - "Medical Spa/Aesthetics" - Businesses offering medical-grade aesthetic services
 - "Medical Weight Loss" - Practices specializing in weight loss under medical supervision
@@ -77,6 +82,7 @@ The "type_persona" field categorizes companies by their business type or special
 - "Wellness" - Holistic health and well-being providers
 
 ##### Fitness Categories
+
 - "Personal Trainer/Solo Owner" - Individual fitness professionals
 - "PT Gym" - Personal training-focused facilities
 - "Boutique/Studio Gym" - Specialized, smaller fitness facilities
@@ -87,6 +93,7 @@ The "type_persona" field categorizes companies by their business type or special
 - "Corporate, Residential, or Hotel Facility" - Fitness facilities in these settings
 
 ##### Industry Partners
+
 - "Equipment Manufacturer" - Makers of fitness or body composition equipment
 - "Distributor or Retailer" - Companies that distribute or sell fitness equipment
 - "Consultant" - Advisory professionals in the industry
@@ -96,11 +103,13 @@ The "type_persona" field categorizes companies by their business type or special
 - "Retail/Nutrition Store" - Retail locations specializing in nutrition products
 
 ##### Knowledge & Research
+
 - "University/Research" - Academic or research institutions
 - "Educational Platform" - Organizations providing educational content
 - "Professional Association/Network" - Industry groups and networks
 
 ##### Other Categories
+
 - "Event/Conference Organizer" - Companies that run industry events
 - "Industry Media/Publication" - Media outlets focusing on the industry
 - "Spa" - Non-medical spa facilities
@@ -109,11 +118,13 @@ The "type_persona" field categorizes companies by their business type or special
 - "Unknown" - Companies whose type has not yet been determined
 
 #### Referrer
+
 - "Website" - Lead came through the website
 - "Virtual Demo" - Lead came through a virtual demo session
 - (Other options may exist)
 
 #### Categories
+
 - "Health Care"
 - "B2C"
 - "E-commerce"
@@ -121,6 +132,7 @@ The "type_persona" field categorizes companies by their business type or special
 ### Standard Fields (43 total)
 
 The CRM also includes 43 standard fields like:
+
 - about
 - description
 - website
@@ -193,10 +205,11 @@ When interacting with the Attio API through the MCP server, several issues were 
 When providing instructions to an LLM that interacts with this Attio MCP server:
 
 1. **Type Enforcement**: For boolean fields, explicitly send boolean values (true/false), not strings ("true"/"false").
+
    ```javascript
    // Correct
    { "value": false, ... }
-   
+
    // Incorrect
    { "value": "false", ... }
    ```
@@ -215,7 +228,7 @@ When providing instructions to an LLM that interacts with this Attio MCP server:
 
 For ShapeScale's use case, we track:
 
-1. Whether a company uses body composition technology 
+1. Whether a company uses body composition technology
 2. What specific body composition technologies they use
 3. Details about their body contouring services
 4. Complete service offerings
@@ -256,6 +269,7 @@ According to the Attio API documentation, "stage" is a **standard attribute type
 The **Prospecting list** (ID: 88709359-01f6-478b-ba66-c07347891b6f) in our ShapeScale Attio instance uses a **custom stage configuration** with the following stage options:
 
 #### Current Stage Options:
+
 1. `"Unresponsive"` - Prospects who haven't responded to outreach
 2. `"Interested"` - Prospects who have shown initial interest
 3. `"Discovery Call"` - Scheduled or completed discovery calls
@@ -276,6 +290,7 @@ The **Prospecting list** (ID: 88709359-01f6-478b-ba66-c07347891b6f) in our Shape
 ### Stage Management Challenges
 
 Currently, the Attio MCP server lacks the tools to:
+
 - Update list entry stage values (e.g., changing from "Interested" to "Demo Scheduling")
 - Read current stage values for list entries
 - Filter list entries by stage
@@ -303,6 +318,7 @@ This represents a significant gap in CRM functionality, as stage management is e
 **Issue**: The `facilities` field is a select field with specific predefined options. Using incorrect values causes API errors.
 
 **Error Example**:
+
 ```
 Request
 
@@ -330,8 +346,9 @@ Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316
 **Solution**: Use only the predefined select options for the `facilities` field:
 
 #### Valid Facilities Options:
+
 - `"1"` - Single location
-- `"2-5"` - 2-5 locations  
+- `"2-5"` - 2-5 locations
 - `"6-10"` - 6-10 locations
 - `"11-25"` - 11-25 locations
 - `"26-50"` - 26-50 locations
@@ -341,16 +358,15 @@ Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316
 - `"Unknown"` - Unknown number of locations
 
 **Correct Usage**:
+
 ```json
 {
   "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
   "attributes": {
     "website": "https://ptsolutionsks.com",
     "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
-    "categories": [
-      "Physical Therapy"
-    ],
-    "facilities": "2-5",  // ✅ CORRECT - use exact option value
+    "categories": ["Physical Therapy"],
+    "facilities": "2-5", // ✅ CORRECT - use exact option value
     "type_persona": "Medical Practice",
     "employee_range": "10-25",
     "body_contouring": "No",
@@ -362,6 +378,7 @@ Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316
 ```
 
 **Key Points**:
+
 1. Always use the exact option value, not descriptive text
 2. The `facilities` field expects a string value matching one of the predefined options
 3. Geographic information (like "in Kansas") should be stored in location fields, not the facilities count field
@@ -371,6 +388,7 @@ Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316
 **Issue**: The `categories` field expects an array of strings, not a single string value. Using a string value causes a field type error.
 
 **Error Example**:
+
 ```
 Request
 
@@ -388,32 +406,31 @@ Response: ERROR [unknown_error]: Invalid company data: Field 'categories' must b
 **Solution**: Always provide categories as an array of strings, even for single values:
 
 **Correct Usage**:
+
 ```json
 {
   "attributes": {
     "name": "The Plastics Doc",
-    "categories": ["Medical Practice"],  // ✅ CORRECT - array with single value
+    "categories": ["Medical Practice"], // ✅ CORRECT - array with single value
     "website": "https://www.theplasticsdoc.com"
   }
 }
 ```
 
 **Multiple Categories Example**:
+
 ```json
 {
   "attributes": {
     "name": "The Plastics Doc",
-    "categories": [
-      "Health Care",
-      "Medical Practice", 
-      "B2C"
-    ],  // ✅ CORRECT - array with multiple values
+    "categories": ["Health Care", "Medical Practice", "B2C"], // ✅ CORRECT - array with multiple values
     "website": "https://www.theplasticsdoc.com"
   }
 }
 ```
 
 #### Valid Categories Options:
+
 - `"Health Care"`
 - `"B2C"` (Business to Consumer)
 - `"E-commerce"`
@@ -424,8 +441,9 @@ Response: ERROR [unknown_error]: Invalid company data: Field 'categories' must b
 **Note**: ~~`"Medical Practice"`~~ was previously listed here but is NOT a valid option - this causes a "Cannot find select option" error.
 
 **Key Points**:
+
 1. Categories field type is **array**, not string
-2. Always wrap category values in square brackets `[]` 
+2. Always wrap category values in square brackets `[]`
 3. Single categories still need to be in an array format: `["Health Care"]`
 4. Multiple categories can be provided: `["Health Care", "B2C", "Sports & Fitness"]`
 5. This is one of the most common field type errors in company creation/updates
@@ -436,6 +454,7 @@ Response: ERROR [unknown_error]: Invalid company data: Field 'categories' must b
 **Issue**: The `postal_code` field causes an error claiming that the "zip" attribute cannot be found, suggesting there's a field mapping issue or the wrong field name is being used.
 
 **Error Example**:
+
 ```
 Request
 
@@ -464,10 +483,11 @@ The error indicates the system is looking for an attribute called "zip" when the
 **Possible Solutions** (need to be tested):
 
 **Option 1 - Use "zip" instead**:
+
 ```json
 {
   "attributes": {
-    "zip": "92584",  // ✅ Try using "zip" instead of "postal_code"
+    "zip": "92584", // ✅ Try using "zip" instead of "postal_code"
     "city": "Corona",
     "state": "CA"
   }
@@ -475,12 +495,13 @@ The error indicates the system is looking for an attribute called "zip" when the
 ```
 
 **Option 2 - Use structured location**:
+
 ```json
 {
   "attributes": {
     "primary_location": {
       "city": "Corona",
-      "state": "CA", 
+      "state": "CA",
       "postal_code": "92584",
       "street_address": "4226 Green River Rd"
     }
@@ -489,6 +510,7 @@ The error indicates the system is looking for an attribute called "zip" when the
 ```
 
 **Key Points**:
+
 1. Avoid using "postal_code" as a top-level attribute until this is resolved
 2. Test with "zip" field name instead
 3. Consider using structured location data in "primary_location"
@@ -499,13 +521,14 @@ The error indicates the system is looking for an attribute called "zip" when the
 **Issue**: Some category options that appear logical or were previously documented don't actually exist in the Attio schema, causing "Cannot find select option" errors.
 
 **Error Example**:
+
 ```
 Request
 
 {
   "attributes": {
     "name": "The Plastics Doc",
-    "website": "https://www.theplasticsdoc.com", 
+    "website": "https://www.theplasticsdoc.com",
     "categories": ["Medical Practice"],  // ❌ This option doesn't exist
     "description": "Plastic surgery and medical spa practice..."
   }
@@ -524,19 +547,22 @@ This issue highlights several UX and system problems:
 5. **No Dynamic Creation**: Users can't create new category options when needed
 
 **Current Verified Valid Categories**:
+
 - `"Health Care"` ✅
 - `"B2C"` (Business to Consumer) ✅
 - `"E-commerce"` ✅
-- `"Sports & Fitness"` ✅ 
+- `"Sports & Fitness"` ✅
 - `"Health & Wellness"` ✅
 - `"Physical Therapy"` ✅
 
 **Invalid Categories** (cause errors):
+
 - ~~`"Medical Practice"`~~ ❌ - Use "Health Care" instead
 
 **Suggested User Experience Improvements**:
 
 1. **Fuzzy Matching**: When an invalid option is provided, suggest similar valid options
+
    ```
    Error: "Medical Practice" not found. Did you mean:
    - "Health Care"
@@ -544,11 +570,13 @@ This issue highlights several UX and system problems:
    ```
 
 2. **Dynamic Option Discovery**: API endpoint to list all valid category options
+
    ```
    GET /categories/options
    ```
 
 3. **Option Creation**: Allow creating new category options through the API (if Attio supports it)
+
    ```
    POST /categories/options
    { "title": "Medical Practice" }
@@ -556,18 +584,20 @@ This issue highlights several UX and system problems:
 
 4. **Better Error Messages**: Include valid options list in error responses
 
-**Workaround**: 
+**Workaround**:
 Use "Health Care" instead of "Medical Practice" for medical businesses:
+
 ```json
 {
   "attributes": {
-    "categories": ["Health Care"],  // ✅ CORRECT - use valid option
+    "categories": ["Health Care"], // ✅ CORRECT - use valid option
     "name": "The Plastics Doc"
   }
 }
 ```
 
 **Key Points**:
+
 1. Always validate category options against current schema before use
 2. When in doubt, use broader categories like "Health Care" instead of specific ones
 3. This issue exists for other select fields too (facilities, type_persona, etc.)
@@ -582,6 +612,7 @@ ShapeScale's CRM uses a robust segmentation system for categorizing different ty
 The primary segmentation field is "type_persona", which includes a comprehensive set of values organized into categories:
 
 1. **Medical Specialists**:
+
    - "Plastic Surgeon" - Medical professionals specializing in cosmetic and reconstructive procedures
    - "Medical Spa/Aesthetics" - Businesses offering medical-grade aesthetic services
    - "Medical Weight Loss" - Practices specializing in weight loss under medical supervision
@@ -590,6 +621,7 @@ The primary segmentation field is "type_persona", which includes a comprehensive
    - "Integrated Health" - Providers combining conventional and alternative medicine
 
 2. **Fitness Professionals**:
+
    - "Personal Trainer/Solo Owner" - Individual fitness professionals
    - "PT Gym" - Personal training-focused facilities
    - "Boutique/Studio Gym" - Specialized, smaller fitness facilities
@@ -599,6 +631,7 @@ The primary segmentation field is "type_persona", which includes a comprehensive
    - "Wellness" - Holistic health and well-being providers
 
 3. **Corporate & Institutional**:
+
    - "Corporate Wellness" - Wellness programs for corporate environments
    - "Corporate, Residential, or Hotel Facility" - Fitness facilities in these settings
    - "University/Research" - Academic or research institutions
@@ -627,9 +660,10 @@ Medical spas are a particular focus in the CRM, with nearly 40 different medical
 A related field, "type_persona_5", appears to be used for alternative categorization but its specific values were not identified in the current analysis.
 
 The CRM also uses categories that overlap with persona types:
+
 - "Health Care"
 - "B2C" (Business to Consumer)
-- "Sports & Fitness" 
+- "Sports & Fitness"
 - "Health & Wellness"
 - "E-commerce"
 
@@ -639,22 +673,26 @@ ShapeScale's CRM is set up to track specific information about body composition 
 
 Key fields used for tracking body composition technologies include:
 
-1. **body_composition_technologies** (text field): 
+1. **body_composition_technologies** (text field):
+
    - Records detailed information about what specific technologies a company uses
    - Example value: "The practice primarily uses visual assessment and traditional measurements. They currently do not utilize any advanced body composition analysis technologies or 3D imaging for body composition."
    - Format: Typically contains 1-2 paragraphs of qualitative description
    - Used to identify gaps in a company's current technology stack
 
 2. **uses_body_composition** (boolean field):
+
    - Simple yes/no indicator of whether a company uses any body composition technology
    - Used for quick filtering of prospects
 
 3. **body_contouring** (text field):
+
    - Describes body contouring services offered by the company
    - Example value: "Comprehensive body contouring services including liposuction (BodySculpt™), tummy tucks with waist tucks, arm lifts, and thigh contouring. Specializes in personalized treatment plans for post-weight loss patients and those with stubborn fat deposits resistant to diet and exercise."
    - Helps identify potential use cases for ShapeScale's technology in tracking contouring results
 
 4. **has_body_contouring** (boolean field):
+
    - Quick indicator of whether a company offers body contouring services
    - Used for prospect segmentation
 
@@ -668,7 +706,6 @@ The CRM also tracks information about competitor products through:
 
 1. **uses_competitor_products** (boolean field):
    - Indicates if a company uses technologies that compete with ShapeScale
-   
 2. **competitor_use** (select field):
    - Specific competitor products being used
    - Used to tailor comparisons when making sales pitches
@@ -678,6 +715,7 @@ The CRM also tracks information about competitor products through:
 The CRM contains records of companies specializing in body composition technology:
 
 1. **DXAMetrics** (Boston DEXA Scan provider):
+
    - Specializes in DEXA scans, RMR, and VO2 max tests
    - Categorized as "Health Care", "B2C", "Sports & Fitness", and "Health & Wellness"
    - Potential competitor/partner as they offer complementary body composition analysis
@@ -692,10 +730,12 @@ The CRM contains records of companies specializing in body composition technolog
 Body composition technology information is integrated into the sales process, with particular attention to:
 
 1. **Type categorization**:
+
    - Companies using basic (visual assessment) vs. advanced technologies
    - Segmentation by technology type helps prioritize sales efforts
 
 2. **Geographical distribution**:
+
    - Regional differences in body composition technology adoption
    - Region-specific distribution partnerships (e.g., Sanny for Brazil)
 
@@ -708,14 +748,17 @@ Body composition technology information is integrated into the sales process, wi
 While there aren't dedicated fields specifically for "success metrics" in the traditional sense, ShapeScale's CRM does track several indicators that relate to the success of body scanning implementations:
 
 1. **Before/After Photo Usage**:
+
    - The "has_before_after_photos" boolean field identifies companies that already track visual progress
    - Companies using before/after photos are likely candidates for 3D scanning upgrades
 
 2. **Results Orientation**:
+
    - Companies with "results" in their name or business description are flagged for targeted messaging
    - These businesses tend to be more metrics-driven and receptive to body scanning technologies
 
 3. **Service Descriptions**:
+
    - The detailed "services" field often contains information about how results are measured and tracked
    - Example: "...specializes in personalized treatment plans and visual transformation results"
 
@@ -728,10 +771,12 @@ While there aren't dedicated fields specifically for "success metrics" in the tr
 ShapeScale's CRM doesn't appear to have dedicated fields for tracking equipment inventory or device deployments specifically. However, it does track:
 
 1. **Competitor Equipment Use**:
+
    - "uses_competitor_products" (boolean) indicates if a company uses competing technologies
    - "competitor_use" (select) specifies which competitor products are being used
 
 2. **Equipment Companies**:
+
    - The CRM contains entries for equipment providers like "Shandong Tianzhan Fitness Equipment Co."
    - These are potential manufacturing or distribution partners
 
@@ -744,15 +789,18 @@ ShapeScale's CRM doesn't appear to have dedicated fields for tracking equipment 
 The CRM has several fields for tracking geographical information:
 
 1. **Region Field**:
+
    - The "regions" select field categorizes companies by broad geographical regions
    - Known values include "Latin America"
    - This helps identify regional market trends and distribution opportunities
 
 2. **Primary Location**:
+
    - Structured location data including address, city, state, country
    - Includes lat/long coordinates for mapping capabilities
 
 3. **Regional Market Focus**:
+
    - Geographic-specific lists like "Weight Loss Management (SF Bay)"
    - Multiple companies can be grouped by region for targeted campaigns
 
@@ -765,30 +813,39 @@ The CRM has several fields for tracking geographical information:
 Based on analysis of the API responses and JSON data, we've identified the following attribute types in Attio:
 
 1. **text**: Simple text fields for storing strings
+
    - Examples: body_contouring, description, services
 
 2. **number**: Numeric fields for integers or decimals
+
    - Examples: google_rating_1, strongest_connection_strength_legacy, twitter_follower_count
 
 3. **boolean**: True/false flags
+
    - Examples: has_before_after_photos, uses_body_composition, has_body_contouring
 
 4. **select**: Dropdown fields with predefined options
+
    - Examples: type_persona, facilities, referrer, typpe
 
 5. **domain**: Special field type for website domains
+
    - Example: domains
 
 6. **timestamp**: Date and time fields
+
    - Example: created_at
 
 7. **date**: Date-only fields
+
    - Example: foundation_date
 
 8. **location**: Structured address information
+
    - Example: primary_location
 
 9. **record-reference**: References to other records (e.g., people)
+
    - Example: team
 
 10. **phone-number**: Structured phone number data

@@ -7,6 +7,7 @@ A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-na
 ## 🚀 Key Features
 
 - **Comprehensive Attio API Support**
+
   - Companies: Search, view details, manage notes
   - People: Search (with email/phone support), view details, manage notes
   - Lists: View, manage entries, add/remove records
@@ -59,6 +60,24 @@ npm install attio-mcp-server
 }
 ```
 
+### Custom Field Mappings
+
+The server supports instance-specific field mappings via `config/field-mappings.json`.
+Use this file to map friendly attribute names to the correct Attio fields. Example:
+
+```json
+{
+  "companies": {
+    "industry": {
+      "primary_field": "type_persona",
+      "fallback_field": "categories"
+    }
+  }
+}
+```
+
+This maps the `industry` input to the `type_persona` field when available and falls back to `categories`.
+
 ## 🌐 Deployment Options
 
 - **Local Development**: [Development Guide](./docs/development-guide.md)
@@ -72,11 +91,13 @@ npm install attio-mcp-server
 Full documentation is available in the [docs directory](./docs):
 
 - **Getting Started**
+
   - [Installation & Setup](./docs/getting-started.md)
   - [Claude Desktop Config](./docs/claude-desktop-config.md)
   - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
 - **API Reference**
+
   - [API Overview](./docs/api/api-overview.md)
   - [People API](./docs/api/people-api.md)
   - [Companies API](./docs/api/companies-api.md)
@@ -84,6 +105,7 @@ Full documentation is available in the [docs directory](./docs):
   - [Notes API](./docs/api/notes-api.md)
 
 - **Deployment**
+
   - [Docker Guide](./docs/docker/docker-guide.md)
   - [Security Best Practices](./docs/docker/security-guide.md)
 

@@ -1,0 +1,8 @@
+{
+  "companies": {
+    "industry": {
+      "primary_field": "type_persona",
+      "fallback_field": "categories"
+    }
+  }
+}
