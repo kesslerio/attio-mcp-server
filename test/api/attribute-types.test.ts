@@ -10,18 +10,19 @@ import {
 } from '../../src/api/attribute-types';
 import { getAttioClient } from '../../src/api/attio-client';
 import { ResourceType } from '../../src/types/attio';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the Attio client
-jest.mock('../../src/api/attio-client');
+vi.mock('../../src/api/attio-client');
 
 describe('Attribute Type Detection', () => {
   const mockApi = {
-    get: jest.fn()
+    get: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApi);
+    vi.clearAllMocks();
+    (getAttioClient as any).mockReturnValue(mockApi);
     clearAttributeCache();
   });
 

@@ -4,23 +4,23 @@ import * as peopleModule from '../../src/objects/people/index';
 import * as errorHandler from '../../src/utils/error-handler';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies/index');
-jest.mock('../../src/objects/people/index');
-jest.mock('../../src/utils/error-handler');
+vi.mock('../../src/objects/companies/index');
+vi.mock('../../src/objects/people/index');
+vi.mock('../../src/utils/error-handler');
 
 describe('resources-people', () => {
   describe('registerResourceHandlers - People', () => {
     let mockServer: any;
-    const mockedPeople = peopleModule as jest.Mocked<typeof peopleModule>;
-    const mockedErrorHandler = errorHandler as jest.Mocked<typeof errorHandler>;
+    const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
+    const mockedErrorHandler = errorHandler as vi.Mocked<typeof errorHandler>;
 
     beforeEach(() => {
       // Reset all mocks before each test
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       
       // Setup mock server
       mockServer = {
-        setRequestHandler: jest.fn(),
+        setRequestHandler: vi.fn(),
       };
     });
 

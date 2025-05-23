@@ -56,11 +56,11 @@ build_project() {
 verify_test_setup() {
     echo "🧪 Verifying test setup..."
     
-    # Check if jest is available
-    if npx jest --version > /dev/null 2>&1; then
-        print_success "Jest is available"
+    # Check if vitest is available
+    if npx vitest --version > /dev/null 2>&1; then
+        print_success "Vitest is available"
     else
-        print_warning "Jest not found - tests may not work"
+        print_warning "Vitest not found - tests may not work"
     fi
     
     # Check TypeScript
@@ -75,27 +75,37 @@ verify_test_setup() {
 create_offline_configs() {
     echo "⚙️ Creating offline configurations..."
     
-    # Create simplified jest config for offline environments
-    cat > jest.config.offline.js << 'EOF'
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/test'],
-  testMatch: ['**/*.test.ts', '**/*.test.js'],
-  collectCoverageFrom: [
-    'src/**/*.{ts,js}',
-    '!src/**/*.d.ts',
-  ],
-  // Simplified config for offline environments
-  setupFilesAfterEnv: [],
-  testTimeout: 10000,
-  // Skip integration tests that require network
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/test/integration/real-api',
-    '/test/manual/'
-  ]
-};
+    # Create simplified vitest config for offline environments
+    cat > vitest.config.offline.ts << 'EOF'
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'node',
+    include: ['test/**/*.test.ts', 'test/**/*.test.js'],
+    exclude: [
+      'node_modules/**',
+      'test/integration/real-api/**',
+      'test/manual/**',
+      'test/**/*.manual.*',
+    ],
+    globals: true,
+    testTimeout: 10000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        maxForks: '50%',
+      },
+    },
+    silent: false,
+    reporter: 'verbose',
+  },
+  resolve: {
+    alias: {
+      '^(\\.{1,2}/.*)\\.js$': '$1',
+    },
+  },
+});
 EOF
 
     # Create offline TypeScript config
@@ -240,7 +250,7 @@ main() {
     echo "  ./scripts/verify-codex-env.sh"
     echo ""
     echo "For offline testing, use:"
-    echo "  npx jest --config=jest.config.offline.js"
+    echo "  npx vitest --config vitest.config.offline.ts"
     echo "  npx tsc --project tsconfig.offline.json --noEmit"
     echo ""
 }

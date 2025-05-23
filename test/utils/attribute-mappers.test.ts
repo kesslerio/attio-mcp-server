@@ -6,8 +6,8 @@ import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
 import * as configLoader from '../../src/utils/config-loader';
 
 // Mock the config loader to test with controlled configurations
-jest.mock('../../src/utils/config-loader', () => ({
-  loadMappingConfig: jest.fn().mockImplementation(() => ({
+vi.mock('../../src/utils/config-loader', () => ({
+  loadMappingConfig: vi.fn().mockImplementation(() => ({
     version: '1.0',
     mappings: {
       attributes: {
@@ -37,7 +37,7 @@ describe('Attribute Mappers', () => {
   beforeEach(() => {
     // Reset all caches before each test
     invalidateConfigCache();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getAttributeSlug', () => {
@@ -68,7 +68,7 @@ describe('Attribute Mappers', () => {
     it('should handle snake case conversion without infinite recursion', () => {
       // Mock handleSpecialCases to simulate the problematic behavior
       const originalHandleSpecialCases = mappingUtils.handleSpecialCases;
-      jest.spyOn(mappingUtils, 'handleSpecialCases').mockImplementation((key) => {
+      vi.spyOn(mappingUtils, 'handleSpecialCases').mockImplementation((key) => {
         if (key.toLowerCase() === 'industry') return 'categories';
         if (key.toLowerCase() === 'categories') return 'industry'; // This creates a circular reference
         return originalHandleSpecialCases(key);
@@ -78,7 +78,7 @@ describe('Attribute Mappers', () => {
       expect(() => getAttributeSlug('industry_type')).not.toThrow();
       
       // Restore original function
-      (mappingUtils.handleSpecialCases as jest.Mock).mockRestore();
+      (mappingUtils.handleSpecialCases as vi.Mock).mockRestore();
     });
 
     it('should handle edge cases in snake case conversion', () => {

@@ -5,20 +5,20 @@ import { getCompanyAttributes } from '../../src/objects/companies/attributes';
 import { getCompanyDetails } from '../../src/objects/companies/basic';
 
 // Mock dependencies
-jest.mock('../../src/objects/companies/basic', () => ({
-  getCompanyDetails: jest.fn(),
-  extractCompanyId: jest.fn().mockImplementation(id => id),
+vi.mock('../../src/objects/companies/basic', () => ({
+  getCompanyDetails: vi.fn(),
+  extractCompanyId: vi.fn().mockImplementation(id => id),
 }));
 
 describe('Company Attributes', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getCompanyAttributes', () => {
     it('should return specific attribute value when attributeName is provided', async () => {
       // Mock company details with test data
-      (getCompanyDetails as jest.Mock).mockResolvedValue({
+      (getCompanyDetails as vi.Mock).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {
           name: [{ value: 'Test Company' }],
@@ -38,7 +38,7 @@ describe('Company Attributes', () => {
 
     it('should return all available attributes when attributeName is not provided', async () => {
       // Mock company details with test data
-      (getCompanyDetails as jest.Mock).mockResolvedValue({
+      (getCompanyDetails as vi.Mock).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {
           name: [{ value: 'Test Company' }],
@@ -58,7 +58,7 @@ describe('Company Attributes', () => {
 
     it('should handle errors properly when attribute is not found', async () => {
       // Mock company details with test data
-      (getCompanyDetails as jest.Mock).mockResolvedValue({
+      (getCompanyDetails as vi.Mock).mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: {
           name: [{ value: 'Test Company' }],
@@ -74,7 +74,7 @@ describe('Company Attributes', () => {
 
     it('should handle errors from getCompanyDetails', async () => {
       // Mock getCompanyDetails to throw an error
-      (getCompanyDetails as jest.Mock).mockRejectedValue(new Error('API error'));
+      (getCompanyDetails as vi.Mock).mockRejectedValue(new Error('API error'));
 
       // Test error handling
       await expect(getCompanyAttributes('comp_123', 'stage'))

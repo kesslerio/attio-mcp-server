@@ -1,13 +1,13 @@
 import { tasksToolConfigs } from '../../src/handlers/tool-configs/tasks';
 import * as tasksModule from '../../src/objects/tasks';
 
-jest.mock('../../src/objects/tasks');
+vi.mock('../../src/objects/tasks');
 
-const mockedTasks = tasksModule as jest.Mocked<typeof tasksModule>;
+const mockedTasks = tasksModule as vi.Mocked<typeof tasksModule>;
 
 describe('Tasks Tool Configs', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it('create-task formats result', async () => {
