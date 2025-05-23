@@ -96,21 +96,31 @@ export class CompanyValidator {
         CompanyValidator.fieldTypeCache.set(fieldName, fieldType);
       }
         
-      // Convert value if it's a boolean field but the value is a string or number
+      // Convert booleans represented as strings/numbers
       if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
         return convertToBoolean(value);
       }
+
+      // Convert single string to array for multiselect fields
+      if (fieldType === 'array' && typeof value === 'string') {
+        return [value];
+      }
     } catch (error) {
       // If field type detection fails, try a heuristic approach based on field naming
-      if (CompanyValidator.isBooleanFieldByName(fieldName) && 
+      if (CompanyValidator.isBooleanFieldByName(fieldName) &&
           (typeof value === 'string' || typeof value === 'number')) {
         try {
           return convertToBoolean(value);
         } catch (conversionError) {
-          console.warn(`Failed to convert potential boolean value for field '${fieldName}':`, 
+          console.warn(`Failed to convert potential boolean value for field '${fieldName}':`,
             conversionError instanceof Error ? conversionError.message : String(conversionError));
           // Return the original value if conversion fails
         }
+      }
+
+      // Heuristic for array fields when type detection fails
+      if (fieldName.toLowerCase().includes('categories') && typeof value === 'string') {
+        return [value];
       }
     }
     

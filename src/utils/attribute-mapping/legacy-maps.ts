@@ -30,8 +30,8 @@ export const LEGACY_ATTRIBUTE_MAP: Record<string, string> = {
   'City': 'city',
   'State': 'state',
   'Country': 'country',
-  'ZIP': 'zip',
-  'Postal Code': 'zip',
+  'ZIP': 'postal_code',
+  'Postal Code': 'postal_code',
 
   // People attributes 
   'First Name': 'first_name',
