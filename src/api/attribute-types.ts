@@ -204,6 +204,23 @@ export function clearAttributeCache(objectSlug?: string): void {
 }
 
 /**
+ * Looks up the API slug for an attribute by its ID
+ *
+ * @param objectSlug - The object type
+ * @param attributeId - The attribute's unique ID
+ * @returns The corresponding slug or null if not found
+ */
+export async function getAttributeSlugById(objectSlug: string, attributeId: string): Promise<string | null> {
+  const metadata = await getObjectAttributeMetadata(objectSlug);
+  for (const [slug, attr] of metadata.entries()) {
+    if (attr.id.attribute_id === attributeId) {
+      return slug;
+    }
+  }
+  return null;
+}
+
+/**
  * Gets field validation rules based on attribute metadata
  * 
  * @param objectSlug - The object type
