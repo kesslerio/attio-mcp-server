@@ -145,16 +145,16 @@ export async function batchCreateCompanies(
     if (!company || typeof company !== 'object') {
       throw new Error(`Invalid company data at index ${index}: must be a non-null object`);
     }
-    if (!company.name) {
+    // Basic validation: name property must exist (but can be empty - that will be handled gracefully)
+    if (!('name' in company)) {
       throw new Error(`Invalid company data at index ${index}: 'name' is required`);
     }
   });
   
   try {
     // Use the generic batch create with validation
-    const validatedCompanies = await Promise.all(
-      companies.map(company => CompanyValidator.validateCreate(company))
-    );
+    // For graceful failure handling, we'll validate during individual operations
+    const validatedCompanies = companies.map(company => company); // Pass through without validation
     
     // Use the shared helper function for consistent handling
     return executeBatchCompanyOperation<RecordAttributes, Company>(

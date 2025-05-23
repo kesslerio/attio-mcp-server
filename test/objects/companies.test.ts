@@ -51,6 +51,16 @@ describe('companies', () => {
       return Promise.resolve('string');
     });
     
+    // Mock formatAllAttributes to return attributes as-is for tests
+    mockedAttributeTypes.formatAllAttributes.mockImplementation(async (objectType: string, attributes: any) => {
+      // For tests, just return the attributes wrapped in the expected format
+      const formatted: Record<string, any> = {};
+      for (const [key, value] of Object.entries(attributes)) {
+        formatted[key] = { value };
+      }
+      return formatted;
+    });
+    
     // Mock getObjectAttributeMetadata if it's called
     mockedAttributeTypes.getObjectAttributeMetadata.mockResolvedValue(new Map([
       ['name', { 
@@ -309,7 +319,12 @@ describe('companies', () => {
       // Assert
       expect(mockedRecords.createObjectRecord).toHaveBeenCalledWith(
         'companies',
-        attributes
+        {
+          categories: { value: 'Technology' },
+          domains: { value: '["newcompany.com"]' },
+          name: { value: 'New Company' },
+          website: { value: 'https://newcompany.com' }
+        }
       );
       expect(result).toEqual(mockResponse);
     });
@@ -378,7 +393,7 @@ describe('companies', () => {
         companyId,
         {
           name: { value: 'Updated Company' },
-          industry: { value: 'Finance' }
+          categories: { value: 'Finance' }
         }
       );
       expect(result).toEqual(mockResponse);
@@ -417,7 +432,7 @@ describe('companies', () => {
       expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
         'companies',
         companyId,
-        { [attributeName]: { value: attributeValue } }
+        { categories: { value: attributeValue } }
       );
       expect(result).toEqual(mockResponse);
     });
