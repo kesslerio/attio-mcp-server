@@ -268,7 +268,7 @@ export type CompanyFieldValue = string | number | boolean | null | undefined | A
 /**
  * Processed company field value types
  */
-export type ProcessedFieldValue = string | number | boolean | null | undefined;
+export type ProcessedFieldValue = string | number | boolean | null | undefined | Array<string | number | boolean>;
 
 /**
  * Contact information value interface

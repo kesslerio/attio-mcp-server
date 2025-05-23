@@ -36,7 +36,7 @@ import {
   GetListsToolConfig,
   GetListEntriesToolConfig,
   DateBasedSearchToolConfig,
-} from '../../../types/tool-types.js';
+} from '../../tool-types.js';
 
 /**
  * Execute a tool request and return formatted results

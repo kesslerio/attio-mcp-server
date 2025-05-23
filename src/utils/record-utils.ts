@@ -62,11 +62,14 @@ export function processListEntries(
     }
 
     // If record data might be in a different nested structure
-    if (entry.values?.record?.id?.record_id) {
-      return {
-        ...entry,
-        record_id: entry.values.record.id.record_id,
-      };
+    if (entry.values && typeof entry.values === 'object' && 'record' in entry.values) {
+      const valuesWithRecord = entry.values as { record?: { id?: { record_id?: string } } };
+      if (valuesWithRecord.record?.id?.record_id) {
+        return {
+          ...entry,
+          record_id: valuesWithRecord.record.id.record_id,
+        };
+      }
     }
 
     // If we can find a record_id in another location
