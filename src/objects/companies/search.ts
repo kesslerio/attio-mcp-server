@@ -14,19 +14,109 @@ import {
   FilterConditionType
 } from "../../types/attio.js";
 import { FilterValidationError } from "../../errors/api-errors.js";
+import { 
+  extractDomain, 
+  hasDomainIndicators, 
+  normalizeDomain,
+  extractAllDomains
+} from "../../utils/domain-utils.js";
 
 /**
- * Searches for companies by name using a simple text search
+ * Searches for companies with domain prioritization when available
  * 
- * @param query - Search query string to match against company names
- * @returns Array of matching company objects
+ * @param query - Search query string to match against company names or domains
+ * @returns Array of matching company objects, prioritized by domain matches
  * @example
  * ```typescript
+ * const companies = await searchCompanies("acme.com");
+ * // Returns companies with domain "acme.com" first, then name matches
+ * 
  * const companies = await searchCompanies("acme");
- * // Returns all companies with names containing "acme"
+ * // Returns companies with names containing "acme"
  * ```
  */
 export async function searchCompanies(query: string): Promise<Company[]> {
+  // Check if query contains domain indicators
+  const extractedDomain = extractDomain(query);
+  
+  if (extractedDomain) {
+    // Priority search by domain first
+    try {
+      const domainResults = await searchCompaniesByDomain(extractedDomain);
+      
+      // If we found exact domain matches, return them first
+      if (domainResults.length > 0) {
+        // Also search by name to include potential additional matches
+        const nameResults = await searchCompaniesByName(query);
+        
+        // Combine results, prioritizing domain matches
+        const combinedResults = [...domainResults];
+        
+        // Add name-based results that aren't already included
+        for (const nameResult of nameResults) {
+          const isDuplicate = domainResults.some(
+            domainResult => domainResult.id?.record_id === nameResult.id?.record_id
+          );
+          if (!isDuplicate) {
+            combinedResults.push(nameResult);
+          }
+        }
+        
+        return combinedResults;
+      }
+    } catch (error) {
+      // If domain search fails, fall back to name search
+      console.warn(`Domain search failed for "${extractedDomain}", falling back to name search:`, error);
+    }
+  }
+  
+  // Fallback to name-based search
+  return await searchCompaniesByName(query);
+}
+
+/**
+ * Searches for companies by domain/website
+ * 
+ * @param domain - Domain to search for
+ * @returns Array of matching company objects
+ */
+export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
+  const normalizedDomain = normalizeDomain(domain);
+  
+  // Create filters for domain search
+  const filters: ListEntryFilters = {
+    filters: [
+      {
+        attribute: { slug: 'website' },
+        condition: FilterConditionType.CONTAINS,
+        value: normalizedDomain
+      }
+    ]
+  };
+  
+  try {
+    return await advancedSearchCompanies(filters);
+  } catch (error) {
+    // Fallback to direct API call
+    const api = getAttioClient();
+    const path = "/objects/companies/records/query";
+    
+    const response = await api.post(path, {
+      filter: {
+        website: { "$contains": normalizedDomain },
+      }
+    });
+    return response.data.data || [];
+  }
+}
+
+/**
+ * Searches for companies by name only
+ * 
+ * @param query - Search query string to match against company names
+ * @returns Array of matching company objects
+ */
+export async function searchCompaniesByName(query: string): Promise<Company[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await searchObject<Company>(ResourceType.COMPANIES, query);
@@ -221,4 +311,78 @@ export function createIndustryFilter(
       }
     ]
   };
+}
+
+/**
+ * Helper function to create filters for searching companies by domain
+ * 
+ * @param domain - Domain to search for
+ * @param condition - Condition type (default: CONTAINS)
+ * @returns ListEntryFilters object configured for domain search
+ */
+export function createDomainFilter(
+  domain: string, 
+  condition: FilterConditionType = FilterConditionType.CONTAINS
+): ListEntryFilters {
+  const normalizedDomain = normalizeDomain(domain);
+  return {
+    filters: [
+      {
+        attribute: { slug: 'website' },
+        condition: condition,
+        value: normalizedDomain
+      }
+    ]
+  };
+}
+
+/**
+ * Smart search that automatically determines search strategy based on query content
+ * 
+ * @param query - Search query that may contain domain, email, URL, or company name
+ * @returns Array of matching company objects with domain matches prioritized
+ */
+export async function smartSearchCompanies(query: string): Promise<Company[]> {
+  const domains = extractAllDomains(query);
+  
+  if (domains.length > 0) {
+    // Multi-domain search with prioritization
+    const allResults: Company[] = [];
+    const seenIds = new Set<string>();
+    
+    // Search by each domain first
+    for (const domain of domains) {
+      try {
+        const domainResults = await searchCompaniesByDomain(domain);
+        for (const result of domainResults) {
+          const id = result.id?.record_id;
+          if (id && !seenIds.has(id)) {
+            seenIds.add(id);
+            allResults.push(result);
+          }
+        }
+      } catch (error) {
+        console.warn(`Domain search failed for "${domain}":`, error);
+      }
+    }
+    
+    // Add name-based results if we have room
+    try {
+      const nameResults = await searchCompaniesByName(query);
+      for (const result of nameResults) {
+        const id = result.id?.record_id;
+        if (id && !seenIds.has(id)) {
+          seenIds.add(id);
+          allResults.push(result);
+        }
+      }
+    } catch (error) {
+      console.warn(`Name search failed for "${query}":`, error);
+    }
+    
+    return allResults;
+  }
+  
+  // No domains found, use regular name search
+  return await searchCompaniesByName(query);
 }
