@@ -14,7 +14,7 @@ export interface SerializationOptions {
   /** Whether to include stack traces in error objects */
   includeStackTraces?: boolean;
   /** Custom replacer function */
-  replacer?: (key: string, value: any) => any;
+  replacer?: (key: string, value: unknown) => unknown;
 }
 
 /**
@@ -35,7 +35,7 @@ const DEFAULT_OPTIONS: Required<SerializationOptions> = {
  * @returns Safe JSON string
  */
 export function safeJsonStringify(
-  obj: any,
+  obj: unknown,
   options: SerializationOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
@@ -45,7 +45,7 @@ export function safeJsonStringify(
   // Performance monitoring for large objects
   const startTime = performance.now();
 
-  const replacer = function (key: string, value: any): any {
+  const replacer = function (key: string, value: unknown): unknown {
     // Apply custom replacer first
     value = opts.replacer(key, value);
 
@@ -90,7 +90,7 @@ export function safeJsonStringify(
     try {
       // Handle special object types
       if (value instanceof Error) {
-        const errorObj: any = {
+        const errorObj: Record<string, unknown> = {
           name: value.name,
           message: value.message,
         };
@@ -148,7 +148,7 @@ export function safeJsonStringify(
       }
 
       // Handle plain objects
-      const result: any = {};
+      const result: Record<string, unknown> = {};
       for (const [objKey, objValue] of Object.entries(value)) {
         try {
           result[objKey] = replacer(objKey, objValue);
@@ -172,7 +172,7 @@ export function safeJsonStringify(
   };
 
   try {
-    const result = JSON.stringify(obj, replacer as any, 2);
+    const result = JSON.stringify(obj, replacer as (key: string, value: unknown) => unknown, 2);
 
     // Performance monitoring and logging
     const duration = performance.now() - startTime;
@@ -217,7 +217,7 @@ export function safeJsonStringify(
  */
 export function validateJsonString(jsonString: string): {
   isValid: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   size: number;
 } {
@@ -247,12 +247,12 @@ export function validateJsonString(jsonString: string): {
  * @returns True if circular references are detected
  */
 export function hasCircularReferences(
-  obj: any,
+  obj: unknown,
   maxDepth: number = 10
 ): boolean {
   const seen = new WeakSet();
 
-  function check(value: any, depth: number): boolean {
+  function check(value: unknown, depth: number): boolean {
     if (depth > maxDepth) return false;
     if (value === null || typeof value !== 'object') return false;
 
@@ -282,9 +282,9 @@ export function hasCircularReferences(
  * @returns Safe copy of the object
  */
 export function createSafeCopy(
-  obj: any,
+  obj: unknown,
   options: SerializationOptions = {}
-): any {
+): unknown {
   const jsonString = safeJsonStringify(obj, options);
   const validation = validateJsonString(jsonString);
 
@@ -309,7 +309,7 @@ export function createSafeCopy(
  * @param response - The MCP response object to sanitize
  * @returns Sanitized response object
  */
-export function sanitizeMcpResponse(response: any): any {
+export function sanitizeMcpResponse(response: unknown): unknown {
   // Ensure response has the correct structure
   if (!response || typeof response !== 'object') {
     return {
