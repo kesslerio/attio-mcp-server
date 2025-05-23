@@ -4,10 +4,10 @@
 const {
   translateAttributeNamesInFilters,
 } = require('./dist/utils/attribute-mapping/index.js');
-const { advancedSearchObject } = require('./dist/api/attio-operations.js');
-const { ResourceType, FilterConditionType } = require('./dist/types/attio.js');
-const { getAttioClient } = require('./dist/api/attio-client.js');
-const { transformFiltersToApiFormat } = require('./dist/utils/filter-utils.js');
+import { advancedSearchObject } from('./dist/api/attio-operations.js');
+import { ResourceType, FilterConditionType } from('./dist/types/attio.js');
+import { getAttioClient } from('./dist/api/attio-client.js');
+import { transformFiltersToApiFormat } from('./dist/utils/filter-utils.js');
 
 // Create a proxy to intercept the actual HTTP calls
 const originalFetch = globalThis.fetch;

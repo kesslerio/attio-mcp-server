@@ -7,7 +7,7 @@
 const {
   advancedSearchCompanies,
 } = require('../../src/objects/companies/index');
-const { FilterValidationError } = require('../../src/errors/api-errors');
+import { FilterValidationError } from('../../src/errors/api-errors');
 
 // Skip tests if no API key is provided
 const SKIP_TESTS = !process.env.ATTIO_API_KEY;

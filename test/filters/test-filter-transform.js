@@ -5,8 +5,8 @@
  */
 
 // Import necessary modules from our codebase
-const { transformFiltersToApiFormat } = require('./src/utils/filter-utils.js');
-const { FilterConditionType } = require('./src/types/attio.js');
+import { transformFiltersToApiFormat } from('./src/utils/filter-utils.js');
+import { FilterConditionType } from('./src/types/attio.js');
 
 // Create a filter object with B2B Segment = "Plastic Surgeon"
 const b2bSegmentFilter = {

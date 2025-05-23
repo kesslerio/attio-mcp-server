@@ -21,7 +21,7 @@ const {
   getCompanyDetails,
   deleteCompany,
 } = require('../../build/objects/companies/index');
-const { initializeAttioClient } = require('../../build/api/attio-client');
+import { initializeAttioClient } from('../../build/api/attio-client');
 const {
   getAttributeSlug,
 } = require('../../build/utils/attribute-mapping/index');

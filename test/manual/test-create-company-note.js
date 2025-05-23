@@ -4,7 +4,7 @@
  * This file tests the create-company-note tool which had an issue
  * where the formatResult function was missing.
  */
-const { executeToolRequest } = require('../../dist/handlers/tools/dispatcher');
+import { executeToolRequest } from('../../dist/handlers/tools/dispatcher');
 
 // Sample company ID for testing
 const COMPANY_ID = 'test-company-id';

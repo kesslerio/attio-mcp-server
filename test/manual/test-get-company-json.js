@@ -8,7 +8,7 @@
  * 1. A valid request with companyId to verify success case
  * 2. A request with missing companyId to verify error handling
  */
-const { executeToolRequest } = require('../../dist/handlers/tools/dispatcher');
+import { executeToolRequest } from('../../dist/handlers/tools/dispatcher');
 
 // Sample company ID for testing
 const COMPANY_ID = 'test-company-id';

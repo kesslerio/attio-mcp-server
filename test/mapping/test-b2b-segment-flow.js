@@ -4,8 +4,8 @@
 const {
   translateAttributeNamesInFilters,
 } = require('./dist/utils/attribute-mapping/index.js');
-const { advancedSearchObject } = require('./dist/api/attio-operations.js');
-const { ResourceType, FilterConditionType } = require('./dist/types/attio.js');
+import { advancedSearchObject } from('./dist/api/attio-operations.js');
+import { ResourceType, FilterConditionType } from('./dist/types/attio.js');
 
 // Mock the API client to see what data is being sent
 const originalPost = require('./dist/api/attio-client.js').getAttioClient;

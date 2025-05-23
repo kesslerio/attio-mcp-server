@@ -1,4 +1,4 @@
-const { updateCompanyAttribute } = require('../dist/objects/companies');
+import { updateCompanyAttribute } from('../dist/objects/companies');
 
 // Mock API client
 const mockClient = {

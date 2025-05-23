@@ -1,10 +1,4 @@
-import {
-  searchPeople,
-  searchPeopleByEmail,
-  searchPeopleByPhone,
-  listPeople,
-  getPersonDetails,
-} from '../../src/objects/people';
+import { searchPeople, searchPeopleByEmail, searchPeopleByPhone, listPeople, getPersonDetails } from '../../src/objects/people';
 import { getAttioClient } from '../../src/api/attio-client';
 import { Person } from '../../src/types/attio';
 
@@ -17,19 +11,19 @@ describe('People API functions', () => {
   // Sample mock data
   const mockPerson: Person = {
     id: {
-      record_id: 'abc123',
+      record_id: 'abc123'
     },
     values: {
       name: [{ value: 'John Doe' }],
       email: [{ value: 'john.doe@example.com' }],
-      phone: [{ value: '+1234567890' }],
-    },
+      phone: [{ value: '+1234567890' }]
+    }
   };
 
   // Mock API client
   const mockApiClient = {
     post: vi.fn(),
-    get: vi.fn(),
+    get: vi.fn()
   };
 
   beforeEach(() => {
@@ -42,26 +36,23 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson],
-        },
+          data: [mockPerson]
+        }
       });
 
       // Call the function
       const result = await searchPeople('John');
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/people/records/query',
-        {
-          filter: {
-            $or: [
-              { name: { $contains: 'John' } },
-              { email_addresses: { $contains: 'John' } },
-            ],
-          },
-          limit: 50,
-        }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
+        filter: {
+          "$or": [
+            { name: { "$contains": "John" } },
+            { email_addresses: { "$contains": "John" } }
+          ]
+        },
+        limit: 50
+      });
       expect(result).toEqual([mockPerson]);
     });
 
@@ -69,8 +60,8 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [],
-        },
+          data: []
+        }
       });
 
       // Call the function
@@ -78,15 +69,16 @@ describe('People API functions', () => {
 
       // Assertions
       expect(result).toEqual([]);
+
     });
 
     it('should handle API errors', async () => {
       // Setup mock error with response data
       const mockError = new Error('API error');
       Object.defineProperty(mockError, 'response', {
-        value: { data: { error: 'Not found' } },
+        value: { data: { error: 'Not found' } }
       });
-
+      
       mockApiClient.post.mockRejectedValueOnce(mockError);
 
       // Call and check for error
@@ -99,26 +91,23 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson],
-        },
+          data: [mockPerson]
+        }
       });
 
       // Call the function
       const result = await searchPeopleByEmail('john.doe@example.com');
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/people/records/query',
-        {
-          filter: {
-            $or: [
-              { name: { $contains: 'john.doe@example.com' } },
-              { email: { $contains: 'john.doe@example.com' } },
-              { phone: { $contains: 'john.doe@example.com' } },
-            ],
-          },
+      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
+        filter: {
+          "$or": [
+            { name: { "$contains": "john.doe@example.com" } },
+            { email_addresses: { "$contains": "john.doe@example.com" } },
+            { phone: { "$contains": "john.doe@example.com" } }
+          ]
         }
-      );
+      });
       expect(result).toEqual([mockPerson]);
     });
 
@@ -126,8 +115,8 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [],
-        },
+          data: []
+        }
       });
 
       // Call the function
@@ -143,26 +132,23 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson],
-        },
+          data: [mockPerson]
+        }
       });
 
       // Call the function
       const result = await searchPeopleByPhone('+1234567890');
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/people/records/query',
-        {
-          filter: {
-            $or: [
-              { name: { $contains: '+1234567890' } },
-              { email: { $contains: '+1234567890' } },
-              { phone: { $contains: '+1234567890' } },
-            ],
-          },
+      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
+        filter: {
+          "$or": [
+            { name: { "$contains": "+1234567890" } },
+            { email_addresses: { "$contains": "+1234567890" } },
+            { phone: { "$contains": "+1234567890" } }
+          ]
         }
-      );
+      });
       expect(result).toEqual([mockPerson]);
     });
 
@@ -170,8 +156,8 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [],
-        },
+          data: []
+        }
       });
 
       // Call the function
@@ -187,27 +173,18 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson],
-        },
+          data: [mockPerson]
+        }
       });
 
       // Call the function
       const result = await listPeople();
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/people/records/query',
-        {
-          limit: 20,
-          sorts: [
-            {
-              attribute: 'last_interaction',
-              field: 'interacted_at',
-              direction: 'desc',
-            },
-          ],
-        }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
+        limit: 20,
+        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
+      });
       expect(result).toEqual([mockPerson]);
     });
 
@@ -215,27 +192,18 @@ describe('People API functions', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson],
-        },
+          data: [mockPerson]
+        }
       });
 
       // Call the function
       const result = await listPeople(5);
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/people/records/query',
-        {
-          limit: 5,
-          sorts: [
-            {
-              attribute: 'last_interaction',
-              field: 'interacted_at',
-              direction: 'desc',
-            },
-          ],
-        }
-      );
+      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
+        limit: 5,
+        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
+      });
       expect(result).toEqual([mockPerson]);
     });
   });
@@ -244,16 +212,14 @@ describe('People API functions', () => {
     it('should get details for a specific person', async () => {
       // Setup mock response
       mockApiClient.get.mockResolvedValueOnce({
-        data: mockPerson,
+        data: mockPerson
       });
 
       // Call the function
       const result = await getPersonDetails('abc123');
 
       // Assertions
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/objects/people/records/abc123'
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith('/objects/people/records/abc123');
       expect(result).toEqual(mockPerson);
     });
 
@@ -261,15 +227,13 @@ describe('People API functions', () => {
       // Setup mock error with response data
       const mockError = new Error('Not found');
       Object.defineProperty(mockError, 'response', {
-        value: { data: { error: 'Not found' } },
+        value: { data: { error: 'Not found' } }
       });
-
+      
       mockApiClient.get.mockRejectedValueOnce(mockError);
 
       // Call and check for error
-      await expect(getPersonDetails('nonexistent')).rejects.toThrow(
-        'Not found'
-      );
+      await expect(getPersonDetails('nonexistent')).rejects.toThrow('Not found');
     });
   });
 });

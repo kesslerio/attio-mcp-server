@@ -10,7 +10,7 @@ require('dotenv').config();
 const {
   advancedSearchCompanies,
 } = require('../../dist/objects/companies/index');
-const { initializeAttioClient } = require('../../dist/api/attio-client');
+import { initializeAttioClient } from('../../dist/api/attio-client');
 
 // Ensure API key is set
 if (!process.env.ATTIO_API_KEY) {

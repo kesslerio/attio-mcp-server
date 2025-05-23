@@ -167,6 +167,21 @@ describe('Enhanced Attribute Mapping', () => {
       // Should convert snake case to display name and then look up
       expect(getAttributeSlug('account_manager')).toBe('account_manager');
     });
+
+    it('should map postal code fields without converting to zip', () => {
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+        version: '1.0',
+        mappings: {
+          attributes: { common: {}, objects: {}, custom: {} },
+          objects: {},
+          lists: {},
+          relationships: {},
+        },
+      });
+
+      expect(getAttributeSlug('postal_code')).toBe('postal_code');
+      expect(getAttributeSlug('ZIP')).toBe('postal_code');
+    });
   });
 
   describe('Object-Specific Mappings', () => {
