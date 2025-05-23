@@ -4,7 +4,7 @@
  * This file tests the refactored handleCompanyBatchOperation helper function
  * to ensure it properly handles batch updates for company records.
  */
-const { executeToolRequest } = require('../../dist/handlers/tools/dispatcher');
+import { executeToolRequest } from('../../dist/handlers/tools/dispatcher');
 
 // Sample company IDs for testing
 const COMPANY_IDS = ['test-company-id-1', 'test-company-id-2'];

@@ -2,6 +2,7 @@
 
 # Setup script for OpenAI Codex CLI
 # This script sets up the complete environment for using Codex CLI
+# Based on OpenAI Codex CLI v0.1+ (April 2025)
 
 set -e
 
@@ -35,27 +36,41 @@ print_error() {
 check_requirements() {
     print_status "Checking system requirements..."
     
-    # Check Node.js version
+    # Check Node.js version - Updated requirement: Node.js 22+
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed. Please install Node.js 22+ from https://nodejs.org/"
         exit 1
     fi
     
     local node_version=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$node_version" -lt 18 ]; then
-        print_warning "Node.js version is $node_version. Recommended version is 22+."
+    if [ "$node_version" -lt 22 ]; then
+        print_error "Node.js ≥22 is required (Node 18 is EOL). Current version: $(node --version)"
+        exit 1
     else
         print_success "Node.js version: $(node --version)"
     fi
     
     # Check Python version
     if ! command -v python3 &> /dev/null; then
-        print_error "Python 3 is not installed. Please install Python 3.12+."
+        print_error "Python 3 is not installed. Please install Python 3.11+."
         exit 1
     fi
     
-    local python_version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1-2)
+    local python_minor=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+    if [[ "$(echo $python_minor)" < "3.11" ]]; then
+        print_error "Python ≥3.11 required for uv. Current version: $(python3 --version)"
+        exit 1
+    fi
+    
     print_success "Python version: $(python3 --version)"
+    
+    # Check Git (recommended for safety)
+    if ! command -v git &> /dev/null; then
+        print_warning "Git is not installed. Codex CLI is safer when used in Git repositories."
+        echo "Consider installing Git for version control safety features."
+    else
+        print_success "Git version: $(git --version)"
+    fi
     
     # Check if uv is installed
     if ! command -v uv &> /dev/null; then
@@ -72,11 +87,75 @@ install_codex_cli() {
     print_status "Installing OpenAI Codex CLI..."
     
     if command -v codex &> /dev/null; then
-        print_success "OpenAI Codex CLI is already installed: $(codex --version)"
+        local current_version=$(codex --version 2>/dev/null || echo "unknown")
+        print_success "OpenAI Codex CLI is already installed: $current_version"
+        
+        read -p "Update to latest version? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            npm install -g @openai/codex@latest
+            print_success "Codex CLI updated to latest version."
+        fi
     else
         npm install -g @openai/codex
         print_success "OpenAI Codex CLI installed successfully."
     fi
+    
+    # Verify installation
+    if command -v codex &> /dev/null; then
+        print_success "Installation verified: $(codex --version)"
+    else
+        print_error "Installation failed. Please check npm permissions and try again."
+        exit 1
+    fi
+}
+
+# Install project dependencies
+install_project_dependencies() {
+    print_status "Installing project dependencies..."
+    
+    # Check if package.json exists
+    if [ ! -f "package.json" ]; then
+        print_warning "No package.json found in current directory. Skipping project dependency installation."
+        return
+    fi
+    
+    # Install npm dependencies
+    if [ -f "package-lock.json" ]; then
+        print_status "Found package-lock.json, running npm ci..."
+        npm ci
+    else
+        print_status "Running npm install..."
+        npm install
+    fi
+    
+    # Verify wireit installation (skip npx prompt)
+    if [ -f "package.json" ]; then
+        if npx --yes wireit --version &> /dev/null; then
+            print_success "Wireit build tool installed successfully."
+        else
+            print_warning "Wireit installation may have failed. Check npm install output."
+        fi
+    else
+        print_status "No package.json found, skipping Wireit verification."
+    fi
+    
+    # Verify project can build
+    if [ -f "tsconfig.json" ]; then
+        # Check if build script exists in package.json
+        if [ -f "package.json" ] && grep -q '"build"' package.json; then
+            print_status "Attempting to build project..."
+            if npm run build; then
+                print_success "Project built successfully."
+            else
+                print_warning "Project build failed. Check TypeScript configuration."
+            fi
+        else
+            print_status "No build script found in package.json, skipping build test."
+        fi
+    fi
+    
+    print_success "Project dependencies installation completed."
 }
 
 # Setup environment variables
@@ -87,10 +166,14 @@ setup_environment() {
     if [ -z "$OPENAI_API_KEY" ]; then
         echo ""
         echo "⚠️  OpenAI API key is required for Codex CLI."
-        echo "Please set your OpenAI API key:"
-        echo "export OPENAI_API_KEY='your-api-key-here'"
+        echo ""
+        echo "💰 Pricing Information (as of May 2025):"
+        echo "   - Input tokens: \$1.10 per 1M tokens"
+        echo "   - Output tokens: \$4.40 per 1M tokens"
+        echo "   - Model: o4-mini (default)"
         echo ""
         echo "You can get your API key from: https://platform.openai.com/api-keys"
+        echo "Note: API account verification may be required for o3/o4-mini models"
         echo ""
         read -p "Enter your OpenAI API key (or press Enter to skip): " api_key
         
@@ -123,19 +206,54 @@ configure_codex() {
     mkdir -p ~/.codex
     
     # Create default config if it doesn't exist
-    if [ ! -f ~/.codex/config.json ]; then
-        cat > ~/.codex/config.json << EOF
-{
-  "model": "o4-mini",
-  "approvalMode": "suggest",
-  "notify": true,
-  "maxTokens": 4096,
-  "temperature": 0.1
-}
+    if [ ! -f ~/.codex/config.yaml ]; then
+        cat > ~/.codex/config.yaml << 'EOF'
+model: o4-mini
+provider: openai
+approvalMode: suggest
+fullAutoErrorMode: ask-user
+notify: true
+maxTokens: 8192
+temperature: 0.1
+providers:
+  openai:
+    name: OpenAI
+    baseURL: https://api.openai.com/v1
+    envKey: OPENAI_API_KEY
+history:
+  maxSize: 1000
+  saveHistory: true
+  sensitivePatterns: []
 EOF
-        print_success "Codex configuration created at ~/.codex/config.json"
+        print_success "Codex configuration created at ~/.codex/config.yaml"
     else
         print_success "Codex configuration already exists."
+    fi
+    
+    # Create global AGENTS.md file for project instructions
+    if [ ! -f ~/.codex/AGENTS.md ]; then
+        cat > ~/.codex/AGENTS.md << 'EOF'
+# Global Codex Instructions
+
+## General Guidelines
+- Always ask for confirmation before making significant changes
+- Prioritize code readability and maintainability
+- Include appropriate error handling
+- Follow language-specific best practices
+
+## Project-Specific Instructions
+- Add your global coding preferences here
+- Specify any coding standards or conventions
+- Define any constraints or requirements
+
+## Safety Reminders
+- Always review changes before approval
+- Use suggest mode for unfamiliar codebases
+- Keep backups when working on important files
+EOF
+        print_success "Global AGENTS.md created at ~/.codex/AGENTS.md"
+    else
+        print_success "Global AGENTS.md already exists."
     fi
 }
 
@@ -192,69 +310,191 @@ create_examples() {
     mkdir -p ~/codex-examples
     
     cat > ~/codex-examples/README.md << 'EOF'
-# OpenAI Codex CLI with MCP Integration Examples
+# OpenAI Codex CLI Usage Examples
 
-## Basic Codex Usage
+## Basic Commands
 
 ```bash
-# Start interactive session
+# Interactive mode (recommended for beginners)
 codex
 
-# Run specific tasks
-codex "Create a Python function to calculate fibonacci numbers"
-codex "Explain this JavaScript code" --file script.js
-codex "Debug this error" --file error.log
+# Direct command with natural language
+codex "create a simple calculator in Python"
+codex "fix the bug in src/utils.js"
+codex "explain what this regex does: ^(?=.*[A-Z]).{8,}$"
 ```
 
-## MCP Brave Search Integration
+## Approval Modes
 
 ```bash
-# Search for recent information
-codex "Search for latest TypeScript features and create examples"
+# Suggest mode (default) - shows changes, asks for approval
+codex --approval-mode suggest "refactor this function"
 
-# Research and code generation
-codex "Find information about React 18 and create a component example"
+# Auto-edit mode - automatically applies approved changes
+codex --approval-mode auto-edit "add error handling"
+
+# Full-auto mode - executes without asking (use with caution!)
+codex --approval-mode full-auto "write unit tests"
 ```
 
-## Configuration
+## Model Selection
 
-### Codex Config (~/.codex/config.json)
-```json
-{
-  "model": "o4-mini",
-  "approvalMode": "suggest",
-  "notify": true,
-  "maxTokens": 4096,
-  "temperature": 0.1
-}
-```
-
-### Environment Variables
 ```bash
-export OPENAI_API_KEY="your-openai-api-key"
-export BRAVE_API_KEY="your-brave-search-api-key"
+# Use specific model
+codex --model gpt-4.1 "complex refactoring task"
+codex --model o4-mini "simple code generation"
+
+# Change model in interactive mode
+codex  # then use /model inside the session
 ```
 
-## Tips
-- Use `codex --help` for all available options
-- Set `approvalMode` to "auto-edit" for automatic code modifications
-- Use `--provider` flag to use different AI providers
-- Combine with MCP servers for enhanced capabilities
+## Project Documentation (AGENTS.md)
+
+Create an `AGENTS.md` file in your project root:
+
+```markdown
+# Project-Specific Instructions
+
+## Coding Standards
+- Use TypeScript for all new files
+- Follow ESLint configuration
+- Include JSDoc comments for public APIs
+
+## Architecture
+- Follow MVC pattern
+- Use dependency injection
+- Prefer composition over inheritance
+
+## Testing
+- Write unit tests for all new functions
+- Use Jest testing framework
+- Aim for >90% test coverage
+```
+
+## Interactive Commands
+
+Once in interactive mode, use these commands:
+- `/suggest` - Switch to suggest approval mode
+- `/autoedit` - Switch to auto-edit mode  
+- `/fullauto` - Switch to full-auto mode
+- `/model` - Change AI model
+- `/help` - Show all available commands
+- `/exit` - Exit Codex CLI
+
+## Advanced Examples
+
+```bash
+# Multi-file refactoring
+codex "refactor the authentication module to use async/await"
+
+# Documentation generation
+codex "generate comprehensive API documentation for this codebase"
+
+# Security audit
+codex "review this code for security vulnerabilities"
+
+# Performance optimization
+codex "optimize this function for better performance"
+
+# Test generation
+codex "write comprehensive unit tests for the user service"
+```
+
+## Safety Tips
+
+1. **Always use suggest mode first** in new projects
+2. **Work in Git repositories** for easy rollback
+3. **Review all changes** before approval
+4. **Start with small tasks** to understand behavior
+5. **Use full-auto mode sparingly** and only in safe environments
+
+## Pricing Awareness
+
+- Input tokens: $1.10 per 1M tokens
+- Output tokens: $4.40 per 1M tokens
+- Monitor usage via OpenAI dashboard
+- Consider using shorter prompts for cost efficiency
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Command not found"**
+   - Ensure Node.js 22+ is installed
+   - Check if codex is in PATH: `which codex`
+
+2. **API Key errors**
+   - Verify OPENAI_API_KEY is set: `echo $OPENAI_API_KEY`
+   - Check API key permissions on OpenAI platform
+
+3. **Model access issues**
+   - Some models require API account verification
+   - Try switching to gpt-3.5-turbo if o4-mini fails
+
+4. **Network/sandbox issues**
+   - Codex runs in sandbox on macOS (normal behavior)
+   - On Linux, consider Docker for additional security
+
+For more help: https://github.com/openai/codex
 EOF
+
+    # Create project-specific AGENTS.md template
+    if [ ! -f "./AGENTS.md" ]; then
+        cat > ./AGENTS.md << 'EOF'
+# Attio MCP Server - Codex Instructions
+
+## Project Overview
+This is an MCP (Model Context Protocol) server for Attio CRM integration.
+
+## Coding Standards
+- Use TypeScript for all code
+- Follow ESLint and Prettier configurations
+- Include comprehensive JSDoc comments
+- Write unit tests for all new functionality
+
+## Architecture Guidelines
+- Follow the existing handler/tool pattern
+- Use proper error handling with custom error types
+- Implement proper logging and monitoring
+- Follow SOLID principles
+
+## MCP-Specific Guidelines
+- Tools should have clear descriptions and parameter schemas
+- Validate all inputs thoroughly
+- Handle Attio API rate limiting gracefully
+- Use proper TypeScript types for all MCP interfaces
+
+## Testing Requirements
+- Unit tests for all handlers and utilities
+- Integration tests for API interactions
+- Mock external dependencies appropriately
+- Maintain >90% test coverage
+
+## Security Considerations
+- Validate all user inputs
+- Handle API keys securely
+- Implement proper error messages without exposing internals
+- Follow principle of least privilege
+EOF
+        print_success "Project-specific AGENTS.md created"
+    fi
 
     print_success "Usage examples created in ~/codex-examples/"
 }
 
 # Main setup function
 main() {
-    echo "🎯 OpenAI Codex CLI Setup"
-    echo "========================="
+    echo "🎯 OpenAI Codex CLI Setup (May 2025)"
+    echo "======================================"
     echo ""
     
     check_requirements
     echo ""
     
     install_codex_cli
+    echo ""
+    
+    install_project_dependencies
     echo ""
     
     setup_environment
@@ -286,11 +526,17 @@ main() {
     echo "2. Verify installation: codex --version"
     echo "3. Test basic functionality: codex 'Hello, world!'"
     echo "4. Check examples in ~/codex-examples/"
+    echo "5. Review AGENTS.md files for project-specific instructions"
     echo ""
-    echo "For more information:"
-    echo "- Codex CLI: https://github.com/openai/codex"
-    echo "- MCP Documentation: https://modelcontextprotocol.io/"
-    echo "- Brave Search API: https://api.search.brave.com/"
+    echo "⚡ Quick start:"
+    echo "   codex --approval-mode suggest 'create a simple hello world script'"
+    echo ""
+    echo "📚 For more information:"
+    echo "   - Codex CLI: https://github.com/openai/codex"
+    echo "   - Documentation: https://www.npmjs.com/package/@openai/codex"
+    echo "   - MCP Documentation: https://modelcontextprotocol.io/"
+    echo ""
+    echo "⚠️  Remember: Codex CLI is experimental software. Always review changes!"
     echo ""
 }
 

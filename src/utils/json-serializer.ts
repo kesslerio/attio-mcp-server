@@ -21,8 +21,8 @@ export interface SerializationOptions {
  * Default serialization options
  */
 const DEFAULT_OPTIONS: Required<SerializationOptions> = {
-  maxDepth: 10,
-  maxStringLength: 50000, // 50KB max string length
+  maxDepth: 20, // Increased from 10 to handle complex Attio API responses
+  maxStringLength: 25000, // 25KB max string length - more reasonable for MCP
   includeStackTraces: false,
   replacer: (key, value) => value
 };
@@ -290,10 +290,10 @@ export function sanitizeMcpResponse(response: any): any {
     };
   }
   
-  // Create safe copy with MCP-specific options
+  // Create safe copy with MCP-specific options optimized for Attio responses
   return createSafeCopy(response, {
-    maxDepth: 8,
-    maxStringLength: 100000, // 100KB for response content
+    maxDepth: 25, // Increased for complex Attio list/company relationship structures
+    maxStringLength: 40000, // 40KB for response content - reasonable limit
     includeStackTraces: process.env.NODE_ENV === 'development'
   });
 }
