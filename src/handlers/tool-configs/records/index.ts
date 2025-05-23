@@ -1,7 +1,7 @@
 /**
  * Records-related tool configurations
  */
-import { AttioRecord } from '../../types/attio.js';
+import { AttioRecord } from '../../../types/attio.js';
 import {
   createObjectRecord,
   getObjectRecord,
@@ -11,8 +11,8 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
   formatRecordAttributes,
-} from '../../objects/records.js';
-import { ToolConfig } from '../tool-types.js';
+} from '../../../objects/records/index.js';
+import { ToolConfig } from '../../tool-types.js';
 
 // Define new tool type interfaces specific to records
 export interface RecordCreateToolConfig extends ToolConfig {

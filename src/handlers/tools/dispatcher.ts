@@ -154,7 +154,8 @@ import {
   RecordListToolConfig,
   RecordBatchCreateToolConfig,
   RecordBatchUpdateToolConfig,
-} from '../tool-configs/records.js';
+} from '../tool-configs/records/index.js';
+
 
 // Import resource-specific tool configuration
 

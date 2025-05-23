@@ -56,7 +56,7 @@ import {
   RecordListToolConfig,
   RecordBatchCreateToolConfig,
   RecordBatchUpdateToolConfig
-} from "./tool-configs/records.js";
+} from "./tool-configs/records/index.js";
 
 // Consolidated tool configurations from modular files
 const TOOL_CONFIGS = {

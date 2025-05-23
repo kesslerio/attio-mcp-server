@@ -6,7 +6,7 @@ import {
   createObjectRecord,
   updateObjectRecord,
   deleteObjectRecord,
-} from './records.js';
+} from './records/index.js';
 import { ResourceType, AttioRecord } from '../types/attio.js';
 import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
 
