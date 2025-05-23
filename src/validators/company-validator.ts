@@ -24,6 +24,7 @@ import {
 import { InvalidRequestError } from '../errors/api-errors.js';
 import { convertToBoolean } from '../utils/attribute-mapping/attribute-mappers.js';
 import { extractDomain, normalizeDomain } from '../utils/domain-utils.js';
+import { CompanyFieldValue, ProcessedFieldValue } from '../types/tool-types.js';
 
 /**
  * Interface for cached attribute type info
@@ -109,8 +110,8 @@ export class CompanyValidator {
    */
   private static async processFieldValue(
     fieldName: string,
-    value: any
-  ): Promise<any> {
+    value: CompanyFieldValue
+  ): Promise<ProcessedFieldValue> {
     // Skip processing for null/undefined values
     if (value === null || value === undefined) {
       return value;
@@ -179,8 +180,8 @@ export class CompanyValidator {
    * @returns Processed attributes object with converted values
    */
   private static async processAttributeValues(
-    attributes: Record<string, any>
-  ): Promise<Record<string, any>> {
+    attributes: Record<string, CompanyFieldValue>
+  ): Promise<Record<string, ProcessedFieldValue>> {
     const processedAttributes = { ...attributes };
 
     for (const [field, value] of Object.entries(attributes)) {
@@ -205,7 +206,7 @@ export class CompanyValidator {
    * @param attributes - Company attributes
    * @returns Attributes with domains field populated if website is provided
    */
-  static extractDomainFromWebsite(attributes: any): any {
+  static extractDomainFromWebsite(attributes: Record<string, CompanyFieldValue>): Record<string, CompanyFieldValue> {
     // Only extract domain if:
     // 1. Website is provided
     // 2. Domains field is not already provided (don't overwrite manually set domains)
@@ -244,7 +245,7 @@ export class CompanyValidator {
    * @throws MissingCompanyFieldError if required fields are missing
    * @throws InvalidCompanyFieldTypeError if field types are invalid
    */
-  static async validateCreate(attributes: any): Promise<CompanyCreateInput> {
+  static async validateCreate(attributes: Record<string, CompanyFieldValue>): Promise<CompanyCreateInput> {
     // Check required fields
     if (!attributes.name) {
       throw new MissingCompanyFieldError('name');
@@ -291,7 +292,7 @@ export class CompanyValidator {
    */
   static async validateUpdate(
     companyId: string,
-    attributes: any
+    attributes: Record<string, CompanyFieldValue>
   ): Promise<CompanyUpdateInput> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
@@ -343,8 +344,8 @@ export class CompanyValidator {
   static async validateAttributeUpdate(
     companyId: string,
     attributeName: string,
-    attributeValue: any
-  ): Promise<any> {
+    attributeValue: CompanyFieldValue
+  ): Promise<ProcessedFieldValue> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
       throw new InvalidCompanyDataError(
@@ -429,7 +430,7 @@ export class CompanyValidator {
    */
   private static async validateFieldType(
     field: string,
-    value: any
+    value: CompanyFieldValue
   ): Promise<void> {
     // Allow null/undefined values for any field
     if (value === null || value === undefined) {
@@ -510,7 +511,7 @@ export class CompanyValidator {
    * @param attributes - Attributes to validate
    */
   private static async performSpecialValidation(
-    attributes: any
+    attributes: Record<string, ProcessedFieldValue>
   ): Promise<void> {
     // Validate services field as string if provided
     if (attributes.services !== undefined && attributes.services !== null) {
@@ -791,15 +792,15 @@ export class CompanyValidator {
    * // validated = { name: 'Acme Corp', employees: 250, is_customer: true }
    */
   static async validateAttributeTypes(
-    attributes: Record<string, any>
-  ): Promise<Record<string, any>> {
-    const validatedAttributes: Record<string, any> = {};
+    attributes: Record<string, ProcessedFieldValue>
+  ): Promise<Record<string, ProcessedFieldValue>> {
+    const validatedAttributes: Record<string, ProcessedFieldValue> = {};
     const errors: Record<string, string> = {};
     let hasErrors = false;
 
     // First handle special cases: undefined and null values
     // Extract attributes that need validation
-    const attributesToValidate: Record<string, any> = {};
+    const attributesToValidate: Record<string, ProcessedFieldValue> = {};
 
     Object.entries(attributes).forEach(([attributeName, value]) => {
       if (value === undefined) {

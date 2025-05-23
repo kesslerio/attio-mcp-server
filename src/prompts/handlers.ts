@@ -21,7 +21,7 @@ import { createErrorResult } from './error-handler.js';
 import Handlebars from 'handlebars';
 
 // Define template delegate type since it's not exported by the Handlebars module
-type HandlebarsTemplateDelegate = (context: any, options?: any) => string;
+type HandlebarsTemplateDelegate = (context: Record<string, unknown>, options?: Record<string, unknown>) => string;
 
 /**
  * Interface for template cache options
@@ -114,8 +114,8 @@ Handlebars.registerHelper(
   'if',
   function (
     this: Record<string, unknown>,
-    conditional: any,
-    options: any
+    conditional: unknown,
+    options: { fn: (context: unknown) => string; inverse: (context: unknown) => string }
   ): string {
     if (conditional) {
       return options.fn(this);
@@ -141,11 +141,11 @@ export async function listPrompts(req: Request, res: Response): Promise<void> {
       success: true,
       data: prompts,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorObj = new Error('Failed to list prompts');
     const errorResult = createErrorResult(
       errorObj,
-      error.message || 'Unknown error',
+      error instanceof Error ? error.message : 'Unknown error',
       500
     );
     res.status(Number(errorResult.error.code)).json(errorResult);
@@ -169,11 +169,11 @@ export async function listPromptCategories(
       success: true,
       data: categories,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorObj = new Error('Failed to list prompt categories');
     const errorResult = createErrorResult(
       errorObj,
-      error.message || 'Unknown error',
+      error instanceof Error ? error.message : 'Unknown error',
       500
     );
     res.status(Number(errorResult.error.code)).json(errorResult);
@@ -209,11 +209,11 @@ export async function getPromptDetails(
       success: true,
       data: prompt,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorObj = new Error('Failed to get prompt details');
     const errorResult = createErrorResult(
       errorObj,
-      error.message || 'Unknown error',
+      error instanceof Error ? error.message : 'Unknown error',
       500
     );
     res.status(Number(errorResult.error.code)).json(errorResult);
@@ -229,7 +229,7 @@ export async function getPromptDetails(
  */
 function validateParameters(
   prompt: PromptTemplate,
-  parameters: Record<string, any>
+  parameters: Record<string, unknown>
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -307,8 +307,8 @@ function validateParameters(
  */
 function applyDefaultValues(
   prompt: PromptTemplate,
-  parameters: Record<string, any>
-): Record<string, any> {
+  parameters: Record<string, unknown>
+): Record<string, unknown> {
   const result = { ...parameters };
 
   prompt.parameters.forEach((param) => {
@@ -372,12 +372,12 @@ export async function executePrompt(
       try {
         template = Handlebars.compile(prompt.template);
         templateCache.set(promptId, template);
-      } catch (compileError: any) {
+      } catch (compileError: unknown) {
         const errorObj = new Error('Failed to compile template');
         const errorResult = createErrorResult(
           errorObj,
           `Template compilation error for prompt ${promptId}: ${
-            compileError.message || 'Unknown error'
+            compileError instanceof Error ? compileError.message : 'Unknown error'
           }`,
           500
         );
@@ -390,12 +390,12 @@ export async function executePrompt(
     let result: string;
     try {
       result = template(parameters);
-    } catch (renderError: any) {
+    } catch (renderError: unknown) {
       const errorObj = new Error('Failed to render template');
       const errorResult = createErrorResult(
         errorObj,
         `Template rendering error for prompt ${promptId}: ${
-          renderError.message || 'Unknown error'
+          renderError instanceof Error ? renderError.message : 'Unknown error'
         }`,
         500
       );
@@ -410,11 +410,11 @@ export async function executePrompt(
         result,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorObj = new Error('Failed to execute prompt');
     const errorResult = createErrorResult(
       errorObj,
-      error.message || 'Unknown error',
+      error instanceof Error ? error.message : 'Unknown error',
       500
     );
     res.status(Number(errorResult.error.code)).json(errorResult);

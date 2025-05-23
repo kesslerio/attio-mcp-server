@@ -10,6 +10,8 @@ import {
 import { ResourceType, Person } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { isValidId } from '../../utils/validation.js';
+import { searchPeople } from './search.js';
+import { getPersonDetails } from './basic.js';
 
 /**
  * Performs batch search operations on people
@@ -46,7 +48,6 @@ export async function batchSearchPeople(
       );
     } catch (batchError) {
       // Fallback to individual searches
-      const { searchPeople } = require('../people/index.js');
       const results = [];
       let succeeded = 0;
       let failed = 0;
@@ -125,7 +126,6 @@ export async function batchGetPeopleDetails(
       );
     } catch (batchError) {
       // Fallback to individual detail retrieval
-      const { getPersonDetails } = require('../people/index.js');
       const results = [];
       let succeeded = 0;
       let failed = 0;

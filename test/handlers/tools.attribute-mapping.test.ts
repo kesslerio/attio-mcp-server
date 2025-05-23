@@ -12,7 +12,7 @@ vi.mock('../../src/utils/error-handler');
 describe('tools attribute mapping integration', () => {
   describe('Advanced search with attribute mapping', () => {
     let mockServer: any;
-    let callToolHandler: Function;
+    let callToolHandler: (...args: any[]) => any;
     const mockedCompanies = companiesModule as vi.Mocked<
       typeof companiesModule
     >;

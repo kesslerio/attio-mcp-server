@@ -17,6 +17,7 @@ import {
   ListRelationshipError,
 } from '../errors/api-errors.js';
 import { createEqualsFilter } from './filters/index.js';
+import { isValidListId } from './validation.js';
 
 /**
  * Configuration for a relationship-based filter
@@ -143,9 +144,6 @@ export function createRecordsByListFilter(
   listId: string
 ): ListEntryFilters {
   try {
-    // Import from validation to avoid circular dependencies
-    const { isValidListId } = require('../utils/validation.js');
-
     // Validate list ID format and security
     if (!listId || !isValidListId(listId)) {
       throw new ListRelationshipError(
@@ -192,9 +190,6 @@ export function createPeopleByCompanyListFilter(
   listId: string
 ): ListEntryFilters {
   try {
-    // Import from validation to avoid circular dependencies
-    const { isValidListId } = require('../utils/validation.js');
-
     // Validate list ID format and security
     if (!listId || !isValidListId(listId)) {
       throw new Error(
@@ -228,9 +223,6 @@ export function createCompaniesByPeopleListFilter(
   listId: string
 ): ListEntryFilters {
   try {
-    // Import from validation to avoid circular dependencies
-    const { isValidListId } = require('../utils/validation.js');
-
     // Validate list ID format and security
     if (!listId || !isValidListId(listId)) {
       throw new Error(

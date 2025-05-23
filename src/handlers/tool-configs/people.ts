@@ -7,6 +7,13 @@ import {
   PersonCreateAttributes,
 } from '../../types/attio.js';
 import { ToolConfig } from '../tool-types.js';
+import {
+  PersonCreateAttributes as PersonCreateAttrs,
+  ToolRequestArguments,
+  ApiOperationResult,
+  ContactValue,
+  NoteDisplay
+} from '../../types/tool-types.js';
 
 /**
  * Utility function to safely extract a person's name from Attio record format.
@@ -15,7 +22,7 @@ import { ToolConfig } from '../tool-types.js';
  * @param person - The person record from Attio API
  * @returns The person's name or 'Unnamed' if not found
  */
-function getPersonName(person: any): string {
+function getPersonName(person: AttioRecord): string {
   // Try multiple potential paths to find a name
   return (
     person.values?.name?.[0]?.full_name ||
@@ -87,7 +94,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n');
@@ -99,7 +106,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n');
@@ -111,7 +118,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n');
@@ -120,16 +127,16 @@ export const peopleToolConfigs = {
   advancedSearch: {
     name: 'advanced-search-people',
     handler: advancedSearchPeople,
-    formatResult: (response: any) => {
-      const results = response.results || response;
-      return results
+    formatResult: (response: ApiOperationResult) => {
+      const results = (response as { results?: AttioRecord[] }).results || response;
+      return (results as AttioRecord[])
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n');
     },
-  } as any,
+  } as ToolConfig,
   details: {
     name: 'get-person-details',
     handler: getPersonDetails,
@@ -172,14 +179,14 @@ export const peopleToolConfigs = {
       if (person.values.email_addresses?.length) {
         contactInfo.push(
           `Email: ${person.values.email_addresses
-            .map((e: any) => e.email_address || e.value || 'N/A')
+            .map((e: ContactValue) => e.email_address || e.value || 'N/A')
             .join(', ')}`
         );
       }
       if (person.values.phone_numbers?.length) {
         contactInfo.push(
           `Phone: ${person.values.phone_numbers
-            .map((p: any) => p.phone_number || p.value || 'N/A')
+            .map((p: ContactValue) => p.phone_number || p.value || 'N/A')
             .join(', ')}`
         );
       }
@@ -212,7 +219,7 @@ export const peopleToolConfigs = {
         if (Array.isArray(values) && values.length > 0) {
           // Format different value types appropriately
           const formattedValues = values
-            .map((v: any) => {
+            .map((v: ContactValue) => {
               if (v.value === undefined) return 'N/A';
               if (typeof v.value === 'object') return JSON.stringify(v.value);
               return String(v.value);
@@ -251,13 +258,13 @@ export const peopleToolConfigs = {
   notes: {
     name: 'get-person-notes',
     handler: getPersonNotes,
-    formatResult: (notes: any) => {
+    formatResult: (notes: NoteDisplay[]) => {
       if (!notes || notes.length === 0) {
         return 'No notes found for this person.';
       }
       return `Found ${notes.length} notes:\n${notes
         .map(
-          (note: any) =>
+          (note: NoteDisplay) =>
             `- ${note.title || 'Untitled'} (Created: ${note.timestamp || 'unknown'})\n  ${note.content ? note.content.substring(0, 100) + '...' : 'No content'}`
         )
         .join('\n\n')}`;
@@ -276,7 +283,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people created in the specified date range:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Created: ${person.values?.created_at || 'unknown'})`
         )
         .join('\n')}`;
@@ -289,7 +296,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people modified in the specified date range:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Modified: ${person.values?.updated_at || 'unknown'})`
         )
         .join('\n')}`;
@@ -302,7 +309,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people with interactions in the specified date range:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`
         )
         .join('\n')}`;
@@ -315,7 +322,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people with matching activity:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`
         )
         .join('\n')}`;
@@ -331,7 +338,7 @@ export const peopleToolConfigs = {
      * This handler transforms the filter to match Attio API expectations
      * for record reference attributes (company.target_record_id)
      */
-    handler: async (args: any) => {
+    handler: async (args: ToolRequestArguments) => {
       // Extract companyFilter from arguments
       const { companyFilter } = args;
 
@@ -433,12 +440,12 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people matching the company filter:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n')}`;
     },
-  } as any,
+  } as ToolConfig,
 
   searchByCompanyList: {
     name: 'search-people-by-company-list',
@@ -446,12 +453,12 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people who work at companies in the specified list:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n')}`;
     },
-  } as any,
+  } as ToolConfig,
 
   searchByNotes: {
     name: 'search-people-by-notes',
@@ -459,7 +466,7 @@ export const peopleToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} people with matching notes:\n${results
         .map(
-          (person: any) =>
+          (person: AttioRecord) =>
             `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`
         )
         .join('\n')}`;
