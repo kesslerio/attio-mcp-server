@@ -8,7 +8,7 @@ import { parseResourceUri } from "../../utils/uri-parser.js";
 import { ResourceType, AttioListEntry, AttioRecord } from "../../types/attio.js";
 import { ListEntryFilters } from "../../api/operations/index.js";
 import { processListEntries } from "../../utils/record-utils.js";
-import { ApiError, isApiError, hasResponseData } from "./error-types.js";
+import { ApiError, isApiError, hasResponseData, isError, toError } from "./error-types.js";
 import { safeJsonStringify } from "../../utils/json-serializer.js";
 
 // Import tool configurations
@@ -177,7 +177,7 @@ async function handleSearchOperation(
     return formatResponse(responseText);
   } catch (error) {
     return createErrorResult(
-      error instanceof Error ? error : new Error("Unknown error"),
+      toError(error),
       `/objects/${resourceType}/records/query`,
       "POST",
       hasResponseData(error) ? error.response.data : {}
@@ -224,7 +224,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         }
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/objects/${resourceType}/records/query`,
           "POST",
           hasResponseData(error) ? error.response.data : {}
@@ -266,7 +266,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           id = uriId;
         } catch (error) {
           return createErrorResult(
-            error instanceof Error ? error : new Error("Invalid URI format"),
+            toError(error),
             uri,
             "GET",
             { status: 400, message: "Invalid URI format" }
@@ -293,7 +293,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           uri,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -329,7 +329,7 @@ export async function executeToolRequest(request: CallToolRequest) {
             notesTargetId = uriId;
           } catch (error) {
             return createErrorResult(
-              error instanceof Error ? error : new Error("Invalid URI format"),
+              toError(error),
               uri,
               "GET",
               { status: 400, message: "Invalid URI format" }
@@ -347,7 +347,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           uri || `/${resourceType}/${notesTargetId}/notes`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -409,7 +409,7 @@ export async function executeToolRequest(request: CallToolRequest) {
             noteTargetId = uriId;
           } catch (error) {
             return createErrorResult(
-              error instanceof Error ? error : new Error("Invalid URI format"),
+              toError(error),
               uri,
               "POST",
               { status: 400, message: "Invalid URI format" }
@@ -426,9 +426,47 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           uri || `/${resourceType}/${noteTargetId}/notes`,
           "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle listsForCompany tool - returns lists that contain the specified company
+    if (toolType === 'listsForCompany') {
+      const companyId = request.params.arguments?.companyId as string;
+
+      let limit: number | undefined;
+      if (
+        request.params.arguments?.limit !== undefined &&
+        request.params.arguments?.limit !== null
+      ) {
+        limit = Number(request.params.arguments.limit);
+      }
+
+      if (!companyId) {
+        return createErrorResult(
+          new Error('companyId parameter is required'),
+          '/companies/lists',
+          'GET',
+          { status: 400, message: 'Missing required parameter: companyId' }
+        );
+      }
+
+      try {
+        const lists = await toolConfig.handler(companyId, limit);
+        const formattedResult = toolConfig.formatResult
+          ? toolConfig.formatResult(lists)
+          : JSON.stringify(lists, null, 2);
+
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error('Unknown error'),
+          '/companies/lists',
+          'GET',
           hasResponseData(error) ? error.response.data : {}
         );
       }
@@ -444,7 +482,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           "/lists",
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -490,7 +528,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           (responseData as any).status = error.response.status;
         }
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}`,
           "GET",
           responseData
@@ -522,7 +560,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -570,7 +608,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResults);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries/query`,
           "POST",
           hasResponseData(error) ? error.response.data : {}
@@ -614,7 +652,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResults);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries/query`,
           "POST",
           hasResponseData(error) ? error.response.data : {}
@@ -661,7 +699,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         );
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries`,
           "POST",
           hasResponseData(error) ? error.response.data : {}
@@ -685,7 +723,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         );
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries/${entryId}`,
           "DELETE",
           hasResponseData(error) ? error.response.data : {}
@@ -746,7 +784,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/lists/${listId}/entries/${entryId}`,
           "PATCH",
           hasResponseData(error) ? error.response.data : {}
@@ -880,11 +918,11 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formatBatchResults(result, operation), result.summary.failed > 0);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError(logName, error, { [paramName]: records });
+          logToolError(logName, toError(error), { [paramName]: records });
         }
         
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/objects/companies/records/batch`,
           httpMethod,
           hasResponseData(error) ? error.response.data : {}
@@ -953,7 +991,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         ? (request.params.arguments?.attributes || request.params.arguments || {})
         : (request.params.arguments?.attributes || {});
       
-      const attributesValidation = validateAttributes(attributes);
+      const attributesValidation = validateAttributes(attributes as Record<string, unknown>);
       if (attributesValidation !== true) {
         return createErrorResult(
           new Error(attributesValidation),
@@ -995,11 +1033,11 @@ export async function executeToolRequest(request: CallToolRequest) {
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError(logName, error, { companyId, attributes });
+          logToolError(logName, toError(error), { companyId, attributes });
         }
         
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/objects/companies/records${operation === 'update' ? `/${companyId}` : ''}`,
           httpMethod,
           hasResponseData(error) ? error.response.data : {}
@@ -1092,7 +1130,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       } catch (error) {
         // Handle and format errors
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/${resourceType}/${id}/attributes`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -1121,7 +1159,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       } catch (error) {
         // Handle and format errors
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/${resourceType}/${id}/json`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -1156,10 +1194,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         // Enhanced error handling with more details
-        logToolError('discoverAttributes', error);
+        logToolError('discoverAttributes', toError(error));
         
         return createErrorResult(
-          error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
+          toError(error),
           apiPath,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -1219,11 +1257,11 @@ export async function executeToolRequest(request: CallToolRequest) {
           return formatResponse(formattedResult);
         } catch (error) {
           if (process.env.NODE_ENV === 'development') {
-            logToolError(toolType, error, { id, fields });
+            logToolError(toolType, toError(error), { id, fields });
           }
           
           return createErrorResult(
-            error instanceof Error ? error : new Error("Unknown error"),
+            toError(error),
             apiPath,
             "GET",
             hasResponseData(error) ? error.response.data : {}
@@ -1241,11 +1279,11 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError(toolType, error, { id });
+          logToolError(toolType, toError(error), { id });
         }
         
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           apiPath,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -1349,7 +1387,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          logToolError('updateAttribute', error, { id, attributeName, value });
+          logToolError('updateAttribute', toError(error), { id, attributeName, value });
         }
         
         // Enhanced error response with more context
@@ -1358,7 +1396,7 @@ export async function executeToolRequest(request: CallToolRequest) {
           : `Failed to update attribute '${attributeName}' on ${resourceType} ${id}`;
           
         return createErrorResult(
-          error instanceof Error ? error : new Error(errorMessage),
+          toError(error),
           `/${resourceType}/${id}/attributes/${attributeName}`,
           "PATCH",
           hasResponseData(error) ? error.response.data : {
@@ -1416,7 +1454,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         return formatResponse(formattedResult);
       } catch (error) {
         return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
+          toError(error),
           `/${resourceType}/${id}/json`,
           "GET",
           hasResponseData(error) ? error.response.data : {}
@@ -1601,7 +1639,7 @@ async function executeRecordOperation(
         const recordBatchCreateConfig = toolConfig as RecordBatchCreateToolConfig;
         const result = await recordBatchCreateConfig.handler(objectSlug, records, objectId);
         
-        return formatResponse(formatBatchResults(result, 'create'), result.summary.failed > 0);
+        return formatResponse(formatBatchResults(result, 'create'), (result as any).summary?.failed > 0);
       }
     } catch (error) {
       // Enhanced error handling for batch operations
@@ -1755,7 +1793,7 @@ async function executeRecordOperation(
         const recordBatchUpdateConfig = toolConfig as RecordBatchUpdateToolConfig;
         const result = await recordBatchUpdateConfig.handler(objectSlug, records, objectId);
         
-        return formatResponse(formatBatchResults(result, 'update'), result.summary.failed > 0);
+        return formatResponse(formatBatchResults(result, 'update'), (result as any).summary?.failed > 0);
       }
     } catch (error) {
       // Enhanced error handling for batch operations
