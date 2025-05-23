@@ -530,7 +530,55 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
     }
     
-    // Handle filterListEntries tool
+    // Handle filterListEntries tool (simple filtering)
+    if (toolType === 'filterListEntries') {
+      const listId = request.params.arguments?.listId as string;
+      const attributeSlug = request.params.arguments?.attributeSlug as string;
+      const condition = request.params.arguments?.condition as string;
+      const value = request.params.arguments?.value as any;
+      
+      // Convert parameters to the correct type
+      let limit: number | undefined;
+      let offset: number | undefined;
+      
+      if (request.params.arguments?.limit !== undefined && request.params.arguments?.limit !== null) {
+        limit = Number(request.params.arguments.limit);
+      }
+      
+      if (request.params.arguments?.offset !== undefined && request.params.arguments?.offset !== null) {
+        offset = Number(request.params.arguments.offset);
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[filterListEntries] Processing request with parameters:', {
+          listId,
+          attributeSlug,
+          condition,
+          value,
+          limit,
+          offset
+        });
+      }
+      
+      try {
+        const entries = await toolConfig.handler(listId, attributeSlug, condition, value, limit, offset);
+        const processedEntries = entries ? processListEntries(entries) : [];
+        const formattedResults = toolConfig.formatResult 
+          ? toolConfig.formatResult(processedEntries) 
+          : JSON.stringify(processedEntries, null, 2);
+        
+        return formatResponse(formattedResults);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/lists/${listId}/entries/query`,
+          "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+
+    // Handle advanced filterListEntries tool
     if (toolType === 'advancedFilterListEntries') {
       const listId = request.params.arguments?.listId as string;
       const filters = request.params.arguments?.filters as any;
@@ -640,6 +688,67 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           `/lists/${listId}/entries/${entryId}`,
           "DELETE",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+    
+    // Handle updateListEntry tool
+    if (toolType === 'updateListEntry') {
+      const listId = request.params.arguments?.listId as string;
+      const entryId = request.params.arguments?.entryId as string;
+      const attributes = request.params.arguments?.attributes as Record<string, any>;
+      
+      // Validate required parameters
+      if (!listId) {
+        return createErrorResult(
+          new Error("listId parameter is required"),
+          `/lists/entries`,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: listId" }
+        );
+      }
+      
+      if (!entryId) {
+        return createErrorResult(
+          new Error("entryId parameter is required"),
+          `/lists/${listId}/entries`,
+          "PATCH",
+          { status: 400, message: "Missing required parameter: entryId" }
+        );
+      }
+      
+      if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+        return createErrorResult(
+          new Error("attributes parameter is required and must be an object"),
+          `/lists/${listId}/entries/${entryId}`,
+          "PATCH",
+          { status: 400, message: "Missing or invalid attributes parameter" }
+        );
+      }
+      
+      // Debug logging for the request in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[updateListEntry] Updating list entry:`);
+        console.error(`- List ID: ${listId}`);
+        console.error(`- Entry ID: ${entryId}`);
+        console.error(`- Attributes: ${JSON.stringify(attributes)}`);
+      }
+      
+      try {
+        const entry = await toolConfig.handler(listId, entryId, attributes);
+        
+        // Use the tool's formatter if available
+        const formattedResult = toolConfig.formatResult 
+          ? toolConfig.formatResult(entry)
+          : `Successfully updated list entry ${entryId} in list ${listId}`;
+        
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error("Unknown error"),
+          `/lists/${listId}/entries/${entryId}`,
+          "PATCH",
           hasResponseData(error) ? error.response.data : {}
         );
       }

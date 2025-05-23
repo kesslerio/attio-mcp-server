@@ -242,6 +242,83 @@ export async function addRecordToList(
 }
 
 /**
+ * Updates a list entry (e.g., changing stage)
+ * 
+ * @param listId - The ID of the list
+ * @param entryId - The ID of the list entry to update
+ * @param attributes - The attributes to update (e.g., { stage: "Demo Scheduling" })
+ * @param retryConfig - Optional retry configuration
+ * @returns The updated list entry
+ */
+export async function updateListEntry(
+  listId: string, 
+  entryId: string,
+  attributes: Record<string, any>,
+  retryConfig?: Partial<RetryConfig>
+): Promise<AttioListEntry> {
+  const api = getAttioClient();
+  const path = `/lists/${listId}/entries/${entryId}`;
+  
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+  
+  if (!entryId || typeof entryId !== 'string') {
+    throw new Error('Invalid entry ID: Must be a non-empty string');
+  }
+  
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+    throw new Error('Invalid attributes: Must be a non-empty object');
+  }
+  
+  return callWithRetry(async () => {
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[updateListEntry] Updating list entry at ${path}`);
+        console.error(`- List ID: ${listId}`);
+        console.error(`- Entry ID: ${entryId}`);
+        console.error(`- Attributes: ${JSON.stringify(attributes)}`);
+      }
+      
+      // Attio API expects updates to list entries in the 'data.values' structure
+      // This follows the same pattern as record updates in crud.ts
+      const response = await api.patch<AttioSingleResponse<AttioListEntry>>(path, {
+        data: {
+          values: attributes
+        }
+      });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[updateListEntry] Success: ${JSON.stringify(response.data)}`);
+      }
+      
+      return response.data.data || response.data;
+    } catch (error: any) {
+      // Enhanced error logging with specific error types
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[updateListEntry] Error updating entry ${entryId} in list ${listId}:`, 
+          error.message || 'Unknown error');
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', JSON.stringify(error.response?.data || {}));
+      }
+      
+      // Add more specific error types based on status codes
+      if (error.response?.status === 404) {
+        throw new Error(`List entry ${entryId} not found in list ${listId}`);
+      } else if (error.response?.status === 400) {
+        throw new Error(`Invalid attributes for list entry update: ${error.response?.data?.message || 'Bad request'}`);
+      } else if (error.response?.status === 403) {
+        throw new Error(`Insufficient permissions to update list entry ${entryId} in list ${listId}`);
+      }
+      
+      // Let upstream handlers create specific, rich error objects.
+      throw error;
+    }
+  }, retryConfig);
+}
+
+/**
  * Removes a record from a list
  * 
  * @param listId - The ID of the list
