@@ -1,21 +1,20 @@
 /**
  * Batch operations for People
  */
-import { getAttioClient } from "../../api/attio-client.js";
-import { 
+import {
   batchSearchObjects,
   batchGetObjectDetails,
   BatchConfig,
-  BatchResponse
-} from "../../api/operations/index.js";
-import { ResourceType, Person } from "../../types/attio.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { isValidId } from "../../utils/validation.js";
+  BatchResponse,
+} from '../../api/operations/index.js';
+import { ResourceType, Person } from '../../types/attio.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import { isValidId } from '../../utils/validation.js';
 
 /**
  * Performs batch search operations on people
  * Searches for multiple people using different queries
- * 
+ *
  * @param queries - Array of search queries
  * @param config - Optional batch configuration
  * @returns BatchResponse with results and errors for each query
@@ -58,14 +57,17 @@ export async function batchSearchPeople(
           results.push({
             query,
             data: searchResults,
-            success: true
+            success: true,
           });
           succeeded++;
         } catch (searchError) {
           results.push({
             query,
-            error: searchError instanceof Error ? searchError : new Error(String(searchError)),
-            success: false
+            error:
+              searchError instanceof Error
+                ? searchError
+                : new Error(String(searchError)),
+            success: false,
           });
           failed++;
         }
@@ -76,14 +78,16 @@ export async function batchSearchPeople(
         summary: {
           total: queries.length,
           succeeded,
-          failed
-        }
+          failed,
+        },
       };
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Batch search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Batch search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to batch search people: ${errorMessage}`);
   }
@@ -92,7 +96,7 @@ export async function batchSearchPeople(
 /**
  * Performs batch detail retrieval for multiple people
  * Gets detailed information for multiple people by their IDs
- * 
+ *
  * @param personIds - Array of person IDs
  * @param config - Optional batch configuration
  * @returns BatchResponse with details and errors for each person
@@ -132,14 +136,17 @@ export async function batchGetPeopleDetails(
           results.push({
             id: personId,
             data: personDetails,
-            success: true
+            success: true,
           });
           succeeded++;
         } catch (detailError) {
           results.push({
             id: personId,
-            error: detailError instanceof Error ? detailError : new Error(String(detailError)),
-            success: false
+            error:
+              detailError instanceof Error
+                ? detailError
+                : new Error(String(detailError)),
+            success: false,
           });
           failed++;
         }
@@ -150,14 +157,16 @@ export async function batchGetPeopleDetails(
         summary: {
           total: personIds.length,
           succeeded,
-          failed
-        }
+          failed,
+        },
       };
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Batch get details validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Batch get details validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to batch get people details: ${errorMessage}`);
   }

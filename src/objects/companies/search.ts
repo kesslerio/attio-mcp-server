@@ -1,25 +1,24 @@
 /**
  * Search functionality for companies
  */
-import { getAttioClient } from "../../api/attio-client.js";
-import { 
+import { getAttioClient } from '../../api/attio-client.js';
+import {
   searchObject,
   advancedSearchObject,
   ListEntryFilters,
-  ListEntryFilter
-} from "../../api/operations/index.js";
+} from '../../api/operations/index.js';
 import {
-  ResourceType, 
+  ResourceType,
   Company,
-  FilterConditionType
-} from "../../types/attio.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { 
-  extractDomain, 
-  hasDomainIndicators, 
+  FilterConditionType,
+} from '../../types/attio.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import {
+  extractDomain,
+  hasDomainIndicators,
   normalizeDomain,
-  extractAllDomains
-} from "../../utils/domain-utils.js";
+  extractAllDomains,
+} from '../../utils/domain-utils.js';
 
 /**
  * Configuration options for company search
@@ -35,7 +34,7 @@ export interface CompanySearchOptions {
 
 /**
  * Searches for companies with domain prioritization when available
- * 
+ *
  * @param query - Search query string to match against company names or domains
  * @param options - Optional search configuration
  * @returns Array of matching company objects, prioritized by domain matches
@@ -43,122 +42,141 @@ export interface CompanySearchOptions {
  * ```typescript
  * const companies = await searchCompanies("acme.com");
  * // Returns companies with domain "acme.com" first, then name matches
- * 
+ *
  * const companies = await searchCompanies("acme");
  * // Returns companies with names containing "acme"
- * 
+ *
  * const companies = await searchCompanies("acme.com", { prioritizeDomains: false });
  * // Disables domain prioritization, uses name search only
  * ```
  */
-export async function searchCompanies(query: string, options: CompanySearchOptions = {}): Promise<Company[]> {
+export async function searchCompanies(
+  query: string,
+  options: CompanySearchOptions = {}
+): Promise<Company[]> {
   // Early return for empty or whitespace-only queries
   if (!query || !query.trim()) {
     return [];
   }
 
   // Extract default options
-  const { 
-    prioritizeDomains = true, 
+  const {
+    prioritizeDomains = true,
     maxResults,
-    debug = process.env.NODE_ENV === 'development' || process.env.DEBUG 
+    debug = process.env.NODE_ENV === 'development' || process.env.DEBUG,
   } = options;
 
   // Check if query contains domain indicators (only if prioritization is enabled)
   const extractedDomain = prioritizeDomains ? extractDomain(query) : null;
-  
+
   // Debug logging for domain extraction
   if (debug) {
     if (extractedDomain) {
-      console.debug(`[searchCompanies] Extracted domain: "${extractedDomain}" from query: "${query}"`);
+      console.debug(
+        `[searchCompanies] Extracted domain: "${extractedDomain}" from query: "${query}"`
+      );
     } else if (prioritizeDomains) {
-      console.debug(`[searchCompanies] No domain detected in query: "${query}", using name-based search`);
+      console.debug(
+        `[searchCompanies] No domain detected in query: "${query}", using name-based search`
+      );
     } else {
-      console.debug(`[searchCompanies] Domain prioritization disabled, using name-based search for: "${query}"`);
+      console.debug(
+        `[searchCompanies] Domain prioritization disabled, using name-based search for: "${query}"`
+      );
     }
   }
-  
+
   if (extractedDomain && prioritizeDomains) {
     // Priority search by domain first
     try {
       const domainResults = await searchCompaniesByDomain(extractedDomain);
-      
+
       // If we found exact domain matches, return them first
       if (domainResults.length > 0) {
         // Also search by name to include potential additional matches
         const nameResults = await searchCompaniesByName(query);
-        
+
         // Combine results, prioritizing domain matches
         const combinedResults = [...domainResults];
-        
+
         // Add name-based results that aren't already included
         for (const nameResult of nameResults) {
           const isDuplicate = domainResults.some(
-            domainResult => domainResult.id?.record_id === nameResult.id?.record_id
+            (domainResult) =>
+              domainResult.id?.record_id === nameResult.id?.record_id
           );
           if (!isDuplicate) {
             combinedResults.push(nameResult);
           }
         }
-        
+
         // Apply maxResults limit if specified
-        const finalResults = maxResults ? combinedResults.slice(0, maxResults) : combinedResults;
+        const finalResults = maxResults
+          ? combinedResults.slice(0, maxResults)
+          : combinedResults;
         return finalResults;
       }
     } catch (error) {
       // If domain search fails, fall back to name search
-      console.warn(`Domain search failed for "${extractedDomain}", falling back to name search:`, error);
+      console.warn(
+        `Domain search failed for "${extractedDomain}", falling back to name search:`,
+        error
+      );
     }
   }
-  
+
   // Fallback to name-based search
   const nameResults = await searchCompaniesByName(query);
-  
+
   // Apply maxResults limit if specified
   return maxResults ? nameResults.slice(0, maxResults) : nameResults;
 }
 
 /**
  * Searches for companies by domain/website
- * 
+ *
  * @param domain - Domain to search for
  * @returns Array of matching company objects
  */
-export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
+export async function searchCompaniesByDomain(
+  domain: string
+): Promise<Company[]> {
   // Early return for empty domain
   if (!domain || !domain.trim()) {
     return [];
   }
 
   const normalizedDomain = normalizeDomain(domain);
-  
+
   // Debug logging for domain search
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-    console.debug(`[searchCompaniesByDomain] Searching for domain: "${normalizedDomain}" (original: "${domain}")`);
+    console.debug(
+      `[searchCompaniesByDomain] Searching for domain: "${normalizedDomain}" (original: "${domain}")`
+    );
   }
-  
+
   // Create filters for domain search
   const filters: ListEntryFilters = {
     filters: [
       {
         attribute: { slug: 'website' },
         condition: FilterConditionType.CONTAINS,
-        value: normalizedDomain
-      }
-    ]
+        value: normalizedDomain,
+      },
+    ],
   };
-  
+
   try {
     return await advancedSearchCompanies(filters);
   } catch (error) {
     // Fallback to direct API call
     const api = getAttioClient();
-    const path = "/objects/companies/records/query";
-    
+    const path = '/objects/companies/records/query';
+
     const response = await api.post(path, {
       filter: {
-        website: { "$contains": normalizedDomain },
-      }
+        website: { $contains: normalizedDomain },
+      },
     });
     return response.data.data || [];
   }
@@ -166,7 +184,7 @@ export async function searchCompaniesByDomain(domain: string): Promise<Company[]
 
 /**
  * Searches for companies by name only
- * 
+ *
  * @param query - Search query string to match against company names
  * @returns Array of matching company objects
  */
@@ -187,12 +205,12 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
   } catch (error) {
     // Fallback implementation
     const api = getAttioClient();
-    const path = "/objects/companies/records/query";
-    
+    const path = '/objects/companies/records/query';
+
     const response = await api.post(path, {
       filter: {
-        name: { "$contains": query },
-      }
+        name: { $contains: query },
+      },
     });
     return response.data.data || [];
   }
@@ -200,10 +218,10 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
 
 /**
  * Performs advanced search with custom filters
- * 
+ *
  * @param filters - List of filters to apply
  * @param limit - Maximum number of results to return (default: 20)
- * @param offset - Number of results to skip (default: 0) 
+ * @param offset - Number of results to skip (default: 0)
  * @returns Array of company results
  * @throws Error if the search encounters any issues
  * @example
@@ -219,7 +237,7 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
  *   ]
  * };
  * const companies = await advancedSearchCompanies(filters);
- * 
+ *
  * // Search with multiple conditions using OR logic
  * const orFilters = {
  *   filters: [
@@ -236,7 +254,7 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
  *   ],
  *   matchAny: true // Use OR logic between conditions
  * };
- * 
+ *
  * // Complex search with nested conditions
  * const complexFilters = {
  *   filters: [
@@ -270,11 +288,13 @@ export async function advancedSearchCompanies(
   try {
     // Import validation utilities only when needed to avoid circular dependencies
     // This is a dynamic import that won't affect the module dependency graph
-    const { validateFilters, ERROR_MESSAGES } = await import('../../utils/filters/validation-utils.js');
-    
+    const { validateFilters, ERROR_MESSAGES } = await import(
+      '../../utils/filters/validation-utils.js'
+    );
+
     // Use standardized validation with consistent error messages
     validateFilters(filters);
-    
+
     // Proceed with the search operation
     return await advancedSearchObject<Company>(
       ResourceType.COMPANIES,
@@ -291,35 +311,37 @@ export async function advancedSearchCompanies(
         error.category
       );
     }
-    
+
     // For other errors, provide clear context
     if (error instanceof Error) {
       // Log the error in development mode
       if (process.env.NODE_ENV === 'development') {
         console.error('[advancedSearchCompanies] Error details:', {
           message: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
       }
-      
+
       // Throw with enhanced context
       throw new Error(`Error in advanced company search: ${error.message}`);
     }
-    
+
     // If we reach here, it's an unexpected error
-    throw new Error(`Failed to search companies with advanced filters: ${String(error)}`);
+    throw new Error(
+      `Failed to search companies with advanced filters: ${String(error)}`
+    );
   }
 }
 
 /**
  * Helper function to create filters for searching companies by name
- * 
+ *
  * @param name - Name to search for
  * @param condition - Condition type (default: CONTAINS)
  * @returns ListEntryFilters object configured for name search
  */
 export function createNameFilter(
-  name: string, 
+  name: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   return {
@@ -327,21 +349,21 @@ export function createNameFilter(
       {
         attribute: { slug: 'name' },
         condition: condition,
-        value: name
-      }
-    ]
+        value: name,
+      },
+    ],
   };
 }
 
 /**
  * Helper function to create filters for searching companies by website
- * 
+ *
  * @param website - Website to search for
  * @param condition - Condition type (default: CONTAINS)
  * @returns ListEntryFilters object configured for website search
  */
 export function createWebsiteFilter(
-  website: string, 
+  website: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   return {
@@ -349,21 +371,21 @@ export function createWebsiteFilter(
       {
         attribute: { slug: 'website' },
         condition: condition,
-        value: website
-      }
-    ]
+        value: website,
+      },
+    ],
   };
 }
 
 /**
  * Helper function to create filters for searching companies by industry
- * 
+ *
  * @param industry - Industry to search for
  * @param condition - Condition type (default: CONTAINS)
  * @returns ListEntryFilters object configured for industry search
  */
 export function createIndustryFilter(
-  industry: string, 
+  industry: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   return {
@@ -371,21 +393,21 @@ export function createIndustryFilter(
       {
         attribute: { slug: 'industry' },
         condition: condition,
-        value: industry
-      }
-    ]
+        value: industry,
+      },
+    ],
   };
 }
 
 /**
  * Helper function to create filters for searching companies by domain
- * 
+ *
  * @param domain - Domain to search for
  * @param condition - Condition type (default: CONTAINS)
  * @returns ListEntryFilters object configured for domain search
  */
 export function createDomainFilter(
-  domain: string, 
+  domain: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   const normalizedDomain = normalizeDomain(domain);
@@ -394,15 +416,15 @@ export function createDomainFilter(
       {
         attribute: { slug: 'website' },
         condition: condition,
-        value: normalizedDomain
-      }
-    ]
+        value: normalizedDomain,
+      },
+    ],
   };
 }
 
 /**
  * Smart search that automatically determines search strategy based on query content
- * 
+ *
  * @param query - Search query that may contain domain, email, URL, or company name
  * @returns Array of matching company objects with domain matches prioritized
  */
@@ -413,17 +435,19 @@ export async function smartSearchCompanies(query: string): Promise<Company[]> {
   }
 
   const domains = extractAllDomains(query);
-  
+
   // Debug logging for smart search
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-    console.debug(`[smartSearchCompanies] Smart search for: "${query}", extracted domains: [${domains.join(', ')}]`);
+    console.debug(
+      `[smartSearchCompanies] Smart search for: "${query}", extracted domains: [${domains.join(', ')}]`
+    );
   }
-  
+
   if (domains.length > 0) {
     // Multi-domain search with prioritization
     const allResults: Company[] = [];
     const seenIds = new Set<string>();
-    
+
     // Search by each domain first
     for (const domain of domains) {
       try {
@@ -439,7 +463,7 @@ export async function smartSearchCompanies(query: string): Promise<Company[]> {
         console.warn(`Domain search failed for "${domain}":`, error);
       }
     }
-    
+
     // Add name-based results if we have room
     try {
       const nameResults = await searchCompaniesByName(query);
@@ -453,10 +477,10 @@ export async function smartSearchCompanies(query: string): Promise<Company[]> {
     } catch (error) {
       console.warn(`Name search failed for "${query}":`, error);
     }
-    
+
     return allResults;
   }
-  
+
   // No domains found, use regular name search
   return await searchCompaniesByName(query);
 }

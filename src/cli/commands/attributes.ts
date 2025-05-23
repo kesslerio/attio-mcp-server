@@ -4,11 +4,10 @@
 import axios from 'axios';
 import ora from 'ora';
 import chalk from 'chalk';
-import { 
-  loadMappingConfig, 
-  writeMappingConfig, 
-  updateMappingSection,
-  MappingConfig
+import {
+  loadMappingConfig,
+  writeMappingConfig,
+  MappingConfig,
 } from '../../utils/config-loader.js';
 
 /**
@@ -31,8 +30,8 @@ interface AttioAttribute {
   created_at: string;
   updated_at: string;
   object_id: string;
-  api_slug: string;    // Changed from 'slug' to match Attio API response
-  title: string;       // Changed from 'display_name' to match Attio API response
+  api_slug: string; // Changed from 'slug' to match Attio API response
+  title: string; // Changed from 'display_name' to match Attio API response
   description?: string;
   type: string;
   [key: string]: any;
@@ -40,7 +39,7 @@ interface AttioAttribute {
 
 /**
  * Creates an Axios instance for the Attio API
- * 
+ *
  * @param apiKey - The Attio API key
  * @returns Configured Axios instance
  */
@@ -48,7 +47,7 @@ function createAttioClient(apiKey: string) {
   return axios.create({
     baseURL: 'https://api.attio.com/v2',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
   });
@@ -56,24 +55,26 @@ function createAttioClient(apiKey: string) {
 
 /**
  * Gets all available objects from Attio
- * 
+ *
  * @param apiKey - The Attio API key
  * @returns Array of object slugs
  */
 export async function getAvailableObjects(apiKey: string): Promise<string[]> {
   const client = createAttioClient(apiKey);
-  
+
   try {
     const response = await client.get('/objects');
     const objects = response.data.data || [];
-    
+
     // Extract API slugs from the objects
     return objects
       .filter((obj: any) => obj.api_slug)
       .map((obj: any) => obj.api_slug);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Failed to get objects: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`);
+      throw new Error(
+        `Failed to get objects: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`
+      );
     }
     throw error;
   }
@@ -81,31 +82,36 @@ export async function getAvailableObjects(apiKey: string): Promise<string[]> {
 
 /**
  * Discovers attributes for a specific object
- * 
+ *
  * @param objectSlug - The object slug (e.g., 'companies')
  * @param apiKey - The Attio API key
  * @returns Map of attribute titles to API slugs
  */
-export async function getObjectAttributes(objectSlug: string, apiKey: string): Promise<Record<string, string>> {
+export async function getObjectAttributes(
+  objectSlug: string,
+  apiKey: string
+): Promise<Record<string, string>> {
   const client = createAttioClient(apiKey);
-  
+
   try {
     const response = await client.get(`/objects/${objectSlug}/attributes`);
     const attributes: AttioAttribute[] = response.data.data || [];
-    
+
     // Create mapping from title to api_slug
     const mappings: Record<string, string> = {};
-    
+
     attributes.forEach((attr) => {
       if (attr.title && attr.api_slug) {
         mappings[attr.title] = attr.api_slug;
       }
     });
-    
+
     return mappings;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      throw new Error(`Failed to get attributes for object ${objectSlug}: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`);
+      throw new Error(
+        `Failed to get attributes for object ${objectSlug}: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`
+      );
     }
     throw error;
   }
@@ -113,27 +119,33 @@ export async function getObjectAttributes(objectSlug: string, apiKey: string): P
 
 /**
  * Command handler for discovering attributes
- * 
+ *
  * @param argv - Command arguments
  */
-export async function discoverAttributes(argv: AttributesCommandArgs): Promise<void> {
+export async function discoverAttributes(
+  argv: AttributesCommandArgs
+): Promise<void> {
   const spinner = ora('Initializing...').start();
-  
+
   try {
     // Get API key from args or environment
     const apiKey = argv.apiKey || process.env.ATTIO_API_KEY;
-    
+
     if (!apiKey) {
-      spinner.fail('No API key provided. Set ATTIO_API_KEY env var or pass --api-key');
+      spinner.fail(
+        'No API key provided. Set ATTIO_API_KEY env var or pass --api-key'
+      );
       process.exit(1);
     }
-    
+
     // Initialize config
     let config: MappingConfig;
     try {
       config = loadMappingConfig();
     } catch (error) {
-      spinner.warn('Failed to load existing configuration, creating new one...');
+      spinner.warn(
+        'Failed to load existing configuration, creating new one...'
+      );
       config = {
         version: '1.0',
         metadata: {
@@ -152,32 +164,34 @@ export async function discoverAttributes(argv: AttributesCommandArgs): Promise<v
         },
       };
     }
-    
+
     // Prepare the objects to process
     let objectsToProcess: string[] = [];
-    
+
     if (argv.all) {
       spinner.text = 'Fetching available objects...';
       objectsToProcess = await getAvailableObjects(apiKey);
-      spinner.succeed(`Found ${objectsToProcess.length} objects in Attio workspace`);
+      spinner.succeed(
+        `Found ${objectsToProcess.length} objects in Attio workspace`
+      );
     } else if (argv.object) {
       objectsToProcess = [argv.object];
     }
-    
+
     // Process each object
     for (const objectSlug of objectsToProcess) {
       spinner.start(`Discovering attributes for ${chalk.cyan(objectSlug)}...`);
-      
+
       try {
         const attributeMappings = await getObjectAttributes(objectSlug, apiKey);
         const attributeCount = Object.keys(attributeMappings).length;
-        
+
         if (attributeCount > 0) {
           // Ensure the object section exists
           if (!config.mappings.attributes.objects[objectSlug]) {
             config.mappings.attributes.objects[objectSlug] = {};
           }
-          
+
           // Reset or merge mappings
           if (argv.reset) {
             config.mappings.attributes.objects[objectSlug] = attributeMappings;
@@ -188,30 +202,40 @@ export async function discoverAttributes(argv: AttributesCommandArgs): Promise<v
               ...attributeMappings,
             };
           }
-          
-          spinner.succeed(`Found ${chalk.green(attributeCount.toString())} attributes for ${chalk.cyan(objectSlug)}`);
+
+          spinner.succeed(
+            `Found ${chalk.green(attributeCount.toString())} attributes for ${chalk.cyan(objectSlug)}`
+          );
         } else {
           spinner.warn(`No attributes found for ${chalk.cyan(objectSlug)}`);
         }
       } catch (error) {
-        spinner.fail(`Error fetching attributes for ${chalk.cyan(objectSlug)}: ${error instanceof Error ? error.message : String(error)}`);
+        spinner.fail(
+          `Error fetching attributes for ${chalk.cyan(objectSlug)}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
-    
+
     // Update metadata
     config.metadata = {
       ...config.metadata,
       generated: new Date().toISOString(),
       lastDiscovery: new Date().toISOString(),
     };
-    
+
     // Write the updated config
-    spinner.start(`Writing configuration to ${chalk.cyan(argv.output || 'config/mappings/user.json')}...`);
+    spinner.start(
+      `Writing configuration to ${chalk.cyan(argv.output || 'config/mappings/user.json')}...`
+    );
     await writeMappingConfig(config, argv.output);
-    
-    spinner.succeed(chalk.green('✓ Attribute discovery completed successfully!'));
+
+    spinner.succeed(
+      chalk.green('✓ Attribute discovery completed successfully!')
+    );
   } catch (error) {
-    spinner.fail(`Discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+    spinner.fail(
+      `Discovery failed: ${error instanceof Error ? error.message : String(error)}`
+    );
     process.exit(1);
   }
 }
