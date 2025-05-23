@@ -6,31 +6,33 @@ import { initializeAttioClient } from '../../dist/api/attio-client.js';
 
 async function testSearchPeopleByCompany() {
   console.log('Testing search-people-by-company tool...');
-  
+
   // Initialize the Attio client first
   if (!process.env.ATTIO_API_KEY) {
     console.error('Please set ATTIO_API_KEY environment variable');
     process.exit(1);
   }
-  
+
   console.log('Initializing Attio client...');
   initializeAttioClient(process.env.ATTIO_API_KEY);
-  
+
   const request = {
     method: 'tools/call',
     params: {
       name: 'search-people-by-company',
       arguments: {
         companyFilter: {
-          filters: [{
-            attribute: { slug: 'companies.name' },
-            condition: 'equals',
-            value: 'Oakwood Precision Medicine'
-          }],
-          matchAny: false
-        }
-      }
-    }
+          filters: [
+            {
+              attribute: { slug: 'companies.name' },
+              condition: 'equals',
+              value: 'Oakwood Precision Medicine',
+            },
+          ],
+          matchAny: false,
+        },
+      },
+    },
   };
 
   try {

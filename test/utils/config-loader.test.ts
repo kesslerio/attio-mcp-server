@@ -3,11 +3,11 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { 
-  loadMappingConfig, 
-  writeMappingConfig, 
+import {
+  loadMappingConfig,
+  writeMappingConfig,
   updateMappingSection,
-  MappingConfig
+  MappingConfig,
 } from '../../src/utils/config-loader';
 
 // Mock fs module
@@ -61,7 +61,7 @@ describe('Configuration Loader', () => {
             version: '1.0',
             mappings: {
               attributes: {
-                common: { 'Name': 'name' },
+                common: { Name: 'name' },
                 objects: {},
                 custom: {},
               },
@@ -76,7 +76,7 @@ describe('Configuration Loader', () => {
             version: '1.0',
             mappings: {
               attributes: {
-                common: { 'Email': 'email' },
+                common: { Email: 'email' },
                 objects: {
                   companies: { 'B2B Segment': 'type_persona' },
                 },
@@ -95,8 +95,8 @@ describe('Configuration Loader', () => {
 
       // Expect merged configuration
       expect(config.mappings.attributes.common).toEqual({
-        'Name': 'name',
-        'Email': 'email',
+        Name: 'name',
+        Email: 'email',
       });
       expect(config.mappings.attributes.objects).toEqual({
         companies: { 'B2B Segment': 'type_persona' },
@@ -153,7 +153,7 @@ describe('Configuration Loader', () => {
         version: '1.0',
         mappings: {
           attributes: {
-            common: { 'Name': 'name' },
+            common: { Name: 'name' },
             objects: {},
             custom: {},
           },
@@ -173,10 +173,13 @@ describe('Configuration Loader', () => {
       );
 
       // Verify the written content
-      const writtenContent = (fs.promises.writeFile as vi.Mock).mock.calls[0][1];
+      const writtenContent = (fs.promises.writeFile as vi.Mock).mock
+        .calls[0][1];
       const parsedContent = JSON.parse(writtenContent);
       expect(parsedContent.version).toBe('1.0');
-      expect(parsedContent.mappings.attributes.common).toEqual({ 'Name': 'name' });
+      expect(parsedContent.mappings.attributes.common).toEqual({
+        Name: 'name',
+      });
       expect(parsedContent.metadata.generated).toBeDefined();
     });
 
@@ -201,7 +204,9 @@ describe('Configuration Loader', () => {
       await writeMappingConfig(config, 'test/dir/output.json');
 
       // Expect fs.mkdirSync to be called to create the directory
-      expect(fs.mkdirSync).toHaveBeenCalledWith('test/dir', { recursive: true });
+      expect(fs.mkdirSync).toHaveBeenCalledWith('test/dir', {
+        recursive: true,
+      });
     });
   });
 
@@ -214,9 +219,9 @@ describe('Configuration Loader', () => {
           version: '1.0',
           mappings: {
             attributes: {
-              common: { 'Name': 'name' },
+              common: { Name: 'name' },
               objects: {
-                companies: { 'Existing': 'existing' },
+                companies: { Existing: 'existing' },
               },
               custom: {},
             },
@@ -231,55 +236,65 @@ describe('Configuration Loader', () => {
     it('should update a specific section with merged mappings', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
-        updatedConfig = JSON.parse(content as string);
-        return undefined;
-      });
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(
+        async (path, content) => {
+          updatedConfig = JSON.parse(content as string);
+          return undefined;
+        }
+      );
 
       await updateMappingSection('attributes.objects.companies', {
-        'New': 'new',
+        New: 'new',
       });
 
       // Expect the section to be updated with merged mappings
       expect(updatedConfig?.mappings.attributes.objects.companies).toEqual({
-        'Existing': 'existing',
-        'New': 'new',
+        Existing: 'existing',
+        New: 'new',
       });
     });
 
     it('should replace section when merge is false', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
-        updatedConfig = JSON.parse(content as string);
-        return undefined;
-      });
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(
+        async (path, content) => {
+          updatedConfig = JSON.parse(content as string);
+          return undefined;
+        }
+      );
 
-      await updateMappingSection('attributes.objects.companies', {
-        'New': 'new',
-      }, false);
+      await updateMappingSection(
+        'attributes.objects.companies',
+        {
+          New: 'new',
+        },
+        false
+      );
 
       // Expect the section to be replaced (not merged)
       expect(updatedConfig?.mappings.attributes.objects.companies).toEqual({
-        'New': 'new',
+        New: 'new',
       });
     });
 
     it('should create missing sections as needed', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
-        updatedConfig = JSON.parse(content as string);
-        return undefined;
-      });
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(
+        async (path, content) => {
+          updatedConfig = JSON.parse(content as string);
+          return undefined;
+        }
+      );
 
       await updateMappingSection('attributes.objects.newobject', {
-        'Field': 'slug',
+        Field: 'slug',
       });
 
       // Expect the new section to be created
       expect(updatedConfig?.mappings.attributes.objects.newobject).toEqual({
-        'Field': 'slug',
+        Field: 'slug',
       });
     });
   });

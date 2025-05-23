@@ -7,7 +7,7 @@ import { getCompanyDetails } from '../../src/objects/companies/basic';
 // Mock dependencies
 vi.mock('../../src/objects/companies/basic', () => ({
   getCompanyDetails: vi.fn(),
-  extractCompanyId: vi.fn().mockImplementation(id => id),
+  extractCompanyId: vi.fn().mockImplementation((id) => id),
 }));
 
 describe('Company Attributes', () => {
@@ -23,16 +23,16 @@ describe('Company Attributes', () => {
         values: {
           name: [{ value: 'Test Company' }],
           stage: [{ value: 'Prospect' }],
-          industry: [{ value: 'Technology' }]
-        }
+          industry: [{ value: 'Technology' }],
+        },
       });
 
       // Test retrieving an existing attribute
       const result = await getCompanyAttributes('comp_123', 'stage');
-      
+
       expect(result).toEqual({
         value: 'Prospect',
-        company: 'Test Company'
+        company: 'Test Company',
       });
     });
 
@@ -43,16 +43,16 @@ describe('Company Attributes', () => {
         values: {
           name: [{ value: 'Test Company' }],
           stage: [{ value: 'Prospect' }],
-          industry: [{ value: 'Technology' }]
-        }
+          industry: [{ value: 'Technology' }],
+        },
       });
 
       // Test retrieving all attributes
       const result = await getCompanyAttributes('comp_123');
-      
+
       expect(result).toEqual({
         attributes: ['industry', 'name', 'stage'], // Should be sorted alphabetically
-        company: 'Test Company'
+        company: 'Test Company',
       });
     });
 
@@ -62,14 +62,14 @@ describe('Company Attributes', () => {
         id: { record_id: 'comp_123' },
         values: {
           name: [{ value: 'Test Company' }],
-          industry: [{ value: 'Technology' }]
-        }
+          industry: [{ value: 'Technology' }],
+        },
       });
 
       // Test handling when attribute doesn't exist
-      await expect(getCompanyAttributes('comp_123', 'non_existent_attribute'))
-        .rejects
-        .toThrow(/Failed to get company attribute/);
+      await expect(
+        getCompanyAttributes('comp_123', 'non_existent_attribute')
+      ).rejects.toThrow(/Failed to get company attribute/);
     });
 
     it('should handle errors from getCompanyDetails', async () => {
@@ -77,9 +77,9 @@ describe('Company Attributes', () => {
       (getCompanyDetails as vi.Mock).mockRejectedValue(new Error('API error'));
 
       // Test error handling
-      await expect(getCompanyAttributes('comp_123', 'stage'))
-        .rejects
-        .toThrow(/Failed to get company attribute/);
+      await expect(getCompanyAttributes('comp_123', 'stage')).rejects.toThrow(
+        /Failed to get company attribute/
+      );
     });
   });
 });

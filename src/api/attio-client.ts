@@ -1,31 +1,31 @@
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance } from "axios";
-import { createAttioError } from "../utils/error-handler.js";
+import axios, { AxiosInstance } from 'axios';
+import { createAttioError } from '../utils/error-handler.js';
 
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
 
 /**
  * Creates and configures an Axios instance for the Attio API
- * 
+ *
  * @param apiKey - The Attio API key
  * @returns Configured Axios instance
  */
 export function createAttioClient(apiKey: string): AxiosInstance {
   const client = axios.create({
-    baseURL: "https://api.attio.com/v2",
+    baseURL: 'https://api.attio.com/v2',
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
     },
   });
-  
+
   // Add response interceptor for error handling
   client.interceptors.response.use(
-    response => response,
-    error => {
+    (response) => response,
+    (error) => {
       if (process.env.NODE_ENV === 'development') {
         console.error('[Attio API] Request failed:');
         console.error('URL:', error.config?.url);
@@ -38,13 +38,13 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       return Promise.reject(enhancedError);
     }
   );
-  
+
   return client;
 }
 
 /**
  * Initializes the global API client with the provided API key
- * 
+ *
  * @param apiKey - The Attio API key
  */
 export function initializeAttioClient(apiKey: string): void {
@@ -53,7 +53,7 @@ export function initializeAttioClient(apiKey: string): void {
 
 /**
  * Gets the global API client instance
- * 
+ *
  * @returns The Axios instance for the Attio API
  * @throws If the API client hasn't been initialized and no API key is available
  */
@@ -62,11 +62,15 @@ export function getAttioClient(): AxiosInstance {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
-      console.warn('[Attio API] API client not initialized, auto-initializing from environment variable');
+      console.warn(
+        '[Attio API] API client not initialized, auto-initializing from environment variable'
+      );
       initializeAttioClient(apiKey);
       return apiInstance!;
     }
-    throw new Error("API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.");
+    throw new Error(
+      'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
+    );
   }
   return apiInstance;
 }

@@ -1,7 +1,10 @@
 /**
  * Tests for attribute mapping functionality
  */
-import { getAttributeSlug, invalidateConfigCache } from '../../src/utils/attribute-mapping/attribute-mappers';
+import {
+  getAttributeSlug,
+  invalidateConfigCache,
+} from '../../src/utils/attribute-mapping/attribute-mappers';
 import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
 import * as configLoader from '../../src/utils/config-loader';
 
@@ -12,25 +15,25 @@ vi.mock('../../src/utils/config-loader', () => ({
     mappings: {
       attributes: {
         common: {
-          'Industry': 'categories', // The problem field that can cause infinite recursion
-          'Company Name': 'name'
+          Industry: 'categories', // The problem field that can cause infinite recursion
+          'Company Name': 'name',
         },
         objects: {
           companies: {
             'Medical Field': 'categories',
-            'Healthcare Industry': 'categories'
-          }
+            'Healthcare Industry': 'categories',
+          },
         },
-        custom: {}
+        custom: {},
       },
       objects: {
-        'Companies': 'companies',
-        'People': 'people'
+        Companies: 'companies',
+        People: 'people',
       },
       lists: {},
-      relationships: {}
-    }
-  }))
+      relationships: {},
+    },
+  })),
 }));
 
 describe('Attribute Mappers', () => {
@@ -53,18 +56,20 @@ describe('Attribute Mappers', () => {
 
     it('should handle object-specific mappings', () => {
       expect(getAttributeSlug('medical field', 'companies')).toBe('categories');
-      expect(getAttributeSlug('healthcare industry', 'companies')).toBe('categories');
+      expect(getAttributeSlug('healthcare industry', 'companies')).toBe(
+        'categories'
+      );
     });
 
     it('should NOT fall into infinite recursion when handling special cases', () => {
       // This line would trigger infinite recursion before the fix
       expect(getAttributeSlug('industry')).toBe('categories');
-      
+
       // Test the fix for other similar cases
       expect(getAttributeSlug('categories')).toBe('categories');
       expect(getAttributeSlug('category')).toBe('category');
     });
-    
+
     it('should handle snake case conversion without infinite recursion', () => {
       // Mock handleSpecialCases to simulate the problematic behavior
       const originalHandleSpecialCases = mappingUtils.handleSpecialCases;
@@ -73,10 +78,10 @@ describe('Attribute Mappers', () => {
         if (key.toLowerCase() === 'categories') return 'industry'; // This creates a circular reference
         return originalHandleSpecialCases(key);
       });
-      
+
       // This would cause infinite recursion without our fix
       expect(() => getAttributeSlug('industry_type')).not.toThrow();
-      
+
       // Restore original function
       (mappingUtils.handleSpecialCases as vi.Mock).mockRestore();
     });
@@ -85,7 +90,7 @@ describe('Attribute Mappers', () => {
       // Test attribute names that should not trigger snake case conversion
       expect(getAttributeSlug('already has spaces')).toBe('already has spaces');
       expect(getAttributeSlug('nounderscores')).toBe('nounderscores');
-      
+
       // Test valid snake case conversion
       expect(getAttributeSlug('company_name')).toBe('name'); // Based on mock config
     });

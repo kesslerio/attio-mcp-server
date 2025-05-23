@@ -1,9 +1,14 @@
 /**
  * Common types for tool configurations
  */
-import { Request, Response } from "express";
-import { AttioRecord, AttioNote, AttioList, AttioListEntry } from "../types/attio.js";
-import { ListEntryFilters } from "../api/operations/index.js";
+import { Request, Response } from 'express';
+import {
+  AttioRecord,
+  AttioNote,
+  AttioList,
+  AttioListEntry,
+} from '../types/attio.js';
+import { ListEntryFilters } from '../api/operations/index.js';
 
 // Base tool configuration interface
 export interface ToolConfig {
@@ -20,7 +25,11 @@ export interface SearchToolConfig extends ToolConfig {
 
 // Advanced search tool configuration
 export interface AdvancedSearchToolConfig extends ToolConfig {
-  handler: (filters: ListEntryFilters, limit?: number, offset?: number) => Promise<AttioRecord[]>;
+  handler: (
+    filters: ListEntryFilters,
+    limit?: number,
+    offset?: number
+  ) => Promise<AttioRecord[]>;
   formatResult: (results: AttioRecord[]) => string;
 }
 
@@ -31,7 +40,11 @@ export interface DetailsToolConfig extends ToolConfig {
 
 // Notes tool configuration
 export interface NotesToolConfig extends ToolConfig {
-  handler: (id: string, limit?: number, offset?: number) => Promise<AttioNote[]>;
+  handler: (
+    id: string,
+    limit?: number,
+    offset?: number
+  ) => Promise<AttioNote[]>;
 }
 
 // Create note tool configuration

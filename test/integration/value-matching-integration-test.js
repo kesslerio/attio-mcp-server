@@ -9,28 +9,32 @@ const mockErrors = [
   {
     name: 'Aesthetics error',
     error: {
-      message: 'Unknown select option name for option field constraint: Aesthetics',
+      message:
+        'Unknown select option name for option field constraint: Aesthetics',
       response: {
         status: 400,
         data: {
-          message: 'Unknown select option name for option field constraint: Aesthetics',
-          path: ['type_persona']
-        }
-      }
-    }
+          message:
+            'Unknown select option name for option field constraint: Aesthetics',
+          path: ['type_persona'],
+        },
+      },
+    },
   },
   {
     name: 'Surgeon error',
     error: {
-      message: 'Unknown select option name for option field constraint: Surgeon',
+      message:
+        'Unknown select option name for option field constraint: Surgeon',
       response: {
         status: 400,
         data: {
-          message: 'Unknown select option name for option field constraint: Surgeon',
-          path: ['type_persona']
-        }
-      }
-    }
+          message:
+            'Unknown select option name for option field constraint: Surgeon',
+          path: ['type_persona'],
+        },
+      },
+    },
   },
   {
     name: 'Tech error',
@@ -39,11 +43,12 @@ const mockErrors = [
       response: {
         status: 400,
         data: {
-          message: 'Unknown select option name for option field constraint: Tech',
-          path: ['industry']
-        }
-      }
-    }
+          message:
+            'Unknown select option name for option field constraint: Tech',
+          path: ['industry'],
+        },
+      },
+    },
   },
   {
     name: 'Random error',
@@ -52,11 +57,11 @@ const mockErrors = [
       response: {
         status: 500,
         data: {
-          message: 'Internal server error'
-        }
-      }
-    }
-  }
+          message: 'Internal server error',
+        },
+      },
+    },
+  },
 ];
 
 console.log('=== Testing Error Enhancement ===\n');
@@ -64,10 +69,10 @@ console.log('=== Testing Error Enhancement ===\n');
 mockErrors.forEach(({ name, error }) => {
   console.log(`Test: ${name}`);
   console.log('Original error:', error.message);
-  
+
   try {
     const enhanced = enhanceApiError(error);
-    
+
     if (enhanced instanceof ValueMatchError) {
       console.log('✅ Enhanced with suggestions!');
       console.log('Message:', enhanced.message);
@@ -80,7 +85,7 @@ mockErrors.forEach(({ name, error }) => {
   } catch (e) {
     console.error('Error:', e.message);
   }
-  
+
   console.log('\n---\n');
 });
 

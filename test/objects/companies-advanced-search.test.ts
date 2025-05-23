@@ -14,9 +14,9 @@ const filters = {
     {
       attribute: { slug: 'name' },
       condition: FilterConditionType.CONTAINS,
-      value: 'test'
-    }
-  ]
+      value: 'test',
+    },
+  ],
 };
 
 const testSuite = skipIntegrationTests ? describe.skip : describe;
@@ -29,13 +29,13 @@ testSuite('Companies Advanced Search', () => {
 
   test('should return either array or paginated results', async () => {
     const results = await advancedSearchCompanies(filters, 5);
-    
+
     // Since the function returns either an array or paginated results
     // we need proper checks for both cases
     if (Array.isArray(results)) {
       // If it's an array, check basic array properties
       expect(results).toBeDefined();
-      
+
       // Array contents would depend on test data, so we can only
       // check for structure if there are results
       if (results.length > 0) {
@@ -48,10 +48,10 @@ testSuite('Companies Advanced Search', () => {
       expect(paginatedResults).toBeDefined();
       expect(paginatedResults).toHaveProperty('data');
       expect(Array.isArray(paginatedResults.data)).toBe(true);
-      
+
       // Check pagination info
       expect(paginatedResults).toHaveProperty('pagination');
-      
+
       // If we have results, check their structure
       if (paginatedResults.data && paginatedResults.data.length > 0) {
         const firstResult = paginatedResults.data[0];

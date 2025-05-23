@@ -19,28 +19,28 @@ console.error = (...args) => {
 
 async function traceHandlerFlow() {
   const { handleToolCall } = await import('./dist/handlers/tools.js');
-  
+
   // Create a mock request similar to what Claude Code would send
   const request = {
     params: {
-      name: "advanced-search-companies",
+      name: 'advanced-search-companies',
       arguments: {
         filters: {
           filters: [
             {
-              attribute: { slug: "b2b_segment" },
-              condition: "contains",
-              value: "Plastic Surgeon"
-            }
-          ]
-        }
-      }
-    }
+              attribute: { slug: 'b2b_segment' },
+              condition: 'contains',
+              value: 'Plastic Surgeon',
+            },
+          ],
+        },
+      },
+    },
   };
-  
+
   console.log('\n=== Mock Request ===');
   console.log(JSON.stringify(request, null, 2));
-  
+
   try {
     // Call the handler
     const result = await handleToolCall(request);
@@ -50,14 +50,15 @@ async function traceHandlerFlow() {
     console.error('\n=== Handler Error ===');
     console.error(error.message);
   }
-  
+
   // Analyze logs for b2b_segment references
   console.log('\n=== Log Analysis ===');
-  const b2bLogs = logs.filter(log => 
-    JSON.stringify(log.args).includes('b2b_segment') || 
-    JSON.stringify(log.args).includes('type_persona')
+  const b2bLogs = logs.filter(
+    (log) =>
+      JSON.stringify(log.args).includes('b2b_segment') ||
+      JSON.stringify(log.args).includes('type_persona')
   );
-  
+
   console.log('Found', b2bLogs.length, 'relevant log entries:');
   b2bLogs.forEach((log, i) => {
     console.log(`\n--- Log ${i + 1} (${log.type}) ---`);
@@ -66,4 +67,4 @@ async function traceHandlerFlow() {
 }
 
 // Run with minimal error handling
-traceHandlerFlow().catch(e => console.error('Fatal error:', e));
+traceHandlerFlow().catch((e) => console.error('Fatal error:', e));

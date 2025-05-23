@@ -11,7 +11,7 @@ export class ValueMatchError extends AttioApiError {
   public readonly suggestions: string[];
   public readonly bestMatch?: string;
   public readonly originalError?: Error;
-  
+
   constructor(
     fieldName: string,
     searchValue: string,
@@ -19,32 +19,35 @@ export class ValueMatchError extends AttioApiError {
     originalErrorParam?: Error
   ) {
     let message = `'${searchValue}' is not a valid value for ${fieldName}.`;
-    
+
     if (matchResult.bestMatch && matchResult.bestMatch.similarity >= 0.7) {
       message += ` Did you mean '${matchResult.bestMatch.value}'?`;
     } else if (matchResult.suggestions.length > 0) {
       message += '\n\nDid you mean one of these?';
-      matchResult.suggestions.forEach(suggestion => {
-        message += `\n  • ${suggestion.value} (${Math.round(suggestion.similarity * 100)}% similar)`;
+      matchResult.suggestions.forEach((suggestion) => {
+        message += `\n  • ${suggestion.value} (${Math.round(
+          suggestion.similarity * 100
+        )}% similar)`;
       });
     }
-    
+
     super(
-      message, 
+      message,
       400, // HTTP status code for bad request
       fieldName, // Use fieldName as endpoint
       'POST', // Typical method for searches
-      { // Additional details
+      {
+        // Additional details
         searchValue,
         suggestions: matchResult.suggestions,
         bestMatch: matchResult.bestMatch,
-        originalErrorMessage: originalErrorParam?.message
+        originalErrorMessage: originalErrorParam?.message,
       }
     );
-    
+
     this.fieldName = fieldName;
     this.searchValue = searchValue;
-    this.suggestions = matchResult.suggestions.map(s => s.value);
+    this.suggestions = matchResult.suggestions.map((s) => s.value);
     this.bestMatch = matchResult.bestMatch?.value;
     this.originalError = originalErrorParam;
   }

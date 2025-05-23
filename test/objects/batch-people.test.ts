@@ -1,6 +1,6 @@
-import { 
+import {
   batchSearchPeople,
-  batchGetPeopleDetails
+  batchGetPeopleDetails,
 } from '../../src/objects/people';
 import * as attioOperations from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
@@ -16,30 +16,30 @@ describe('People Batch Operations', () => {
   // Sample mock data
   const mockPerson1: Person = {
     id: {
-      record_id: 'person123'
+      record_id: 'person123',
     },
     values: {
       name: [{ value: 'John Doe' }],
       email: [{ value: 'john.doe@example.com' }],
-      phone: [{ value: '+1234567890' }]
-    }
+      phone: [{ value: '+1234567890' }],
+    },
   };
 
   const mockPerson2: Person = {
     id: {
-      record_id: 'person456'
+      record_id: 'person456',
     },
     values: {
       name: [{ value: 'Jane Smith' }],
       email: [{ value: 'jane.smith@example.com' }],
-      phone: [{ value: '+0987654321' }]
-    }
+      phone: [{ value: '+0987654321' }],
+    },
   };
 
   // Mock API client
   const mockApiClient = {
     post: vi.fn(),
-    get: vi.fn()
+    get: vi.fn(),
   };
 
   beforeEach(() => {
@@ -53,17 +53,19 @@ describe('People Batch Operations', () => {
       const mockResponse = {
         results: [
           { id: 'search_people_0', success: true, data: [mockPerson1] },
-          { id: 'search_people_1', success: true, data: [mockPerson2] }
+          { id: 'search_people_1', success: true, data: [mockPerson2] },
         ],
         summary: {
           total: 2,
           succeeded: 2,
-          failed: 0
-        }
+          failed: 0,
+        },
       };
-      
+
       // Mock the batchSearchObjects function
-      (attioOperations.batchSearchObjects as vi.Mock).mockResolvedValue(mockResponse);
+      (attioOperations.batchSearchObjects as vi.Mock).mockResolvedValue(
+        mockResponse
+      );
 
       // Call the function
       const result = await batchSearchPeople(['John', 'Jane']);
@@ -82,7 +84,7 @@ describe('People Batch Operations', () => {
       (attioOperations.batchSearchObjects as vi.Mock).mockImplementation(() => {
         throw new Error('Batch operation failed');
       });
-      
+
       // Mock the searchPeople for individual searches in the fallback
       vi.spyOn(require('../../src/objects/people'), 'searchPeople')
         .mockResolvedValueOnce([mockPerson1])
@@ -96,10 +98,10 @@ describe('People Batch Operations', () => {
       expect(result.summary.succeeded).toBe(1);
       expect(result.summary.failed).toBe(1);
       expect(result.results.length).toBe(2);
-      
+
       expect(result.results[0].success).toBe(true);
       expect(result.results[0].data).toEqual([mockPerson1]);
-      
+
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
       expect(result.results[1].error.message).toBe('Search failed');
@@ -112,17 +114,19 @@ describe('People Batch Operations', () => {
       const mockResponse = {
         results: [
           { id: 'get_people_person123', success: true, data: mockPerson1 },
-          { id: 'get_people_person456', success: true, data: mockPerson2 }
+          { id: 'get_people_person456', success: true, data: mockPerson2 },
         ],
         summary: {
           total: 2,
           succeeded: 2,
-          failed: 0
-        }
+          failed: 0,
+        },
       };
-      
+
       // Mock the batchGetObjectDetails function
-      (attioOperations.batchGetObjectDetails as vi.Mock).mockResolvedValue(mockResponse);
+      (attioOperations.batchGetObjectDetails as vi.Mock).mockResolvedValue(
+        mockResponse
+      );
 
       // Call the function
       const result = await batchGetPeopleDetails(['person123', 'person456']);
@@ -138,10 +142,12 @@ describe('People Batch Operations', () => {
 
     it('should handle errors using fallback implementation', async () => {
       // Mock batchGetObjectDetails to fail
-      (attioOperations.batchGetObjectDetails as vi.Mock).mockImplementation(() => {
-        throw new Error('Batch operation failed');
-      });
-      
+      (attioOperations.batchGetObjectDetails as vi.Mock).mockImplementation(
+        () => {
+          throw new Error('Batch operation failed');
+        }
+      );
+
       // Mock the getPersonDetails for individual gets in the fallback
       vi.spyOn(require('../../src/objects/people'), 'getPersonDetails')
         .mockResolvedValueOnce(mockPerson1)
@@ -155,10 +161,10 @@ describe('People Batch Operations', () => {
       expect(result.summary.succeeded).toBe(1);
       expect(result.summary.failed).toBe(1);
       expect(result.results.length).toBe(2);
-      
+
       expect(result.results[0].success).toBe(true);
       expect(result.results[0].data).toEqual(mockPerson1);
-      
+
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
       expect(result.results[1].error.message).toBe('Person not found');

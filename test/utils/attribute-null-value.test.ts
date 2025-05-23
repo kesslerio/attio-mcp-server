@@ -5,8 +5,8 @@ import { formatAllAttributes } from '../../src/api/attribute-types';
 const mockGet = vi.fn() as any;
 vi.mock('../../src/api/attio-client', () => ({
   getAttioClient: vi.fn(() => ({
-    get: mockGet
-  }))
+    get: mockGet,
+  })),
 }));
 
 // Setup mock response
@@ -17,20 +17,20 @@ beforeEach(() => {
         {
           api_slug: 'body_contouring',
           type: 'text',
-          is_multiselect: false
+          is_multiselect: false,
         },
         {
           api_slug: 'name',
           type: 'text',
-          is_required: true
+          is_required: true,
         },
         {
           api_slug: 'services',
           type: 'text',
-          is_multiselect: false
-        }
-      ]
-    }
+          is_multiselect: false,
+        },
+      ],
+    },
   });
 });
 
@@ -39,7 +39,7 @@ describe('formatAllAttributes - null value handling', () => {
     const attributes = {
       body_contouring: null,
       name: 'Test Company',
-      services: 'Test services'
+      services: 'Test services',
     };
 
     const formatted = await formatAllAttributes('companies', attributes);
@@ -47,7 +47,7 @@ describe('formatAllAttributes - null value handling', () => {
     // The key assertion: null values should be preserved
     expect(formatted).toHaveProperty('body_contouring');
     expect(formatted.body_contouring).toBe(null);
-    
+
     // Other values should be formatted normally
     expect(formatted).toHaveProperty('name');
     expect(formatted).toHaveProperty('services');
@@ -58,7 +58,7 @@ describe('formatAllAttributes - null value handling', () => {
       body_contouring: null,
       name: 'Test Company',
       services: undefined,
-      website: 'https://example.com'
+      website: 'https://example.com',
     };
 
     const formatted = await formatAllAttributes('companies', attributes);
@@ -66,10 +66,10 @@ describe('formatAllAttributes - null value handling', () => {
     // null values should be preserved
     expect(formatted).toHaveProperty('body_contouring');
     expect(formatted.body_contouring).toBe(null);
-    
+
     // undefined values should be omitted
     expect(formatted).not.toHaveProperty('services');
-    
+
     // regular values should be formatted
     expect(formatted).toHaveProperty('name');
     expect(formatted).toHaveProperty('website');
@@ -78,7 +78,7 @@ describe('formatAllAttributes - null value handling', () => {
   it('should handle objects with only null values', async () => {
     const attributes = {
       body_contouring: null,
-      services: null
+      services: null,
     };
 
     const formatted = await formatAllAttributes('companies', attributes);

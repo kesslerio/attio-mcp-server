@@ -1,4 +1,8 @@
-import { processListEntries, getRecordNameFromEntry, API_PARAMS } from '../../src/utils/record-utils';
+import {
+  processListEntries,
+  getRecordNameFromEntry,
+  API_PARAMS,
+} from '../../src/utils/record-utils';
 import { AttioListEntry } from '../../src/types/attio';
 
 describe('record-utils', () => {
@@ -9,7 +13,7 @@ describe('record-utils', () => {
       id: { entry_id: 'entry1' },
       list_id: 'list1',
       record_id: 'record1',
-      created_at: '2025-01-01T00:00:00Z'
+      created_at: '2025-01-01T00:00:00Z',
     },
     // Entry with nested record ID
     {
@@ -18,8 +22,8 @@ describe('record-utils', () => {
       created_at: '2025-01-01T00:00:00Z',
       record: {
         id: { record_id: 'record2' },
-        values: {}
-      }
+        values: {},
+      },
     },
     // Entry with record ID in values
     {
@@ -29,23 +33,23 @@ describe('record-utils', () => {
       values: {
         record: {
           id: { record_id: 'record3' },
-          values: {} // Required by AttioRecord
-        }
-      }
+          values: {}, // Required by AttioRecord
+        },
+      },
     },
     // Entry with record ID as other property
     {
       id: { entry_id: 'entry4' },
       list_id: 'list1',
       created_at: '2025-01-01T00:00:00Z',
-      company_record_id: 'record4'
+      company_record_id: 'record4',
     },
     // Entry without record ID
     {
       id: { entry_id: 'entry5' },
       list_id: 'list1',
-      created_at: '2025-01-01T00:00:00Z'
-    }
+      created_at: '2025-01-01T00:00:00Z',
+    },
   ];
 
   describe('processListEntries', () => {
@@ -68,10 +72,10 @@ describe('record-utils', () => {
         list_id: 'list1',
         record_id: 'existing-record-id',
         created_at: '2025-01-01T00:00:00Z',
-        record: { 
+        record: {
           id: { record_id: 'should-not-use-this' },
-          values: {}
-        }
+          values: {},
+        },
       };
 
       // Act
@@ -93,9 +97,9 @@ describe('record-utils', () => {
         record: {
           id: { record_id: 'record1' },
           values: {
-            name: [{ value: 'Test Company' }]
-          }
-        }
+            name: [{ value: 'Test Company' }],
+          },
+        },
       };
 
       // Act
@@ -111,7 +115,7 @@ describe('record-utils', () => {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
-        created_at: '2025-01-01T00:00:00Z'
+        created_at: '2025-01-01T00:00:00Z',
       };
 
       // Act
@@ -131,9 +135,9 @@ describe('record-utils', () => {
         record: {
           id: { record_id: 'record1' },
           values: {
-            name: []
-          }
-        }
+            name: [],
+          },
+        },
       };
 
       // Act

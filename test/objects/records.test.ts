@@ -1,4 +1,4 @@
-import { 
+import {
   createObjectRecord,
   getObjectRecord,
   updateObjectRecord,
@@ -7,7 +7,7 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
   formatRecordAttribute,
-  formatRecordAttributes
+  formatRecordAttributes,
 } from '../../src/objects/records';
 import * as attioOperations from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
@@ -23,12 +23,12 @@ describe('Records API', () => {
   // Sample mock data
   const mockRecord: AttioRecord = {
     id: {
-      record_id: 'record123'
+      record_id: 'record123',
     },
     values: {
       name: [{ value: 'Test Record' }],
-      description: [{ value: 'This is a test record' }]
-    }
+      description: [{ value: 'This is a test record' }],
+    },
   };
 
   // Mock API client
@@ -36,7 +36,7 @@ describe('Records API', () => {
     post: vi.fn(),
     get: vi.fn(),
     patch: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   };
 
   beforeEach(() => {
@@ -49,20 +49,23 @@ describe('Records API', () => {
       // Setup mock response
       const mockAttributes = {
         name: 'Test Record',
-        description: 'This is a test record'
+        description: 'This is a test record',
       };
-      
+
       // Mock the createRecord function
       (attioOperations.createRecord as vi.Mock).mockResolvedValue(mockRecord);
 
       // Call the function
-      const result = await createObjectRecord<AttioRecord>('companies', mockAttributes);
+      const result = await createObjectRecord<AttioRecord>(
+        'companies',
+        mockAttributes
+      );
 
       // Assertions
       expect(attioOperations.createRecord).toHaveBeenCalledWith({
         objectSlug: 'companies',
         objectId: undefined,
-        attributes: mockAttributes
+        attributes: mockAttributes,
       });
       expect(result).toEqual(mockRecord);
     });
@@ -71,33 +74,39 @@ describe('Records API', () => {
       // Mock data
       const mockAttributes = {
         name: 'Test Record',
-        description: 'This is a test record'
+        description: 'This is a test record',
       };
-      
+
       // Mock the createRecord function to throw an error that's a non-Error object
       // This will bypass the error instanceof Error check
       (attioOperations.createRecord as vi.Mock).mockImplementation(() => {
         // Return a Promise that rejects with a non-Error object
         return Promise.reject({ message: 'API error' });
       });
-      
+
       // Mock the direct API call for fallback
       mockApiClient.post.mockResolvedValue({
         data: {
-          data: mockRecord
-        }
+          data: mockRecord,
+        },
       });
 
       // Call the function
-      const result = await createObjectRecord<AttioRecord>('companies', mockAttributes);
+      const result = await createObjectRecord<AttioRecord>(
+        'companies',
+        mockAttributes
+      );
 
       // Assertions
       expect(attioOperations.createRecord).toHaveBeenCalled();
-      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/companies/records', {
-        data: {
-          values: mockAttributes
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/objects/companies/records',
+        {
+          data: {
+            values: mockAttributes,
+          },
         }
-      });
+      );
       expect(result).toEqual(mockRecord);
     });
   });
@@ -108,7 +117,10 @@ describe('Records API', () => {
       (attioOperations.getRecord as vi.Mock).mockResolvedValue(mockRecord);
 
       // Call the function
-      const result = await getObjectRecord<AttioRecord>('companies', 'record123');
+      const result = await getObjectRecord<AttioRecord>(
+        'companies',
+        'record123'
+      );
 
       // Assertions
       expect(attioOperations.getRecord).toHaveBeenCalledWith(
@@ -126,7 +138,11 @@ describe('Records API', () => {
 
       // Call the function with attributes
       const attributes = ['name', 'description'];
-      const result = await getObjectRecord<AttioRecord>('companies', 'record123', attributes);
+      const result = await getObjectRecord<AttioRecord>(
+        'companies',
+        'record123',
+        attributes
+      );
 
       // Assertions
       expect(attioOperations.getRecord).toHaveBeenCalledWith(
@@ -143,21 +159,25 @@ describe('Records API', () => {
     it('should call updateRecord to update a record', async () => {
       // Setup mock data
       const mockAttributes = {
-        description: 'Updated description'
+        description: 'Updated description',
       };
-      
+
       // Mock the updateRecord function
       (attioOperations.updateRecord as vi.Mock).mockResolvedValue(mockRecord);
 
       // Call the function
-      const result = await updateObjectRecord<AttioRecord>('companies', 'record123', mockAttributes);
+      const result = await updateObjectRecord<AttioRecord>(
+        'companies',
+        'record123',
+        mockAttributes
+      );
 
       // Assertions
       expect(attioOperations.updateRecord).toHaveBeenCalledWith({
         objectSlug: 'companies',
         objectId: undefined,
         recordId: 'record123',
-        attributes: mockAttributes
+        attributes: mockAttributes,
       });
       expect(result).toEqual(mockRecord);
     });
@@ -184,8 +204,11 @@ describe('Records API', () => {
   describe('listObjectRecords', () => {
     it('should call listRecords to list records', async () => {
       // Mock response data
-      const mockRecords = [mockRecord, { ...mockRecord, id: { record_id: 'record456' } }];
-      
+      const mockRecords = [
+        mockRecord,
+        { ...mockRecord, id: { record_id: 'record456' } },
+      ];
+
       // Mock the listRecords function
       (attioOperations.listRecords as vi.Mock).mockResolvedValue(mockRecords);
 
@@ -195,7 +218,7 @@ describe('Records API', () => {
       // Assertions
       expect(attioOperations.listRecords).toHaveBeenCalledWith({
         objectSlug: 'companies',
-        objectId: undefined
+        objectId: undefined,
       });
       expect(result).toEqual(mockRecords);
       expect(result.length).toBe(2);
@@ -204,7 +227,7 @@ describe('Records API', () => {
     it('should support filtering options', async () => {
       // Mock response data
       const mockRecords = [mockRecord];
-      
+
       // Mock the listRecords function
       (attioOperations.listRecords as vi.Mock).mockResolvedValue(mockRecords);
 
@@ -213,16 +236,16 @@ describe('Records API', () => {
         query: 'Test',
         pageSize: 10,
         sort: 'name',
-        direction: 'asc' as const
+        direction: 'asc' as const,
       };
-      
+
       const result = await listObjectRecords<AttioRecord>('companies', options);
 
       // Assertions
       expect(attioOperations.listRecords).toHaveBeenCalledWith({
         objectSlug: 'companies',
         objectId: undefined,
-        ...options
+        ...options,
       });
       expect(result).toEqual(mockRecords);
     });
@@ -232,19 +255,19 @@ describe('Records API', () => {
     it('should correctly format Date values', () => {
       const date = new Date('2023-01-01T00:00:00Z');
       const result = formatRecordAttribute('date_field', date);
-      
+
       expect(result).toBe('2023-01-01T00:00:00.000Z');
     });
 
     it('should handle currency fields', () => {
       const result = formatRecordAttribute('annual_revenue', 5000000);
-      
+
       expect(result).toBe(5000000);
     });
 
     it('should handle record ID links', () => {
       const result = formatRecordAttribute('primary_contact', 'record_abc123');
-      
+
       expect(result).toEqual({ record_id: 'record_abc123' });
     });
 
@@ -262,17 +285,17 @@ describe('Records API', () => {
         founded_date: date,
         annual_revenue: 5000000,
         primary_contact: 'record_abc123',
-        description: null
+        description: null,
       };
-      
+
       const result = formatRecordAttributes(attributes);
-      
+
       expect(result).toEqual({
         name: 'Test Record',
         founded_date: '2023-01-01T00:00:00.000Z',
         annual_revenue: 5000000,
         primary_contact: { record_id: 'record_abc123' },
-        description: null
+        description: null,
       });
     });
   });

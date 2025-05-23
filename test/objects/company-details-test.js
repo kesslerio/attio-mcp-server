@@ -13,12 +13,12 @@ process.env.NODE_ENV = 'development';
 
 // Test the function
 getCompanyDetails(companyId)
-  .then(result => {
+  .then((result) => {
     console.log('SUCCESS: Company details retrieved successfully');
     console.log('Company ID:', result.id);
     console.log('Company Name:', result.values?.name?.[0]?.value || 'Unknown');
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('ERROR:', error.message);
     console.error('Stack:', error.stack);
   });

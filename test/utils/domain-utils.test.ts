@@ -1,30 +1,36 @@
 /**
  * Unit tests for domain utility functions
  */
-import { 
-  extractDomain, 
-  isValidDomain, 
-  normalizeDomain, 
+import {
+  extractDomain,
+  isValidDomain,
+  normalizeDomain,
   hasDomainIndicators,
-  extractAllDomains
+  extractAllDomains,
 } from '../../src/utils/domain-utils.js';
 
 describe('Domain Utilities', () => {
   describe('extractDomain', () => {
     test('should extract domain from simple domain', () => {
       expect(extractDomain('example.com')).toBe('example.com');
-      expect(extractDomain('subdomain.example.com')).toBe('subdomain.example.com');
+      expect(extractDomain('subdomain.example.com')).toBe(
+        'subdomain.example.com'
+      );
     });
 
     test('should extract domain from URLs', () => {
       expect(extractDomain('https://example.com')).toBe('example.com');
       expect(extractDomain('http://example.com/path')).toBe('example.com');
-      expect(extractDomain('https://www.example.com/path?query=1')).toBe('www.example.com');
+      expect(extractDomain('https://www.example.com/path?query=1')).toBe(
+        'www.example.com'
+      );
     });
 
     test('should extract domain from email addresses', () => {
       expect(extractDomain('user@example.com')).toBe('example.com');
-      expect(extractDomain('john.doe@subdomain.example.org')).toBe('subdomain.example.org');
+      expect(extractDomain('john.doe@subdomain.example.org')).toBe(
+        'subdomain.example.org'
+      );
     });
 
     test('should handle invalid inputs', () => {
@@ -35,7 +41,9 @@ describe('Domain Utilities', () => {
     });
 
     test('should extract domain from text containing domains', () => {
-      expect(extractDomain('Visit https://example.com for more')).toBe('example.com');
+      expect(extractDomain('Visit https://example.com for more')).toBe(
+        'example.com'
+      );
       expect(extractDomain('www.example.com')).toBe('example.com');
     });
   });
@@ -67,7 +75,9 @@ describe('Domain Utilities', () => {
     test('should normalize domains correctly', () => {
       expect(normalizeDomain('Example.Com')).toBe('example.com');
       expect(normalizeDomain('WWW.Example.COM')).toBe('example.com');
-      expect(normalizeDomain('www.subdomain.example.com')).toBe('subdomain.example.com');
+      expect(normalizeDomain('www.subdomain.example.com')).toBe(
+        'subdomain.example.com'
+      );
     });
 
     test('should handle empty input', () => {
@@ -109,19 +119,24 @@ describe('Domain Utilities', () => {
     });
 
     test('should extract multiple domains', () => {
-      const result = extractAllDomains('Contact user@example.com or visit https://another.org');
+      const result = extractAllDomains(
+        'Contact user@example.com or visit https://another.org'
+      );
       expect(result).toContain('example.com');
       expect(result).toContain('another.org');
       expect(result).toHaveLength(2);
     });
 
     test('should remove duplicates', () => {
-      const result = extractAllDomains('user@example.com and https://example.com');
+      const result = extractAllDomains(
+        'user@example.com and https://example.com'
+      );
       expect(result).toEqual(['example.com']);
     });
 
     test('should handle complex text', () => {
-      const text = 'Email support@company.com, visit https://www.company.com or try api.company.com';
+      const text =
+        'Email support@company.com, visit https://www.company.com or try api.company.com';
       const result = extractAllDomains(text);
       expect(result).toContain('company.com');
       expect(result).toContain('api.company.com');
@@ -133,7 +148,9 @@ describe('Domain Utilities', () => {
     });
 
     test('should normalize extracted domains', () => {
-      const result = extractAllDomains('Visit WWW.Example.COM and API.Example.COM');
+      const result = extractAllDomains(
+        'Visit WWW.Example.COM and API.Example.COM'
+      );
       expect(result).toContain('example.com');
       expect(result).toContain('api.example.com');
     });

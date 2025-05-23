@@ -11,10 +11,13 @@
 // stemming from previous incorrect edits.
 
 export function placeholderInterceptorLogic(error: any): any {
-  console.warn('[placeholderInterceptorLogic] This is a placeholder in src/handlers/error-interceptor.ts. Original error passed through:', error?.message);
+  console.warn(
+    '[placeholderInterceptorLogic] This is a placeholder in src/handlers/error-interceptor.ts. Original error passed through:',
+    error?.message
+  );
   return error;
 }
 
-// If this file was intended to export an Axios interceptor function, 
+// If this file was intended to export an Axios interceptor function,
 // it would look different, e.g.:
 // export const attioErrorResponseInterceptor = (error: any) => { ... return Promise.reject(error) };

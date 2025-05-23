@@ -17,7 +17,7 @@ const mockedCompanyBasic = companyBasic as vi.Mocked<typeof companyBasic>;
 describe('Update Company Tool', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    
+
     // Mock the registry's findToolConfig function to return mock configurations
     mockedRegistry.findToolConfig.mockImplementation((toolName: string) => {
       if (toolName === 'update-company') {
@@ -26,9 +26,14 @@ describe('Update Company Tool', () => {
           toolConfig: {
             name: 'update-company',
             handler: mockedCompanyBasic.updateCompany,
-            formatResult: vi.fn((result) => `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${result.id?.record_id || result.id || 'unknown'})`)
+            formatResult: vi.fn(
+              (result) =>
+                `Company updated: ${result.values?.name || 'Unnamed'} (ID: ${
+                  result.id?.record_id || result.id || 'unknown'
+                })`
+            ),
           },
-          toolType: 'update'
+          toolType: 'update',
         };
       }
       return undefined;
@@ -37,10 +42,10 @@ describe('Update Company Tool', () => {
     // Mock the company update function with default successful response
     mockedCompanyBasic.updateCompany.mockResolvedValue({
       id: { record_id: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e' },
-      values: { 
+      values: {
         name: [{ value: 'Test Company' }],
-        industry: [{ value: 'Batch Test Industry' }]
-      }
+        industry: [{ value: 'Batch Test Industry' }],
+      },
     });
   });
 
@@ -48,53 +53,58 @@ describe('Update Company Tool', () => {
     it('should execute update-company tool with companyId and attributes', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
             attributes: {
-              industry: 'Batch Test Industry'
-            }
-          }
-        }
+              industry: 'Batch Test Industry',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
-      expect(mockedRegistry.findToolConfig).toHaveBeenCalledWith('update-company');
+      expect(mockedRegistry.findToolConfig).toHaveBeenCalledWith(
+        'update-company'
+      );
       expect(mockedCompanyBasic.updateCompany).toHaveBeenCalledWith(
-        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e', 
+        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
         { industry: 'Batch Test Industry' }
       );
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('Company updated');
-      expect(result.content[0].text).toContain('3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e');
+      expect(result.content[0].text).toContain(
+        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e'
+      );
     });
 
     it('should support recordData parameter instead of attributes', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
-            recordData: {  // Using recordData instead of attributes
-              industry: 'Software Development'
-            }
-          }
-        }
+            recordData: {
+              // Using recordData instead of attributes
+              industry: 'Software Development',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(mockedCompanyBasic.updateCompany).toHaveBeenCalledWith(
-        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e', 
+        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
         { industry: 'Software Development' }
       );
       expect(result.isError).toBeFalsy();
@@ -103,28 +113,28 @@ describe('Update Company Tool', () => {
     it('should handle attributes with special characters', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
             attributes: {
               name: 'Company & Sons (EMEA)',
-              description: 'They handle the <complex> "special" characters!'
-            }
-          }
-        }
+              description: 'They handle the <complex> "special" characters!',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(mockedCompanyBasic.updateCompany).toHaveBeenCalledWith(
-        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e', 
-        { 
-          name: 'Company & Sons (EMEA)', 
-          description: 'They handle the <complex> "special" characters!' 
+        '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
+        {
+          name: 'Company & Sons (EMEA)',
+          description: 'They handle the <complex> "special" characters!',
         }
       );
       expect(result.isError).toBeFalsy();
@@ -135,23 +145,25 @@ describe('Update Company Tool', () => {
     it('should handle missing companyId parameter', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             attributes: {
-              industry: 'Batch Test Industry'
-            }
-          }
-        }
+              industry: 'Batch Test Industry',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('companyId parameter is required');
+      expect(result.content[0].text).toContain(
+        'companyId parameter is required'
+      );
       // Ensure updateCompany wasn't called
       expect(mockedCompanyBasic.updateCompany).not.toHaveBeenCalled();
     });
@@ -159,22 +171,24 @@ describe('Update Company Tool', () => {
     it('should handle missing attributes parameter', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
             // No attributes or recordData
-          }
-        }
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Attributes parameter cannot be empty');
+      expect(result.content[0].text).toContain(
+        'Attributes parameter cannot be empty'
+      );
     });
 
     it('should handle invalid companyId format', async () => {
@@ -182,23 +196,23 @@ describe('Update Company Tool', () => {
       mockedCompanyBasic.updateCompany.mockRejectedValue(
         new InvalidCompanyDataError('Invalid company ID format')
       );
-      
+
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: 'invalid-format',
             attributes: {
-              industry: 'Batch Test Industry'
-            }
-          }
-        }
+              industry: 'Batch Test Industry',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
       expect(result.content[0].text).toContain('Error');
@@ -207,43 +221,47 @@ describe('Update Company Tool', () => {
     it('should handle non-object attributes parameter', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
-            attributes: 'string instead of object'
-          }
-        }
+            attributes: 'string instead of object',
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Attributes parameter must be an object');
+      expect(result.content[0].text).toContain(
+        'Attributes parameter must be an object'
+      );
     });
 
     it('should handle array attributes parameter', async () => {
       // Arrange
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
-            attributes: ['array', 'instead', 'of', 'object']
-          }
-        }
+            attributes: ['array', 'instead', 'of', 'object'],
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Attributes parameter must be an object');
+      expect(result.content[0].text).toContain(
+        'Attributes parameter must be an object'
+      );
     });
 
     it('should handle API errors', async () => {
@@ -251,23 +269,23 @@ describe('Update Company Tool', () => {
       mockedCompanyBasic.updateCompany.mockRejectedValue(
         new Error('API error: Service unavailable')
       );
-      
+
       const request = {
-      method: "tools/call" as const,
+        method: 'tools/call' as const,
         params: {
           name: 'update-company',
           arguments: {
             companyId: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e',
             attributes: {
-              industry: 'Batch Test Industry'
-            }
-          }
-        }
+              industry: 'Batch Test Industry',
+            },
+          },
+        },
       };
-      
+
       // Act
       const result = await executeToolRequest(request);
-      
+
       // Assert
       expect(result.isError).toBeTruthy();
       expect(result.content[0].text).toContain('Error');
