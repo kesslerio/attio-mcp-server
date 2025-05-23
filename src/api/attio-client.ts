@@ -55,11 +55,18 @@ export function initializeAttioClient(apiKey: string): void {
  * Gets the global API client instance
  * 
  * @returns The Axios instance for the Attio API
- * @throws If the API client hasn't been initialized
+ * @throws If the API client hasn't been initialized and no API key is available
  */
 export function getAttioClient(): AxiosInstance {
   if (!apiInstance) {
-    throw new Error("API client not initialized. Call initializeAttioClient first.");
+    // Fallback: try to initialize from environment variable
+    const apiKey = process.env.ATTIO_API_KEY;
+    if (apiKey) {
+      console.warn('[Attio API] API client not initialized, auto-initializing from environment variable');
+      initializeAttioClient(apiKey);
+      return apiInstance!;
+    }
+    throw new Error("API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.");
   }
   return apiInstance;
 }
