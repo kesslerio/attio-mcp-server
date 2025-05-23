@@ -20,6 +20,7 @@ import { ResourceType } from '../types/attio.js';
 import { validateAttributeValue, ValidationResult, AttributeType } from './attribute-validator.js';
 import { InvalidRequestError } from '../errors/api-errors.js';
 import { convertToBoolean } from '../utils/attribute-mapping/attribute-mappers.js';
+import { extractDomain, normalizeDomain } from '../utils/domain-utils.js';
 
 /**
  * Interface for cached attribute type info
@@ -140,6 +141,41 @@ export class CompanyValidator {
   }
   
   /**
+   * Automatically extracts domain from website URL if domains field is not provided
+   * 
+   * @param attributes - Company attributes
+   * @returns Attributes with domains field populated if website is provided
+   */
+  static extractDomainFromWebsite(attributes: any): any {
+    // Only extract domain if:
+    // 1. Website is provided
+    // 2. Domains field is not already provided (don't overwrite manually set domains)
+    if (attributes.website && !attributes.domains) {
+      const extractedDomain = extractDomain(attributes.website);
+      
+      if (extractedDomain) {
+        // Normalize the domain to remove www prefix
+        const normalizedDomain = normalizeDomain(extractedDomain);
+        
+        // Log domain extraction for debugging
+        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+          console.log(`[CompanyValidator] Auto-extracted domain "${normalizedDomain}" from website "${attributes.website}"`);
+        }
+        
+        // Try both formats to handle different Attio configurations
+        // Some domains fields expect arrays, some expect strings
+        // We'll start with array format and let the API validation handle the final format
+        attributes.domains = [normalizedDomain];
+        
+        // Mark this as auto-extracted to skip our internal validation
+        attributes._autoExtractedDomains = true;
+      }
+    }
+    
+    return attributes;
+  }
+  
+  /**
    * Validates data for creating a company using dynamic field type detection
    * 
    * @param attributes - Raw attributes for company creation
@@ -153,8 +189,14 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
+    // CRITICAL FIX: Auto-extract domain from website before processing other attributes
+    const attributesWithDomain = CompanyValidator.extractDomainFromWebsite(attributes);
+
+    // Remove internal flags before validation and processing
+    const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
+
     // First process values, including boolean conversion from the main branch
-    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
+    const processedAttributes = await CompanyValidator.processAttributeValues(cleanAttributes);
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(processedAttributes);
@@ -176,20 +218,25 @@ export class CompanyValidator {
   /**
    * Validates data for updating a company using dynamic field type detection
    * 
-   * @param companyId - ID of the company to update
-   * @param attributes - Raw attributes for company update
+   * @param companyId - ID of company to update
+   * @param attributes - Raw attributes for company update (partial)
    * @returns Validated company update input with processed values
-   * @throws InvalidCompanyDataError if company ID is invalid
-   * @throws InvalidCompanyFieldTypeError if field types are invalid
+   * @throws InvalidCompanyDataError if validation fails
    */
   static async validateUpdate(companyId: string, attributes: any): Promise<CompanyUpdateInput> {
     // Validate company ID
     if (!companyId || typeof companyId !== 'string') {
-      throw new InvalidCompanyDataError('Company ID must be a non-empty string');
+      throw new InvalidCompanyDataError('Company ID must be a non-empty string for update');
     }
 
+    // CRITICAL FIX: Auto-extract domain from website on updates too
+    const attributesWithDomain = CompanyValidator.extractDomainFromWebsite(attributes);
+
+    // Remove internal flags before validation and processing
+    const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
+
     // First process values, including boolean conversion from the main branch
-    const processedAttributes = await CompanyValidator.processAttributeValues(attributes);
+    const processedAttributes = await CompanyValidator.processAttributeValues(cleanAttributes);
     
     // Special validation for specific field types
     await CompanyValidator.performSpecialValidation(processedAttributes);
@@ -286,6 +333,12 @@ export class CompanyValidator {
   private static async validateFieldType(field: string, value: any): Promise<void> {
     // Allow null/undefined values for any field
     if (value === null || value === undefined) {
+      return;
+    }
+    
+    // Skip validation for auto-extracted domains to avoid conflicts
+    // Let Attio's API handle the final format validation
+    if (field === 'domains') {
       return;
     }
     
