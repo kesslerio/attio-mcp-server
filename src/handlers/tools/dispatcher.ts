@@ -245,6 +245,73 @@ export async function executeToolRequest(request: CallToolRequest) {
     }
     
     // Handle details tools
+    // Handle getAttributes tool
+    if (toolType === 'getAttributes') {
+      const apiPath = `/${resourceType}/attributes`;
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      const id = idOrError;
+      const attributeName = request.params.arguments?.attributeName as string | undefined;
+      try {
+        const result = await toolConfig.handler(id, attributeName);
+        const formatted = toolConfig.formatResult
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        return formatResponse(formatted);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error('Unknown error'),
+          `/${resourceType}/${id}/attributes`,
+          'GET',
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+
+    // Handle json tool - returns raw JSON representation of a resource
+    if (toolType === 'json') {
+      const apiPath = `/${resourceType}/json`;
+      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
+      if (typeof idOrError !== 'string') {
+        return idOrError.error;
+      }
+      const id = idOrError;
+      try {
+        const result = await toolConfig.handler(id);
+        const formatted = toolConfig.formatResult
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        return formatResponse(formatted);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error('Unknown error'),
+          `/${resourceType}/${id}/json`,
+          'GET',
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+
+    // Handle discoverAttributes tool - discovers available attributes for a resource type
+    if (toolType === 'discoverAttributes') {
+      const apiPath = `/${resourceType}/attributes`;
+      try {
+        const result = await toolConfig.handler();
+        const formatted = toolConfig.formatResult
+          ? toolConfig.formatResult(result)
+          : safeJsonStringify(result);
+        return formatResponse(formatted);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
+          apiPath,
+          'GET',
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
     if (toolType === 'details') {
       let id: string;
       let uri: string;
@@ -1063,109 +1130,6 @@ export async function executeToolRequest(request: CallToolRequest) {
     }
     
     
-    // Handle getAttributes tool
-    if (toolType === 'getAttributes') {
-      const apiPath = `/${resourceType}/attributes`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      const attributeName = request.params.arguments?.attributeName as string;
-      
-      try {
-        // Execute the handler with provided parameters
-        const result = await toolConfig.handler(id, attributeName);
-        
-        // Format result using the tool's formatter if available
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result, { 
-              maxDepth: 6, 
-              includeStackTraces: process.env.NODE_ENV === 'development' 
-            });
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/${resourceType}/${id}/attributes`,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
-    
-    // Handle json tool - returns raw JSON representation of a resource
-    if (toolType === 'json') {
-      const apiPath = `/${resourceType}/json`;
-      
-      // Validate and extract resource ID
-      const idOrError = validateResourceId(resourceType, request.params.arguments, apiPath);
-      if (typeof idOrError !== 'string') {
-        return idOrError.error;
-      }
-      
-      const id = idOrError;
-      
-      try {
-        // Execute the handler and return formatted JSON result
-        const result = await toolConfig.handler(id);
-        
-        // Format result as pretty-printed JSON with safety check
-        return formatResponse(safeJsonStringify(result));
-      } catch (error) {
-        // Handle and format errors
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/${resourceType}/${id}/json`,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
-    
-    // Handle discoverAttributes tool - discovers available attributes for a resource type
-    if (toolType === 'discoverAttributes') {
-      const apiPath = `/${resourceType}/attributes`;
-      
-      // Debug logging to help diagnose issues
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[discoverAttributes] Handler execution:');
-        console.error('- Resource type:', resourceType);
-        console.error('- Tool handler exists:', typeof toolConfig.handler === 'function');
-        console.error('- Tool formatter exists:', typeof toolConfig.formatResult === 'function');
-      }
-      
-      try {
-        // Execute attribute discovery - explicitly call without args to avoid undefined params
-        const result = await toolConfig.handler();
-        
-        // Format result using the tool's formatter if available
-        const formattedResult = toolConfig.formatResult 
-          ? toolConfig.formatResult(result)
-          : safeJsonStringify(result, { 
-              maxDepth: 6, 
-              includeStackTraces: process.env.NODE_ENV === 'development' 
-            });
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        // Enhanced error handling with more details
-        logToolError('discoverAttributes', error);
-        
-        return createErrorResult(
-          error instanceof Error ? error : new Error(`Unknown error in discoverAttributes: ${String(error)}`),
-          apiPath,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
     
     /**
      * Helper function to handle company information tools with consistent error handling
@@ -1380,49 +1344,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleCompanyAttributeUpdate(ResourceType.COMPANIES, request, toolConfig);
     }
     
-    // Handle json tool - returns raw JSON representation of a resource
-    if (toolType === 'json') {
-      // Add debug logging for json tool processing
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`[json] Processing JSON tool request for ${resourceType}:`);
-        console.error('- Tool name:', toolName);
-        console.error('- Request arguments:', JSON.stringify(request.params.arguments, null, 2));
-      }
-      
-      const apiPath = `/${resourceType}/json`;
-      
-      // Validate and extract resource ID
-      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-      const id = request.params.arguments?.[idParamName] as string;
-      
-      if (!id) {
-        return createErrorResult(
-          new Error(`${idParamName} parameter is required`),
-          apiPath,
-          "GET",
-          { status: 400, message: `Missing required parameter: ${idParamName}` }
-        );
-      }
-      
-      try {
-        // Execute the handler and return formatted JSON result
-        const result = await toolConfig.handler(id);
-        
-        // Format result using the tool's formatResult function if available, or fall back to JSON.stringify
-        const formattedResult = toolConfig.formatResult ? 
-          toolConfig.formatResult(result) : 
-          safeJsonStringify(result);
-        
-        return formatResponse(formattedResult);
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error("Unknown error"),
-          `/${resourceType}/${id}/json`,
-          "GET",
-          hasResponseData(error) ? error.response.data : {}
-        );
-      }
-    }
     
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
