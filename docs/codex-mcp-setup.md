@@ -83,6 +83,21 @@ Create `~/.codex/config.json`:
 
 MCP server integration is optional and can be added later if needed. The main Codex CLI works independently.
 
+### External MCP Servers
+This project can work with external MCP servers that provide additional capabilities. These are separate services, not npm dependencies.
+
+**Crawl4AI RAG MCP Server** (Optional):
+- Repository: https://github.com/coleam00/mcp-crawl4ai-rag
+- Purpose: Web crawling and RAG capabilities
+- Tools: crawl_single_page, smart_crawl_url, perform_rag_query
+- Setup: Follow the repository's installation guide
+
+**Other MCP Servers**:
+- YOURLS URL shortener: mcp__yourls__ namespace
+- Brave Search: mcp__brave-search__ namespace  
+- Tavily Search: mcp__tavily-mcp__ namespace
+- Attio CRM: This project's main functionality
+
 ### Claude Desktop Integration
 
 For Claude Desktop integration, update `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
