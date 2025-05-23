@@ -264,7 +264,7 @@ describe('Advanced Search Companies Integration', () => {
       
       await expect(advancedSearchCompanies(filters))
         .rejects
-        .toThrow(/Failed to search companies with advanced filters/i);
+        .toThrow(/Error in advanced company search/i);
     });
   });
 });
