@@ -9,6 +9,10 @@ import {
   updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation
 } from "./base-operations.js";
+import { AttioApiError } from "../utils/error-handler.js";
+import { getAttributeSlugById } from "../api/attribute-types.js";
+import { searchPeopleByEmail } from "./people/search.js";
+import { searchCompaniesByName } from "./companies/search.js";
 
 // Error classes for people operations
 export class PersonOperationError extends Error {
@@ -39,12 +43,34 @@ export class PersonValidator {
     if (!attributes.email_addresses && !attributes.name) {
       throw new InvalidPersonDataError('Must provide at least an email address or name');
     }
-    
+
     // Ensure email_addresses is an array if provided
     if (attributes.email_addresses && !Array.isArray(attributes.email_addresses)) {
       attributes.email_addresses = [attributes.email_addresses];
     }
-    
+
+    // Check for duplicate emails
+    if (attributes.email_addresses) {
+      for (const email of attributes.email_addresses) {
+        const existing = await searchPeopleByEmail(email);
+        if (existing.length > 0) {
+          throw new InvalidPersonDataError(`Person with email ${email} already exists`);
+        }
+      }
+    }
+
+    // Resolve company name to record reference
+    if (attributes.company && typeof attributes.company === 'string') {
+      const results = await searchCompaniesByName(attributes.company);
+      if (results.length === 1) {
+        attributes.company = { record_id: results[0].id?.record_id } as any;
+      } else if (results.length === 0) {
+        throw new InvalidPersonDataError(`Company '${attributes.company}' not found. Provide a valid company ID.`);
+      } else {
+        throw new InvalidPersonDataError(`Multiple companies match '${attributes.company}'. Please specify the company ID.`);
+      }
+    }
+
     return attributes;
   }
   
@@ -108,6 +134,18 @@ export async function createPerson(attributes: PersonCreateAttributes): Promise<
   } catch (error) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
+    }
+
+    if (error instanceof AttioApiError) {
+      const detail = typeof error.detail === 'string' ? error.detail : '';
+      const match = detail.match(/attribute with ID "([^"]+)"/);
+      if (match) {
+        const slug = await getAttributeSlugById(ResourceType.PEOPLE, match[1]);
+        if (slug) {
+          const friendly = detail.replace(match[1], slug);
+          throw new PersonOperationError('create', undefined, friendly);
+        }
+      }
     }
     throw new PersonOperationError('create', undefined, error instanceof Error ? error.message : String(error));
   }
