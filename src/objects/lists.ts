@@ -8,6 +8,7 @@ import {
   getListEntries as getGenericListEntries,
   addRecordToList as addGenericRecordToList,
   removeRecordFromList as removeGenericRecordFromList,
+  updateListEntry as updateGenericListEntry,
   BatchConfig,
   BatchResponse,
   executeBatchOperations,
@@ -266,6 +267,65 @@ export async function addRecordToList(
     
     if (process.env.NODE_ENV === 'development') {
       console.log(`[addRecordToList:fallback] Success response:`, JSON.stringify(response.data || {}));
+    }
+    
+    return response.data.data || response.data;
+  }
+}
+
+/**
+ * Updates a list entry (e.g., changing stage)
+ * 
+ * @param listId - The ID of the list
+ * @param entryId - The ID of the list entry to update
+ * @param attributes - The attributes to update (e.g., { stage: "Demo Scheduling" })
+ * @returns The updated list entry
+ */
+export async function updateListEntry(
+  listId: string, 
+  entryId: string,
+  attributes: Record<string, any>
+): Promise<AttioListEntry> {
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+  
+  if (!entryId || typeof entryId !== 'string') {
+    throw new Error('Invalid entry ID: Must be a non-empty string');
+  }
+  
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+    throw new Error('Invalid attributes: Must be a non-empty object');
+  }
+  
+  // Use the generic operation with fallback to direct implementation
+  try {
+    return await updateGenericListEntry(listId, entryId, attributes);
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generic updateListEntry failed: ${error.message || 'Unknown error'}`);
+      console.log(`Falling back to direct implementation for list ${listId}, entry ${entryId}`);
+    }
+    
+    // Fallback implementation
+    const api = getAttioClient();
+    const path = `/lists/${listId}/entries/${entryId}`;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[updateListEntry:fallback] Request to ${path} with attributes:`, JSON.stringify(attributes));
+    }
+    
+    // Attio API expects updates to list entries in the 'data.values' structure
+    // This follows the same pattern as record updates in crud.ts  
+    const response = await api.patch(path, {
+      data: {
+        values: attributes
+      }
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[updateListEntry:fallback] Success response:`, JSON.stringify(response.data || {}));
     }
     
     return response.data.data || response.data;

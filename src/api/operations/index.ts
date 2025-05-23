@@ -51,7 +51,8 @@ export {
   getListDetails,
   getListEntries,
   addRecordToList,
-  removeRecordFromList
+  removeRecordFromList,
+  updateListEntry
 } from './lists.js';
 
 export {
