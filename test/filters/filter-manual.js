@@ -1,8 +1,8 @@
 /**
  * Quick test script for advanced list filtering
  */
-const { getListEntries } = require('../dist/objects/lists');
-const { transformFiltersToApiFormat } = require('../dist/utils/record-utils');
+import { getListEntries } from('../dist/objects/lists');
+import { transformFiltersToApiFormat } from('../dist/utils/record-utils');
 
 // Replace with your actual list ID
 const TEST_LIST_ID = "list_01a1a1a1a1a1a1a1a1a1a1a1";

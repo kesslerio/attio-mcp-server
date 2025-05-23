@@ -142,7 +142,7 @@ if (!process.env.ATTIO_API_KEY) {
 }
 
 // Initialize the API client - mock implementation for testing
-const { initializeAttioClient } = require('../../dist/api/attio-client.js');
+import { initializeAttioClient } from('../../dist/api/attio-client.js');
 initializeAttioClient(process.env.ATTIO_API_KEY);
 
 // Run the tests

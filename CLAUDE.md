@@ -46,7 +46,7 @@ CODE STYLE/STRUCTURE
 - Imports: Node.js standard modules -> external -> internal.
 - Testing: 
   * ALWAYS place ALL tests in the `/test` directory - never in project root
-  * Use Vitest for TypeScript tests (*.test.ts)
+  * Use Jest for TypeScript tests (*.test.ts)
   * Manual test scripts should be named with `-test.js` suffix
   * Test files should mirror the structure of the source code they test
 - Integration Tests:

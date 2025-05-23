@@ -4,7 +4,7 @@
  * This file tests the refactored handleCompanyAttributeUpdate helper function
  * to ensure it properly handles attribute updates for company records.
  */
-const { executeToolRequest } = require('../../dist/handlers/tools/dispatcher');
+import { executeToolRequest } from('../../dist/handlers/tools/dispatcher');
 
 // Sample company ID for testing
 const COMPANY_ID = 'test-company-id';

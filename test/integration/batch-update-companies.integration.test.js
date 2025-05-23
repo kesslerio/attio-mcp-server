@@ -12,7 +12,11 @@
  * 4. Cleans up by deleting the test companies
  */
 
-const { batchCreateCompanies, batchUpdateCompanies, batchDeleteCompanies } = require('../../dist/objects/batch-companies');
+const {
+  batchCreateCompanies,
+  batchUpdateCompanies,
+  batchDeleteCompanies,
+} = require('../../dist/objects/batch-companies');
 const { ResourceType } = require('../../dist/types/attio');
 
 // Skip tests if no API key is available or SKIP_INTEGRATION_TESTS is set
