@@ -18,7 +18,7 @@ import { initializeAttioClient } from '../../src/api/attio-client';
 const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;
 
 // Increase timeout for real API calls
-jest.setTimeout(30000);
+vi.setTimeout(30000);
 
 describe('Real API Integration Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {

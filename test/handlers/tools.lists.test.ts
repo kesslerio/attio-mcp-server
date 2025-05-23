@@ -2,14 +2,14 @@ import { listsToolConfigs } from '../../src/handlers/tool-configs/lists';
 import * as listsModule from '../../src/objects/lists';
 
 // Mock dependencies
-jest.mock('../../src/objects/lists');
+vi.mock('../../src/objects/lists');
 
 describe('Lists Tool Configurations', () => {
-  const mockedLists = listsModule as jest.Mocked<typeof listsModule>;
+  const mockedLists = listsModule as vi.Mocked<typeof listsModule>;
   
   beforeEach(() => {
     // Reset all mocks before each test
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
   
   describe('getLists tool', () => {

@@ -3,24 +3,24 @@ import * as attioClient from '../../src/api/attio-client';
 import * as attioOperations from '../../src/api/operations/lists';
 
 // Mock the API client and operations
-jest.mock('../../src/api/attio-client');
-jest.mock('../../src/api/operations/lists');
+vi.mock('../../src/api/attio-client');
+vi.mock('../../src/api/operations/lists');
 
-const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
-const mockedAttioOperations = attioOperations as jest.Mocked<typeof attioOperations>;
+const mockedAttioClient = attioClient as vi.Mocked<typeof attioClient>;
+const mockedAttioOperations = attioOperations as vi.Mocked<typeof attioOperations>;
 
 describe('lists', () => {
   let mockAxiosInstance: any;
 
   beforeEach(() => {
     // Reset all mocks before each test
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     
     // Setup mock API client
     mockAxiosInstance = {
-      get: jest.fn(),
-      post: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      post: vi.fn(),
+      delete: vi.fn(),
     };
     mockedAttioClient.getAttioClient.mockReturnValue(mockAxiosInstance);
   });

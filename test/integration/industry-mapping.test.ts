@@ -2,7 +2,7 @@
  * Integration tests for industry-to-categories field mapping for companies
  * Tests issue #176 fix for the incorrect industry field mapping
  */
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from 'vitest';
 import { createCompany, updateCompany } from '../../src/objects/companies/index';
 import { getAttributeSlug } from '../../src/utils/attribute-mapping/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
@@ -10,34 +10,34 @@ import * as attioClient from '../../src/api/attio-client';
 import { createMockApiClient, type MockCompanyUpdate } from '../types/test-types';
 
 // Mock the attioClient module
-jest.mock('../../src/api/attio-client', () => {
-  const actual = jest.requireActual('../../src/api/attio-client');
+vi.mock('../../src/api/attio-client', () => {
+  const actual = vi.requireActual('../../src/api/attio-client');
   return {
     ...actual as any,
-    getAttioClient: jest.fn(),
-    initializeAttioClient: jest.fn(),
+    getAttioClient: vi.fn(),
+    initializeAttioClient: vi.fn(),
   };
 });
 
 describe('Industry Field Mapping - Integration Tests', () => {
-  let mockApiCall: jest.Mock;
+  let mockApiCall: vi.Mock;
   
   beforeAll(() => {
     initializeAttioClient('test-api-key');
   });
   
   beforeEach(() => {
-    mockApiCall = jest.fn();
+    mockApiCall = vi.fn();
     const mockClient = createMockApiClient();
     mockClient.post = mockApiCall;
     mockClient.put = mockApiCall;
     mockClient.patch = mockApiCall;
     
-    jest.mocked(attioClient.getAttioClient).mockReturnValue(mockClient as any);
+    vi.mocked(attioClient.getAttioClient).mockReturnValue(mockClient as any);
   });
   
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   
   describe('Industry to Categories Mapping', () => {

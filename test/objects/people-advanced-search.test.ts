@@ -6,9 +6,9 @@ import { ListEntryFilters, ListEntryFilter } from '../../src/api/operations/inde
 import { FilterConditionType } from '../../src/types/attio';
 
 // Mock the Attio client
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(() => ({
-    post: jest.fn().mockResolvedValue({
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(() => ({
+    post: vi.fn().mockResolvedValue({
       data: {
         data: [
           {
