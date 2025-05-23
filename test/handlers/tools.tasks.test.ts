@@ -11,7 +11,13 @@ describe('Tasks Tool Configs', () => {
   });
 
   it('create-task formats result', async () => {
-    const mockTask = { id: { task_id: 't1' }, content: 'do', status: 'todo', created_at: '', updated_at: '' } as any;
+    const mockTask = {
+      id: { task_id: 't1' },
+      content: 'do',
+      status: 'todo',
+      created_at: '',
+      updated_at: '',
+    } as any;
     mockedTasks.createTask.mockResolvedValueOnce(mockTask);
     const result = await tasksToolConfigs.createTask.handler('do');
     const formatted = tasksToolConfigs.createTask.formatResult?.(result) || '';
@@ -22,7 +28,7 @@ describe('Tasks Tool Configs', () => {
   it('list-tasks formats list', async () => {
     const mock = [
       { id: { task_id: 'a' }, content: 'one', status: 'todo' },
-      { id: { task_id: 'b' }, content: 'two', status: 'todo' }
+      { id: { task_id: 'b' }, content: 'two', status: 'todo' },
     ] as any[];
     mockedTasks.listTasks.mockResolvedValueOnce(mock);
     const result = await tasksToolConfigs.listTasks.handler();

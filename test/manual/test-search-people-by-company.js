@@ -5,22 +5,24 @@ import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 
 async function testSearchPeopleByCompany() {
   console.log('Testing search-people-by-company tool...');
-  
+
   const request = {
     method: 'tools/call',
     params: {
       name: 'search-people-by-company',
       arguments: {
         companyFilter: {
-          filters: [{
-            attribute: { slug: 'companies.name' },
-            condition: 'equals',
-            value: 'Oakwood Precision Medicine'
-          }],
-          matchAny: false
-        }
-      }
-    }
+          filters: [
+            {
+              attribute: { slug: 'companies.name' },
+              condition: 'equals',
+              value: 'Oakwood Precision Medicine',
+            },
+          ],
+          matchAny: false,
+        },
+      },
+    },
   };
 
   try {

@@ -1,6 +1,6 @@
 /**
  * MCP Prompts module
- * 
+ *
  * This module implements the MCP Prompts feature for the Attio MCP server,
  * providing pre-defined templates for common Attio operations.
  */
@@ -9,11 +9,11 @@
 export * from './types.js';
 
 // Export template utilities
-export { 
+export {
   getAllPrompts,
   getPromptsByCategory,
   getPromptById,
-  getAllCategories
+  getAllCategories,
 } from './templates/index.js';
 
 // Export handlers
@@ -21,7 +21,7 @@ export {
   listPrompts,
   listPromptCategories,
   getPromptDetails,
-  executePrompt
+  executePrompt,
 } from './handlers.js';
 
 // Export all templates

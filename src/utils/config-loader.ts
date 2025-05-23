@@ -34,7 +34,7 @@ const CONFIG_PATHS = {
 
 /**
  * Deep merges two objects, with values from the source object taking precedence
- * 
+ *
  * @param target - The target object
  * @param source - The source object to merge in
  * @returns The merged object
@@ -44,9 +44,17 @@ function deepMerge(target: any, source: any): any {
 
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
-      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (
+        source[key] &&
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key])
+      ) {
         // If both target and source have an object at this key, merge them
-        if (result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])) {
+        if (
+          result[key] &&
+          typeof result[key] === 'object' &&
+          !Array.isArray(result[key])
+        ) {
           result[key] = deepMerge(result[key], source[key]);
         } else {
           // Otherwise, just use the source value
@@ -64,7 +72,7 @@ function deepMerge(target: any, source: any): any {
 
 /**
  * Creates an empty mapping configuration with default structure
- * 
+ *
  * @returns An empty mapping configuration
  */
 function createEmptyConfig(): MappingConfig {
@@ -89,7 +97,7 @@ function createEmptyConfig(): MappingConfig {
 
 /**
  * Loads a JSON configuration file
- * 
+ *
  * @param filePath - Path to the JSON file
  * @returns Parsed JSON object, or null if the file doesn't exist
  */
@@ -107,7 +115,7 @@ function loadJsonFile(filePath: string): any {
 
 /**
  * Loads and merges the mapping configuration from default and user files
- * 
+ *
  * @returns The merged mapping configuration
  */
 export function loadMappingConfig(): MappingConfig {
@@ -131,7 +139,7 @@ export function loadMappingConfig(): MappingConfig {
 
 /**
  * Writes a mapping configuration to a file
- * 
+ *
  * @param config - The configuration to write
  * @param filePath - The file path to write to (defaults to user.json)
  */
@@ -162,7 +170,7 @@ export async function writeMappingConfig(
 
 /**
  * Updates a specific section of the mapping configuration
- * 
+ *
  * @param section - The section to update (e.g., 'attributes.common')
  * @param mappings - The mappings to set or merge
  * @param merge - Whether to merge with existing mappings (default: true)
@@ -190,7 +198,7 @@ export async function updateMappingSection(
   }
 
   const finalPart = sectionParts[sectionParts.length - 1];
-  
+
   // Update the target section
   if (merge && target[finalPart]) {
     target[finalPart] = { ...target[finalPart], ...mappings };

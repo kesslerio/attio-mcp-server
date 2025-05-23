@@ -157,7 +157,9 @@ async function tryMultipleListEntryEndpoints(
       if (process.env.NODE_ENV === 'development') {
         const messageType = entries.length > 0 ? 'SUCCESS' : 'WARNING';
         console.log(
-          `[tryMultipleListEntryEndpoints] [${messageType}] Found ${entries.length} entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`,
+          `[tryMultipleListEntryEndpoints] [${messageType}] Found ${
+            entries.length
+          } entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`,
           {
             listId,
             limit,
@@ -175,7 +177,9 @@ async function tryMultipleListEntryEndpoints(
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${endpoint.path}:`,
+          `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${
+            endpoint.path
+          }:`,
           error.message || 'Unknown error',
           {
             listId,
@@ -221,7 +225,9 @@ export async function getListEntries(
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `[getListEntries] Generic list entries failed: ${error.message || 'Unknown error'}`,
+        `[getListEntries] Generic list entries failed: ${
+          error.message || 'Unknown error'
+        }`,
         {
           method: 'getGenericListEntries',
           listId,
@@ -394,7 +400,9 @@ export async function removeRecordFromList(
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `Generic removeRecordFromList failed: ${error.message || 'Unknown error'}`
+        `Generic removeRecordFromList failed: ${
+          error.message || 'Unknown error'
+        }`
       );
     }
     // Fallback implementation

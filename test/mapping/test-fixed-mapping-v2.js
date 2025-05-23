@@ -14,30 +14,30 @@ globalThis.fetch = async (url, options) => {
   const body = options?.body ? JSON.parse(options.body) : null;
   console.log('\n[MOCK API] Request to:', url);
   console.log('[MOCK API] Body:', JSON.stringify(body, null, 2));
-  
+
   // Check what attribute was sent
   if (JSON.stringify(body).includes('b2b_segment')) {
     console.error('[MOCK API] ERROR: Untranslated b2b_segment found!');
     return {
       ok: false,
       status: 400,
-      json: async () => ({ error: 'Unknown attribute slug: b2b_segment' })
+      json: async () => ({ error: 'Unknown attribute slug: b2b_segment' }),
     };
   }
-  
+
   if (JSON.stringify(body).includes('type_persona')) {
     console.log('[MOCK API] SUCCESS: Found translated type_persona!');
     return {
       ok: true,
       status: 200,
-      json: async () => ({ data: [] })
+      json: async () => ({ data: [] }),
     };
   }
-  
+
   return {
     ok: true,
     status: 200,
-    json: async () => ({ data: [] })
+    json: async () => ({ data: [] }),
   };
 };
 
@@ -45,21 +45,22 @@ async function testMCPFlow() {
   // Create a mock MCP server
   const mockServer = {
     handlers: {},
-    setRequestHandler: function(schema, handler) {
+    setRequestHandler: function (schema, handler) {
       const key = schema._tag || schema.method || 'unknown';
       console.log(`Registered handler for: ${key}`);
       this.handlers[key] = handler;
-    }
+    },
   };
-  
+
   // Register handlers
   registerToolHandlers(mockServer);
-  
+
   // Look for the tool call handler
-  const toolHandler = mockServer.handlers['mcpsdk:CallToolRequestSchema'] || 
-                     mockServer.handlers['tools/call'] ||
-                     Object.values(mockServer.handlers).find(h => typeof h === 'function');
-  
+  const toolHandler =
+    mockServer.handlers['mcpsdk:CallToolRequestSchema'] ||
+    mockServer.handlers['tools/call'] ||
+    Object.values(mockServer.handlers).find((h) => typeof h === 'function');
+
   if (toolHandler) {
     const request = {
       params: {
@@ -68,19 +69,19 @@ async function testMCPFlow() {
           filters: {
             filters: [
               {
-                attribute: { slug: "b2b_segment" },
+                attribute: { slug: 'b2b_segment' },
                 condition: FilterConditionType.CONTAINS,
-                value: "Plastic Surgeon"
-              }
-            ]
-          }
-        }
-      }
+                value: 'Plastic Surgeon',
+              },
+            ],
+          },
+        },
+      },
     };
-    
+
     console.log('\n=== Testing Advanced Search Companies ===');
     console.log('Request:', JSON.stringify(request, null, 2));
-    
+
     try {
       const response = await toolHandler(request);
       console.log('\nResponse:', JSON.stringify(response, null, 2));

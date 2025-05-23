@@ -1,4 +1,10 @@
-import { getLists, getListDetails, getListEntries, addRecordToList, removeRecordFromList } from '../../src/objects/lists';
+import {
+  getLists,
+  getListDetails,
+  getListEntries,
+  addRecordToList,
+  removeRecordFromList,
+} from '../../src/objects/lists';
 import * as attioClient from '../../src/api/attio-client';
 import * as attioOperations from '../../src/api/operations/lists';
 
@@ -7,7 +13,9 @@ vi.mock('../../src/api/attio-client');
 vi.mock('../../src/api/operations/lists');
 
 const mockedAttioClient = attioClient as vi.Mocked<typeof attioClient>;
-const mockedAttioOperations = attioOperations as vi.Mocked<typeof attioOperations>;
+const mockedAttioOperations = attioOperations as vi.Mocked<
+  typeof attioOperations
+>;
 
 describe('lists', () => {
   let mockAxiosInstance: any;
@@ -15,7 +23,7 @@ describe('lists', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     vi.resetAllMocks();
-    
+
     // Setup mock API client
     mockAxiosInstance = {
       get: vi.fn(),
@@ -29,22 +37,22 @@ describe('lists', () => {
     it('should get all lists using the generic operation when available', async () => {
       // Arrange
       const mockLists = [
-        { 
+        {
           id: { list_id: 'list1' },
           title: 'Test List 1',
           object_slug: 'companies',
           workspace_id: 'workspace1',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-02T00:00:00Z'
+          updated_at: '2023-01-02T00:00:00Z',
         },
-        { 
+        {
           id: { list_id: 'list2' },
           title: 'Test List 2',
           object_slug: 'people',
           workspace_id: 'workspace1',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-02T00:00:00Z'
-        }
+          updated_at: '2023-01-02T00:00:00Z',
+        },
       ];
       mockedAttioOperations.getAllLists.mockResolvedValue(mockLists);
 
@@ -52,7 +60,10 @@ describe('lists', () => {
       const result = await getLists();
 
       // Assert
-      expect(mockedAttioOperations.getAllLists).toHaveBeenCalledWith(undefined, 20);
+      expect(mockedAttioOperations.getAllLists).toHaveBeenCalledWith(
+        undefined,
+        20
+      );
       expect(result).toEqual(mockLists);
     });
 
@@ -64,18 +75,18 @@ describe('lists', () => {
       const mockResponse = {
         data: {
           data: [
-            { 
+            {
               id: { list_id: 'list1' },
               title: 'Test List 1',
               object_slug: 'companies',
               workspace_id: 'workspace1',
               created_at: '2023-01-01T00:00:00Z',
-              updated_at: '2023-01-02T00:00:00Z'
-            }
-          ]
-        }
+              updated_at: '2023-01-02T00:00:00Z',
+            },
+          ],
+        },
       };
-      
+
       mockedAttioOperations.getAllLists.mockRejectedValue(mockError);
       mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
@@ -83,8 +94,13 @@ describe('lists', () => {
       const result = await getLists(objectSlug, limit);
 
       // Assert
-      expect(mockedAttioOperations.getAllLists).toHaveBeenCalledWith(objectSlug, limit);
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/lists?limit=${limit}&objectSlug=${objectSlug}`);
+      expect(mockedAttioOperations.getAllLists).toHaveBeenCalledWith(
+        objectSlug,
+        limit
+      );
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        `/lists?limit=${limit}&objectSlug=${objectSlug}`
+      );
       expect(result).toEqual(mockResponse.data.data);
     });
   });
@@ -93,13 +109,13 @@ describe('lists', () => {
     it('should get list details using the generic operation when available', async () => {
       // Arrange
       const listId = 'list123';
-      const mockListDetails = { 
+      const mockListDetails = {
         id: { list_id: listId },
         title: 'Test List',
         object_slug: 'companies',
         workspace_id: 'workspace1',
         created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-02T00:00:00Z'
+        updated_at: '2023-01-02T00:00:00Z',
       };
       mockedAttioOperations.getListDetails.mockResolvedValue(mockListDetails);
 
@@ -117,17 +133,17 @@ describe('lists', () => {
       const mockError = new Error('Generic operation failed');
       const mockResponse = {
         data: {
-          data: { 
+          data: {
             id: { list_id: listId },
             title: 'Test List',
             object_slug: 'companies',
             workspace_id: 'workspace1',
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-02T00:00:00Z'
-          }
-        }
+            updated_at: '2023-01-02T00:00:00Z',
+          },
+        },
       };
-      
+
       mockedAttioOperations.getListDetails.mockRejectedValue(mockError);
       mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
@@ -148,20 +164,20 @@ describe('lists', () => {
       const limit = 5;
       const offset = 10;
       const mockEntries = [
-        { 
+        {
           id: { entry_id: 'entry1' },
           list_id: listId,
           record_id: 'record1',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-02T00:00:00Z'
+          updated_at: '2023-01-02T00:00:00Z',
         },
-        { 
+        {
           id: { entry_id: 'entry2' },
           list_id: listId,
           record_id: 'record2',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-02T00:00:00Z'
-        }
+          updated_at: '2023-01-02T00:00:00Z',
+        },
       ];
       mockedAttioOperations.getListEntries.mockResolvedValue(mockEntries);
 
@@ -169,7 +185,12 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(
+        listId,
+        limit,
+        offset,
+        undefined
+      );
       expect(result).toEqual(mockEntries);
     });
 
@@ -182,31 +203,38 @@ describe('lists', () => {
         filters: [
           {
             attribute: {
-              slug: 'stage'
+              slug: 'stage',
             },
             condition: 'equals',
-            value: 'Discovery'
-          }
-        ]
+            value: 'Discovery',
+          },
+        ],
       };
-      
+
       const mockFilteredEntries = [
-        { 
+        {
           id: { entry_id: 'entry1' },
           list_id: listId,
           record_id: 'record1',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-02T00:00:00Z'
-        }
+          updated_at: '2023-01-02T00:00:00Z',
+        },
       ];
-      
-      mockedAttioOperations.getListEntries.mockResolvedValue(mockFilteredEntries);
+
+      mockedAttioOperations.getListEntries.mockResolvedValue(
+        mockFilteredEntries
+      );
 
       // Act
       const result = await getListEntries(listId, limit, offset, filters);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, filters);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(
+        listId,
+        limit,
+        offset,
+        filters
+      );
       expect(result).toEqual(mockFilteredEntries);
     });
 
@@ -219,19 +247,19 @@ describe('lists', () => {
       const mockResponse = {
         data: {
           data: [
-            { 
+            {
               id: { entry_id: 'entry1' },
               list_id: listId,
               record_id: 'record1',
               created_at: '2023-01-01T00:00:00Z',
-              updated_at: '2023-01-02T00:00:00Z'
-            }
-          ]
-        }
+              updated_at: '2023-01-02T00:00:00Z',
+            },
+          ],
+        },
       };
-      
+
       mockedAttioOperations.getListEntries.mockRejectedValue(mockError);
-      
+
       // Mock the first endpoint to succeed
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
@@ -239,10 +267,15 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(
+        listId,
+        limit,
+        offset,
+        undefined
+      );
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
-        { limit, offset, expand: ["record"] }
+        { limit, offset, expand: ['record'] }
       );
       expect(result).toEqual(mockResponse.data.data);
     });
@@ -258,19 +291,19 @@ describe('lists', () => {
       const mockResponse = {
         data: {
           data: [
-            { 
+            {
               id: { entry_id: 'entry1' },
               list_id: listId,
               record_id: 'record1',
               created_at: '2023-01-01T00:00:00Z',
-              updated_at: '2023-01-02T00:00:00Z'
-            }
-          ]
-        }
+              updated_at: '2023-01-02T00:00:00Z',
+            },
+          ],
+        },
       };
-      
+
       mockedAttioOperations.getListEntries.mockRejectedValue(mockError);
-      
+
       // Mock first and second endpoints to fail, third to succeed
       mockAxiosInstance.post
         .mockRejectedValueOnce(mockEndpoint1Error)
@@ -281,14 +314,19 @@ describe('lists', () => {
       const result = await getListEntries(listId, limit, offset);
 
       // Assert
-      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(listId, limit, offset, undefined);
+      expect(mockedAttioOperations.getListEntries).toHaveBeenCalledWith(
+        listId,
+        limit,
+        offset,
+        undefined
+      );
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries/query`,
-        { limit, offset, expand: ["record"] }
+        { limit, offset, expand: ['record'] }
       );
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists-entries/query`,
-        { list_id: listId, limit, offset, expand: ["record"] }
+        { list_id: listId, limit, offset, expand: ['record'] }
       );
       // Instead of checking exact URL, check for the presence of all expected parameters
       const getCall = mockAxiosInstance.get.mock.calls[0][0];
@@ -306,12 +344,12 @@ describe('lists', () => {
       // Arrange
       const listId = 'list123';
       const recordId = 'record123';
-      const mockEntry = { 
+      const mockEntry = {
         id: { entry_id: 'entry1' },
         list_id: listId,
         record_id: recordId,
         created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-02T00:00:00Z'
+        updated_at: '2023-01-02T00:00:00Z',
       };
       mockedAttioOperations.addRecordToList.mockResolvedValue(mockEntry);
 
@@ -319,7 +357,10 @@ describe('lists', () => {
       const result = await addRecordToList(listId, recordId);
 
       // Assert
-      expect(mockedAttioOperations.addRecordToList).toHaveBeenCalledWith(listId, recordId);
+      expect(mockedAttioOperations.addRecordToList).toHaveBeenCalledWith(
+        listId,
+        recordId
+      );
       expect(result).toEqual(mockEntry);
     });
 
@@ -330,16 +371,16 @@ describe('lists', () => {
       const mockError = new Error('Generic operation failed');
       const mockResponse = {
         data: {
-          data: { 
+          data: {
             id: { entry_id: 'entry1' },
             list_id: listId,
             record_id: recordId,
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-02T00:00:00Z'
-          }
-        }
+            updated_at: '2023-01-02T00:00:00Z',
+          },
+        },
       };
-      
+
       mockedAttioOperations.addRecordToList.mockRejectedValue(mockError);
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
@@ -347,7 +388,10 @@ describe('lists', () => {
       const result = await addRecordToList(listId, recordId);
 
       // Assert
-      expect(mockedAttioOperations.addRecordToList).toHaveBeenCalledWith(listId, recordId);
+      expect(mockedAttioOperations.addRecordToList).toHaveBeenCalledWith(
+        listId,
+        recordId
+      );
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         `/lists/${listId}/entries`,
         { data: { record_id: recordId } }
@@ -367,7 +411,10 @@ describe('lists', () => {
       const result = await removeRecordFromList(listId, entryId);
 
       // Assert
-      expect(mockedAttioOperations.removeRecordFromList).toHaveBeenCalledWith(listId, entryId);
+      expect(mockedAttioOperations.removeRecordFromList).toHaveBeenCalledWith(
+        listId,
+        entryId
+      );
       expect(result).toBe(true);
     });
 
@@ -376,7 +423,7 @@ describe('lists', () => {
       const listId = 'list123';
       const entryId = 'entry123';
       const mockError = new Error('Generic operation failed');
-      
+
       mockedAttioOperations.removeRecordFromList.mockRejectedValue(mockError);
       mockAxiosInstance.delete.mockResolvedValue({});
 
@@ -384,8 +431,13 @@ describe('lists', () => {
       const result = await removeRecordFromList(listId, entryId);
 
       // Assert
-      expect(mockedAttioOperations.removeRecordFromList).toHaveBeenCalledWith(listId, entryId);
-      expect(mockAxiosInstance.delete).toHaveBeenCalledWith(`/lists/${listId}/entries/${entryId}`);
+      expect(mockedAttioOperations.removeRecordFromList).toHaveBeenCalledWith(
+        listId,
+        entryId
+      );
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith(
+        `/lists/${listId}/entries/${entryId}`
+      );
       expect(result).toBe(true);
     });
   });

@@ -6,16 +6,16 @@ import { initializeAttioClient } from '../../dist/api/attio-client.js';
 
 async function testSearchPeopleByCompany() {
   console.log('Testing search-people-by-company tool with fix...');
-  
+
   // Initialize the Attio client first
   if (!process.env.ATTIO_API_KEY) {
     console.error('Please set ATTIO_API_KEY environment variable');
     process.exit(1);
   }
-  
+
   console.log('Initializing Attio client...');
   initializeAttioClient(process.env.ATTIO_API_KEY);
-  
+
   // Test with company name
   const nameRequest = {
     method: 'tools/call',
@@ -23,15 +23,17 @@ async function testSearchPeopleByCompany() {
       name: 'search-people-by-company',
       arguments: {
         companyFilter: {
-          filters: [{
-            attribute: { slug: 'companies.name' },
-            condition: 'equals',
-            value: 'Oakwood Precision Medicine'
-          }],
-          matchAny: false
-        }
-      }
-    }
+          filters: [
+            {
+              attribute: { slug: 'companies.name' },
+              condition: 'equals',
+              value: 'Oakwood Precision Medicine',
+            },
+          ],
+          matchAny: false,
+        },
+      },
+    },
   };
 
   try {
@@ -43,7 +45,7 @@ async function testSearchPeopleByCompany() {
     console.error('Error details:', JSON.stringify(error, null, 2));
     console.error('Stack:', error.stack);
   }
-  
+
   // Test with company ID if we have one
   const idRequest = {
     method: 'tools/call',
@@ -51,17 +53,19 @@ async function testSearchPeopleByCompany() {
       name: 'search-people-by-company',
       arguments: {
         companyFilter: {
-          filters: [{
-            attribute: { slug: 'companies.id' },
-            condition: 'equals',
-            value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' }
-          }],
-          matchAny: false
-        }
-      }
-    }
+          filters: [
+            {
+              attribute: { slug: 'companies.id' },
+              condition: 'equals',
+              value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' },
+            },
+          ],
+          matchAny: false,
+        },
+      },
+    },
   };
-  
+
   try {
     console.log('\nTesting company ID filter...');
     const result = await executeToolRequest(idRequest);

@@ -13,19 +13,19 @@ vi.mock('../../src/api/attio-client');
 
 describe('People-Company Search Tool Fix', () => {
   const mockPeople = [
-    { 
-      id: { record_id: '8b3b35f0-d811-5a4c-a555-0b4cfc5b4841' }, 
-      values: { name: [{ value: 'John Doe' }] } 
+    {
+      id: { record_id: '8b3b35f0-d811-5a4c-a555-0b4cfc5b4841' },
+      values: { name: [{ value: 'John Doe' }] },
     },
-    { 
-      id: { record_id: 'ad08494e-39b9-49f2-9dcb-3497c3a56015' }, 
-      values: { name: [{ value: 'Jane Smith' }] } 
-    }
+    {
+      id: { record_id: 'ad08494e-39b9-49f2-9dcb-3497c3a56015' },
+      values: { name: [{ value: 'Jane Smith' }] },
+    },
   ];
-  
+
   const mockCompany = {
     id: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' },
-    values: { name: [{ value: 'Oakwood Precision Medicine' }] }
+    values: { name: [{ value: 'Oakwood Precision Medicine' }] },
   };
 
   beforeEach(() => {
@@ -34,59 +34,79 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle search-people-by-company with company ID filter', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+      mockPeople
+    );
 
     const request: CallToolRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
           companyFilter: {
-            filters: [{
-              attribute: { slug: 'companies.id' },
-              condition: 'equals',
-              value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' }
-            }]
-          }
-        }
-      }
+            filters: [
+              {
+                attribute: { slug: 'companies.id' },
+                condition: 'equals',
+                value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' },
+              },
+            ],
+          },
+        },
+      },
     };
 
     const result = await executeToolRequest(request);
-    
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith('0c472146-9c7b-5fde-96cd-5df8e5cf9575');
-    expect(result.content).toContain('Found 2 people matching the company filter');
+
+    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+      '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
+    );
+    expect(result.content).toContain(
+      'Found 2 people matching the company filter'
+    );
     expect(result.content).toContain('John Doe');
     expect(result.content).toContain('Jane Smith');
   });
 
   it('should handle search-people-by-company with company name filter', async () => {
     // Mock searchCompanies to return a company
-    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([mockCompany]);
+    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([
+      mockCompany,
+    ]);
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+      mockPeople
+    );
 
     const request: CallToolRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
           companyFilter: {
-            filters: [{
-              attribute: { slug: 'companies.name' },
-              condition: 'equals',
-              value: 'Oakwood Precision Medicine'
-            }]
-          }
-        }
-      }
+            filters: [
+              {
+                attribute: { slug: 'companies.name' },
+                condition: 'equals',
+                value: 'Oakwood Precision Medicine',
+              },
+            ],
+          },
+        },
+      },
     };
 
     const result = await executeToolRequest(request);
-    
-    expect(companiesModule.searchCompanies).toHaveBeenCalledWith('Oakwood Precision Medicine');
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith('0c472146-9c7b-5fde-96cd-5df8e5cf9575');
-    expect(result.content).toContain('Found 2 people matching the company filter');
+
+    expect(companiesModule.searchCompanies).toHaveBeenCalledWith(
+      'Oakwood Precision Medicine'
+    );
+    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+      '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
+    );
+    expect(result.content).toContain(
+      'Found 2 people matching the company filter'
+    );
   });
 
   it('should handle error when company not found', async () => {
@@ -94,51 +114,59 @@ describe('People-Company Search Tool Fix', () => {
     (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([]);
 
     const request: CallToolRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
           companyFilter: {
-            filters: [{
-              attribute: { slug: 'companies.name' },
-              condition: 'equals',
-              value: 'Non-existent Company'
-            }]
-          }
-        }
-      }
+            filters: [
+              {
+                attribute: { slug: 'companies.name' },
+                condition: 'equals',
+                value: 'Non-existent Company',
+              },
+            ],
+          },
+        },
+      },
     };
 
     const result = await executeToolRequest(request);
-    
-    expect(companiesModule.searchCompanies).toHaveBeenCalledWith('Non-existent Company');
-    expect(result.content).toContain('No company found with name: Non-existent Company');
+
+    expect(companiesModule.searchCompanies).toHaveBeenCalledWith(
+      'Non-existent Company'
+    );
+    expect(result.content).toContain(
+      'No company found with name: Non-existent Company'
+    );
   });
 
   it('should handle invalid filter format', async () => {
     const request: CallToolRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
           companyFilter: {
-            filters: []
-          }
-        }
-      }
+            filters: [],
+          },
+        },
+      },
     };
 
     const result = await executeToolRequest(request);
-    
+
     expect(result.content).toContain('Invalid companyFilter format');
   });
 
   it('should handle multiple filters and use the first valid one', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(mockPeople);
+    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+      mockPeople
+    );
 
     const request: CallToolRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -147,22 +175,26 @@ describe('People-Company Search Tool Fix', () => {
               {
                 attribute: { slug: 'companies.unrecognized' },
                 condition: 'equals',
-                value: 'some value'
+                value: 'some value',
               },
               {
                 attribute: { slug: 'companies.id' },
                 condition: 'equals',
-                value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' }
-              }
-            ]
-          }
-        }
-      }
+                value: { record_id: '0c472146-9c7b-5fde-96cd-5df8e5cf9575' },
+              },
+            ],
+          },
+        },
+      },
     };
 
     const result = await executeToolRequest(request);
-    
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith('0c472146-9c7b-5fde-96cd-5df8e5cf9575');
-    expect(result.content).toContain('Found 2 people matching the company filter');
+
+    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+      '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
+    );
+    expect(result.content).toContain(
+      'Found 2 people matching the company filter'
+    );
   });
 });

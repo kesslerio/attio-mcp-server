@@ -75,7 +75,8 @@
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.4"
+    "vitest": "^3.1.4",
+    "wireit": "^0.14.12"
   },
   "wireit": {
     "lint:check": {
