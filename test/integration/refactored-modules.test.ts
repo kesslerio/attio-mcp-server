@@ -40,6 +40,37 @@ describe('Refactored Modules Integration', () => {
       delete: jest.fn()
     };
     
+    // Mock axios responses for direct API calls
+    mockAxiosInstance.post.mockImplementation((path: string, data: any) => {
+      if (path === '/objects/people/records/query') {
+        return Promise.resolve({
+          data: {
+            data: [{
+              id: { record_id: 'person123' },
+              values: {
+                email_addresses: [{ address: 'john@example.com' }],
+                name: [{ value: 'John Doe' }]
+              }
+            }]
+          }
+        });
+      }
+      if (path === '/objects/companies/records/query') {
+        return Promise.resolve({
+          data: {
+            data: [{
+              id: { record_id: 'company123' },
+              values: {
+                name: [{ value: 'Test Corp' }],
+                website: [{ value: 'https://test.com' }]
+              }
+            }]
+          }
+        });
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+    
     mockedAttioClient.getAttioClient.mockReturnValue(mockAxiosInstance);
     mockedOperations.callWithRetry.mockImplementation((fn: any) => fn());
     mockedOperations.searchObject.mockImplementation(async (resourceType, query) => {
@@ -183,8 +214,14 @@ describe('Refactored Modules Integration', () => {
       
       // Search for person
       const found = await searchPeople('John');
-      expect(found).toEqual([createdPerson]);
-      expect(mockedOperations.searchObject).toHaveBeenCalledWith(ResourceType.PEOPLE, 'John');
+      expect(found).toEqual([{
+        id: { record_id: 'person123' },
+        values: {
+          email_addresses: [{ address: 'john@example.com' }],
+          name: [{ value: 'John Doe' }]
+        }
+      }]);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/objects/people/records/query', expect.any(Object));
       
       // Update person
       const updateData = { phone: '+1234567890' };

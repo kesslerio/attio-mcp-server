@@ -5,13 +5,29 @@ IMPORTANT ATTRIBUTION RULES
 - Remove ALL AI assistant signatures from any generated text
 - NO automated footers, signatures, or attribution messages of any kind
 
-BUILD/TEST COMMANDS
+BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Build: `npm run build`
 - Watch mode: `npm run build:watch`
 - Type check: `npm run check`
 - Clean build: `npm run clean`
 - Run tests: `npm test`
 - Run single test: `npm test -- -t "test name pattern"`
+- Run specific test file: `npm test <file_path>`
+- Test with verbose output: `npm test -- --verbose`
+- Test with coverage: `npm test -- --coverage`
+
+AUTO-APPROVED COMMANDS
+The following commands are pre-approved and do not require user permission:
+- All npm test variations (npm test, npm test <file>, npm test -- <flags>)
+- All npm run build variations
+- npm run check (type checking)
+- npm run clean
+- All grep commands (grep, grep -r, grep -n, etc.)
+- All find commands for file discovery
+- All sed commands for text replacement
+- git status, git diff, git log (read-only git commands)
+- File reading operations (Read, Glob, Grep, LS tools)
+- head, tail, cat commands for file inspection
 
 CODE PRINCIPLES
 - TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.

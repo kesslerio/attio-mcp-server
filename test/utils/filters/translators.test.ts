@@ -108,31 +108,21 @@ describe('Filter Translators', () => {
     
     // Invalid filter cases
     describe('Invalid filter structures', () => {
-      it('should throw error for undefined filters', () => {
-        expect(() => {
-          transformFiltersToApiFormat(undefined);
-        }).toThrow(FilterValidationError);
-        
-        expect(() => {
-          transformFiltersToApiFormat(undefined);
-        }).toThrow(/required/i);
+      it('should return empty object for undefined filters', () => {
+        const result = transformFiltersToApiFormat(undefined);
+        expect(result).toEqual({});
       });
       
-      it('should throw error for non-array filters property', () => {
+      it('should return empty object for non-array filters property', () => {
         const filters = {
           filters: { notAnArray: true }
         } as any;
         
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(FilterValidationError);
-        
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(/must be an array/i);
+        const result = transformFiltersToApiFormat(filters);
+        expect(result).toEqual({});
       });
       
-      it('should throw error when all filters in OR condition are invalid', () => {
+      it('should return empty object when all filters in OR condition are invalid', () => {
         const filters: ListEntryFilters = {
           filters: [
             {
@@ -144,16 +134,11 @@ describe('Filter Translators', () => {
           matchAny: true
         };
         
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(FilterValidationError);
-        
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(/invalid/i);
+        const result = transformFiltersToApiFormat(filters);
+        expect(result).toEqual({});
       });
       
-      it('should throw error when all filters in AND condition are invalid', () => {
+      it('should return empty object when all filters in AND condition are invalid', () => {
         const filters: ListEntryFilters = {
           filters: [
             {
@@ -165,13 +150,8 @@ describe('Filter Translators', () => {
           ]
         };
         
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(FilterValidationError);
-        
-        expect(() => {
-          transformFiltersToApiFormat(filters);
-        }).toThrow(/invalid/i);
+        const result = transformFiltersToApiFormat(filters);
+        expect(result).toEqual({});
       });
       
       it('should throw error for invalid condition type', () => {

@@ -17,17 +17,17 @@ describe('Company Formatters', () => {
     };
 
     it('should correctly format company creation result', () => {
-      const formatted = crudToolConfigs.create.formatResult(mockCompany as Company);
+      const formatted = crudToolConfigs.create.formatResult!(mockCompany as Company);
       expect(formatted).toBe('Company created: Test Company (ID: test-id-123)');
     });
 
     it('should correctly format company update result', () => {
-      const formatted = crudToolConfigs.update.formatResult(mockCompany as Company);
+      const formatted = crudToolConfigs.update.formatResult!(mockCompany as Company);
       expect(formatted).toBe('Company updated: Test Company (ID: test-id-123)');
     });
 
     it('should correctly format company attribute update result', () => {
-      const formatted = crudToolConfigs.updateAttribute.formatResult(mockCompany as Company);
+      const formatted = crudToolConfigs.updateAttribute.formatResult!(mockCompany as Company);
       expect(formatted).toBe('Company attribute updated for: Test Company (ID: test-id-123)');
     });
 
@@ -36,7 +36,7 @@ describe('Company Formatters', () => {
         id: { record_id: 'test-id-456' },
         values: { website: [{ value: 'https://test.com' }] }
       };
-      const formatted = crudToolConfigs.updateAttribute.formatResult(noNameCompany as Company);
+      const formatted = crudToolConfigs.updateAttribute.formatResult!(noNameCompany as Company);
       expect(formatted).toBe('Company attribute updated for: Unnamed (ID: test-id-456)');
     });
 
@@ -45,7 +45,7 @@ describe('Company Formatters', () => {
         id: { record_id: 'test-id-789' },
         values: {}
       };
-      const formatted = crudToolConfigs.updateAttribute.formatResult(emptyCompany as Company);
+      const formatted = crudToolConfigs.updateAttribute.formatResult!(emptyCompany as Company);
       expect(formatted).toBe('Company attribute updated for: Unnamed (ID: test-id-789)');
     });
 
@@ -53,13 +53,13 @@ describe('Company Formatters', () => {
       const noIdCompany: Partial<Company> = {
         values: { name: [{ value: 'No ID Company' }] }
       };
-      const formatted = crudToolConfigs.updateAttribute.formatResult(noIdCompany as Company);
+      const formatted = crudToolConfigs.updateAttribute.formatResult!(noIdCompany as Company);
       expect(formatted).toBe('Company attribute updated for: No ID Company (ID: unknown)');
     });
 
     it('should handle completely invalid company object gracefully', () => {
       const invalidCompany = {} as Company;
-      const formatted = crudToolConfigs.updateAttribute.formatResult(invalidCompany);
+      const formatted = crudToolConfigs.updateAttribute.formatResult!(invalidCompany);
       expect(formatted).toBe('Company attribute updated for: Unnamed (ID: unknown)');
     });
   });

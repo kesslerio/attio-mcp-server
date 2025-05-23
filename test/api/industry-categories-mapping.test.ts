@@ -29,14 +29,12 @@ config({ path: '.env.test' });
 // Skip integration tests if no API key is available or SKIP_INTEGRATION_TESTS is set
 const skipIntegrationTests = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
-describe.skipIf(skipIntegrationTests)('Industry-Categories Mapping - E2E Tests', () => {
+(skipIntegrationTests ? describe.skip : describe)('Industry-Categories Mapping - E2E Tests', () => {
   const testCompanies: string[] = [];
   
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    initializeAttioClient({
-      apiKey: process.env.ATTIO_API_KEY!
-    });
+    initializeAttioClient(process.env.ATTIO_API_KEY!);
   });
   
   afterEach(async () => {
@@ -130,15 +128,15 @@ describe.skipIf(skipIntegrationTests)('Industry-Categories Mapping - E2E Tests',
       // Update with multiple industry values (as an array)
       const industryValues = ['Healthcare', 'Biotechnology'];
       const updatedCompany = await updateCompany(company.id.record_id, {
-        industry: industryValues
+        industry: industryValues.join(', ')
       });
       
       // Fetch the company details to verify mapping
       const companyDetails = await getCompanyDetails(company.id.record_id);
       
       // Get the categories or industry values
-      const categoryValues = companyDetails.values?.categories?.map(v => v.value) || [];
-      const industryFieldValues = companyDetails.values?.industry?.map(v => v.value) || [];
+      const categoryValues = companyDetails.values?.categories?.map((v: any) => v.value) || [];
+      const industryFieldValues = companyDetails.values?.industry?.map((v: any) => v.value) || [];
       
       // Check if either field contains the values
       const hasAllCategoriesValues = industryValues.every(v => categoryValues.includes(v));

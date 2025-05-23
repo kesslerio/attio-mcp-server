@@ -270,6 +270,27 @@ export function isValidId(id: string): boolean {
     return false;
   }
   
+  // Check for dangerous patterns that could be used for injection
+  const dangerousPatterns = [
+    /--/,          // SQL comment marker
+    /\/\*/,        // SQL block comment start
+    /\*\//,        // SQL block comment end
+    /\$\{/,        // Template literal injection
+    /\.\./,        // Path traversal
+    /\|\|/,        // Command injection
+    /<script/i,    // XSS attempt
+    /javascript:/i, // JavaScript protocol
+    /data:/i,      // Data URL
+    /&#/,          // HTML entities
+    /=/,           // Assignment/parameter pollution
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(id)) {
+      return false;
+    }
+  }
+  
   return true;
 }
 

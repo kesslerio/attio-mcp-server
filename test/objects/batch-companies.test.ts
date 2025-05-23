@@ -56,8 +56,8 @@ jest.mock('../../src/api/operations/index', () => ({
     
     return { results, summary: { total: items.length, succeeded, failed } };
   }),
-  batchCreateRecords: jest.fn().mockRejectedValue(new Error('Batch API not available')),
-  batchUpdateRecords: jest.fn().mockRejectedValue(new Error('Batch API not available'))
+  batchCreateRecords: (jest.fn() as any).mockRejectedValue(new Error('Batch API not available')),
+  batchUpdateRecords: (jest.fn() as any).mockRejectedValue(new Error('Batch API not available'))
 }));
 
 describe('Batch Company Operations', () => {

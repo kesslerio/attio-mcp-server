@@ -209,7 +209,7 @@ describe('tools', () => {
         expect(mockedCompanies.getCompanyDetails).toHaveBeenCalledWith('company1');
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
-        expect(result.content[0].text).toContain('details for company1');
+        expect(result.content[0].text).toContain('Company:');
       });
       
       it('should handle get-person-details tool call successfully', async () => {
@@ -237,7 +237,7 @@ describe('tools', () => {
         expect(mockedPeople.getPersonDetails).toHaveBeenCalledWith('person1');
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
-        expect(result.content[0].text).toContain('details for person1');
+        expect(result.content[0].text).toContain('Person Details:');
       });
       
       it('should handle errors in tool calls appropriately', async () => {

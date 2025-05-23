@@ -4,8 +4,8 @@
  * This test verifies that the advanced search functionality handles both
  * valid and invalid filter structures properly, with clear error messages.
  */
-const { advancedSearchCompanies } = require('../../dist/objects/companies/index');
-const { FilterValidationError } = require('../../dist/errors/api-errors');
+const { advancedSearchCompanies } = require('../../src/objects/companies/index');
+const { FilterValidationError } = require('../../src/errors/api-errors');
 
 // Skip tests if no API key is provided
 const SKIP_TESTS = !process.env.ATTIO_API_KEY;

@@ -94,7 +94,9 @@ describe('Records API', () => {
       // Assertions
       expect(attioOperations.createRecord).toHaveBeenCalled();
       expect(mockApiClient.post).toHaveBeenCalledWith('/objects/companies/records', {
-        attributes: mockAttributes
+        data: {
+          values: mockAttributes
+        }
       });
       expect(result).toEqual(mockRecord);
     });
