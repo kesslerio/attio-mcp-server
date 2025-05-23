@@ -248,7 +248,8 @@ function validateParameters(
     if (
       param.enum &&
       parameters[param.name] !== undefined &&
-      !param.enum.includes(parameters[param.name])
+      typeof parameters[param.name] === 'string' &&
+      !param.enum.includes(parameters[param.name] as string)
     ) {
       errors.push(
         `Invalid value for parameter ${param.name}. ` +

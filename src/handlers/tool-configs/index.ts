@@ -2,7 +2,7 @@
  * Export all tool configurations
  */
 export { companyToolConfigs, companyToolDefinitions } from './companies/index.js';
-export { peopleToolConfigs, peopleToolDefinitions } from './people.js';
+export { peopleToolConfigs, peopleToolDefinitions } from './people/index.js';
 export { listsToolConfigs, listsToolDefinitions } from './lists.js';
 export { promptsToolConfigs, promptsToolDefinitions } from './prompts.js';
 export { recordToolConfigs, recordToolDefinitions } from './records/index.js';

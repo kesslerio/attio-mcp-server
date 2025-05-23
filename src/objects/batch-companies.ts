@@ -8,6 +8,7 @@ import {
   BatchConfig,
   RecordAttributes,
 } from '../types/attio.js';
+import { CompanyFieldValue } from '../types/tool-types.js';
 import {
   executeBatchOperations,
   batchCreateRecords,
@@ -171,7 +172,7 @@ export async function batchCreateCompanies(params: {
     const validatedCompanies = await Promise.all(
       companies.map(async (company, index) => {
         try {
-          return await CompanyValidator.validateCreate(company);
+          return await CompanyValidator.validateCreate(company as Record<string, CompanyFieldValue>);
         } catch (error) {
           // Log validation error but allow operation to continue for individual handling
           console.warn(
