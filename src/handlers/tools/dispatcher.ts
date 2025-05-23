@@ -277,6 +277,17 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Handle smartSearch tools
     if (toolType === 'smartSearch') {
       const query = request.params.arguments?.query as string;
+      
+      // Validate query parameter
+      if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        return createErrorResult(
+          new Error('Query parameter is required for smart search and must be a non-empty string'),
+          `/objects/${resourceType}/smart-search`,
+          'POST',
+          { status: 400, message: 'Missing or invalid required parameter: query' }
+        );
+      }
+      
       try {
         const searchConfig = toolConfig as SearchToolConfig;
         const results = await searchConfig.handler(query);
