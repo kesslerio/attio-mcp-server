@@ -11,7 +11,7 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
   formatRecordAttributes,
-} from '../../objects/records.js';
+} from '../../objects/records/index.js';
 import { ToolConfig } from '../tool-types.js';
 
 // Define new tool type interfaces specific to records
