@@ -1,5 +1,5 @@
-const { getCompanyDetails } = require('../dist/objects/companies');
-const { initializeAttioClient } = require('../dist/api/attio-client');
+import { getCompanyDetails } from('../dist/objects/companies');
+import { initializeAttioClient } from('../dist/api/attio-client');
 
 async function checkServicesFormat() {
   try {
