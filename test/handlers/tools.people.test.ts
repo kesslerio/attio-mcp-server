@@ -16,7 +16,7 @@ describe('tools-people', () => {
     beforeEach(() => {
       // Reset all mocks before each test
       vi.resetAllMocks();
-      
+
       // Setup mock server
       mockServer = {
         setRequestHandler: vi.fn(),
@@ -26,7 +26,7 @@ describe('tools-people', () => {
     it('should register handlers for ListToolsRequestSchema and CallToolRequestSchema', () => {
       // Act
       registerToolHandlers(mockServer);
-      
+
       // Assert
       expect(mockServer.setRequestHandler).toHaveBeenCalledTimes(2);
     });
@@ -34,27 +34,27 @@ describe('tools-people', () => {
     it('should include people tools in the list of available tools', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the list tools handler
       const [listToolsHandler, _] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Call the handler
       const result = await listToolsHandler[1]();
-      
+
       // Expected people tool names
       const expectedPeopleTools = [
-        "search-people", 
-        "search-people-by-email",
-        "search-people-by-phone",
-        "get-person-details", 
-        "get-person-notes",
-        "create-person-note"
+        'search-people',
+        'search-people-by-email',
+        'search-people-by-phone',
+        'get-person-details',
+        'get-person-notes',
+        'create-person-note',
       ];
-      
+
       // Assert
       expect(result).toHaveProperty('tools');
       expect(Array.isArray(result.tools)).toBeTruthy();
-      
+
       // Check for the expected people tools
       const toolNames = result.tools.map((tool: any) => tool.name);
       for (const toolName of expectedPeopleTools) {
@@ -65,24 +65,27 @@ describe('tools-people', () => {
     it('should handle search-people tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler
       const [_, callToolHandler] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Setup mock people data
       const mockPeople = [
-        { id: { record_id: 'person1' }, values: { name: [{ value: 'Test Person' }] } }
+        {
+          id: { record_id: 'person1' },
+          values: { name: [{ value: 'Test Person' }] },
+        },
       ];
       mockedPeople.searchPeople.mockResolvedValue(mockPeople);
-      
+
       // Call the handler with search-people tool
       const result = await callToolHandler[1]({
         params: {
           name: 'search-people',
-          arguments: { query: 'Test' }
-        }
+          arguments: { query: 'Test' },
+        },
       });
-      
+
       // Assert
       expect(mockedPeople.searchPeople).toHaveBeenCalledWith('Test');
       expect(result).toHaveProperty('content');
@@ -93,26 +96,28 @@ describe('tools-people', () => {
     it('should handle errors in search-people tool', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler
       const [_, callToolHandler] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Setup mock error
       const mockError = new Error('API Error');
       mockedPeople.searchPeople.mockRejectedValue(mockError);
-      
+
       // Setup mock error result
       const mockErrorResult = { isError: true, error: { message: 'Error' } };
-      mockedErrorHandler.createErrorResult.mockReturnValue(mockErrorResult as any);
-      
+      mockedErrorHandler.createErrorResult.mockReturnValue(
+        mockErrorResult as any
+      );
+
       // Call the handler with search-people tool
       const result = await callToolHandler[1]({
         params: {
           name: 'search-people',
-          arguments: { query: 'Test' }
-        }
+          arguments: { query: 'Test' },
+        },
       });
-      
+
       // Assert
       expect(mockedPeople.searchPeople).toHaveBeenCalledWith('Test');
       expect(mockedErrorHandler.createErrorResult).toHaveBeenCalled();
@@ -122,25 +127,25 @@ describe('tools-people', () => {
     it('should handle get-person-details tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler
       const [_, callToolHandler] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Setup mock person data
-      const mockPerson = { 
-        id: { record_id: 'person1' }, 
-        values: { name: [{ value: 'Test Person' }] } 
+      const mockPerson = {
+        id: { record_id: 'person1' },
+        values: { name: [{ value: 'Test Person' }] },
       };
       mockedPeople.getPersonDetails.mockResolvedValue(mockPerson);
-      
+
       // Call the handler with get-person-details tool
       const result = await callToolHandler[1]({
         params: {
           name: 'get-person-details',
-          arguments: { uri: 'attio://people/person1' }
-        }
+          arguments: { uri: 'attio://people/person1' },
+        },
       });
-      
+
       // Assert
       expect(mockedPeople.getPersonDetails).toHaveBeenCalledWith('person1');
       expect(result).toHaveProperty('content');
@@ -151,39 +156,43 @@ describe('tools-people', () => {
     it('should handle get-person-notes tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler
       const [_, callToolHandler] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Setup mock notes data
       const mockNotes = [
-        { 
-          id: { note_id: 'note1' }, 
-          title: 'Note 1', 
+        {
+          id: { note_id: 'note1' },
+          title: 'Note 1',
           content: 'Content 1',
           format: 'plaintext',
           parent_object: 'people',
           parent_record_id: 'person1',
           created_at: '2025-01-01T00:00:00Z',
-          updated_at: '2025-01-01T00:00:00Z'
-        }
+          updated_at: '2025-01-01T00:00:00Z',
+        },
       ];
       mockedPeople.getPersonNotes.mockResolvedValue(mockNotes);
-      
+
       // Call the handler with get-person-notes tool
       const result = await callToolHandler[1]({
         params: {
           name: 'get-person-notes',
-          arguments: { 
+          arguments: {
             uri: 'attio://people/person1',
             limit: 5,
-            offset: 10
-          }
-        }
+            offset: 10,
+          },
+        },
       });
-      
+
       // Assert
-      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith('person1', 5, 10);
+      expect(mockedPeople.getPersonNotes).toHaveBeenCalledWith(
+        'person1',
+        5,
+        10
+      );
       expect(result).toHaveProperty('content');
       expect(result).toHaveProperty('isError', false);
       expect(result.content[0].text).toContain('Found');
@@ -193,10 +202,10 @@ describe('tools-people', () => {
     it('should handle create-person-note tool call', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler
       const [_, callToolHandler] = mockServer.setRequestHandler.mock.calls;
-      
+
       // Setup mock response
       const mockResponse = {
         id: { note_id: 'note123' },
@@ -206,26 +215,26 @@ describe('tools-people', () => {
         parent_object: 'people',
         parent_record_id: 'person1',
         created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-01T00:00:00Z'
+        updated_at: '2025-01-01T00:00:00Z',
       };
       mockedPeople.createPersonNote.mockResolvedValue(mockResponse);
-      
+
       // Call the handler with create-person-note tool
       const result = await callToolHandler[1]({
         params: {
           name: 'create-person-note',
-          arguments: { 
+          arguments: {
             personId: 'person1',
             noteTitle: 'Test Note',
-            noteText: 'This is a test note'
-          }
-        }
+            noteText: 'This is a test note',
+          },
+        },
       });
-      
+
       // Assert
       expect(mockedPeople.createPersonNote).toHaveBeenCalledWith(
-        'person1', 
-        'Test Note', 
+        'person1',
+        'Test Note',
         'This is a test note'
       );
       expect(result).toHaveProperty('content');

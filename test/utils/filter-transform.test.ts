@@ -14,19 +14,19 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: FilterConditionType.EQUALS,
-          value: 'discovery'
-        }
-      ]
+          value: 'discovery',
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter);
-    
+
     expect(result).toEqual({
       filter: {
         stage: {
-          '$equals': 'discovery'
-        }
-      }
+          $equals: 'discovery',
+        },
+      },
     });
   });
 
@@ -48,27 +48,27 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: FilterConditionType.EQUALS,
-          value: 'discovery'
+          value: 'discovery',
         },
         {
           attribute: { slug: 'value' },
           condition: FilterConditionType.GREATER_THAN,
-          value: 10000
-        }
-      ]
+          value: 10000,
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter);
-    
+
     expect(result).toEqual({
       filter: {
         stage: {
-          '$equals': 'discovery'
+          $equals: 'discovery',
         },
         value: {
-          '$greater_than': 10000
-        }
-      }
+          $greater_than: 10000,
+        },
+      },
     });
   });
 
@@ -79,26 +79,26 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: FilterConditionType.EQUALS,
-          value: 'discovery'
+          value: 'discovery',
         },
         {
           attribute: { slug: 'stage' },
           condition: FilterConditionType.EQUALS,
-          value: 'proposal'
-        }
+          value: 'proposal',
+        },
       ],
-      matchAny: true
+      matchAny: true,
     };
 
     const result = transformFiltersToApiFormat(filter);
-    
+
     expect(result).toEqual({
       filter: {
-        '$or': [
-          { stage: { '$equals': 'discovery' } },
-          { stage: { '$equals': 'proposal' } }
-        ]
-      }
+        $or: [
+          { stage: { $equals: 'discovery' } },
+          { stage: { $equals: 'proposal' } },
+        ],
+      },
     });
   });
 
@@ -109,35 +109,35 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'name' },
           condition: FilterConditionType.CONTAINS,
-          value: 'Tech'
+          value: 'Tech',
         },
         {
           attribute: { slug: 'created_at' },
           condition: FilterConditionType.GREATER_THAN,
-          value: '2023-01-01'
+          value: '2023-01-01',
         },
         {
           attribute: { slug: 'is_active' },
           condition: FilterConditionType.IS_SET,
-          value: null
-        }
-      ]
+          value: null,
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter);
-    
+
     expect(result).toEqual({
       filter: {
         name: {
-          '$contains': 'Tech'
+          $contains: 'Tech',
         },
         created_at: {
-          '$greater_than': '2023-01-01'
+          $greater_than: '2023-01-01',
         },
         is_active: {
-          '$is_set': null
-        }
-      }
+          $is_set: null,
+        },
+      },
     });
   });
 
@@ -148,12 +148,14 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: 'invalid_condition', // Invalid condition
-          value: 'discovery'
-        }
-      ]
+          value: 'discovery',
+        },
+      ],
     };
 
-    expect(() => transformFiltersToApiFormat(filter)).toThrow(FilterValidationError);
+    expect(() => transformFiltersToApiFormat(filter)).toThrow(
+      FilterValidationError
+    );
   });
 
   test('skips filters with missing attribute slug', () => {
@@ -162,9 +164,9 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: '' }, // Empty slug
           condition: FilterConditionType.EQUALS,
-          value: 'discovery'
-        }
-      ]
+          value: 'discovery',
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter);
@@ -177,9 +179,9 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: undefined as any, // Missing condition
-          value: 'discovery'
-        }
-      ]
+          value: 'discovery',
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter);
@@ -193,19 +195,19 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'stage' },
           condition: 'custom_condition', // Would normally be invalid
-          value: 'discovery'
-        }
-      ]
+          value: 'discovery',
+        },
+      ],
     };
 
     const result = transformFiltersToApiFormat(filter, false);
-    
+
     expect(result).toEqual({
       filter: {
         stage: {
-          '$custom_condition': 'discovery'
-        }
-      }
+          $custom_condition: 'discovery',
+        },
+      },
     });
   });
 });

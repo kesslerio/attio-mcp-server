@@ -21,6 +21,87 @@ import {
 } from '../../utils/domain-utils.js';
 
 /**
+ * Simple LRU cache for company search results
+ * Reduces API calls for frequently looked-up companies
+ */
+class CompanySearchCache {
+  private cache = new Map<string, { data: Company[]; timestamp: number }>();
+  private readonly maxSize: number;
+  private readonly ttlMs: number;
+
+  constructor(maxSize = 100, ttlMs = 5 * 60 * 1000) {
+    // Default: 100 entries, 5 minutes TTL
+    this.maxSize = maxSize;
+    this.ttlMs = ttlMs;
+  }
+
+  private isExpired(timestamp: number): boolean {
+    return Date.now() - timestamp > this.ttlMs;
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (this.isExpired(entry.timestamp)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  get(key: string): Company[] | null {
+    const entry = this.cache.get(key);
+    if (!entry || this.isExpired(entry.timestamp)) {
+      if (entry) {
+        this.cache.delete(key);
+      }
+      return null;
+    }
+
+    // Move to end (LRU behavior)
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+    return entry.data;
+  }
+
+  set(key: string, data: Company[]): void {
+    // Remove oldest entries if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
+
+    this.cache.set(key, { data, timestamp: Date.now() });
+
+    // Periodic cleanup
+    if (Math.random() < 0.1) {
+      // 10% chance to trigger cleanup
+      this.cleanup();
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+// Global cache instance
+const companySearchCache = new CompanySearchCache();
+
+/**
+ * Cache management functions for testing and administration
+ */
+export const companyCache = {
+  clear: () => companySearchCache.clear(),
+  size: () => companySearchCache.size(),
+};
+
+/**
  * Configuration options for company search
  */
 export interface CompanySearchOptions {
@@ -194,14 +275,29 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
     return [];
   }
 
+  // Create cache key (normalize query for better cache hits)
+  const cacheKey = `name:${query.trim().toLowerCase()}`;
+
+  // Check cache first
+  const cachedResult = companySearchCache.get(cacheKey);
+  if (cachedResult) {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+      console.debug(
+        `[searchCompaniesByName] Cache hit for: "${query}" (${cachedResult.length} results)`
+      );
+    }
+    return cachedResult;
+  }
+
   // Debug logging for name search
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
     console.debug(`[searchCompaniesByName] Searching by name: "${query}"`);
   }
 
   // Use the unified operation if available, with fallback to direct implementation
+  let results: Company[];
   try {
-    return await searchObject<Company>(ResourceType.COMPANIES, query);
+    results = await searchObject<Company>(ResourceType.COMPANIES, query);
   } catch (error) {
     // Fallback implementation
     const api = getAttioClient();
@@ -212,8 +308,19 @@ export async function searchCompaniesByName(query: string): Promise<Company[]> {
         name: { $contains: query },
       },
     });
-    return response.data.data || [];
+    results = response.data.data || [];
   }
+
+  // Cache the results
+  companySearchCache.set(cacheKey, results);
+
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.debug(
+      `[searchCompaniesByName] Cached ${results.length} results for: "${query}"`
+    );
+  }
+
+  return results;
 }
 
 /**

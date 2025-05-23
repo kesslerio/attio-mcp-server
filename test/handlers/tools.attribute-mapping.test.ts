@@ -13,48 +13,52 @@ describe('tools attribute mapping integration', () => {
   describe('Advanced search with attribute mapping', () => {
     let mockServer: any;
     let callToolHandler: Function;
-    const mockedCompanies = companiesModule as vi.Mocked<typeof companiesModule>;
+    const mockedCompanies = companiesModule as vi.Mocked<
+      typeof companiesModule
+    >;
     const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
-    const mockedAttributeMapping = attributeMappingModule as vi.Mocked<typeof attributeMappingModule>;
+    const mockedAttributeMapping = attributeMappingModule as vi.Mocked<
+      typeof attributeMappingModule
+    >;
 
     // Mock data
     const mockCompanySearchResults = [
       {
         id: { record_id: 'company1' },
-        values: { name: [{ value: 'Acme Corp' }] }
+        values: { name: [{ value: 'Acme Corp' }] },
       },
       {
         id: { record_id: 'company2' },
-        values: { name: [{ value: 'Globex Inc' }] }
-      }
+        values: { name: [{ value: 'Globex Inc' }] },
+      },
     ];
 
     const mockPeopleSearchResults = [
       {
         id: { record_id: 'person1' },
-        values: { name: [{ value: 'John Doe' }] }
+        values: { name: [{ value: 'John Doe' }] },
       },
       {
         id: { record_id: 'person2' },
-        values: { name: [{ value: 'Jane Smith' }] }
-      }
+        values: { name: [{ value: 'Jane Smith' }] },
+      },
     ];
 
     beforeEach(() => {
       // Reset all mocks before each test
       vi.resetAllMocks();
-      
+
       // Setup mock server
       mockServer = {
         setRequestHandler: vi.fn(),
       };
-      
+
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the call tool handler (second handler registered)
       callToolHandler = mockServer.setRequestHandler.mock.calls[1][1];
-      
+
       // Setup translateAttributeNamesInFilters mock
       mockedAttributeMapping.translateAttributeNamesInFilters.mockImplementation(
         (filters, objectType) => {
@@ -63,7 +67,7 @@ describe('tools attribute mapping integration', () => {
           return {
             ...filters,
             _translated: true,
-            _objectType: objectType
+            _objectType: objectType,
           };
         }
       );
@@ -71,22 +75,24 @@ describe('tools attribute mapping integration', () => {
 
     it('should translate attribute names in company advanced search filters', async () => {
       // Setup mock for advanced search
-      mockedCompanies.advancedSearchCompanies.mockResolvedValueOnce(mockCompanySearchResults);
-      
+      mockedCompanies.advancedSearchCompanies.mockResolvedValueOnce(
+        mockCompanySearchResults
+      );
+
       // Original filters with human-readable attribute names
       const originalFilters = {
         operator: 'and',
         filters: [
           {
             attribute: {
-              slug: 'B2B Segment'  // This should be translated to "type_persona"
+              slug: 'B2B Segment', // This should be translated to "type_persona"
             },
             condition: 'equals',
-            value: 'Enterprise'
-          }
-        ]
+            value: 'Enterprise',
+          },
+        ],
       };
-      
+
       // Create a mock request for advanced search
       const request = {
         params: {
@@ -94,25 +100,24 @@ describe('tools attribute mapping integration', () => {
           arguments: {
             filters: originalFilters,
             limit: 10,
-            offset: 0
-          }
-        }
+            offset: 0,
+          },
+        },
       };
-      
+
       // Call the handler
       await callToolHandler(request);
-      
+
       // Verify translation was called with correct parameters
-      expect(mockedAttributeMapping.translateAttributeNamesInFilters).toHaveBeenCalledWith(
-        originalFilters, 
-        'companies'
-      );
-      
+      expect(
+        mockedAttributeMapping.translateAttributeNamesInFilters
+      ).toHaveBeenCalledWith(originalFilters, 'companies');
+
       // Verify the translated filters were passed to the advancedSearchCompanies function
       expect(mockedCompanies.advancedSearchCompanies).toHaveBeenCalledWith(
         expect.objectContaining({
           _translated: true,
-          _objectType: 'companies'
+          _objectType: 'companies',
         }),
         10,
         0
@@ -128,49 +133,50 @@ describe('tools attribute mapping integration', () => {
           pageSize: 20,
           totalCount: mockPeopleSearchResults.length,
           totalPages: 1,
-          hasMore: false
-        }
+          hasMore: false,
+        },
       };
-      mockedPeople.advancedSearchPeople.mockResolvedValueOnce(paginatedResponse);
-      
+      mockedPeople.advancedSearchPeople.mockResolvedValueOnce(
+        paginatedResponse
+      );
+
       // Original filters with human-readable attribute names
       const originalFilters = {
         operator: 'and',
         filters: [
           {
             attribute: {
-              slug: 'Full Name'  // This should be translated to "name"
+              slug: 'Full Name', // This should be translated to "name"
             },
             condition: 'contains',
-            value: 'John'
-          }
-        ]
+            value: 'John',
+          },
+        ],
       };
-      
+
       // Create a mock request for advanced search
       const request = {
         params: {
           name: 'advanced-search-people',
           arguments: {
-            filters: originalFilters
-          }
-        }
+            filters: originalFilters,
+          },
+        },
       };
-      
+
       // Call the handler
       await callToolHandler(request);
-      
+
       // Verify translation was called with correct parameters
-      expect(mockedAttributeMapping.translateAttributeNamesInFilters).toHaveBeenCalledWith(
-        originalFilters, 
-        'people'
-      );
-      
+      expect(
+        mockedAttributeMapping.translateAttributeNamesInFilters
+      ).toHaveBeenCalledWith(originalFilters, 'people');
+
       // Verify the translated filters were passed to the advancedSearchPeople function
       expect(mockedPeople.advancedSearchPeople).toHaveBeenCalledWith(
         expect.objectContaining({
           _translated: true,
-          _objectType: 'people'
+          _objectType: 'people',
         }),
         undefined,
         undefined
@@ -179,74 +185,76 @@ describe('tools attribute mapping integration', () => {
 
     it('should handle complex nested filters with mixed attribute names', async () => {
       // Setup mock for advanced search
-      mockedCompanies.advancedSearchCompanies.mockResolvedValueOnce(mockCompanySearchResults);
-      
+      mockedCompanies.advancedSearchCompanies.mockResolvedValueOnce(
+        mockCompanySearchResults
+      );
+
       // Complex filters with nested structure and different object types
       const complexFilters = {
         operator: 'and',
         filters: [
           {
             attribute: {
-              slug: 'B2B Segment'  // Companies attribute
+              slug: 'B2B Segment', // Companies attribute
             },
             condition: 'equals',
-            value: 'Enterprise'
+            value: 'Enterprise',
           },
           {
             operator: 'or',
             filters: [
               {
                 attribute: {
-                  slug: 'Industry'  // Companies attribute
+                  slug: 'Industry', // Companies attribute
                 },
                 condition: 'equals',
-                value: 'Technology'
+                value: 'Technology',
               },
               {
                 attribute: {
-                  slug: 'Annual Revenue'  // Should translate to annual_revenue
+                  slug: 'Annual Revenue', // Should translate to annual_revenue
                 },
                 condition: 'greater_than',
-                value: 1000000
-              }
-            ]
+                value: 1000000,
+              },
+            ],
           },
           {
-            people: {  // Nested people-specific section
+            people: {
+              // Nested people-specific section
               attribute: {
-                slug: 'Full Name'  // People attribute
+                slug: 'Full Name', // People attribute
               },
               condition: 'contains',
-              value: 'CEO'
-            }
-          }
-        ]
+              value: 'CEO',
+            },
+          },
+        ],
       };
-      
+
       // Create a mock request for advanced search
       const request = {
         params: {
           name: 'advanced-search-companies',
           arguments: {
-            filters: complexFilters
-          }
-        }
+            filters: complexFilters,
+          },
+        },
       };
-      
+
       // Call the handler
       await callToolHandler(request);
-      
+
       // Verify translation was called with correct parameters
-      expect(mockedAttributeMapping.translateAttributeNamesInFilters).toHaveBeenCalledWith(
-        complexFilters, 
-        'companies'
-      );
-      
+      expect(
+        mockedAttributeMapping.translateAttributeNamesInFilters
+      ).toHaveBeenCalledWith(complexFilters, 'companies');
+
       // Verify the translated filters were passed to the advancedSearchCompanies function
       expect(mockedCompanies.advancedSearchCompanies).toHaveBeenCalledWith(
         expect.objectContaining({
           _translated: true,
-          _objectType: 'companies'
+          _objectType: 'companies',
         }),
         undefined,
         undefined

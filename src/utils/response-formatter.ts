@@ -1,7 +1,7 @@
 /**
  * Response formatting utilities for standardizing MCP tool responses
  */
-import { safeJsonStringify, sanitizeMcpResponse } from "./json-serializer.js";
+import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 
 /**
  * Interface for a simple text content item
@@ -53,7 +53,7 @@ export interface ListResponse<T> {
 
 /**
  * Format a simple success response with a text message
- * 
+ *
  * @param message - Success message text
  * @param metadata - Optional metadata to include
  * @returns Formatted tool response
@@ -66,17 +66,17 @@ export function formatSuccessResponse(
     content: [
       {
         type: 'text',
-        text: message
-      }
+        text: message,
+      },
     ],
     isError: false,
-    metadata
+    metadata,
   };
 }
 
 /**
  * Format a list response with items
- * 
+ *
  * @param title - Title for the list
  * @param items - Array of items to format
  * @param formatter - Function to format each item to a string
@@ -91,37 +91,39 @@ export function formatListResponse<T>(
   pagination?: { total?: number; hasMore?: boolean; nextCursor?: string },
   metadata?: Record<string, unknown>
 ): ToolResponse {
-  const itemsText = items.length > 0
-    ? items.map(formatter).join('\n')
-    : 'No items found';
-  
-  const countText = pagination?.total !== undefined
-    ? `${items.length} of ${pagination.total} total`
-    : `${items.length}`;
-  
+  const itemsText =
+    items.length > 0 ? items.map(formatter).join('\n') : 'No items found';
+
+  const countText =
+    pagination?.total !== undefined
+      ? `${items.length} of ${pagination.total} total`
+      : `${items.length}`;
+
   const paginationText = pagination?.hasMore
     ? `\n\nShowing ${countText} items. More items available.`
     : `\n\nShowing ${countText} items.`;
-  
+
   return {
     content: [
       {
         type: 'text',
-        text: `${title}:\n${itemsText}\n\nShowing ${countText} items${pagination?.hasMore ? '. More items available.' : '.'}`
-      }
+        text: `${title}:\n${itemsText}\n\nShowing ${countText} items${
+          pagination?.hasMore ? '. More items available.' : '.'
+        }`,
+      },
     ],
     isError: false,
     metadata: {
       items,
       pagination,
-      ...metadata
-    }
+      ...metadata,
+    },
   };
 }
 
 /**
  * Format a single record response
- * 
+ *
  * @param title - Title for the record
  * @param record - The record to format
  * @param formatter - Function to format the record to a string
@@ -138,20 +140,20 @@ export function formatRecordResponse<T>(
     content: [
       {
         type: 'text',
-        text: `${title}:\n${formatter(record)}`
-      }
+        text: `${title}:\n${formatter(record)}`,
+      },
     ],
     isError: false,
     metadata: {
       record,
-      ...metadata
-    }
+      ...metadata,
+    },
   };
 }
 
 /**
  * Format a response with a detailed JSON view
- * 
+ *
  * @param title - Title for the JSON data
  * @param data - The data to format as JSON
  * @param metadata - Optional metadata to include
@@ -166,22 +168,22 @@ export function formatJsonResponse(
     content: [
       {
         type: 'text',
-        text: `${title}:\n${safeJsonStringify(data, { maxDepth: 8 })}`
-      }
+        text: `${title}:\n${safeJsonStringify(data, { maxDepth: 8 })}`,
+      },
     ],
     isError: false,
     metadata: {
       data,
-      ...metadata
-    }
+      ...metadata,
+    },
   };
-  
+
   return sanitizeMcpResponse(response);
 }
 
 /**
  * Format a response with markdown content
- * 
+ *
  * @param title - Title for the markdown content
  * @param markdown - The markdown content
  * @param metadata - Optional metadata to include
@@ -196,17 +198,17 @@ export function formatMarkdownResponse(
     content: [
       {
         type: 'markdown',
-        text: `# ${title}\n\n${markdown}`
-      }
+        text: `# ${title}\n\n${markdown}`,
+      },
     ],
     isError: false,
-    metadata
+    metadata,
   };
 }
 
 /**
  * Format a multi-part response with different content types
- * 
+ *
  * @param title - Title for the response
  * @param parts - Array of content parts to include
  * @param metadata - Optional metadata to include
@@ -221,18 +223,18 @@ export function formatMultiPartResponse(
     content: [
       {
         type: 'text',
-        text: title
+        text: title,
       },
-      ...parts
+      ...parts,
     ],
     isError: false,
-    metadata
+    metadata,
   };
 }
 
 /**
  * Format an empty response (no content)
- * 
+ *
  * @param metadata - Optional metadata to include
  * @returns Formatted tool response
  */
@@ -242,13 +244,13 @@ export function formatEmptyResponse(
   return {
     content: [],
     isError: false,
-    metadata
+    metadata,
   };
 }
 
 /**
  * Format a standardized error response
- * 
+ *
  * @param message - Error message
  * @param code - Error code (HTTP status code or custom code)
  * @param type - Error type (e.g., validation_error, not_found, etc.)
@@ -265,17 +267,21 @@ export function formatErrorResponse(
     content: [
       {
         type: 'text',
-        text: `ERROR [${type}]: ${message}${details ? '\n\nDetails: ' + safeJsonStringify(details, { maxDepth: 5 }) : ''}`
-      }
+        text: `ERROR [${type}]: ${message}${
+          details
+            ? '\n\nDetails: ' + safeJsonStringify(details, { maxDepth: 5 })
+            : ''
+        }`,
+      },
     ],
     isError: true,
     error: {
       code,
       message,
       type,
-      details
-    }
+      details,
+    },
   };
-  
+
   return sanitizeMcpResponse(response);
 }

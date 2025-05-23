@@ -37,7 +37,7 @@ export interface TestCompanyData {
 }
 
 export interface TestMockRequest {
-  method: "tools/call";
+  method: 'tools/call';
   params: {
     name: string;
     arguments: Record<string, any>;
@@ -57,7 +57,7 @@ export function createMockApiClient(): MockApiClient {
 export function createMockResponse<T>(data: T[]): MockApiResponse<T> {
   return {
     data: {
-      data
-    }
+      data,
+    },
   };
 }

@@ -1,6 +1,6 @@
-import { 
-  searchCompanies, 
-  listCompanies, 
+import {
+  searchCompanies,
+  listCompanies,
   getCompanyDetails,
   getCompanyNotes,
   getCompanyLists,
@@ -8,14 +8,15 @@ import {
   createCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany
+  deleteCompany,
 } from '../../src/objects/companies/index';
+import { companyCache } from '../../src/objects/companies/search';
 import * as attioClient from '../../src/api/attio-client';
 import * as records from '../../src/objects/records';
 import * as attributeTypes from '../../src/api/attribute-types';
-import { 
-  InvalidCompanyDataError, 
-  CompanyOperationError 
+import {
+  InvalidCompanyDataError,
+  CompanyOperationError,
 } from '../../src/errors/company-errors';
 
 // Mock the API client and records module
@@ -27,14 +28,20 @@ vi.mock('../../src/api/attribute-types');
 vi.mock('../../src/validators/company-validator', () => ({
   CompanyValidator: {
     validateCreate: vi.fn(async (company: any) => {
-      const { InvalidCompanyDataError } = await import('../../src/errors/company-errors');
+      const { InvalidCompanyDataError } = await import(
+        '../../src/errors/company-errors'
+      );
       if (!company.name) {
         throw new InvalidCompanyDataError('Name is required');
       }
       if (typeof company.name !== 'string') {
         throw new InvalidCompanyDataError('Name must be a string');
       }
-      if (company.website && (typeof company.website !== 'string' || !company.website.startsWith('http'))) {
+      if (
+        company.website &&
+        (typeof company.website !== 'string' ||
+          !company.website.startsWith('http'))
+      ) {
         throw new InvalidCompanyDataError('Website must be a valid URL');
       }
       return company;
@@ -42,11 +49,13 @@ vi.mock('../../src/validators/company-validator', () => ({
     validateUpdate: vi.fn(async (companyId: string, attributes: any) => {
       return attributes;
     }),
-    validateAttributeUpdate: vi.fn(async (companyId: string, attributeName: string, value: any) => {
-      // Simple pass-through for testing - just return the value
-      return value;
-    })
-  }
+    validateAttributeUpdate: vi.fn(
+      async (companyId: string, attributeName: string, value: any) => {
+        // Simple pass-through for testing - just return the value
+        return value;
+      }
+    ),
+  },
 }));
 const mockedAttioClient = attioClient as vi.Mocked<typeof attioClient>;
 const mockedRecords = records as vi.Mocked<typeof records>;
@@ -58,7 +67,7 @@ describe('companies', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     vi.resetAllMocks();
-    
+
     // Setup mock API client
     mockAxiosInstance = {
       get: vi.fn(),
@@ -66,54 +75,83 @@ describe('companies', () => {
       patch: vi.fn(),
     };
     mockedAttioClient.getAttioClient.mockReturnValue(mockAxiosInstance);
-    
+
     // Mock attribute type detection to avoid API calls during tests
-    mockedAttributeTypes.detectFieldType.mockImplementation((objectSlug: string, field: string) => {
-      // Return the expected type for known fields
-      if (field === 'services') return Promise.resolve('string');
-      if (field === 'name') return Promise.resolve('string');
-      if (field === 'industry') return Promise.resolve('string');
-      // Default to string for unknown fields
-      return Promise.resolve('string');
-    });
-    
-    // Mock formatAllAttributes to return attributes as-is for tests
-    mockedAttributeTypes.formatAllAttributes.mockImplementation(async (objectType: string, attributes: any) => {
-      // For tests, just return the attributes wrapped in the expected format
-      const formatted: Record<string, any> = {};
-      for (const [key, value] of Object.entries(attributes)) {
-        formatted[key] = { value };
+    mockedAttributeTypes.detectFieldType.mockImplementation(
+      (objectSlug: string, field: string) => {
+        // Return the expected type for known fields
+        if (field === 'services') return Promise.resolve('string');
+        if (field === 'name') return Promise.resolve('string');
+        if (field === 'industry') return Promise.resolve('string');
+        // Default to string for unknown fields
+        return Promise.resolve('string');
       }
-      return formatted;
-    });
-    
+    );
+
+    // Mock formatAllAttributes to return attributes as-is for tests
+    mockedAttributeTypes.formatAllAttributes.mockImplementation(
+      async (objectType: string, attributes: any) => {
+        // For tests, just return the attributes wrapped in the expected format
+        const formatted: Record<string, any> = {};
+        for (const [key, value] of Object.entries(attributes)) {
+          formatted[key] = { value };
+        }
+        return formatted;
+      }
+    );
+
     // Mock getObjectAttributeMetadata if it's called
-    mockedAttributeTypes.getObjectAttributeMetadata.mockResolvedValue(new Map([
-      ['name', { 
-        api_slug: 'name', 
-        type: 'text', 
-        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'name' }, 
-        title: 'Name' 
-      }],
-      ['services', { 
-        api_slug: 'services', 
-        type: 'text', 
-        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'services' }, 
-        title: 'Services' 
-      }],
-      ['industry', { 
-        api_slug: 'industry', 
-        type: 'text', 
-        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'industry' }, 
-        title: 'Industry' 
-      }]
-    ]));
+    mockedAttributeTypes.getObjectAttributeMetadata.mockResolvedValue(
+      new Map([
+        [
+          'name',
+          {
+            api_slug: 'name',
+            type: 'text',
+            id: {
+              workspace_id: 'ws1',
+              object_id: 'obj1',
+              attribute_id: 'name',
+            },
+            title: 'Name',
+          },
+        ],
+        [
+          'services',
+          {
+            api_slug: 'services',
+            type: 'text',
+            id: {
+              workspace_id: 'ws1',
+              object_id: 'obj1',
+              attribute_id: 'services',
+            },
+            title: 'Services',
+          },
+        ],
+        [
+          'industry',
+          {
+            api_slug: 'industry',
+            type: 'text',
+            id: {
+              workspace_id: 'ws1',
+              object_id: 'obj1',
+              attribute_id: 'industry',
+            },
+            title: 'Industry',
+          },
+        ],
+      ])
+    );
 
     // Mock formatAllAttributes to pass through the attributes in the expected format
-    mockedAttributeTypes.formatAllAttributes.mockImplementation(async (objectType: string, attributes: any) => {
-      // For companies test, return the attributes as expected by the test
-      return attributes;
-    });
+    mockedAttributeTypes.formatAllAttributes.mockImplementation(
+      async (objectType: string, attributes: any) => {
+        // For companies test, return the attributes as expected by the test
+        return attributes;
+      }
+    );
   });
 
   describe('searchCompanies', () => {
@@ -123,12 +161,12 @@ describe('companies', () => {
       const mockResponse = {
         data: {
           data: [
-            { 
+            {
               id: { record_id: 'company1' },
-              values: { name: [{ value: 'Test Company Inc.' }] }
-            }
-          ]
-        }
+              values: { name: [{ value: 'Test Company Inc.' }] },
+            },
+          ],
+        },
       };
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
@@ -140,14 +178,17 @@ describe('companies', () => {
         '/objects/companies/records/query',
         expect.objectContaining({
           filter: {
-            name: { "$contains": query }
-          }
+            name: { $contains: query },
+          },
         })
       );
       expect(result).toEqual(mockResponse.data.data);
     });
 
     it('should throw error when API call fails', async () => {
+      // Clear cache to ensure we test the actual API call failure
+      companyCache.clear();
+
       // Arrange
       const query = 'Test Company';
       const mockError = new Error('API Error');
@@ -158,7 +199,7 @@ describe('companies', () => {
         const actual = vi.requireActual('../../src/api/attio-operations.js');
         return {
           ...actual,
-          callWithRetry: (fn: any) => fn()
+          callWithRetry: (fn: any) => fn(),
         };
       });
 
@@ -173,16 +214,16 @@ describe('companies', () => {
       const mockResponse = {
         data: {
           data: [
-            { 
+            {
               id: { record_id: 'company1' },
-              values: { name: [{ value: 'Company A' }] }
+              values: { name: [{ value: 'Company A' }] },
             },
-            { 
+            {
               id: { record_id: 'company2' },
-              values: { name: [{ value: 'Company B' }] }
-            }
-          ]
-        }
+              values: { name: [{ value: 'Company B' }] },
+            },
+          ],
+        },
       };
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
@@ -194,7 +235,13 @@ describe('companies', () => {
         '/objects/companies/records/query',
         expect.objectContaining({
           limit: 20,
-          sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
+          sorts: [
+            {
+              attribute: 'last_interaction',
+              field: 'interacted_at',
+              direction: 'desc',
+            },
+          ],
         })
       );
       expect(result).toEqual(mockResponse.data.data);
@@ -208,8 +255,8 @@ describe('companies', () => {
       const mockResponse = {
         data: {
           id: { record_id: companyId },
-          values: { name: [{ value: 'Test Company' }] }
-        }
+          values: { name: [{ value: 'Test Company' }] },
+        },
       };
       mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
@@ -217,7 +264,9 @@ describe('companies', () => {
       const result = await getCompanyDetails(companyId);
 
       // Assert
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`/objects/companies/records/${companyId}`);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        `/objects/companies/records/${companyId}`
+      );
       expect(result).toEqual(mockResponse.data);
     });
   });
@@ -232,9 +281,9 @@ describe('companies', () => {
         data: {
           data: [
             { id: 'note1', title: 'Note 1', content: 'Content 1' },
-            { id: 'note2', title: 'Note 2', content: 'Content 2' }
-          ]
-        }
+            { id: 'note2', title: 'Note 2', content: 'Content 2' },
+          ],
+        },
       };
       mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
@@ -253,8 +302,8 @@ describe('companies', () => {
       const companyId = 'company123';
       const mockResponse = {
         data: {
-          data: [{ id: 'note1' }]
-        }
+          data: [{ id: 'note1' }],
+        },
       };
       mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
@@ -262,7 +311,7 @@ describe('companies', () => {
       await getCompanyNotes(companyId);
 
       // Assert
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
         `/notes?limit=10&offset=0&parent_object=companies&parent_record_id=${companyId}`
       );
     });
@@ -274,21 +323,35 @@ describe('companies', () => {
       const mockResponse = {
         data: {
           data: [
-            { list_id: 'list1', id: { entry_id: 'e1' }, list: { id: { list_id: 'list1' }, name: 'List A' } },
-            { list_id: 'list2', id: { entry_id: 'e2' }, list: { id: { list_id: 'list2' }, name: 'List B' } }
-          ]
-        }
+            {
+              list_id: 'list1',
+              id: { entry_id: 'e1' },
+              list: { id: { list_id: 'list1' }, name: 'List A' },
+            },
+            {
+              list_id: 'list2',
+              id: { entry_id: 'e2' },
+              list: { id: { list_id: 'list2' }, name: 'List B' },
+            },
+          ],
+        },
       };
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
       const result = await getCompanyLists(companyId);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/lists-entries/query', {
-        filter: { record_id: { '$equals': companyId } },
-        expand: ['list'],
-        limit: 50
-      });
-      expect(result).toEqual([mockResponse.data.data[0].list, mockResponse.data.data[1].list]);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/lists-entries/query',
+        {
+          filter: { record_id: { $equals: companyId } },
+          expand: ['list'],
+          limit: 50,
+        }
+      );
+      expect(result).toEqual([
+        mockResponse.data.data[0].list,
+        mockResponse.data.data[1].list,
+      ]);
     });
   });
 
@@ -302,8 +365,8 @@ describe('companies', () => {
         data: {
           id: { note_id: 'note123' },
           title: '[AI] Test Note',
-          content: 'This is a test note'
-        }
+          content: 'This is a test note',
+        },
       };
       mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
@@ -311,18 +374,15 @@ describe('companies', () => {
       const result = await createCompanyNote(companyId, title, content);
 
       // Assert
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/notes',
-        {
-          data: {
-            format: 'plaintext',
-            parent_object: 'companies',
-            parent_record_id: companyId,
-            title: `[AI] ${title}`,
-            content: content
-          },
-        }
-      );
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/notes', {
+        data: {
+          format: 'plaintext',
+          parent_object: 'companies',
+          parent_record_id: companyId,
+          title: `[AI] ${title}`,
+          content: content,
+        },
+      });
       expect(result).toEqual(mockResponse.data);
     });
   });
@@ -333,15 +393,15 @@ describe('companies', () => {
       const attributes = {
         name: 'New Company',
         website: 'https://newcompany.com',
-        industry: 'Technology'
+        industry: 'Technology',
       };
       const mockResponse = {
         id: { record_id: 'newcompany1' },
         values: {
           name: [{ value: 'New Company' }],
           website: [{ value: 'https://newcompany.com' }],
-          industry: [{ value: 'Technology' }]
-        }
+          industry: [{ value: 'Technology' }],
+        },
       };
       mockedRecords.createObjectRecord.mockResolvedValue(mockResponse);
 
@@ -354,7 +414,7 @@ describe('companies', () => {
         {
           name: 'New Company',
           website: 'https://newcompany.com',
-          categories: 'Technology' // Note: 'industry' is mapped to 'categories'
+          categories: 'Technology', // Note: 'industry' is mapped to 'categories'
         }
       );
       expect(result).toEqual(mockResponse);
@@ -365,7 +425,9 @@ describe('companies', () => {
       const attributes = { website: 'https://test.com' }; // Missing required name
 
       // Act & Assert
-      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+      await expect(createCompany(attributes)).rejects.toThrow(
+        InvalidCompanyDataError
+      );
     });
 
     it('should validate field types', async () => {
@@ -373,18 +435,22 @@ describe('companies', () => {
       const attributes = { name: 123 } as any; // Name should be string - bypassing TS for test
 
       // Act & Assert
-      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+      await expect(createCompany(attributes)).rejects.toThrow(
+        InvalidCompanyDataError
+      );
     });
 
     it('should validate URL fields', async () => {
       // Arrange
-      const attributes = { 
+      const attributes = {
         name: 'Test Company',
-        website: 'not-a-valid-url' 
+        website: 'not-a-valid-url',
       };
 
       // Act & Assert
-      await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);
+      await expect(createCompany(attributes)).rejects.toThrow(
+        InvalidCompanyDataError
+      );
     });
 
     it('should handle errors when creating a company', async () => {
@@ -394,7 +460,9 @@ describe('companies', () => {
       mockedRecords.createObjectRecord.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(createCompany(attributes)).rejects.toThrow(CompanyOperationError);
+      await expect(createCompany(attributes)).rejects.toThrow(
+        CompanyOperationError
+      );
     });
   });
 
@@ -404,14 +472,14 @@ describe('companies', () => {
       const companyId = 'company123';
       const attributes = {
         name: 'Updated Company',
-        industry: 'Finance'
+        industry: 'Finance',
       };
       const mockResponse = {
         id: { record_id: companyId },
         values: {
           name: [{ value: 'Updated Company' }],
-          industry: [{ value: 'Finance' }]
-        }
+          industry: [{ value: 'Finance' }],
+        },
       };
       mockedRecords.updateObjectRecord.mockResolvedValue(mockResponse);
 
@@ -424,7 +492,7 @@ describe('companies', () => {
         companyId,
         {
           name: 'Updated Company',
-          categories: 'Finance' // Note: 'industry' is mapped to 'categories'
+          categories: 'Finance', // Note: 'industry' is mapped to 'categories'
         }
       );
       expect(result).toEqual(mockResponse);
@@ -438,7 +506,9 @@ describe('companies', () => {
       mockedRecords.updateObjectRecord.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(updateCompany(companyId, attributes)).rejects.toThrow('Update failed');
+      await expect(updateCompany(companyId, attributes)).rejects.toThrow(
+        'Update failed'
+      );
     });
   });
 
@@ -451,13 +521,17 @@ describe('companies', () => {
       const mockResponse = {
         id: { record_id: companyId },
         values: {
-          industry: [{ value: 'Healthcare' }]
-        }
+          industry: [{ value: 'Healthcare' }],
+        },
       };
       mockedRecords.updateObjectRecord.mockResolvedValue(mockResponse);
 
       // Act
-      const result = await updateCompanyAttribute(companyId, attributeName, attributeValue);
+      const result = await updateCompanyAttribute(
+        companyId,
+        attributeName,
+        attributeValue
+      );
 
       // Assert - Note: 'industry' is automatically mapped to 'categories' by attribute mapping system
       // The updateCompanyAttribute function calls updateCompany with { [attributeName]: value }
@@ -465,7 +539,7 @@ describe('companies', () => {
       expect(mockedRecords.updateObjectRecord).toHaveBeenCalledWith(
         'companies',
         companyId,
-        { categories: 'Healthcare' } // Note: 'industry' is mapped to 'categories' 
+        { categories: 'Healthcare' } // Note: 'industry' is mapped to 'categories'
       );
       expect(result).toEqual(mockResponse);
     });
@@ -479,8 +553,9 @@ describe('companies', () => {
       mockedRecords.updateObjectRecord.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(updateCompanyAttribute(companyId, attributeName, attributeValue))
-        .rejects.toThrow('Attribute update failed');
+      await expect(
+        updateCompanyAttribute(companyId, attributeName, attributeValue)
+      ).rejects.toThrow('Attribute update failed');
     });
   });
 
