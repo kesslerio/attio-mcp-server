@@ -354,7 +354,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         );
       }
     }
-    
+
     // Handle createNote tools
     if (toolType === 'createNote') {
       const directId = resourceType === ResourceType.COMPANIES 
@@ -429,6 +429,44 @@ export async function executeToolRequest(request: CallToolRequest) {
           error instanceof Error ? error : new Error("Unknown error"),
           uri || `/${resourceType}/${noteTargetId}/notes`,
           "POST",
+          hasResponseData(error) ? error.response.data : {}
+        );
+      }
+    }
+
+    // Handle listsForCompany tool
+    if (toolType === 'listsForCompany') {
+      const companyId = request.params.arguments?.companyId as string;
+
+      let limit: number | undefined;
+      if (
+        request.params.arguments?.limit !== undefined &&
+        request.params.arguments?.limit !== null
+      ) {
+        limit = Number(request.params.arguments.limit);
+      }
+
+      if (!companyId) {
+        return createErrorResult(
+          new Error('companyId parameter is required'),
+          '/lists-entries/query',
+          'POST',
+          { status: 400, message: 'Missing required parameter: companyId' }
+        );
+      }
+
+      try {
+        const lists = await toolConfig.handler(companyId, limit);
+        const formattedResult = toolConfig.formatResult
+          ? toolConfig.formatResult(lists)
+          : JSON.stringify(lists, null, 2);
+
+        return formatResponse(formattedResult);
+      } catch (error) {
+        return createErrorResult(
+          error instanceof Error ? error : new Error('Unknown error'),
+          '/lists-entries/query',
+          'POST',
           hasResponseData(error) ? error.response.data : {}
         );
       }
