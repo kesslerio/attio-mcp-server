@@ -6,7 +6,7 @@
  * - Type safety with PersonCreateAttributes
  */
 
-import { peopleToolConfigs } from '../../dist/handlers/tool-configs/people.js';
+import { peopleToolConfigs } from '../../dist/handlers/tool-configs/people/index.js';
 
 async function testEnhancedErrorHandling() {
   console.log('Testing enhanced error handling in create-person adapter...\n');

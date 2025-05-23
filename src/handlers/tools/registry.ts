@@ -12,7 +12,7 @@ import {
 import {
   peopleToolConfigs,
   peopleToolDefinitions
-} from "../tool-configs/people.js";
+} from "../tool-configs/people/index.js";
 import {
   listsToolConfigs,
   listsToolDefinitions
