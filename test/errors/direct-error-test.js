@@ -15,22 +15,22 @@ async function testError() {
         filters: [
           {
             attribute: {
-              slug: 'type_persona'  // Using the actual Attio field directly
+              slug: 'type_persona', // Using the actual Attio field directly
             },
             condition: 'equals',
-            value: 'Aesthetics'  // Invalid value
-          }
+            value: 'Aesthetics', // Invalid value
+          },
         ],
-        matchAny: false
+        matchAny: false,
       },
       limit: 20,
-      offset: 0
+      offset: 0,
     });
   } catch (error) {
     console.log('===== Error caught =====');
     console.log('Original error message:', error.message);
     console.log('Error response data:', error.response?.data);
-    
+
     // Try to enhance the error
     console.log('\n===== Attempting to enhance error =====');
     const enhancedResult = interceptAndEnhanceError(
@@ -38,7 +38,7 @@ async function testError() {
       '/objects/people/records/query',
       'POST'
     );
-    
+
     console.log('\n===== Enhanced result =====');
     console.log(JSON.stringify(enhancedResult, null, 2));
   }

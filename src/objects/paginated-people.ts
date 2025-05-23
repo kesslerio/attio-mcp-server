@@ -61,7 +61,9 @@ export async function paginatedSearchPeople(
       throw error;
     }
     throw new Error(
-      `Failed to search people with pagination: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search people with pagination: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -105,7 +107,9 @@ export async function paginatedSearchPeopleByCreationDate(
       throw error;
     }
     throw new Error(
-      `Failed to search people by creation date: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search people by creation date: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -148,7 +152,9 @@ export async function paginatedSearchPeopleByModificationDate(
       throw error;
     }
     throw new Error(
-      `Failed to search people by modification date: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search people by modification date: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -214,7 +220,9 @@ export async function paginatedSearchPeopleByLastInteraction(
       throw error;
     }
     throw new Error(
-      `Failed to search people by last interaction: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search people by last interaction: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -257,7 +265,9 @@ export async function paginatedSearchPeopleByActivity(
       throw error;
     }
     throw new Error(
-      `Failed to search people by activity: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search people by activity: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }

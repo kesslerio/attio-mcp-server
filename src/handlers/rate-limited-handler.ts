@@ -47,7 +47,9 @@ export function withRateLimiting<T extends any[]>(
     if (!rateLimit.allowed) {
       const error: RateLimitError = {
         error: 'Rate limit exceeded',
-        message: `Too many requests. Try again in ${Math.ceil(rateLimit.msUntilReset / 1000)} seconds.`,
+        message: `Too many requests. Try again in ${Math.ceil(
+          rateLimit.msUntilReset / 1000
+        )} seconds.`,
         retryAfter: Math.ceil(rateLimit.msUntilReset / 1000),
       };
 
@@ -122,7 +124,9 @@ export function withSearchRateLimiting<T extends any[]>(
     if (!rateLimit.allowed) {
       req.res.status(429).json({
         error: 'Rate limit exceeded',
-        message: `Too many requests. Try again in ${Math.ceil(rateLimit.msUntilReset / 1000)} seconds.`,
+        message: `Too many requests. Try again in ${Math.ceil(
+          rateLimit.msUntilReset / 1000
+        )} seconds.`,
         retryAfter: Math.ceil(rateLimit.msUntilReset / 1000),
       });
 
@@ -131,7 +135,9 @@ export function withSearchRateLimiting<T extends any[]>(
         content: [
           {
             type: 'text',
-            text: `Error: Rate limit exceeded. Try again in ${Math.ceil(rateLimit.msUntilReset / 1000)} seconds.`,
+            text: `Error: Rate limit exceeded. Try again in ${Math.ceil(
+              rateLimit.msUntilReset / 1000
+            )} seconds.`,
           },
         ],
         isError: true,

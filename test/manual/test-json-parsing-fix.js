@@ -15,20 +15,20 @@ const projectRoot = join(__dirname, '../..');
 
 async function testJsonParsing() {
   console.error('🧪 Testing JSON parsing fix...');
-  
+
   // Create a minimal MCP request for update-company-attribute
   const mcpRequest = {
-    jsonrpc: "2.0",
+    jsonrpc: '2.0',
     id: 1,
-    method: "tools/call",
+    method: 'tools/call',
     params: {
-      name: "update-company-attribute",
+      name: 'update-company-attribute',
       arguments: {
-        companyId: "test-company-id",
-        attributeName: "description",
-        value: "Test description to verify no stdout pollution"
-      }
-    }
+        companyId: 'test-company-id',
+        attributeName: 'description',
+        value: 'Test description to verify no stdout pollution',
+      },
+    },
   };
 
   return new Promise((resolve, reject) => {
@@ -37,9 +37,9 @@ async function testJsonParsing() {
       env: {
         ...process.env,
         NODE_ENV: 'development',
-        ATTIO_API_KEY: process.env.ATTIO_API_KEY || 'dummy-key-for-test'
+        ATTIO_API_KEY: process.env.ATTIO_API_KEY || 'dummy-key-for-test',
       },
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
     let stdoutData = '';
@@ -49,7 +49,7 @@ async function testJsonParsing() {
     // Collect stdout (should be clean JSON only)
     serverProcess.stdout.on('data', (data) => {
       stdoutData += data.toString();
-      
+
       // Look for a complete JSON response
       const lines = stdoutData.split('\n');
       for (const line of lines) {
@@ -81,40 +81,42 @@ async function testJsonParsing() {
     setTimeout(() => {
       console.error('📤 Sending test MCP request...');
       serverProcess.stdin.write(JSON.stringify(mcpRequest) + '\n');
-      
+
       // Give it time to process and respond
       setTimeout(() => {
         console.error('🔍 Analyzing output...');
-        
+
         // Check if stdout contains any non-JSON content
-        const stdoutLines = stdoutData.split('\n').filter(line => line.trim());
+        const stdoutLines = stdoutData
+          .split('\n')
+          .filter((line) => line.trim());
         let hasNonJsonOutput = false;
-        
+
         for (const line of stdoutLines) {
           if (line.trim() && !line.includes('"jsonrpc"')) {
             console.error('❌ Found non-JSON content in stdout:', line);
             hasNonJsonOutput = true;
           }
         }
-        
+
         if (!hasNonJsonOutput && stdoutLines.length > 0) {
           console.error('✅ Stdout contains only JSON responses');
         }
-        
+
         // Check that debug output went to stderr
         if (stderrData.includes('[updateRecord]') || stderrData.includes('[')) {
           console.error('✅ Debug output correctly routed to stderr');
         }
-        
+
         serverProcess.kill();
-        
+
         if (hasNonJsonOutput) {
           reject(new Error('stdout contaminated with non-JSON content'));
         } else {
           resolve({
             stdoutClean: !hasNonJsonOutput,
             hasDebugOutput: stderrData.length > 0,
-            receivedResponse: hasReceivedResponse
+            receivedResponse: hasReceivedResponse,
           });
         }
       }, 3000);

@@ -1,13 +1,18 @@
-import { 
+import {
   searchObject,
   listObjects,
   getObjectDetails,
   getObjectNotes,
   createObjectNote,
-  getListEntries
+  getListEntries,
 } from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
-import { ResourceType, Person, Company, AttioListEntry } from '../../src/types/attio';
+import {
+  ResourceType,
+  Person,
+  Company,
+  AttioListEntry,
+} from '../../src/types/attio';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the axios client
@@ -19,29 +24,29 @@ describe('Attio Operations', () => {
   // Sample mock data
   const mockPerson: Person = {
     id: {
-      record_id: 'person123'
+      record_id: 'person123',
     },
     values: {
       name: [{ value: 'John Doe' }],
       email: [{ value: 'john.doe@example.com' }],
-      phone: [{ value: '+1234567890' }]
-    }
+      phone: [{ value: '+1234567890' }],
+    },
   };
 
   const mockCompany: Company = {
     id: {
-      record_id: 'company123'
+      record_id: 'company123',
     },
     values: {
-      name: [{ value: 'Acme Inc' }]
-    }
+      name: [{ value: 'Acme Inc' }],
+    },
   };
 
   // Mock API client
   const mockApiClient = {
     post: vi.fn(),
     get: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   };
 
   beforeEach(() => {
@@ -54,23 +59,26 @@ describe('Attio Operations', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson]
-        }
+          data: [mockPerson],
+        },
       });
 
       // Call the function
       const result = await searchObject<Person>(ResourceType.PEOPLE, 'John');
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
-        filter: {
-          '$or': [
-            { name: { '$contains': 'John' } },
-            { email: { '$contains': 'John' } },
-            { phone: { '$contains': 'John' } }
-          ]
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/objects/people/records/query',
+        {
+          filter: {
+            $or: [
+              { name: { $contains: 'John' } },
+              { email: { $contains: 'John' } },
+              { phone: { $contains: 'John' } },
+            ],
+          },
         }
-      });
+      );
       expect(result).toEqual([mockPerson]);
     });
 
@@ -78,19 +86,25 @@ describe('Attio Operations', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockCompany]
-        }
+          data: [mockCompany],
+        },
       });
 
       // Call the function
-      const result = await searchObject<Company>(ResourceType.COMPANIES, 'Acme');
+      const result = await searchObject<Company>(
+        ResourceType.COMPANIES,
+        'Acme'
+      );
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/companies/records/query', {
-        filter: {
-          name: { '$contains': 'Acme' }
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/objects/companies/records/query',
+        {
+          filter: {
+            name: { $contains: 'Acme' },
+          },
         }
-      });
+      );
       expect(result).toEqual([mockCompany]);
     });
 
@@ -98,8 +112,8 @@ describe('Attio Operations', () => {
       // Setup mock error
       mockApiClient.post.mockRejectedValueOnce({
         response: {
-          status: 404
-        }
+          status: 404,
+        },
       });
 
       // Mock the retry functionality to immediately return to avoid timeouts
@@ -107,13 +121,16 @@ describe('Attio Operations', () => {
         const actual = vi.requireActual('../../src/api/operations/index');
         return {
           ...actual,
-          callWithRetry: (fn: any) => fn()
+          callWithRetry: (fn: any) => fn(),
         };
       });
 
       // Call and check for error
-      await expect(searchObject(ResourceType.PEOPLE, 'Nonexistent', { maxRetries: 0 }))
-        .rejects.toThrow(`No ${ResourceType.PEOPLE} found matching 'Nonexistent'`);
+      await expect(
+        searchObject(ResourceType.PEOPLE, 'Nonexistent', { maxRetries: 0 })
+      ).rejects.toThrow(
+        `No ${ResourceType.PEOPLE} found matching 'Nonexistent'`
+      );
     }, 10000); // Increase timeout to 10 seconds
 
     it('should propagate other errors', async () => {
@@ -122,8 +139,9 @@ describe('Attio Operations', () => {
       mockApiClient.post.mockRejectedValueOnce(error);
 
       // Call and check for error
-      await expect(searchObject(ResourceType.PEOPLE, 'Test', { maxRetries: 0 }))
-        .rejects.toThrow('Network error');
+      await expect(
+        searchObject(ResourceType.PEOPLE, 'Test', { maxRetries: 0 })
+      ).rejects.toThrow('Network error');
     }, 10000); // Increase timeout to 10 seconds
   });
 
@@ -132,18 +150,27 @@ describe('Attio Operations', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockPerson]
-        }
+          data: [mockPerson],
+        },
       });
 
       // Call the function
       const result = await listObjects<Person>(ResourceType.PEOPLE);
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
-        limit: 20,
-        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
-      });
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/objects/people/records/query',
+        {
+          limit: 20,
+          sorts: [
+            {
+              attribute: 'last_interaction',
+              field: 'interacted_at',
+              direction: 'desc',
+            },
+          ],
+        }
+      );
       expect(result).toEqual([mockPerson]);
     });
 
@@ -151,18 +178,27 @@ describe('Attio Operations', () => {
       // Setup mock response
       mockApiClient.post.mockResolvedValueOnce({
         data: {
-          data: [mockCompany]
-        }
+          data: [mockCompany],
+        },
       });
 
       // Call the function
       const result = await listObjects<Company>(ResourceType.COMPANIES, 5);
 
       // Assertions
-      expect(mockApiClient.post).toHaveBeenCalledWith('/objects/companies/records/query', {
-        limit: 5,
-        sorts: [{ attribute: 'last_interaction', field: 'interacted_at', direction: 'desc' }]
-      });
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/objects/companies/records/query',
+        {
+          limit: 5,
+          sorts: [
+            {
+              attribute: 'last_interaction',
+              field: 'interacted_at',
+              direction: 'desc',
+            },
+          ],
+        }
+      );
       expect(result).toEqual([mockCompany]);
     });
   });
@@ -172,26 +208,34 @@ describe('Attio Operations', () => {
       // Setup mock response
       mockApiClient.get.mockResolvedValueOnce({
         data: {
-          data: mockPerson
-        }
+          data: mockPerson,
+        },
       });
 
       // Call the function
-      const result = await getObjectDetails<Person>(ResourceType.PEOPLE, 'person123');
+      const result = await getObjectDetails<Person>(
+        ResourceType.PEOPLE,
+        'person123'
+      );
 
       // Assertions
-      expect(mockApiClient.get).toHaveBeenCalledWith('/objects/people/records/person123');
+      expect(mockApiClient.get).toHaveBeenCalledWith(
+        '/objects/people/records/person123'
+      );
       expect(result).toEqual(mockPerson);
     });
 
     it('should handle records without data field', async () => {
       // Setup mock response with no data field
       mockApiClient.get.mockResolvedValueOnce({
-        data: mockPerson // No nested data field
+        data: mockPerson, // No nested data field
       });
 
       // Call the function
-      const result = await getObjectDetails<Person>(ResourceType.PEOPLE, 'person123');
+      const result = await getObjectDetails<Person>(
+        ResourceType.PEOPLE,
+        'person123'
+      );
 
       // Assertions
       expect(result).toEqual(mockPerson);
@@ -203,28 +247,31 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockEntries = [
-        { 
+        {
           id: { record_id: 'person123' },
           values: {
             name: [{ value: 'John Doe' }],
             email: [{ value: 'john.doe@example.com' }],
-            phone: [{ value: '+1234567890' }]
-          }
-        }
+            phone: [{ value: '+1234567890' }],
+          },
+        },
       ];
       mockApiClient.post.mockResolvedValueOnce({
-        data: { data: mockEntries }
+        data: { data: mockEntries },
       });
 
       // Act
       const result = await getListEntries(listId);
 
       // Assert
-      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
-        limit: 20,
-        offset: 0,
-        expand: ["record"]
-      });
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/lists/list123/entries/query',
+        {
+          limit: 20,
+          offset: 0,
+          expand: ['record'],
+        }
+      );
       expect(result).toEqual(mockEntries);
     });
 
@@ -232,15 +279,15 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockFilteredEntries = [
-        { 
+        {
           id: { record_id: 'company123' },
           values: {
-            name: [{ value: 'Acme Inc' }]
-          }
-        }
+            name: [{ value: 'Acme Inc' }],
+          },
+        },
       ];
       mockApiClient.post.mockResolvedValueOnce({
-        data: { data: mockFilteredEntries }
+        data: { data: mockFilteredEntries },
       });
 
       // Create filter for "stage equals Discovery"
@@ -248,28 +295,31 @@ describe('Attio Operations', () => {
         filters: [
           {
             attribute: {
-              slug: 'stage'
+              slug: 'stage',
             },
             condition: 'equals',
-            value: 'Discovery'
-          }
-        ]
+            value: 'Discovery',
+          },
+        ],
       };
 
       // Act
       const result = await getListEntries(listId, 20, 0, filters);
 
       // Assert
-      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
-        limit: 20,
-        offset: 0,
-        expand: ["record"],
-        filter: {
-          stage: {
-            '$equals': 'Discovery'
-          }
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/lists/list123/entries/query',
+        {
+          limit: 20,
+          offset: 0,
+          expand: ['record'],
+          filter: {
+            stage: {
+              $equals: 'Discovery',
+            },
+          },
         }
-      });
+      );
       expect(result).toEqual(mockFilteredEntries);
     });
 
@@ -277,10 +327,10 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockFilteredEntries = [
-        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+        { id: { entry_id: 'entry1' }, record_id: 'record1' },
       ];
       mockApiClient.post.mockResolvedValueOnce({
-        data: { data: mockFilteredEntries }
+        data: { data: mockFilteredEntries },
       });
 
       // Create filter for "stage equals Discovery AND value greater_than 50000"
@@ -288,38 +338,41 @@ describe('Attio Operations', () => {
         filters: [
           {
             attribute: {
-              slug: 'stage'
+              slug: 'stage',
             },
             condition: 'equals',
-            value: 'Discovery'
+            value: 'Discovery',
           },
           {
             attribute: {
-              slug: 'value'
+              slug: 'value',
             },
             condition: 'greater_than',
-            value: 50000
-          }
-        ]
+            value: 50000,
+          },
+        ],
       };
 
       // Act
       const result = await getListEntries(listId, 20, 0, filters);
 
       // Assert
-      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
-        limit: 20,
-        offset: 0,
-        expand: ["record"],
-        filter: {
-          stage: {
-            '$equals': 'Discovery'
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/lists/list123/entries/query',
+        {
+          limit: 20,
+          offset: 0,
+          expand: ['record'],
+          filter: {
+            stage: {
+              $equals: 'Discovery',
+            },
+            value: {
+              $greater_than: 50000,
+            },
           },
-          value: {
-            '$greater_than': 50000
-          }
         }
-      });
+      );
       expect(result).toEqual(mockFilteredEntries);
     });
 
@@ -327,14 +380,14 @@ describe('Attio Operations', () => {
       // Arrange
       const listId = 'list123';
       const mockFilteredEntries = [
-        { id: { entry_id: 'entry1' }, record_id: 'record1' }
+        { id: { entry_id: 'entry1' }, record_id: 'record1' },
       ];
-      
+
       // Mock first endpoint to fail
       mockApiClient.post
         .mockRejectedValueOnce(new Error('Primary endpoint failed'))
         .mockResolvedValueOnce({
-          data: { data: mockFilteredEntries }
+          data: { data: mockFilteredEntries },
         });
 
       // Create filter for "stage equals Discovery"
@@ -342,12 +395,12 @@ describe('Attio Operations', () => {
         filters: [
           {
             attribute: {
-              slug: 'stage'
+              slug: 'stage',
             },
             condition: 'equals',
-            value: 'Discovery'
-          }
-        ]
+            value: 'Discovery',
+          },
+        ],
       };
 
       // Act
@@ -355,26 +408,29 @@ describe('Attio Operations', () => {
 
       // Assert
       expect(mockApiClient.post).toHaveBeenCalledTimes(2);
-      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
-        limit: 20,
-        offset: 0,
-        expand: ["record"],
-        filter: {
-          stage: {
-            '$equals': 'Discovery'
-          }
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/lists/list123/entries/query',
+        {
+          limit: 20,
+          offset: 0,
+          expand: ['record'],
+          filter: {
+            stage: {
+              $equals: 'Discovery',
+            },
+          },
         }
-      });
+      );
       expect(mockApiClient.post).toHaveBeenCalledWith('/lists-entries/query', {
         list_id: 'list123',
         limit: 20,
         offset: 0,
-        expand: ["record"],
+        expand: ['record'],
         filter: {
           stage: {
-            '$equals': 'Discovery'
-          }
-        }
+            $equals: 'Discovery',
+          },
+        },
       });
       // GET should not be called
       expect(mockApiClient.get).not.toHaveBeenCalled();
@@ -384,24 +440,24 @@ describe('Attio Operations', () => {
     it('should extract record_id from nested record structure', async () => {
       // Arrange
       const listId = 'list123';
-      
+
       // Mock entries with nested record structure but missing direct record_id
       const mockNestedEntries = [
-        { 
-          id: { entry_id: 'entry1' }, 
-          record: { id: { record_id: 'record1' } }
+        {
+          id: { entry_id: 'entry1' },
+          record: { id: { record_id: 'record1' } },
         },
-        { 
-          id: { entry_id: 'entry2' }, 
-          record: { 
+        {
+          id: { entry_id: 'entry2' },
+          record: {
             id: { record_id: 'record2' },
-            values: { name: [{ value: 'Company ABC' }] }
-          }
-        }
+            values: { name: [{ value: 'Company ABC' }] },
+          },
+        },
       ];
-      
+
       mockApiClient.post.mockResolvedValueOnce({
-        data: { data: mockNestedEntries }
+        data: { data: mockNestedEntries },
       });
 
       // Act
@@ -417,14 +473,14 @@ describe('Attio Operations', () => {
       const listId = 'list123';
       const mockEntries = [
         { id: { entry_id: 'entry1' }, record_id: 'record1' },
-        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+        { id: { entry_id: 'entry2' }, record_id: 'record2' },
       ];
-      
+
       // Mock first endpoint to fail
       mockApiClient.post
         .mockRejectedValueOnce(new Error('Primary endpoint failed'))
         .mockResolvedValueOnce({
-          data: { data: mockEntries }
+          data: { data: mockEntries },
         });
 
       // Act
@@ -432,16 +488,19 @@ describe('Attio Operations', () => {
 
       // Assert
       expect(mockApiClient.post).toHaveBeenCalledTimes(2);
-      expect(mockApiClient.post).toHaveBeenCalledWith('/lists/list123/entries/query', {
-        limit: 20,
-        offset: 0,
-        expand: ["record"]
-      });
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/lists/list123/entries/query',
+        {
+          limit: 20,
+          offset: 0,
+          expand: ['record'],
+        }
+      );
       expect(mockApiClient.post).toHaveBeenCalledWith('/lists-entries/query', {
         list_id: 'list123',
         limit: 20,
         offset: 0,
-        expand: ["record"]
+        expand: ['record'],
       });
       expect(result).toEqual(mockEntries);
     });
@@ -451,17 +510,17 @@ describe('Attio Operations', () => {
       const listId = 'list123';
       const mockEntries = [
         { id: { entry_id: 'entry1' }, record_id: 'record1' },
-        { id: { entry_id: 'entry2' }, record_id: 'record2' }
+        { id: { entry_id: 'entry2' }, record_id: 'record2' },
       ];
-      
+
       // Mock first and second endpoints to fail
       mockApiClient.post
         .mockRejectedValueOnce(new Error('Primary endpoint failed'))
         .mockRejectedValueOnce(new Error('Secondary endpoint failed'));
-      
+
       // Mock GET for the last fallback
       mockApiClient.get.mockResolvedValueOnce({
-        data: { data: mockEntries }
+        data: { data: mockEntries },
       });
 
       // Act

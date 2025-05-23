@@ -38,8 +38,10 @@ export class InvalidCompanyDataError extends CompanyError {
 export class CompanyOperationError extends CompanyError {
   constructor(operation: string, companyId?: string, details?: string) {
     const baseMessage = `Company ${operation} failed`;
-    const fullMessage = companyId 
-      ? `${baseMessage} for company ${companyId}${details ? `: ${details}` : ''}`
+    const fullMessage = companyId
+      ? `${baseMessage} for company ${companyId}${
+          details ? `: ${details}` : ''
+        }`
       : `${baseMessage}${details ? `: ${details}` : ''}`;
     super(fullMessage);
     this.name = 'CompanyOperationError';
@@ -61,7 +63,9 @@ export class MissingCompanyFieldError extends InvalidCompanyDataError {
  */
 export class InvalidCompanyFieldTypeError extends InvalidCompanyDataError {
   constructor(fieldName: string, expectedType: string, actualType: string) {
-    super(`Field '${fieldName}' must be of type ${expectedType}, but got ${actualType}`);
+    super(
+      `Field '${fieldName}' must be of type ${expectedType}, but got ${actualType}`
+    );
     this.name = 'InvalidCompanyFieldTypeError';
   }
 }

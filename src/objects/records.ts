@@ -286,7 +286,9 @@ export async function listObjectRecords<T extends AttioRecord>(
         queryParams.append('direction', options.direction);
       }
 
-      const path = `/objects/${objectId || objectSlug}/records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const path = `/objects/${objectId || objectSlug}/records${
+        queryParams.toString() ? '?' + queryParams.toString() : ''
+      }`;
 
       const response = await api.get(path);
       return response.data.data || [];

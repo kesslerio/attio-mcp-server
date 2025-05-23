@@ -13,7 +13,7 @@ interface HealthServerOptions {
 /**
  * Start a simple HTTP server for health checks
  * This is primarily for Docker container health checks
- * 
+ *
  * @param options - Configuration options for the health server
  *   @param options.port - The port to listen on (default: 3000)
  *   @param options.maxRetries - Maximum number of alternative ports to try (default: 3)
@@ -21,29 +21,31 @@ interface HealthServerOptions {
  *   @param options.retryBackoff - Base backoff time in ms between retries (default: 500)
  * @returns The HTTP server instance with shutdown method
  */
-export function startHealthServer(options?: Partial<HealthServerOptions>): http.Server {
+export function startHealthServer(
+  options?: Partial<HealthServerOptions>
+): http.Server {
   // Set default options
   const config: HealthServerOptions = {
     port: 3000,
     maxRetries: 3,
     maxRetryTime: 10000,
     retryBackoff: 500,
-    ...options
+    ...options,
   };
-  
+
   const server = http.createServer((req, res) => {
     if (req.url === '/health' || req.url === '/') {
       // Ensure proper JSON formatting with correct content type
-      const healthResponse = { 
-        status: 'ok', 
+      const healthResponse = {
+        status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
       };
       const jsonResponse = JSON.stringify(healthResponse);
-      
-      res.writeHead(200, { 
+
+      res.writeHead(200, {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(jsonResponse)
+        'Content-Length': Buffer.byteLength(jsonResponse),
       });
       res.end(jsonResponse);
     } else {
@@ -54,15 +56,24 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
 
   // Store timeout for cleanup
   let retryTimeout: NodeJS.Timeout | null = null;
-  
+
   // Try to start the server with port fallback
-  const tryListen = (currentPort: number, retriesLeft: number, startTime: number = Date.now()) => {
+  const tryListen = (
+    currentPort: number,
+    retriesLeft: number,
+    startTime: number = Date.now()
+  ) => {
     // Check if max retry time exceeded
-    if (Date.now() - startTime > config.maxRetryTime && retriesLeft < config.maxRetries) {
-      console.error(`Maximum retry time exceeded (${config.maxRetryTime}ms), stopping retries`);
+    if (
+      Date.now() - startTime > config.maxRetryTime &&
+      retriesLeft < config.maxRetries
+    ) {
+      console.error(
+        `Maximum retry time exceeded (${config.maxRetryTime}ms), stopping retries`
+      );
       return;
     }
-    
+
     server.listen(currentPort, () => {
       // Use stderr for health server logs to avoid interfering with JSON-RPC stdout
       console.error(`Health check server listening on port ${currentPort}`);
@@ -71,24 +82,28 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
     // Handle port in use errors
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && retriesLeft > 0) {
-        console.error(`Port ${currentPort} is already in use, trying port ${currentPort + 1}`);
-        
+        console.error(
+          `Port ${currentPort} is already in use, trying port ${
+            currentPort + 1
+          }`
+        );
+
         // Clean up listeners from the current attempt before retrying
         server.removeAllListeners('listening');
         server.removeAllListeners('error');
         // server.close(); // Ensure server is closed before trying again or new listeners are added.
-                       // Note: close is async. The critical part is removing listeners to prevent leaks for the SAME server instance.
-                       // If we create a NEW server instance on each retry, this close would be vital.
-                       // Since we reuse the `server` instance, removing listeners is key.
+        // Note: close is async. The critical part is removing listeners to prevent leaks for the SAME server instance.
+        // If we create a NEW server instance on each retry, this close would be vital.
+        // Since we reuse the `server` instance, removing listeners is key.
 
         if (retryTimeout) clearTimeout(retryTimeout);
-        
+
         // Try the next port with an exponential backoff
         const backoff = Math.min(
-          config.retryBackoff * (config.maxRetries - retriesLeft + 1), 
+          config.retryBackoff * (config.maxRetries - retriesLeft + 1),
           2000
         );
-        
+
         retryTimeout = setTimeout(() => {
           tryListen(currentPort + 1, retriesLeft - 1, startTime);
         }, backoff);
@@ -100,7 +115,7 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
 
   // Start trying ports
   tryListen(config.port, config.maxRetries);
-  
+
   // Add graceful shutdown method to server
   const shutdownServer = (callback?: (err?: Error) => void) => {
     console.error('Health check server: Initiating shutdown...');
@@ -120,7 +135,7 @@ export function startHealthServer(options?: Partial<HealthServerOptions>): http.
       }
     });
   };
-  
+
   // Add shutdown method to server
   (server as any).shutdown = shutdownServer;
 

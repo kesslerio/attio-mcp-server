@@ -1,4 +1,8 @@
-import { createAttioClient, initializeAttioClient, getAttioClient } from '../../src/api/attio-client';
+import {
+  createAttioClient,
+  initializeAttioClient,
+  getAttioClient,
+} from '../../src/api/attio-client';
 import axios from 'axios';
 
 // Mock axios
@@ -15,13 +19,13 @@ describe('attio-client', () => {
     it('should create an axios instance with correct configuration', () => {
       // Arrange
       const apiKey = 'test-api-key';
-      const mockAxiosInstance = { 
+      const mockAxiosInstance = {
         defaults: {},
         interceptors: {
           response: {
-            use: vi.fn()
-          }
-        }
+            use: vi.fn(),
+          },
+        },
       };
       mockedAxios.create.mockReturnValue(mockAxiosInstance as any);
 
@@ -32,7 +36,7 @@ describe('attio-client', () => {
       expect(mockedAxios.create).toHaveBeenCalledWith({
         baseURL: 'https://api.attio.com/v2',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
@@ -45,13 +49,13 @@ describe('attio-client', () => {
     it('should initialize the API client and make it retrievable', () => {
       // Arrange
       const apiKey = 'test-api-key';
-      const mockAxiosInstance = { 
+      const mockAxiosInstance = {
         defaults: {},
         interceptors: {
           response: {
-            use: vi.fn()
-          }
-        }
+            use: vi.fn(),
+          },
+        },
       };
       mockedAxios.create.mockReturnValue(mockAxiosInstance as any);
 
@@ -60,21 +64,23 @@ describe('attio-client', () => {
       const result = getAttioClient();
 
       // Assert
-      expect(mockedAxios.create).toHaveBeenCalledWith(expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': `Bearer ${apiKey}`,
+      expect(mockedAxios.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${apiKey}`,
+          }),
         })
-      }));
+      );
       expect(result).toBe(mockAxiosInstance);
     });
 
-    it('should throw an error if getAttioClient is called before initialization', () => {
+    it('should throw an error if getAttioClient is called before initialization', async () => {
       // Create a new module to reset the singleton API client
       vi.resetModules();
-      
+
       // Import the module again to reset its state
-      const { getAttioClient } = require('../../src/api/attio-client.js');
-      
+      const { getAttioClient } = await import('../../src/api/attio-client');
+
       // Assert
       expect(() => getAttioClient()).toThrow('API client not initialized');
     });

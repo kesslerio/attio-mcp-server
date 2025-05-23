@@ -14,72 +14,92 @@ vi.mock('../../src/utils/uri-parser');
 describe('tools', () => {
   describe('registerToolHandlers', () => {
     let mockServer: any;
-    const mockedCompanies = companiesModule as vi.Mocked<typeof companiesModule>;
+    const mockedCompanies = companiesModule as vi.Mocked<
+      typeof companiesModule
+    >;
     const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
     const mockedErrorHandler = errorHandler as vi.Mocked<typeof errorHandler>;
-    const mockedParseResourceUri = parseResourceUri as vi.MockedFunction<typeof parseResourceUri>;
+    const mockedParseResourceUri = parseResourceUri as vi.MockedFunction<
+      typeof parseResourceUri
+    >;
 
     // Mock data
     const mockCompanySearchResults = [
       {
         id: { record_id: 'company1' },
-        values: { name: [{ value: 'Acme Corp' }] }
+        values: { name: [{ value: 'Acme Corp' }] },
       },
       {
         id: { record_id: 'company2' },
-        values: { name: [{ value: 'Globex Inc' }] }
-      }
+        values: { name: [{ value: 'Globex Inc' }] },
+      },
     ];
 
     const mockPeopleSearchResults = [
       {
         id: { record_id: 'person1' },
-        values: { name: [{ value: 'John Doe' }] }
+        values: { name: [{ value: 'John Doe' }] },
       },
       {
         id: { record_id: 'person2' },
-        values: { name: [{ value: 'Jane Smith' }] }
-      }
+        values: { name: [{ value: 'Jane Smith' }] },
+      },
     ];
 
     const mockCompanyDetails = {
       id: { record_id: 'company1' },
       values: {
         name: [{ value: 'Acme Corp' }],
-        industry: [{ value: 'Technology' }]
-      }
+        industry: [{ value: 'Technology' }],
+      },
     };
 
     const mockPersonDetails = {
       id: { record_id: 'person1' },
       values: {
         name: [{ value: 'John Doe' }],
-        email: [{ value: 'john@example.com' }]
-      }
+        email: [{ value: 'john@example.com' }],
+      },
     };
 
     const mockCompanyNotes = [
-      { id: { note_id: 'note1' }, title: 'Meeting notes', content: 'Discussed project timeline' },
-      { id: { note_id: 'note2' }, title: 'Follow-up', content: 'Sent proposal' }
+      {
+        id: { note_id: 'note1' },
+        title: 'Meeting notes',
+        content: 'Discussed project timeline',
+      },
+      {
+        id: { note_id: 'note2' },
+        title: 'Follow-up',
+        content: 'Sent proposal',
+      },
     ];
 
     const mockPersonNotes = [
-      { id: { note_id: 'note3' }, title: 'Introduction', content: 'First contact with John' },
-      { id: { note_id: 'note4' }, title: 'Career history', content: 'Discussed background' }
+      {
+        id: { note_id: 'note3' },
+        title: 'Introduction',
+        content: 'First contact with John',
+      },
+      {
+        id: { note_id: 'note4' },
+        title: 'Career history',
+        content: 'Discussed background',
+      },
     ];
 
     const mockCreatedCompanyNote = {
-      id: { note_id: 'note5' }
+      id: { note_id: 'note5' },
     };
 
     const mockCreatedPersonNote = {
-      id: { note_id: 'note6' }
+      id: { note_id: 'note6' },
     };
 
     beforeEach(() => {
       // Reset all mocks before each test
       vi.resetAllMocks();
-      
+
       // Setup mock server
       mockServer = {
         setRequestHandler: vi.fn(),
@@ -89,7 +109,7 @@ describe('tools', () => {
     it('should register handlers for ListToolsRequestSchema and CallToolRequestSchema', () => {
       // Act
       registerToolHandlers(mockServer);
-      
+
       // Assert
       expect(mockServer.setRequestHandler).toHaveBeenCalledTimes(2);
     });
@@ -97,27 +117,27 @@ describe('tools', () => {
     it('should handle list tools request and return available tools', async () => {
       // Register handlers
       registerToolHandlers(mockServer);
-      
+
       // Get the first handler function (ListToolsRequestSchema handler)
       const listToolsHandler = mockServer.setRequestHandler.mock.calls[0][1];
-      
+
       // Call the handler
       const result = await listToolsHandler();
-      
+
       // Verify the result has the expected structure
       expect(result).toHaveProperty('tools');
       expect(Array.isArray(result.tools)).toBeTruthy();
       expect(result.tools.length).toBeGreaterThan(0);
-      
+
       // Extract tool names for easier testing
       const toolNames = result.tools.map((tool: any) => tool.name);
-      
+
       // Check for expected company tools
       expect(toolNames).toContain('search-companies');
       expect(toolNames).toContain('get-company-details');
       expect(toolNames).toContain('get-company-notes');
       expect(toolNames).toContain('create-company-note');
-      
+
       // Check for expected people tools
       expect(toolNames).toContain('search-people');
       expect(toolNames).toContain('get-person-details');
@@ -127,159 +147,182 @@ describe('tools', () => {
 
     describe('Tool handlers', () => {
       let callToolHandler: Function;
-      
+
       beforeEach(() => {
         // Register handlers
         registerToolHandlers(mockServer);
-        
+
         // Get the second handler function (CallToolRequestSchema handler)
         callToolHandler = mockServer.setRequestHandler.mock.calls[1][1];
       });
-      
+
       it('should handle search-companies tool call successfully', async () => {
         // Mock searchCompanies to return results
-        mockedCompanies.searchCompanies.mockResolvedValueOnce(mockCompanySearchResults);
-        
+        mockedCompanies.searchCompanies.mockResolvedValueOnce(
+          mockCompanySearchResults
+        );
+
         // Create a mock request
         const request = {
           params: {
             name: 'search-companies',
             arguments: {
-              query: 'Acme'
-            }
-          }
+              query: 'Acme',
+            },
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
         expect(mockedCompanies.searchCompanies).toHaveBeenCalledWith('Acme');
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
         expect(result.content[0].text).toContain('Found 2 companies');
       });
-      
+
       it('should handle search-people tool call successfully', async () => {
         // Mock searchPeople to return results
-        mockedPeople.searchPeople.mockResolvedValueOnce(mockPeopleSearchResults);
-        
+        mockedPeople.searchPeople.mockResolvedValueOnce(
+          mockPeopleSearchResults
+        );
+
         // Create a mock request
         const request = {
           params: {
             name: 'search-people',
             arguments: {
-              query: 'John'
-            }
-          }
+              query: 'John',
+            },
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
         expect(mockedPeople.searchPeople).toHaveBeenCalledWith('John');
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
         expect(result.content[0].text).toContain('Found 2 people');
       });
-      
+
       it('should handle get-company-details tool call successfully', async () => {
         // Mock parseResourceUri to return valid type and ID
-        mockedParseResourceUri.mockReturnValueOnce([ResourceType.COMPANIES, 'company1']);
-        
+        mockedParseResourceUri.mockReturnValueOnce([
+          ResourceType.COMPANIES,
+          'company1',
+        ]);
+
         // Mock getCompanyDetails to return company details
-        mockedCompanies.getCompanyDetails.mockResolvedValueOnce(mockCompanyDetails);
-        
+        mockedCompanies.getCompanyDetails.mockResolvedValueOnce(
+          mockCompanyDetails
+        );
+
         // Create a mock request
         const request = {
           params: {
             name: 'get-company-details',
             arguments: {
-              uri: 'attio://companies/company1'
-            }
-          }
+              uri: 'attio://companies/company1',
+            },
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
-        expect(mockedParseResourceUri).toHaveBeenCalledWith('attio://companies/company1');
-        expect(mockedCompanies.getCompanyDetails).toHaveBeenCalledWith('company1');
+        expect(mockedParseResourceUri).toHaveBeenCalledWith(
+          'attio://companies/company1'
+        );
+        expect(mockedCompanies.getCompanyDetails).toHaveBeenCalledWith(
+          'company1'
+        );
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
         expect(result.content[0].text).toContain('Company:');
       });
-      
+
       it('should handle get-person-details tool call successfully', async () => {
         // Mock parseResourceUri to return valid type and ID
-        mockedParseResourceUri.mockReturnValueOnce([ResourceType.PEOPLE, 'person1']);
-        
+        mockedParseResourceUri.mockReturnValueOnce([
+          ResourceType.PEOPLE,
+          'person1',
+        ]);
+
         // Mock getPersonDetails to return person details
         mockedPeople.getPersonDetails.mockResolvedValueOnce(mockPersonDetails);
-        
+
         // Create a mock request
         const request = {
           params: {
             name: 'get-person-details',
             arguments: {
-              uri: 'attio://people/person1'
-            }
-          }
+              uri: 'attio://people/person1',
+            },
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
-        expect(mockedParseResourceUri).toHaveBeenCalledWith('attio://people/person1');
+        expect(mockedParseResourceUri).toHaveBeenCalledWith(
+          'attio://people/person1'
+        );
         expect(mockedPeople.getPersonDetails).toHaveBeenCalledWith('person1');
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', false);
         expect(result.content[0].text).toContain('Person Details:');
       });
-      
+
       it('should handle errors in tool calls appropriately', async () => {
         // Mock searchCompanies to throw an error
         const mockError = new Error('API error');
         mockedCompanies.searchCompanies.mockRejectedValueOnce(mockError);
-        
+
         // Mock createErrorResult
-        const mockErrorResult = { isError: true, content: [{ type: 'text', text: 'Error message' }] };
-        mockedErrorHandler.createErrorResult.mockReturnValueOnce(mockErrorResult as any);
-        
+        const mockErrorResult = {
+          isError: true,
+          content: [{ type: 'text', text: 'Error message' }],
+        };
+        mockedErrorHandler.createErrorResult.mockReturnValueOnce(
+          mockErrorResult as any
+        );
+
         // Create a mock request
         const request = {
           params: {
             name: 'search-companies',
             arguments: {
-              query: 'Acme'
-            }
-          }
+              query: 'Acme',
+            },
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
         expect(mockedCompanies.searchCompanies).toHaveBeenCalledWith('Acme');
         expect(mockedErrorHandler.createErrorResult).toHaveBeenCalled();
         expect(result).toBe(mockErrorResult);
       });
-      
+
       it('should handle unknown tool name', async () => {
         // Create a mock request with invalid tool name
         const request = {
           params: {
             name: 'non-existent-tool',
-            arguments: {}
-          }
+            arguments: {},
+          },
         };
-        
+
         // Call the handler
         const result = await callToolHandler(request);
-        
+
         // Verify
         expect(result).toHaveProperty('content');
         expect(result).toHaveProperty('isError', true);

@@ -6,16 +6,13 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/test'],
   testMatch: ['**/*.test.ts', '**/*.test.js'],
-  collectCoverageFrom: [
-    'src/**/*.{ts,js}',
-    '!src/**/*.d.ts',
-  ],
-  
+  collectCoverageFrom: ['src/**/*.{ts,js}', '!src/**/*.d.ts'],
+
   // Offline optimizations
   setupFilesAfterEnv: [],
   testTimeout: 10000,
   maxWorkers: '50%',
-  
+
   // Skip tests that require network access
   testPathIgnorePatterns: [
     '/node_modules/',
@@ -23,17 +20,17 @@ module.exports = {
     '/test/manual/',
     '/test/.*\\.manual\\.',
     'real-api-integration',
-    'claude-desktop-scenario'
+    'claude-desktop-scenario',
   ],
-  
+
   // Skip slow or network-dependent tests
   globalTeardown: undefined,
   globalSetup: undefined,
-  
+
   // Simplified module resolution for offline
   moduleNameMapping: {},
-  
+
   // Reduce noise in offline environments
   silent: false,
-  verbose: true
+  verbose: true,
 };

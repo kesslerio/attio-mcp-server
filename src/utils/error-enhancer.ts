@@ -61,12 +61,15 @@ interface ErrorContext {
 function parseApiError(error: any): ErrorContext {
   console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
   console.error(
-    `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${error?.constructor?.name}`
+    `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${error
+      ?.constructor?.name}`
   );
 
   if (error && typeof error === 'object') {
     console.error(
-      `[enhancer-parseApiError] error keys: ${JSON.stringify(Object.keys(error))}`
+      `[enhancer-parseApiError] error keys: ${JSON.stringify(
+        Object.keys(error)
+      )}`
     );
     console.error(
       `[enhancer-parseApiError] error.message from input: ${error.message}`
@@ -85,7 +88,9 @@ function parseApiError(error: any): ErrorContext {
   if (isAxios && error.response) {
     responseExists = true;
     console.error(
-      `[enhancer-parseApiError] Step 2: error.response exists. Keys: ${JSON.stringify(Object.keys(error.response))}`
+      `[enhancer-parseApiError] Step 2: error.response exists. Keys: ${JSON.stringify(
+        Object.keys(error.response)
+      )}`
     );
 
     if (error.response.data) {
@@ -96,7 +101,8 @@ function parseApiError(error: any): ErrorContext {
         responseDataContent = 'Error stringifying response.data';
       }
       console.error(
-        `[enhancer-parseApiError] Step 3: error.response.data exists. Type: ${typeof error.response.data}, Content: ${responseDataContent}`
+        `[enhancer-parseApiError] Step 3: error.response.data exists. Type: ${typeof error
+          .response.data}, Content: ${responseDataContent}`
       );
     } else {
       console.error(
