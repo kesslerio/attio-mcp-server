@@ -5,31 +5,55 @@ import {
 } from '../../../objects/people/index.js';
 import { searchCompanies } from '../../../objects/companies/index.js';
 import { getAttioClient } from '../../../api/attio-client.js';
-import { ToolRequestArguments } from '../../tool-types.js';
+import { ToolRequestArguments } from '../../../types/tool-types.js';
 import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
+
+// Type definitions for filter values
+interface CompanyFilterValue {
+  record_id?: string;
+  value?: string | number | boolean;
+}
+
+interface CompanyFilter {
+  attribute: {
+    slug: string;
+  };
+  condition: string;
+  value: CompanyFilterValue | string | number | boolean;
+}
 
 export const relationshipToolConfigs = {
   searchByCompany: {
     name: 'search-people-by-company',
     handler: async (args: ToolRequestArguments) => {
-      const { companyFilter } = args;
+      const companyFilter = args.companyFilter as any;
       if (!companyFilter?.filters || !Array.isArray(companyFilter.filters) || companyFilter.filters.length === 0) {
         throw new Error('Invalid companyFilter format. Expected filters array with at least one filter');
       }
 
-      const filters: any[] = [];
+      const filters: Array<{ company: { target_record_id: { $eq: string } } }> = [];
       for (const filter of companyFilter.filters) {
-        const slug = filter.attribute?.slug;
+        const typedFilter = filter as CompanyFilter;
+        const slug = typedFilter.attribute?.slug;
         if (slug === 'companies.id') {
-          const recordId = (filter as any).value?.record_id || (filter as any).value;
+          let recordId: string;
+          if (typeof typedFilter.value === 'object' && typedFilter.value !== null && 'record_id' in typedFilter.value) {
+            recordId = (typedFilter.value as CompanyFilterValue).record_id || '';
+          } else {
+            recordId = String(typedFilter.value);
+          }
           filters.push({ company: { target_record_id: { $eq: recordId } } });
         } else if (slug === 'companies.name') {
-          const companies = await searchCompanies((filter as any).value);
+          const searchValue = String(typedFilter.value);
+          const companies = await searchCompanies(searchValue);
           if (companies.length === 0) {
-            throw new Error(`No company found with name: ${(filter as any).value}`);
+            throw new Error(`No company found with name: ${searchValue}`);
           }
           const companyId = companies[0].id?.record_id;
+          if (!companyId) {
+            throw new Error(`Company found but has no record ID: ${searchValue}`);
+          }
           filters.push({ company: { target_record_id: { $eq: companyId } } });
         } else {
           throw new Error(

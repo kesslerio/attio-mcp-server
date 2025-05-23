@@ -2,7 +2,8 @@
  * Note operations for people
  */
 import { getPersonNotes, createPersonNote } from '../../../objects/people/index.js';
-import { NotesToolConfig, CreateNoteToolConfig, NoteDisplay } from '../../tool-types.js';
+import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
+import { NoteDisplay } from '../../../types/tool-types.js';
 
 export const notesToolConfigs = {
   notes: {

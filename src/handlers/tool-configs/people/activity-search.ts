@@ -15,7 +15,7 @@ export const activitySearchToolConfigs = {
     handler: searchPeopleByLastInteraction,
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people with interactions in the specified date range:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`)
+        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${(person.values as any)?.last_interaction?.interacted_at || 'unknown'})`)
         .join('\n')}`
   } as DateBasedSearchToolConfig,
 
@@ -24,7 +24,7 @@ export const activitySearchToolConfigs = {
     handler: searchPeopleByActivity,
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people with matching activity:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${person.values?.last_interaction?.interacted_at || 'unknown'})`)
+        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${(person.values as any)?.last_interaction?.interacted_at || 'unknown'})`)
         .join('\n')}`
   } as DateBasedSearchToolConfig
 };
