@@ -382,6 +382,10 @@ export class CompanyValidator {
         
       case 'array':
         if (!Array.isArray(value)) {
+          // Allow single string values to be converted to an array later
+          if (typeof value === 'string') {
+            return;
+          }
           throw new InvalidCompanyFieldTypeError(field, 'array', actualType);
         }
         break;
