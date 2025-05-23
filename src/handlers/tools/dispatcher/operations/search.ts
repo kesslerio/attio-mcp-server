@@ -12,6 +12,33 @@ import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
 
 /**
+ * Check if the formatted results already contain a header to avoid duplication
+ */
+function hasResultHeader(formattedResults: unknown): boolean {
+  return typeof formattedResults === 'string' && formattedResults.startsWith('Found ');
+}
+
+/**
+ * Format search results with appropriate header
+ */
+function formatSearchResults(
+  formattedResults: string,
+  results: unknown[],
+  resourceType: ResourceType,
+  searchContext?: string
+): string {
+  if (hasResultHeader(formattedResults)) {
+    return formattedResults;
+  }
+  
+  const header = searchContext 
+    ? `Found ${results.length} ${resourceType} ${searchContext}:`
+    : `Found ${results.length} ${resourceType}:`;
+  
+  return `${header}\n${formattedResults}`;
+}
+
+/**
  * Handle common search operations
  *
  * @param toolType - The type of search tool
@@ -29,21 +56,10 @@ export async function handleSearchOperation(
   try {
     const results = await searchConfig.handler(searchParam);
     const formattedResults = searchConfig.formatResult(results);
-
-    // Check if the formatter already includes a header
-    const hasHeader = formattedResults.startsWith('Found ');
-
-    // Format the response based on the tool type and formatted results
-    let responseText = '';
-
-    if (hasHeader) {
-      // If the formatter already includes a "Found" header, use it as is
-      responseText = formattedResults;
-    } else {
-      // Add a contextual header based on the tool type
-      const searchType = toolType.replace('searchBy', '').toLowerCase();
-      responseText = `Found ${String(results.length)} ${resourceType} matching ${searchType} "${searchParam}":\n${formattedResults}`;
-    }
+    
+    const searchType = toolType.replace('searchBy', '').toLowerCase();
+    const searchContext = `matching ${searchType} "${searchParam}"`;
+    const responseText = formatSearchResults(formattedResults, results, resourceType, searchContext);
 
     return formatResponse(responseText);
   } catch (error) {
@@ -68,20 +84,9 @@ export async function handleBasicSearch(
   try {
     const results = await toolConfig.handler(query);
     const formattedResults = toolConfig.formatResult(results);
+    const responseText = formatSearchResults(formattedResults, results, resourceType);
 
-    // Check if the formatter already includes a header to avoid duplication
-    const hasHeader =
-      typeof formattedResults === 'string' &&
-      formattedResults.startsWith('Found ');
-
-    if (hasHeader) {
-      // If the formatter already includes a "Found" header, use it as is
-      return formatResponse(formattedResults);
-    } else {
-      // For basic search tools, we need to add the header
-      const header = `Found ${results.length} ${resourceType}:`;
-      return formatResponse(`${header}\n${formattedResults}`);
-    }
+    return formatResponse(responseText);
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
@@ -139,20 +144,9 @@ export async function handleSmartSearch(
   try {
     const results = await toolConfig.handler(query);
     const formattedResults = toolConfig.formatResult(results);
+    const responseText = formatSearchResults(formattedResults, results, resourceType, '(smart search)');
 
-    // Check if the formatter already includes a header to avoid duplication
-    const hasHeader =
-      typeof formattedResults === 'string' &&
-      formattedResults.startsWith('Found ');
-
-    if (hasHeader) {
-      // If the formatter already includes a "Found" header, use it as is
-      return formatResponse(formattedResults);
-    } else {
-      // For smart search tools, we need to add the header
-      const header = `Found ${results.length} ${resourceType} (smart search):`;
-      return formatResponse(`${header}\n${formattedResults}`);
-    }
+    return formatResponse(responseText);
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
