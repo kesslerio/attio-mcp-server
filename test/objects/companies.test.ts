@@ -19,25 +19,25 @@ import {
 } from '../../src/errors/company-errors';
 
 // Mock the API client and records module
-jest.mock('../../src/api/attio-client');
-jest.mock('../../src/objects/records');
-jest.mock('../../src/api/attribute-types');
-const mockedAttioClient = attioClient as jest.Mocked<typeof attioClient>;
-const mockedRecords = records as jest.Mocked<typeof records>;
-const mockedAttributeTypes = attributeTypes as jest.Mocked<typeof attributeTypes>;
+vi.mock('../../src/api/attio-client');
+vi.mock('../../src/objects/records');
+vi.mock('../../src/api/attribute-types');
+const mockedAttioClient = attioClient as vi.Mocked<typeof attioClient>;
+const mockedRecords = records as vi.Mocked<typeof records>;
+const mockedAttributeTypes = attributeTypes as vi.Mocked<typeof attributeTypes>;
 
 describe('companies', () => {
   let mockAxiosInstance: any;
 
   beforeEach(() => {
     // Reset all mocks before each test
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     
     // Setup mock API client
     mockAxiosInstance = {
-      get: jest.fn(),
-      post: jest.fn(),
-      patch: jest.fn(),
+      get: vi.fn(),
+      post: vi.fn(),
+      patch: vi.fn(),
     };
     mockedAttioClient.getAttioClient.mockReturnValue(mockAxiosInstance);
     
@@ -112,8 +112,8 @@ describe('companies', () => {
       mockAxiosInstance.post.mockRejectedValue(mockError);
 
       // Mock the retry functionality directly in the test
-      jest.mock('../../src/api/attio-operations.js', () => {
-        const actual = jest.requireActual('../../src/api/attio-operations.js');
+      vi.mock('../../src/api/attio-operations.js', () => {
+        const actual = vi.requireActual('../../src/api/attio-operations.js');
         return {
           ...actual,
           callWithRetry: (fn: any) => fn()

@@ -11,25 +11,25 @@ import {
 } from '../../src/utils/config-loader';
 
 // Mock fs module
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  readFileSync: jest.fn(),
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
   promises: {
-    writeFile: jest.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   },
-  mkdirSync: jest.fn(),
+  mkdirSync: vi.fn(),
 }));
 
 describe('Configuration Loader', () => {
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('loadMappingConfig', () => {
     it('should return an empty config when no files exist', () => {
       // Mock fs.existsSync to return false (files don't exist)
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
+      (fs.existsSync as vi.Mock).mockReturnValue(false);
 
       const config = loadMappingConfig();
 
@@ -52,10 +52,10 @@ describe('Configuration Loader', () => {
 
     it('should load and merge default and user configurations', () => {
       // Mock fs.existsSync to return true (files exist)
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.existsSync as vi.Mock).mockReturnValue(true);
 
       // Mock fs.readFileSync to return test configurations
-      (fs.readFileSync as jest.Mock).mockImplementation((filePath) => {
+      (fs.readFileSync as vi.Mock).mockImplementation((filePath) => {
         if (filePath.includes('default.json')) {
           return JSON.stringify({
             version: '1.0',
@@ -105,10 +105,10 @@ describe('Configuration Loader', () => {
 
     it('should handle invalid JSON in configuration files', () => {
       // Mock fs.existsSync to return true (files exist)
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.existsSync as vi.Mock).mockReturnValue(true);
 
       // Mock fs.readFileSync to return invalid JSON
-      (fs.readFileSync as jest.Mock).mockImplementation((filePath) => {
+      (fs.readFileSync as vi.Mock).mockImplementation((filePath) => {
         if (filePath.includes('default.json')) {
           return '{ invalid json';
         }
@@ -116,7 +116,7 @@ describe('Configuration Loader', () => {
       });
 
       // Mock console.warn to capture warnings
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
 
       const config = loadMappingConfig();
 
@@ -147,7 +147,7 @@ describe('Configuration Loader', () => {
   describe('writeMappingConfig', () => {
     it('should write configuration to file', async () => {
       // Mock fs.existsSync to return true (directory exists)
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.existsSync as vi.Mock).mockReturnValue(true);
 
       const config: MappingConfig = {
         version: '1.0',
@@ -173,7 +173,7 @@ describe('Configuration Loader', () => {
       );
 
       // Verify the written content
-      const writtenContent = (fs.promises.writeFile as jest.Mock).mock.calls[0][1];
+      const writtenContent = (fs.promises.writeFile as vi.Mock).mock.calls[0][1];
       const parsedContent = JSON.parse(writtenContent);
       expect(parsedContent.version).toBe('1.0');
       expect(parsedContent.mappings.attributes.common).toEqual({ 'Name': 'name' });
@@ -182,7 +182,7 @@ describe('Configuration Loader', () => {
 
     it('should create directory if it does not exist', async () => {
       // Mock fs.existsSync to return false (directory doesn't exist)
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
+      (fs.existsSync as vi.Mock).mockReturnValue(false);
 
       const config: MappingConfig = {
         version: '1.0',
@@ -208,8 +208,8 @@ describe('Configuration Loader', () => {
   describe('updateMappingSection', () => {
     beforeEach(() => {
       // Mock loadMappingConfig to return a test configuration
-      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
-      jest.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+      vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
         return JSON.stringify({
           version: '1.0',
           mappings: {
@@ -231,7 +231,7 @@ describe('Configuration Loader', () => {
     it('should update a specific section with merged mappings', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      jest.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
         updatedConfig = JSON.parse(content as string);
         return undefined;
       });
@@ -250,7 +250,7 @@ describe('Configuration Loader', () => {
     it('should replace section when merge is false', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      jest.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
         updatedConfig = JSON.parse(content as string);
         return undefined;
       });
@@ -268,7 +268,7 @@ describe('Configuration Loader', () => {
     it('should create missing sections as needed', async () => {
       // Mock writeMappingConfig to capture the updated config
       let updatedConfig: any = null;
-      jest.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
+      vi.spyOn(fs.promises, 'writeFile').mockImplementation(async (path, content) => {
         updatedConfig = JSON.parse(content as string);
         return undefined;
       });

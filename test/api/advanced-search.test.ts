@@ -23,7 +23,7 @@ import { FilterValidationError } from '../../src/errors/api-errors';
 const SKIP_TESTS = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 // Increase timeout for API tests
-jest.setTimeout(30000);
+vi.setTimeout(30000);
 
 describe('Advanced Search API Tests', () => {
   // Initialize API client if not skipping tests

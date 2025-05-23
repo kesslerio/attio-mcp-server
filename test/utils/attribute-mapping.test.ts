@@ -11,20 +11,20 @@ import {
 import * as configLoader from '../../src/utils/config-loader';
 
 // Mock the config-loader
-jest.mock('../../src/utils/config-loader', () => ({
-  loadMappingConfig: jest.fn(),
+vi.mock('../../src/utils/config-loader', () => ({
+  loadMappingConfig: vi.fn(),
 }));
 
 describe('Attribute Mapping', () => {
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getAttributeSlug', () => {
     it('should return the matching slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -60,7 +60,7 @@ describe('Attribute Mapping', () => {
 
     it('should handle case-insensitive matching', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -83,7 +83,7 @@ describe('Attribute Mapping', () => {
 
     it('should fall back to legacy map if not found in config', () => {
       // Mock the config loader to return a test configuration without the requested mapping
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -103,7 +103,7 @@ describe('Attribute Mapping', () => {
 
     it('should return the original input if no mapping found', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -129,7 +129,7 @@ describe('Attribute Mapping', () => {
     
     it('should map industry to categories via special case handling', () => {
       // Reset modules to ensure fresh state
-      jest.resetModules();
+      vi.resetModules();
       
       // Industry should map to categories through special case handling
       const result = getAttributeSlug('industry');
@@ -142,7 +142,7 @@ describe('Attribute Mapping', () => {
 
     it('should prioritize object-specific mappings over common mappings', () => {
       // Mock the config loader to return a test configuration with both common and object-specific mappings
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -163,7 +163,7 @@ describe('Attribute Mapping', () => {
       });
 
       // Reset cached config first to ensure we use the mock
-      jest.resetModules();
+      vi.resetModules();
       
       // Should use the company-specific mapping
       const companySlug = getAttributeSlug('Name', 'companies');
@@ -178,7 +178,7 @@ describe('Attribute Mapping', () => {
   describe('getObjectSlug', () => {
     it('should return the matching object slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -202,7 +202,7 @@ describe('Attribute Mapping', () => {
 
     it('should handle case-insensitive matching for objects', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -225,7 +225,7 @@ describe('Attribute Mapping', () => {
 
     it('should normalize unknown object names', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -247,7 +247,7 @@ describe('Attribute Mapping', () => {
   describe('getListSlug', () => {
     it('should return the matching list slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -265,7 +265,7 @@ describe('Attribute Mapping', () => {
       });
 
       // Reset cached config to ensure we use the latest mock
-      jest.resetModules();
+      vi.resetModules();
       
       // Test list mappings
       const importantLeadsSlug = getListSlug('Important Leads');
@@ -277,7 +277,7 @@ describe('Attribute Mapping', () => {
 
     it('should return the original input for unknown lists', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -292,7 +292,7 @@ describe('Attribute Mapping', () => {
       });
 
       // Reset cached config to ensure we use the latest mock
-      jest.resetModules();
+      vi.resetModules();
       
       // Test with an unknown list name
       expect(getListSlug('Unknown List')).toBe('Unknown List');
@@ -302,10 +302,10 @@ describe('Attribute Mapping', () => {
   describe('translateAttributeNamesInFilters', () => {
     beforeEach(() => {
       // Reset modules before each test to ensure fresh state
-      jest.resetModules();
+      vi.resetModules();
       
       // Mock the config loader with a comprehensive test configuration
-      (configLoader.loadMappingConfig as jest.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {

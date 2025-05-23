@@ -3,8 +3,8 @@ import { getAttioClient } from '../../src/api/attio-client';
 import { Person } from '../../src/types/attio';
 
 // Mock the axios client
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(),
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(),
 }));
 
 describe('People API functions', () => {
@@ -22,13 +22,13 @@ describe('People API functions', () => {
 
   // Mock API client
   const mockApiClient = {
-    post: jest.fn(),
-    get: jest.fn()
+    post: vi.fn(),
+    get: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (getAttioClient as jest.Mock).mockReturnValue(mockApiClient);
+    vi.clearAllMocks();
+    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
   });
 
   describe('searchPeople', () => {

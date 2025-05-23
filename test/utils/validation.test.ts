@@ -250,7 +250,7 @@ describe('validation', () => {
         }
       };
       
-      const errorFormatter = jest.fn((error, type, details) => ({
+      const errorFormatter = vi.fn((error, type, details) => ({
         error: true,
         message: error.message,
         type,
@@ -277,7 +277,7 @@ describe('validation', () => {
         }
       };
       
-      const errorFormatter = jest.fn((error, type, details) => ({
+      const errorFormatter = vi.fn((error, type, details) => ({
         error: true,
         message: error.message,
         type,

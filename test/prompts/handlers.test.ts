@@ -10,9 +10,9 @@ import { registerPromptHandlers } from '../../src/prompts/handlers';
 import { getAllPrompts } from '../../src/prompts/templates/index';
 
 // Mock the server
-jest.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: jest.fn().mockImplementation(() => ({
-    setRequestHandler: jest.fn()
+vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
+  Server: vi.fn().mockImplementation(() => ({
+    setRequestHandler: vi.fn()
   }))
 }));
 
@@ -21,7 +21,7 @@ describe('Prompts Handlers', () => {
   
   beforeEach(() => {
     server = new Server({ name: 'test-server', version: '1.0.0' }, { capabilities: {} }) as any;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   
   describe('registerPromptHandlers', () => {
@@ -47,7 +47,7 @@ describe('Prompts Handlers', () => {
     it('should implement prompts/list handler correctly', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as jest.Mock).mock.calls.find(
+      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         call => call[0] === ListPromptsRequestSchema
       )[1];
       
@@ -69,7 +69,7 @@ describe('Prompts Handlers', () => {
     it('should implement prompts/get handler correctly', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as jest.Mock).mock.calls.find(
+      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         call => call[0] === GetPromptRequestSchema
       )[1];
       
@@ -94,7 +94,7 @@ describe('Prompts Handlers', () => {
     it('should throw an error when prompt is not found', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as jest.Mock).mock.calls.find(
+      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         call => call[0] === GetPromptRequestSchema
       )[1];
       

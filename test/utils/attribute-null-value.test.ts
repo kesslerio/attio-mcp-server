@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from 'vitest';
 import { formatAllAttributes } from '../../src/api/attribute-types';
 
 // Mock dependencies
-const mockGet = jest.fn() as any;
-jest.mock('../../src/api/attio-client', () => ({
-  getAttioClient: jest.fn(() => ({
+const mockGet = vi.fn() as any;
+vi.mock('../../src/api/attio-client', () => ({
+  getAttioClient: vi.fn(() => ({
     get: mockGet
   }))
 }));

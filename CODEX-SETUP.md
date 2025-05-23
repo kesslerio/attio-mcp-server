@@ -37,7 +37,7 @@ Use these commands in network-restricted environments:
 npm run test:offline
 
 # Or directly with npx
-npx jest --config=jest.config.offline.js
+npx vitest --config vitest.config.offline.ts
 ```
 
 ### Type Checking
@@ -57,7 +57,7 @@ npm run build
 
 ## Common Issues & Solutions
 
-### ❌ "jest not found"
+### ❌ "vitest not found"
 **Cause**: Dev dependencies not installed
 **Solution**: Run `npm run codex:setup` during setup phase
 
@@ -71,7 +71,7 @@ npm run build
 
 ## What the Offline Configs Do
 
-### `jest.config.offline.js`
+### `vitest.config.offline.ts`
 - Skips integration tests that require network
 - Excludes manual test files
 - Uses shorter timeouts
@@ -111,8 +111,8 @@ ls -la node_modules/.bin/
 npx tsc --noEmit
 
 # Test Jest
-npx jest --version
-npx jest --passWithNoTests
+npx vitest --version
+npx vitest --run --passWithNoTests
 
 # Test project build
 npm run build

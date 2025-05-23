@@ -245,22 +245,43 @@ Here's an example of a company record in our CRM (The Plastics Doc):
 
 ## Pipeline and Sales Process
 
-Based on our analysis of the codebase, the Attio CRM appears to support a standard sales pipeline with the following stages:
+Based on our analysis of the codebase and the Attio API documentation, the Attio CRM supports tracking prospects through sales pipelines using list entries with stage attributes.
 
-- Lead
-- Prospect
-- Opportunity
-- Customer
-- Churned
-- Qualified
-- Engaged
-- Negotiation
+### Standard Stage Attribute
 
-These stages are likely used to track prospects through the sales process, though we haven't been able to directly verify their implementation in the current Prospecting list due to tool limitations. The system appears to support tracking pipeline stages through either:
+According to the Attio API documentation, "stage" is a **standard attribute type** for list entries. This is a built-in feature of Attio lists that allows tracking the progression of records through different stages of a process.
 
-1. A dedicated "stage" attribute on company or people records
-2. A separate "deals" object with its own stage progression
-3. Lists that might represent different stages in the pipeline
+### ShapeScale Prospecting List Stages
+
+The **Prospecting list** (ID: 88709359-01f6-478b-ba66-c07347891b6f) in our ShapeScale Attio instance uses a **custom stage configuration** with the following stage options:
+
+#### Current Stage Options:
+1. `"Unresponsive"` - Prospects who haven't responded to outreach
+2. `"Interested"` - Prospects who have shown initial interest
+3. `"Discovery Call"` - Scheduled or completed discovery calls
+4. `"On Demand Demo"` - Self-service demo requests
+5. `"Demo Scheduling"` - Actively scheduling product demonstrations
+6. `"Demo"` - Scheduled or completed product demonstrations
+7. `"Demo - No Shows"` - Prospects who missed their demo appointments
+8. `"No Shows - Followed Up"` - No-shows that have been re-contacted
+9. `"Post-Demo Follow Up"` - Following up after completed demos
+10. `"Negotiation"` - Active contract or pricing discussions
+11. `"Won"` - Successfully closed deals
+12. `"Pause/Nurture"` - Prospects in long-term nurturing
+13. `"Lost"` - Opportunities that didn't convert
+14. `"Not a fit"` - Prospects determined to be unsuitable
+
+**Note**: These are custom stage values specific to the ShapeScale Prospecting list and are **not** the standard Attio pipeline stages. Each list can have its own custom stage configuration.
+
+### Stage Management Challenges
+
+Currently, the Attio MCP server lacks the tools to:
+- Update list entry stage values (e.g., changing from "Interested" to "Demo Scheduling")
+- Read current stage values for list entries
+- Filter list entries by stage
+- Track stage progression history
+
+This represents a significant gap in CRM functionality, as stage management is essential for sales pipeline operations.
 
 ## Known Bugs and Issues
 
@@ -272,6 +293,75 @@ These stages are likely used to track prospects through the sales process, thoug
 6. Resolved: use the `get-company-lists` tool to see which lists a company belongs to (Issue #184)
 7. Type checking in the MCP server appears inconsistent
 8. Intermittent connectivity issues with certain tools
+9. **Facilities Field Select Options Issue**: Using incorrect values for the `facilities` select field causes API errors
+
+### Facilities Field Select Options Issue
+
+**Issue**: The `facilities` field is a select field with specific predefined options. Using incorrect values causes API errors.
+
+**Error Example**:
+```
+Request
+
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5 locations in Kansas",  // ❌ INCORRECT - descriptive text
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+
+Response: ERROR [unknown_error]: Company update failed for company d5cda19b-b316-5453-ae0d-c7cb3ec29ef2: Bad Request: Cannot find select option with title "2-5 locations in Kansas".
+```
+
+**Solution**: Use only the predefined select options for the `facilities` field:
+
+#### Valid Facilities Options:
+- `"1"` - Single location
+- `"2-5"` - 2-5 locations  
+- `"6-10"` - 6-10 locations
+- `"11-25"` - 11-25 locations
+- `"26-50"` - 26-50 locations
+- `"51-100"` - 51-100 locations
+- `"101-250"` - 101-250 locations
+- `"251+"` - 251+ locations
+- `"Unknown"` - Unknown number of locations
+
+**Correct Usage**:
+```json
+{
+  "companyId": "d5cda19b-b316-5453-ae0d-c7cb3ec29ef2",
+  "attributes": {
+    "website": "https://ptsolutionsks.com",
+    "services": "Physical Therapy, Orthopedic Rehabilitation, Sports Medicine, Concussion Care, Outpatient Therapy",
+    "categories": [
+      "Physical Therapy"
+    ],
+    "facilities": "2-5",  // ✅ CORRECT - use exact option value
+    "type_persona": "Medical Practice",
+    "employee_range": "10-25",
+    "body_contouring": "No",
+    "foundation_date": "2012",
+    "uses_body_composition": "No",
+    "has_weight_loss_program": "No"
+  }
+}
+```
+
+**Key Points**:
+1. Always use the exact option value, not descriptive text
+2. The `facilities` field expects a string value matching one of the predefined options
+3. Geographic information (like "in Kansas") should be stored in location fields, not the facilities count field
 
 ## ShapeScale-Specific Features
 

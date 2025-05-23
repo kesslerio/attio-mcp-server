@@ -17,10 +17,19 @@ export {
 // Search functionality
 export {
   searchCompanies,
+  searchCompaniesByDomain,
+  searchCompaniesByName,
+  smartSearchCompanies,
   advancedSearchCompanies,
   createNameFilter,
   createWebsiteFilter,
-  createIndustryFilter
+  createIndustryFilter,
+  createDomainFilter
+} from "./search.js";
+
+// Search types
+export type {
+  CompanySearchOptions
 } from "./search.js";
 
 // Relationship-based queries
