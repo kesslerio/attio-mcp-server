@@ -2,31 +2,37 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { formatAllAttributes } from '../../src/api/attribute-types';
 
 // Mock dependencies
+const mockGet = jest.fn() as any;
 jest.mock('../../src/api/attio-client', () => ({
   getAttioClient: jest.fn(() => ({
-    get: jest.fn().mockResolvedValue({
-      data: {
-        data: [
-          {
-            api_slug: 'body_contouring',
-            type: 'text',
-            is_multiselect: false
-          },
-          {
-            api_slug: 'name',
-            type: 'text',
-            is_required: true
-          },
-          {
-            api_slug: 'services',
-            type: 'text',
-            is_multiselect: false
-          }
-        ]
-      }
-    })
+    get: mockGet
   }))
 }));
+
+// Setup mock response
+beforeEach(() => {
+  (mockGet as any).mockResolvedValue({
+    data: {
+      data: [
+        {
+          api_slug: 'body_contouring',
+          type: 'text',
+          is_multiselect: false
+        },
+        {
+          api_slug: 'name',
+          type: 'text',
+          is_required: true
+        },
+        {
+          api_slug: 'services',
+          type: 'text',
+          is_multiselect: false
+        }
+      ]
+    }
+  });
+});
 
 describe('formatAllAttributes - null value handling', () => {
   it('should preserve null values in formatted output', async () => {

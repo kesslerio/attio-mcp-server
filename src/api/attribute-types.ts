@@ -103,23 +103,25 @@ export async function detectFieldType(objectSlug: string, attributeSlug: string)
   }
   
   // Map Attio types to our internal types
+  const isMultiple = attrMetadata.is_multiselect || (attrMetadata as any).allow_multiple_values;
+  
   switch (attrMetadata.type) {
     case 'text':
     case 'email':
     case 'url':
     case 'phone-number':
-      return attrMetadata.is_multiselect ? 'array' : 'string';
+      return isMultiple ? 'array' : 'string';
       
     case 'select':
       // For select fields, check if multiselect is enabled
-      return attrMetadata.is_multiselect ? 'array' : 'string';
+      return isMultiple ? 'array' : 'string';
       
     case 'record-reference':
-      return attrMetadata.is_multiselect ? 'array' : 'object';
+      return isMultiple ? 'array' : 'object';
       
     case 'number':
     case 'currency':
-      return attrMetadata.is_multiselect ? 'array' : 'number';
+      return isMultiple ? 'array' : 'number';
       
     case 'checkbox':
     case 'boolean':
@@ -242,8 +244,9 @@ export async function getFieldValidationRules(objectSlug: string, attributeSlug:
     }
     
     // Add enum values for select fields
-    if (typeInfo.attioType === 'select' && typeInfo.metadata.config?.select?.options) {
-      rules.enum = typeInfo.metadata.config.select.options.map((opt: any) => opt.value);
+    const config = typeInfo.metadata.config as any;
+    if (typeInfo.attioType === 'select' && config?.options) {
+      rules.enum = config.options.map((opt: any) => opt.value);
     }
   }
   

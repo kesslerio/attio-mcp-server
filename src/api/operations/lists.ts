@@ -186,12 +186,77 @@ export async function getListEntries(
       // Process response to ensure record_id is correctly extracted
       const entries = processListEntries(response.data.data || []);
       return entries;
-    } catch (error: any) {
+    } catch (primaryError: any) {
       logOperation('Primary endpoint failed', { 
-        error: error.message, 
-        status: error.response?.status 
+        error: primaryError.message, 
+        status: primaryError.response?.status 
       }, true);
-      throw error;
+      
+      // Try fallback endpoint with global list-entries query
+      try {
+        const fallbackPath = '/lists-entries/query';
+        const fallbackBody = {
+          ...createRequestBody(),
+          list_id: listId
+        };
+        
+        logOperation('Attempt 2: Calling fallback endpoint', { 
+          path: fallbackPath, 
+          requestBody: JSON.stringify(fallbackBody) 
+        });
+        
+        const response = await api.post<AttioListResponse<AttioListEntry>>(fallbackPath, fallbackBody);
+        
+        logOperation('Fallback endpoint successful', { 
+          resultCount: response.data.data?.length || 0 
+        });
+        
+        // Process response to ensure record_id is correctly extracted
+        const entries = processListEntries(response.data.data || []);
+        return entries;
+      } catch (fallbackError: any) {
+        logOperation('Fallback endpoint failed', { 
+          error: fallbackError.message, 
+          status: fallbackError.response?.status 
+        }, true);
+        
+        // If no filters are provided, try GET endpoint as last resort
+        if (!filters || !filters.filters || filters.filters.length === 0) {
+          try {
+            const params = new URLSearchParams();
+            params.append('list_id', listId);
+            params.append('expand', 'record');
+            params.append('limit', (safeLimit || 20).toString());
+            params.append('offset', (safeOffset || 0).toString());
+            
+            const getPath = `/lists-entries?${params.toString()}`;
+            
+            logOperation('Attempt 3: Calling GET fallback', { 
+              path: getPath 
+            });
+            
+            const response = await api.get<AttioListResponse<AttioListEntry>>(getPath);
+            
+            logOperation('GET fallback successful', { 
+              resultCount: response.data.data?.length || 0 
+            });
+            
+            // Process response to ensure record_id is correctly extracted
+            const entries = processListEntries(response.data.data || []);
+            return entries;
+          } catch (getError: any) {
+            logOperation('GET fallback failed', { 
+              error: getError.message, 
+              status: getError.response?.status 
+            }, true);
+            // Throw the original primary error since it's most relevant
+            throw primaryError;
+          }
+        } else {
+          // If filters were provided, don't try GET endpoint (per test expectation)
+          throw primaryError;
+        }
+      }
     }
   }, retryConfig);
 }

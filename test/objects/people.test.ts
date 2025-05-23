@@ -46,8 +46,12 @@ describe('People API functions', () => {
       // Assertions
       expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
         filter: {
-          name: { '$contains': 'John' }
-        }
+          "$or": [
+            { name: { "$contains": "John" } },
+            { email_addresses: { "$contains": "John" } }
+          ]
+        },
+        limit: 50
       });
       expect(result).toEqual([mockPerson]);
     });
@@ -96,7 +100,13 @@ describe('People API functions', () => {
 
       // Assertions
       expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
-        limit: 100
+        filter: {
+          "$or": [
+            { name: { "$contains": "john.doe@example.com" } },
+            { email: { "$contains": "john.doe@example.com" } },
+            { phone: { "$contains": "john.doe@example.com" } }
+          ]
+        }
       });
       expect(result).toEqual([mockPerson]);
     });
@@ -131,7 +141,13 @@ describe('People API functions', () => {
 
       // Assertions
       expect(mockApiClient.post).toHaveBeenCalledWith('/objects/people/records/query', {
-        limit: 100
+        filter: {
+          "$or": [
+            { name: { "$contains": "+1234567890" } },
+            { email: { "$contains": "+1234567890" } },
+            { phone: { "$contains": "+1234567890" } }
+          ]
+        }
       });
       expect(result).toEqual([mockPerson]);
     });

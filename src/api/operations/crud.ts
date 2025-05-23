@@ -153,11 +153,6 @@ export async function updateRecord<T extends AttioRecord>(
       
       return response.data.data;
     } catch (error: any) {
-      console.error('[updateRecord] Error:', error.message);
-      console.error('[updateRecord] Response data:', error.response?.data);
-      console.error('[updateRecord] Response status:', error.response?.status);
-      console.error('[updateRecord] Response headers:', error.response?.headers);
-      console.error('[updateRecord] Request config:', error.config);
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }

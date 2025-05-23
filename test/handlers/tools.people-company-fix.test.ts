@@ -38,7 +38,6 @@ describe('People-Company Search Tool Fix', () => {
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
-      method: 'tools/call',
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -69,7 +68,6 @@ describe('People-Company Search Tool Fix', () => {
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
-      method: 'tools/call',
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -97,7 +95,6 @@ describe('People-Company Search Tool Fix', () => {
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
-      method: 'tools/call',
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -121,7 +118,6 @@ describe('People-Company Search Tool Fix', () => {
   it('should handle invalid filter format', async () => {
     const request: CallToolRequest = {
       method: "tools/call" as const,
-      method: 'tools/call',
       params: {
         name: 'search-people-by-company',
         arguments: {
@@ -143,7 +139,6 @@ describe('People-Company Search Tool Fix', () => {
 
     const request: CallToolRequest = {
       method: "tools/call" as const,
-      method: 'tools/call',
       params: {
         name: 'search-people-by-company',
         arguments: {

@@ -38,8 +38,8 @@ describe('Update Company Tool', () => {
     mockedCompanyBasic.updateCompany.mockResolvedValue({
       id: { record_id: '3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e' },
       values: { 
-        name: 'Test Company',
-        industry: 'Batch Test Industry'
+        name: [{ value: 'Test Company' }],
+        industry: [{ value: 'Batch Test Industry' }]
       }
     });
   });
@@ -71,7 +71,7 @@ describe('Update Company Tool', () => {
       );
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('Company updated');
-      expect(result.content[0].text).toContain('Test Company');
+      expect(result.content[0].text).toContain('3bdf5c9d-aa78-492a-a4c1-5a143e94ef0e');
     });
 
     it('should support recordData parameter instead of attributes', async () => {
@@ -174,7 +174,7 @@ describe('Update Company Tool', () => {
       
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Record data parameter is required');
+      expect(result.content[0].text).toContain('Attributes parameter cannot be empty');
     });
 
     it('should handle invalid companyId format', async () => {
@@ -222,7 +222,7 @@ describe('Update Company Tool', () => {
       
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Record data parameter is required and must be a non-empty object');
+      expect(result.content[0].text).toContain('Attributes parameter must be an object');
     });
 
     it('should handle array attributes parameter', async () => {
@@ -243,7 +243,7 @@ describe('Update Company Tool', () => {
       
       // Assert
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('Record data parameter is required and must be a non-empty object');
+      expect(result.content[0].text).toContain('Attributes parameter must be an object');
     });
 
     it('should handle API errors', async () => {

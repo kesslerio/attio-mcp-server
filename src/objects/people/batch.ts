@@ -39,11 +39,47 @@ export async function batchSearchPeople(
       }
     }
 
-    return await batchSearchObjects<Person>(
-      ResourceType.PEOPLE,
-      queries,
-      config
-    );
+    try {
+      return await batchSearchObjects<Person>(
+        ResourceType.PEOPLE,
+        queries,
+        config
+      );
+    } catch (batchError) {
+      // Fallback to individual searches
+      const { searchPeople } = require('../people/index.js');
+      const results = [];
+      let succeeded = 0;
+      let failed = 0;
+
+      for (const query of queries) {
+        try {
+          const searchResults = await searchPeople(query);
+          results.push({
+            query,
+            data: searchResults,
+            success: true
+          });
+          succeeded++;
+        } catch (searchError) {
+          results.push({
+            query,
+            error: searchError instanceof Error ? searchError : new Error(String(searchError)),
+            success: false
+          });
+          failed++;
+        }
+      }
+
+      return {
+        results,
+        summary: {
+          total: queries.length,
+          succeeded,
+          failed
+        }
+      };
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
@@ -77,11 +113,47 @@ export async function batchGetPeopleDetails(
       }
     }
 
-    return await batchGetObjectDetails<Person>(
-      ResourceType.PEOPLE,
-      personIds,
-      config
-    );
+    try {
+      return await batchGetObjectDetails<Person>(
+        ResourceType.PEOPLE,
+        personIds,
+        config
+      );
+    } catch (batchError) {
+      // Fallback to individual detail retrieval
+      const { getPersonDetails } = require('../people/index.js');
+      const results = [];
+      let succeeded = 0;
+      let failed = 0;
+
+      for (const personId of personIds) {
+        try {
+          const personDetails = await getPersonDetails(personId);
+          results.push({
+            id: personId,
+            data: personDetails,
+            success: true
+          });
+          succeeded++;
+        } catch (detailError) {
+          results.push({
+            id: personId,
+            error: detailError instanceof Error ? detailError : new Error(String(detailError)),
+            success: false
+          });
+          failed++;
+        }
+      }
+
+      return {
+        results,
+        summary: {
+          total: personIds.length,
+          succeeded,
+          failed
+        }
+      };
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {

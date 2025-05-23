@@ -16,14 +16,15 @@ config({ path: '.env.test' });
 // Skip integration tests if no API key is available
 const skipIntegrationTests = !process.env.ATTIO_API_KEY;
 
-describe.skipIf(skipIntegrationTests)('Concurrent Operations - Integration Tests', () => {
+const testSuite = skipIntegrationTests ? describe.skip : describe;
+testSuite('Concurrent Operations - Integration Tests', () => {
   const testCompanies: string[] = [];
   
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    initializeAttioClient({
-      apiKey: process.env.ATTIO_API_KEY!
-    });
+    if (!skipIntegrationTests) {
+      initializeAttioClient(process.env.ATTIO_API_KEY!);
+    }
   });
   
   afterEach(async () => {

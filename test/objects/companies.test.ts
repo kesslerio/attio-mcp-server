@@ -53,9 +53,24 @@ describe('companies', () => {
     
     // Mock getObjectAttributeMetadata if it's called
     mockedAttributeTypes.getObjectAttributeMetadata.mockResolvedValue(new Map([
-      ['name', { api_slug: 'name', type: 'text', id: 'name', title: 'Name' }],
-      ['services', { api_slug: 'services', type: 'text', id: 'services', title: 'Services' }],
-      ['industry', { api_slug: 'industry', type: 'text', id: 'industry', title: 'Industry' }]
+      ['name', { 
+        api_slug: 'name', 
+        type: 'text', 
+        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'name' }, 
+        title: 'Name' 
+      }],
+      ['services', { 
+        api_slug: 'services', 
+        type: 'text', 
+        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'services' }, 
+        title: 'Services' 
+      }],
+      ['industry', { 
+        api_slug: 'industry', 
+        type: 'text', 
+        id: { workspace_id: 'ws1', object_id: 'obj1', attribute_id: 'industry' }, 
+        title: 'Industry' 
+      }]
     ]));
   });
 
@@ -309,7 +324,7 @@ describe('companies', () => {
 
     it('should validate field types', async () => {
       // Arrange
-      const attributes = { name: 123 }; // Name should be string
+      const attributes = { name: 123 } as any; // Name should be string - bypassing TS for test
 
       // Act & Assert
       await expect(createCompany(attributes)).rejects.toThrow(InvalidCompanyDataError);

@@ -121,7 +121,17 @@ describe('tools attribute mapping integration', () => {
 
     it('should translate attribute names in people advanced search filters', async () => {
       // Setup mock for advanced search
-      mockedPeople.advancedSearchPeople.mockResolvedValueOnce(mockPeopleSearchResults);
+      const paginatedResponse = {
+        results: mockPeopleSearchResults,
+        pagination: {
+          currentPage: 1,
+          pageSize: 20,
+          totalCount: mockPeopleSearchResults.length,
+          totalPages: 1,
+          hasMore: false
+        }
+      };
+      mockedPeople.advancedSearchPeople.mockResolvedValueOnce(paginatedResponse);
       
       // Original filters with human-readable attribute names
       const originalFilters = {
