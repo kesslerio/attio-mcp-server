@@ -18,7 +18,7 @@ export function formatSearchResults(results: AttioRecord[], resourceType: string
   }
   
   return results.map((record, index) => {
-    const attributes = record.attributes || {};
+    const attributes = record.attributes || ({} as Record<string, any>);
     const name = attributes.name?.value ?? 'Unknown';
     const id = record.id?.record_id || record.recordId || 'Unknown ID';
     return `${index + 1}. ${name} (ID: ${id})`;
@@ -36,7 +36,7 @@ export function formatRecordDetails(record: AttioRecord): string {
     return 'No record found.';
   }
   
-  const attributes = record.attributes || {};
+  const attributes = record.attributes || ({} as Record<string, any>);
   const formattedAttrs = Object.entries(attributes).map(([key, attr]) => {
     const value = (attr as any).value || 'N/A';
     return `${key}: ${value}`;
@@ -60,7 +60,7 @@ export function formatListEntries(entries: AttioListEntry[]): string {
   
   return processedEntries.map((entry, index) => {
     const record = entry.record;
-    const attributes = record?.attributes || {};
+    const attributes = record?.attributes || ({} as Record<string, any>);
     const name = attributes.name?.value ?? 'Unknown';
     const entryId = entry.entry_id;
     const recordId = record?.id?.record_id || 'Unknown ID';

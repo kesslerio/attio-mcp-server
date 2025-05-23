@@ -261,6 +261,16 @@ export type FilterValue = string | number | boolean | null | Array<string | numb
 export type AttributeValue = string | number | boolean | null | Array<{ value: unknown }> | Record<string, unknown>;
 
 /**
+ * Company field input value types
+ */
+export type CompanyFieldValue = string | number | boolean | null | undefined | Array<unknown> | Record<string, unknown>;
+
+/**
+ * Processed company field value types
+ */
+export type ProcessedFieldValue = string | number | boolean | null | undefined;
+
+/**
  * Contact information value interface
  */
 export interface ContactValue {
