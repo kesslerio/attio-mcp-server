@@ -175,11 +175,24 @@ Indexed: modelcontextprotocol.io (MCP protocol documentation)
 Indexed: github.com (MCP Python SDK, Brave Search, Tavily MCP)
 Indexed: yourls.org (YOURLS URL shortener documentation)
 Indexed: docs.attio.com (Attio's official API documentation)
+
+EXTERNAL MCP SERVERS (Runtime Dependencies)
+Note: These are external MCP servers that provide additional capabilities.
+They are NOT npm dependencies of this project but external services.
+
 Namespace mcp__crawl4ai-rag__:
-- get_available_sources()
-- crawl_single_page(url)
-- smart_crawl_url(url)
-- perform_rag_query(q, source?, match_count?)
+External Server: Crawl4AI RAG MCP Server (https://github.com/coleam00/mcp-crawl4ai-rag)
+Purpose: Web crawling and RAG (Retrieval Augmented Generation) capabilities
+Tools:
+- get_available_sources() - List indexed documentation sources
+- crawl_single_page(url) - Crawl a single web page
+- smart_crawl_url(url) - Intelligently crawl URLs with link following
+- perform_rag_query(q, source?, match_count?) - Query indexed content
 Examples:
 perform_rag_query("authentication bearer token","docs.attio.com")
 perform_rag_query("webhooks configuration",null,10)
+
+Setup: To use crawl4ai-rag tools, you need to:
+1. Install the external MCP server: https://github.com/coleam00/mcp-crawl4ai-rag
+2. Configure it in your Claude Desktop or MCP client configuration
+3. The tools will then be available via the mcp__crawl4ai-rag__ namespace

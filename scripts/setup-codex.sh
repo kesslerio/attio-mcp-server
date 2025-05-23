@@ -80,8 +80,9 @@ check_requirements() {
 install_codex_cli() {
     print_status "Installing OpenAI Codex CLI..."
     
-    if command -v codex &> /dev/null; then
-        local current_version=$(codex --version 2>/dev/null || echo "unknown")
+    # Check if OpenAI codex is already installed by looking for the npm global package
+    if npm list -g @openai/codex &> /dev/null; then
+        local current_version=$(npm list -g @openai/codex --depth=0 2>/dev/null | grep @openai/codex | cut -d'@' -f3)
         print_success "OpenAI Codex CLI is already installed: $current_version"
         
         read -p "Update to latest version? (y/N): " -n 1 -r
@@ -95,9 +96,18 @@ install_codex_cli() {
         print_success "OpenAI Codex CLI installed successfully."
     fi
     
-    # Verify installation
-    if command -v codex &> /dev/null; then
-        print_success "Installation verified: $(codex --version)"
+    # Verify installation by checking npm package
+    if npm list -g @openai/codex &> /dev/null; then
+        local installed_version=$(npm list -g @openai/codex --depth=0 2>/dev/null | grep @openai/codex | cut -d'@' -f3)
+        print_success "Installation verified: @openai/codex@$installed_version"
+        
+        # Find the actual binary path
+        local codex_path=$(npm bin -g)/codex
+        if [ -f "$codex_path" ]; then
+            print_success "Codex CLI binary located at: $codex_path"
+        else
+            print_warning "Binary not found at expected location. You may need to adjust your PATH."
+        fi
     else
         print_error "Installation failed. Please check npm permissions and try again."
         exit 1
@@ -431,6 +441,16 @@ EOF
     fi
 
     print_success "Usage examples created in ~/codex-examples/"
+}
+
+# Show disclaimer function
+show_disclaimer() {
+    echo "⚠️  EXPERIMENTAL TECHNOLOGY DISCLAIMER"
+    echo "======================================"
+    echo "OpenAI Codex CLI is an experimental project under active development."
+    echo "It may contain bugs, incomplete features, or undergo breaking changes."
+    echo "Always review changes before approval and work in Git repositories for safety."
+    echo ""
 }
 
 # Main setup function
