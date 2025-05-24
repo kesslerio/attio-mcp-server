@@ -21,7 +21,10 @@ import { createErrorResult } from './error-handler.js';
 import Handlebars from 'handlebars';
 
 // Define template delegate type since it's not exported by the Handlebars module
-type HandlebarsTemplateDelegate = (context: Record<string, unknown>, options?: Record<string, unknown>) => string;
+type HandlebarsTemplateDelegate = (
+  context: Record<string, unknown>,
+  options?: Record<string, unknown>
+) => string;
 
 /**
  * Interface for template cache options
@@ -115,7 +118,10 @@ Handlebars.registerHelper(
   function (
     this: Record<string, unknown>,
     conditional: unknown,
-    options: { fn: (context: unknown) => string; inverse: (context: unknown) => string }
+    options: {
+      fn: (context: unknown) => string;
+      inverse: (context: unknown) => string;
+    }
   ): string {
     if (conditional) {
       return options.fn(this);
@@ -378,7 +384,9 @@ export async function executePrompt(
         const errorResult = createErrorResult(
           errorObj,
           `Template compilation error for prompt ${promptId}: ${
-            compileError instanceof Error ? compileError.message : 'Unknown error'
+            compileError instanceof Error
+              ? compileError.message
+              : 'Unknown error'
           }`,
           500
         );

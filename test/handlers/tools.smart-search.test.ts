@@ -21,10 +21,16 @@ describe('SmartSearch Tool Handler', () => {
     const mockSmartSearchConfig: ToolConfig = {
       name: 'smart-search-companies',
       handler: mockedCompanySearch.smartSearchCompanies,
-      formatResult: vi.fn((results) => 
-        `Found ${results.length} companies (smart search):\n${results.map((company: any) => 
-          `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`
-        ).join('\n')}`
+      formatResult: vi.fn(
+        (results) =>
+          `Found ${results.length} companies (smart search):\n${results
+            .map(
+              (company: any) =>
+                `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
+                  company.id?.record_id || 'unknown'
+                })`
+            )
+            .join('\n')}`
       ),
     };
 
@@ -63,10 +69,14 @@ describe('SmartSearch Tool Handler', () => {
       const result = await executeToolRequest(request);
 
       // Assert
-      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith('IHT Factor joey@ihtfactor.com');
+      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith(
+        'IHT Factor joey@ihtfactor.com'
+      );
       expect(result.isError).toBeFalsy();
       expect(result.content).toBeDefined();
-      expect(result.content[0].text).toContain('Found 1 companies (smart search)');
+      expect(result.content[0].text).toContain(
+        'Found 1 companies (smart search)'
+      );
       expect(result.content[0].text).toContain('IHT Factor');
     });
 
@@ -86,7 +96,9 @@ describe('SmartSearch Tool Handler', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Query parameter is required for smart search');
+      expect(result.content[0].text).toContain(
+        'Query parameter is required for smart search'
+      );
       expect(mockedCompanySearch.smartSearchCompanies).not.toHaveBeenCalled();
     });
 
@@ -104,7 +116,9 @@ describe('SmartSearch Tool Handler', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Query parameter is required for smart search');
+      expect(result.content[0].text).toContain(
+        'Query parameter is required for smart search'
+      );
       expect(mockedCompanySearch.smartSearchCompanies).not.toHaveBeenCalled();
     });
 
@@ -124,7 +138,9 @@ describe('SmartSearch Tool Handler', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Query parameter is required for smart search');
+      expect(result.content[0].text).toContain(
+        'Query parameter is required for smart search'
+      );
       expect(mockedCompanySearch.smartSearchCompanies).not.toHaveBeenCalled();
     });
 
@@ -144,7 +160,9 @@ describe('SmartSearch Tool Handler', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Query parameter is required for smart search');
+      expect(result.content[0].text).toContain(
+        'Query parameter is required for smart search'
+      );
       expect(mockedCompanySearch.smartSearchCompanies).not.toHaveBeenCalled();
     });
 
@@ -166,7 +184,9 @@ describe('SmartSearch Tool Handler', () => {
       const result = await executeToolRequest(request);
 
       // Assert
-      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith('test query');
+      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith(
+        'test query'
+      );
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Smart search failed');
     });
@@ -209,8 +229,12 @@ describe('SmartSearch Tool Handler', () => {
       const result = await executeToolRequest(request);
 
       // Assert
-      expect(result.content[0].text).toContain('Found 1 companies (smart search):');
-      expect(result.content[0].text).toContain('- Test Company (ID: company-123)');
+      expect(result.content[0].text).toContain(
+        'Found 1 companies (smart search):'
+      );
+      expect(result.content[0].text).toContain(
+        '- Test Company (ID: company-123)'
+      );
     });
 
     it('should use formatter header when formatter includes "Found" header', async () => {
@@ -229,7 +253,10 @@ describe('SmartSearch Tool Handler', () => {
       // Mock formatter that INCLUDES "Found" header
       const configWithHeader = {
         ...mockSmartSearchConfig,
-        formatResult: vi.fn(() => 'Found 1 companies matching domain:\n- Test Company (ID: company-123)'),
+        formatResult: vi.fn(
+          () =>
+            'Found 1 companies matching domain:\n- Test Company (ID: company-123)'
+        ),
       };
 
       mockedRegistry.findToolConfig.mockReturnValue({
@@ -251,8 +278,12 @@ describe('SmartSearch Tool Handler', () => {
       const result = await executeToolRequest(request);
 
       // Assert
-      expect(result.content[0].text).toBe('Found 1 companies matching domain:\n- Test Company (ID: company-123)');
-      expect(result.content[0].text).not.toContain('Found 1 companies (smart search):');
+      expect(result.content[0].text).toBe(
+        'Found 1 companies matching domain:\n- Test Company (ID: company-123)'
+      );
+      expect(result.content[0].text).not.toContain(
+        'Found 1 companies (smart search):'
+      );
     });
 
     it('should handle complex query with domain and email', async () => {
@@ -282,9 +313,13 @@ describe('SmartSearch Tool Handler', () => {
       const result = await executeToolRequest(request);
 
       // Assert
-      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith('Acme Corp john@acme.com https://acme.com');
+      expect(mockedCompanySearch.smartSearchCompanies).toHaveBeenCalledWith(
+        'Acme Corp john@acme.com https://acme.com'
+      );
       expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain('Found 1 companies (smart search)');
+      expect(result.content[0].text).toContain(
+        'Found 1 companies (smart search)'
+      );
       expect(result.content[0].text).toContain('Acme Corp');
     });
   });
@@ -308,7 +343,9 @@ describe('SmartSearch Tool Handler', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Tool not found: non-existent-smart-search');
+      expect(result.content[0].text).toContain(
+        'Tool not found: non-existent-smart-search'
+      );
     });
   });
 });
