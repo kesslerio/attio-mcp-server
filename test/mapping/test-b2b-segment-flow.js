@@ -1,17 +1,17 @@
 /**
  * Test B2B segment mapping flow
  */
-const {
-  translateAttributeNamesInFilters,
-} = require('./dist/utils/attribute-mapping/index.js');
-import { advancedSearchObject } from('./dist/api/attio-operations.js');
-import { ResourceType, FilterConditionType } from('./dist/types/attio.js');
+import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
+import { advancedSearchObject } from './dist/api/attio-operations.js';
+import { ResourceType, FilterConditionType } from './dist/types/attio.js';
 
 // Mock the API client to see what data is being sent
-const originalPost = require('./dist/api/attio-client.js').getAttioClient;
+import { getAttioClient } from './dist/api/attio-client.js';
+const originalPost = getAttioClient;
 let mockClient = null;
 
-require('./dist/api/attio-client.js').getAttioClient = function () {
+// Mock implementation
+const mockGetAttioClient = function () {
   if (!mockClient) {
     mockClient = {
       ...originalPost(),
@@ -46,6 +46,12 @@ require('./dist/api/attio-client.js').getAttioClient = function () {
   }
   return mockClient;
 };
+
+// Replace the original function with our mock
+Object.defineProperty(getAttioClient, 'implementation', {
+  value: mockGetAttioClient,
+  writable: true,
+});
 
 async function testB2BSegmentFlow() {
   try {

@@ -11,9 +11,7 @@
  */
 
 // Import required modules
-const {
-  executeToolRequest,
-} = require('../../dist/handlers/tools/dispatcher.js');
+import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 
 // Constants for testing - replace with real IDs from your Attio workspace
 // ShapeScale Prospecting List ID from Issue #209
@@ -224,7 +222,7 @@ if (!process.env.ATTIO_API_KEY) {
 }
 
 // Initialize the API client
-const { initializeAttioClient } = require('../../dist/api/attio-client.js');
+import { initializeAttioClient } from '../../dist/api/attio-client.js';
 initializeAttioClient(process.env.ATTIO_API_KEY);
 
 // Run the tests

@@ -14,9 +14,7 @@
  * - The records parameter is properly passed and processed
  * - Error handling works as expected
  */
-const {
-  batchUpdateCompanies,
-} = require('../../build/objects/batch-companies.js');
+import { batchUpdateCompanies } from '../../build/objects/batch-companies.js';
 
 // Simulating the example request from the issue
 const testUpdates = [
