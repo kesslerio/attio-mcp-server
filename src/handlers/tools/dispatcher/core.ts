@@ -4,6 +4,15 @@
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../../types/attio.js';
 
+// Import utilities
+import { 
+  initializeToolContext, 
+  logToolRequest, 
+  logToolSuccess, 
+  logToolError, 
+  logToolConfigError 
+} from './logging.js';
+
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
 
@@ -48,80 +57,60 @@ import {
  */
 export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
+  
+  // Initialize logging context for this tool execution
+  const correlationId = initializeToolContext(toolName);
 
   try {
     const toolInfo = findToolConfig(toolName);
 
     if (!toolInfo) {
+      logToolConfigError(toolName, 'Tool configuration not found');
       throw new Error(`Tool not found: ${toolName}`);
     }
 
     const { resourceType, toolConfig, toolType } = toolInfo;
+    
+    // Start tool execution logging with performance tracking
+    const timer = logToolRequest(toolType, toolName, request);
+
+    let result;
 
     // Handle search tools
     if (toolType === 'search') {
-      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByEmail') {
+      result = await handleSearchByEmail(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByPhone') {
+      result = await handleSearchByPhone(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'smartSearch') {
+      result = await handleSmartSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'details') {
+      result = await handleDetailsOperation(request, toolConfig as DetailsToolConfig, resourceType);
+    } else if (toolType === 'notes') {
+      result = await handleNotesOperation(request, toolConfig as NotesToolConfig, resourceType);
+    } else if (toolType === 'createNote') {
+      result = await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
+    } else if (toolType === 'getLists') {
+      result = await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
+    } else if (toolType === 'create') {
+      result = await handleCreateOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'update') {
+      result = await handleUpdateOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'updateAttribute') {
+      result = await handleUpdateAttributeOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'delete') {
+      result = await handleDeleteOperation(request, toolConfig as ToolConfig, resourceType);
+    } else {
+      // Placeholder for other operations - will be extracted to modules later
+      throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
     }
 
-    // Handle searchByEmail tools
-    if (toolType === 'searchByEmail') {
-      return await handleSearchByEmail(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle searchByPhone tools
-    if (toolType === 'searchByPhone') {
-      return await handleSearchByPhone(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle smartSearch tools
-    if (toolType === 'smartSearch') {
-      return await handleSmartSearch(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle details tools
-    if (toolType === 'details') {
-      return await handleDetailsOperation(request, toolConfig as DetailsToolConfig, resourceType);
-    }
-
-    // Handle notes tools
-    if (toolType === 'notes') {
-      return await handleNotesOperation(request, toolConfig as NotesToolConfig, resourceType);
-    }
-
-    // Handle createNote tools
-    if (toolType === 'createNote') {
-      return await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
-    }
-
-    // Handle getLists tool
-    if (toolType === 'getLists') {
-      return await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
-    }
-
-    // Handle create tools
-    if (toolType === 'create') {
-      return await handleCreateOperation(request, toolConfig as ToolConfig, resourceType);
-    }
-
-    // Handle update tools
-    if (toolType === 'update') {
-      return await handleUpdateOperation(request, toolConfig as ToolConfig, resourceType);
-    }
-
-    // Handle updateAttribute tools
-    if (toolType === 'updateAttribute') {
-      return await handleUpdateAttributeOperation(request, toolConfig as ToolConfig, resourceType);
-    }
-
-    // Handle delete tools
-    if (toolType === 'delete') {
-      return await handleDeleteOperation(request, toolConfig as ToolConfig, resourceType);
-    }
-
-    // Placeholder for other operations - will be extracted to modules later
-    throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
+    // Log successful execution
+    logToolSuccess(toolName, toolType, result, timer);
+    return result;
   } catch (error) {
-    // Enhanced error handling with detailed information
+    // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error
         ? error.message
@@ -143,13 +132,8 @@ export async function executeToolRequest(request: CallToolRequest) {
           : undefined,
     };
 
-    if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-      console.error(
-        `[executeToolRequest] Error executing tool '${toolName}':`,
-        errorMessage,
-        errorDetails
-      );
-    }
+    // Log error using enhanced structured logging
+    logToolError(toolName, 'unknown', error, timer!, errorDetails);
 
     // Create properly formatted MCP response with detailed error information
     return {
