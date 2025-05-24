@@ -253,22 +253,47 @@ export type ValidationResult = true | string;
 /**
  * Filter condition value types
  */
-export type FilterValue = string | number | boolean | null | Array<string | number> | Record<string, unknown>;
+export type FilterValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<string | number>
+  | Record<string, unknown>;
 
 /**
  * Attribute value types for Attio records
  */
-export type AttributeValue = string | number | boolean | null | Array<{ value: unknown }> | Record<string, unknown>;
+export type AttributeValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Array<{ value: unknown }>
+  | Record<string, unknown>;
 
 /**
  * Company field input value types
  */
-export type CompanyFieldValue = string | number | boolean | null | undefined | Array<unknown> | Record<string, unknown>;
+export type CompanyFieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Array<unknown>
+  | Record<string, unknown>;
 
 /**
  * Processed company field value types
  */
-export type ProcessedFieldValue = string | number | boolean | null | undefined | Array<string | number | boolean>;
+export type ProcessedFieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Array<string | number | boolean>;
 
 /**
  * Contact information value interface

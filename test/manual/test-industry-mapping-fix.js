@@ -15,16 +15,14 @@
  *    node test/manual/test-industry-mapping-fix.js
  */
 
-const {
+import {
   createCompany,
   updateCompany,
   getCompanyDetails,
   deleteCompany,
-} = require('../../build/objects/companies/index');
-import { initializeAttioClient } from('../../build/api/attio-client');
-const {
-  getAttributeSlug,
-} = require('../../build/utils/attribute-mapping/index');
+} from '../../build/objects/companies/index.js';
+import { initializeAttioClient } from '../../build/api/attio-client.js';
+import { getAttributeSlug } from '../../build/utils/attribute-mapping/index.js';
 
 // Initialize API client with key from environment
 if (!process.env.ATTIO_API_KEY) {

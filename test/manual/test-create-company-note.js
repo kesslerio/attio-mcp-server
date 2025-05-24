@@ -1,10 +1,10 @@
 /**
  * Manual test for the create-company-note tool
- * 
+ *
  * This file tests the create-company-note tool which had an issue
  * where the formatResult function was missing.
  */
-import { executeToolRequest } from('../../dist/handlers/tools/dispatcher');
+import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 
 // Sample company ID for testing
 const COMPANY_ID = 'test-company-id';
@@ -18,20 +18,22 @@ const request = {
     arguments: {
       companyId: COMPANY_ID,
       title: NOTE_TITLE,
-      content: NOTE_CONTENT
-    }
+      content: NOTE_CONTENT,
+    },
   },
-  method: 'tools/call'
+  method: 'tools/call',
 };
 
 async function runTest() {
   try {
-    console.log('Testing create-company-note tool with added formatResult function...');
+    console.log(
+      'Testing create-company-note tool with added formatResult function...'
+    );
     console.log('Request:', JSON.stringify(request, null, 2));
-    
+
     // Execute the tool request
     const result = await executeToolRequest(request);
-    
+
     console.log('Result:', JSON.stringify(result, null, 2));
     console.log('Test completed successfully');
   } catch (error) {
@@ -40,8 +42,8 @@ async function runTest() {
 }
 
 // Only run if executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runTest();
 }
 
-module.exports = { runTest };
+export { runTest };

@@ -1,7 +1,7 @@
 /**
  * Test to trace URL construction for company creation
  */
-import { ResourceType } from('../dist/types/attio.js');
+import { ResourceType } from '../../dist/types/attio.js';
 
 console.log('=== URL Construction Trace ===');
 console.log('ResourceType.COMPANIES:', ResourceType.COMPANIES);

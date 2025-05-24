@@ -105,14 +105,13 @@ describe('Lists Batch Operations', () => {
       );
 
       // Mock getListDetails to use in the test
-      vi.spyOn(
-        listsModule,
-        'getListDetails'
-      ).mockImplementation(async (listId) => {
-        if (listId === 'list123') return mockList1;
-        if (listId === 'list456') return mockList2;
-        throw new Error('List not found');
-      });
+      vi.spyOn(listsModule, 'getListDetails').mockImplementation(
+        async (listId) => {
+          if (listId === 'list123') return mockList1;
+          if (listId === 'list456') return mockList2;
+          throw new Error('List not found');
+        }
+      );
 
       // Call the function
       const result = await batchGetListsDetails(['list123', 'list456']);
@@ -199,13 +198,12 @@ describe('Lists Batch Operations', () => {
       );
 
       // Mock getListEntries to use in the test
-      vi.spyOn(
-        listsModule,
-        'getListEntries'
-      ).mockImplementation(async (listId) => {
-        if (listId === 'list123') return [mockListEntry1, mockListEntry2];
-        return [];
-      });
+      vi.spyOn(listsModule, 'getListEntries').mockImplementation(
+        async (listId) => {
+          if (listId === 'list123') return [mockListEntry1, mockListEntry2];
+          return [];
+        }
+      );
 
       // Call the function
       const result = await batchGetListsEntries([

@@ -172,7 +172,9 @@ export async function batchCreateCompanies(params: {
     const validatedCompanies = await Promise.all(
       companies.map(async (company, index) => {
         try {
-          return await CompanyValidator.validateCreate(company as Record<string, CompanyFieldValue>);
+          return await CompanyValidator.validateCreate(
+            company as Record<string, CompanyFieldValue>
+          );
         } catch (error) {
           // Log validation error but allow operation to continue for individual handling
           console.warn(

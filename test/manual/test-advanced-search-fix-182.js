@@ -6,11 +6,9 @@
  * 1. Ensure you have a valid ATTIO_API_KEY environment variable set
  * 2. Run with: node test/manual/test-advanced-search-fix-182.js
  */
-require('dotenv').config();
-const {
-  advancedSearchCompanies,
-} = require('../../dist/objects/companies/index');
-import { initializeAttioClient } from('../../dist/api/attio-client');
+import 'dotenv/config';
+import { advancedSearchCompanies } from '../../dist/objects/companies/index.js';
+import { initializeAttioClient } from '../../dist/api/attio-client.js';
 
 // Ensure API key is set
 if (!process.env.ATTIO_API_KEY) {
