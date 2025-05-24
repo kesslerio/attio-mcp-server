@@ -1,9 +1,7 @@
 /**
  * Test the complete API call flow to find where untranslated filter is used
  */
-import {
-  translateAttributeNamesInFilters,
-} from '../../dist/utils/attribute-mapping/index.js';
+import { translateAttributeNamesInFilters } from '../../dist/utils/attribute-mapping/index.js';
 import { advancedSearchObject } from '../../dist/api/attio-operations.js';
 import { ResourceType, FilterConditionType } from '../../dist/types/attio.js';
 import { getAttioClient } from '../../dist/api/attio-client.js';
