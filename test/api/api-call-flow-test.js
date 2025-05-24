@@ -1,13 +1,11 @@
 /**
  * Test the complete API call flow to find where untranslated filter is used
  */
-const {
-  translateAttributeNamesInFilters,
-} = require('./dist/utils/attribute-mapping/index.js');
-import { advancedSearchObject } from('./dist/api/attio-operations.js');
-import { ResourceType, FilterConditionType } from('./dist/types/attio.js');
-import { getAttioClient } from('./dist/api/attio-client.js');
-import { transformFiltersToApiFormat } from('./dist/utils/filter-utils.js');
+import { translateAttributeNamesInFilters } from '../../dist/utils/attribute-mapping/index.js';
+import { advancedSearchObject } from '../../dist/api/attio-operations.js';
+import { ResourceType, FilterConditionType } from '../../dist/types/attio.js';
+import { getAttioClient } from '../../dist/api/attio-client.js';
+import { transformFiltersToApiFormat } from '../../dist/utils/filter-utils.js';
 
 // Create a proxy to intercept the actual HTTP calls
 const originalFetch = globalThis.fetch;

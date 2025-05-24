@@ -3,12 +3,8 @@
  */
 
 // Import the mapping functions
-const {
-  getAttributeSlug,
-} = require('../dist/utils/attribute-mapping/attribute-mappers.js');
-const {
-  translateAttributeNamesInFilters,
-} = require('../dist/utils/attribute-mapping.js');
+import { getAttributeSlug } from '../dist/utils/attribute-mapping/attribute-mappers.js';
+import { translateAttributeNamesInFilters } from '../dist/utils/attribute-mapping.js';
 
 // Test cases
 const testCases = ['B2B Segment', 'b2b_segment', 'b2b segment', 'B2B_Segment'];

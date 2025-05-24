@@ -6,16 +6,19 @@ import { createErrorResult } from './dist/utils/error-handler.js';
 
 // Simulate the exact error the user encounters
 const simulateAttioError = () => {
-  const error = new Error('Unknown select option name for option field constraint: Aesthetics');
+  const error = new Error(
+    'Unknown select option name for option field constraint: Aesthetics'
+  );
   error.response = {
     status: 400,
     data: {
       status_code: 400,
       type: 'invalid_request_error',
       code: 'unknown_filter_select_option_slug',
-      message: 'Unknown select option name for option field constraint: Aesthetics',
-      path: ['type_persona']
-    }
+      message:
+        'Unknown select option name for option field constraint: Aesthetics',
+      path: ['type_persona'],
+    },
   };
   return error;
 };
@@ -51,10 +54,12 @@ console.log('\n---\n');
 // Test 3: Show what the user would see
 console.log('Test 3: User experience comparison\n');
 console.log('BEFORE (confusing error):');
-console.log('❌ "Unknown select option name for option field constraint: Aesthetics"\n');
+console.log(
+  '❌ "Unknown select option name for option field constraint: Aesthetics"\n'
+);
 
 console.log('AFTER (helpful suggestions):');
-console.log('✅ "'Aesthetics' is not a valid value for type_persona."');
+console.log('✅ "\'Aesthetics\' is not a valid value for type_persona."');
 console.log('   Did you mean one of these?');
 console.log('   • Aesthetic Medicine (64% similar)');
 console.log('   • Medical Spa/Aesthetics (62% similar)');
@@ -65,4 +70,6 @@ console.log('1. Identifies that "Aesthetics" is not a valid value');
 console.log('2. Suggests "Medical Spa/Aesthetics" as the most likely match');
 console.log('3. Provides a similarity score to show confidence');
 console.log('4. Makes it easy for the user to correct their search');
-console.log('\nInstead of a cryptic error, users now get actionable suggestions! 🎉');
+console.log(
+  '\nInstead of a cryptic error, users now get actionable suggestions! 🎉'
+);
