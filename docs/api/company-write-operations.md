@@ -304,6 +304,24 @@ Common field types and their expected formats:
 | foundation_date | date | ISO 8601 | "2020-01-15" |
 | industry | string | Any text | "Technology" |
 
+### Record Reference Attributes
+
+Record reference attributes are used to link a company to another record in Attio.
+
+#### main_contact
+
+- **Type:** array
+- **Format:** Record reference
+- **Example:** `[{"target_record_id": "person_id", "target_object": "people"}]`
+
+**Important notes when using the Attio API directly:**
+
+1. The API requires the array format even for a single reference
+2. Field names must be `target_record_id` and `target_object` (not `record_id` and `object`)
+3. Using incorrect field names will result in error messages that might be misleading (e.g., "received: string" when you're providing an array)
+4. To clear the `main_contact` attribute, send an empty array (`[]`)
+5. Do not use `null` to clear the field as it will cause a validation error
+
 ### Custom Fields
 
 Custom fields follow the same validation rules as their configured types in Attio.
