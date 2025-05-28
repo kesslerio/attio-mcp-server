@@ -176,7 +176,7 @@ export function debug(
       metadata: createLogMetadata('DEBUG', module, operation, operationType),
       ...(data && { data }),
     };
-    outputLog(entry, console.log);
+    outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
 }
 
@@ -202,7 +202,7 @@ export function info(
       metadata: createLogMetadata('INFO', module, operation, operationType),
       ...(data && { data }),
     };
-    outputLog(entry, console.log);
+    outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
 }
 
@@ -507,6 +507,18 @@ export async function withLogging<T>(
   }
 }
 
+/**
+ * Safe logging function that never interferes with MCP protocol
+ * Always use this for any direct console logging that might occur during MCP operations
+ *
+ * @param message - Message to log
+ * @param args - Additional arguments to log
+ */
+export function safeMcpLog(message: string, ...args: any[]): void {
+  // Always use console.error to avoid interfering with MCP protocol
+  console.error(`[MCP_SAFE_LOG] ${message}`, ...args);
+}
+
 export default {
   debug,
   info,
@@ -522,6 +534,7 @@ export default {
   generateCorrelationId,
   createScopedLogger,
   withLogging,
+  safeMcpLog,
   PerformanceTimer,
   LogLevel,
   OperationType,
