@@ -3,7 +3,8 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
-import { ResourceType, Company } from '../../types/attio.js';
+import { ResourceType, Company, Person } from '../../types/attio.js';
+import { searchPeople } from '../people/search.js';
 import { CompanyAttributes } from './types.js';
 import { CompanyValidator } from '../../validators/company-validator.js';
 import {

@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 
 // Mock dependencies before importing
-vi.mock('../../../src/objects/people/index.js', () => ({
+vi.mock('../../../src/objects/people/search.js', () => ({
   searchPeople: vi.fn()
 }));
 
@@ -23,7 +23,7 @@ vi.mock('../../../src/validators/company-validator.js', () => ({
 
 // Import after mocking
 import { updateCompanyAttribute } from '../../../src/objects/companies/basic.js';
-import { searchPeople } from '../../../src/objects/people/index.js';
+import { searchPeople } from '../../../src/objects/people/search.js';
 import { CompanyOperationError } from '../../../src/errors/company-errors.js';
 
 describe('updateCompanyAttribute - main_contact handling', () => {

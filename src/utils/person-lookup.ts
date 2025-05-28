@@ -1,7 +1,7 @@
 /**
  * Utility functions for looking up people and handling person references
  */
-import { searchPeople } from '../objects/people/index.js';
+import { searchPeople } from '../objects/people/search.js';
 import { CompanyOperationError } from '../errors/company-errors.js';
 
 /**
