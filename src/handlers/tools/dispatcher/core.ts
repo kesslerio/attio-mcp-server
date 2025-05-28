@@ -16,6 +16,7 @@ import {
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
+import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 
 // Import operation handlers
 import {
@@ -183,7 +184,10 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     // Log successful execution
     logToolSuccess(toolName, toolType, result, timer);
-    return result;
+    
+    // Ensure the response is safely serializable
+    const sanitizedResult = sanitizeMcpResponse(result);
+    return sanitizedResult;
   } catch (error) {
     // Enhanced error handling with structured logging
     const errorMessage =
@@ -224,7 +228,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     );
 
     // Create properly formatted MCP response with detailed error information
-    return {
+    const errorResponse = {
       content: [
         {
           type: 'text',
@@ -239,6 +243,9 @@ export async function executeToolRequest(request: CallToolRequest) {
         details: errorDetails,
       },
     };
+    
+    // Ensure the error response is safely serializable
+    return sanitizeMcpResponse(errorResponse);
   }
 }
 

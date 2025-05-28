@@ -282,16 +282,16 @@ export function formatErrorResponse(
 
   if (details) {
     try {
-      // Use safe JSON serialization that handles circular references and non-serializable values
-      const detailsString = safeJsonStringify(details, {
-        maxDepth: 5,
-        includeStackTraces: process.env.NODE_ENV === 'development',
-      });
-      safeDetails = JSON.parse(detailsString);
+      // Use createSafeCopy which handles circular references and non-serializable values
+      safeDetails = JSON.parse(
+        safeJsonStringify(details, {
+          includeStackTraces: process.env.NODE_ENV === 'development',
+        })
+      );
     } catch (err) {
       console.error(
         '[formatErrorResponse] Error with safe stringification:',
-        err
+        err instanceof Error ? err.message : String(err)
       );
       // Ultimate fallback
       safeDetails = {
@@ -317,7 +317,7 @@ export function formatErrorResponse(
         type: 'text',
         text: `ERROR [${type}]: ${errorMessage}${helpfulTip}${
           safeDetails
-            ? '\n\nDetails: ' + safeJsonStringify(safeDetails, { maxDepth: 3 })
+            ? '\n\nDetails: ' + safeJsonStringify(safeDetails, { indent: 0 })
             : ''
         }`,
       },
