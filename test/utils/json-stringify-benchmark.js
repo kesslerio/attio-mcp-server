@@ -1,12 +1,12 @@
 /**
  * Benchmark comparison of JSON serialization libraries
- * 
+ *
  * This script compares the performance of:
  * - Native JSON.stringify
  * - Our custom safeJsonStringify
  * - fast-safe-stringify
  * - safe-stable-stringify
- * 
+ *
  * Run with: node test/utils/json-stringify-benchmark.js
  */
 
@@ -21,23 +21,31 @@ function createTestCase(name, obj) {
 // Test cases that represent real-world scenarios we need to handle
 const testCases = [
   createTestCase('Simple object', { a: 1, b: 'string', c: true }),
-  
-  createTestCase('Circular reference - direct', (() => {
-    const obj = { a: 1, b: 'string' };
-    obj.circular = obj;
-    return obj;
-  })()),
 
-  createTestCase('Circular reference - nested', (() => {
-    const obj = { a: 1, b: { c: 2 } };
-    obj.b.parent = obj;
-    return obj;
-  })()),
+  createTestCase(
+    'Circular reference - direct',
+    (() => {
+      const obj = { a: 1, b: 'string' };
+      obj.circular = obj;
+      return obj;
+    })()
+  ),
+
+  createTestCase(
+    'Circular reference - nested',
+    (() => {
+      const obj = { a: 1, b: { c: 2 } };
+      obj.b.parent = obj;
+      return obj;
+    })()
+  ),
 
   createTestCase('Functions', {
     a: 1,
-    fn: function test() { return 'test'; },
-    arrow: () => 'arrow'
+    fn: function test() {
+      return 'test';
+    },
+    arrow: () => 'arrow',
   }),
 
   createTestCase('Non-serializable values', {
@@ -45,43 +53,52 @@ const testCases = [
     b: undefined,
     c: Symbol('test'),
     d: new Map([['key', 'value']]),
-    e: new Set([1, 2, 3])
+    e: new Set([1, 2, 3]),
   }),
 
   createTestCase('Error object', {
-    error: new Error('Test error with stack trace')
+    error: new Error('Test error with stack trace'),
   }),
 
-  createTestCase('Deep object', (() => {
-    let deepObj = { value: 1 };
-    let current = deepObj;
-    
-    // Create an object that's 100 levels deep
-    for (let i = 0; i < 100; i++) {
-      current.next = { value: i + 2 };
-      current = current.next;
-    }
-    return deepObj;
-  })()),
+  createTestCase(
+    'Deep object',
+    (() => {
+      let deepObj = { value: 1 };
+      let current = deepObj;
+
+      // Create an object that's 100 levels deep
+      for (let i = 0; i < 100; i++) {
+        current.next = { value: i + 2 };
+        current = current.next;
+      }
+      return deepObj;
+    })()
+  ),
 
   createTestCase('Large array', {
-    array: Array.from({ length: 10000 }, (_, i) => ({ id: i, value: `Item ${i}` }))
+    array: Array.from({ length: 10000 }, (_, i) => ({
+      id: i,
+      value: `Item ${i}`,
+    })),
   }),
 
   createTestCase('MCP response', {
     content: [
-      { type: 'text', text: 'This is a test response with some "quotes" and \\backslashes\\' }
+      {
+        type: 'text',
+        text: 'This is a test response with some "quotes" and \\backslashes\\',
+      },
     ],
     metadata: {
       timing: {
         start: new Date(),
-        end: new Date()
+        end: new Date(),
       },
       source: {
         api: 'Attio',
-        details: { response: 'very long response data...'.repeat(100) }
-      }
-    }
+        details: { response: 'very long response data...'.repeat(100) },
+      },
+    },
   }),
 
   createTestCase('Company record', {
@@ -94,18 +111,20 @@ const testCases = [
       type_persona: [{ option: { title: 'Plastic Surgeon' } }],
       services: [
         { option: { title: 'Service 1' } },
-        { option: { title: 'Service 2' } }
+        { option: { title: 'Service 2' } },
       ],
       employees: [{ value: 100 }],
-      primary_location: [{ 
-        locality: 'San Francisco',
-        region: 'CA',
-        country_code: 'US'
-      }]
+      primary_location: [
+        {
+          locality: 'San Francisco',
+          region: 'CA',
+          country_code: 'US',
+        },
+      ],
     },
     created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-02T00:00:00Z'
-  })
+    updated_at: '2023-01-02T00:00:00Z',
+  }),
 ];
 
 // Warm up the engines
@@ -115,19 +134,19 @@ for (const testCase of testCases) {
   } catch (e) {
     // Ignore errors in warmup
   }
-  
+
   try {
     safeJsonStringify(testCase.obj);
   } catch (e) {
     // Ignore errors in warmup
   }
-  
+
   try {
     fastSafeStringify(testCase.obj);
   } catch (e) {
     // Ignore errors in warmup
   }
-  
+
   try {
     safeStableStringify(testCase.obj);
   } catch (e) {
@@ -138,19 +157,25 @@ for (const testCase of testCases) {
 // Run the benchmark
 console.log('=== JSON Stringification Performance Benchmark ===');
 console.log('Each test case runs 1000 iterations for each library');
-console.log('Results show: success/failure rate and average time in microseconds (μs)\n');
+console.log(
+  'Results show: success/failure rate and average time in microseconds (μs)\n'
+);
 
-console.log('| Test Case | Native JSON | Our Implementation | fast-safe-stringify | safe-stable-stringify |');
-console.log('|-----------|-------------|-------------------|---------------------|----------------------|');
+console.log(
+  '| Test Case | Native JSON | Our Implementation | fast-safe-stringify | safe-stable-stringify |'
+);
+console.log(
+  '|-----------|-------------|-------------------|---------------------|----------------------|'
+);
 
 for (const testCase of testCases) {
   const results = {
     native: { success: 0, time: 0 },
     custom: { success: 0, time: 0 },
     fast: { success: 0, time: 0 },
-    stable: { success: 0, time: 0 }
+    stable: { success: 0, time: 0 },
   };
-  
+
   // Test native JSON.stringify
   for (let i = 0; i < 1000; i++) {
     const start = process.hrtime.bigint();
@@ -162,7 +187,7 @@ for (const testCase of testCases) {
       results.native.time += Number(process.hrtime.bigint() - start);
     }
   }
-  
+
   // Test our custom implementation
   for (let i = 0; i < 1000; i++) {
     const start = process.hrtime.bigint();
@@ -174,7 +199,7 @@ for (const testCase of testCases) {
       results.custom.time += Number(process.hrtime.bigint() - start);
     }
   }
-  
+
   // Test fast-safe-stringify
   for (let i = 0; i < 1000; i++) {
     const start = process.hrtime.bigint();
@@ -186,7 +211,7 @@ for (const testCase of testCases) {
       results.fast.time += Number(process.hrtime.bigint() - start);
     }
   }
-  
+
   // Test safe-stable-stringify
   for (let i = 0; i < 1000; i++) {
     const start = process.hrtime.bigint();
@@ -198,14 +223,22 @@ for (const testCase of testCases) {
       results.stable.time += Number(process.hrtime.bigint() - start);
     }
   }
-  
+
   // Calculate averages in microseconds
   const nativeAvg = Math.round(results.native.time / 1000 / 1000);
   const customAvg = Math.round(results.custom.time / 1000 / 1000);
   const fastAvg = Math.round(results.fast.time / 1000 / 1000);
   const stableAvg = Math.round(results.stable.time / 1000 / 1000);
-  
-  console.log(`| ${testCase.name.padEnd(9)} | ${results.native.success}/1000 (${nativeAvg}μs) | ${results.custom.success}/1000 (${customAvg}μs) | ${results.fast.success}/1000 (${fastAvg}μs) | ${results.stable.success}/1000 (${stableAvg}μs) |`);
+
+  console.log(
+    `| ${testCase.name.padEnd(9)} | ${
+      results.native.success
+    }/1000 (${nativeAvg}μs) | ${
+      results.custom.success
+    }/1000 (${customAvg}μs) | ${results.fast.success}/1000 (${fastAvg}μs) | ${
+      results.stable.success
+    }/1000 (${stableAvg}μs) |`
+  );
 }
 
 // Test serialization correctness
@@ -214,14 +247,14 @@ console.log('Testing if the serialized output can be parsed back to JSON\n');
 
 for (const testCase of testCases) {
   console.log(`Test case: ${testCase.name}`);
-  
+
   try {
     const nativeResult = JSON.stringify(testCase.obj);
     console.log('  Native JSON: ' + (nativeResult ? '✓' : '✗'));
   } catch (e) {
     console.log(`  Native JSON: ✗ (${e.message})`);
   }
-  
+
   try {
     const customResult = safeJsonStringify(testCase.obj);
     const parsedCustom = JSON.parse(customResult);
@@ -229,7 +262,7 @@ for (const testCase of testCases) {
   } catch (e) {
     console.log(`  Our Implementation: ✗ (${e.message})`);
   }
-  
+
   try {
     const fastResult = fastSafeStringify(testCase.obj);
     const parsedFast = JSON.parse(fastResult);
@@ -237,7 +270,7 @@ for (const testCase of testCases) {
   } catch (e) {
     console.log(`  fast-safe-stringify: ✗ (${e.message})`);
   }
-  
+
   try {
     const stableResult = safeStableStringify(testCase.obj);
     const parsedStable = JSON.parse(stableResult);
@@ -245,6 +278,6 @@ for (const testCase of testCases) {
   } catch (e) {
     console.log(`  safe-stable-stringify: ✗ (${e.message})`);
   }
-  
+
   console.log('');
 }

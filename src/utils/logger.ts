@@ -140,7 +140,10 @@ function createLogMetadata(
 /**
  * Format and output structured log entry
  */
-function outputLog(entry: LogEntry, logFunction: (message: string, ...args: any[]) => void): void {
+function outputLog(
+  entry: LogEntry,
+  logFunction: (message: string, ...args: any[]) => void
+): void {
   if (process.env.LOG_FORMAT === 'json') {
     // Output compact JSON using safe stringify to prevent errors
     logFunction(safeJsonStringify(entry, { indent: 0 }));
@@ -253,14 +256,15 @@ export function error(
       metadata: createLogMetadata('ERROR', module, operation, operationType),
       ...(data && { data }),
       ...(errorObj && {
-        error: errorObj instanceof Error
-          ? {
-              message: errorObj.message,
-              name: errorObj.name,
-              stack: errorObj.stack,
-              code: (errorObj as any).code,
-            }
-          : { message: String(errorObj), name: 'Unknown' },
+        error:
+          errorObj instanceof Error
+            ? {
+                message: errorObj.message,
+                name: errorObj.name,
+                stack: errorObj.stack,
+                code: (errorObj as any).code,
+              }
+            : { message: String(errorObj), name: 'Unknown' },
       }),
     };
     outputLog(entry, console.error);
@@ -276,7 +280,11 @@ export class PerformanceTimer {
   private operation: string;
   private operationType: OperationType;
 
-  constructor(module: string, operation: string, operationType: OperationType = OperationType.SYSTEM) {
+  constructor(
+    module: string,
+    operation: string,
+    operationType: OperationType = OperationType.SYSTEM
+  ) {
     this.module = module;
     this.operation = operation;
     this.operationType = operationType;
@@ -314,7 +322,13 @@ export function operationStart(
   operationType: OperationType = OperationType.SYSTEM,
   params?: any
 ): PerformanceTimer {
-  debug(module, `Starting operation: ${operation}`, params, operation, operationType);
+  debug(
+    module,
+    `Starting operation: ${operation}`,
+    params,
+    operation,
+    operationType
+  );
   return new PerformanceTimer(module, operation, operationType);
 }
 
@@ -338,7 +352,13 @@ export function operationSuccess(
     ...resultSummary,
     ...(duration && { duration: `${duration}ms` }),
   };
-  info(module, `Operation successful: ${operation}`, logData, operation, operationType);
+  info(
+    module,
+    `Operation successful: ${operation}`,
+    logData,
+    operation,
+    operationType
+  );
 }
 
 /**
@@ -363,7 +383,14 @@ export function operationFailure(
     ...context,
     ...(duration && { duration: `${duration}ms` }),
   };
-  error(module, `Operation failed: ${operation}`, errorObj, logData, operation, operationType);
+  error(
+    module,
+    `Operation failed: ${operation}`,
+    errorObj,
+    logData,
+    operation,
+    operationType
+  );
 }
 
 /**
@@ -380,24 +407,67 @@ export function fallbackStart(
   reason: string,
   operationType: OperationType = OperationType.API_CALL
 ): void {
-  warn(module, `Trying fallback: ${operation}. Reason: ${reason}`, { reason }, operation, operationType);
+  warn(
+    module,
+    `Trying fallback: ${operation}. Reason: ${reason}`,
+    { reason },
+    operation,
+    operationType
+  );
 }
 
 /**
  * Creates a scoped logger instance with pre-configured context
  */
-export function createScopedLogger(module: string, operation?: string, operationType?: OperationType) {
+export function createScopedLogger(
+  module: string,
+  operation?: string,
+  operationType?: OperationType
+) {
   return {
-    debug: (message: string, data?: any) => debug(module, message, data, operation, operationType),
-    info: (message: string, data?: any) => info(module, message, data, operation, operationType),
-    warn: (message: string, data?: any) => warn(module, message, data, operation, operationType),
-    error: (message: string, errorObj?: any, data?: any) => error(module, message, errorObj, data, operation, operationType),
-    operationStart: (op?: string, opType?: OperationType, params?: any) => 
-      operationStart(module, op || operation || 'unknown', opType || operationType || OperationType.SYSTEM, params),
-    operationSuccess: (op?: string, resultSummary?: any, opType?: OperationType, duration?: number) =>
-      operationSuccess(module, op || operation || 'unknown', resultSummary, opType || operationType || OperationType.SYSTEM, duration),
-    operationFailure: (op?: string, errorObj?: any, context?: any, opType?: OperationType, duration?: number) =>
-      operationFailure(module, op || operation || 'unknown', errorObj, context, opType || operationType || OperationType.SYSTEM, duration),
+    debug: (message: string, data?: any) =>
+      debug(module, message, data, operation, operationType),
+    info: (message: string, data?: any) =>
+      info(module, message, data, operation, operationType),
+    warn: (message: string, data?: any) =>
+      warn(module, message, data, operation, operationType),
+    error: (message: string, errorObj?: any, data?: any) =>
+      error(module, message, errorObj, data, operation, operationType),
+    operationStart: (op?: string, opType?: OperationType, params?: any) =>
+      operationStart(
+        module,
+        op || operation || 'unknown',
+        opType || operationType || OperationType.SYSTEM,
+        params
+      ),
+    operationSuccess: (
+      op?: string,
+      resultSummary?: any,
+      opType?: OperationType,
+      duration?: number
+    ) =>
+      operationSuccess(
+        module,
+        op || operation || 'unknown',
+        resultSummary,
+        opType || operationType || OperationType.SYSTEM,
+        duration
+      ),
+    operationFailure: (
+      op?: string,
+      errorObj?: any,
+      context?: any,
+      opType?: OperationType,
+      duration?: number
+    ) =>
+      operationFailure(
+        module,
+        op || operation || 'unknown',
+        errorObj,
+        context,
+        opType || operationType || OperationType.SYSTEM,
+        duration
+      ),
   };
 }
 
@@ -415,11 +485,24 @@ export async function withLogging<T>(
   try {
     const result = await fn();
     const duration = timer.end();
-    operationSuccess(module, operation, { success: true }, operationType, duration);
+    operationSuccess(
+      module,
+      operation,
+      { success: true },
+      operationType,
+      duration
+    );
     return result;
   } catch (error) {
     const duration = timer.end();
-    operationFailure(module, operation, error, context, operationType, duration);
+    operationFailure(
+      module,
+      operation,
+      error,
+      context,
+      operationType,
+      duration
+    );
     throw error;
   }
 }

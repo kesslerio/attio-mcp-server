@@ -1,7 +1,7 @@
 /**
  * Safe JSON serialization utilities to prevent MCP protocol breakdown
  * Handles circular references, non-serializable values, and large objects
- * 
+ *
  * Uses fast-safe-stringify for improved performance and reliability
  */
 // @ts-ignore - Fast-safe-stringify has CommonJS exports
@@ -31,12 +31,12 @@ const DEFAULT_OPTIONS: Required<SerializationOptions> = {
   maxStringLength: 25000, // 25KB max string length - more reasonable for MCP
   includeStackTraces: false,
   replacer: (key, value) => value,
-  indent: 2
+  indent: 2,
 };
 
 /**
  * Safe JSON stringify that handles circular references and non-serializable values
- * 
+ *
  * Uses fast-safe-stringify for high performance and reliability
  *
  * @param obj - The object to stringify
@@ -48,7 +48,7 @@ export function safeJsonStringify(
   options: SerializationOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  
+
   // Performance monitoring for large objects
   const startTime = performance.now();
 
@@ -57,17 +57,17 @@ export function safeJsonStringify(
     const customReplacer = (key: string, value: any): any => {
       // First apply user-provided replacer if any
       value = opts.replacer(key, value);
-      
+
       // Handle undefined (normally skipped by JSON)
       if (value === undefined) {
         return null;
       }
-      
+
       // Handle very long strings
       if (typeof value === 'string' && value.length > opts.maxStringLength) {
         return value.substring(0, opts.maxStringLength) + '... [truncated]';
       }
-      
+
       // Handle special object types more gracefully
       if (value instanceof Error) {
         const errorObj: any = {
@@ -82,25 +82,25 @@ export function safeJsonStringify(
         }
         return errorObj;
       }
-      
+
       if (value instanceof Map) {
         return '[Map: ' + value.size + ' entries]';
       }
-      
+
       if (value instanceof Set) {
         return '[Set: ' + value.size + ' items]';
       }
-      
+
       if (ArrayBuffer && value instanceof ArrayBuffer) {
         return '[ArrayBuffer: ' + value.byteLength + ' bytes]';
       }
-      
+
       return value;
     };
-    
+
     // Use fast-safe-stringify with our custom replacer
     const result = fastSafeStringify(obj, customReplacer, opts.indent);
-    
+
     // Performance monitoring and logging
     const duration = performance.now() - startTime;
     if (duration > 100) {
@@ -110,7 +110,7 @@ export function safeJsonStringify(
         )}ms for ${typeof obj} (${result.length} chars)`
       );
     }
-    
+
     return result;
   } catch (error) {
     // Enhanced error context
@@ -121,7 +121,7 @@ export function safeJsonStringify(
       )}ms for ${typeof obj}:`,
       error
     );
-    
+
     // Use fast-safe-stringify directly for the error fallback
     return fastSafeStringify(
       {
@@ -169,7 +169,7 @@ export function validateJsonString(jsonString: string): {
 
 /**
  * Detects potential circular references in an object before serialization
- * 
+ *
  * NOTE: This is less critical now with fast-safe-stringify, but kept for
  * compatibility with existing code that uses it.
  *
@@ -207,7 +207,7 @@ export function hasCircularReferences(
 
 /**
  * Creates a safe copy of an object that can be JSON serialized
- * 
+ *
  * Uses fast-safe-stringify for improved performance and reliability
  *
  * @param obj - The object to copy
@@ -221,7 +221,7 @@ export function createSafeCopy(
   try {
     // Fast path: directly use fast-safe-stringify to create a JSON string
     const jsonString = safeJsonStringify(obj, options);
-    
+
     // Parse it back to create the safe copy
     return JSON.parse(jsonString);
   } catch (error) {
@@ -229,7 +229,7 @@ export function createSafeCopy(
       '[createSafeCopy] Failed to create safe copy:',
       error instanceof Error ? error.message : String(error)
     );
-    
+
     // Return a structured error object
     return {
       error: 'Failed to create safe copy',
@@ -241,7 +241,7 @@ export function createSafeCopy(
 
 /**
  * Sanitizes MCP response objects to prevent JSON parsing errors
- * 
+ *
  * Uses fast-safe-stringify to ensure all responses are safely serializable
  *
  * @param response - The MCP response object to sanitize
@@ -284,7 +284,9 @@ export function sanitizeMcpResponse(response: any): any {
       isError: true,
       error: {
         code: 500,
-        message: 'Response sanitization failed: ' + (error instanceof Error ? error.message : String(error)),
+        message:
+          'Response sanitization failed: ' +
+          (error instanceof Error ? error.message : String(error)),
         type: 'sanitization_error',
       },
     };

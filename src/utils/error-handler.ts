@@ -283,9 +283,11 @@ export function formatErrorResponse(
   if (details) {
     try {
       // Use createSafeCopy which handles circular references and non-serializable values
-      safeDetails = JSON.parse(safeJsonStringify(details, {
-        includeStackTraces: process.env.NODE_ENV === 'development',
-      }));
+      safeDetails = JSON.parse(
+        safeJsonStringify(details, {
+          includeStackTraces: process.env.NODE_ENV === 'development',
+        })
+      );
     } catch (err) {
       console.error(
         '[formatErrorResponse] Error with safe stringification:',
