@@ -29,12 +29,34 @@ import {
   handleCreateNoteOperation 
 } from './operations/notes.js';
 import { handleGetListsOperation } from './operations/lists.js';
+
+// Import CRUD operation handlers
 import {
   handleCreateOperation,
   handleUpdateOperation,
   handleUpdateAttributeOperation,
   handleDeleteOperation
 } from './operations/crud.js';
+
+// Import List operation handlers (additional operations from emergency fix)
+import {
+  handleAddRecordToListOperation,
+  handleRemoveRecordFromListOperation,
+  handleUpdateListEntryOperation,
+  handleGetListDetailsOperation,
+  handleGetListEntriesOperation,
+  handleFilterListEntriesOperation,
+  handleAdvancedFilterListEntriesOperation
+} from './operations/lists.js';
+
+// Import Batch operation handlers
+import {
+  handleBatchUpdateOperation,
+  handleBatchCreateOperation,
+  handleBatchDeleteOperation,
+  handleBatchSearchOperation,
+  handleBatchGetDetailsOperation
+} from './operations/batch.js';
 
 // Import tool type definitions
 import {
@@ -93,6 +115,8 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
     } else if (toolType === 'getLists') {
       result = await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
+    
+    // Handle CRUD operations (from emergency fix)
     } else if (toolType === 'create') {
       result = await handleCreateOperation(request, toolConfig as ToolConfig, resourceType);
     } else if (toolType === 'update') {
@@ -101,6 +125,53 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleUpdateAttributeOperation(request, toolConfig as ToolConfig, resourceType);
     } else if (toolType === 'delete') {
       result = await handleDeleteOperation(request, toolConfig as ToolConfig, resourceType);
+    
+    // Handle additional info operations (from emergency fix)
+    } else if (toolType === 'basicInfo' || toolType === 'businessInfo' || toolType === 'contactInfo' || toolType === 'socialInfo' || toolType === 'json') {
+      result = await handleInfoOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'fields') {
+      result = await handleFieldsOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'getAttributes') {
+      result = await handleGetAttributesOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'discoverAttributes') {
+      result = await handleDiscoverAttributesOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'customFields') {
+      result = await handleInfoOperation(request, toolConfig, resourceType);
+
+    // Handle List operations (from emergency fix)
+    } else if (toolType === 'addRecordToList') {
+      result = await handleAddRecordToListOperation(request, toolConfig);
+    } else if (toolType === 'removeRecordFromList') {
+      result = await handleRemoveRecordFromListOperation(request, toolConfig);
+    } else if (toolType === 'updateListEntry') {
+      result = await handleUpdateListEntryOperation(request, toolConfig);
+    } else if (toolType === 'getListDetails') {
+      result = await handleGetListDetailsOperation(request, toolConfig);
+    } else if (toolType === 'getListEntries') {
+      result = await handleGetListEntriesOperation(request, toolConfig);
+    } else if (toolType === 'filterListEntries') {
+      result = await handleFilterListEntriesOperation(request, toolConfig);
+    } else if (toolType === 'advancedFilterListEntries') {
+      result = await handleAdvancedFilterListEntriesOperation(request, toolConfig);
+
+    // Handle Batch operations (from emergency fix)
+    } else if (toolType === 'batchUpdate') {
+      result = await handleBatchUpdateOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchCreate') {
+      result = await handleBatchCreateOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchDelete') {
+      result = await handleBatchDeleteOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchSearch') {
+      result = await handleBatchSearchOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchGetDetails') {
+      result = await handleBatchGetDetailsOperation(request, toolConfig, resourceType);
+
+    // Handle other advanced search operations (from emergency fix)
+    } else if (toolType === 'advancedSearch') {
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByDomain') {
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
@@ -132,8 +203,9 @@ export async function executeToolRequest(request: CallToolRequest) {
           : undefined,
     };
 
-    // Log error using enhanced structured logging
-    logToolError(toolName, 'unknown', error, timer!, errorDetails);
+    // Log error using enhanced structured logging  
+    const timer = Date.now(); // Fallback timer if not initialized
+    logToolError(toolName, 'unknown', error, timer, errorDetails);
 
     // Create properly formatted MCP response with detailed error information
     return {
@@ -154,3 +226,70 @@ export async function executeToolRequest(request: CallToolRequest) {
   }
 }
 
+// Placeholder functions that need to be implemented (missing from main branch)
+async function handleInfoOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
+
+  if (!id) {
+    throw new Error(`${idParam} parameter is required`);
+  }
+
+  const result = await toolConfig.handler(id);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
+}
+
+async function handleFieldsOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
+  const fields = request.params.arguments?.fields as string[];
+
+  if (!id || !fields) {
+    throw new Error('Both id and fields parameters are required');
+  }
+
+  const result = await toolConfig.handler(id, fields);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
+}
+
+async function handleGetAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
+  const attributeName = request.params.arguments?.attributeName as string;
+
+  if (!id) {
+    throw new Error(`${idParam} parameter is required`);
+  }
+
+  const result = await toolConfig.handler(id, attributeName);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
+}
+
+async function handleDiscoverAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const result = await toolConfig.handler();
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
+}
