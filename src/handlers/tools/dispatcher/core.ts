@@ -25,6 +25,38 @@ import {
   handleSmartSearch
 } from './operations/search.js';
 
+// Import CRUD operation handlers
+import {
+  handleUpdateOperation,
+  handleUpdateAttributeOperation,
+  handleGetAttributesOperation,
+  handleCreateOperation,
+  handleInfoOperation,
+  handleFieldsOperation,
+  handleDiscoverAttributesOperation,
+  handleDeleteOperation
+} from './operations/crud.js';
+
+// Import List operation handlers
+import {
+  handleAddRecordToListOperation,
+  handleRemoveRecordFromListOperation,
+  handleUpdateListEntryOperation,
+  handleGetListDetailsOperation,
+  handleGetListEntriesOperation,
+  handleFilterListEntriesOperation,
+  handleAdvancedFilterListEntriesOperation
+} from './operations/lists.js';
+
+// Import Batch operation handlers
+import {
+  handleBatchUpdateOperation,
+  handleBatchCreateOperation,
+  handleBatchDeleteOperation,
+  handleBatchSearchOperation,
+  handleBatchGetDetailsOperation
+} from './operations/batch.js';
+
 // Import tool type definitions
 import {
   ToolConfig,
@@ -96,7 +128,103 @@ export async function executeToolRequest(request: CallToolRequest) {
       return await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
     }
 
-    // Placeholder for other operations - will be extracted to modules later
+    // Handle CRUD operations
+    if (toolType === 'update') {
+      return await handleUpdateOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'updateAttribute') {
+      return await handleUpdateAttributeOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'getAttributes') {
+      return await handleGetAttributesOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'create') {
+      return await handleCreateOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'basicInfo' || toolType === 'businessInfo' || toolType === 'contactInfo' || toolType === 'socialInfo' || toolType === 'json') {
+      return await handleInfoOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'fields') {
+      return await handleFieldsOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'discoverAttributes') {
+      return await handleDiscoverAttributesOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'delete') {
+      return await handleDeleteOperation(request, toolConfig, resourceType);
+    }
+
+    // Handle List operations
+    if (toolType === 'addRecordToList') {
+      return await handleAddRecordToListOperation(request, toolConfig);
+    }
+
+    if (toolType === 'removeRecordFromList') {
+      return await handleRemoveRecordFromListOperation(request, toolConfig);
+    }
+
+    if (toolType === 'updateListEntry') {
+      return await handleUpdateListEntryOperation(request, toolConfig);
+    }
+
+    if (toolType === 'getListDetails') {
+      return await handleGetListDetailsOperation(request, toolConfig);
+    }
+
+    if (toolType === 'getListEntries') {
+      return await handleGetListEntriesOperation(request, toolConfig);
+    }
+
+    if (toolType === 'filterListEntries') {
+      return await handleFilterListEntriesOperation(request, toolConfig);
+    }
+
+    if (toolType === 'advancedFilterListEntries') {
+      return await handleAdvancedFilterListEntriesOperation(request, toolConfig);
+    }
+
+    // Handle Batch operations
+    if (toolType === 'batchUpdate') {
+      return await handleBatchUpdateOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'batchCreate') {
+      return await handleBatchCreateOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'batchDelete') {
+      return await handleBatchDeleteOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'batchSearch') {
+      return await handleBatchSearchOperation(request, toolConfig, resourceType);
+    }
+
+    if (toolType === 'batchGetDetails') {
+      return await handleBatchGetDetailsOperation(request, toolConfig, resourceType);
+    }
+
+    // Handle other advanced search operations that may have been missed
+    if (toolType === 'advancedSearch') {
+      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    }
+
+    if (toolType === 'searchByDomain') {
+      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    }
+
+    if (toolType === 'customFields') {
+      return await handleInfoOperation(request, toolConfig, resourceType);
+    }
+
+    // If we reach here, the tool type is truly not implemented
     throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
   } catch (error) {
     // Enhanced error handling with detailed information
