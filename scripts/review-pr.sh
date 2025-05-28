@@ -68,9 +68,17 @@ fi
 
 echo "🔍 Running Claude analysis with allowedTools: $ALLOWED_TOOLS ($REVIEW_TYPE)..."
 
-# Create comprehensive review prompt 
-cat > /tmp/pr_review_prompt_${PR_NUMBER}.md << 'EOF'
+# Create comprehensive review prompt with allowed tools integrated
+if [ "$REVIEW_TYPE" = "LARGE_PR_SUMMARY" ]; then
+  TOOLS_CONFIG="Bash,Read,Grep"
+else
+  TOOLS_CONFIG="Bash,Read,Grep,Glob,LS"
+fi
+
+cat > /tmp/pr_review_prompt_${PR_NUMBER}.md << EOF
 You are an expert code reviewer for the Attio MCP Server project.
+
+You may use these tools: ${TOOLS_CONFIG}
 
 Perform a comprehensive review of this Pull Request and provide output in the exact format below:
 
@@ -159,8 +167,8 @@ ${PR_DIFF}
 EOF
 fi
 
-# Run claude -p with allowedTools and the prompt and data
-claude --allowedTools "$ALLOWED_TOOLS" -p /tmp/pr_review_prompt_${PR_NUMBER}.md < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
+# Run claude -p with the prompt and data (tools now defined in the prompt file)
+claude -p /tmp/pr_review_prompt_${PR_NUMBER}.md < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
 
 echo "📝 Posting review to PR..."
 
