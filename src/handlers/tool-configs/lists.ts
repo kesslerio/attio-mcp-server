@@ -10,6 +10,8 @@ import {
   addRecordToList,
   removeRecordFromList,
   updateListEntry,
+  getRecordListMemberships,
+  ListMembership,
 } from '../../objects/lists.js';
 import {
   GetListsToolConfig,
@@ -33,6 +35,23 @@ export const listsToolConfigs = {
         .join('\n')}`;
     },
   } as GetListsToolConfig,
+  getRecordListMemberships: {
+    name: 'get-company-lists',
+    handler: getRecordListMemberships,
+    formatResult: (results: ListMembership[]) => {
+      if (results.length === 0) {
+        return 'Record is not a member of any lists.';
+      }
+      
+      return `Found ${results.length} list membership(s):\n${results
+        .map((membership: ListMembership) => {
+          // Format each membership with list name and IDs
+          return `- List: ${membership.listName} (ID: ${membership.listId})
+  Entry ID: ${membership.entryId}`;
+        })
+        .join('\n')}`;
+    },
+  } as ToolConfig,
   getListDetails: {
     name: 'get-list-details',
     handler: getListDetails,
@@ -173,7 +192,13 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     name: 'add-record-to-list',
     handler: addRecordToList,
     idParams: ['listId', 'recordId'],
-  } as ListActionToolConfig,
+    formatResult: (result: AttioListEntry) => {
+      const entryId = result.id?.entry_id || 'unknown';
+      const recordId = result.record_id || result.parent_record_id || 'unknown';
+      
+      return `Successfully added record ${recordId} to list (Entry ID: ${entryId})`;
+    },
+  } as ToolConfig,
   removeRecordFromList: {
     name: 'remove-record-from-list',
     handler: removeRecordFromList,
@@ -209,6 +234,30 @@ export const listsToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {},
+    },
+  },
+  {
+    name: 'get-company-lists',
+    description: 'Find all lists that a specific company or person belongs to',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        recordId: {
+          type: 'string',
+          description: 'ID of the record to find in lists',
+        },
+        objectType: {
+          type: 'string',
+          description: 'Type of record (e.g., "companies", "people")',
+          enum: ['companies', 'people'],
+        },
+        includeEntryValues: {
+          type: 'boolean',
+          description: 'Whether to include entry values in the response (e.g., stage, status)',
+          default: false,
+        },
+      },
+      required: ['recordId'],
     },
   },
   {
@@ -397,6 +446,15 @@ export const listsToolDefinitions = [
         recordId: {
           type: 'string',
           description: 'ID of the record to add to the list',
+        },
+        objectType: {
+          type: 'string',
+          description: 'Type of record (e.g., "companies", "people")',
+          enum: ['companies', 'people'],
+        },
+        initialValues: {
+          type: 'object',
+          description: 'Initial values for the list entry (e.g., {"stage": "Prospect"})',
         },
       },
       required: ['listId', 'recordId'],
