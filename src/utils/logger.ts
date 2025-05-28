@@ -140,20 +140,13 @@ function createLogMetadata(
  * Format and output structured log entry
  */
 function outputLog(entry: LogEntry, logFunction: (message: string, ...args: any[]) => void): void {
-  const formattedMessage = `[${entry.metadata.module}] [${entry.metadata.level}] ${entry.message}`;
-  
   if (process.env.LOG_FORMAT === 'json') {
+    // Output compact JSON
     logFunction(JSON.stringify(entry));
   } else {
-    if (entry.data || entry.error || Object.keys(entry.metadata).length > 4) {
-      logFunction(formattedMessage, {
-        metadata: entry.metadata,
-        ...(entry.data && { data: entry.data }),
-        ...(entry.error && { error: entry.error }),
-      });
-    } else {
-      logFunction(formattedMessage);
-    }
+    // Output pretty-printed JSON to maintain human readability for console,
+    // while ensuring it's a single, valid JSON string to prevent MCP parsing errors.
+    logFunction(JSON.stringify(entry, null, 2));
   }
 }
 
