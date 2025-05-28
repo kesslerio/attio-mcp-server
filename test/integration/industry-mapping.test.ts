@@ -9,7 +9,6 @@ import {
   beforeAll,
   beforeEach,
   afterEach,
-  jest,
 } from 'vitest';
 import {
   createCompany,

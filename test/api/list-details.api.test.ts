@@ -4,6 +4,7 @@
  * This test will use the real Attio API if SKIP_INTEGRATION_TESTS is not set
  * and ATTIO_API_KEY is provided
  */
+import { describe, test, expect, beforeAll } from 'vitest';
 import { initializeAttioClient } from '../../src/api/attio-client';
 import { getListDetails } from '../../src/objects/lists';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
@@ -17,7 +18,7 @@ describe('get-list-details API test', () => {
   const shouldSkip =
     process.env.SKIP_INTEGRATION_TESTS === 'true' || !process.env.ATTIO_API_KEY;
 
-  // Conditional Jest test that respects the SKIP_INTEGRATION_TESTS flag
+  // Conditional Vitest test that respects the SKIP_INTEGRATION_TESTS flag
   const conditionalTest = shouldSkip ? test.skip : test;
 
   beforeAll(() => {

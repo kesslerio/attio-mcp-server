@@ -2,7 +2,7 @@
  * Tests for record ID extraction from list entries
  */
 
-import { expect, describe, it } from '@jest/globals';
+import { expect, describe, it } from 'vitest';
 import { processListEntries } from '../../src/utils/record-utils.js';
 import { AttioListEntry } from '../../src/types/attio.js';
 
