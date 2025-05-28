@@ -301,7 +301,10 @@ export async function formatAttributeValue(
 
   // Handle null/undefined values
   if (value === null || value === undefined) {
-    return null;
+    // If the attribute is an array type, clearing it means sending an empty array.
+    // Otherwise, send null.
+    const returnValue = typeInfo.isArray ? [] : null;
+    return returnValue;
   }
 
   // Different field types need different formatting
@@ -318,17 +321,20 @@ export async function formatAttributeValue(
       }
 
     case 'text':
-      // Text fields for people object don't need wrapping
+      // Text fields for people object don't need wrapping for certain slugs
       if (
         objectSlug === 'people' &&
-        (attributeSlug === 'name' || attributeSlug === 'job_title')
+        (attributeSlug === 'name' ||
+          attributeSlug === 'job_title' ||
+          attributeSlug === 'first_name' ||
+          attributeSlug === 'last_name')
       ) {
         return value;
       }
-      // Other text fields need wrapped values
+      // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue.map((v) => ({ value: v }));
+        return arrayValue.map((v: any) => ({ value: v }));
       } else {
         return { value };
       }
@@ -422,11 +428,7 @@ export async function formatAllAttributes(
   for (const [key, value] of Object.entries(attributes)) {
     if (value !== undefined) {
       // Handle null values explicitly - format them according to Attio's expected structure
-      if (value === null) {
-        formatted[key] = null;
-      } else {
-        formatted[key] = await formatAttributeValue(objectSlug, key, value);
-      }
+      formatted[key] = await formatAttributeValue(objectSlug, key, value);
     }
   }
 
