@@ -6,8 +6,7 @@ import {
   createCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
-  getCompanyBasicInfo
+  deleteCompany
 } from "../../../objects/companies/index.js";
 import { ToolConfig } from "../../tool-types.js";
 import { formatterConfigs } from "./formatters.js";
@@ -39,11 +38,14 @@ function extractCompanyDisplayInfo(company: Company): { name: string; id: string
 
 // Company CRUD tool configurations
 export const crudToolConfigs = {
+  // Removed duplicate basicInfo configuration - already defined in formatterConfigs
+  /* Removed to prevent duplicate tool name conflict:
   basicInfo: {
     name: "get-company-basic-info",
     handler: getCompanyBasicInfo,
     formatResult: formatterConfigs.basicInfo.formatResult
   } as ToolConfig,
+  */
   
   create: {
     name: "create-company",
@@ -81,6 +83,8 @@ export const crudToolConfigs = {
 
 // CRUD tool definitions
 export const crudToolDefinitions = [
+  // Removed duplicate definition - already defined in formatterToolDefinitions
+  /* Removed to prevent duplicate tool name conflict:
   {
     name: "get-company-basic-info",
     description: "Get basic information about a company in Attio",
@@ -95,6 +99,7 @@ export const crudToolDefinitions = [
       required: ["companyId"]
     }
   },
+  */
   {
     name: "create-company",
     description: "Create a new company in Attio",
