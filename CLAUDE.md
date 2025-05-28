@@ -28,6 +28,7 @@ The following commands are pre-approved and do not require user permission:
 - git status, git diff, git log (read-only git commands)
 - File reading operations (Read, Glob, Grep, LS tools)
 - head, tail, cat commands for file inspection
+- ./scripts/review-pr.sh <PR_NUMBER> (automated PR review)
 
 CODE PRINCIPLES
 - TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.
@@ -46,7 +47,10 @@ CODE STYLE/STRUCTURE
 - Imports: Node.js standard modules -> external -> internal.
 - Testing: 
   * ALWAYS place ALL tests in the `/test` directory - never in project root
-  * Use Jest for TypeScript tests (*.test.ts)
+  * Use Vitest (NOT Jest) for TypeScript tests (*.test.ts)
+  * Import testing functions: `import { describe, it, expect, beforeEach, vi } from 'vitest'`
+  * Use `vi.mock()` for mocking, `vi.fn()` for mock functions, `vi.mocked()` for typed mocks
+  * Use `vi.clearAllMocks()` in beforeEach for test isolation
   * Manual test scripts should be named with `-test.js` suffix
   * Test files should mirror the structure of the source code they test
 - Integration Tests:

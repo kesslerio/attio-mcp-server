@@ -2,12 +2,15 @@
 .windsurfrules
 .claude/
 .DS_Store
-
-# CLAUDE.md should be tracked (project instructions)
+.git
 node_modules/
+CLAUDE.md
+CODEX-SETUP.md
 
 # Environment files
 .env
+.env.test
+.env.production
 .env.local
 .env.*.local
 

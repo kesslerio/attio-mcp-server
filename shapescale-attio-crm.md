@@ -187,6 +187,11 @@ When interacting with the Attio API through the MCP server, several issues were 
 1. **Tool Availability Problems**: Some tools may return errors or be unavailable.
 2. **Value Type Conversion**: The API returns errors when a string representation of a boolean is passed rather than a native boolean.
 3. **Attribute Existence Checks**: Always verify attributes exist before updating.
+4. **`website` Attribute Null Handling**:
+    * The MCP server's internal documentation (`docs/api/company-write-operations.md`) suggests using `null` to clear attribute values.
+    * However, direct API testing for the `website` attribute on company records shows that sending `null` results in a 400 Bad Request with an "Invalid input" error.
+    * To clear the `website` attribute, an empty string (`""`) must be sent. This is accepted by the API and successfully clears the field.
+    * This indicates that the `website` attribute has specific handling different from the general guidance, or the documentation needs to be updated to reflect this nuance. Applications should send `""` to clear the `website` field.
 
 ### Recommendations for LLM Instructions
 
