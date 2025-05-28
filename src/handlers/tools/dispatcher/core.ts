@@ -15,6 +15,7 @@ import {
 
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
+import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 
 // Import operation handlers
 import {
@@ -82,6 +83,8 @@ export async function executeToolRequest(request: CallToolRequest) {
   
   // Initialize logging context for this tool execution
   const correlationId = initializeToolContext(toolName);
+  let timer: PerformanceTimer | undefined;
+  let toolType: string | undefined;
 
   try {
     const toolInfo = findToolConfig(toolName);
@@ -91,10 +94,11 @@ export async function executeToolRequest(request: CallToolRequest) {
       throw new Error(`Tool not found: ${toolName}`);
     }
 
-    const { resourceType, toolConfig, toolType } = toolInfo;
+    const { resourceType, toolConfig } = toolInfo;
+    toolType = toolInfo.toolType; // Assign to outer scope variable
     
     // Start tool execution logging with performance tracking
-    const timer = logToolRequest(toolType, toolName, request);
+    timer = logToolRequest(toolType, toolName, request);
 
     let result;
 
@@ -203,9 +207,21 @@ export async function executeToolRequest(request: CallToolRequest) {
           : undefined,
     };
 
-    // Log error using enhanced structured logging  
-    const timer = Date.now(); // Fallback timer if not initialized
-    logToolError(toolName, 'unknown', error, timer, errorDetails);
+    // Log error using enhanced structured logging
+    // 'timer' (PerformanceTimer) from the try block should be used here.
+    // If timer is undefined (e.g. error before timer initialization), create a new one.
+    // toolType might also be undefined if error occurred before its assignment.
+    const finalTimer = timer 
+      ? timer 
+      : new PerformanceTimer('dispatcher_error_fallback', toolName, OperationType.TOOL_EXECUTION);
+    
+    logToolError(
+      toolName, 
+      toolType || 'unknown_type_on_error', 
+      error, 
+      finalTimer, 
+      errorDetails
+    );
 
     // Create properly formatted MCP response with detailed error information
     return {

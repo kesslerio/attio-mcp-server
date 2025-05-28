@@ -92,10 +92,18 @@ const updated = await updateCompany("company-id-123", {
 });
 ```
 
-**Note:** Null values can be used to clear attributes:
+**Note on Clearing Attributes:**
+While `null` can be passed to this SDK function to signify an intent to clear an attribute, the underlying Attio API behavior for clearing can vary by attribute type:
+- For many standard text attributes (e.g., `description`), `null` might be translated by the SDK or directly accepted by the API.
+- For specific text attributes like `website`, the Attio API expects an empty string (`""`) to clear the value.
+- For record reference attributes (often array-based, e.g., `main_contact`), the Attio API expects an empty array (`[]`) to clear existing references.
+
+The `updateCompany` function aims to abstract these differences. Passing `null` for an attribute in the `attributes` object is the recommended way to signal the SDK to perform the correct clearing operation for that attribute's type.
 ```javascript
 const result = await updateCompany("company-id-123", {
-  description: null  // This will clear the description
+  description: null, // SDK handles clearing, likely sends null or appropriate value
+  website: null,     // SDK should handle this, potentially by sending \"\" to the API
+  main_contact: null // SDK should handle this, potentially by sending [] to the API
 });
 ```
 
@@ -110,7 +118,7 @@ Updates a single attribute of a company. This is more efficient than `updateComp
 **Parameters:**
 - `companyId` (string, **required**): ID of the company to update
 - `attributeName` (string, **required**): Name of the attribute to update
-- `attributeValue` (any, **required**): New value for the attribute (can be null)
+- `attributeValue` (any, **required**): New value for the attribute. To clear an attribute, pass `null`. The SDK will attempt to use the correct mechanism for clearing based on the attribute's type (e.g., sending `""` for `website`, or `[]` for a record reference like `main_contact`).
 
 **Example:**
 ```javascript
@@ -121,11 +129,25 @@ const result = await updateCompanyAttribute(
   "https://updated-website.com"
 );
 
-// Clear a field by setting to null
-const cleared = await updateCompanyAttribute(
+// Clear a standard text field (e.g., description)
+const clearedDescription = await updateCompanyAttribute(
   "company-id-123",
   "description",
-  null
+  null // SDK handles sending the appropriate clear signal
+);
+
+// Clear the 'website' field
+const clearedWebsite = await updateCompanyAttribute(
+  "company-id-123",
+  "website",
+  null // SDK should translate to \"\" for the API
+);
+
+// Clear a record reference field (e.g., main_contact)
+const clearedMainContact = await updateCompanyAttribute(
+  "company-id-123",
+  "main_contact",
+  null // SDK should translate to [] for the API
 );
 ```
 
@@ -147,6 +169,59 @@ const success = await deleteCompany("company-id-123");
 ```
 
 **Warning:** This operation is permanent and cannot be undone.
+
+## Handling Specific Attribute Types
+
+Interacting with certain Attio attribute types requires specific formatting or considerations when using the SDK functions.
+
+### Text Attributes (e.g., `website`)
+
+-   **Setting**: Standard string value.
+-   **Clearing**: Pass `null` to the SDK function (e.g., `updateCompanyAttribute(id, "website", null)`). The SDK should handle sending an empty string (`""`) to the Attio API, as the API typically expects `""` to clear website fields, not `null`.
+
+### Record Reference Attributes (e.g., `main_contact`)
+
+These attributes link to other records (e.g., a Person record for `main_contact`).
+
+-   **Setting a Single Reference**:
+    If the attribute is configured in Attio to reference multiple object types (e.g., `main_contact` could potentially link to a Person or another object type), you must specify the target object type. The Attio API expects a specific format for record references:
+    
+    ```javascript
+    [
+      {
+        "target_record_id": "the_target_record_id_string", // e.g., "person_01h2x..."
+        "target_object": "object_slug_string"           // e.g., "people", "companies"
+      }
+    ]
+    ```
+    
+    The SDK handles this formatting internally, so you can simply pass a person ID or name to the `updateCompanyAttribute` function:
+    
+    ```javascript
+    // Example: Setting main_contact to a Person record by ID
+    await updateCompanyAttribute(companyId, "main_contact", "person_01h2x...");
+    
+    // Example: Setting main_contact to a Person record by name
+    // The SDK will search for the person and use their ID
+    await updateCompanyAttribute(companyId, "main_contact", "Jane Smith");
+    ```
+    
+    Note that the SDK will automatically convert these values to the correct format required by the Attio API, including wrapping them in an array and using the proper field names (`target_record_id` and `target_object`).
+-   **Clearing**: Pass `null` to the SDK function (e.g., `updateCompanyAttribute(id, "main_contact", null)`). The SDK should handle sending an empty array (`[]`) to the Attio API, as this is the typical method for clearing array-based or multi-select reference attributes.
+
+-   **Note on Direct API Interaction for `main_contact`**:
+    When directly interacting with the Attio API (not through this SDK), be aware that:
+    - The API requires an array of objects for the `main_contact` attribute.
+    - Each object in the array must use the field names `target_record_id` and `target_object` (not `record_id` and `object`).
+    - The correct format is: `[{"target_record_id": "person_id", "target_object": "people"}]`
+    - Attempting to use a simpler format (e.g., `["person_id"]`) will result in an error for attributes like `main_contact` that can reference multiple object types.
+    - Using incorrect field names (e.g., `record_id` instead of `target_record_id`) will cause API errors even if the structure is otherwise correct.
+
+### Other Array-Based Attributes (e.g., Multi-Select, Tags)
+
+-   **Setting**: Provide an array of the appropriate values (e.g., array of strings for tags, array of option IDs for multi-selects).
+-   **Clearing**: Pass `null` to the SDK function. The SDK should translate this to an empty array (`[]`) for the API.
+-   **Replacing**: To replace all existing values, provide a new array with all desired values.
 
 ## Error Handling
 
