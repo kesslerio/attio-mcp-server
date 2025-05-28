@@ -16,7 +16,7 @@ import {
   updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
 } from '../base-operations.js';
-import { searchPeople } from '../people/index.js';
+import { findPersonReference } from '../../utils/person-lookup.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -290,6 +290,37 @@ export async function updateCompany(
  * @returns Updated company record
  * @throws InvalidCompanyDataError if validation fails
  * @throws CompanyOperationError if update fails
+ *
+ * @example
+ * ```typescript
+ * // Update a simple string attribute
+ * const updated = await updateCompanyAttribute(
+ *   "company_123",
+ *   "website",
+ *   "https://example.com"
+ * );
+ * 
+ * // Update main_contact with Person Record ID
+ * const withPerson = await updateCompanyAttribute(
+ *   "company_123",
+ *   "main_contact",
+ *   "person_01h8g3j5k7m9n1p3r"
+ * );
+ * 
+ * // Update main_contact with person name (will be looked up)
+ * const byName = await updateCompanyAttribute(
+ *   "company_123",
+ *   "main_contact", 
+ *   "John Smith"
+ * );
+ * 
+ * // Clear an attribute 
+ * const cleared = await updateCompanyAttribute(
+ *   "company_123",
+ *   "website",
+ *   null
+ * );
+ * ```
  */
 export async function updateCompanyAttribute(
   companyId: string,
@@ -299,44 +330,28 @@ export async function updateCompanyAttribute(
   try {
     let valueToProcess = attributeValue;
 
+    /**
+     * Special handling for main_contact attribute
+     * 
+     * The Attio API requires a specific format for record references:
+     * - Array format: [{ target_record_id: "person_id", target_object: "people" }]
+     * - Field name must be target_record_id (not record_id)
+     * - Empty array ([]) to clear the field
+     * 
+     * This handler provides user-friendly functionality:
+     * 1. Accept Person Record ID string (e.g., "person_01h8g3j5k7m9n1p3r")
+     * 2. Accept person name string (will search for exact match)
+     * 3. Validates Person ID format with regex
+     * 4. Provides helpful error messages for common issues
+     */
     if (attributeName === 'main_contact' && typeof attributeValue === 'string') {
-      // Check if the provided string is already a Person Record ID (e.g., "person_01h...")
-      if (attributeValue.startsWith('person_') && attributeValue.length > 7) { // Basic check for Attio Person ID format
-        valueToProcess = [{ target_record_id: attributeValue, target_object: "people" }];
-      } else {
-        // It's a name, try to find the person ID.
-        const people = await searchPeople(attributeValue);
-
-        if (people.length === 0) {
-          throw new CompanyOperationError(
-            'update attribute',
-            companyId,
-            `Person named "${attributeValue}" not found for main_contact. Please provide an exact name or a valid Person Record ID (e.g., person_xxxxxxxxxxxx).`
-          );
-        }
-
-        if (people.length > 1) {
-          const names = people.map((p: any) => p.values.name?.[0]?.value || 'Unknown Name').join(', ');
-          throw new CompanyOperationError(
-            'update attribute',
-            companyId,
-            `Multiple people found for "${attributeValue}": [${names}]. Please provide a more specific name or the Person Record ID for main_contact.`
-          );
-        }
-
-        const person = people[0];
-        const personRecordId = person.id?.record_id;
-
-        if (!personRecordId) {
-          throw new CompanyOperationError(
-            'update attribute',
-            companyId,
-            `Could not retrieve Record ID for person "${attributeValue}".`
-          );
-        }
-        // Correct format for single reference attribute like main_contact
-        valueToProcess = [{ target_record_id: personRecordId, target_object: "people" }];
-      }
+      // Use the utility function to handle person reference lookup
+      valueToProcess = await findPersonReference(
+        attributeValue,
+        'update attribute',
+        'company',
+        companyId
+      );
     }
 
     // Validate attribute update and get processed value
