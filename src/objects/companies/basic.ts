@@ -16,6 +16,7 @@ import {
   updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
 } from '../base-operations.js';
+import { searchPeople } from '../people/index.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -296,12 +297,54 @@ export async function updateCompanyAttribute(
   attributeValue: any
 ): Promise<Company> {
   try {
+    let valueToProcess = attributeValue;
+
+    if (attributeName === 'main_contact' && typeof attributeValue === 'string') {
+      // Check if the provided string is already a Person Record ID (e.g., "person_01h...")
+      if (attributeValue.startsWith('person_') && attributeValue.length > 7) { // Basic check for Attio Person ID format
+        valueToProcess = [{ target_record_id: attributeValue, target_object: "people" }];
+      } else {
+        // It's a name, try to find the person ID.
+        const people = await searchPeople(attributeValue);
+
+        if (people.length === 0) {
+          throw new CompanyOperationError(
+            'update attribute',
+            companyId,
+            `Person named "${attributeValue}" not found for main_contact. Please provide an exact name or a valid Person Record ID (e.g., person_xxxxxxxxxxxx).`
+          );
+        }
+
+        if (people.length > 1) {
+          const names = people.map((p: any) => p.values.name?.[0]?.value || 'Unknown Name').join(', ');
+          throw new CompanyOperationError(
+            'update attribute',
+            companyId,
+            `Multiple people found for "${attributeValue}": [${names}]. Please provide a more specific name or the Person Record ID for main_contact.`
+          );
+        }
+
+        const person = people[0];
+        const personRecordId = person.id?.record_id;
+
+        if (!personRecordId) {
+          throw new CompanyOperationError(
+            'update attribute',
+            companyId,
+            `Could not retrieve Record ID for person "${attributeValue}".`
+          );
+        }
+        // Correct format for single reference attribute like main_contact
+        valueToProcess = [{ target_record_id: personRecordId, target_object: "people" }];
+      }
+    }
+
     // Validate attribute update and get processed value
     // This will handle conversion of string values to boolean for boolean fields
     const processedValue = await CompanyValidator.validateAttributeUpdate(
       companyId,
       attributeName,
-      attributeValue
+      valueToProcess
     );
 
     return await updateObjectAttributeWithDynamicFields<Company>(
