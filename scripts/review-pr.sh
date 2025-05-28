@@ -157,8 +157,8 @@ ${PR_DIFF}
 EOF
 fi
 
-# Run claude -p with the prompt and data (tools now defined in the prompt file)
-claude --verbose --output-format stream-json -p /tmp/pr_review_prompt_${PR_NUMBER}.md < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
+# Run claude with the prompt and data using the allowed-tools flag
+claude --verbose --output-format json -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowed-tools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
 
 echo "📝 Posting review to PR..."
 

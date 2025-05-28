@@ -15,11 +15,21 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
-import { AttioList, AttioListEntry } from '../types/attio.js';
+import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
 } from '../utils/record-utils.js';
+
+/**
+ * Represents a list membership entry for a record
+ */
+export interface ListMembership {
+  listId: string;
+  listName: string;
+  entryId: string;
+  entryValues?: Record<string, any>;
+}
 
 /**
  * Gets all lists in the workspace
@@ -248,11 +258,15 @@ export async function getListEntries(
  *
  * @param listId - The ID of the list
  * @param recordId - The ID of the record to add
+ * @param objectType - Optional object type ('companies', 'people', etc.)
+ * @param initialValues - Optional initial values for the list entry (e.g., stage)
  * @returns The created list entry
  */
 export async function addRecordToList(
   listId: string,
-  recordId: string
+  recordId: string,
+  objectType?: string,
+  initialValues?: Record<string, any>
 ): Promise<AttioListEntry> {
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
@@ -262,10 +276,16 @@ export async function addRecordToList(
   if (!recordId || typeof recordId !== 'string') {
     throw new Error('Invalid record ID: Must be a non-empty string');
   }
+  
+  // Validate objectType if provided
+  if (objectType && !Object.values(ResourceType).includes(objectType as ResourceType)) {
+    const validTypes = Object.values(ResourceType).join(', ');
+    throw new Error(`Invalid object type: "${objectType}". Must be one of: ${validTypes}`);
+  }
 
   // Use the generic operation with fallback to direct implementation
   try {
-    return await addGenericRecordToList(listId, recordId);
+    return await addGenericRecordToList(listId, recordId, objectType, initialValues);
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
@@ -280,11 +300,16 @@ export async function addRecordToList(
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
 
-    // Construct the correct payload format
+    // Default object type to 'companies' if not specified
+    const safeObjectType = objectType || 'companies';
+
+    // Construct the correct payload format according to Attio API requirements
     const payload = {
       data: {
-        record_id: recordId,
-        // record_type could also be included here if needed for specific record types
+        parent_record_id: recordId,
+        parent_object: safeObjectType,
+        // Only include entry_values if initialValues is provided
+        ...(initialValues && { entry_values: initialValues }),
       },
     };
 
@@ -295,8 +320,6 @@ export async function addRecordToList(
       );
     }
 
-    // Note: Attio API requires a 'data' object wrapper around the record_id
-    // for the lists endpoints as per API requirements
     const response = await api.post(path, payload);
 
     if (process.env.NODE_ENV === 'development') {
@@ -469,4 +492,143 @@ export async function batchGetListsEntries(
     (params) => getListEntries(params.listId, params.limit, params.offset),
     batchConfig
   );
+}
+
+/**
+ * Finds all lists that contain a specific record
+ * 
+ * @param recordId - The ID of the record to find in lists
+ * @param objectType - Optional record type ('companies', 'people', etc.)
+ * @param includeEntryValues - Whether to include entry values in the result (default: false)
+ * @returns Array of list memberships
+ */
+/**
+ * Finds all lists that contain a specific record
+ * 
+ * @param recordId - The ID of the record to find in lists
+ * @param objectType - Optional record type ('companies', 'people', etc.)
+ * @param includeEntryValues - Whether to include entry values in the result (default: false)
+ * @param batchSize - Number of lists to process in parallel (default: 5)
+ * @returns Array of list memberships
+ * 
+ * @example
+ * // Find all lists containing a company record
+ * const memberships = await getRecordListMemberships('company-123', 'companies');
+ * 
+ * // Find all lists containing a person record with entry values
+ * const membershipsWithValues = await getRecordListMemberships('person-456', 'people', true);
+ */
+export async function getRecordListMemberships(
+  recordId: string,
+  objectType?: string,
+  includeEntryValues: boolean = false,
+  batchSize: number = 5
+): Promise<ListMembership[]> {
+  // Input validation
+  if (!recordId || typeof recordId !== 'string') {
+    throw new Error('Invalid record ID: Must be a non-empty string');
+  }
+  
+  // Validate objectType if provided
+  if (objectType && !Object.values(ResourceType).includes(objectType as ResourceType)) {
+    const validTypes = Object.values(ResourceType).join(', ');
+    throw new Error(`Invalid object type: "${objectType}". Must be one of: ${validTypes}`);
+  }
+  
+  // Validate batchSize
+  if (typeof batchSize !== 'number' || batchSize < 1 || batchSize > 20) {
+    throw new Error('Invalid batch size: Must be a number between 1 and 20');
+  }
+
+  const allMemberships: ListMembership[] = [];
+  
+  try {
+    // First get all lists in the workspace
+    // If objectType is provided, filter lists by that object type
+    const lists = await getLists(objectType);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[getRecordListMemberships] Found ${lists.length} ${objectType || ''} lists to check`);
+    }
+    
+    // If no lists found, return empty array
+    if (!lists || lists.length === 0) {
+      return [];
+    }
+    
+    // For each list, check entries in parallel using batch operation
+    const listConfigs = lists.map(list => ({
+      listId: list.id?.list_id || list.id,
+      // Use the list name from the list object for later reference
+      listName: list.name || list.title || 'Unnamed List',
+      // Set a higher limit to ensure we catch the record if it exists
+      limit: 100
+    }));
+    
+    // Process lists in batches to avoid overwhelming the API
+    // batchSize parameter allows customizing the concurrency level
+    for (let i = 0; i < listConfigs.length; i += batchSize) {
+      const batchLists = listConfigs.slice(i, i + batchSize);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[getRecordListMemberships] Processing batch ${Math.floor(i/batchSize) + 1} (${batchLists.length} lists)`);
+      }
+      
+      // For each list in the batch, get entries and check for record ID
+      const promises = batchLists.map(async (listConfig) => {
+        try {
+          // Get entries for this list
+          const entries = await getListEntries(listConfig.listId, listConfig.limit);
+          
+          // Filter entries to find those matching the record ID
+          const matchingEntries = entries.filter(entry => entry.record_id === recordId);
+          
+          if (matchingEntries.length > 0) {
+            // Process matching entries into ListMembership format
+            matchingEntries.forEach(entry => {
+              allMemberships.push({
+                listId: listConfig.listId,
+                listName: listConfig.listName,
+                entryId: entry.id?.entry_id || '',
+                // Include entry values if requested
+                ...(includeEntryValues && { 
+                  entryValues: entry.values || {} 
+                })
+              });
+            });
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                `[getRecordListMemberships] Found ${matchingEntries.length} membership(s) in list "${listConfig.listName}"`
+              );
+            }
+          }
+        } catch (error: any) {
+          // Log error but continue with other lists
+          if (process.env.NODE_ENV === 'development') {
+            console.error(
+              `[getRecordListMemberships] Error getting entries for list ${listConfig.listId}: ${error.message || 'Unknown error'}`
+            );
+          }
+        }
+      });
+      
+      // Wait for all promises in this batch to complete
+      await Promise.all(promises);
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[getRecordListMemberships] Total memberships found: ${allMemberships.length}`);
+    }
+    
+    return allMemberships;
+  } catch (error: any) {
+    // Log error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        `[getRecordListMemberships] Error: ${error.message || 'Unknown error'}`
+      );
+    }
+    throw error;
+  }
 }
