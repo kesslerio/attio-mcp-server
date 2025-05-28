@@ -48,21 +48,53 @@ export function processListEntries(
   entries: AttioListEntry[]
 ): AttioListEntry[] {
   return entries.map((entry) => {
-    // If record_id is already defined, no processing needed
-    if (entry.record_id) {
+    // Debug logging in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[processListEntries] Processing entry:`, {
+        entryId: entry.id?.entry_id || 'unknown',
+        hasRecordId: !!entry.record_id,
+        hasRecord: !!entry.record,
+        hasParentRecordId: !!entry.parent_record_id,
+        valueKeys: entry.values ? Object.keys(entry.values) : [],
+      });
+    }
+
+    // If record_id is already defined and non-empty, no processing needed
+    if (entry.record_id && typeof entry.record_id === 'string' && entry.record_id.trim() !== '') {
       return entry;
     }
 
-    // Try to extract record_id from the nested record structure
-    if (entry.record?.id?.record_id) {
-      return {
-        ...entry,
-        record_id: entry.record.id.record_id,
-      };
-    }
+    // Enhanced record_id extraction from multiple possible locations
+    let recordId: string | undefined;
 
-    // If record data might be in a different nested structure
-    if (
+    // Option 1: Direct parent_record_id property
+    if (entry.parent_record_id) {
+      recordId = entry.parent_record_id;
+    } 
+    // Option 2: Nested in record object
+    else if (entry.record?.id?.record_id) {
+      recordId = entry.record.id.record_id;
+    }
+    // Option 3: Nested in values.record_id
+    else if (
+      entry.values &&
+      typeof entry.values === 'object' &&
+      'record_id' in entry.values
+    ) {
+      const recordIdValue = entry.values.record_id;
+      if (Array.isArray(recordIdValue) && recordIdValue.length > 0) {
+        // Handle array of values with possible value property
+        if (recordIdValue[0].value) {
+          recordId = recordIdValue[0].value;
+        } else if (typeof recordIdValue[0] === 'string') {
+          recordId = recordIdValue[0];
+        }
+      } else if (typeof recordIdValue === 'string') {
+        recordId = recordIdValue;
+      }
+    }
+    // Option 4: Nested in values.record
+    else if (
       entry.values &&
       typeof entry.values === 'object' &&
       'record' in entry.values
@@ -71,31 +103,90 @@ export function processListEntries(
         record?: { id?: { record_id?: string } };
       };
       if (valuesWithRecord.record?.id?.record_id) {
+        recordId = valuesWithRecord.record.id.record_id;
+      }
+    }
+    // Option 5: Check for reference_id property
+    else if (entry.reference_id) {
+      recordId = entry.reference_id;
+    }
+    // Option 6: Check for object_id property
+    else if (entry.object_id) {
+      recordId = entry.object_id;
+    }
+    // Option 7: Search all properties for anything ending with _record_id
+    else {
+      const possibleKeys = Object.keys(entry);
+      for (const key of possibleKeys) {
+        if (
+          key.endsWith('_record_id') &&
+          typeof entry[key] === 'string' &&
+          entry[key]
+        ) {
+          recordId = entry[key] as string;
+          break;
+        }
+      }
+    }
+
+    // Option 8: If record object exists, look for record.reference_id or record.record_id
+    if (!recordId && entry.record) {
+      if (entry.record.reference_id) {
+        recordId = entry.record.reference_id;
+      } else if (entry.record.record_id) {
+        recordId = entry.record.record_id;
+      } else if (entry.record.id) {
+        // Various id object patterns
+        const idObj = entry.record.id;
+        if (typeof idObj === 'string') {
+          recordId = idObj;
+        } else if (idObj.record_id) {
+          recordId = idObj.record_id;
+        } else if (idObj.id) {
+          recordId = idObj.id;
+        } else if (idObj.reference_id) {
+          recordId = idObj.reference_id;
+        }
+      }
+    }
+
+    // If a record_id was found, return updated entry
+    if (recordId) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[processListEntries] Found record_id: ${recordId} for entry ${entry.id?.entry_id || 'unknown'}`);
+      }
+      return {
+        ...entry,
+        record_id: recordId,
+      };
+    }
+
+    // Additional fallback: Check if record has a uri property 
+    if (entry.record?.uri) {
+      const uriParts = entry.record.uri.split('/');
+      if (uriParts.length > 0) {
+        recordId = uriParts[uriParts.length - 1];
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[processListEntries] Extracted record_id ${recordId} from URI: ${entry.record.uri}`);
+        }
+        
         return {
           ...entry,
-          record_id: valuesWithRecord.record.id.record_id,
+          record_id: recordId,
         };
       }
     }
 
-    // If we can find a record_id in another location
-    const possibleKeys = Object.keys(entry);
-    for (const key of possibleKeys) {
-      // Check if any property ends with 'record_id' and is a string
-      if (
-        key.endsWith('_record_id') &&
-        typeof entry[key] === 'string' &&
-        entry[key]
-      ) {
-        return {
-          ...entry,
-          record_id: entry[key] as string,
-        };
-      }
+    // Unable to find record_id, log warning and return entry with a placeholder
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[processListEntries] Could not extract record_id for entry ${entry.id?.entry_id || 'unknown'}`);
     }
-
-    // Unable to find record_id, return the entry as-is
-    return entry;
+    
+    return {
+      ...entry,
+      record_id: 'record-id-unavailable',
+    };
   });
 }
 
