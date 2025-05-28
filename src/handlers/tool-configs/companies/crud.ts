@@ -6,8 +6,7 @@ import {
   createCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
-  getCompanyBasicInfo
+  deleteCompany
 } from "../../../objects/companies/index.js";
 import { ToolConfig } from "../../tool-types.js";
 import { formatterConfigs } from "./formatters.js";
@@ -39,11 +38,8 @@ function extractCompanyDisplayInfo(company: Company): { name: string; id: string
 
 // Company CRUD tool configurations
 export const crudToolConfigs = {
-  basicInfo: {
-    name: "get-company-basic-info",
-    handler: getCompanyBasicInfo,
-    formatResult: formatterConfigs.basicInfo.formatResult
-  } as ToolConfig,
+  // DO NOT add basicInfo tool here - it's already defined in formatterConfigs
+  // Adding it here would cause duplicate tool name conflict in MCP
   
   create: {
     name: "create-company",
@@ -81,20 +77,8 @@ export const crudToolConfigs = {
 
 // CRUD tool definitions
 export const crudToolDefinitions = [
-  {
-    name: "get-company-basic-info",
-    description: "Get basic information about a company in Attio",
-    inputSchema: {
-      type: "object",
-      properties: {
-        companyId: {
-          type: "string",
-          description: "ID of the company to retrieve"
-        }
-      },
-      required: ["companyId"]
-    }
-  },
+  // DO NOT add get-company-basic-info definition here - it's already defined in formatterToolDefinitions
+  // Adding it here would cause duplicate tool name conflict in MCP
   {
     name: "create-company",
     description: "Create a new company in Attio",
