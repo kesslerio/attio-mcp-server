@@ -249,16 +249,31 @@ export interface AttioList {
  * List entry record type
  */
 export interface AttioListEntry {
-  id: {
-    entry_id: string;
+  id?: {
+    entry_id?: string;
     [key: string]: unknown;
   };
-  list_id: string;
-  record_id?: string; // Making this optional to better match the API reality
-  created_at: string;
+  list_id?: string;
+  record_id?: string; // Record ID - may come from different properties
+  parent_record_id?: string; // Alternative property name for record ID
+  reference_id?: string; // Another alternative ID property
+  object_id?: string; // Another alternative ID property
+  created_at?: string;
   updated_at?: string;
-  record?: AttioRecord; // Optional included record data
-  [key: string]: unknown; // Additional fields
+  record?: {
+    id?: {
+      record_id?: string;
+      [key: string]: unknown;
+    };
+    record_id?: string; // Sometimes directly on record object
+    reference_id?: string; // Alternative ID field
+    values?: Record<string, any>;
+    object_slug?: string;
+    uri?: string; // URI that might contain record ID
+    [key: string]: unknown;
+  };
+  values?: Record<string, any>; // May contain record information
+  [key: string]: unknown; // Additional fields that vary by API response
 }
 
 /**
