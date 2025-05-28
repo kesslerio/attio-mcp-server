@@ -39,12 +39,12 @@ describe('Structured Logging System', () => {
     console.log = mockConsoleLog;
     console.warn = mockConsoleWarn;
     console.error = mockConsoleError;
-    
+
     // Clear all mocks
     mockConsoleLog.mockClear();
     mockConsoleWarn.mockClear();
     mockConsoleError.mockClear();
-    
+
     // Clear log context
     clearLogContext();
   });
@@ -59,7 +59,7 @@ describe('Structured Logging System', () => {
   describe('Basic Logging Functions', () => {
     test('debug logs with structured format', () => {
       debug('test-module', 'Test debug message', { key: 'value' });
-      
+
       expect(mockConsoleLog).toHaveBeenCalledWith(
         '[test-module] [DEBUG] Test debug message',
         expect.objectContaining({
@@ -68,20 +68,22 @@ describe('Structured Logging System', () => {
             level: 'DEBUG',
             module: 'test-module',
           }),
-          data: { key: 'value' }
+          data: { key: 'value' },
         })
       );
     });
 
     test('info logs with structured format', () => {
       info('test-module', 'Test info message');
-      
-      expect(mockConsoleLog).toHaveBeenCalledWith('[test-module] [INFO] Test info message');
+
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[test-module] [INFO] Test info message'
+      );
     });
 
     test('warn logs with structured format', () => {
       warn('test-module', 'Test warning message', { warning: true });
-      
+
       expect(mockConsoleWarn).toHaveBeenCalledWith(
         '[test-module] [WARN] Test warning message',
         expect.objectContaining({
@@ -89,15 +91,17 @@ describe('Structured Logging System', () => {
             level: 'WARN',
             module: 'test-module',
           }),
-          data: { warning: true }
+          data: { warning: true },
         })
       );
     });
 
     test('error logs with structured format and error object', () => {
       const testError = new Error('Test error');
-      error('test-module', 'Test error message', testError, { context: 'test' });
-      
+      error('test-module', 'Test error message', testError, {
+        context: 'test',
+      });
+
       expect(mockConsoleError).toHaveBeenCalledWith(
         '[test-module] [ERROR] Test error message',
         expect.objectContaining({
@@ -110,7 +114,7 @@ describe('Structured Logging System', () => {
             message: 'Test error',
             name: 'Error',
             stack: expect.any(String),
-          })
+          }),
         })
       );
     });
@@ -134,7 +138,7 @@ describe('Structured Logging System', () => {
     test('clearLogContext clears the context', () => {
       setLogContext({ correlationId: 'test-id' });
       clearLogContext();
-      
+
       const context = getLogContext();
       expect(context).toEqual({});
     });
@@ -142,7 +146,7 @@ describe('Structured Logging System', () => {
     test('generateCorrelationId generates unique IDs', () => {
       const id1 = generateCorrelationId();
       const id2 = generateCorrelationId();
-      
+
       expect(id1).toBeTruthy();
       expect(id2).toBeTruthy();
       expect(id1).not.toBe(id2);
@@ -166,7 +170,7 @@ describe('Structured Logging System', () => {
             correlationId: 'test-correlation-id',
             operation: 'test-operation',
             operationType: OperationType.TOOL_EXECUTION,
-          })
+          }),
         })
       );
     });
@@ -174,20 +178,24 @@ describe('Structured Logging System', () => {
 
   describe('PerformanceTimer', () => {
     test('tracks timing correctly', async () => {
-      const timer = new PerformanceTimer('test-module', 'test-operation', OperationType.API_CALL);
-      
+      const timer = new PerformanceTimer(
+        'test-module',
+        'test-operation',
+        OperationType.API_CALL
+      );
+
       // Wait a bit to ensure some time passes
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       const duration = timer.end('Operation completed');
-      
+
       expect(duration).toBeGreaterThan(0);
       expect(mockConsoleLog).toHaveBeenCalledWith(
         '[test-module] [DEBUG] Operation completed',
         expect.objectContaining({
           data: expect.objectContaining({
-            duration: expect.stringMatching(/^\d+ms$/)
-          })
+            duration: expect.stringMatching(/^\d+ms$/),
+          }),
         })
       );
     });
@@ -210,7 +218,7 @@ describe('Structured Logging System', () => {
             operation: 'test-operation',
             operationType: OperationType.API_CALL,
           }),
-          data: { param: 'value' }
+          data: { param: 'value' },
         })
       );
     });
@@ -233,15 +241,15 @@ describe('Structured Logging System', () => {
           }),
           data: expect.objectContaining({
             count: 5,
-            duration: '150ms'
-          })
+            duration: '150ms',
+          }),
         })
       );
     });
 
     test('operationFailure logs failure with error and duration', () => {
       const testError = new Error('Operation failed');
-      
+
       operationFailure(
         'test-module',
         'test-operation',
@@ -260,12 +268,12 @@ describe('Structured Logging System', () => {
           }),
           data: expect.objectContaining({
             context: 'test',
-            duration: '100ms'
+            duration: '100ms',
           }),
           error: expect.objectContaining({
             message: 'Operation failed',
-            name: 'Error'
-          })
+            name: 'Error',
+          }),
         })
       );
     });
@@ -289,14 +297,20 @@ describe('Structured Logging System', () => {
             operation: 'scoped-operation',
             operationType: OperationType.VALIDATION,
           }),
-          data: { test: true }
+          data: { test: true },
         })
       );
     });
 
     test('scoped logger operationStart works correctly', () => {
-      const scopedLogger = createScopedLogger('scoped-module', 'base-operation');
-      const timer = scopedLogger.operationStart('specific-operation', OperationType.API_CALL);
+      const scopedLogger = createScopedLogger(
+        'scoped-module',
+        'base-operation'
+      );
+      const timer = scopedLogger.operationStart(
+        'specific-operation',
+        OperationType.API_CALL
+      );
 
       expect(timer).toBeInstanceOf(PerformanceTimer);
       expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -306,7 +320,7 @@ describe('Structured Logging System', () => {
             module: 'scoped-module',
             operation: 'specific-operation',
             operationType: OperationType.API_CALL,
-          })
+          }),
         })
       );
     });
@@ -326,13 +340,13 @@ describe('Structured Logging System', () => {
 
       expect(result).toBe('success');
       expect(mockOperation).toHaveBeenCalled();
-      
+
       // Should log operation start
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining('Starting operation: test-operation'),
         expect.any(Object)
       );
-      
+
       // Should log operation success
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining('Operation successful: test-operation'),
@@ -355,13 +369,13 @@ describe('Structured Logging System', () => {
       ).rejects.toThrow('Operation failed');
 
       expect(mockOperation).toHaveBeenCalled();
-      
+
       // Should log operation start
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining('Starting operation: test-operation'),
         expect.any(Object)
       );
-      
+
       // Should log operation failure
       expect(mockConsoleError).toHaveBeenCalledWith(
         expect.stringContaining('Operation failed: test-operation'),
@@ -394,15 +408,15 @@ describe('Structured Logging System', () => {
 
       const loggedJson = mockConsoleLog.mock.calls[0][0];
       const parsedLog = JSON.parse(loggedJson);
-      
+
       expect(parsedLog).toMatchObject({
         message: 'Test JSON message',
         metadata: expect.objectContaining({
           level: 'DEBUG',
           module: 'test-module',
-          timestamp: expect.any(String)
+          timestamp: expect.any(String),
         }),
-        data: { key: 'value' }
+        data: { key: 'value' },
       });
     });
   });
@@ -432,7 +446,7 @@ describe('Structured Logging System', () => {
           metadata: expect.objectContaining({
             operation: 'custom-operation',
             operationType: OperationType.TRANSFORMATION,
-          })
+          }),
         })
       );
     });
