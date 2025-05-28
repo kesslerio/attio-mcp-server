@@ -1,58 +1,184 @@
 /**
- * Logging utilities for tool execution
- * 
- * Provides consistent logging for tool requests and errors during development
+ * Enhanced logging utilities for tool execution using structured logging
  */
 
 import { ToolExecutionRequest, ToolErrorContext } from '../../../types/tool-types.js';
+import { 
+  debug, 
+  error, 
+  info, 
+  warn, 
+  createScopedLogger, 
+  OperationType, 
+  setLogContext, 
+  generateCorrelationId,
+  PerformanceTimer 
+} from '../../../utils/logger.js';
+import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 /**
- * Logs tool execution requests in a consistent format (for development mode)
- *
- * @param toolType - The type of tool being executed (e.g., 'search', 'create', 'update')
- * @param toolName - The name of the tool as defined in the MCP configuration
- * @param request - The request data containing parameters and arguments
+ * Initialize tool execution context with correlation ID
  */
-export function logToolRequest(toolType: string, toolName: string, request: ToolExecutionRequest) {
-  if (process.env.NODE_ENV !== 'development') return;
+export function initializeToolContext(toolName: string): string {
+  const correlationId = generateCorrelationId();
+  setLogContext({
+    correlationId,
+    operation: toolName,
+    operationType: OperationType.TOOL_EXECUTION,
+  });
+  return correlationId;
+}
 
-  console.error(`[${toolName}] Tool execution request:`);
-  console.error(`- Tool type: ${toolType}`);
-  console.error(
-    `- Arguments:`,
-    request.params.arguments
-      ? JSON.stringify(request.params.arguments, null, 2)
-      : 'No arguments provided'
+/**
+ * Create a scoped logger for tool execution
+ */
+export function createToolLogger(toolName: string, toolType?: string) {
+  return createScopedLogger(
+    `tool:${toolName}`, 
+    toolType || toolName, 
+    OperationType.TOOL_EXECUTION
   );
 }
 
 /**
- * Logs tool execution errors in a consistent format
+ * Enhanced tool execution request logging with structured format
  *
- * @param toolType - The type of tool where the error occurred (e.g., 'search', 'create', 'update')
+ * @param toolType - The type of tool being executed (e.g., 'search', 'create', 'update')
+ * @param toolName - The name of the tool as defined in the MCP configuration
+ * @param request - The tool request data
+ * @returns PerformanceTimer for tracking execution duration
+ */
+export function logToolRequest(
+  toolType: string, 
+  toolName: string, 
+  request: CallToolRequest
+): PerformanceTimer {
+  const logger = createToolLogger(toolName, toolType);
+  
+  const requestData = {
+    toolType,
+    toolName,
+    argumentsCount: request.params.arguments ? Object.keys(request.params.arguments).length : 0,
+    hasArguments: !!request.params.arguments,
+    ...(process.env.NODE_ENV === 'development' && {
+      arguments: request.params.arguments
+    })
+  };
+
+  return logger.operationStart('execute', OperationType.TOOL_EXECUTION, requestData);
+}
+
+/**
+ * Log successful tool execution
+ *
+ * @param toolName - The name of the tool
+ * @param toolType - The type of tool
+ * @param result - The execution result
+ * @param timer - Performance timer from logToolRequest
+ */
+export function logToolSuccess(
+  toolName: string,
+  toolType: string,
+  result: any,
+  timer: PerformanceTimer
+): void {
+  const logger = createToolLogger(toolName, toolType);
+  const duration = timer.end();
+  
+  const resultSummary = {
+    success: true,
+    hasContent: !!result?.content,
+    contentLength: result?.content?.length || 0,
+    resultType: Array.isArray(result?.content) ? 'array' : typeof result?.content,
+  };
+
+  logger.operationSuccess('execute', resultSummary, OperationType.TOOL_EXECUTION, duration);
+}
+
+/**
+ * Enhanced tool execution error logging with structured format
+ *
+ * @param toolName - The name of the tool where the error occurred
+ * @param toolType - The type of tool where the error occurred
  * @param error - The error that was caught during execution
- * @param additionalInfo - Optional additional information about the execution context, such as parameters
+ * @param timer - Performance timer from logToolRequest
+ * @param additionalInfo - Optional additional information about the execution context
  */
 export function logToolError(
+  toolName: string,
   toolType: string,
   error: unknown,
+  timer: PerformanceTimer,
   additionalInfo: ToolErrorContext = {}
-) {
-  console.error(`[${toolType}] Execution error:`, error);
-  console.error(
-    `- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`
-  );
-  console.error(
-    `- Message: ${error instanceof Error ? error.message : String(error)}`
-  );
+): void {
+  const logger = createToolLogger(toolName, toolType);
+  const duration = timer.end();
 
-  if (error instanceof Error && error.stack) {
-    console.error(`- Stack trace: ${error.stack}`);
-  } else {
-    console.error('- No stack trace available');
-  }
+  const errorContext = {
+    toolType,
+    toolName,
+    errorType: error instanceof Error ? error.constructor.name : typeof error,
+    hasStack: error instanceof Error && !!error.stack,
+    ...additionalInfo,
+  };
 
-  if (Object.keys(additionalInfo).length > 0) {
-    console.error('- Additional context:', additionalInfo);
-  }
+  logger.operationFailure('execute', error, errorContext, OperationType.TOOL_EXECUTION, duration);
+}
+
+/**
+ * Log tool validation errors
+ */
+export function logToolValidationError(
+  toolName: string,
+  toolType: string,
+  validationError: string,
+  context?: any
+): void {
+  const logger = createToolLogger(toolName, toolType);
+  
+  warn(
+    `tool:${toolName}`,
+    `Validation failed: ${validationError}`,
+    context,
+    toolType,
+    OperationType.VALIDATION
+  );
+}
+
+/**
+ * Log tool configuration errors
+ */
+export function logToolConfigError(
+  toolName: string,
+  configError: string,
+  context?: any
+): void {
+  error(
+    'tool:registry',
+    `Configuration error for tool ${toolName}: ${configError}`,
+    undefined,
+    context,
+    'config-lookup',
+    OperationType.SYSTEM
+  );
+}
+
+/**
+ * Log API fallback attempts during tool execution
+ */
+export function logToolFallback(
+  toolName: string,
+  toolType: string,
+  reason: string,
+  fallbackMethod: string
+): void {
+  const logger = createToolLogger(toolName, toolType);
+  
+  warn(
+    `tool:${toolName}`,
+    `Using fallback method: ${fallbackMethod}`,
+    { reason, fallbackMethod },
+    toolType,
+    OperationType.API_CALL
+  );
 }

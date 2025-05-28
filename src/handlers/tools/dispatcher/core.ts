@@ -2,20 +2,19 @@
  * Core dispatcher module - main tool execution dispatcher with modular operation handlers
  */
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../utils/error-handler.js';
-import { parseResourceUri } from '../../../utils/uri-parser.js';
 import { ResourceType } from '../../../types/attio.js';
-import { safeJsonStringify } from '../../../utils/json-serializer.js';
 
 // Import utilities
-import { logToolRequest, logToolError } from './logging.js';
-import { validateAttributes, validateResourceId } from './validation.js';
-import { formatSuccessResponse } from './formatting.js';
+import { 
+  initializeToolContext, 
+  logToolRequest, 
+  logToolSuccess, 
+  logToolError, 
+  logToolConfigError 
+} from './logging.js';
 
 // Import tool configurations
 import { findToolConfig } from '../registry.js';
-import { formatResponse } from '../formatters.js';
-import { hasResponseData } from '../error-types.js';
 
 // Import operation handlers
 import {
@@ -24,20 +23,22 @@ import {
   handleSearchByPhone,
   handleSmartSearch
 } from './operations/search.js';
+import { handleDetailsOperation } from './operations/details.js';
+import { 
+  handleNotesOperation, 
+  handleCreateNoteOperation 
+} from './operations/notes.js';
+import { handleGetListsOperation } from './operations/lists.js';
 
 // Import CRUD operation handlers
 import {
+  handleCreateOperation,
   handleUpdateOperation,
   handleUpdateAttributeOperation,
-  handleGetAttributesOperation,
-  handleCreateOperation,
-  handleInfoOperation,
-  handleFieldsOperation,
-  handleDiscoverAttributesOperation,
   handleDeleteOperation
 } from './operations/crud.js';
 
-// Import List operation handlers
+// Import List operation handlers (additional operations from emergency fix)
 import {
   handleAddRecordToListOperation,
   handleRemoveRecordFromListOperation,
@@ -78,156 +79,109 @@ import {
  */
 export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
+  
+  // Initialize logging context for this tool execution
+  const correlationId = initializeToolContext(toolName);
 
   try {
     const toolInfo = findToolConfig(toolName);
 
     if (!toolInfo) {
+      logToolConfigError(toolName, 'Tool configuration not found');
       throw new Error(`Tool not found: ${toolName}`);
     }
 
     const { resourceType, toolConfig, toolType } = toolInfo;
+    
+    // Start tool execution logging with performance tracking
+    const timer = logToolRequest(toolType, toolName, request);
+
+    let result;
 
     // Handle search tools
     if (toolType === 'search') {
-      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByEmail') {
+      result = await handleSearchByEmail(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByPhone') {
+      result = await handleSearchByPhone(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'smartSearch') {
+      result = await handleSmartSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'details') {
+      result = await handleDetailsOperation(request, toolConfig as DetailsToolConfig, resourceType);
+    } else if (toolType === 'notes') {
+      result = await handleNotesOperation(request, toolConfig as NotesToolConfig, resourceType);
+    } else if (toolType === 'createNote') {
+      result = await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
+    } else if (toolType === 'getLists') {
+      result = await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
+    
+    // Handle CRUD operations (from emergency fix)
+    } else if (toolType === 'create') {
+      result = await handleCreateOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'update') {
+      result = await handleUpdateOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'updateAttribute') {
+      result = await handleUpdateAttributeOperation(request, toolConfig as ToolConfig, resourceType);
+    } else if (toolType === 'delete') {
+      result = await handleDeleteOperation(request, toolConfig as ToolConfig, resourceType);
+    
+    // Handle additional info operations (from emergency fix)
+    } else if (toolType === 'basicInfo' || toolType === 'businessInfo' || toolType === 'contactInfo' || toolType === 'socialInfo' || toolType === 'json') {
+      result = await handleInfoOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'fields') {
+      result = await handleFieldsOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'getAttributes') {
+      result = await handleGetAttributesOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'discoverAttributes') {
+      result = await handleDiscoverAttributesOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'customFields') {
+      result = await handleInfoOperation(request, toolConfig, resourceType);
+
+    // Handle List operations (from emergency fix)
+    } else if (toolType === 'addRecordToList') {
+      result = await handleAddRecordToListOperation(request, toolConfig);
+    } else if (toolType === 'removeRecordFromList') {
+      result = await handleRemoveRecordFromListOperation(request, toolConfig);
+    } else if (toolType === 'updateListEntry') {
+      result = await handleUpdateListEntryOperation(request, toolConfig);
+    } else if (toolType === 'getListDetails') {
+      result = await handleGetListDetailsOperation(request, toolConfig);
+    } else if (toolType === 'getListEntries') {
+      result = await handleGetListEntriesOperation(request, toolConfig);
+    } else if (toolType === 'filterListEntries') {
+      result = await handleFilterListEntriesOperation(request, toolConfig);
+    } else if (toolType === 'advancedFilterListEntries') {
+      result = await handleAdvancedFilterListEntriesOperation(request, toolConfig);
+
+    // Handle Batch operations (from emergency fix)
+    } else if (toolType === 'batchUpdate') {
+      result = await handleBatchUpdateOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchCreate') {
+      result = await handleBatchCreateOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchDelete') {
+      result = await handleBatchDeleteOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchSearch') {
+      result = await handleBatchSearchOperation(request, toolConfig, resourceType);
+    } else if (toolType === 'batchGetDetails') {
+      result = await handleBatchGetDetailsOperation(request, toolConfig, resourceType);
+
+    // Handle other advanced search operations (from emergency fix)
+    } else if (toolType === 'advancedSearch') {
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    } else if (toolType === 'searchByDomain') {
+      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+    
+    } else {
+      // Placeholder for other operations - will be extracted to modules later
+      throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
     }
 
-    // Handle searchByEmail tools
-    if (toolType === 'searchByEmail') {
-      return await handleSearchByEmail(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle searchByPhone tools
-    if (toolType === 'searchByPhone') {
-      return await handleSearchByPhone(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle smartSearch tools
-    if (toolType === 'smartSearch') {
-      return await handleSmartSearch(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    // Handle details tools
-    if (toolType === 'details') {
-      return await handleDetailsOperation(request, toolConfig as DetailsToolConfig, resourceType);
-    }
-
-    // Handle notes tools
-    if (toolType === 'notes') {
-      return await handleNotesOperation(request, toolConfig as NotesToolConfig, resourceType);
-    }
-
-    // Handle createNote tools
-    if (toolType === 'createNote') {
-      return await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
-    }
-
-    // Handle getLists tool
-    if (toolType === 'getLists') {
-      return await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
-    }
-
-    // Handle CRUD operations
-    if (toolType === 'update') {
-      return await handleUpdateOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'updateAttribute') {
-      return await handleUpdateAttributeOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'getAttributes') {
-      return await handleGetAttributesOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'create') {
-      return await handleCreateOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'basicInfo' || toolType === 'businessInfo' || toolType === 'contactInfo' || toolType === 'socialInfo' || toolType === 'json') {
-      return await handleInfoOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'fields') {
-      return await handleFieldsOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'discoverAttributes') {
-      return await handleDiscoverAttributesOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'delete') {
-      return await handleDeleteOperation(request, toolConfig, resourceType);
-    }
-
-    // Handle List operations
-    if (toolType === 'addRecordToList') {
-      return await handleAddRecordToListOperation(request, toolConfig);
-    }
-
-    if (toolType === 'removeRecordFromList') {
-      return await handleRemoveRecordFromListOperation(request, toolConfig);
-    }
-
-    if (toolType === 'updateListEntry') {
-      return await handleUpdateListEntryOperation(request, toolConfig);
-    }
-
-    if (toolType === 'getListDetails') {
-      return await handleGetListDetailsOperation(request, toolConfig);
-    }
-
-    if (toolType === 'getListEntries') {
-      return await handleGetListEntriesOperation(request, toolConfig);
-    }
-
-    if (toolType === 'filterListEntries') {
-      return await handleFilterListEntriesOperation(request, toolConfig);
-    }
-
-    if (toolType === 'advancedFilterListEntries') {
-      return await handleAdvancedFilterListEntriesOperation(request, toolConfig);
-    }
-
-    // Handle Batch operations
-    if (toolType === 'batchUpdate') {
-      return await handleBatchUpdateOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'batchCreate') {
-      return await handleBatchCreateOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'batchDelete') {
-      return await handleBatchDeleteOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'batchSearch') {
-      return await handleBatchSearchOperation(request, toolConfig, resourceType);
-    }
-
-    if (toolType === 'batchGetDetails') {
-      return await handleBatchGetDetailsOperation(request, toolConfig, resourceType);
-    }
-
-    // Handle other advanced search operations that may have been missed
-    if (toolType === 'advancedSearch') {
-      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    if (toolType === 'searchByDomain') {
-      return await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
-    }
-
-    if (toolType === 'customFields') {
-      return await handleInfoOperation(request, toolConfig, resourceType);
-    }
-
-    // If we reach here, the tool type is truly not implemented
-    throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
+    // Log successful execution
+    logToolSuccess(toolName, toolType, result, timer);
+    return result;
   } catch (error) {
-    // Enhanced error handling with detailed information
+    // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error
         ? error.message
@@ -249,13 +203,9 @@ export async function executeToolRequest(request: CallToolRequest) {
           : undefined,
     };
 
-    if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
-      console.error(
-        `[executeToolRequest] Error executing tool '${toolName}':`,
-        errorMessage,
-        errorDetails
-      );
-    }
+    // Log error using enhanced structured logging  
+    const timer = Date.now(); // Fallback timer if not initialized
+    logToolError(toolName, 'unknown', error, timer, errorDetails);
 
     // Create properly formatted MCP response with detailed error information
     return {
@@ -276,238 +226,70 @@ export async function executeToolRequest(request: CallToolRequest) {
   }
 }
 
-/**
- * Handle details operation
- */
-async function handleDetailsOperation(
-  request: CallToolRequest,
-  toolConfig: DetailsToolConfig,
-  resourceType: ResourceType
-) {
-  let id: string;
-  let uri: string;
+// Placeholder functions that need to be implemented (missing from main branch)
+async function handleInfoOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
 
-  // Check which parameter is provided
-  const directId =
-    resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-
-  uri = request.params.arguments?.uri as string;
-
-  // Use either direct ID or URI, with priority to URI if both are provided
-  if (uri) {
-    try {
-      const [uriType, uriId] = parseResourceUri(uri);
-      if (uriType !== resourceType) {
-        throw new Error(
-          `URI type mismatch: Expected ${resourceType}, got ${uriType}`
-        );
-      }
-      id = uriId;
-    } catch (error) {
-      return createErrorResult(
-        error instanceof Error ? error : new Error('Invalid URI format'),
-        uri,
-        'GET',
-        { status: 400, message: 'Invalid URI format' }
-      );
-    }
-  } else if (directId) {
-    id = directId;
-    // For logging purposes
-    uri = `attio://${resourceType}/${directId}`;
-  } else {
-    return createErrorResult(
-      new Error('Either companyId/personId or uri parameter is required'),
-      `/${resourceType}`,
-      'GET',
-      { status: 400, message: 'Missing required parameter' }
-    );
+  if (!id) {
+    throw new Error(`${idParam} parameter is required`);
   }
 
-  try {
-    const record = await toolConfig.handler(id);
-    const formattedResult = toolConfig.formatResult!(record);
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      uri,
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
+  const result = await toolConfig.handler(id);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
 }
 
-/**
- * Handle notes operation
- */
-async function handleNotesOperation(
-  request: CallToolRequest,
-  toolConfig: NotesToolConfig,
-  resourceType: ResourceType
-) {
-  const directId =
-    resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-  const uri = request.params.arguments?.uri as string;
+async function handleFieldsOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
+  const fields = request.params.arguments?.fields as string[];
 
-  if (!directId && !uri) {
-    const idParamName =
-      resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-    return createErrorResult(
-      new Error(`Either ${idParamName} or uri parameter is required`),
-      `/${resourceType}/notes`,
-      'GET',
-      { status: 400, message: 'Missing required parameter' }
-    );
+  if (!id || !fields) {
+    throw new Error('Both id and fields parameters are required');
   }
 
-  let notesTargetId = directId;
-  let notesResourceType = resourceType;
-
-  try {
-    if (uri) {
-      try {
-        const [uriType, uriId] = parseResourceUri(uri);
-        notesResourceType = uriType as ResourceType;
-        notesTargetId = uriId;
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error('Invalid URI format'),
-          uri,
-          'GET',
-          { status: 400, message: 'Invalid URI format' }
-        );
-      }
-    }
-
-    const limit = request.params.arguments?.limit as number;
-    const offset = request.params.arguments?.offset as number;
-
-    const notes = await toolConfig.handler(notesTargetId, limit, offset);
-    const formattedResult = toolConfig.formatResult!(notes);
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      uri || `/${resourceType}/${notesTargetId}/notes`,
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
+  const result = await toolConfig.handler(id, fields);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
 }
 
-/**
- * Handle createNote operation
- */
-async function handleCreateNoteOperation(
-  request: CallToolRequest,
-  toolConfig: CreateNoteToolConfig,
-  resourceType: ResourceType
-) {
-  const directId =
-    resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-  const uri = request.params.arguments?.uri as string;
+async function handleGetAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const id = request.params.arguments?.[idParam] as string;
+  const attributeName = request.params.arguments?.attributeName as string;
 
-  /**
-   * Parameter Mapping Strategy for Note Creation
-   *
-   * This function supports multiple parameter names for backward compatibility
-   * and to accommodate different API clients:
-   *
-   * - title: Primary parameter name (preferred)
-   * - noteTitle: Legacy/alternative parameter name for title
-   * - content: Primary parameter name (preferred)
-   * - noteText: Legacy/alternative parameter name for content
-   *
-   * The fallback pattern (primary || legacy) ensures compatibility while
-   * encouraging use of the standardized parameter names.
-   */
-  const title = (request.params.arguments?.title ||
-    request.params.arguments?.noteTitle) as string;
-  const content = (request.params.arguments?.content ||
-    request.params.arguments?.noteText) as string;
-
-  if (!title || !content) {
-    return createErrorResult(
-      new Error('Both title and content are required'),
-      `/${resourceType}/notes`,
-      'POST',
-      { status: 400, message: 'Missing required parameters' }
-    );
+  if (!id) {
+    throw new Error(`${idParam} parameter is required`);
   }
 
-  if (!directId && !uri) {
-    const idParamName =
-      resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-    return createErrorResult(
-      new Error(`Either ${idParamName} or uri parameter is required`),
-      `/${resourceType}/notes`,
-      'POST',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  let noteTargetId = directId;
-  let noteResourceType = resourceType;
-
-  try {
-    if (uri) {
-      try {
-        const [uriType, uriId] = parseResourceUri(uri);
-        noteResourceType = uriType as ResourceType;
-        noteTargetId = uriId;
-      } catch (error) {
-        return createErrorResult(
-          error instanceof Error ? error : new Error('Invalid URI format'),
-          uri,
-          'POST',
-          { status: 400, message: 'Invalid URI format' }
-        );
-      }
-    }
-
-    const note = await toolConfig.handler(noteTargetId, title, content);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(note)
-      : `Note added to ${resourceType.slice(0, -1)} ${noteTargetId}: ${note.title || 'Untitled'}`;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      uri || `/${resourceType}/${noteTargetId}/notes`,
-      'POST',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
+  const result = await toolConfig.handler(id, attributeName);
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
 }
 
-/**
- * Handle getLists operation
- */
-async function handleGetListsOperation(
-  request: CallToolRequest,
-  toolConfig: GetListsToolConfig
-) {
-  try {
-    const lists = await toolConfig.handler();
-    const formattedResult = toolConfig.formatResult!(lists);
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      '/lists',
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
+async function handleDiscoverAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+  // This should be moved to an appropriate operations module
+  const result = await toolConfig.handler();
+  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+  
+  return {
+    content: [{ type: 'text', text: formattedResult }],
+    isError: false
+  };
 }

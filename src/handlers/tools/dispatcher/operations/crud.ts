@@ -10,7 +10,42 @@ import { ResourceType } from '../../../../types/attio.js';
 import { ToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
-import { validateAttributes, validateResourceId } from '../validation.js';
+
+/**
+ * Handle create operations
+ */
+export async function handleCreateOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig,
+  resourceType: ResourceType
+) {
+  try {
+    const attributes = request.params.arguments?.attributes;
+    
+    if (!attributes) {
+      return createErrorResult(
+        new Error('Attributes parameter is required for create operation'),
+        `/${resourceType}`,
+        'POST',
+        { status: 400, message: 'Missing required parameter: attributes' }
+      );
+    }
+
+    const result = await toolConfig.handler(attributes);
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : `${resourceType.slice(0, -1)} created successfully`;
+
+    return formatResponse(formattedResult);
+  } catch (error) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error('Unknown error'),
+      `/${resourceType}`,
+      'POST',
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
 
 /**
  * Handle update operations
@@ -20,37 +55,42 @@ export async function handleUpdateOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const attributes = request.params.arguments?.attributes;
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'PUT',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  if (!attributes || typeof attributes !== 'object') {
-    return createErrorResult(
-      new Error('attributes parameter is required and must be an object'),
-      `/${resourceType}/${id}`,
-      'PUT',
-      { status: 400, message: 'Missing or invalid attributes parameter' }
-    );
-  }
-
   try {
+    const id = resourceType === ResourceType.COMPANIES
+      ? (request.params.arguments?.companyId as string)
+      : (request.params.arguments?.personId as string);
+    
+    const attributes = request.params.arguments?.attributes;
+    
+    if (!id) {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required for update operation`),
+        `/${resourceType}`,
+        'PUT',
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (!attributes) {
+      return createErrorResult(
+        new Error('Attributes parameter is required for update operation'),
+        `/${resourceType}/${id}`,
+        'PUT',
+        { status: 400, message: 'Missing required parameter: attributes' }
+      );
+    }
+
     const result = await toolConfig.handler(id, attributes);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : `${resourceType.slice(0, -1)} updated successfully`;
 
     return formatResponse(formattedResult);
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}`,
+      `/${resourceType}`,
       'PUT',
       hasResponseData(error) ? error.response.data : {}
     );
@@ -65,221 +105,53 @@ export async function handleUpdateAttributeOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const attributeName = request.params.arguments?.attributeName as string;
-  const value = request.params.arguments?.value;
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'PUT',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  if (!attributeName) {
-    return createErrorResult(
-      new Error('attributeName parameter is required'),
-      `/${resourceType}/${id}`,
-      'PUT',
-      { status: 400, message: 'Missing required parameter: attributeName' }
-    );
-  }
-
-  if (value === undefined) {
-    return createErrorResult(
-      new Error('value parameter is required'),
-      `/${resourceType}/${id}`,
-      'PUT',
-      { status: 400, message: 'Missing required parameter: value' }
-    );
-  }
-
   try {
+    const id = resourceType === ResourceType.COMPANIES
+      ? (request.params.arguments?.companyId as string)
+      : (request.params.arguments?.personId as string);
+    
+    const attributeName = request.params.arguments?.attributeName as string;
+    const value = request.params.arguments?.value;
+    
+    if (!id) {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required for updateAttribute operation`),
+        `/${resourceType}`,
+        'PATCH',
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+    
+    if (!attributeName) {
+      return createErrorResult(
+        new Error('attributeName parameter is required for updateAttribute operation'),
+        `/${resourceType}/${id}`,
+        'PATCH',
+        { status: 400, message: 'Missing required parameter: attributeName' }
+      );
+    }
+    
+    if (value === undefined) {
+      return createErrorResult(
+        new Error('value parameter is required for updateAttribute operation'),
+        `/${resourceType}/${id}`,
+        'PATCH',
+        { status: 400, message: 'Missing required parameter: value' }
+      );
+    }
+
     const result = await toolConfig.handler(id, attributeName, value);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}`,
-      'PUT',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
-}
-
-/**
- * Handle getAttributes operations
- */
-export async function handleGetAttributesOperation(
-  request: CallToolRequest,
-  toolConfig: ToolConfig,
-  resourceType: ResourceType
-) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const attributeName = request.params.arguments?.attributeName as string;
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'GET',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  try {
-    const result = await toolConfig.handler(id, attributeName);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}/attributes`,
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
-}
-
-/**
- * Handle create operations
- */
-export async function handleCreateOperation(
-  request: CallToolRequest,
-  toolConfig: ToolConfig,
-  resourceType: ResourceType
-) {
-  const attributes = request.params.arguments?.attributes;
-
-  if (!attributes || typeof attributes !== 'object') {
-    return createErrorResult(
-      new Error('attributes parameter is required and must be an object'),
-      `/${resourceType}`,
-      'POST',
-      { status: 400, message: 'Missing or invalid attributes parameter' }
-    );
-  }
-
-  try {
-    const result = await toolConfig.handler(attributes);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : `${resourceType.slice(0, -1)} attribute updated successfully`;
 
     return formatResponse(formattedResult);
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}`,
-      'POST',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
-}
-
-/**
- * Handle basicInfo and other info operations
- */
-export async function handleInfoOperation(
-  request: CallToolRequest,
-  toolConfig: ToolConfig,
-  resourceType: ResourceType
-) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'GET',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  try {
-    const result = await toolConfig.handler(id);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}`,
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
-}
-
-/**
- * Handle fields operations
- */
-export async function handleFieldsOperation(
-  request: CallToolRequest,
-  toolConfig: ToolConfig,
-  resourceType: ResourceType
-) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const fields = request.params.arguments?.fields as string[];
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'GET',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
-  if (!fields || !Array.isArray(fields)) {
-    return createErrorResult(
-      new Error('fields parameter is required and must be an array'),
-      `/${resourceType}/${id}`,
-      'GET',
-      { status: 400, message: 'Missing or invalid fields parameter' }
-    );
-  }
-
-  try {
-    const result = await toolConfig.handler(id, fields);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}/fields`,
-      'GET',
-      hasResponseData(error) ? error.response.data : {}
-    );
-  }
-}
-
-/**
- * Handle discoverAttributes operations
- */
-export async function handleDiscoverAttributesOperation(
-  request: CallToolRequest,
-  toolConfig: ToolConfig,
-  resourceType: ResourceType
-) {
-  try {
-    const result = await toolConfig.handler();
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-
-    return formatResponse(formattedResult);
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/attributes/discover`,
-      'GET',
+      'PATCH',
       hasResponseData(error) ? error.response.data : {}
     );
   }
@@ -293,27 +165,35 @@ export async function handleDeleteOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-
-  if (!id) {
-    return createErrorResult(
-      new Error(`${idParam} parameter is required`),
-      `/${resourceType}`,
-      'DELETE',
-      { status: 400, message: 'Missing required parameter' }
-    );
-  }
-
   try {
+    const id = resourceType === ResourceType.COMPANIES
+      ? (request.params.arguments?.companyId as string)
+      : (request.params.arguments?.personId as string);
+    
+    if (!id) {
+      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      return createErrorResult(
+        new Error(`${idParamName} parameter is required for delete operation`),
+        `/${resourceType}`,
+        'DELETE',
+        { status: 400, message: `Missing required parameter: ${idParamName}` }
+      );
+    }
+
     const result = await toolConfig.handler(id);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : `${resourceType.slice(0, -1)} deleted successfully`;
 
     return formatResponse(formattedResult);
   } catch (error) {
+    const id = resourceType === ResourceType.COMPANIES
+      ? (request.params.arguments?.companyId as string)
+      : (request.params.arguments?.personId as string);
+    
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
-      `/${resourceType}/${id}`,
+      `/${resourceType}/${id || 'unknown'}`,
       'DELETE',
       hasResponseData(error) ? error.response.data : {}
     );
