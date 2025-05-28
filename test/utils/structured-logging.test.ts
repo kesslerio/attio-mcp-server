@@ -22,9 +22,9 @@ import {
 } from '../../src/utils/logger.js';
 
 // Mock console methods
-const mockConsoleLog = jest.fn();
-const mockConsoleWarn = jest.fn();
-const mockConsoleError = jest.fn();
+const mockConsoleLog = vi.fn();
+const mockConsoleWarn = vi.fn();
+const mockConsoleError = vi.fn();
 
 // Store original console methods
 const originalConsole = {
@@ -328,7 +328,7 @@ describe('Structured Logging System', () => {
 
   describe('withLogging Utility', () => {
     test('withLogging wraps successful operations', async () => {
-      const mockOperation = jest.fn().mockResolvedValue('success');
+      const mockOperation = vi.fn().mockResolvedValue('success');
 
       const result = await withLogging(
         'test-module',
@@ -356,7 +356,7 @@ describe('Structured Logging System', () => {
 
     test('withLogging wraps failed operations', async () => {
       const mockError = new Error('Operation failed');
-      const mockOperation = jest.fn().mockRejectedValue(mockError);
+      const mockOperation = vi.fn().mockRejectedValue(mockError);
 
       await expect(
         withLogging(
