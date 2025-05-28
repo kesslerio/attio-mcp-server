@@ -3,6 +3,12 @@
  * Handles circular references, non-serializable values, and large objects
  *
  * Uses fast-safe-stringify for improved performance and reliability
+ * 
+ * IMPORTANT MCP PROTOCOL WARNING:
+ * Never use console.log() in this file or any MCP-related code. 
+ * Always use console.error() or logger.safeMcpLog() instead.
+ * Using console.log will break the MCP protocol, as it writes to stdout
+ * which is used for client-server communication.
  */
 // @ts-ignore - Fast-safe-stringify has CommonJS exports
 import fastSafeStringify from 'fast-safe-stringify';
@@ -104,7 +110,7 @@ export function safeJsonStringify(
     // Performance monitoring and logging
     const duration = performance.now() - startTime;
     if (duration > 100) {
-      console.debug(
+      console.error(
         `[safeJsonStringify] Slow serialization detected: ${duration.toFixed(
           2
         )}ms for ${typeof obj} (${result.length} chars)`
