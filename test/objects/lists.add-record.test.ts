@@ -2,19 +2,20 @@
  * Tests for addRecordToList with the proper API payload format
  */
 
-import { expect, describe, it, jest, beforeEach } from '@jest/globals';
+import { expect, describe, it, beforeEach, vi } from 'vitest';
 import { addRecordToList } from '../../src/objects/lists.js';
 import * as attioClient from '../../src/api/attio-client.js';
 import * as apiOperations from '../../src/api/operations/lists.js';
+import { ResourceType } from '../../src/types/attio.js';
 
 describe('addRecordToList Tests', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it('should call the API with the correct payload format', async () => {
     // Mock the API client
-    const mockPost = jest.fn().mockResolvedValue({
+    const mockPost = vi.fn().mockResolvedValue({
       data: {
         data: {
           id: { entry_id: 'new-entry-id' },
@@ -23,15 +24,15 @@ describe('addRecordToList Tests', () => {
       },
     });
     
-    jest.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
-      get: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
     });
     
     // Mock the generic function to throw so we test the fallback
-    jest.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
 
     // Call the function
     const listId = 'test-list-id';
@@ -53,7 +54,7 @@ describe('addRecordToList Tests', () => {
 
   it('should use default objectType if not provided', async () => {
     // Mock the API client
-    const mockPost = jest.fn().mockResolvedValue({
+    const mockPost = vi.fn().mockResolvedValue({
       data: {
         data: {
           id: { entry_id: 'new-entry-id' },
@@ -62,15 +63,15 @@ describe('addRecordToList Tests', () => {
       },
     });
     
-    jest.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
-      get: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
     });
     
     // Mock the generic function to throw so we test the fallback
-    jest.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
 
     // Call the function without objectType
     const listId = 'test-list-id';
@@ -89,7 +90,7 @@ describe('addRecordToList Tests', () => {
 
   it('should omit entry_values if initialValues not provided', async () => {
     // Mock the API client
-    const mockPost = jest.fn().mockResolvedValue({
+    const mockPost = vi.fn().mockResolvedValue({
       data: {
         data: {
           id: { entry_id: 'new-entry-id' },
@@ -98,15 +99,15 @@ describe('addRecordToList Tests', () => {
       },
     });
     
-    jest.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
-      get: jest.fn(),
-      patch: jest.fn(),
-      delete: jest.fn(),
+      get: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
     });
     
     // Mock the generic function to throw so we test the fallback
-    jest.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
 
     // Call the function with objectType but no initialValues
     const listId = 'test-list-id';
@@ -134,9 +135,32 @@ describe('addRecordToList Tests', () => {
     await expect(addRecordToList('valid-list-id', null as unknown as string)).rejects.toThrow('Invalid record ID');
   });
 
+  it('should throw an error for invalid objectType', async () => {
+    await expect(addRecordToList('valid-list-id', 'valid-record-id', 'invalid-type')).rejects.toThrow(
+      /Invalid object type.+Must be one of/
+    );
+  });
+
+  it('should accept valid ResourceType values', async () => {
+    // Mock the generic function to return a successful response
+    vi.spyOn(apiOperations, 'addRecordToList').mockResolvedValue({
+      id: { entry_id: 'test-entry-id' },
+      parent_record_id: 'test-record-id',
+    });
+
+    // Loop through all valid ResourceType values
+    for (const validType of Object.values(ResourceType)) {
+      // Should not throw
+      await addRecordToList('valid-list-id', 'valid-record-id', validType);
+    }
+
+    // Verify generic function was called with correct parameters for each value
+    expect(apiOperations.addRecordToList).toHaveBeenCalledTimes(Object.values(ResourceType).length);
+  });
+
   it('should call the generic function first before fallback', async () => {
     // Mock the generic function
-    const mockGenericAddRecordToList = jest.spyOn(apiOperations, 'addRecordToList')
+    const mockGenericAddRecordToList = vi.spyOn(apiOperations, 'addRecordToList')
       .mockResolvedValue({
         id: { entry_id: 'test-entry-id' },
         parent_record_id: 'test-record-id',
@@ -159,7 +183,41 @@ describe('addRecordToList Tests', () => {
     );
     
     // Verify API client was not called directly (fallback not used)
-    const mockGetAttioClient = jest.spyOn(attioClient, 'getAttioClient');
+    const mockGetAttioClient = vi.spyOn(attioClient, 'getAttioClient');
     expect(mockGetAttioClient).not.toHaveBeenCalled();
+  });
+
+  it('should provide detailed error messages for validation errors', async () => {
+    // Mock the API client with a validation error response
+    const mockPost = vi.fn().mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          validation_errors: [
+            { path: ['data', 'parent_record_id'], message: 'Invalid record ID format' },
+            { path: ['data', 'parent_object'], message: 'Invalid object type' }
+          ]
+        }
+      }
+    });
+    
+    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
+      post: mockPost,
+      get: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    });
+    
+    // Mock the generic function to throw so we test the fallback
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+
+    // Call the function
+    const listId = 'test-list-id';
+    const recordId = 'invalid-id';
+    
+    // Should throw with formatted validation errors
+    await expect(addRecordToList(listId, recordId)).rejects.toThrow(
+      'Validation error adding record to list: data.parent_record_id: Invalid record ID format; data.parent_object: Invalid object type'
+    );
   });
 });
