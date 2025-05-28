@@ -303,7 +303,8 @@ export async function addRecordToList(
     // Default object type to 'companies' if not specified
     const safeObjectType = objectType || 'companies';
 
-    // Construct the correct payload format according to Attio API requirements
+    // Construct the proper API payload according to Attio API requirements
+    // The API expects parent_record_id, parent_object, and optionally entry_values
     const payload = {
       data: {
         parent_record_id: recordId,
@@ -318,18 +319,50 @@ export async function addRecordToList(
         `[addRecordToList:fallback] Request to ${path} with payload:`,
         JSON.stringify(payload)
       );
+      console.log(`Object Type: ${safeObjectType}`);
+      if (initialValues) {
+        console.log(`Initial Values: ${JSON.stringify(initialValues)}`);
+      }
     }
 
-    const response = await api.post(path, payload);
+    try {
+      const response = await api.post(path, payload);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[addRecordToList:fallback] Success response:`,
-        JSON.stringify(response.data || {})
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[addRecordToList:fallback] Success response:`,
+          JSON.stringify(response.data || {})
+        );
+      }
+
+      return response.data.data || response.data;
+    } catch (error: any) {
+      // Enhanced error handling for validation errors
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[addRecordToList] Error adding record ${recordId} to list ${listId}:`, 
+          error.message || 'Unknown error');
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', JSON.stringify(error.response?.data || {}));
+        
+        // Add additional debug information for validation errors
+        if (error.response?.data?.validation_errors) {
+          console.error('Validation errors:', JSON.stringify(error.response.data.validation_errors));
+        }
+      }
+      
+      // Add more context to the error message
+      if (error.response?.status === 400) {
+        const validationErrors = error.response?.data?.validation_errors || [];
+        const errorDetails = validationErrors.map((e: any) => 
+          `${e.path.join('.')}: ${e.message}`
+        ).join('; ');
+        
+        throw new Error(`Validation error adding record to list: ${errorDetails || error.message}`);
+      }
+      
+      // Let upstream handlers create specific, rich error objects.
+      throw error;
     }
-
-    return response.data.data || response.data;
   }
 }
 
