@@ -7,6 +7,7 @@
 
 /**
  * Verifies that required tool types are present in a tool configuration object
+ * and checks for duplicate tool names
  * 
  * @param {string} resourceName - The name of the resource for logging (e.g., 'company', 'people')
  * @param {Object} combinedConfigs - The combined tool configurations object
@@ -14,12 +15,43 @@
  * @returns {boolean} - Whether all required tools are properly configured
  */
 export function verifyToolConfigsWithRequiredTools(resourceName: string, combinedConfigs: any, requiredToolTypes: string[]): boolean {
-  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
+  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
   
   console.log(`[${resourceName}ToolConfigs] Verifying tool configs during initialization`);
   
   let allPresent = true;
+  
+  // Check for duplicate tool names
+  const toolNameMap: Record<string, string[]> = {};
+  
+  // Build a map of tool names to their config types
+  for (const [configType, config] of Object.entries(combinedConfigs)) {
+    if (config && typeof config === 'object' && 'name' in config && typeof config.name === 'string') {
+      const toolName = config.name;
+      if (!toolNameMap[toolName]) {
+        toolNameMap[toolName] = [];
+      }
+      toolNameMap[toolName].push(configType);
+    }
+  }
+  
+  // Check for duplicates
+  const duplicates = Object.entries(toolNameMap)
+    .filter(([_, configTypes]) => configTypes.length > 1);
+  
+  if (duplicates.length > 0) {
+    console.warn(`[${resourceName}ToolConfigs] DUPLICATE TOOL NAMES DETECTED:`);
+    for (const [toolName, configTypes] of duplicates) {
+      console.warn(`  Tool name "${toolName}" is defined in multiple configs: ${configTypes.join(', ')}`);
+    }
+    
+    // In strict mode, fail validation
+    if (process.env.STRICT_TOOL_VALIDATION === 'true') {
+      console.error(`[${resourceName}ToolConfigs] ERROR: Duplicate tool names will cause MCP tool initialization failures.`);
+      allPresent = false;
+    }
+  }
   
   // Verify each required tool type is present
   for (const toolType of requiredToolTypes) {
@@ -60,7 +92,7 @@ export function verifyToolConfigsWithRequiredTools(resourceName: string, combine
  * @returns {boolean} - Whether the tool is properly configured
  */
 export function verifySpecificTool(resourceName: string, configs: any, toolType: string, subConfigs: any = null): boolean {
-  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
+  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
   
   if (subConfigs && toolType in subConfigs) {
