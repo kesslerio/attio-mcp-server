@@ -15,7 +15,7 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
-import { AttioList, AttioListEntry } from '../types/attio.js';
+import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
@@ -276,6 +276,12 @@ export async function addRecordToList(
   if (!recordId || typeof recordId !== 'string') {
     throw new Error('Invalid record ID: Must be a non-empty string');
   }
+  
+  // Validate objectType if provided
+  if (objectType && !Object.values(ResourceType).includes(objectType as ResourceType)) {
+    const validTypes = Object.values(ResourceType).join(', ');
+    throw new Error(`Invalid object type: "${objectType}". Must be one of: ${validTypes}`);
+  }
 
   // Use the generic operation with fallback to direct implementation
   try {
@@ -496,14 +502,42 @@ export async function batchGetListsEntries(
  * @param includeEntryValues - Whether to include entry values in the result (default: false)
  * @returns Array of list memberships
  */
+/**
+ * Finds all lists that contain a specific record
+ * 
+ * @param recordId - The ID of the record to find in lists
+ * @param objectType - Optional record type ('companies', 'people', etc.)
+ * @param includeEntryValues - Whether to include entry values in the result (default: false)
+ * @param batchSize - Number of lists to process in parallel (default: 5)
+ * @returns Array of list memberships
+ * 
+ * @example
+ * // Find all lists containing a company record
+ * const memberships = await getRecordListMemberships('company-123', 'companies');
+ * 
+ * // Find all lists containing a person record with entry values
+ * const membershipsWithValues = await getRecordListMemberships('person-456', 'people', true);
+ */
 export async function getRecordListMemberships(
   recordId: string,
   objectType?: string,
-  includeEntryValues: boolean = false
+  includeEntryValues: boolean = false,
+  batchSize: number = 5
 ): Promise<ListMembership[]> {
   // Input validation
   if (!recordId || typeof recordId !== 'string') {
     throw new Error('Invalid record ID: Must be a non-empty string');
+  }
+  
+  // Validate objectType if provided
+  if (objectType && !Object.values(ResourceType).includes(objectType as ResourceType)) {
+    const validTypes = Object.values(ResourceType).join(', ');
+    throw new Error(`Invalid object type: "${objectType}". Must be one of: ${validTypes}`);
+  }
+  
+  // Validate batchSize
+  if (typeof batchSize !== 'number' || batchSize < 1 || batchSize > 20) {
+    throw new Error('Invalid batch size: Must be a number between 1 and 20');
   }
 
   const allMemberships: ListMembership[] = [];
@@ -532,7 +566,7 @@ export async function getRecordListMemberships(
     }));
     
     // Process lists in batches to avoid overwhelming the API
-    const batchSize = 5;
+    // batchSize parameter allows customizing the concurrency level
     for (let i = 0; i < listConfigs.length; i += batchSize) {
       const batchLists = listConfigs.slice(i, i + batchSize);
       
