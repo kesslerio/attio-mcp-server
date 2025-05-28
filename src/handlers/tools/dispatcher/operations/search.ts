@@ -80,7 +80,24 @@ export async function handleBasicSearch(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const query = request.params.arguments?.query as string;
+  let queryFromArgs = request.params.arguments?.query as string;
+  const domainFromArgs = request.params.arguments?.domain as string;
+
+  let effectiveQuery = queryFromArgs;
+
+  // If 'query' is not provided, but 'domain' is, and the specific tool being handled is 'search-companies',
+  // use the 'domain' value as the query. This makes 'search-companies' more robust to this specific invocation pattern.
+  if (effectiveQuery === undefined && domainFromArgs !== undefined && toolConfig.name === 'search-companies') {
+    effectiveQuery = domainFromArgs;
+    console.warn(
+        `[handleBasicSearch] Tool 'search-companies' was called with a 'domain' parameter instead of 'query'. ` +
+        `Using the 'domain' value ("${effectiveQuery}") as the search query. ` +
+        `For clarity and future compatibility, please use the 'query' parameter for the 'search-companies' tool, ` +
+        `or use the 'search-companies-by-domain' tool for explicit domain searches.`
+    );
+  }
+
+  const query = effectiveQuery; // Use 'query' as the variable name for the rest of the function for minimal changes
   try {
     const results = await toolConfig.handler(query);
     const formattedResults = toolConfig.formatResult(results);
