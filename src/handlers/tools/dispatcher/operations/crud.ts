@@ -1,7 +1,7 @@
 /**
  * CRUD operation handlers for tool execution
  * 
- * Handles create, read, update, and delete operations for records
+ * Handles create, read, update, delete, and related operations
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
