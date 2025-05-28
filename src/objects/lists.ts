@@ -248,11 +248,15 @@ export async function getListEntries(
  *
  * @param listId - The ID of the list
  * @param recordId - The ID of the record to add
+ * @param objectType - Optional object type ('companies', 'people', etc.)
+ * @param initialValues - Optional initial values for the list entry (e.g., stage)
  * @returns The created list entry
  */
 export async function addRecordToList(
   listId: string,
-  recordId: string
+  recordId: string,
+  objectType?: string,
+  initialValues?: Record<string, any>
 ): Promise<AttioListEntry> {
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
@@ -265,7 +269,7 @@ export async function addRecordToList(
 
   // Use the generic operation with fallback to direct implementation
   try {
-    return await addGenericRecordToList(listId, recordId);
+    return await addGenericRecordToList(listId, recordId, objectType, initialValues);
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
@@ -280,11 +284,17 @@ export async function addRecordToList(
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
 
-    // Construct the correct payload format
+    // Default object type to 'companies' if not specified
+    const safeObjectType = objectType || 'companies';
+
+    // Construct the proper API payload according to Attio API requirements
+    // The API expects parent_record_id, parent_object, and optionally entry_values
     const payload = {
       data: {
-        record_id: recordId,
-        // record_type could also be included here if needed for specific record types
+        parent_record_id: recordId,
+        parent_object: safeObjectType,
+        // Only include entry_values if initialValues is provided
+        ...(initialValues && { entry_values: initialValues }),
       },
     };
 
@@ -293,20 +303,50 @@ export async function addRecordToList(
         `[addRecordToList:fallback] Request to ${path} with payload:`,
         JSON.stringify(payload)
       );
+      console.log(`Object Type: ${safeObjectType}`);
+      if (initialValues) {
+        console.log(`Initial Values: ${JSON.stringify(initialValues)}`);
+      }
     }
 
-    // Note: Attio API requires a 'data' object wrapper around the record_id
-    // for the lists endpoints as per API requirements
-    const response = await api.post(path, payload);
+    try {
+      const response = await api.post(path, payload);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[addRecordToList:fallback] Success response:`,
-        JSON.stringify(response.data || {})
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[addRecordToList:fallback] Success response:`,
+          JSON.stringify(response.data || {})
+        );
+      }
+
+      return response.data.data || response.data;
+    } catch (error: any) {
+      // Enhanced error handling for validation errors
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[addRecordToList] Error adding record ${recordId} to list ${listId}:`, 
+          error.message || 'Unknown error');
+        console.error('Status:', error.response?.status);
+        console.error('Response data:', JSON.stringify(error.response?.data || {}));
+        
+        // Add additional debug information for validation errors
+        if (error.response?.data?.validation_errors) {
+          console.error('Validation errors:', JSON.stringify(error.response.data.validation_errors));
+        }
+      }
+      
+      // Add more context to the error message
+      if (error.response?.status === 400) {
+        const validationErrors = error.response?.data?.validation_errors || [];
+        const errorDetails = validationErrors.map((e: any) => 
+          `${e.path.join('.')}: ${e.message}`
+        ).join('; ');
+        
+        throw new Error(`Validation error adding record to list: ${errorDetails || error.message}`);
+      }
+      
+      // Let upstream handlers create specific, rich error objects.
+      throw error;
     }
-
-    return response.data.data || response.data;
   }
 }
 
