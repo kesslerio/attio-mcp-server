@@ -1,13 +1,17 @@
 /**
  * Safe JSON serialization utilities to prevent MCP protocol breakdown
  * Handles circular references, non-serializable values, and large objects
+ * 
+ * Uses fast-safe-stringify for improved performance and reliability
  */
+// @ts-ignore - Fast-safe-stringify has CommonJS exports
+import fastSafeStringify from 'fast-safe-stringify';
 
 /**
  * Interface for serialization options
  */
 export interface SerializationOptions {
-  /** Maximum depth for nested objects */
+  /** Maximum depth for nested objects (only used in the legacy implementation) */
   maxDepth?: number;
   /** Maximum string length before truncation */
   maxStringLength?: number;
@@ -15,20 +19,25 @@ export interface SerializationOptions {
   includeStackTraces?: boolean;
   /** Custom replacer function */
   replacer?: (key: string, value: any) => any;
+  /** Indent spaces for pretty printing (default: 2) */
+  indent?: number;
 }
 
 /**
  * Default serialization options
  */
 const DEFAULT_OPTIONS: Required<SerializationOptions> = {
-  maxDepth: 20, // Increased from 10 to handle complex Attio API responses
+  maxDepth: 20, // Kept for backward compatibility
   maxStringLength: 25000, // 25KB max string length - more reasonable for MCP
   includeStackTraces: false,
   replacer: (key, value) => value,
+  indent: 2
 };
 
 /**
  * Safe JSON stringify that handles circular references and non-serializable values
+ * 
+ * Uses fast-safe-stringify for high performance and reliability
  *
  * @param obj - The object to stringify
  * @param options - Serialization options
@@ -39,56 +48,27 @@ export function safeJsonStringify(
   options: SerializationOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const seen = new WeakSet();
-  let depth = 0;
-
+  
   // Performance monitoring for large objects
   const startTime = performance.now();
 
-  const replacer = function (key: string, value: any): any {
-    // Apply custom replacer first
-    value = opts.replacer(key, value);
-
-    // Handle null and undefined
-    if (value === null) return null;
-    if (value === undefined) return null;
-
-    // Handle primitives
-    if (typeof value !== 'object') {
-      // Truncate very long strings
+  try {
+    // Create a custom replacer to handle non-standard values
+    const customReplacer = (key: string, value: any): any => {
+      // First apply user-provided replacer if any
+      value = opts.replacer(key, value);
+      
+      // Handle undefined (normally skipped by JSON)
+      if (value === undefined) {
+        return null;
+      }
+      
+      // Handle very long strings
       if (typeof value === 'string' && value.length > opts.maxStringLength) {
         return value.substring(0, opts.maxStringLength) + '... [truncated]';
       }
-      // Handle functions
-      if (typeof value === 'function') {
-        return '[Function: ' + (value.name || 'anonymous') + ']';
-      }
-      // Handle symbols
-      if (typeof value === 'symbol') {
-        return '[Symbol: ' + value.toString() + ']';
-      }
-      // Handle bigint
-      if (typeof value === 'bigint') {
-        return '[BigInt: ' + value.toString() + ']';
-      }
-      return value;
-    }
-
-    // Handle circular references
-    if (seen.has(value)) {
-      return '[Circular Reference]';
-    }
-
-    // Track depth to prevent infinite recursion
-    if (depth >= opts.maxDepth) {
-      return '[Max Depth Reached]';
-    }
-
-    seen.add(value);
-    depth++;
-
-    try {
-      // Handle special object types
+      
+      // Handle special object types more gracefully
       if (value instanceof Error) {
         const errorObj: any = {
           name: value.name,
@@ -102,88 +82,35 @@ export function safeJsonStringify(
         }
         return errorObj;
       }
-
-      if (value instanceof Date) {
-        if (isNaN(value.getTime())) {
-          return '[Invalid Date]';
-        }
-        return value.toISOString();
-      }
-
-      if (value instanceof RegExp) {
-        return '[RegExp: ' + value.toString() + ']';
-      }
-
+      
       if (value instanceof Map) {
         return '[Map: ' + value.size + ' entries]';
       }
-
+      
       if (value instanceof Set) {
         return '[Set: ' + value.size + ' items]';
       }
-
+      
       if (ArrayBuffer && value instanceof ArrayBuffer) {
         return '[ArrayBuffer: ' + value.byteLength + ' bytes]';
       }
-
-      // Handle arrays
-      if (Array.isArray(value)) {
-        const result = value.map((item, index) => {
-          try {
-            return replacer(index.toString(), item);
-          } catch (error) {
-            console.error(
-              `[safeJsonStringify] Array item serialization failed at index ${index} (depth ${depth}):`,
-              error
-            );
-            return (
-              '[Serialization Error: ' +
-              (error instanceof Error ? error.message : 'Unknown') +
-              ']'
-            );
-          }
-        });
-        depth--;
-        return result;
-      }
-
-      // Handle plain objects
-      const result: any = {};
-      for (const [objKey, objValue] of Object.entries(value)) {
-        try {
-          result[objKey] = replacer(objKey, objValue);
-        } catch (error) {
-          console.error(
-            `[safeJsonStringify] Object property serialization failed for key '${objKey}' (depth ${depth}):`,
-            error
-          );
-          result[objKey] =
-            '[Serialization Error: ' +
-            (error instanceof Error ? error.message : 'Unknown') +
-            ']';
-        }
-      }
-
-      depth--;
-      return result;
-    } finally {
-      seen.delete(value);
-    }
-  };
-
-  try {
-    const result = JSON.stringify(obj, replacer as any, 2);
-
+      
+      return value;
+    };
+    
+    // Use fast-safe-stringify with our custom replacer
+    const result = fastSafeStringify(obj, customReplacer, opts.indent);
+    
     // Performance monitoring and logging
     const duration = performance.now() - startTime;
     if (duration > 100) {
-      console.warn(
+      console.debug(
         `[safeJsonStringify] Slow serialization detected: ${duration.toFixed(
           2
         )}ms for ${typeof obj} (${result.length} chars)`
       );
     }
-
+    
     return result;
   } catch (error) {
     // Enhanced error context
@@ -194,8 +121,9 @@ export function safeJsonStringify(
       )}ms for ${typeof obj}:`,
       error
     );
-
-    return JSON.stringify(
+    
+    // Use fast-safe-stringify directly for the error fallback
+    return fastSafeStringify(
       {
         error: 'Serialization failed',
         message: error instanceof Error ? error.message : String(error),
@@ -203,7 +131,7 @@ export function safeJsonStringify(
         timestamp: new Date().toISOString(),
         duration: `${duration.toFixed(2)}ms`,
       },
-      null,
+      undefined,
       2
     );
   }
@@ -241,6 +169,9 @@ export function validateJsonString(jsonString: string): {
 
 /**
  * Detects potential circular references in an object before serialization
+ * 
+ * NOTE: This is less critical now with fast-safe-stringify, but kept for
+ * compatibility with existing code that uses it.
  *
  * @param obj - The object to check
  * @param maxDepth - Maximum depth to check
@@ -276,6 +207,8 @@ export function hasCircularReferences(
 
 /**
  * Creates a safe copy of an object that can be JSON serialized
+ * 
+ * Uses fast-safe-stringify for improved performance and reliability
  *
  * @param obj - The object to copy
  * @param options - Serialization options
@@ -285,26 +218,31 @@ export function createSafeCopy(
   obj: any,
   options: SerializationOptions = {}
 ): any {
-  const jsonString = safeJsonStringify(obj, options);
-  const validation = validateJsonString(jsonString);
-
-  if (!validation.isValid) {
+  try {
+    // Fast path: directly use fast-safe-stringify to create a JSON string
+    const jsonString = safeJsonStringify(obj, options);
+    
+    // Parse it back to create the safe copy
+    return JSON.parse(jsonString);
+  } catch (error) {
     console.error(
       '[createSafeCopy] Failed to create safe copy:',
-      validation.error
+      error instanceof Error ? error.message : String(error)
     );
+    
+    // Return a structured error object
     return {
       error: 'Failed to create safe copy',
-      message: validation.error,
+      message: error instanceof Error ? error.message : String(error),
       originalType: typeof obj,
     };
   }
-
-  return validation.data;
 }
 
 /**
  * Sanitizes MCP response objects to prevent JSON parsing errors
+ * 
+ * Uses fast-safe-stringify to ensure all responses are safely serializable
  *
  * @param response - The MCP response object to sanitize
  * @returns Sanitized response object
@@ -328,10 +266,27 @@ export function sanitizeMcpResponse(response: any): any {
     };
   }
 
-  // Create safe copy with MCP-specific options optimized for Attio responses
-  return createSafeCopy(response, {
-    maxDepth: 25, // Increased for complex Attio list/company relationship structures
-    maxStringLength: 40000, // 40KB for response content - reasonable limit
-    includeStackTraces: process.env.NODE_ENV === 'development',
-  });
+  try {
+    // Create safe copy with MCP-specific options optimized for Attio responses
+    return createSafeCopy(response, {
+      maxStringLength: 40000, // 40KB for response content - reasonable limit
+      includeStackTraces: process.env.NODE_ENV === 'development',
+    });
+  } catch (error) {
+    // Provide a valid fallback response if sanitization fails
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error processing response. The server encountered an error while formatting the response data.',
+        },
+      ],
+      isError: true,
+      error: {
+        code: 500,
+        message: 'Response sanitization failed: ' + (error instanceof Error ? error.message : String(error)),
+        type: 'sanitization_error',
+      },
+    };
+  }
 }

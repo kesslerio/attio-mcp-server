@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { safeJsonStringify } from './json-serializer.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -141,12 +142,12 @@ function createLogMetadata(
  */
 function outputLog(entry: LogEntry, logFunction: (message: string, ...args: any[]) => void): void {
   if (process.env.LOG_FORMAT === 'json') {
-    // Output compact JSON
-    logFunction(JSON.stringify(entry));
+    // Output compact JSON using safe stringify to prevent errors
+    logFunction(safeJsonStringify(entry, { indent: 0 }));
   } else {
     // Output pretty-printed JSON to maintain human readability for console,
     // while ensuring it's a single, valid JSON string to prevent MCP parsing errors.
-    logFunction(JSON.stringify(entry, null, 2));
+    logFunction(safeJsonStringify(entry, { indent: 2 }));
   }
 }
 
