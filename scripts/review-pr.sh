@@ -52,7 +52,6 @@ echo "📊 Diff size: $DIFF_SIZE characters"
 # Determine allowed tools and review approach
 if [ $DIFF_SIZE -gt 100000 ]; then
     echo "⚠️ Large PR detected - using focused review approach"
-    ALLOWED_TOOLS="Bash,Read,Grep"
     # For large PRs: get file summaries instead of full diff
     FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
     # Get just the diff headers and key changes
@@ -60,16 +59,15 @@ if [ $DIFF_SIZE -gt 100000 ]; then
     REVIEW_TYPE="LARGE_PR_SUMMARY"
 else
     echo "📝 Small/Medium PR - using detailed review approach"
-    ALLOWED_TOOLS="Bash,Read,Grep,Glob,LS"
     # For smaller PRs: get full diff
     PR_DIFF=$(gh pr diff $PR_NUMBER)
     REVIEW_TYPE="FULL_ANALYSIS"
 fi
 
-echo "🔍 Running Claude analysis with allowedTools: $ALLOWED_TOOLS ($REVIEW_TYPE)..."
+echo "🔍 Running Claude analysis ($REVIEW_TYPE)..."
 
-# Create comprehensive review prompt 
-cat > /tmp/pr_review_prompt_${PR_NUMBER}.md << 'EOF'
+# Create comprehensive review prompt
+cat > /tmp/pr_review_prompt_${PR_NUMBER}.md << EOF
 You are an expert code reviewer for the Attio MCP Server project.
 
 Perform a comprehensive review of this Pull Request and provide output in the exact format below:
@@ -159,8 +157,8 @@ ${PR_DIFF}
 EOF
 fi
 
-# Run claude -p with allowedTools and the prompt and data
-claude --allowedTools "$ALLOWED_TOOLS" -p /tmp/pr_review_prompt_${PR_NUMBER}.md < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
+# Run claude -p with the prompt and data (tools now defined in the prompt file)
+claude --verbose --output-format stream-json -p /tmp/pr_review_prompt_${PR_NUMBER}.md < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
 
 echo "📝 Posting review to PR..."
 
@@ -177,4 +175,4 @@ echo "🔗 View at: $(gh pr view $PR_NUMBER --json url -q .url)"
 rm /tmp/pr_review_prompt_${PR_NUMBER}.md /tmp/pr_data_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
 
 echo ""
-echo "💡 Full detailed analysis completed using claude -p with allowedTools support"
+echo "💡 Full detailed analysis completed using claude -p"
