@@ -4,16 +4,14 @@
  * This test verifies that the advanced search functionality handles both
  * valid and invalid filter structures properly, with clear error messages.
  */
-const {
-  advancedSearchCompanies,
-} = require('../../src/objects/companies/index');
-import { FilterValidationError } from('../../src/errors/api-errors');
+import { describe, test, expect, beforeAll } from 'vitest';
+import { advancedSearchCompanies } from '../../src/objects/companies/index';
+import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Skip tests if no API key is provided
 const SKIP_TESTS = !process.env.ATTIO_API_KEY;
 
-// Increase timeout for API tests
-jest.setTimeout(30000);
+// Tests have 30s timeout by default with Vitest config
 
 describe('Advanced Search Companies Fix', () => {
   // Skip all tests if no API key
