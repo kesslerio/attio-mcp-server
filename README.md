@@ -1,6 +1,10 @@
 # Attio MCP Server
 
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
+[![CI/CD Pipeline](https://github.com/kesslerio/attio-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/kesslerio/attio-mcp-server/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/kesslerio/attio-mcp-server/branch/main/graph/badge.svg)](https://codecov.io/gh/kesslerio/attio-mcp-server)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![npm version](https://badge.fury.io/js/attio-mcp-server.svg)](https://badge.fury.io/js/attio-mcp-server)
 
 A Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-native CRM. This server enables AI assistants like Claude to interact directly with your Attio data, providing a seamless integration between conversational AI and your CRM.
 

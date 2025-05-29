@@ -19,6 +19,7 @@ import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
+  createPathBasedFilter,
 } from '../utils/record-utils.js';
 
 /**

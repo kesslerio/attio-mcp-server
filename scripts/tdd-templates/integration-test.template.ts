@@ -17,9 +17,9 @@ describe('Integration Test - Module Name', () => {
   describe('Feature Integration', () => {
     it('should integrate multiple components successfully', async () => {
       // Arrange
-      const testData = {
-        // TODO: Add test data
-      };
+      // const testData = {
+      //   // TODO: Add test data
+      // };
 
       // Act
       // const result = await someIntegrationFunction(testData);
