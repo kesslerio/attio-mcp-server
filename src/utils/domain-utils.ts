@@ -54,7 +54,7 @@ export function extractDomain(input: string): string | null {
     /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/;
   const match = cleanInput.match(domainPattern);
   if (match && isValidDomain(match[1])) {
-    return match[1];
+    return normalizeDomain(match[1]);
   }
 
   return null;
