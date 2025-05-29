@@ -11,8 +11,8 @@ describe('Module Name', () => {
   describe('functionName', () => {
     it('should handle basic functionality', () => {
       // Arrange
-      const input = 'test input';
-      const expected = 'expected output';
+      // const input = 'test input';
+      // const expected = 'expected output';
 
       // Act
       // const result = functionName(input);
