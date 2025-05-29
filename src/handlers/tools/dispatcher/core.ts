@@ -48,7 +48,9 @@ import {
   handleGetListDetailsOperation,
   handleGetListEntriesOperation,
   handleFilterListEntriesOperation,
-  handleAdvancedFilterListEntriesOperation
+  handleAdvancedFilterListEntriesOperation,
+  handleFilterListEntriesByParentOperation,
+  handleFilterListEntriesByParentIdOperation
 } from './operations/lists.js';
 
 // Import Batch operation handlers
@@ -158,6 +160,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       result = await handleFilterListEntriesOperation(request, toolConfig);
     } else if (toolType === 'advancedFilterListEntries') {
       result = await handleAdvancedFilterListEntriesOperation(request, toolConfig);
+    } else if (toolType === 'filterListEntriesByParent') {
+      result = await handleFilterListEntriesByParentOperation(request, toolConfig);
+    } else if (toolType === 'filterListEntriesByParentId') {
+      result = await handleFilterListEntriesByParentIdOperation(request, toolConfig);
 
     // Handle Batch operations (from emergency fix)
     } else if (toolType === 'batchUpdate') {

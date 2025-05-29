@@ -11,6 +11,8 @@ import {
   removeRecordFromList,
   updateListEntry,
   getRecordListMemberships,
+  filterListEntriesByParent,
+  filterListEntriesByParentId,
   ListMembership,
 } from '../../objects/lists.js';
 import {
@@ -232,6 +234,60 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
       }
 
       return `Successfully updated list entry ${entryId} for record ${recordId}${stageInfo}`;
+    },
+  } as ToolConfig,
+  
+  filterListEntriesByParent: {
+    name: 'filter-list-entries-by-parent',
+    handler: filterListEntriesByParent,
+    formatResult: (results: AttioListEntry[]) => {
+      if (results.length === 0) {
+        return 'No entries found matching the filter criteria.';
+      }
+      
+      return `Found ${results.length} entries matching the parent record filter:\n${results
+        .map((entry, index) => {
+          // Extract record details with improved name and type extraction
+          const recordDetails = getRecordNameFromEntry(entry);
+
+          // Format display name with record type for better context
+          let displayInfo = '';
+          if (recordDetails.name) {
+            displayInfo = recordDetails.type
+              ? ` (${recordDetails.type}: ${recordDetails.name})`
+              : ` (${recordDetails.name})`;
+          }
+
+          return `${index + 1}. Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+        })
+        .join('\n')}`;
+    },
+  } as ToolConfig,
+  
+  filterListEntriesByParentId: {
+    name: 'filter-list-entries-by-parent-id',
+    handler: filterListEntriesByParentId,
+    formatResult: (results: AttioListEntry[]) => {
+      if (results.length === 0) {
+        return 'No entries found with the specified parent record ID.';
+      }
+      
+      return `Found ${results.length} entries with the specified parent record ID:\n${results
+        .map((entry, index) => {
+          // Extract record details with improved name and type extraction
+          const recordDetails = getRecordNameFromEntry(entry);
+
+          // Format display name with record type for better context
+          let displayInfo = '';
+          if (recordDetails.name) {
+            displayInfo = recordDetails.type
+              ? ` (${recordDetails.type}: ${recordDetails.name})`
+              : ` (${recordDetails.name})`;
+          }
+
+          return `${index + 1}. Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+        })
+        .join('\n')}`;
     },
   } as ToolConfig,
 };
@@ -524,6 +580,86 @@ export const listsToolDefinitions = [
         },
       },
       required: ['listId', 'entryId', 'attributes'],
+    },
+  },
+  {
+    name: 'filter-list-entries-by-parent',
+    description: 'Filter list entries based on parent record properties',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        listId: {
+          type: 'string',
+          description: 'ID of the list to filter entries from',
+        },
+        parentObjectType: {
+          type: 'string',
+          description: 'Type of the parent record (e.g., "companies", "people")',
+          enum: ['companies', 'people'],
+        },
+        parentAttributeSlug: {
+          type: 'string',
+          description: 'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "industry")',
+        },
+        condition: {
+          type: 'string',
+          description: 'Filter condition (e.g., "equals", "contains", "starts_with")',
+          enum: [
+            'equals',
+            'not_equals',
+            'contains',
+            'not_contains',
+            'starts_with',
+            'ends_with',
+            'greater_than',
+            'less_than',
+            'greater_than_or_equals',
+            'less_than_or_equals',
+            'is_empty',
+            'is_not_empty',
+            'is_set',
+            'is_not_set',
+          ],
+        },
+        value: {
+          description: 'Value to filter by (type depends on the attribute)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of entries to fetch (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of entries to skip for pagination (default: 0)',
+        },
+      },
+      required: ['listId', 'parentObjectType', 'parentAttributeSlug', 'condition', 'value'],
+    },
+  },
+  {
+    name: 'filter-list-entries-by-parent-id',
+    description: 'Filter list entries by parent record ID',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        listId: {
+          type: 'string',
+          description: 'ID of the list to filter entries from',
+        },
+        recordId: {
+          type: 'string',
+          description: 'ID of the parent record to filter by',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of entries to fetch (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of entries to skip for pagination (default: 0)',
+        },
+      },
+      required: ['listId', 'recordId'],
     },
   },
 ];
