@@ -23,6 +23,7 @@ import {
   handleBasicSearch,
   handleSearchByEmail,
   handleSearchByPhone,
+  handleSearchByCompany,
   handleSmartSearch,
 } from './operations/search.js';
 import { handleDetailsOperation } from './operations/details.js';
@@ -124,6 +125,11 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolConfig as SearchToolConfig,
         resourceType
       );
+    } else if (toolType === 'searchByCompany') {
+      // Use the tool config's own handler and format the result
+      const rawResult = await toolConfig.handler(request.params.arguments);
+      const formattedResult = toolConfig.formatResult(rawResult);
+      result = { content: [{ type: 'text', text: formattedResult }] };
     } else if (toolType === 'smartSearch') {
       result = await handleSmartSearch(
         request,

@@ -1,25 +1,22 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerToolHandlers } from '../../src/handlers/tools/index';
 import * as companiesModule from '../../src/objects/companies/index';
 import * as peopleModule from '../../src/objects/people/index';
 import * as attributeMappingModule from '../../src/utils/attribute-mapping';
 
-// Mock dependencies
-vi.mock('../../src/objects/companies/index');
-vi.mock('../../src/objects/people/index');
-vi.mock('../../src/utils/attribute-mapping');
-vi.mock('../../src/utils/error-handler');
+// Mock attribute mapping module
+vi.mock('../../src/utils/attribute-mapping', () => ({
+  translateAttributeNamesInFilters: vi.fn(),
+  translateAttributeNames: vi.fn(),
+}));
 
 describe('tools attribute mapping integration', () => {
   describe('Advanced search with attribute mapping', () => {
     let mockServer: any;
     let callToolHandler: (...args: any[]) => any;
-    const mockedCompanies = companiesModule as vi.Mocked<
-      typeof companiesModule
-    >;
-    const mockedPeople = peopleModule as vi.Mocked<typeof peopleModule>;
-    const mockedAttributeMapping = attributeMappingModule as vi.Mocked<
-      typeof attributeMappingModule
-    >;
+    const mockedCompanies = vi.mocked(companiesModule);
+    const mockedPeople = vi.mocked(peopleModule);
+    const mockedAttributeMapping = vi.mocked(attributeMappingModule);
 
     // Mock data
     const mockCompanySearchResults = [
@@ -45,8 +42,8 @@ describe('tools attribute mapping integration', () => {
     ];
 
     beforeEach(() => {
-      // Reset all mocks before each test
-      vi.resetAllMocks();
+      // Clear all mocks before each test (preserve mock functions)
+      vi.clearAllMocks();
 
       // Setup mock server
       mockServer = {

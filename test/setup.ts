@@ -48,22 +48,28 @@ vi.mock('../src/objects/people-write', async () => {
 });
 
 // Global mock for companies module
-vi.mock('../src/objects/companies/index', () => ({
-  searchCompanies: vi.fn(async () => []),
-  searchCompaniesByName: vi.fn(async (name: string) => {
-    // Mock behavior based on company name for testing
-    if (name === 'Test Company' || name === 'Existing Company') {
-      return [{ id: { record_id: 'existing-company-id' } }];
-    }
-    return [];
-  }),
-  advancedSearchCompanies: vi.fn(async () => []),
-  listCompanies: vi.fn(async () => []),
-  getCompanyDetails: vi.fn(async () => ({})),
-  createCompany: vi.fn(async () => ({})),
-  updateCompany: vi.fn(async () => ({})),
-  deleteCompany: vi.fn(async () => true),
-}));
+vi.mock('../src/objects/companies/index', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchCompanies: vi.fn(async () => []),
+    searchCompaniesByName: vi.fn(async (name: string) => {
+      // Mock behavior based on company name for testing
+      if (name === 'Test Company' || name === 'Existing Company') {
+        return [{ id: { record_id: 'existing-company-id' } }];
+      }
+      return [];
+    }),
+    searchCompaniesByDomain: vi.fn(async () => []),
+    advancedSearchCompanies: vi.fn(async () => []),
+    listCompanies: vi.fn(async () => []),
+    getCompanyDetails: vi.fn(async () => ({})),
+    createCompany: vi.fn(async () => ({})),
+    updateCompany: vi.fn(async () => ({})),
+    deleteCompany: vi.fn(async () => true),
+    smartSearchCompanies: vi.fn(async () => []),
+  };
+});
 
 // Global mock for companies search module
 vi.mock('../src/objects/companies/search', () => ({
@@ -82,15 +88,20 @@ vi.mock('../src/objects/companies/search', () => ({
 }));
 
 // Global mock for people module
-vi.mock('../src/objects/people/index', () => ({
-  searchPeople: vi.fn(async () => []),
-  advancedSearchPeople: vi.fn(async () => []),
-  listPeople: vi.fn(async () => []),
-  getPersonDetails: vi.fn(async () => ({})),
-  createPerson: vi.fn(async () => ({})),
-  updatePerson: vi.fn(async () => ({})),
-  deletePerson: vi.fn(async () => true),
-}));
+vi.mock('../src/objects/people/index', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchPeople: vi.fn(async () => []),
+    advancedSearchPeople: vi.fn(async () => []),
+    listPeople: vi.fn(async () => []),
+    getPersonDetails: vi.fn(async () => ({})),
+    createPerson: vi.fn(async () => ({})),
+    updatePerson: vi.fn(async () => ({})),
+    deletePerson: vi.fn(async () => true),
+    searchPeopleByCompany: vi.fn(async () => []),
+  };
+});
 
 // Mock console methods globally to prevent issues with logging tests
 const originalConsole = {
