@@ -1,6 +1,7 @@
 /**
  * Integration tests for get-record-list-memberships tool
  */
+import { describe, test, expect, beforeAll, vi } from 'vitest';
 import axios from 'axios';
 import { initializeAttioClient } from '../../../src/api/attio-client';
 import { executeToolRequest } from '../../../src/handlers/tools/dispatcher';

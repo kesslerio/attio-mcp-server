@@ -1,7 +1,7 @@
 /**
  * Integration tests for path-based filtering of list entries
  */
-
+import { describe, it, expect } from 'vitest';
 import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
