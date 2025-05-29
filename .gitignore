@@ -6,6 +6,7 @@
 node_modules/
 CLAUDE.md
 CODEX-SETUP.md
+.cursor/
 
 # Environment files
 .env

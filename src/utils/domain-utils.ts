@@ -38,7 +38,7 @@ export function extractDomain(input: string): string | null {
 
     // Validate that hostname looks like a domain
     if (isValidDomain(hostname)) {
-      return hostname;
+      return normalizeDomain(hostname);
     }
   } catch (error) {
     // Not a valid URL, continue with other checks
@@ -46,7 +46,7 @@ export function extractDomain(input: string): string | null {
 
   // Check if input is already a domain
   if (isValidDomain(cleanInput)) {
-    return cleanInput;
+    return normalizeDomain(cleanInput);
   }
 
   // Try to extract domain from text that might contain a domain
@@ -54,7 +54,7 @@ export function extractDomain(input: string): string | null {
     /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/;
   const match = cleanInput.match(domainPattern);
   if (match && isValidDomain(match[1])) {
-    return match[1];
+    return normalizeDomain(match[1]);
   }
 
   return null;
@@ -88,7 +88,7 @@ export function normalizeDomain(domain: string): string {
     return '';
   }
 
-  return domain.toLowerCase().replace(/^www\./, '');
+  return domain.trim().toLowerCase().replace(/^www\./, '');
 }
 
 /**
@@ -147,13 +147,13 @@ export function extractAllDomains(query: string): string[] {
     });
   }
 
-  // Extract standalone domains
+  // Extract standalone domains (including subdomains)
   const domainMatches = query.match(
-    /(?:^|\s)([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?:\s|$)/g
+    /(?:^|\s|,)([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,})(?=\s|,|$)/g
   );
   if (domainMatches) {
     domainMatches.forEach((match) => {
-      const domain = extractDomain(match.trim());
+      const domain = extractDomain(match.trim().replace(/^[,\s]+/, ''));
       if (domain) {
         domains.push(domain);
       }
