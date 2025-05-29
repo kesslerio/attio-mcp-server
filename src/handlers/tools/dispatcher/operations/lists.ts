@@ -187,6 +187,153 @@ export async function handleUpdateListEntryOperation(
 }
 
 /**
+ * Handle filterListEntriesByParent operations
+ * 
+ * This handler extracts the required parameters from the tool request and passes them
+ * to the handler function for filtering list entries based on parent record properties.
+ */
+export async function handleFilterListEntriesByParentOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const listId = request.params.arguments?.listId as string;
+  const parentObjectType = request.params.arguments?.parentObjectType as string;
+  const parentAttributeSlug = request.params.arguments?.parentAttributeSlug as string;
+  const condition = request.params.arguments?.condition as string;
+  const value = request.params.arguments?.value;
+  const limit = request.params.arguments?.limit as number;
+  const offset = request.params.arguments?.offset as number;
+
+  // Validate required parameters
+  if (!listId) {
+    return createErrorResult(
+      new Error('listId parameter is required'),
+      '/lists',
+      'GET',
+      { status: 400, message: 'Missing required parameter: listId' }
+    );
+  }
+
+  if (!parentObjectType) {
+    return createErrorResult(
+      new Error('parentObjectType parameter is required'),
+      `/lists/${listId}/entries`,
+      'GET',
+      { status: 400, message: 'Missing required parameter: parentObjectType' }
+    );
+  }
+
+  if (!parentAttributeSlug) {
+    return createErrorResult(
+      new Error('parentAttributeSlug parameter is required'),
+      `/lists/${listId}/entries`,
+      'GET',
+      { status: 400, message: 'Missing required parameter: parentAttributeSlug' }
+    );
+  }
+
+  if (!condition) {
+    return createErrorResult(
+      new Error('condition parameter is required'),
+      `/lists/${listId}/entries`,
+      'GET',
+      { status: 400, message: 'Missing required parameter: condition' }
+    );
+  }
+
+  if (value === undefined) {
+    return createErrorResult(
+      new Error('value parameter is required'),
+      `/lists/${listId}/entries`,
+      'GET',
+      { status: 400, message: 'Missing required parameter: value' }
+    );
+  }
+
+  try {
+    // Call the handler function with all parameters
+    const result = await toolConfig.handler(
+      listId,
+      parentObjectType,
+      parentAttributeSlug,
+      condition,
+      value,
+      limit,
+      offset
+    );
+    
+    // Format the result using the configured formatter
+    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+
+    return formatResponse(formattedResult);
+  } catch (error) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error('Unknown error'),
+      `/lists/${listId}/entries`,
+      'GET',
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
+
+/**
+ * Handle filterListEntriesByParentId operations
+ * 
+ * This handler extracts the required parameters from the tool request and passes them
+ * to the handler function for filtering list entries by parent record ID.
+ */
+export async function handleFilterListEntriesByParentIdOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const listId = request.params.arguments?.listId as string;
+  const recordId = request.params.arguments?.recordId as string;
+  const limit = request.params.arguments?.limit as number;
+  const offset = request.params.arguments?.offset as number;
+
+  // Validate required parameters
+  if (!listId) {
+    return createErrorResult(
+      new Error('listId parameter is required'),
+      '/lists',
+      'GET',
+      { status: 400, message: 'Missing required parameter: listId' }
+    );
+  }
+
+  if (!recordId) {
+    return createErrorResult(
+      new Error('recordId parameter is required'),
+      `/lists/${listId}/entries`,
+      'GET',
+      { status: 400, message: 'Missing required parameter: recordId' }
+    );
+  }
+
+  try {
+    // Call the handler function with all parameters
+    const result = await toolConfig.handler(
+      listId,
+      recordId,
+      limit,
+      offset
+    );
+    
+    // Format the result using the configured formatter
+    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+
+    return formatResponse(formattedResult);
+  } catch (error) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error('Unknown error'),
+      `/lists/${listId}/entries`,
+      'GET',
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
+
+/**
  * Handle getListDetails operations
  */
 export async function handleGetListDetailsOperation(
