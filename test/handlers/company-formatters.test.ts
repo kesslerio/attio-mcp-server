@@ -1,9 +1,8 @@
 /**
  * Tests for company formatter functions
  */
-const {
-  crudToolConfigs,
-} = require('../../dist/handlers/tool-configs/companies/crud');
+import { describe, it, expect } from 'vitest';
+import { crudToolConfigs } from '../../src/handlers/tool-configs/companies/crud.js';
 
 describe('Company Formatters', () => {
   describe('CRUD operation formatters', () => {

@@ -6,7 +6,7 @@ import { vi, beforeEach } from 'vitest';
 import { createMockApiClient } from './types/test-types';
 
 // Global mock for attio-client
-vi.mock('../src/api/attio-client', () => {
+vi.mock('../src/api/attio-client', async () => {
   const mockAxiosInstance = createMockApiClient();
   
   return {
@@ -16,6 +16,7 @@ vi.mock('../src/api/attio-client', () => {
       return Promise.resolve(mockAxiosInstance);
     }),
     isAttioClientInitialized: vi.fn(() => true),
+    createAttioClient: vi.fn(() => mockAxiosInstance),
   };
 });
 
@@ -46,7 +47,25 @@ vi.mock('../src/objects/people-write', async () => {
   };
 });
 
-// Global mock for searchCompaniesByName for PersonValidator tests
+// Global mock for companies module
+vi.mock('../src/objects/companies/index', () => ({
+  searchCompanies: vi.fn(async () => []),
+  searchCompaniesByName: vi.fn(async (name: string) => {
+    // Mock behavior based on company name for testing
+    if (name === 'Test Company' || name === 'Existing Company') {
+      return [{ id: { record_id: 'existing-company-id' } }];
+    }
+    return [];
+  }),
+  advancedSearchCompanies: vi.fn(async () => []),
+  listCompanies: vi.fn(async () => []),
+  getCompanyDetails: vi.fn(async () => ({})),
+  createCompany: vi.fn(async () => ({})),
+  updateCompany: vi.fn(async () => ({})),
+  deleteCompany: vi.fn(async () => true),
+}));
+
+// Global mock for companies search module
 vi.mock('../src/objects/companies/search', () => ({
   searchCompaniesByName: vi.fn(async (name: string) => {
     // Mock behavior based on company name for testing
@@ -60,6 +79,17 @@ vi.mock('../src/objects/companies/search', () => ({
     get: vi.fn(),
     set: vi.fn(),
   },
+}));
+
+// Global mock for people module
+vi.mock('../src/objects/people/index', () => ({
+  searchPeople: vi.fn(async () => []),
+  advancedSearchPeople: vi.fn(async () => []),
+  listPeople: vi.fn(async () => []),
+  getPersonDetails: vi.fn(async () => ({})),
+  createPerson: vi.fn(async () => ({})),
+  updatePerson: vi.fn(async () => ({})),
+  deletePerson: vi.fn(async () => true),
 }));
 
 // Set up environment variables for testing
