@@ -591,7 +591,7 @@ export async function getRecordListMemberships(
     
     // For each list, check entries in parallel using batch operation
     const listConfigs = lists.map(list => ({
-      listId: list.id?.list_id || list.id,
+      listId: list.id?.list_id || (typeof list.id === 'string' ? list.id : ''),
       // Use the list name from the list object for later reference
       listName: list.name || list.title || 'Unnamed List',
       // Set a higher limit to ensure we catch the record if it exists

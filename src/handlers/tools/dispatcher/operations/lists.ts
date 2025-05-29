@@ -41,6 +41,8 @@ export async function handleAddRecordToListOperation(
 ) {
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
+  const objectType = request.params.arguments?.objectType as string;
+  const initialValues = request.params.arguments?.initialValues as Record<string, any>;
 
   if (!listId) {
     return createErrorResult(
@@ -61,7 +63,8 @@ export async function handleAddRecordToListOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, recordId);
+    // Pass objectType and initialValues to the handler function
+    const result = await toolConfig.handler(listId, recordId, objectType, initialValues);
     const formattedResult = toolConfig.formatResult 
       ? toolConfig.formatResult(result) 
       : `Successfully added record ${recordId} to list ${listId}`;
