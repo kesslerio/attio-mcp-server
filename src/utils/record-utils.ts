@@ -192,7 +192,7 @@ export function processListEntries(
       }
     }
 
-    // Unable to find record_id, log warning and return entry with a placeholder
+    // Unable to find record_id, log warning and return entry unchanged
     if (process.env.NODE_ENV === 'development') {
       console.warn(
         `[processListEntries] Could not extract record_id for entry ${
@@ -201,10 +201,8 @@ export function processListEntries(
       );
     }
 
-    return {
-      ...entry,
-      record_id: 'record-id-unavailable',
-    };
+    // Return entry unchanged if no record_id found
+    return entry;
   });
 }
 
