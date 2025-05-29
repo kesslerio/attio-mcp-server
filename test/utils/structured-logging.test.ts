@@ -21,11 +21,6 @@ import {
   operationFailure,
 } from '../../src/utils/logger.js';
 
-// Mock console methods
-const mockConsoleLog = vi.fn();
-const mockConsoleWarn = vi.fn();
-const mockConsoleError = vi.fn();
-
 // Store original console methods
 const originalConsole = {
   log: console.log,
@@ -34,16 +29,20 @@ const originalConsole = {
 };
 
 describe('Structured Logging System', () => {
+  let mockConsoleLog: vi.Mock;
+  let mockConsoleWarn: vi.Mock;
+  let mockConsoleError: vi.Mock;
+
   beforeEach(() => {
+    // Create fresh mocks for each test
+    mockConsoleLog = vi.fn();
+    mockConsoleWarn = vi.fn();
+    mockConsoleError = vi.fn();
+
     // Mock console methods
     console.log = mockConsoleLog;
     console.warn = mockConsoleWarn;
     console.error = mockConsoleError;
-
-    // Clear all mocks
-    mockConsoleLog.mockClear();
-    mockConsoleWarn.mockClear();
-    mockConsoleError.mockClear();
 
     // Clear log context
     clearLogContext();

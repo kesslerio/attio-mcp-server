@@ -7,7 +7,7 @@ import axios from 'axios';
 
 // Mock axios
 vi.mock('axios');
-const mockedAxios = axios as vi.Mocked<typeof axios>;
+const mockedAxios = vi.mocked(axios);
 
 describe('attio-client', () => {
   beforeEach(() => {
