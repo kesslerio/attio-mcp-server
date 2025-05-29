@@ -157,7 +157,7 @@ describe('Record ID Extraction Tests', () => {
     expect(processed[0].record_id).toBe('company-record-id');
   });
 
-  it('should set placeholder when no record_id can be found', () => {
+  it('should leave record_id undefined when no record_id can be found', () => {
     const entries: AttioListEntry[] = [
       {
         id: { entry_id: 'entry1' },
@@ -166,7 +166,7 @@ describe('Record ID Extraction Tests', () => {
     ];
 
     const processed = processListEntries(entries);
-    expect(processed[0].record_id).toBe('record-id-unavailable');
+    expect(processed[0].record_id).toBeUndefined();
   });
 
   it('should handle complex nested structures', () => {
@@ -219,6 +219,6 @@ describe('Record ID Extraction Tests', () => {
     expect(processed[0].record_id).toBe('direct-id-1');
     expect(processed[1].record_id).toBe('nested-id-2');
     expect(processed[2].record_id).toBe('parent-id-3');
-    expect(processed[3].record_id).toBe('record-id-unavailable');
+    expect(processed[3].record_id).toBeUndefined();
   });
 });
