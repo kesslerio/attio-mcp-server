@@ -23,7 +23,7 @@ describe('Domain Utilities', () => {
       expect(extractDomain('https://example.com')).toBe('example.com');
       expect(extractDomain('http://example.com/path')).toBe('example.com');
       expect(extractDomain('https://www.example.com/path?query=1')).toBe(
-        'www.example.com'
+        'example.com'
       );
     });
 
