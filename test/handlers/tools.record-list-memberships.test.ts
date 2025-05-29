@@ -1,5 +1,5 @@
 /**
- * Tests for the company lists tool functionality
+ * Tests for the list memberships tool functionality
  */
 
 import { expect, describe, it, beforeEach, vi } from 'vitest';
@@ -7,7 +7,7 @@ import { listsToolConfigs } from '../../src/handlers/tool-configs/lists.js';
 import * as listsObject from '../../src/objects/lists.js';
 import * as attioClient from '../../src/api/attio-client.js';
 
-describe('Company Lists Tool Tests', () => {
+describe('Record List Memberships Tool Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     
@@ -20,9 +20,9 @@ describe('Company Lists Tool Tests', () => {
     });
   });
 
-  it('should have the get-company-lists tool configuration', () => {
+  it('should have the get-record-list-memberships tool configuration', () => {
     expect(listsToolConfigs.getRecordListMemberships).toBeDefined();
-    expect(listsToolConfigs.getRecordListMemberships.name).toEqual('get-company-lists');
+    expect(listsToolConfigs.getRecordListMemberships.name).toEqual('get-record-list-memberships');
     expect(typeof listsToolConfigs.getRecordListMemberships.handler).toEqual('function');
     expect(typeof listsToolConfigs.getRecordListMemberships.formatResult).toEqual('function');
   });
@@ -55,8 +55,49 @@ describe('Company Lists Tool Tests', () => {
     expect(formatted).toContain('Entry ID: entry-101');
   });
 
-  it('should call handler correctly', () => {
-    // Skip this test for now
-    expect(true).toBe(true);
+  it('should format results with entry values correctly', () => {
+    const results: listsObject.ListMembership[] = [
+      {
+        listId: 'list-123',
+        listName: 'Sales Pipeline',
+        entryId: 'entry-456',
+        entryValues: {
+          stage: 'Qualified',
+          priority: 'High',
+          expected_value: 10000
+        }
+      }
+    ];
+
+    const formatted = listsToolConfigs.getRecordListMemberships.formatResult(results);
+    expect(formatted).toContain('Found 1 list membership(s):');
+    expect(formatted).toContain('List: Sales Pipeline (ID: list-123)');
+    expect(formatted).toContain('Entry ID: entry-456');
+    expect(formatted).toContain('stage: Qualified');
+    expect(formatted).toContain('priority: High');
+    expect(formatted).toContain('expected_value: 10000');
+  });
+
+  it('should call handler correctly', async () => {
+    // Mock getRecordListMemberships function
+    const mockGetRecordListMemberships = vi.spyOn(listsObject, 'getRecordListMemberships');
+    mockGetRecordListMemberships.mockResolvedValue([
+      {
+        listId: 'list-123',
+        listName: 'Test List',
+        entryId: 'entry-456'
+      }
+    ]);
+    
+    // Call the handler directly
+    const handler = listsToolConfigs.getRecordListMemberships.handler;
+    await handler('company-123', 'companies', true);
+    
+    // Verify the function was called with correct parameters
+    expect(mockGetRecordListMemberships).toHaveBeenCalledWith('company-123', 'companies', true, undefined);
+    
+    // Test with default values
+    await handler('person-456');
+    expect(mockGetRecordListMemberships).toHaveBeenCalledWith('person-456', undefined, undefined, undefined);
   });
 });
