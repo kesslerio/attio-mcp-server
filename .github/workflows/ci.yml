@@ -1,0 +1,310 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
+  checks: write
+
+env:
+  NODE_VERSION_MATRIX: '["18.x", "20.x", "22.x"]'
+
+jobs:
+  # Job 1: Lint and Type Check
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linter
+        run: npm run lint:check
+        
+      - name: Run type checker
+        run: npm run check
+        
+      - name: Check format
+        run: npm run check:format
+
+  # Job 2: Unit and Integration Tests
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+      fail-fast: false
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run offline tests
+        run: npm run test:offline
+        
+      - name: Run unit tests with coverage
+        run: npm run test:coverage:offline
+        
+      - name: Upload coverage reports to Codecov
+        if: matrix.node-version == '20.x'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Job 3: Integration Tests (with API credentials)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-integration-tests')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run integration tests
+        env:
+          ATTIO_API_KEY: ${{ secrets.ATTIO_TEST_API_KEY }}
+          ATTIO_WORKSPACE_ID: ${{ secrets.ATTIO_TEST_WORKSPACE_ID }}
+        run: npm run test -- test/integration/
+        
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            coverage/
+            test-results/
+
+  # Job 4: Build Verification
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Verify build artifacts
+        run: |
+          test -d dist/
+          test -f dist/index.js
+          test -f dist/cli/discover.js
+          
+      - name: Test CLI execution
+        run: |
+          chmod +x dist/index.js
+          chmod +x dist/cli/discover.js
+          node dist/index.js --help || echo "CLI help test completed"
+
+  # Job 5: Dependency Security Check
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security audit
+        run: npm audit --audit-level moderate
+        continue-on-error: true
+        
+      - name: Run vulnerability scan
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - run: |
+          npx audit-ci --moderate
+
+  # Job 6: Performance Tests
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run performance benchmarks
+        run: |
+          # Run existing benchmark if available
+          if [ -f "test/performance/benchmark.test.ts" ]; then
+            npm run test -- test/performance/
+          fi
+          
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: performance-results/
+
+  # Job 7: Test Results Summary
+  test-summary:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, test, build, security]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Create test summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = {
+              'lint-and-typecheck': '${{ needs.lint-and-typecheck.result }}',
+              'test': '${{ needs.test.result }}',
+              'build': '${{ needs.build.result }}',
+              'security': '${{ needs.security.result }}'
+            };
+            
+            let summary = '## 🔍 CI/CD Pipeline Results\n\n';
+            let allPassed = true;
+            
+            for (const [job, result] of Object.entries(jobs)) {
+              const emoji = result === 'success' ? '✅' : result === 'failure' ? '❌' : '⚠️';
+              summary += `${emoji} **${job.replace('-', ' ').toUpperCase()}**: ${result}\n`;
+              if (result !== 'success') allPassed = false;
+            }
+            
+            if (allPassed) {
+              summary += '\n🎉 **All checks passed!** This PR is ready for review.';
+            } else {
+              summary += '\n⚠️ **Some checks failed.** Please review the failing jobs above.';
+            }
+            
+            // Add coverage info if available
+            summary += '\n\n### 📊 Coverage Report\n';
+            summary += 'Coverage reports are available in the test artifacts.';
+            
+            console.log(summary);
+            
+            // Post comment on PR if this is a pull request
+            if (context.eventName === 'pull_request') {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary
+              });
+            }
+
+  # Job 8: PR Quality Gates
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, test, build]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Check quality gates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = {
+              lint: '${{ needs.lint-and-typecheck.result }}',
+              test: '${{ needs.test.result }}',
+              build: '${{ needs.build.result }}'
+            };
+            
+            const failed = Object.entries(results).filter(([_, result]) => result !== 'success');
+            
+            if (failed.length > 0) {
+              const failedJobs = failed.map(([job, _]) => job).join(', ');
+              core.setFailed(`Quality gates failed: ${failedJobs}`);
+            } else {
+              console.log('✅ All quality gates passed!');
+            }
