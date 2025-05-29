@@ -1,6 +1,6 @@
 /**
  * Search operation handlers for tool execution
- * 
+ *
  * Handles basic search operations including search, searchByEmail, searchByPhone, and smartSearch
  */
 
@@ -15,7 +15,10 @@ import { hasResponseData } from '../../error-types.js';
  * Check if the formatted results already contain a header to avoid duplication
  */
 function hasResultHeader(formattedResults: unknown): boolean {
-  return typeof formattedResults === 'string' && formattedResults.startsWith('Found ');
+  return (
+    typeof formattedResults === 'string' &&
+    formattedResults.startsWith('Found ')
+  );
 }
 
 /**
@@ -30,11 +33,11 @@ function formatSearchResults(
   if (hasResultHeader(formattedResults)) {
     return formattedResults;
   }
-  
-  const header = searchContext 
+
+  const header = searchContext
     ? `Found ${results.length} ${resourceType} ${searchContext}:`
     : `Found ${results.length} ${resourceType}:`;
-  
+
   return `${header}\n${formattedResults}`;
 }
 
@@ -56,10 +59,15 @@ export async function handleSearchOperation(
   try {
     const results = await searchConfig.handler(searchParam);
     const formattedResults = searchConfig.formatResult(results);
-    
+
     const searchType = toolType.replace('searchBy', '').toLowerCase();
     const searchContext = `matching ${searchType} "${searchParam}"`;
-    const responseText = formatSearchResults(formattedResults, results, resourceType, searchContext);
+    const responseText = formatSearchResults(
+      formattedResults,
+      results,
+      resourceType,
+      searchContext
+    );
 
     return formatResponse(responseText);
   } catch (error) {
@@ -80,17 +88,21 @@ export async function handleBasicSearch(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  let queryFromArgs = request.params.arguments?.query as string;
+  const queryFromArgs = request.params.arguments?.query as string;
   const domainFromArgs = request.params.arguments?.domain as string;
 
   let effectiveQuery = queryFromArgs;
 
   // If 'query' is not provided, but 'domain' is, and the specific tool being handled is 'search-companies',
   // use the 'domain' value as the query. This makes 'search-companies' more robust to this specific invocation pattern.
-  if (effectiveQuery === undefined && domainFromArgs !== undefined && toolConfig.name === 'search-companies') {
+  if (
+    effectiveQuery === undefined &&
+    domainFromArgs !== undefined &&
+    toolConfig.name === 'search-companies'
+  ) {
     effectiveQuery = domainFromArgs;
     console.warn(
-        `[handleBasicSearch] Tool 'search-companies' was called with a 'domain' parameter instead of 'query'. ` +
+      `[handleBasicSearch] Tool 'search-companies' was called with a 'domain' parameter instead of 'query'. ` +
         `Using the 'domain' value ("${effectiveQuery}") as the search query. ` +
         `For clarity and future compatibility, please use the 'query' parameter for the 'search-companies' tool, ` +
         `or use the 'search-companies-by-domain' tool for explicit domain searches.`
@@ -101,7 +113,11 @@ export async function handleBasicSearch(
   try {
     const results = await toolConfig.handler(query);
     const formattedResults = toolConfig.formatResult(results);
-    const responseText = formatSearchResults(formattedResults, results, resourceType);
+    const responseText = formatSearchResults(
+      formattedResults,
+      results,
+      resourceType
+    );
 
     return formatResponse(responseText);
   } catch (error) {
@@ -123,7 +139,12 @@ export async function handleSearchByEmail(
   resourceType: ResourceType
 ) {
   const email = request.params.arguments?.email as string;
-  return handleSearchOperation('searchByEmail', toolConfig, email, resourceType);
+  return handleSearchOperation(
+    'searchByEmail',
+    toolConfig,
+    email,
+    resourceType
+  );
 }
 
 /**
@@ -135,7 +156,12 @@ export async function handleSearchByPhone(
   resourceType: ResourceType
 ) {
   const phone = request.params.arguments?.phone as string;
-  return handleSearchOperation('searchByPhone', toolConfig, phone, resourceType);
+  return handleSearchOperation(
+    'searchByPhone',
+    toolConfig,
+    phone,
+    resourceType
+  );
 }
 
 /**
@@ -147,21 +173,28 @@ export async function handleSmartSearch(
   resourceType: ResourceType
 ) {
   const query = request.params.arguments?.query as string;
-  
+
   // Validate query parameter
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     return createErrorResult(
-      new Error('Query parameter is required for smart search and must be a non-empty string'),
+      new Error(
+        'Query parameter is required for smart search and must be a non-empty string'
+      ),
       `/objects/${resourceType}/smart-search`,
       'POST',
       { status: 400, message: 'Missing or invalid required parameter: query' }
     );
   }
-  
+
   try {
     const results = await toolConfig.handler(query);
     const formattedResults = toolConfig.formatResult(results);
-    const responseText = formatSearchResults(formattedResults, results, resourceType, '(smart search)');
+    const responseText = formatSearchResults(
+      formattedResults,
+      results,
+      resourceType,
+      '(smart search)'
+    );
 
     return formatResponse(responseText);
   } catch (error) {

@@ -713,10 +713,10 @@ export async function getRecordListMemberships(
 
 /**
  * Filters list entries based on parent record properties using path-based filtering
- * 
+ *
  * This function allows filtering list entries based on properties of their parent records,
  * such as company name, email domain, or any other attribute of the parent record.
- * 
+ *
  * @param listId - The ID of the list to filter entries from
  * @param parentObjectType - The type of parent record (e.g., 'companies', 'people')
  * @param parentAttributeSlug - The attribute of the parent record to filter by
@@ -725,7 +725,7 @@ export async function getRecordListMemberships(
  * @param limit - Maximum number of entries to fetch (default: 20)
  * @param offset - Number of entries to skip (default: 0)
  * @returns Array of filtered list entries
- * 
+ *
  * @example
  * // Get list entries for companies that have "Tech" in their industry
  * const entries = await filterListEntriesByParent(
@@ -755,7 +755,9 @@ export async function filterListEntriesByParent(
   }
 
   if (!parentAttributeSlug || typeof parentAttributeSlug !== 'string') {
-    throw new Error('Invalid parent attribute slug: Must be a non-empty string');
+    throw new Error(
+      'Invalid parent attribute slug: Must be a non-empty string'
+    );
   }
 
   if (!condition || typeof condition !== 'string') {
@@ -766,7 +768,7 @@ export async function filterListEntriesByParent(
   try {
     // Get API client
     const api = getAttioClient();
-    
+
     // Create path-based filter using our utility function
     const { path, constraints } = createPathBasedFilter(
       listId,
@@ -775,67 +777,80 @@ export async function filterListEntriesByParent(
       condition,
       value
     );
-    
+
     // Construct the request payload
     const payload = {
       limit: limit,
       offset: offset,
       expand: ['record'],
       path,
-      constraints
+      constraints,
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[filterListEntriesByParent] Filtering list ${listId} with path-based filter:`);
+      console.log(
+        `[filterListEntriesByParent] Filtering list ${listId} with path-based filter:`
+      );
       console.log(`- Parent Object Type: ${parentObjectType}`);
       console.log(`- Parent Attribute: ${parentAttributeSlug}`);
       console.log(`- Condition: ${condition}`);
       console.log(`- Value: ${JSON.stringify(value)}`);
       console.log(`- Request payload: ${JSON.stringify(payload)}`);
     }
-    
+
     // Create API URL endpoint
     const endpoint = `/lists/${listId}/entries/query`;
-    
+
     // Make the API request
     const response = await api.post(endpoint, payload);
-    
+
     // Process the entries to ensure record_id is properly set
     const entries = processListEntries(response.data.data || []);
-    
+
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[filterListEntriesByParent] Found ${entries.length} matching entries`);
+      console.log(
+        `[filterListEntriesByParent] Found ${entries.length} matching entries`
+      );
     }
-    
+
     return entries;
   } catch (error: any) {
     // Enhanced error logging
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[filterListEntriesByParent] Error filtering list entries: ${error.message || 'Unknown error'}`);
-      
+      console.error(
+        `[filterListEntriesByParent] Error filtering list entries: ${
+          error.message || 'Unknown error'
+        }`
+      );
+
       if (error.response) {
         console.error('Status:', error.response.status);
-        console.error('Response data:', JSON.stringify(error.response.data || {}));
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response.data || {})
+        );
       }
     }
-    
+
     // Add context to error message
     if (error.response?.status === 400) {
-      throw new Error(`Invalid filter parameters: ${error.message || 'Bad request'}`);
+      throw new Error(
+        `Invalid filter parameters: ${error.message || 'Bad request'}`
+      );
     } else if (error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
     }
-    
+
     throw error;
   }
 }
 
 /**
  * Filters list entries by parent record ID
- * 
+ *
  * This is a specialized version of filterListEntriesByParent that specifically
  * filters by the record ID of the parent record, which is a common use case.
- * 
+ *
  * @param listId - The ID of the list to filter entries from
  * @param recordId - The ID of the parent record to filter by
  * @param limit - Maximum number of entries to fetch (default: 20)

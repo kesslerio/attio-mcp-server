@@ -74,15 +74,11 @@ describe('Boolean Attribute API Tests', () => {
   }, TEST_TIMEOUT);
 
   // Test updating a boolean attribute with string 'false'
-  test(
+  test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates boolean attribute with string "false"',
     async () => {
-      // Skip if tests are disabled
-      if (SKIP_TESTS || !process.env.ATTIO_API_KEY) {
-        return;
-      }
 
-      const companyId = testCompany.id?.record_id;
+      const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
       // Update the is_active attribute with string 'false'
@@ -109,15 +105,11 @@ describe('Boolean Attribute API Tests', () => {
   );
 
   // Test updating a boolean attribute with string 'true'
-  test(
+  test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates boolean attribute with string "true"',
     async () => {
-      // Skip if tests are disabled
-      if (SKIP_TESTS || !process.env.ATTIO_API_KEY) {
-        return;
-      }
 
-      const companyId = testCompany.id?.record_id;
+      const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
       // Update the is_active attribute with string 'true'
@@ -143,15 +135,11 @@ describe('Boolean Attribute API Tests', () => {
   );
 
   // Test updating multiple boolean attributes in a single request
-  test(
+  test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates multiple boolean attributes with string values',
     async () => {
-      // Skip if tests are disabled
-      if (SKIP_TESTS || !process.env.ATTIO_API_KEY) {
-        return;
-      }
 
-      const companyId = testCompany.id?.record_id;
+      const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
       // Update multiple boolean attributes with string values

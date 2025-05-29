@@ -546,7 +546,9 @@ export async function smartSearchCompanies(query: string): Promise<Company[]> {
   // Debug logging for smart search
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
     console.debug(
-      `[smartSearchCompanies] Smart search for: "${query}", extracted domains: [${domains.join(', ')}]`
+      `[smartSearchCompanies] Smart search for: "${query}", extracted domains: [${domains.join(
+        ', '
+      )}]`
     );
   }
 

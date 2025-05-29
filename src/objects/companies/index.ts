@@ -11,8 +11,8 @@ export {
   updateCompany,
   updateCompanyAttribute,
   deleteCompany,
-  extractCompanyId
-} from "./basic.js";
+  extractCompanyId,
+} from './basic.js';
 
 // Search functionality
 export {
@@ -24,27 +24,22 @@ export {
   createNameFilter,
   createWebsiteFilter,
   createIndustryFilter,
-  createDomainFilter
-} from "./search.js";
+  createDomainFilter,
+} from './search.js';
 
 // Search types
-export type {
-  CompanySearchOptions
-} from "./search.js";
+export type { CompanySearchOptions } from './search.js';
 
 // Relationship-based queries
 export {
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
   searchCompaniesByNotes,
-  getCompanyLists
-} from "./relationships.js";
+  getCompanyLists,
+} from './relationships.js';
 
 // Note operations
-export {
-  getCompanyNotes,
-  createCompanyNote
-} from "./notes.js";
+export { getCompanyNotes, createCompanyNote } from './notes.js';
 
 // Attribute management
 export {
@@ -55,8 +50,8 @@ export {
   getCompanySocialInfo,
   getCompanyCustomFields,
   discoverCompanyAttributes,
-  getCompanyAttributes
-} from "./attributes.js";
+  getCompanyAttributes,
+} from './attributes.js';
 
 // Batch operations (re-export from separate module)
 export {
@@ -64,13 +59,13 @@ export {
   batchUpdateCompanies,
   batchDeleteCompanies,
   batchSearchCompanies,
-  batchGetCompanyDetails
-} from "./batch.js";
+  batchGetCompanyDetails,
+} from './batch.js';
 
 // Re-export types for convenience
 export type {
   Company,
   CompanyCreateInput,
   CompanyUpdateInput,
-  CompanyAttributeUpdate
-} from "./types.js";
+  CompanyAttributeUpdate,
+} from './types.js';

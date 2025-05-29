@@ -111,7 +111,9 @@ export async function getCompanyDetails(
       const firstError = error;
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `[getCompanyDetails] First attempt failed: ${firstError.message || 'Unknown error'}`,
+          `[getCompanyDetails] First attempt failed: ${
+            firstError.message || 'Unknown error'
+          }`,
           {
             method: 'getObjectDetails',
             companyId,
@@ -137,7 +139,9 @@ export async function getCompanyDetails(
         const secondError = error;
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            `[getCompanyDetails] Second attempt failed: ${secondError.message || 'Unknown error'}`,
+            `[getCompanyDetails] Second attempt failed: ${
+              secondError.message || 'Unknown error'
+            }`,
             {
               method: 'direct API path',
               path: `/objects/companies/records/${companyId}`,
@@ -190,7 +194,9 @@ export async function getCompanyDetails(
           }
 
           throw new Error(
-            `Could not retrieve company details for ${companyIdOrUri}: ${thirdError.message || 'Unknown error'}`
+            `Could not retrieve company details for ${companyIdOrUri}: ${
+              thirdError.message || 'Unknown error'
+            }`
           );
         }
       }
@@ -300,22 +306,22 @@ export async function updateCompany(
  *   "website",
  *   "https://example.com"
  * );
- * 
+ *
  * // Update main_contact with Person Record ID
  * const withPerson = await updateCompanyAttribute(
  *   "company_123",
  *   "main_contact",
  *   "person_01h8g3j5k7m9n1p3r"
  * );
- * 
+ *
  * // Update main_contact with person name (will be looked up)
  * const byName = await updateCompanyAttribute(
  *   "company_123",
- *   "main_contact", 
+ *   "main_contact",
  *   "John Smith"
  * );
- * 
- * // Clear an attribute 
+ *
+ * // Clear an attribute
  * const cleared = await updateCompanyAttribute(
  *   "company_123",
  *   "website",
@@ -333,19 +339,22 @@ export async function updateCompanyAttribute(
 
     /**
      * Special handling for main_contact attribute
-     * 
+     *
      * The Attio API requires a specific format for record references:
      * - Array format: [{ target_record_id: "person_id", target_object: "people" }]
      * - Field name must be target_record_id (not record_id)
      * - Empty array ([]) to clear the field
-     * 
+     *
      * This handler provides user-friendly functionality:
      * 1. Accept Person Record ID string (e.g., "person_01h8g3j5k7m9n1p3r")
      * 2. Accept person name string (will search for exact match)
      * 3. Validates Person ID format with regex
      * 4. Provides helpful error messages for common issues
      */
-    if (attributeName === 'main_contact' && typeof attributeValue === 'string') {
+    if (
+      attributeName === 'main_contact' &&
+      typeof attributeValue === 'string'
+    ) {
       // Use the utility function to handle person reference lookup
       valueToProcess = await findPersonReference(
         attributeValue,

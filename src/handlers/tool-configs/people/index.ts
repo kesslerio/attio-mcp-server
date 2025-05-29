@@ -2,12 +2,24 @@
  * People tool configuration index
  */
 import { searchToolConfigs, searchToolDefinitions } from './search.js';
-import { advancedSearchToolConfigs, advancedSearchToolDefinitions } from './advanced-search.js';
-import { dateSearchToolConfigs, dateSearchToolDefinitions } from './date-search.js';
-import { activitySearchToolConfigs, activitySearchToolDefinitions } from './activity-search.js';
+import {
+  advancedSearchToolConfigs,
+  advancedSearchToolDefinitions,
+} from './advanced-search.js';
+import {
+  dateSearchToolConfigs,
+  dateSearchToolDefinitions,
+} from './date-search.js';
+import {
+  activitySearchToolConfigs,
+  activitySearchToolDefinitions,
+} from './activity-search.js';
 import { crudToolConfigs, crudToolDefinitions } from './crud.js';
 import { notesToolConfigs, notesToolDefinitions } from './notes.js';
-import { relationshipToolConfigs, relationshipToolDefinitions } from './relationships.js';
+import {
+  relationshipToolConfigs,
+  relationshipToolDefinitions,
+} from './relationships.js';
 
 export const peopleToolConfigs = {
   ...crudToolConfigs,
@@ -16,7 +28,7 @@ export const peopleToolConfigs = {
   ...dateSearchToolConfigs,
   ...activitySearchToolConfigs,
   ...notesToolConfigs,
-  ...relationshipToolConfigs
+  ...relationshipToolConfigs,
 };
 
 export const peopleToolDefinitions = [
@@ -26,7 +38,7 @@ export const peopleToolDefinitions = [
   ...dateSearchToolDefinitions,
   ...activitySearchToolDefinitions,
   ...notesToolDefinitions,
-  ...relationshipToolDefinitions
+  ...relationshipToolDefinitions,
 ];
 
 export {
@@ -43,6 +55,5 @@ export {
   notesToolConfigs,
   notesToolDefinitions,
   relationshipToolConfigs,
-  relationshipToolDefinitions
+  relationshipToolDefinitions,
 };
-

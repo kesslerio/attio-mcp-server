@@ -1,36 +1,39 @@
 /**
  * Search functionality for People
  */
-import { getAttioClient } from "../../api/attio-client.js";
-import { 
+import { getAttioClient } from '../../api/attio-client.js';
+import {
   searchObject,
   advancedSearchObject,
-  ListEntryFilters
-} from "../../api/operations/index.js";
-import { 
-  ResourceType, 
-  Person, 
+  ListEntryFilters,
+} from '../../api/operations/index.js';
+import {
+  ResourceType,
+  Person,
   DateRange,
   InteractionType,
-  ActivityFilter
-} from "../../types/attio.js";
+  ActivityFilter,
+} from '../../types/attio.js';
 import {
   createCreatedDateFilter,
   createModifiedDateFilter,
   createLastInteractionFilter,
-  createActivityFilter
-} from "../../utils/filters/index.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { 
+  createActivityFilter,
+} from '../../utils/filters/index.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import {
   validateDateRange,
   validateActivityFilter,
-  validateNumericParam
-} from "../../utils/filters/index.js";
-import { PaginatedResponse, createPaginatedResponse } from "../../utils/pagination.js";
+  validateNumericParam,
+} from '../../utils/filters/index.js';
+import {
+  PaginatedResponse,
+  createPaginatedResponse,
+} from '../../utils/pagination.js';
 
 /**
  * Searches for people by name, email, or phone number
- * 
+ *
  * @param query - Search query string
  * @returns Array of person results
  */
@@ -46,25 +49,27 @@ export async function searchPeople(query: string): Promise<Person[]> {
     // Use the API directly to avoid the phone field issue
     const api = getAttioClient();
     const path = `/objects/people/records/query`;
-    
+
     // Search only by name and email, not phone
     const filter = {
-      "$or": [
-        { name: { "$contains": query } },
-        { email_addresses: { "$contains": query } }
-      ]
+      $or: [
+        { name: { $contains: query } },
+        { email_addresses: { $contains: query } },
+      ],
     };
 
     const response = await api.post(path, {
       filter,
-      limit: 50
+      limit: 50,
     });
-    
+
     return response.data.data || [];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people: ${errorMessage}`);
   }
@@ -72,7 +77,7 @@ export async function searchPeople(query: string): Promise<Person[]> {
 
 /**
  * Searches for people using query (alias for searchPeople)
- * 
+ *
  * @param query - Search query string
  * @returns Array of person results
  */
@@ -85,16 +90,15 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
       throw new FilterValidationError('Search query too long');
     }
 
-    const response = await searchObject<Person>(
-      ResourceType.PEOPLE,
-      query
-    );
-    
+    const response = await searchObject<Person>(ResourceType.PEOPLE, query);
+
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by query: ${errorMessage}`);
   }
@@ -102,7 +106,7 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
 
 /**
  * Searches for people by email address
- * 
+ *
  * @param email - Email address to search for
  * @returns Array of person results
  */
@@ -116,16 +120,15 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
       throw new FilterValidationError(`Invalid email format: ${email}`);
     }
 
-    const response = await searchObject<Person>(
-      ResourceType.PEOPLE,
-      email
-    );
-    
+    const response = await searchObject<Person>(ResourceType.PEOPLE, email);
+
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Email search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Email search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by email: ${errorMessage}`);
   }
@@ -133,7 +136,7 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
 
 /**
  * Searches for people by phone number
- * 
+ *
  * @param phone - Phone number to search for
  * @returns Array of person results
  */
@@ -141,12 +144,9 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
   try {
     // Format the phone number for search
     const cleanedPhone = phone.replace(/\D/g, '');
-    
-    const response = await searchObject<Person>(
-      ResourceType.PEOPLE,
-      phone
-    );
-    
+
+    const response = await searchObject<Person>(ResourceType.PEOPLE, phone);
+
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -156,7 +156,7 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
 
 /**
  * getPersonByEmail (alias for searchPeopleByEmail)
- * 
+ *
  * @param email - Email address to search for
  * @returns Array of person results
  */
@@ -166,7 +166,7 @@ export async function getPersonByEmail(email: string): Promise<Person[]> {
 
 /**
  * Searches people using advanced filter criteria
- * 
+ *
  * @param filters - Filter criteria including attribute filters, date ranges, etc.
  * @param options - Optional search configuration including pagination
  * @returns Array of person results
@@ -194,7 +194,7 @@ export async function advancedSearchPeople(
         throw new FilterValidationError(`Invalid limit: ${error}`);
       }
     }
-    
+
     if (options?.offset) {
       try {
         const validatedOffset = validateNumericParam(options.offset, 'offset');
@@ -211,7 +211,7 @@ export async function advancedSearchPeople(
 
     const searchParams = {
       ...filters,
-      sorts: options?.sorts
+      sorts: options?.sorts,
     };
 
     const response = await advancedSearchObject<Person>(
@@ -224,25 +224,24 @@ export async function advancedSearchPeople(
     const offset = options?.offset || 0;
     const limit = options?.limit || 100;
     const page = Math.floor(offset / limit) + 1;
-    
-    return createPaginatedResponse(
-      response,
-      response.length,
-      page,
-      limit
-    );
+
+    return createPaginatedResponse(response, response.length, page, limit);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Advanced search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Advanced search validation failed: ${errorMessage}`
+      );
     }
-    throw new Error(`Failed to perform advanced people search: ${errorMessage}`);
+    throw new Error(
+      `Failed to perform advanced people search: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Searches for people created within a date range
- * 
+ *
  * @param dateRange - Date range for creation date
  * @returns Array of people created within the specified range
  */
@@ -260,13 +259,13 @@ export async function searchPeopleByCreationDate(
 
   const filters = createCreatedDateFilter(dateRange);
   const response = await advancedSearchPeople(filters);
-  
+
   return response.results;
 }
 
 /**
  * Searches for people modified within a date range
- * 
+ *
  * @param dateRange - Date range for modification date
  * @returns Array of people modified within the specified range
  */
@@ -284,13 +283,13 @@ export async function searchPeopleByModificationDate(
 
   const filters = createModifiedDateFilter(dateRange);
   const response = await advancedSearchPeople(filters);
-  
+
   return response.results;
 }
 
 /**
  * Searches for people by last interaction date
- * 
+ *
  * @param dateRange - Date range for last interaction
  * @param interactionType - Optional type of interaction to filter by
  * @returns Array of people with interactions in the specified range
@@ -310,26 +309,27 @@ export async function searchPeopleByLastInteraction(
     }
 
     const filters = createLastInteractionFilter(dateRange, interactionType);
-    const response = await advancedSearchPeople(
-      filters.filter,
-      {
-        ...(filters.sorts && { sorts: filters.sorts })
-      }
-    );
-    
+    const response = await advancedSearchPeople(filters.filter, {
+      ...(filters.sorts && { sorts: filters.sorts }),
+    });
+
     return response.results;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Last interaction search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Last interaction search validation failed: ${errorMessage}`
+      );
     }
-    throw new Error(`Failed to search people by last interaction: ${errorMessage}`);
+    throw new Error(
+      `Failed to search people by last interaction: ${errorMessage}`
+    );
   }
 }
 
 /**
  * Searches for people by activity (meetings, emails, calls)
- * 
+ *
  * @param activityFilter - Activity type and optional date range
  * @returns Array of people with the specified activity
  */
@@ -347,18 +347,17 @@ export async function searchPeopleByActivity(
     }
 
     const filters = createActivityFilter(activityFilter);
-    const response = await advancedSearchPeople(
-      filters.filter,
-      {
-        ...(filters.sorts && { sorts: filters.sorts })
-      }
-    );
-    
+    const response = await advancedSearchPeople(filters.filter, {
+      ...(filters.sorts && { sorts: filters.sorts }),
+    });
+
     return response.results;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
-      throw new FilterValidationError(`Activity search validation failed: ${errorMessage}`);
+      throw new FilterValidationError(
+        `Activity search validation failed: ${errorMessage}`
+      );
     }
     throw new Error(`Failed to search people by activity: ${errorMessage}`);
   }

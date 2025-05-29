@@ -5,25 +5,23 @@ import {
   ResourceType,
   Company,
   AttioList,
-  AttioListEntry
-} from "../../types/attio.js";
-import { ListEntryFilters } from "../../api/operations/index.js";
-import { FilterValidationError } from "../../errors/api-errors.js";
-import { validateNumericParam } from "../../utils/filters/index.js";
-import {
-  getAttioClient
-} from "../../api/attio-client.js";
-import { getListDetails } from "../lists.js";
+  AttioListEntry,
+} from '../../types/attio.js';
+import { ListEntryFilters } from '../../api/operations/index.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import { validateNumericParam } from '../../utils/filters/index.js';
+import { getAttioClient } from '../../api/attio-client.js';
+import { getListDetails } from '../lists.js';
 import {
   createCompaniesByPeopleFilter,
   createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter
-} from "../../utils/relationship-utils.js";
-import { advancedSearchCompanies } from "./search.js";
+  createRecordsByNotesFilter,
+} from '../../utils/relationship-utils.js';
+import { advancedSearchCompanies } from './search.js';
 
 /**
  * Search for companies based on attributes of their associated people
- * 
+ *
  * @param peopleFilter - Filter to apply to people
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
@@ -36,19 +34,27 @@ export async function searchCompaniesByPeople(
 ): Promise<Company[]> {
   try {
     // Ensure peopleFilter is a properly structured filter object
-    if (typeof peopleFilter !== 'object' || !peopleFilter || !peopleFilter.filters) {
+    if (
+      typeof peopleFilter !== 'object' ||
+      !peopleFilter ||
+      !peopleFilter.filters
+    ) {
       throw new FilterValidationError(
         'People filter must be a valid ListEntryFilters object with at least one filter'
       );
     }
-    
+
     // Validate and normalize limit and offset parameters
     const validatedLimit = validateNumericParam(limit, 'limit', 20);
     const validatedOffset = validateNumericParam(offset, 'offset', 0);
-    
+
     // Create the relationship-based filter and perform the search
     const filters = createCompaniesByPeopleFilter(peopleFilter);
-    const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchCompanies(
+      filters,
+      validatedLimit,
+      validatedOffset
+    );
     return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
@@ -56,14 +62,16 @@ export async function searchCompaniesByPeople(
       throw error;
     }
     throw new FilterValidationError(
-      `Failed to search companies by people: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search companies by people: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
 
 /**
  * Search for companies that have employees in a specific list
- * 
+ *
  * @param listId - ID of the list containing people
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
@@ -79,14 +87,18 @@ export async function searchCompaniesByPeopleList(
     if (!listId || typeof listId !== 'string' || listId.trim() === '') {
       throw new FilterValidationError('List ID must be a non-empty string');
     }
-    
+
     // Validate and normalize limit and offset parameters
     const validatedLimit = validateNumericParam(limit, 'limit', 20);
     const validatedOffset = validateNumericParam(offset, 'offset', 0);
-    
+
     // Create the relationship-based filter and perform the search
     const filters = createCompaniesByPeopleListFilter(listId);
-    const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+    const results = await advancedSearchCompanies(
+      filters,
+      validatedLimit,
+      validatedOffset
+    );
     return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
@@ -94,14 +106,16 @@ export async function searchCompaniesByPeopleList(
       throw error;
     }
     throw new FilterValidationError(
-      `Failed to search companies by people list: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search companies by people list: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
 
 /**
  * Search for companies that have notes containing specific text
- * 
+ *
  * @param searchText - Text to search for in notes
  * @param limit - Maximum number of results to return (default: 20)
  * @param offset - Number of results to skip (default: 0)
@@ -114,17 +128,28 @@ export async function searchCompaniesByNotes(
 ): Promise<Company[]> {
   try {
     // Validate searchText
-    if (!searchText || typeof searchText !== 'string' || searchText.trim() === '') {
+    if (
+      !searchText ||
+      typeof searchText !== 'string' ||
+      searchText.trim() === ''
+    ) {
       throw new FilterValidationError('Search text must be a non-empty string');
     }
-    
+
     // Validate and normalize limit and offset parameters
     const validatedLimit = validateNumericParam(limit, 'limit', 20);
     const validatedOffset = validateNumericParam(offset, 'offset', 0);
-    
+
     // Create the relationship-based filter and perform the search
-    const filters = createRecordsByNotesFilter(ResourceType.COMPANIES, searchText);
-    const results = await advancedSearchCompanies(filters, validatedLimit, validatedOffset);
+    const filters = createRecordsByNotesFilter(
+      ResourceType.COMPANIES,
+      searchText
+    );
+    const results = await advancedSearchCompanies(
+      filters,
+      validatedLimit,
+      validatedOffset
+    );
     return Array.isArray(results) ? results : [];
   } catch (error) {
     // Convert all errors to FilterValidationErrors for consistent handling
@@ -132,7 +157,9 @@ export async function searchCompaniesByNotes(
       throw error;
     }
     throw new FilterValidationError(
-      `Failed to search companies by notes: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to search companies by notes: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -152,9 +179,9 @@ export async function getCompanyLists(
   const response = await api.post<{ data: AttioListEntry[] }>(
     '/lists-entries/query',
     {
-      filter: { record_id: { '$equals': companyId } },
+      filter: { record_id: { $equals: companyId } },
       expand: ['list'],
-      limit
+      limit,
     }
   );
 
@@ -181,4 +208,3 @@ export async function getCompanyLists(
 
   return lists;
 }
-

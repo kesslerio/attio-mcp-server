@@ -7,7 +7,7 @@ import {
   BatchRequestItem as BatchRequestItemType,
   BatchItemResult as BatchItemResultType,
   BatchResponse as BatchResponseType,
-  BatchConfig as BatchConfigType
+  BatchConfig as BatchConfigType,
 } from '../../types/attio.js';
 
 // Re-export batch types for convenience

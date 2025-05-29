@@ -1,7 +1,10 @@
 /**
  * Test the value matching functionality
  */
-import { findBestValueMatch, formatValueMatchError } from './dist/utils/value-matcher.js';
+import {
+  findBestValueMatch,
+  formatValueMatchError,
+} from './dist/utils/value-matcher.js';
 
 // Test data - known values for type_persona field
 const typePersonaValues = [
@@ -11,7 +14,7 @@ const typePersonaValues = [
   'Medical Practice',
   'Wellness Center',
   'Cosmetic Surgery',
-  'Aesthetic Medicine'
+  'Aesthetic Medicine',
 ];
 
 console.log('=== Value Matching Tests ===\n');
@@ -20,21 +23,30 @@ console.log('=== Value Matching Tests ===\n');
 console.log('Test 1: Searching for "Aesthetics"');
 const result1 = findBestValueMatch('Aesthetics', typePersonaValues);
 console.log('Result:', JSON.stringify(result1, null, 2));
-console.log('Error message:', formatValueMatchError('B2B Segment', 'Aesthetics', result1));
+console.log(
+  'Error message:',
+  formatValueMatchError('B2B Segment', 'Aesthetics', result1)
+);
 console.log();
 
 // Test 2: Search for "Surgeon"
 console.log('Test 2: Searching for "Surgeon"');
 const result2 = findBestValueMatch('Surgeon', typePersonaValues);
 console.log('Result:', JSON.stringify(result2, null, 2));
-console.log('Error message:', formatValueMatchError('B2B Segment', 'Surgeon', result2));
+console.log(
+  'Error message:',
+  formatValueMatchError('B2B Segment', 'Surgeon', result2)
+);
 console.log();
 
 // Test 3: Search for "Plastic Surgery"
 console.log('Test 3: Searching for "Plastic Surgery"');
 const result3 = findBestValueMatch('Plastic Surgery', typePersonaValues);
 console.log('Result:', JSON.stringify(result3, null, 2));
-console.log('Error message:', formatValueMatchError('B2B Segment', 'Plastic Surgery', result3));
+console.log(
+  'Error message:',
+  formatValueMatchError('B2B Segment', 'Plastic Surgery', result3)
+);
 console.log();
 
 // Test 4: Search for exact match
@@ -47,7 +59,10 @@ console.log();
 console.log('Test 5: Searching for "Technology"');
 const result5 = findBestValueMatch('Technology', typePersonaValues);
 console.log('Result:', JSON.stringify(result5, null, 2));
-console.log('Error message:', formatValueMatchError('B2B Segment', 'Technology', result5));
+console.log(
+  'Error message:',
+  formatValueMatchError('B2B Segment', 'Technology', result5)
+);
 console.log();
 
 // Test 6: Case sensitivity

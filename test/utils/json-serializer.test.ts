@@ -94,7 +94,7 @@ describe('JSON Serializer', () => {
     });
 
     it('should handle deep objects without exceeding max depth', () => {
-      let deepObj: any = { value: 1 };
+      const deepObj: any = { value: 1 };
       let current = deepObj;
 
       // Create an object that's 30 levels deep

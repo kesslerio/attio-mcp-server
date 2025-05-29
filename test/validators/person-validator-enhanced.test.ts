@@ -1,11 +1,20 @@
-import { PersonValidator } from '../../src/objects/people-write.js';
-import { searchPeopleByEmail } from '../../src/objects/people/search.js';
+import { PersonValidator, searchPeopleByEmails } from '../../src/objects/people-write.js';
 import { searchCompaniesByName } from '../../src/objects/companies/search.js';
+import * as attioClient from '../../src/api/attio-client.js';
 
-vi.mock('../../src/objects/people/search.js', () => ({
-  searchPeopleByEmail: vi.fn(),
-}));
+// Mock the API client to avoid initialization issues
+vi.mock('../../src/api/attio-client.js');
 
+// Mock people search functions
+vi.mock('../../src/objects/people-write.js', async () => {
+  const actual = await vi.importActual('../../src/objects/people-write.js');
+  return {
+    ...actual,
+    searchPeopleByEmails: vi.fn(),
+  };
+});
+
+// Mock companies search
 vi.mock('../../src/objects/companies/search.js', () => ({
   searchCompaniesByName: vi.fn(),
 }));
@@ -16,17 +25,19 @@ describe('PersonValidator.validateCreate', () => {
   });
 
   it('should reject duplicate email addresses', async () => {
-    (searchPeopleByEmail as vi.Mock).mockResolvedValue([
-      { id: { record_id: 'p1' } },
+    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
+      { email: 'dup@example.com', exists: true, personId: 'p1' },
     ]);
     const attrs = { name: 'Test', email_addresses: ['dup@example.com'] } as any;
     await expect(PersonValidator.validateCreate(attrs)).rejects.toThrow(
-      'Person with email dup@example.com already exists'
+      'Person(s) with email(s) dup@example.com already exist'
     );
   });
 
   it('should resolve company name to record id', async () => {
-    (searchPeopleByEmail as vi.Mock).mockResolvedValue([]);
+    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
+      { email: 'a@b.com', exists: false },
+    ]);
     (searchCompaniesByName as vi.Mock).mockResolvedValue([
       { id: { record_id: 'comp_1' } },
     ]);
@@ -40,7 +51,9 @@ describe('PersonValidator.validateCreate', () => {
   });
 
   it('should throw error when company name not found', async () => {
-    (searchPeopleByEmail as vi.Mock).mockResolvedValue([]);
+    (searchPeopleByEmails as vi.Mock).mockResolvedValue([
+      { email: 'a@b.com', exists: false },
+    ]);
     (searchCompaniesByName as vi.Mock).mockResolvedValue([]);
     const attrs = {
       name: 'Test',

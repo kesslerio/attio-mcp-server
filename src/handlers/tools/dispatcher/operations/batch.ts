@@ -1,6 +1,6 @@
 /**
  * Batch operation handlers for tool execution
- * 
+ *
  * Handles batch operations for multiple records
  */
 
@@ -45,7 +45,9 @@ export async function handleBatchUpdateOperation(
     const update = updates[i];
     if (!update.id || !update.attributes) {
       return createErrorResult(
-        new Error(`Update at index ${i} must have 'id' and 'attributes' properties`),
+        new Error(
+          `Update at index ${i} must have 'id' and 'attributes' properties`
+        ),
         `/${resourceType}/batch`,
         'PUT',
         { status: 400, message: 'Invalid update structure' }
@@ -55,7 +57,9 @@ export async function handleBatchUpdateOperation(
 
   try {
     const result = await toolConfig.handler(updates, config);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -76,7 +80,10 @@ export async function handleBatchCreateOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const items = request.params.arguments?.companies || request.params.arguments?.people || request.params.arguments?.items;
+  const items =
+    request.params.arguments?.companies ||
+    request.params.arguments?.people ||
+    request.params.arguments?.items;
   const config = request.params.arguments?.config;
 
   if (!items || !Array.isArray(items)) {
@@ -99,7 +106,9 @@ export async function handleBatchCreateOperation(
 
   try {
     const result = await toolConfig.handler(items, config);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -120,7 +129,10 @@ export async function handleBatchDeleteOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const ids = request.params.arguments?.companyIds || request.params.arguments?.personIds || request.params.arguments?.ids;
+  const ids =
+    request.params.arguments?.companyIds ||
+    request.params.arguments?.personIds ||
+    request.params.arguments?.ids;
   const config = request.params.arguments?.config;
 
   if (!ids || !Array.isArray(ids)) {
@@ -143,7 +155,9 @@ export async function handleBatchDeleteOperation(
 
   try {
     const result = await toolConfig.handler(ids, config);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -187,7 +201,9 @@ export async function handleBatchSearchOperation(
 
   try {
     const result = await toolConfig.handler(queries, config);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -208,7 +224,10 @@ export async function handleBatchGetDetailsOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const ids = request.params.arguments?.companyIds || request.params.arguments?.personIds || request.params.arguments?.ids;
+  const ids =
+    request.params.arguments?.companyIds ||
+    request.params.arguments?.personIds ||
+    request.params.arguments?.ids;
   const config = request.params.arguments?.config;
 
   if (!ids || !Array.isArray(ids)) {
@@ -231,7 +250,9 @@ export async function handleBatchGetDetailsOperation(
 
   try {
     const result = await toolConfig.handler(ids, config);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {

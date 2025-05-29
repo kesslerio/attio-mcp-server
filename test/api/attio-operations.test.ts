@@ -117,8 +117,8 @@ describe('Attio Operations', () => {
       });
 
       // Mock the retry functionality to immediately return to avoid timeouts
-      vi.mock('../../src/api/operations/index', () => {
-        const actual = vi.requireActual('../../src/api/operations/index');
+      vi.mock('../../src/api/operations/index', async () => {
+        const actual = await vi.importActual('../../src/api/operations/index');
         return {
           ...actual,
           callWithRetry: (fn: any) => fn(),

@@ -1,6 +1,6 @@
 /**
  * CRUD operation handlers for tool execution
- * 
+ *
  * Handles create, read, update, delete, and related operations
  */
 
@@ -21,7 +21,7 @@ export async function handleCreateOperation(
 ) {
   try {
     const attributes = request.params.arguments?.attributes;
-    
+
     if (!attributes) {
       return createErrorResult(
         new Error('Attributes parameter is required for create operation'),
@@ -56,14 +56,16 @@ export async function handleUpdateOperation(
   resourceType: ResourceType
 ) {
   try {
-    const id = resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-    
+    const id =
+      resourceType === ResourceType.COMPANIES
+        ? (request.params.arguments?.companyId as string)
+        : (request.params.arguments?.personId as string);
+
     const attributes = request.params.arguments?.attributes;
-    
+
     if (!id) {
-      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      const idParamName =
+        resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(`${idParamName} parameter is required for update operation`),
         `/${resourceType}`,
@@ -71,7 +73,7 @@ export async function handleUpdateOperation(
         { status: 400, message: `Missing required parameter: ${idParamName}` }
       );
     }
-    
+
     if (!attributes) {
       return createErrorResult(
         new Error('Attributes parameter is required for update operation'),
@@ -106,32 +108,38 @@ export async function handleUpdateAttributeOperation(
   resourceType: ResourceType
 ) {
   try {
-    const id = resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-    
+    const id =
+      resourceType === ResourceType.COMPANIES
+        ? (request.params.arguments?.companyId as string)
+        : (request.params.arguments?.personId as string);
+
     const attributeName = request.params.arguments?.attributeName as string;
     const value = request.params.arguments?.value;
-    
+
     if (!id) {
-      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      const idParamName =
+        resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
-        new Error(`${idParamName} parameter is required for updateAttribute operation`),
+        new Error(
+          `${idParamName} parameter is required for updateAttribute operation`
+        ),
         `/${resourceType}`,
         'PATCH',
         { status: 400, message: `Missing required parameter: ${idParamName}` }
       );
     }
-    
+
     if (!attributeName) {
       return createErrorResult(
-        new Error('attributeName parameter is required for updateAttribute operation'),
+        new Error(
+          'attributeName parameter is required for updateAttribute operation'
+        ),
         `/${resourceType}/${id}`,
         'PATCH',
         { status: 400, message: 'Missing required parameter: attributeName' }
       );
     }
-    
+
     if (value === undefined) {
       return createErrorResult(
         new Error('value parameter is required for updateAttribute operation'),
@@ -166,12 +174,14 @@ export async function handleDeleteOperation(
   resourceType: ResourceType
 ) {
   try {
-    const id = resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-    
+    const id =
+      resourceType === ResourceType.COMPANIES
+        ? (request.params.arguments?.companyId as string)
+        : (request.params.arguments?.personId as string);
+
     if (!id) {
-      const idParamName = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      const idParamName =
+        resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(`${idParamName} parameter is required for delete operation`),
         `/${resourceType}`,
@@ -187,10 +197,11 @@ export async function handleDeleteOperation(
 
     return formatResponse(formattedResult);
   } catch (error) {
-    const id = resourceType === ResourceType.COMPANIES
-      ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
-    
+    const id =
+      resourceType === ResourceType.COMPANIES
+        ? (request.params.arguments?.companyId as string)
+        : (request.params.arguments?.personId as string);
+
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/${id || 'unknown'}`,

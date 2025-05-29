@@ -19,7 +19,9 @@ function logAttributeError(
 ) {
   console.error(`[${functionName}] Error:`, error);
   console.error(
-    `- Error type: ${error instanceof Error ? error.constructor.name : typeof error}`
+    `- Error type: ${
+      error instanceof Error ? error.constructor.name : typeof error
+    }`
   );
   console.error(
     `- Message: ${error instanceof Error ? error.message : String(error)}`
@@ -85,7 +87,9 @@ export async function getCompanyFields(
 
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `[getCompanyFields] Filtered to ${Object.keys(filteredValues).length} fields`
+        `[getCompanyFields] Filtered to ${
+          Object.keys(filteredValues).length
+        } fields`
       );
     }
 
@@ -355,7 +359,9 @@ export async function discoverCompanyAttributes(): Promise<{
 
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `[discoverCompanyAttributes] Retrieved ${Object.keys(values).length} fields from sample company`
+        `[discoverCompanyAttributes] Retrieved ${
+          Object.keys(values).length
+        } fields from sample company`
       );
     }
 
@@ -452,7 +458,9 @@ export async function discoverCompanyAttributes(): Promise<{
 
     // Throw with more context
     throw new Error(
-      `Failed to discover company attributes: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to discover company attributes: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -525,7 +533,9 @@ export async function getCompanyAttributes(
 
     // Re-throw with enhanced context
     throw new Error(
-      `Failed to get company attribute: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to get company attribute: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }

@@ -4,10 +4,10 @@
  */
 
 import { getAttioClient } from '../attio-client.js';
-import { 
-  AttioRecord, 
-  ResourceType, 
-  AttioListResponse
+import {
+  AttioRecord,
+  ResourceType,
+  AttioListResponse,
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import { ListEntryFilters } from './types.js';
@@ -16,43 +16,43 @@ import { FilterValidationError } from '../../errors/api-errors.js';
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)
- * 
+ *
  * @param objectType - The type of object to search (people or companies)
  * @param query - Search query string
  * @param retryConfig - Optional retry configuration
  * @returns Array of matching records
  */
 export async function searchObject<T extends AttioRecord>(
-  objectType: ResourceType, 
+  objectType: ResourceType,
   query: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
   const api = getAttioClient();
   const path = `/objects/${objectType}/records/query`;
-  
+
   // Use different search logic based on object type
   let filter = {};
-  
+
   if (objectType === ResourceType.PEOPLE) {
     // For people, search by name, email, or phone
     filter = {
-      "$or": [
-        { name: { "$contains": query } },
-        { email_addresses: { "$contains": query } },
-        { phone: { "$contains": query } }
-      ]
+      $or: [
+        { name: { $contains: query } },
+        { email_addresses: { $contains: query } },
+        { phone: { $contains: query } },
+      ],
     };
   } else {
     // For other types (like companies), search by name only
     filter = {
-      name: { "$contains": query }
+      name: { $contains: query },
     };
   }
-  
+
   return callWithRetry(async () => {
     try {
       const response = await api.post<AttioListResponse<T>>(path, {
-        filter
+        filter,
       });
       return response.data.data || [];
     } catch (error: any) {
@@ -68,7 +68,7 @@ export async function searchObject<T extends AttioRecord>(
 
 /**
  * Generic function to search any object type with advanced filtering capabilities
- * 
+ *
  * @param objectType - The type of object to search (people or companies)
  * @param filters - Optional filters to apply
  * @param limit - Maximum number of results to return (optional)
@@ -85,35 +85,34 @@ export async function advancedSearchObject<T extends AttioRecord>(
 ): Promise<T[]> {
   const api = getAttioClient();
   const path = `/objects/${objectType}/records/query`;
-  
+
   // Coerce input parameters to ensure proper types
   const safeLimit = typeof limit === 'number' ? limit : undefined;
   const safeOffset = typeof offset === 'number' ? offset : undefined;
-  
+
   // Create request body with parameters and filters
   const createRequestBody = async () => {
     // Start with base parameters
     const body: any = {
-      "limit": safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
-      "offset": safeOffset !== undefined ? safeOffset : 0 // Default to 0 if not specified
+      limit: safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
+      offset: safeOffset !== undefined ? safeOffset : 0, // Default to 0 if not specified
     };
-    
+
     try {
       // If filters is undefined, return body without filter
       if (!filters) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[advancedSearchObject] No filters provided, using default parameters only');
+          console.log(
+            '[advancedSearchObject] No filters provided, using default parameters only'
+          );
         }
         return body;
       }
-      
+
       // Import validation utilities dynamically to avoid circular dependencies
-      const { 
-        validateFilters, 
-        getFilterExample,
-        ERROR_MESSAGES 
-      } = await import('../../utils/filters/validation-utils.js');
-      
+      const { validateFilters, getFilterExample, ERROR_MESSAGES } =
+        await import('../../utils/filters/validation-utils.js');
+
       // Use centralized validation with consistent error messages
       try {
         validateFilters(filters);
@@ -127,21 +126,21 @@ export async function advancedSearchObject<T extends AttioRecord>(
         }
         throw validationError;
       }
-      
+
       // Use our shared utility to transform filters to API format
       const filterObject = transformFiltersToApiFormat(filters, true);
-      
+
       // Add filter to body if it exists
       if (filterObject.filter) {
         body.filter = filterObject.filter;
-        
+
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
           console.log('[advancedSearchObject] Transformed filters:', {
             originalFilters: JSON.stringify(filters),
             transformedFilters: JSON.stringify(filterObject.filter),
             useOrLogic: filters?.matchAny === true,
-            filterCount: filters?.filters?.length || 0
+            filterCount: filters?.filters?.length || 0,
           });
         }
       }
@@ -152,30 +151,33 @@ export async function advancedSearchObject<T extends AttioRecord>(
         if (process.env.NODE_ENV === 'development') {
           console.error('[advancedSearchObject] Filter validation error:', {
             error: err.message,
-            providedFilters: JSON.stringify(filters, (key, value) => 
+            providedFilters: JSON.stringify(filters, (key, value) =>
               // Handle circular references in error logging
-              typeof value === 'object' && value !== null ? 
-                (Object.keys(value).length > 0 ? value : '[Empty Object]') : 
-                value
-            )
+              typeof value === 'object' && value !== null
+                ? Object.keys(value).length > 0
+                  ? value
+                  : '[Empty Object]'
+                : value
+            ),
           });
         }
-        
+
         // The error message may already include examples, so just rethrow
         throw err;
       }
-      
+
       // For other error types
-      const errorMessage = err instanceof Error ? 
-        `Error processing search filters: ${err.message}` : 
-        'Unknown error processing search filters';
-      
+      const errorMessage =
+        err instanceof Error
+          ? `Error processing search filters: ${err.message}`
+          : 'Unknown error processing search filters';
+
       throw new Error(errorMessage);
     }
-    
+
     return body;
   };
-  
+
   return callWithRetry(async () => {
     try {
       const requestBody = await createRequestBody();
@@ -190,31 +192,33 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
 /**
  * Generic function to list any object type with pagination and sorting
- * 
+ *
  * @param objectType - The type of object to list (people or companies)
  * @param limit - Maximum number of results to return
  * @param retryConfig - Optional retry configuration
  * @returns Array of records
  */
 export async function listObjects<T extends AttioRecord>(
-  objectType: ResourceType, 
+  objectType: ResourceType,
   limit?: number,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
   const api = getAttioClient();
   const path = `/objects/${objectType}/records/query`;
-  
+
   return callWithRetry(async () => {
     try {
       const body: any = {
         limit: limit || 20,
-        sorts: [{ 
-          attribute: 'last_interaction', 
-          field: 'interacted_at', 
-          direction: 'desc' 
-        }]
+        sorts: [
+          {
+            attribute: 'last_interaction',
+            field: 'interacted_at',
+            direction: 'desc',
+          },
+        ],
       };
-      
+
       const response = await api.post<AttioListResponse<T>>(path, body);
       return response.data.data || [];
     } catch (error: any) {

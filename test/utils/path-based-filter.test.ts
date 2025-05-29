@@ -11,7 +11,7 @@ describe('createPathBasedFilter', () => {
       const parentAttributeSlug = 'industry';
       const condition = 'contains';
       const value = 'Tech';
-      
+
       // Act
       const filter = createPathBasedFilter(
         listId,
@@ -20,18 +20,18 @@ describe('createPathBasedFilter', () => {
         condition,
         value
       );
-      
+
       // Assert
       expect(filter).toEqual({
         path: [
           [listId, 'parent_record'],
-          [companiesObjectType, parentAttributeSlug]
+          [companiesObjectType, parentAttributeSlug],
         ],
-        constraints: { contains: 'Tech' }
+        constraints: { contains: 'Tech' },
       });
     });
   });
-  
+
   describe('condition mapping', () => {
     it('should correctly map equals condition', () => {
       const filter = createPathBasedFilter(
@@ -41,10 +41,10 @@ describe('createPathBasedFilter', () => {
         'equals',
         'Technology'
       );
-      
+
       expect(filter.constraints).toEqual({ value: 'Technology' });
     });
-    
+
     it('should correctly map contains condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -53,10 +53,10 @@ describe('createPathBasedFilter', () => {
         'contains',
         'software'
       );
-      
+
       expect(filter.constraints).toEqual({ contains: 'software' });
     });
-    
+
     it('should correctly map starts_with condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -65,10 +65,10 @@ describe('createPathBasedFilter', () => {
         'starts_with',
         'Acme'
       );
-      
+
       expect(filter.constraints).toEqual({ starts_with: 'Acme' });
     });
-    
+
     it('should correctly map ends_with condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -77,10 +77,10 @@ describe('createPathBasedFilter', () => {
         'ends_with',
         '.com'
       );
-      
+
       expect(filter.constraints).toEqual({ ends_with: '.com' });
     });
-    
+
     it('should correctly map greater_than condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -89,10 +89,10 @@ describe('createPathBasedFilter', () => {
         'greater_than',
         100
       );
-      
+
       expect(filter.constraints).toEqual({ gt: 100 });
     });
-    
+
     it('should correctly map less_than condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -101,10 +101,10 @@ describe('createPathBasedFilter', () => {
         'less_than',
         1000000
       );
-      
+
       expect(filter.constraints).toEqual({ lt: 1000000 });
     });
-    
+
     it('should correctly map is_empty condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -113,10 +113,10 @@ describe('createPathBasedFilter', () => {
         'is_empty',
         null
       );
-      
+
       expect(filter.constraints).toEqual({ is_empty: true });
     });
-    
+
     it('should correctly map is_not_empty condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -125,10 +125,10 @@ describe('createPathBasedFilter', () => {
         'is_not_empty',
         null
       );
-      
+
       expect(filter.constraints).toEqual({ is_not_empty: true });
     });
-    
+
     it('should correctly map in condition with array value', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -137,10 +137,12 @@ describe('createPathBasedFilter', () => {
         'in',
         ['Technology', 'Software', 'SaaS']
       );
-      
-      expect(filter.constraints).toEqual({ in: ['Technology', 'Software', 'SaaS'] });
+
+      expect(filter.constraints).toEqual({
+        in: ['Technology', 'Software', 'SaaS'],
+      });
     });
-    
+
     it('should correctly map in condition with single value (converted to array)', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -149,11 +151,11 @@ describe('createPathBasedFilter', () => {
         'in',
         'Technology'
       );
-      
+
       expect(filter.constraints).toEqual({ in: ['Technology'] });
     });
   });
-  
+
   describe('special attribute handling', () => {
     it('should create special filter for record_id', () => {
       const filter = createPathBasedFilter(
@@ -163,14 +165,14 @@ describe('createPathBasedFilter', () => {
         'equals',
         'company_123'
       );
-      
+
       // Should have simplified path and direct record_id constraint
       expect(filter).toEqual({
         path: [[listId, 'parent_record']],
-        constraints: { record_id: 'company_123' }
+        constraints: { record_id: 'company_123' },
       });
     });
-    
+
     it('should create special filter for id attribute', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -179,14 +181,14 @@ describe('createPathBasedFilter', () => {
         'equals',
         'company_123'
       );
-      
+
       // Should have simplified path and direct record_id constraint
       expect(filter).toEqual({
         path: [[listId, 'parent_record']],
-        constraints: { record_id: 'company_123' }
+        constraints: { record_id: 'company_123' },
       });
     });
-    
+
     it('should handle name attribute with equals condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -195,10 +197,10 @@ describe('createPathBasedFilter', () => {
         'equals',
         'Acme Corp'
       );
-      
+
       expect(filter.constraints).toEqual({ full_name: 'Acme Corp' });
     });
-    
+
     it('should handle name attribute with contains condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -207,10 +209,10 @@ describe('createPathBasedFilter', () => {
         'contains',
         'Acme'
       );
-      
+
       expect(filter.constraints).toEqual({ full_name: { contains: 'Acme' } });
     });
-    
+
     it('should handle email_addresses attribute with contains condition', () => {
       const filter = createPathBasedFilter(
         listId,
@@ -219,8 +221,10 @@ describe('createPathBasedFilter', () => {
         'contains',
         '@example.com'
       );
-      
-      expect(filter.constraints).toEqual({ email_address: { contains: '@example.com' } });
+
+      expect(filter.constraints).toEqual({
+        email_address: { contains: '@example.com' },
+      });
     });
   });
 });
