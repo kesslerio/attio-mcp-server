@@ -23,6 +23,14 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:offline": "vitest --config vitest.config.offline.ts",
+    "test:coverage": "vitest --coverage --run",
+    "test:coverage:offline": "vitest --config vitest.config.offline.ts --coverage --run",
+    "test:coverage:watch": "vitest --coverage --watch",
+    "test:watch:offline": "vitest --config vitest.config.offline.ts --watch",
+    "test:watch:ui": "vitest --ui",
+    "test:watch:changed": "vitest --watch --changed",
+    "test:single": "vitest --run",
+    "test:debug": "vitest --reporter=verbose --no-coverage",
     "check:offline": "tsc --project tsconfig.offline.json --noEmit",
     "codex:setup": "./scripts/codex-env-setup.sh",
     "codex:verify": "./scripts/verify-codex-env.sh",
@@ -50,7 +58,10 @@
     "syncpack:fix": "syncpack fix-mismatches",
     "check:all": "npm run check && npm run build && npm run test:offline",
     "setup:dev": "npm install && npm run build",
-    "verify:env": "node -e \"console.log('Node:', process.version); console.log('NPM:', process.env.npm_version || 'unknown')\""
+    "setup:tdd": "./scripts/setup-tdd.sh",
+    "create:test": "./scripts/create-test.sh",
+    "verify:env": "node -e \"console.log('Node:', process.version); console.log('NPM:', process.env.npm_version || 'unknown')\"",
+    "prepare": "husky"
   },
   "files": [
     "dist"
@@ -74,9 +85,11 @@
     "@types/string-similarity": "^4.0.2",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@vitest/coverage-v8": "^3.1.4",
     "@vitest/ui": "^3.1.4",
     "axios": "^1.9.0",
     "eslint": "^8.0.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "shx": "^0.4.0",
     "syncpack": "^13.0.4",

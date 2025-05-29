@@ -23,25 +23,27 @@ describe('addRecordToList Tests', () => {
         },
       },
     });
-    
+
     vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
     });
-    
+
     // Mock the generic function to throw so we test the fallback
-    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
+      new Error('Test error')
+    );
 
     // Call the function
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
     const objectType = 'companies';
     const initialValues = { stage: 'Prospect' };
-    
+
     await addRecordToList(listId, recordId, objectType, initialValues);
-    
+
     // Verify API was called with correct payload
     expect(mockPost).toHaveBeenCalledWith(`/lists/${listId}/entries`, {
       data: {
@@ -62,23 +64,25 @@ describe('addRecordToList Tests', () => {
         },
       },
     });
-    
+
     vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
     });
-    
+
     // Mock the generic function to throw so we test the fallback
-    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
+      new Error('Test error')
+    );
 
     // Call the function without objectType
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
-    
+
     await addRecordToList(listId, recordId);
-    
+
     // Verify API was called with default objectType 'companies'
     expect(mockPost).toHaveBeenCalledWith(`/lists/${listId}/entries`, {
       data: {
@@ -98,24 +102,26 @@ describe('addRecordToList Tests', () => {
         },
       },
     });
-    
+
     vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
     });
-    
+
     // Mock the generic function to throw so we test the fallback
-    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
+      new Error('Test error')
+    );
 
     // Call the function with objectType but no initialValues
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
     const objectType = 'people';
-    
+
     await addRecordToList(listId, recordId, objectType);
-    
+
     // Verify API was called with correct payload without entry_values
     expect(mockPost).toHaveBeenCalledWith(`/lists/${listId}/entries`, {
       data: {
@@ -126,19 +132,27 @@ describe('addRecordToList Tests', () => {
   });
 
   it('should throw an error for invalid listId', async () => {
-    await expect(addRecordToList('', 'valid-record-id')).rejects.toThrow('Invalid list ID');
-    await expect(addRecordToList(null as unknown as string, 'valid-record-id')).rejects.toThrow('Invalid list ID');
+    await expect(addRecordToList('', 'valid-record-id')).rejects.toThrow(
+      'Invalid list ID'
+    );
+    await expect(
+      addRecordToList(null as unknown as string, 'valid-record-id')
+    ).rejects.toThrow('Invalid list ID');
   });
 
   it('should throw an error for invalid recordId', async () => {
-    await expect(addRecordToList('valid-list-id', '')).rejects.toThrow('Invalid record ID');
-    await expect(addRecordToList('valid-list-id', null as unknown as string)).rejects.toThrow('Invalid record ID');
+    await expect(addRecordToList('valid-list-id', '')).rejects.toThrow(
+      'Invalid record ID'
+    );
+    await expect(
+      addRecordToList('valid-list-id', null as unknown as string)
+    ).rejects.toThrow('Invalid record ID');
   });
 
   it('should throw an error for invalid objectType', async () => {
-    await expect(addRecordToList('valid-list-id', 'valid-record-id', 'invalid-type')).rejects.toThrow(
-      /Invalid object type.+Must be one of/
-    );
+    await expect(
+      addRecordToList('valid-list-id', 'valid-record-id', 'invalid-type')
+    ).rejects.toThrow(/Invalid object type.+Must be one of/);
   });
 
   it('should accept valid ResourceType values', async () => {
@@ -155,12 +169,15 @@ describe('addRecordToList Tests', () => {
     }
 
     // Verify generic function was called with correct parameters for each value
-    expect(apiOperations.addRecordToList).toHaveBeenCalledTimes(Object.values(ResourceType).length);
+    expect(apiOperations.addRecordToList).toHaveBeenCalledTimes(
+      Object.values(ResourceType).length
+    );
   });
 
   it('should call the generic function first before fallback', async () => {
     // Mock the generic function
-    const mockGenericAddRecordToList = vi.spyOn(apiOperations, 'addRecordToList')
+    const mockGenericAddRecordToList = vi
+      .spyOn(apiOperations, 'addRecordToList')
       .mockResolvedValue({
         id: { entry_id: 'test-entry-id' },
         parent_record_id: 'test-record-id',
@@ -171,9 +188,9 @@ describe('addRecordToList Tests', () => {
     const recordId = 'test-record-id';
     const objectType = 'companies';
     const initialValues = { stage: 'Prospect' };
-    
+
     await addRecordToList(listId, recordId, objectType, initialValues);
-    
+
     // Verify generic function was called with correct parameters
     expect(mockGenericAddRecordToList).toHaveBeenCalledWith(
       listId,
@@ -181,7 +198,7 @@ describe('addRecordToList Tests', () => {
       objectType,
       initialValues
     );
-    
+
     // Verify API client was not called directly (fallback not used)
     const mockGetAttioClient = vi.spyOn(attioClient, 'getAttioClient');
     expect(mockGetAttioClient).not.toHaveBeenCalled();
@@ -194,27 +211,32 @@ describe('addRecordToList Tests', () => {
         status: 400,
         data: {
           validation_errors: [
-            { path: ['data', 'parent_record_id'], message: 'Invalid record ID format' },
-            { path: ['data', 'parent_object'], message: 'Invalid object type' }
-          ]
-        }
-      }
+            {
+              path: ['data', 'parent_record_id'],
+              message: 'Invalid record ID format',
+            },
+            { path: ['data', 'parent_object'], message: 'Invalid object type' },
+          ],
+        },
+      },
     });
-    
+
     vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
       post: mockPost,
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
     });
-    
+
     // Mock the generic function to throw so we test the fallback
-    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(new Error('Test error'));
+    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
+      new Error('Test error')
+    );
 
     // Call the function
     const listId = 'test-list-id';
     const recordId = 'invalid-id';
-    
+
     // Should throw with formatted validation errors
     await expect(addRecordToList(listId, recordId)).rejects.toThrow(
       'Validation error adding record to list: data.parent_record_id: Invalid record ID format; data.parent_object: Invalid object type'

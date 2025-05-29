@@ -2,14 +2,7 @@
  * Integration tests for industry-to-categories field mapping for companies
  * Tests issue #176 fix for the incorrect industry field mapping
  */
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  beforeEach,
-  afterEach,
-} from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import {
   createCompany,
   updateCompany,

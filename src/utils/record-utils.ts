@@ -61,7 +61,11 @@ export function processListEntries(
     }
 
     // If record_id is already defined and non-empty, no processing needed
-    if (entry.record_id && typeof entry.record_id === 'string' && entry.record_id.trim() !== '') {
+    if (
+      entry.record_id &&
+      typeof entry.record_id === 'string' &&
+      entry.record_id.trim() !== ''
+    ) {
       return entry;
     }
 
@@ -71,7 +75,7 @@ export function processListEntries(
     // Option 1: Direct parent_record_id property
     if (entry.parent_record_id) {
       recordId = entry.parent_record_id;
-    } 
+    }
     // Option 2: Nested in record object
     else if (entry.record?.id?.record_id) {
       recordId = entry.record.id.record_id;
@@ -145,7 +149,10 @@ export function processListEntries(
           recordId = idObj.record_id;
         } else if (idObj.id && typeof idObj.id === 'string') {
           recordId = idObj.id;
-        } else if (idObj.reference_id && typeof idObj.reference_id === 'string') {
+        } else if (
+          idObj.reference_id &&
+          typeof idObj.reference_id === 'string'
+        ) {
           recordId = idObj.reference_id;
         }
       }
@@ -154,7 +161,11 @@ export function processListEntries(
     // If a record_id was found, return updated entry
     if (recordId) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[processListEntries] Found record_id: ${recordId} for entry ${entry.id?.entry_id || 'unknown'}`);
+        console.log(
+          `[processListEntries] Found record_id: ${recordId} for entry ${
+            entry.id?.entry_id || 'unknown'
+          }`
+        );
       }
       return {
         ...entry,
@@ -162,16 +173,18 @@ export function processListEntries(
       };
     }
 
-    // Additional fallback: Check if record has a uri property 
+    // Additional fallback: Check if record has a uri property
     if (entry.record?.uri) {
       const uriParts = entry.record.uri.split('/');
       if (uriParts.length > 0) {
         recordId = uriParts[uriParts.length - 1];
-        
+
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[processListEntries] Extracted record_id ${recordId} from URI: ${entry.record.uri}`);
+          console.log(
+            `[processListEntries] Extracted record_id ${recordId} from URI: ${entry.record.uri}`
+          );
         }
-        
+
         return {
           ...entry,
           record_id: recordId,
@@ -181,9 +194,13 @@ export function processListEntries(
 
     // Unable to find record_id, log warning and return entry with a placeholder
     if (process.env.NODE_ENV === 'development') {
-      console.warn(`[processListEntries] Could not extract record_id for entry ${entry.id?.entry_id || 'unknown'}`);
+      console.warn(
+        `[processListEntries] Could not extract record_id for entry ${
+          entry.id?.entry_id || 'unknown'
+        }`
+      );
     }
-    
+
     return {
       ...entry,
       record_id: 'record-id-unavailable',

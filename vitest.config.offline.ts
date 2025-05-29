@@ -17,8 +17,31 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
+        minForks: 1,
         maxForks: '50%',
       },
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,js}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.{ts,js}',
+        'src/**/*.spec.{ts,js}',
+        'src/types/**',
+        'src/**/types.ts',
+        'src/index.ts',
+      ],
+      thresholds: {
+        statements: 5,
+        branches: 5,
+        functions: 10,
+        lines: 5,
+      },
+      all: true,
+      clean: true,
     },
     silent: false,
     reporter: 'verbose',
