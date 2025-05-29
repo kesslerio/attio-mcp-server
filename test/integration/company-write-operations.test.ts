@@ -71,9 +71,9 @@ testSuite('Company Write Operations - Integration Tests', () => {
 
       expect(result).toBeDefined();
       expect(result.values?.name?.[0]?.value).toBe(companyData.name);
-      
+
       // Test passes as long as we can create the company and verify the name
-      
+
       // Track for cleanup
       testCompanies.push(result.id.record_id);
     });
@@ -104,7 +104,7 @@ testSuite('Company Write Operations - Integration Tests', () => {
       // Check that the updated fields exist with correct values
       const websiteValue = result.values?.website?.[0]?.value;
       const descriptionValue = result.values?.description?.[0]?.value;
-      
+
       // Check website and description from immediate result
       expect(websiteValue).toBe(updates.website);
       expect(descriptionValue).toBe(updates.description);
@@ -197,7 +197,9 @@ testSuite('Company Write Operations - Integration Tests', () => {
         .map((_, i) =>
           createCompany({
             name: baseName,
-            description: `Company instance ${i} - ${Math.random().toString(36)}`,
+            description: `Company instance ${i} - ${Math.random().toString(
+              36
+            )}`,
           })
         );
 

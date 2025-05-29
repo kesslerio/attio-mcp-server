@@ -3,9 +3,9 @@
  * Handles circular references, non-serializable values, and large objects
  *
  * Uses fast-safe-stringify for improved performance and reliability
- * 
+ *
  * IMPORTANT MCP PROTOCOL WARNING:
- * Never use console.log() in this file or any MCP-related code. 
+ * Never use console.log() in this file or any MCP-related code.
  * Always use console.error() or logger.safeMcpLog() instead.
  * Using console.log will break the MCP protocol, as it writes to stdout
  * which is used for client-server communication.
