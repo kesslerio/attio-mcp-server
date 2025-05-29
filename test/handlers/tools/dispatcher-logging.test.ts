@@ -2,6 +2,7 @@
  * Tests for enhanced tool dispatcher logging functionality
  */
 
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import {
   initializeToolContext,
   createToolLogger,
@@ -20,9 +21,9 @@ import {
 } from '../../../src/utils/logger.js';
 
 // Mock console methods
-const mockConsoleLog = jest.fn();
-const mockConsoleWarn = jest.fn();
-const mockConsoleError = jest.fn();
+const mockConsoleLog = vi.fn();
+const mockConsoleWarn = vi.fn();
+const mockConsoleError = vi.fn();
 
 // Store original console methods
 const originalConsole = {
@@ -39,9 +40,7 @@ describe('Tool Dispatcher Logging', () => {
     console.error = mockConsoleError;
 
     // Clear all mocks
-    mockConsoleLog.mockClear();
-    mockConsoleWarn.mockClear();
-    mockConsoleError.mockClear();
+    vi.clearAllMocks();
 
     // Clear log context
     clearLogContext();
@@ -55,7 +54,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Context Initialization', () => {
-    test('initializeToolContext sets correlation ID and context', () => {
+    it('initializeToolContext sets correlation ID and context', () => {
       const correlationId = initializeToolContext('test-tool');
       const context = getLogContext();
 
@@ -66,7 +65,7 @@ describe('Tool Dispatcher Logging', () => {
       expect(context.operationType).toBe('tool_execution');
     });
 
-    test('initializeToolContext generates unique correlation IDs', () => {
+    it('initializeToolContext generates unique correlation IDs', () => {
       const id1 = initializeToolContext('tool1');
       const id2 = initializeToolContext('tool2');
 
@@ -75,7 +74,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Logger Creation', () => {
-    test('createToolLogger returns scoped logger', () => {
+    it('createToolLogger returns scoped logger', () => {
       const logger = createToolLogger('test-tool', 'search');
 
       logger.debug('Test debug message');
@@ -92,7 +91,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('createToolLogger works without toolType', () => {
+    it('createToolLogger works without toolType', () => {
       const logger = createToolLogger('test-tool');
 
       logger.info('Test info message');
@@ -104,7 +103,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Request Logging', () => {
-    test('logToolRequest logs structured request data and returns timer', () => {
+    it('logToolRequest logs structured request data and returns timer', () => {
       const mockRequest: CallToolRequest = {
         method: 'tools/call',
         params: {
@@ -137,7 +136,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('logToolRequest handles request without arguments', () => {
+    it('logToolRequest handles request without arguments', () => {
       const mockRequest: CallToolRequest = {
         method: 'tools/call',
         params: {
@@ -159,7 +158,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('logToolRequest includes arguments in development mode', () => {
+    it('logToolRequest includes arguments in development mode', () => {
       const originalNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
@@ -187,7 +186,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Success Logging', () => {
-    test('logToolSuccess logs success with result summary', async () => {
+    it('logToolSuccess logs success with result summary', async () => {
       const timer = new PerformanceTimer(
         'tool:test-tool',
         'execute',
@@ -224,7 +223,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('logToolSuccess handles result without content', async () => {
+    it('logToolSuccess handles result without content', async () => {
       const timer = new PerformanceTimer(
         'tool:test-tool',
         'execute',
@@ -251,7 +250,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Error Logging', () => {
-    test('logToolError logs error with context and timing', async () => {
+    it('logToolError logs error with context and timing', async () => {
       const timer = new PerformanceTimer(
         'tool:test-tool',
         'execute',
@@ -289,7 +288,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('logToolError handles non-Error objects', async () => {
+    it('logToolError handles non-Error objects', async () => {
       const timer = new PerformanceTimer(
         'tool:test-tool',
         'execute',
@@ -318,7 +317,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Validation Error Logging', () => {
-    test('logToolValidationError logs validation errors', () => {
+    it('logToolValidationError logs validation errors', () => {
       logToolValidationError(
         'test-tool',
         'search',
@@ -341,7 +340,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Configuration Error Logging', () => {
-    test('logToolConfigError logs configuration errors', () => {
+    it('logToolConfigError logs configuration errors', () => {
       logToolConfigError('test-tool', 'Tool configuration not found', {
         requestedTool: 'test-tool',
       });
@@ -361,7 +360,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Tool Fallback Logging', () => {
-    test('logToolFallback logs fallback attempts', () => {
+    it('logToolFallback logs fallback attempts', () => {
       logToolFallback(
         'test-tool',
         'search',
@@ -387,7 +386,7 @@ describe('Tool Dispatcher Logging', () => {
   });
 
   describe('Integration with Log Context', () => {
-    test('tool logging includes correlation ID from context', () => {
+    it('tool logging includes correlation ID from context', () => {
       const correlationId = initializeToolContext('test-tool');
       const logger = createToolLogger('test-tool', 'search');
 
@@ -405,7 +404,7 @@ describe('Tool Dispatcher Logging', () => {
       );
     });
 
-    test('multiple tool executions have different correlation IDs', () => {
+    it('multiple tool executions have different correlation IDs', () => {
       const id1 = initializeToolContext('tool1');
       const logger1 = createToolLogger('tool1');
       logger1.debug('Message from tool1');

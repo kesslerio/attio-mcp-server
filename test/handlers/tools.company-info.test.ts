@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import * as registry from '../../src/handlers/tools/registry';
 import * as companyAttributes from '../../src/objects/companies/attributes';

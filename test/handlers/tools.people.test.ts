@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerToolHandlers } from '../../src/handlers/tools/index';
 import * as peopleModule from '../../src/objects/people/index';
 import * as errorHandler from '../../src/utils/error-handler';

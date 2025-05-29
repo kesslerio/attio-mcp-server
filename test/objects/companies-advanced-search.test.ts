@@ -1,6 +1,7 @@
 /**
  * Test for companies advanced search functionality
  */
+import { describe, test, expect, beforeAll } from 'vitest';
 import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { FilterConditionType } from '../../src/types/attio';
 import { initializeAttioClient } from '../../src/api/attio-client';

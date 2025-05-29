@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { tasksToolConfigs } from '../../src/handlers/tool-configs/tasks';
 import * as tasksModule from '../../src/objects/tasks';
 

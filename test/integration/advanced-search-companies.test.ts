@@ -5,6 +5,7 @@
  * This uses mocked API responses to test the full integration path
  * without requiring actual API credentials.
  */
+import { describe, beforeAll, beforeEach, test, expect, vi } from 'vitest';
 import axios from 'axios';
 import { advancedSearchCompanies } from '../../src/objects/companies/search';
 import { initializeAttioClient } from '../../src/api/attio-client';

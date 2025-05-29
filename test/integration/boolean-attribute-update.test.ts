@@ -1,6 +1,7 @@
 /**
  * Integration tests for boolean attribute update functionality
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   updateCompanyAttribute,
   updateCompany,

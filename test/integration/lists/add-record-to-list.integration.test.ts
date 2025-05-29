@@ -2,7 +2,7 @@
  * Integration test for the add-record-to-list tool
  * Tests the entire flow from tool invocation to API call with proper parameters
  */
-
+import { describe, test, expect, beforeAll, vi } from 'vitest';
 import { getAttioClient } from '../../../src/api/attio-client';
 import { addRecordToList } from '../../../src/objects/lists';
 import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
@@ -17,13 +17,13 @@ const TEST_LIST_ID = 'list_your_test_list_id_here'; // Replace with a real list 
 const TEST_RECORD_ID = 'company_your_test_company_id_here'; // Replace with a real company ID for testing
 
 // Mock axios for API client in case we're skipping real API tests
-jest.mock('axios', () => {
+vi.mock('axios', () => {
   // Only mock if we're skipping tests
   if (skipTests) {
     return {
-      create: jest.fn(() => ({
-        get: jest.fn().mockResolvedValue({ data: { data: {} } }),
-        post: jest.fn().mockResolvedValue({
+      create: vi.fn(() => ({
+        get: vi.fn().mockResolvedValue({ data: { data: {} } }),
+        post: vi.fn().mockResolvedValue({
           data: {
             data: {
               id: { entry_id: 'mock-entry-id' },
@@ -33,20 +33,18 @@ jest.mock('axios', () => {
           },
         }),
         interceptors: {
-          request: { use: jest.fn() },
-          response: { use: jest.fn() },
+          request: { use: vi.fn() },
+          response: { use: vi.fn() },
         },
       })),
     };
   }
 
   // Otherwise use the real axios
-  return jest.requireActual('axios');
+  return vi.importActual('axios');
 });
 
 describe('Add Record To List Integration', () => {
-  // Longer timeout for API calls
-  jest.setTimeout(30000);
 
   // Skip all tests if no API key
   const conditionalTest = skipTests ? test.skip : test;

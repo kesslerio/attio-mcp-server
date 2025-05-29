@@ -6,6 +6,7 @@
  * NOTE: This test file requires a valid ATTIO_API_KEY to be set
  * in the environment. If the key is not set, tests will be skipped.
  */
+import { describe, it, test, expect } from 'vitest';
 import {
   advancedSearchCompanies,
   createNameFilter,

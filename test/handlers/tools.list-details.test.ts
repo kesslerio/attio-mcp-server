@@ -1,6 +1,7 @@
 /**
  * Unit tests for get-list-details tool handler
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { findToolConfig } from '../../src/handlers/tools/registry';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import { getListDetails } from '../../src/objects/lists';
