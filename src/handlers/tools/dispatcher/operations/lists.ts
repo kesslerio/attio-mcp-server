@@ -34,6 +34,14 @@ export async function handleGetListsOperation(
 
 /**
  * Handle addRecordToList operations
+ * 
+ * This function extracts parameters from the tool request and passes them to the handler.
+ * It supports both required parameters (listId, recordId) and optional parameters 
+ * (objectType, initialValues) needed for proper API payload construction.
+ * 
+ * @param request - The tool request containing parameters
+ * @param toolConfig - The tool configuration with handler function
+ * @returns Formatted response with success or error information
  */
 export async function handleAddRecordToListOperation(
   request: CallToolRequest,
@@ -41,8 +49,8 @@ export async function handleAddRecordToListOperation(
 ) {
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
-  const objectType = request.params.arguments?.objectType as string;
-  const initialValues = request.params.arguments?.initialValues as Record<string, any>;
+  const objectType = request.params.arguments?.objectType as string | undefined;
+  const initialValues = request.params.arguments?.initialValues as Record<string, any> | undefined;
 
   if (!listId) {
     return createErrorResult(

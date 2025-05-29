@@ -8,11 +8,21 @@ import { safeJsonStringify, sanitizeMcpResponse } from "../../utils/json-seriali
 /**
  * Safely extract value from record attributes
  * 
+ * This function handles various record formats and extracts values from them,
+ * including standard AttioRecord objects and similar record-like structures
+ * that may come from different API responses or transformations.
+ * 
  * @param record - The record to extract the value from, which might be an AttioRecord or a similar structure
  * @param fieldName - The name of the field to extract
  * @returns The extracted value as a string, or 'Unknown' if not found
  */
-function getAttributeValue(record: any | undefined, fieldName: string): string {
+function getAttributeValue(
+  record: { 
+    values?: Record<string, any> | undefined;
+    [key: string]: any;
+  } | undefined, 
+  fieldName: string
+): string {
   if (!record?.values) return 'Unknown';
   
   const fieldValue = record.values[fieldName];
