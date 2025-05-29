@@ -36,7 +36,7 @@ export const listsToolConfigs = {
     },
   } as GetListsToolConfig,
   getRecordListMemberships: {
-    name: 'get-company-lists',
+    name: 'get-record-list-memberships',
     handler: getRecordListMemberships,
     formatResult: (results: ListMembership[]) => {
       if (results.length === 0) {
@@ -46,8 +46,18 @@ export const listsToolConfigs = {
       return `Found ${results.length} list membership(s):\n${results
         .map((membership: ListMembership) => {
           // Format each membership with list name and IDs
-          return `- List: ${membership.listName} (ID: ${membership.listId})
+          let membershipInfo = `- List: ${membership.listName} (ID: ${membership.listId})
   Entry ID: ${membership.entryId}`;
+          
+          // Add entry values if available
+          if (membership.entryValues && Object.keys(membership.entryValues).length > 0) {
+            const valuesString = Object.entries(membership.entryValues)
+              .map(([key, value]) => `    ${key}: ${value}`)
+              .join('\n');
+            membershipInfo += `\n  Entry Values:\n${valuesString}`;
+          }
+          
+          return membershipInfo;
         })
         .join('\n')}`;
     },
@@ -237,8 +247,8 @@ export const listsToolDefinitions = [
     },
   },
   {
-    name: 'get-company-lists',
-    description: 'Find all lists that a specific company or person belongs to',
+    name: 'get-record-list-memberships',
+    description: 'Find all lists that a specific record (company, person, etc.) belongs to',
     inputSchema: {
       type: 'object',
       properties: {
@@ -256,6 +266,13 @@ export const listsToolDefinitions = [
           description: 'Whether to include entry values in the response (e.g., stage, status)',
           default: false,
         },
+        batchSize: {
+          type: 'number',
+          description: 'Number of lists to process in parallel (1-20, default: 5)',
+          minimum: 1,
+          maximum: 20,
+          default: 5
+        }
       },
       required: ['recordId'],
     },

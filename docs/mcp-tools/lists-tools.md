@@ -4,6 +4,74 @@ The Attio MCP server provides several tools for working with lists in Attio:
 
 ## Available Tools
 
+### get-record-list-memberships
+
+Find all lists that a specific record (company, person, etc.) belongs to.
+
+#### Parameters
+
+| Parameter          | Type    | Description                                                    | Required |
+|-------------------|---------|----------------------------------------------------------------|----------|
+| recordId          | string  | ID of the record to find in lists                              | Yes      |
+| objectType        | string  | Type of record (e.g., "companies", "people")                   | No       |
+| includeEntryValues| boolean | Whether to include entry values in the response (e.g., stage)  | No       |
+| batchSize         | number  | Number of lists to process in parallel (1-20, default: 5)      | No       |
+
+#### Example Usage
+
+```json
+{
+  "name": "get-record-list-memberships",
+  "arguments": {
+    "recordId": "company_01abcdef"
+  }
+}
+```
+
+```json
+{
+  "name": "get-record-list-memberships",
+  "arguments": {
+    "recordId": "person_02ghijkl",
+    "objectType": "people",
+    "includeEntryValues": true
+  }
+}
+```
+
+#### Response Format
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Found 2 list membership(s):\n\n- List: Sales Pipeline (ID: list_01abcdef)\n  Entry ID: entry_03mnopqr\n  Entry Values:\n    stage: Negotiation\n    priority: High\n    expected_value: 75000\n\n- List: Key Accounts (ID: list_04stuvwx)\n  Entry ID: entry_05yzabcd"
+    }
+  ],
+  "isError": false,
+  "metadata": {
+    "memberships": [
+      {
+        "listId": "list_01abcdef",
+        "listName": "Sales Pipeline",
+        "entryId": "entry_03mnopqr",
+        "entryValues": {
+          "stage": "Negotiation",
+          "priority": "High",
+          "expected_value": 75000
+        }
+      },
+      {
+        "listId": "list_04stuvwx",
+        "listName": "Key Accounts",
+        "entryId": "entry_05yzabcd"
+      }
+    ]
+  }
+}
+```
+
 ### list-lists
 
 Get all lists in the Attio workspace.
@@ -364,6 +432,7 @@ The Lists API implements a set of operations for managing lists and list entries
 - `getListEntries`: Get entries for a specific list, with paging support
 - `addRecordToList`: Add a record to a list
 - `removeRecordFromList`: Remove a record from a list
+- `getRecordListMemberships`: Find all lists that a specific record belongs to
 
 ### Fallback Endpoints for List Entries
 
@@ -426,3 +495,45 @@ All responses follow a standardized format for consistency:
 ```
 
 This provides both human-readable text responses and structured metadata that can be used programmatically.
+
+### Finding List Memberships
+
+The `getRecordListMemberships` function implements an efficient batch processing strategy to find all lists that contain a specific record:
+
+```typescript
+export async function getRecordListMemberships(
+  recordId: string,
+  objectType?: string,
+  includeEntryValues: boolean = false,
+  batchSize: number = 5
+): Promise<ListMembership[]> {
+  // 1. Get all lists in the workspace (filtered by objectType if provided)
+  const lists = await getLists(objectType);
+  
+  // 2. Process lists in batches to avoid overwhelming the API
+  for (let i = 0; i < lists.length; i += batchSize) {
+    const batchLists = lists.slice(i, i + batchSize);
+    
+    // 3. Process each batch in parallel
+    await Promise.all(batchLists.map(async (list) => {
+      // 4. Get entries for this list
+      const entries = await getListEntries(list.id);
+      
+      // 5. Filter entries to find those matching the record ID
+      const matchingEntries = entries.filter(entry => entry.record_id === recordId);
+      
+      // 6. Add matching entries to results
+      // ...
+    }));
+  }
+  
+  return allMemberships;
+}
+```
+
+This efficient implementation:
+- Optimizes API calls by filtering lists by object type
+- Uses parallel processing for better performance
+- Configurable batch size to control concurrency
+- Continues processing remaining lists if one list fails
+- Optionally includes entry values (like stages, statuses, etc.)
