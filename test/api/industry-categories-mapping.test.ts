@@ -21,26 +21,25 @@ import {
   deleteCompany,
 } from '../../src/objects/companies/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
-import { config } from 'dotenv';
 
-// Load environment variables for testing
-config({ path: '.env.test' });
+// These tests use real API calls - only run when API key is available
+const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
-// Skip integration tests if no API key is available or SKIP_INTEGRATION_TESTS is set
-const skipIntegrationTests =
-  !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+describe('Industry-Categories Mapping - E2E Tests', () => {
+  if (SKIP_INTEGRATION_TESTS) {
+    it.skip('Skipping E2E tests - no API key found or tests disabled', () => {});
+    return;
+  }
 
-(skipIntegrationTests ? describe.skip : describe)(
-  'Industry-Categories Mapping - E2E Tests',
-  () => {
-    const testCompanies: string[] = [];
+  const testCompanies: string[] = [];
 
-    beforeAll(() => {
-      // Initialize the Attio client with test API key
-      initializeAttioClient(process.env.ATTIO_API_KEY!);
-    });
+  beforeAll(() => {
+    // Initialize the Attio client with test API key
+    const apiKey = process.env.ATTIO_API_KEY!;
+    initializeAttioClient(apiKey);
+  });
 
-    afterEach(async () => {
+  afterEach(async () => {
       // Cleanup: Delete any test companies created
       for (const companyId of testCompanies) {
         try {
