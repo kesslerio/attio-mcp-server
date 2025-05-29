@@ -13,6 +13,7 @@ import {
   createActivityFilter,
   createNumericFilter,
   FILTER_ATTRIBUTES,
+  FilterConditionType,
 } from './filters/index.js';
 
 // Re-export filter utilities for backwards compatibility
@@ -142,9 +143,9 @@ export function processListEntries(
           recordId = idObj;
         } else if (idObj.record_id) {
           recordId = idObj.record_id;
-        } else if (idObj.id) {
+        } else if (idObj.id && typeof idObj.id === 'string') {
           recordId = idObj.id;
-        } else if (idObj.reference_id) {
+        } else if (idObj.reference_id && typeof idObj.reference_id === 'string') {
           recordId = idObj.reference_id;
         }
       }
@@ -245,4 +246,112 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
     name: recordName,
     type: recordType,
   };
+}
+
+/**
+ * Creates a path-based filter for filtering list entries by parent record properties
+ * 
+ * This function constructs a filter that follows paths through related objects,
+ * which is necessary for filtering list entries based on properties of their parent records.
+ * 
+ * @param listSlug - The slug of the list (either the API slug or list ID)
+ * @param parentObjectType - The type of the parent record (e.g., 'companies', 'people')
+ * @param parentAttributeSlug - The attribute of the parent record to filter by
+ * @param condition - The filter condition to apply
+ * @param value - The value to filter by
+ * @returns A filter object compatible with the Attio API for path-based filtering
+ * 
+ * @example
+ * // Filter for companies in a list named "prospects" that have "Tech" in their industry
+ * const filter = createPathBasedFilter('prospects', 'companies', 'industry', 'contains', 'Tech');
+ * 
+ * @example
+ * // Filter for people in a list with ID "list_12345" who have an email from apple.com
+ * const filter = createPathBasedFilter('list_12345', 'people', 'email_addresses', 'contains', '@apple.com');
+ */
+export function createPathBasedFilter(
+  listSlug: string,
+  parentObjectType: string,
+  parentAttributeSlug: string,
+  condition: string,
+  value: any
+): { path: string[][]; constraints: Record<string, any> } {
+  // Create path array for drilling down through objects
+  // First path element is [listSlug, "parent_record"] to navigate from list entry to its parent record
+  // Second path element is [parentObjectType, parentAttributeSlug] to navigate to specific attribute
+  const path = [
+    [listSlug, 'parent_record'],
+    [parentObjectType, parentAttributeSlug]
+  ];
+  
+  // Create constraints object based on condition and value
+  let constraints: Record<string, any> = {};
+  
+  // Handle different condition types appropriately
+  if (condition === 'equals' || condition === 'eq') {
+    // For exact equality on simple attributes
+    constraints = { value };
+  } else if (condition === 'contains') {
+    // For partial text matching
+    constraints = { contains: value };
+  } else if (condition === 'starts_with') {
+    constraints = { starts_with: value };
+  } else if (condition === 'ends_with') {
+    constraints = { ends_with: value };
+  } else if (condition === 'greater_than' || condition === 'gt') {
+    constraints = { gt: value };
+  } else if (condition === 'less_than' || condition === 'lt') {
+    constraints = { lt: value };
+  } else if (condition === 'greater_than_or_equals' || condition === 'gte') {
+    constraints = { gte: value };
+  } else if (condition === 'less_than_or_equals' || condition === 'lte') {
+    constraints = { lte: value };
+  } else if (condition === 'not_equals' || condition === 'ne') {
+    constraints = { ne: value };
+  } else if (condition === 'is_empty' || condition === 'is_not_set') {
+    constraints = { is_empty: true };
+  } else if (condition === 'is_not_empty' || condition === 'is_set') {
+    constraints = { is_not_empty: true };
+  } else if (condition === 'in') {
+    constraints = { in: Array.isArray(value) ? value : [value] };
+  } else {
+    // Default to exact match if condition is unknown
+    constraints = { value };
+  }
+  
+  // Special case for filtering by record ID
+  if (parentAttributeSlug === 'id' || parentAttributeSlug === 'record_id') {
+    return {
+      path: [[listSlug, 'parent_record']],
+      constraints: { record_id: value }
+    };
+  }
+  
+  // For filtering by name, we need to use full_name property
+  if (parentAttributeSlug === 'name') {
+    if (condition === 'equals') {
+      constraints = { full_name: value };
+    } else if (condition === 'contains') {
+      constraints = { full_name: { contains: value } };
+    } else if (condition === 'starts_with') {
+      constraints = { full_name: { starts_with: value } };
+    } else if (condition === 'ends_with') {
+      constraints = { full_name: { ends_with: value } };
+    }
+  }
+  
+  // For email addresses, we need to use email_address property
+  if (parentAttributeSlug === 'email_addresses') {
+    if (condition === 'equals') {
+      constraints = { email_address: value };
+    } else if (condition === 'contains') {
+      constraints = { email_address: { contains: value } };
+    } else if (condition === 'starts_with') {
+      constraints = { email_address: { starts_with: value } };
+    } else if (condition === 'ends_with') {
+      constraints = { email_address: { ends_with: value } };
+    }
+  }
+  
+  return { path, constraints };
 }
