@@ -142,9 +142,9 @@ export function processListEntries(
           recordId = idObj;
         } else if (idObj.record_id) {
           recordId = idObj.record_id;
-        } else if (idObj.id) {
+        } else if (idObj.id && typeof idObj.id === 'string') {
           recordId = idObj.id;
-        } else if (idObj.reference_id) {
+        } else if (idObj.reference_id && typeof idObj.reference_id === 'string') {
           recordId = idObj.reference_id;
         }
       }
