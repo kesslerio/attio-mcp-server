@@ -1,6 +1,7 @@
 /**
  * Tests for formatter functions to ensure proper string formatting
  */
+import { describe, it, expect } from 'vitest';
 import { crudToolConfigs } from '../../src/handlers/tool-configs/companies/crud.js';
 import { Company } from '../../src/types/attio.js';
 

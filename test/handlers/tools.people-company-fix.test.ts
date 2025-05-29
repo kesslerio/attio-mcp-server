@@ -1,6 +1,7 @@
 /**
  * Unit tests for people-company search fix
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import * as peopleModule from '../../src/objects/people/index';
