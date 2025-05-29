@@ -1,9 +1,4 @@
-IMPORTANT ATTRIBUTION RULES
-- NEVER include "Generated with Claude Code" or similar messages in any code, commits, or PRs
-- NEVER add "Co-Authored-By: Claude" or other AI assistant attributions to commits
-- ALL work should appear as if done directly by the human developer
-- Remove ALL AI assistant signatures from any generated text
-- NO automated footers, signatures, or attribution messages of any kind
+ATTIO MCP SERVER GUIDELINES
 
 BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Build: `npm run build`
@@ -45,7 +40,7 @@ CODE STYLE/STRUCTURE
 - Formatting: Follow project style, 2-space indentation.
 - Types/Docs: Mandatory type hints. Use JSDoc for public API.
 - Imports: Node.js standard modules -> external -> internal.
-- Testing: 
+- Testing:
   * ALWAYS place ALL tests in the `/test` directory - never in project root
   * Use Vitest (NOT Jest) for TypeScript tests (*.test.ts)
   * Import testing functions: `import { describe, it, expect, beforeEach, vi } from 'vitest'`
@@ -80,188 +75,99 @@ git fetch upstream && git checkout main && git merge upstream/main && git push o
 
 Best Practices for Clean PRs
 1. Focus on a single feature or fix per PR
-   - Keep each PR centered around a specific enhancement
 2. Keep PRs small and focused
-   - Smaller PRs are easier to review and more likely to be merged
-3. Use meaningful commit messages
-   - Format: `Feature:`, `Fix:`, `Docs:`, `Refactor:`, etc. followed by a clear description
+3. Use meaningful commit messages (Format: `Feature:`, `Fix:`, `Docs:`, `Refactor:`, etc.)
 4. Only include relevant files
-   - Don't include unrelated changes, .env files, or personal configuration files
-   - Avoid modifying .gitignore unless specifically necessary
 5. Test thoroughly before submitting
-   - Make sure your changes work with the current upstream code
 6. Update documentation
-   - Add or update documentation to reflect your changes
-7. For refactoring work
-   - Follow guidelines in @docs/refactoring-guidelines.md
-   - Use checklists in issues to track progress
-   - Reference related commits in PR descriptions
+7. For refactoring work, follow guidelines in @docs/refactoring-guidelines.md
 
 Troubleshooting:
 git rm --cached <path> && git commit --amend && git push -f origin <branch>
 git fetch upstream && git rebase upstream/main && git push -f origin <branch>
 
 ISSUE MANAGEMENT (ENHANCED WITH CLEAR THOUGHT)
+
+⚠️ CRITICAL WORKFLOW: Issue Work Checklist
+BEFORE starting ANY GitHub issue work, ALWAYS follow this checklist:
+1. [ ] Check current branch: `git branch --show-current`
+2. [ ] If not on main or appropriate feature branch, checkout main: `git checkout main`
+3. [ ] Pull latest changes: `git pull origin main`
+4. [ ] Create issue branch: `git checkout -b feature/issue-{number}-{description}`
+5. [ ] Verify clean state: `git status` (should show "nothing to commit, working tree clean")
+6. [ ] Begin work implementation
+7. [ ] Commit with issue reference: `git commit -m "Type: Description #issue-number"`
+8. [ ] Push branch: `git push -u origin HEAD`
+9. [ ] Create PR: `gh pr create -R kesslerio/attio-mcp-server`
+
 1. Issue Creation
-- Create issues before starting work
-- Use descriptive titles: type: Description (clear, concise)
-- Search first: gh issue list --repo kesslerio/attio-mcp-server --search "keyword" to avoid duplication
-- APPLY MENTAL MODEL: Use First Principles Thinking to break down the problem
-- CREATE STRUCTURED ANALYSIS: Use Sequential Thinking for complex issues
-- For refactoring issues: Follow template in @docs/refactoring-guidelines.md using checklists
+- Create issues before starting work.
+- Use descriptive titles: type: Description (clear, concise).
+- Search first: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`.
+- Create Command: `gh issue create --title "type: Description" --body "Detailed description or use --body-file /path/to/template.md" --label "P2,type:bug,area:core"` (Verify labels with `gh label list --repo kesslerio/attio-mcp-server`).
+- Problem Analysis: Use Clear Thought tools like `mcp_clear-thought_mentalmodel` (e.g., First Principles) or `mcp_mcp-sequentialthinking-tools_sequentialthinking_tools` for complex issues.
+- Refactoring: Follow template in @docs/refactoring-guidelines.md.
 
 Required Labels:
-- Priority Labels:
-  * P0 - Critical (service down, security issue)
-  * P1 - High (blocking functionality)
-  * P2 - Medium (important but not blocking)
-  * P3 - Low (minor improvements)
-  * P4/P5 - Trivial (cosmetic, nice-to-have)
+- Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
+- Type: bug, feature, enhancement, documentation, test
+- Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
+- Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
 
-- Type Labels:
-  * bug - Incorrect functionality
-  * feature - New capability
-  * enhancement - Improvement to existing feature
-  * documentation - Documentation updates
-  * test - Test improvements
-
-- Status Labels: (Required)
-  * status:blocked - Work cannot proceed due to dependencies or blockers
-  * status:in-progress - Work is currently being actively worked on
-  * status:ready - Ready for implementation or review
-  * status:review - Ready for or currently under review
-  * status:needs-info - Requires additional information to proceed
-  * status:untriaged - Not yet assessed or categorized
-
-- Area Labels:
-  * Module: area:core, area:api, area:build, area:dist
-  * Content: area:documentation, area:testing, area:performance, area:refactor
-  * API-specific: area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks
-  * Functional: area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
-
-2. Branch Strategy (ENHANCED)
-- NEVER work directly on main except for critical hotfixes
-- PROBLEM ANALYSIS: Apply mental models before creating feature branch
-  * Use Opportunity Cost Analysis for feature prioritization
-  * Apply Pareto Principle to identify 20% effort for 80% impact
-- ARCHITECTURE PLANNING: Use Design Patterns tool for structural decisions
-- Create feature branches: git checkout -b feature/your-feature-name
-- Use consistent prefixes: feature/, fix/, docs/, etc.
-- IMPLEMENTATION: Select appropriate Programming Paradigm
-  * Functional for data transformations
-  * Event-driven for user interactions
-  * Concurrent for performance-critical sections
-- DEBUGGING: Apply systematic debugging approaches before commits
+2. Branch Strategy
+- NEVER work directly on main (except critical hotfixes).
+- ALWAYS create a new branch before starting ANY work on GitHub issues.
+- MANDATORY: Check current branch with `git branch --show-current` BEFORE starting work.
+- If not on a clean feature branch, IMMEDIATELY create one: `git checkout -b feature/issue-{issue-number}-{short-description}` or `git checkout -b fix/issue-{issue-number}-{short-description}`.
+- Branch naming convention: `feature/issue-319-test-cleanup`, `fix/issue-123-domain-utils`, `docs/issue-456-api-guide`.
+- NEVER continue work on unrelated branches unless explicitly approved.
+- Use Clear Thought tools for planning (e.g., `mcp__clear-thought-server__mentalmodel` for analysis, `mcp__clear-thought-server__decisionframework` for architectural choices).
 
 3. Commit Message Format
-- ALWAYS start commit messages with one of these exact prefixes:
-  Feature: <description>     # New functionality
-  Fix: <description>         # Bug fixes
-  Docs: <description>        # Documentation changes
-  Refactor: <description>    # Code restructuring
-  Test: <description>        # Test additions/modifications
-  Chore: <description>       # Routine maintenance tasks
-- Include issue references when applicable: #123
-- For hotfixes, include [HOTFIX] in the commit message
-- Case is important: use exactly as shown above
+- Prefixes: Feature:, Fix:, Docs:, Refactor:, Test:, Chore:
+- Include issue references: #123. [HOTFIX] for hotfixes.
 
 4. Pull Requests
-- ALWAYS get explicit approval from repository owner before committing or pushing to git upstream
-- Reference issues with Closes #XX or Relates to #XX
-- Include complete testing details
-- Wait for review approval before merging
-- Use squash merging when possible
+- Get approval before pushing to upstream.
+- Reference issues: Closes #XX or Relates to #XX.
+- Include testing details. Wait for review. Use squash merging.
 
 5. Issue Closure Requirements
-When closing issues, always include:
-- All acceptance criteria checked off
-- Implementation comment with:
-  - Implementation details
-  - Key elements (3+ points)
-  - Lessons learned (3+ insights)
-  - Challenges/solutions
-  - Future considerations
-- Verification statement: "✅ VERIFICATION: I have completed all GitHub documentation requirements including: [list requirements]"
+- Verify acceptance criteria.
+- Add implementation comment (details, lessons, challenges, future considerations).
+- Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
 
 AVAILABLE DOCUMENTATION SOURCES
-Indexed: docs.cognee.ai (Cognee.ai official documentation)
-Indexed: docs.falkordb.com (FalkorDB graph database documentation)
-Indexed: modelcontextprotocol.io (MCP protocol documentation)
-Indexed: github.com (MCP Python SDK, Brave Search, Tavily MCP)
-Indexed: yourls.org (YOURLS URL shortener documentation)
-Indexed: docs.attio.com (Attio's official API documentation)
+Indexed: docs.cognee.ai, docs.falkordb.com, modelcontextprotocol.io, github.com (MCP SDKs, etc.), yourls.org, docs.attio.com.
+Querying: Use `mcp_crawl4ai-rag_perform_rag_query(query="search query", source="optional_domain", match_count=N)`.
+  Examples: `mcp_crawl4ai-rag_perform_rag_query(query="bearer token", source="docs.attio.com")`, `mcp_crawl4ai-rag_perform_rag_query(query="webhook config", match_count=5)`.
 
 CLEAR THOUGHT MCP INTEGRATION (Systematic Problem-Solving)
-Primary Server: clear-thought-mcp-server
-Tools: Mental Models, Design Patterns, Programming Paradigms, Debugging, Sequential Thinking
-Integration: Use with existing MCP endpoints
-Status: Available via mcp__mcp-sequentialthinking-tools namespace
+- Purpose: Enhance problem analysis, design, implementation, and debugging.
+- Documentation: See @docs/tools/clear-thought-tools.md for comprehensive tool reference.
+- Integration: Use Clear Thought MCP tools (e.g., `mcp__clear-thought-server__mentalmodel`, `mcp__clear-thought-server__sequentialthinking`, `mcp__clear-thought-server__debuggingapproach`) via their respective MCP tool names and schemas.
+- Problem-Solving Workflow:
+  1. Problem Analysis (e.g., First Principles via `mcp__clear-thought-server__mentalmodel`)
+  2. Architecture Planning (e.g., Design Patterns via `mcp__clear-thought-server__designpattern`)
+  3. Implementation Strategy (e.g., Programming Paradigms via `mcp__clear-thought-server__programmingparadigm`)
+  4. Debugging (e.g., Systematic approaches via `mcp__clear-thought-server__debuggingapproach`)
+  5. Documentation/Synthesis (e.g., `mcp__clear-thought-server__sequentialthinking`)
 
-Problem-Solving Workflow (Use with existing git/issue workflows):
-1. Problem Analysis: First Principles Thinking to understand core issues
-2. Architecture Planning: Design Patterns for modular architecture decisions
-3. Implementation: Programming Paradigms (functional, event-driven, concurrent)
-4. Debugging: Systematic approaches (binary search, divide & conquer)
-5. Documentation: Sequential Thinking for synthesis and conclusion
+- Contextual Tool Application:
+  * Performance Issues: `mcp__clear-thought-server__programmingparadigm` + `mcp__clear-thought-server__debuggingapproach`.
+  * New Features: `mcp__clear-thought-server__mentalmodel` + `mcp__clear-thought-server__designpattern`.
+  * Integration Problems: `mcp__clear-thought-server__debuggingapproach` + `mcp__clear-thought-server__designpattern`.
+  * Refactoring: `mcp__clear-thought-server__mentalmodel` (e.g., Opportunity Cost) + `mcp__clear-thought-server__programmingparadigm`.
 
-Core Workflow Integration:
-
-DEBUGGING WORKFLOW:
-1. Binary Search for large codebase issues
-2. Divide and Conquer for complex systems
-3. Rubber Duck for logic verification
-
-ARCHITECTURE DECISIONS:
-- API Integration patterns for service coordination
-- Functional paradigms for data processing
-- State Management for complex workflows
-
-COMPLEX PROBLEM SOLVING:
-Use Sequential Thinking for multi-stage problems:
-1. Problem Definition
-2. Research
-3. Analysis
-4. Synthesis
-5. Conclusion
-
-DECISION FRAMEWORK:
-For major architectural choices, tech stack decisions, or feature prioritization:
-- Apply decision criteria: performance, maintainability, cost
-- Use with existing cost analysis workflows
-
-Tool Selection by Context:
-- Performance Issues: Programming Paradigms + Debugging (Binary Search)
-- New Features: Mental Models (First Principles) + Design Patterns
-- Integration Problems: Debugging (Cause Elimination) + Design Patterns (API Integration)
-- Code Refactoring: Mental Models (Opportunity Cost) + Programming Paradigms
-- Documentation: Sequential Thinking + Structured Argumentation
-
-Testing (ENHANCED WITH CLEAR THOUGHT):
-Standard Tests: npm test, npm test <file>, npm test -- <flags>
-
-Clear Thought Enhanced Testing:
-1. PRE-TEST ANALYSIS: Apply Mental Models (Error Propagation) to predict failure points
-2. TEST STRATEGY: Use Debugging Approaches (Program Slicing) to isolate test components
-3. FAILURE ANALYSIS: Apply Sequential Thinking to systematically analyze test failures
-4. OPTIMIZATION: Use Pareto Principle to focus on 20% of tests covering 80% of functionality
+- Enhanced Testing with Clear Thought:
+  1. Pre-Test Analysis: `mcp__clear-thought-server__mentalmodel` (e.g., Error Propagation).
+  2. Test Strategy: `mcp__clear-thought-server__debuggingapproach` (e.g., Program Slicing).
+  3. Failure Analysis: `mcp__clear-thought-server__sequentialthinking`.
 
 EXTERNAL MCP SERVERS (Runtime Dependencies)
-Note: These are external MCP servers that provide additional capabilities.
-They are NOT npm dependencies of this project but external services.
-
-Namespace mcp__crawl4ai-rag__:
-External Server: Crawl4AI RAG MCP Server (https://github.com/coleam00/mcp-crawl4ai-rag)
-Purpose: Web crawling and RAG (Retrieval Augmented Generation) capabilities
-Tools:
-- get_available_sources() - List indexed documentation sources
-- crawl_single_page(url) - Crawl a single web page
-- smart_crawl_url(url) - Intelligently crawl URLs with link following
-- perform_rag_query(q, source?, match_count?) - Query indexed content
-Examples:
-perform_rag_query("authentication bearer token","docs.attio.com")
-perform_rag_query("webhooks configuration",null,10)
-
-Setup: To use crawl4ai-rag tools, you need to:
-1. Install the external MCP server: https://github.com/coleam00/mcp-crawl4ai-rag
-2. Configure it in your Claude Desktop or MCP client configuration
-3. The tools will then be available via the mcp__crawl4ai-rag__ namespace
+- Note: External services, not npm dependencies.
+- Namespace `mcp__crawl4ai-rag__`:
+  * Server: Crawl4AI RAG MCP Server (https://github.com/coleam00/mcp-crawl4ai-rag)
+  * Purpose: Web crawling and RAG.
+  * Tools: get_available_sources(), crawl_single_page(url), smart_crawl_url(url), perform_rag_query(q, source?, match_count?)
+  * Setup: Install external server, configure in MCP client.
