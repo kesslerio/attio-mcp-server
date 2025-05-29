@@ -8,9 +8,25 @@ export default defineConfig({
     testTimeout: 30000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
       include: ['src/**/*.{ts,js}'],
-      exclude: ['src/**/*.d.ts', 'src/**/*.test.{ts,js}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.{ts,js}',
+        'src/**/*.spec.{ts,js}',
+        'src/types/**',
+        'src/**/types.ts',
+        'src/index.ts',
+      ],
+      thresholds: {
+        statements: 5,
+        branches: 5,
+        functions: 10,
+        lines: 5,
+      },
+      all: true,
+      clean: true,
     },
     watchExclude: [
       'node_modules/**',

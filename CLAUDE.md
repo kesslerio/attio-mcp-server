@@ -101,11 +101,13 @@ Troubleshooting:
 git rm --cached <path> && git commit --amend && git push -f origin <branch>
 git fetch upstream && git rebase upstream/main && git push -f origin <branch>
 
-ISSUE MANAGEMENT
+ISSUE MANAGEMENT (ENHANCED WITH CLEAR THOUGHT)
 1. Issue Creation
 - Create issues before starting work
 - Use descriptive titles: type: Description (clear, concise)
 - Search first: gh issue list --repo kesslerio/attio-mcp-server --search "keyword" to avoid duplication
+- APPLY MENTAL MODEL: Use First Principles Thinking to break down the problem
+- CREATE STRUCTURED ANALYSIS: Use Sequential Thinking for complex issues
 - For refactoring issues: Follow template in @docs/refactoring-guidelines.md using checklists
 
 Required Labels:
@@ -137,10 +139,19 @@ Required Labels:
   * API-specific: area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks
   * Functional: area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
 
-2. Branch Strategy
+2. Branch Strategy (ENHANCED)
 - NEVER work directly on main except for critical hotfixes
+- PROBLEM ANALYSIS: Apply mental models before creating feature branch
+  * Use Opportunity Cost Analysis for feature prioritization
+  * Apply Pareto Principle to identify 20% effort for 80% impact
+- ARCHITECTURE PLANNING: Use Design Patterns tool for structural decisions
 - Create feature branches: git checkout -b feature/your-feature-name
 - Use consistent prefixes: feature/, fix/, docs/, etc.
+- IMPLEMENTATION: Select appropriate Programming Paradigm
+  * Functional for data transformations
+  * Event-driven for user interactions
+  * Concurrent for performance-critical sections
+- DEBUGGING: Apply systematic debugging approaches before commits
 
 3. Commit Message Format
 - ALWAYS start commit messages with one of these exact prefixes:
@@ -179,6 +190,60 @@ Indexed: modelcontextprotocol.io (MCP protocol documentation)
 Indexed: github.com (MCP Python SDK, Brave Search, Tavily MCP)
 Indexed: yourls.org (YOURLS URL shortener documentation)
 Indexed: docs.attio.com (Attio's official API documentation)
+
+CLEAR THOUGHT MCP INTEGRATION (Systematic Problem-Solving)
+Primary Server: clear-thought-mcp-server
+Tools: Mental Models, Design Patterns, Programming Paradigms, Debugging, Sequential Thinking
+Integration: Use with existing MCP endpoints
+Status: Available via mcp__mcp-sequentialthinking-tools namespace
+
+Problem-Solving Workflow (Use with existing git/issue workflows):
+1. Problem Analysis: First Principles Thinking to understand core issues
+2. Architecture Planning: Design Patterns for modular architecture decisions
+3. Implementation: Programming Paradigms (functional, event-driven, concurrent)
+4. Debugging: Systematic approaches (binary search, divide & conquer)
+5. Documentation: Sequential Thinking for synthesis and conclusion
+
+Core Workflow Integration:
+
+DEBUGGING WORKFLOW:
+1. Binary Search for large codebase issues
+2. Divide and Conquer for complex systems
+3. Rubber Duck for logic verification
+
+ARCHITECTURE DECISIONS:
+- API Integration patterns for service coordination
+- Functional paradigms for data processing
+- State Management for complex workflows
+
+COMPLEX PROBLEM SOLVING:
+Use Sequential Thinking for multi-stage problems:
+1. Problem Definition
+2. Research
+3. Analysis
+4. Synthesis
+5. Conclusion
+
+DECISION FRAMEWORK:
+For major architectural choices, tech stack decisions, or feature prioritization:
+- Apply decision criteria: performance, maintainability, cost
+- Use with existing cost analysis workflows
+
+Tool Selection by Context:
+- Performance Issues: Programming Paradigms + Debugging (Binary Search)
+- New Features: Mental Models (First Principles) + Design Patterns
+- Integration Problems: Debugging (Cause Elimination) + Design Patterns (API Integration)
+- Code Refactoring: Mental Models (Opportunity Cost) + Programming Paradigms
+- Documentation: Sequential Thinking + Structured Argumentation
+
+Testing (ENHANCED WITH CLEAR THOUGHT):
+Standard Tests: npm test, npm test <file>, npm test -- <flags>
+
+Clear Thought Enhanced Testing:
+1. PRE-TEST ANALYSIS: Apply Mental Models (Error Propagation) to predict failure points
+2. TEST STRATEGY: Use Debugging Approaches (Program Slicing) to isolate test components
+3. FAILURE ANALYSIS: Apply Sequential Thinking to systematically analyze test failures
+4. OPTIMIZATION: Use Pareto Principle to focus on 20% of tests covering 80% of functionality
 
 EXTERNAL MCP SERVERS (Runtime Dependencies)
 Note: These are external MCP servers that provide additional capabilities.

@@ -34,3 +34,7 @@ dist/
 comment.md
 issue_body.md
 .wireit/
+
+# Test coverage reports
+coverage/
+*.lcov
