@@ -1,6 +1,7 @@
 /**
  * Tests for the configuration loader
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -12,6 +13,14 @@ import {
 
 // Mock fs module
 vi.mock('fs', () => ({
+  default: {
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
+    promises: {
+      writeFile: vi.fn().mockResolvedValue(undefined),
+    },
+    mkdirSync: vi.fn(),
+  },
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
   promises: {

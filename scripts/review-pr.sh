@@ -46,22 +46,46 @@ DELETIONS=$(echo "$PR_INFO" | jq -r '.deletions')
 FILES_CHANGED=$(echo "$PR_INFO" | jq -r '.files[].path')
 
 # Get file stats to determine review approach
-DIFF_SIZE=$(gh pr diff $PR_NUMBER | wc -c)
-echo "📊 Diff size: $DIFF_SIZE characters"
+# Handle GitHub API diff size limits (20K lines max)
+DIFF_OUTPUT=$(gh pr diff $PR_NUMBER 2>&1)
+DIFF_EXIT_CODE=$?
 
-# Determine allowed tools and review approach
-if [ $DIFF_SIZE -gt 100000 ]; then
-    echo "⚠️ Large PR detected - using focused review approach"
-    # For large PRs: get file summaries instead of full diff
+if [ $DIFF_EXIT_CODE -ne 0 ] && echo "$DIFF_OUTPUT" | grep -q "diff exceeded the maximum number of lines"; then
+    echo "⚠️ Very large PR detected - diff exceeds GitHub's 20K line limit"
+    echo "📊 Using file-by-file analysis approach"
+    DIFF_SIZE=999999  # Set to very large to trigger large PR mode
+    REVIEW_TYPE="VERY_LARGE_PR"
+    
+    # Get file summaries for very large PRs
     FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
-    # Get just the diff headers and key changes
-    PR_DIFF_SAMPLE=$(gh pr diff $PR_NUMBER | grep -E "^(diff|@@|\+\+\+|---|\+[^+]|\-[^-])" | head -200)
-    REVIEW_TYPE="LARGE_PR_SUMMARY"
+    
+    # Try to get sample content from a few key files
+    SAMPLE_FILES=$(echo "$PR_INFO" | jq -r '.files[0:5][] | .path')
+    PR_DIFF_SAMPLE="# Very Large PR - Sample from first 5 files:\n"
+    for file in $SAMPLE_FILES; do
+        echo "Getting sample from $file..."
+        # Get individual file diff using the files API
+        FILE_DIFF=$(gh api repos/{owner}/{repo}/pulls/$PR_NUMBER/files --jq ".[] | select(.filename == \"$file\") | .patch // \"File too large or binary\"" 2>/dev/null || echo "File diff unavailable")
+        PR_DIFF_SAMPLE="$PR_DIFF_SAMPLE\n## $file\n\`\`\`diff\n$(echo "$FILE_DIFF" | head -20)\n\`\`\`\n"
+    done
 else
-    echo "📝 Small/Medium PR - using detailed review approach"
-    # For smaller PRs: get full diff
-    PR_DIFF=$(gh pr diff $PR_NUMBER)
-    REVIEW_TYPE="FULL_ANALYSIS"
+    DIFF_SIZE=$(echo "$DIFF_OUTPUT" | wc -c)
+    echo "📊 Diff size: $DIFF_SIZE characters"
+    
+    # Determine review approach based on size
+    if [ $DIFF_SIZE -gt 100000 ]; then
+        echo "⚠️ Large PR detected - using focused review approach"
+        # For large PRs: get file summaries instead of full diff
+        FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
+        # Get just the diff headers and key changes
+        PR_DIFF_SAMPLE=$(echo "$DIFF_OUTPUT" | grep -E "^(diff|@@|\+\+\+|---|\+[^+]|\-[^-])" | head -200)
+        REVIEW_TYPE="LARGE_PR_SUMMARY"
+    else
+        echo "📝 Small/Medium PR - using detailed review approach"
+        # For smaller PRs: get full diff
+        PR_DIFF="$DIFF_OUTPUT"
+        REVIEW_TYPE="FULL_ANALYSIS"
+    fi
 fi
 
 echo "🔍 Running Claude analysis ($REVIEW_TYPE)..."
@@ -107,7 +131,37 @@ Focus on Attio MCP Server project conventions from CLAUDE.md, TypeScript standar
 EOF
 
 # Create data file for claude -p
-if [ "$REVIEW_TYPE" = "LARGE_PR_SUMMARY" ]; then
+if [ "$REVIEW_TYPE" = "VERY_LARGE_PR" ]; then
+cat > /tmp/pr_data_${PR_NUMBER}.md << EOF
+# PR #${PR_NUMBER} Review Data (Very Large PR - File Summary Analysis)
+
+## PR Information
+**Title:** ${PR_TITLE}
+**Author:** ${PR_AUTHOR}
+**Created:** ${PR_CREATED}
+**Branch:** ${HEAD_BRANCH} → ${BASE_BRANCH}
+**Files Changed:** ${FILES_COUNT}
+**Lines:** +${ADDITIONS}/-${DELETIONS}
+
+**Description:**
+${PR_BODY}
+
+**File Change Summary:**
+${FILE_STATS}
+
+**Sample Code Changes (First 5 files with 20-line previews):**
+$(echo -e "$PR_DIFF_SAMPLE")
+
+**Note:** This PR exceeds GitHub's 20K line diff limit. Review focuses on file-level changes, architecture patterns, and high-level impact assessment rather than detailed line-by-line analysis.
+
+**Review Strategy:**
+- Focus on architectural changes and patterns
+- Identify potential breaking changes or compatibility issues  
+- Assess security implications of large-scale changes
+- Recommend testing strategies for comprehensive changes
+- Highlight areas that need careful manual review
+EOF
+elif [ "$REVIEW_TYPE" = "LARGE_PR_SUMMARY" ]; then
 cat > /tmp/pr_data_${PR_NUMBER}.md << EOF
 # PR #${PR_NUMBER} Review Data (Large PR - Summary Analysis)
 

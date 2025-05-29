@@ -2,6 +2,7 @@
  * Integration tests for attribute validation
  * Tests the integration of attribute validation with company operations
  */
+import { describe, it, test, expect, beforeEach, vi } from 'vitest';
 import { CompanyValidator } from '../../src/validators/company-validator.js';
 import {
   getAttributeTypeInfo,

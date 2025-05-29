@@ -1,6 +1,7 @@
 /**
  * Unit tests for domain utility functions
  */
+import { describe, it, test, expect } from 'vitest';
 import {
   extractDomain,
   isValidDomain,

@@ -1,6 +1,7 @@
 /**
  * Tests for advanced search functionality for people
  */
+import { describe, it, expect, vi } from 'vitest';
 import { advancedSearchPeople } from '../../src/objects/people';
 import {
   ListEntryFilters,

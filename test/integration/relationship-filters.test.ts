@@ -6,6 +6,7 @@
  *
  * Note: These tests require valid API credentials and will make actual API calls.
  */
+import { describe, test, expect, beforeAll } from 'vitest';
 import axios from 'axios';
 import {
   createPeopleByCompanyFilter,

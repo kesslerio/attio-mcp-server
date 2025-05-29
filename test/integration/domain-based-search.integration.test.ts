@@ -1,6 +1,7 @@
 /**
  * Integration tests for domain-based company search enhancement
  */
+import { describe, test, beforeAll } from 'vitest';
 import {
   searchCompanies,
   searchCompaniesByDomain,

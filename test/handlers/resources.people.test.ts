@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerResourceHandlers } from '../../src/handlers/resources';
 import * as companiesModule from '../../src/objects/companies/index';
 import * as peopleModule from '../../src/objects/people/index';

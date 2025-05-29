@@ -1,6 +1,7 @@
 /**
  * Test for update-company tool handler
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
 import * as registry from '../../src/handlers/tools/registry';
 import * as companyBasic from '../../src/objects/companies/basic';
