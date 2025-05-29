@@ -92,6 +92,14 @@ vi.mock('../src/objects/people/index', () => ({
   deletePerson: vi.fn(async () => true),
 }));
 
+// Mock console methods globally to prevent issues with logging tests
+const originalConsole = {
+  log: console.log,
+  error: console.error,
+  warn: console.warn,
+  debug: console.debug,
+};
+
 // Set up environment variables for testing
 beforeEach(() => {
   // Mock environment variables for API initialization
@@ -100,4 +108,10 @@ beforeEach(() => {
   
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
+  
+  // Reset console methods to original implementation to avoid interference
+  console.log = originalConsole.log;
+  console.error = originalConsole.error;
+  console.warn = originalConsole.warn;
+  console.debug = originalConsole.debug;
 });
