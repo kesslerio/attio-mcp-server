@@ -1,5 +1,6 @@
 import { AttioRecord } from '../../../types/attio.js';
 import {
+  searchPeopleByCompany,
   searchPeopleByCompanyList,
   searchPeopleByNotes,
 } from '../../../objects/people/index.js';
@@ -38,11 +39,11 @@ export const relationshipToolConfigs = {
         );
       }
 
-      const filters: Array<{ company: { target_record_id: { $eq: string } } }> =
-        [];
+      // Process the filters to extract company identifiers
       for (const filter of companyFilter.filters) {
         const typedFilter = filter as CompanyFilter;
         const slug = typedFilter.attribute?.slug;
+        
         if (slug === 'companies.id') {
           let recordId: string;
           if (
@@ -50,12 +51,12 @@ export const relationshipToolConfigs = {
             typedFilter.value !== null &&
             'record_id' in typedFilter.value
           ) {
-            recordId =
-              (typedFilter.value as CompanyFilterValue).record_id || '';
+            recordId = (typedFilter.value as CompanyFilterValue).record_id || '';
           } else {
             recordId = String(typedFilter.value);
           }
-          filters.push({ company: { target_record_id: { $eq: recordId } } });
+          // Use the searchPeopleByCompany function
+          return await searchPeopleByCompany(recordId);
         } else if (slug === 'companies.name') {
           const searchValue = String(typedFilter.value);
           const companies = await searchCompanies(searchValue);
@@ -64,30 +65,18 @@ export const relationshipToolConfigs = {
           }
           const companyId = companies[0].id?.record_id;
           if (!companyId) {
-            throw new Error(
-              `Company found but has no record ID: ${searchValue}`
-            );
+            throw new Error(`Company found but has no record ID: ${searchValue}`);
           }
-          filters.push({ company: { target_record_id: { $eq: companyId } } });
+          // Use the searchPeopleByCompany function
+          return await searchPeopleByCompany(companyId);
         } else {
           throw new Error(
             `Unsupported filter type: '${slug}'. Supported filters are: 'companies.id' and 'companies.name'`
           );
         }
       }
-
-      const apiFilter =
-        filters.length === 1
-          ? filters[0]
-          : companyFilter.matchAny
-            ? { $or: filters }
-            : { $and: filters };
-      const api = getAttioClient();
-      const response = await api.post('/objects/people/records/query', {
-        filter: apiFilter,
-        limit: 50,
-      });
-      return response.data.data || [];
+      
+      throw new Error('No valid filters found');
     },
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people matching the company filter:\n${results
