@@ -18,28 +18,29 @@ export const notesPrompts: PromptTemplate[] = [
         type: 'string',
         description: 'Type of object to add the note to (people or companies)',
         required: true,
-        enum: ['people', 'companies']
+        enum: ['people', 'companies'],
       },
       {
         name: 'recordId',
         type: 'string',
         description: 'ID of the record to add the note to',
-        required: true
+        required: true,
       },
       {
         name: 'title',
         type: 'string',
         description: 'Title of the note',
-        required: true
+        required: true,
       },
       {
         name: 'content',
         type: 'string',
         description: 'Content of the note',
-        required: true
-      }
+        required: true,
+      },
     ],
-    template: 'Create a note titled "{{title}}" with content "{{content}}" for the {{objectType}} record with ID {{recordId}}.'
+    template:
+      'Create a note titled "{{title}}" with content "{{content}}" for the {{objectType}} record with ID {{recordId}}.',
   },
   {
     id: 'get-notes-for-record',
@@ -52,30 +53,31 @@ export const notesPrompts: PromptTemplate[] = [
         type: 'string',
         description: 'Type of object to get notes for (people or companies)',
         required: true,
-        enum: ['people', 'companies']
+        enum: ['people', 'companies'],
       },
       {
         name: 'recordId',
         type: 'string',
         description: 'ID of the record to get notes for',
-        required: true
+        required: true,
       },
       {
         name: 'limit',
         type: 'number',
         description: 'Maximum number of notes to retrieve',
         required: false,
-        default: 10
+        default: 10,
       },
       {
         name: 'offset',
         type: 'number',
         description: 'Number of notes to skip',
         required: false,
-        default: 0
-      }
+        default: 0,
+      },
     ],
-    template: 'Get {{limit}} notes for the {{objectType}} record with ID {{recordId}}{{#if offset}}, skipping the first {{offset}} notes{{/if}}.'
+    template:
+      'Get {{limit}} notes for the {{objectType}} record with ID {{recordId}}{{#if offset}}, skipping the first {{offset}} notes{{/if}}.',
   },
   {
     id: 'update-note',
@@ -87,22 +89,23 @@ export const notesPrompts: PromptTemplate[] = [
         name: 'noteId',
         type: 'string',
         description: 'ID of the note to update',
-        required: true
+        required: true,
       },
       {
         name: 'title',
         type: 'string',
         description: 'New title for the note',
-        required: false
+        required: false,
       },
       {
         name: 'content',
         type: 'string',
         description: 'New content for the note',
-        required: false
-      }
+        required: false,
+      },
     ],
-    template: 'Update the note with ID {{noteId}}{{#if title}} to change its title to "{{title}}"{{/if}}{{#if content}} and update its content to "{{content}}"{{/if}}.'
+    template:
+      'Update the note with ID {{noteId}}{{#if title}} to change its title to "{{title}}"{{/if}}{{#if content}} and update its content to "{{content}}"{{/if}}.',
   },
   {
     id: 'delete-note',
@@ -114,11 +117,11 @@ export const notesPrompts: PromptTemplate[] = [
         name: 'noteId',
         type: 'string',
         description: 'ID of the note to delete',
-        required: true
-      }
+        required: true,
+      },
     ],
-    template: 'Delete the note with ID {{noteId}}.'
-  }
+    template: 'Delete the note with ID {{noteId}}.',
+  },
 ];
 
 export default notesPrompts;

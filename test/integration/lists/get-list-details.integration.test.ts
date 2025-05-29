@@ -20,10 +20,10 @@ describe('get-list-details integration test', () => {
       patch: mockedAxios.patch,
       interceptors: {
         request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      }
+        response: { use: vi.fn() },
+      },
     } as any);
-    
+
     // Initialize the API client with a dummy key
     initializeAttioClient('test-api-key');
   });
@@ -45,22 +45,22 @@ describe('get-list-details integration test', () => {
           workspace_id: 'workspace789',
           created_at: '2023-02-01T00:00:00Z', // Will format to 2023-02-01 in ISO format
           updated_at: '2023-02-02T00:00:00Z', // Will format to 2023-02-02 in ISO format
-          entry_count: 25
-        }
-      }
+          entry_count: 25,
+        },
+      },
     };
-    
+
     mockedAxios.get.mockResolvedValueOnce(mockApiResponse);
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-list-details',
         arguments: {
-          listId: 'list456'
-        }
-      }
+          listId: 'list456',
+        },
+      },
     };
 
     // Execute the request
@@ -75,7 +75,7 @@ describe('get-list-details integration test', () => {
     expect(response.isError).toBeFalsy();
     expect(response.content).toBeDefined();
     expect(response.content[0].type).toBe('text');
-    
+
     // Verify the content contains the expected information
     const textContent = response.content[0].text;
     expect(textContent).toContain('List Details:');
@@ -85,7 +85,9 @@ describe('get-list-details integration test', () => {
     expect(textContent).toContain('25 entries');
     expect(textContent).toContain('Created: 2023-02-01'); // ISO format date
     expect(textContent).toContain('Updated: 2023-02-02'); // ISO format date
-    expect(textContent).toContain('Description: A list for integration testing');
+    expect(textContent).toContain(
+      'Description: A list for integration testing'
+    );
   });
 
   it('should handle API error responses', async () => {
@@ -96,22 +98,22 @@ describe('get-list-details integration test', () => {
       data: {
         message: 'List not found',
         error: 'Not Found',
-        path: ['/lists/nonexistent456']
-      }
+        path: ['/lists/nonexistent456'],
+      },
     };
     (axiosError as any).isAxiosError = true;
-    
+
     mockedAxios.get.mockRejectedValueOnce(axiosError);
 
     // Create a mock request with non-existent list ID
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-list-details',
         arguments: {
-          listId: 'nonexistent456'
-        }
-      }
+          listId: 'nonexistent456',
+        },
+      },
     };
 
     // Execute the request
@@ -125,10 +127,12 @@ describe('get-list-details integration test', () => {
     expect(response).toBeDefined();
     expect(response.isError).toBeTruthy();
     expect(response.error).toBeDefined();
-    // Note: Due to error handling implementation, specific HTTP status codes 
+    // Note: Due to error handling implementation, specific HTTP status codes
     // may not be preserved and default to 500
     expect(response.error.code).toBe(500);
-    expect(response.error.message).toContain('Cannot read properties of undefined');
+    expect(response.error.message).toContain(
+      'Cannot read properties of undefined'
+    );
   });
 
   it('should handle API rate limit responses', async () => {
@@ -138,22 +142,22 @@ describe('get-list-details integration test', () => {
       status: 429,
       data: {
         message: 'Too many requests',
-        error: 'Rate Limited'
-      }
+        error: 'Rate Limited',
+      },
     };
     (rateLimitError as any).isAxiosError = true;
-    
+
     mockedAxios.get.mockRejectedValueOnce(rateLimitError);
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-list-details',
         arguments: {
-          listId: 'list789'
-        }
-      }
+          listId: 'list789',
+        },
+      },
     };
 
     // Execute the request
@@ -167,10 +171,12 @@ describe('get-list-details integration test', () => {
     expect(response).toBeDefined();
     expect(response.isError).toBeTruthy();
     expect(response.error).toBeDefined();
-    // Note: Due to error handling implementation, specific HTTP status codes 
+    // Note: Due to error handling implementation, specific HTTP status codes
     // may not be preserved and default to 500
     expect(response.error.code).toBe(500);
-    expect(response.error.message).toContain('Cannot read properties of undefined');
+    expect(response.error.message).toContain(
+      'Cannot read properties of undefined'
+    );
   });
 
   it('should handle missing data in API response', async () => {
@@ -178,21 +184,21 @@ describe('get-list-details integration test', () => {
     const mockApiResponseMissingData = {
       data: {
         // Missing the 'data' field that should contain the list details
-        id: 'list999'
-      }
+        id: 'list999',
+      },
     };
-    
+
     mockedAxios.get.mockResolvedValueOnce(mockApiResponseMissingData);
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-list-details',
         arguments: {
-          listId: 'list999'
-        }
-      }
+          listId: 'list999',
+        },
+      },
     };
 
     // Execute the request
@@ -207,7 +213,7 @@ describe('get-list-details integration test', () => {
     expect(response.isError).toBeFalsy();
     expect(response.content).toBeDefined();
     expect(response.content[0].type).toBe('text');
-    
+
     // Verify the content adapts to missing fields
     const textContent = response.content[0].text;
     expect(textContent).toContain('List Details:');

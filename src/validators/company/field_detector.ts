@@ -1,7 +1,10 @@
 import { detectFieldType } from '../../api/attribute-types.js';
 import { ResourceType } from '../../types/attio.js';
 import { convertToBoolean } from '../../utils/attribute-mapping/attribute-mappers.js';
-import { CompanyFieldValue, ProcessedFieldValue } from '../../types/tool-types.js';
+import {
+  CompanyFieldValue,
+  ProcessedFieldValue,
+} from '../../types/tool-types.js';
 import { TypeCache } from './type_cache.js';
 
 export const booleanFieldPatterns = [
@@ -29,7 +32,7 @@ export const booleanFieldPatterns = [
   'available',
   'eligible',
   'complete',
-  'valid'
+  'valid',
 ];
 
 export function isBooleanFieldByName(fieldName: string): boolean {
@@ -62,7 +65,10 @@ export async function processFieldValue(
       TypeCache.setFieldType(fieldName, fieldType);
     }
 
-    if (fieldType === 'boolean' && (typeof value === 'string' || typeof value === 'number')) {
+    if (
+      fieldType === 'boolean' &&
+      (typeof value === 'string' || typeof value === 'number')
+    ) {
       return convertToBoolean(value);
     }
 
@@ -70,7 +76,10 @@ export async function processFieldValue(
       return [value];
     }
   } catch {
-    if (isBooleanFieldByName(fieldName) && (typeof value === 'string' || typeof value === 'number')) {
+    if (
+      isBooleanFieldByName(fieldName) &&
+      (typeof value === 'string' || typeof value === 'number')
+    ) {
       try {
         return convertToBoolean(value);
       } catch {
@@ -78,24 +87,36 @@ export async function processFieldValue(
       }
     }
 
-    if (fieldName.toLowerCase().includes('categories') && typeof value === 'string') {
+    if (
+      fieldName.toLowerCase().includes('categories') &&
+      typeof value === 'string'
+    ) {
       return [value];
     }
   }
 
   // Ensure we return a valid ProcessedFieldValue
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null || value === undefined) {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value === null ||
+    value === undefined
+  ) {
     return value;
   }
-  
+
   // For arrays, ensure all elements are valid types
   if (Array.isArray(value)) {
-    const processedArray = value.filter(item => 
-      typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+    const processedArray = value.filter(
+      (item) =>
+        typeof item === 'string' ||
+        typeof item === 'number' ||
+        typeof item === 'boolean'
     );
     return processedArray.length > 0 ? processedArray : undefined;
   }
-  
+
   // For other types, convert to string or return undefined
   return typeof value === 'object' ? String(value) : undefined;
 }

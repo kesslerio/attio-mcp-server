@@ -20,10 +20,10 @@ describe('get-record-list-memberships integration test', () => {
       patch: mockedAxios.patch,
       interceptors: {
         request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      }
+        response: { use: vi.fn() },
+      },
     } as any);
-    
+
     // Initialize the API client with a dummy key
     initializeAttioClient('test-api-key');
   });
@@ -40,17 +40,17 @@ describe('get-record-list-memberships integration test', () => {
           {
             id: 'list-1',
             name: 'Sales Pipeline',
-            object_slug: 'companies'
+            object_slug: 'companies',
           },
           {
             id: 'list-2',
             name: 'Marketing Contacts',
-            object_slug: 'companies'
-          }
-        ]
-      }
+            object_slug: 'companies',
+          },
+        ],
+      },
     };
-    
+
     // Setup mock responses for the getListEntries calls
     const mockEntriesResponse1 = {
       data: {
@@ -60,30 +60,30 @@ describe('get-record-list-memberships integration test', () => {
             record_id: 'company-123',
             values: {
               stage: 'Qualified',
-              priority: 'High'
-            }
+              priority: 'High',
+            },
           },
           {
             id: { entry_id: 'entry-2' },
             record_id: 'company-456',
-            values: {}
-          }
-        ]
-      }
+            values: {},
+          },
+        ],
+      },
     };
-    
+
     const mockEntriesResponse2 = {
       data: {
         data: [
           {
             id: { entry_id: 'entry-3' },
             record_id: 'company-789',
-            values: {}
-          }
-        ]
-      }
+            values: {},
+          },
+        ],
+      },
     };
-    
+
     // Mock the axios calls in sequence
     mockedAxios.get.mockImplementation((url) => {
       if (url === '/lists?limit=20') {
@@ -107,29 +107,31 @@ describe('get-record-list-memberships integration test', () => {
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-record-list-memberships',
         arguments: {
           recordId: 'company-123',
           objectType: 'companies',
-          includeEntryValues: true
-        }
-      }
+          includeEntryValues: true,
+        },
+      },
     };
 
     // Execute the request
     const response = await executeToolRequest(mockRequest);
 
     // Check that axios calls were made correctly
-    expect(mockedAxios.get).toHaveBeenCalledWith('/lists?limit=20&objectSlug=companies');
-    
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      '/lists?limit=20&objectSlug=companies'
+    );
+
     // Check the response
     expect(response).toBeDefined();
     expect(response.isError).toBeFalsy();
     expect(response.content).toBeDefined();
     expect(response.content[0].type).toBe('text');
-    
+
     // Verify the content contains the expected information
     const textContent = response.content[0].text;
     expect(textContent).toContain('Found 1 list membership(s):');
@@ -137,7 +139,7 @@ describe('get-record-list-memberships integration test', () => {
     expect(textContent).toContain('Entry ID: entry-1');
     expect(textContent).toContain('stage: Qualified');
     expect(textContent).toContain('priority: High');
-    
+
     // Verify the metadata
     expect(response.metadata).toBeDefined();
     expect(response.metadata.memberships).toHaveLength(1);
@@ -146,7 +148,7 @@ describe('get-record-list-memberships integration test', () => {
     expect(response.metadata.memberships[0].entryId).toBe('entry-1');
     expect(response.metadata.memberships[0].entryValues).toEqual({
       stage: 'Qualified',
-      priority: 'High'
+      priority: 'High',
     });
   });
 
@@ -158,24 +160,24 @@ describe('get-record-list-memberships integration test', () => {
           {
             id: 'list-1',
             name: 'Sales Pipeline',
-            object_slug: 'companies'
+            object_slug: 'companies',
           },
           {
             id: 'list-2',
             name: 'Marketing Contacts',
-            object_slug: 'companies'
-          }
-        ]
-      }
+            object_slug: 'companies',
+          },
+        ],
+      },
     };
-    
+
     // Mock entries responses with no matches
     const mockEmptyEntriesResponse = {
       data: {
-        data: []
-      }
+        data: [],
+      },
     };
-    
+
     // Mock the axios calls
     mockedAxios.get.mockImplementation((url) => {
       if (url === '/lists?limit=20') {
@@ -195,13 +197,13 @@ describe('get-record-list-memberships integration test', () => {
 
     // Create a mock request for a record that isn't in any lists
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-record-list-memberships',
         arguments: {
-          recordId: 'not-in-any-list-123'
-        }
-      }
+          recordId: 'not-in-any-list-123',
+        },
+      },
     };
 
     // Execute the request
@@ -212,8 +214,10 @@ describe('get-record-list-memberships integration test', () => {
     expect(response.isError).toBeFalsy();
     expect(response.content).toBeDefined();
     expect(response.content[0].type).toBe('text');
-    expect(response.content[0].text).toBe('Record is not a member of any lists.');
-    
+    expect(response.content[0].text).toBe(
+      'Record is not a member of any lists.'
+    );
+
     // Verify empty metadata
     expect(response.metadata).toBeDefined();
     expect(response.metadata.memberships).toHaveLength(0);
@@ -225,22 +229,22 @@ describe('get-record-list-memberships integration test', () => {
     (apiError as any).response = {
       status: 500,
       data: {
-        message: 'Internal Server Error'
-      }
+        message: 'Internal Server Error',
+      },
     };
     (apiError as any).isAxiosError = true;
-    
+
     mockedAxios.get.mockRejectedValue(apiError);
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-record-list-memberships',
         arguments: {
-          recordId: 'company-123'
-        }
-      }
+          recordId: 'company-123',
+        },
+      },
     };
 
     // Execute the request
@@ -261,22 +265,22 @@ describe('get-record-list-memberships integration test', () => {
           {
             id: 'list-1',
             name: 'Sales Pipeline',
-            object_slug: 'companies'
+            object_slug: 'companies',
           },
           {
             id: 'list-2',
             name: 'Marketing Contacts (Fails)',
-            object_slug: 'companies'
+            object_slug: 'companies',
           },
           {
             id: 'list-3',
             name: 'Customers',
-            object_slug: 'companies'
-          }
-        ]
-      }
+            object_slug: 'companies',
+          },
+        ],
+      },
     };
-    
+
     // Setup mock responses for successful list entries
     const mockEntriesResponse1 = {
       data: {
@@ -284,34 +288,34 @@ describe('get-record-list-memberships integration test', () => {
           {
             id: { entry_id: 'entry-1' },
             record_id: 'company-123',
-            values: { stage: 'Lead' }
-          }
-        ]
-      }
+            values: { stage: 'Lead' },
+          },
+        ],
+      },
     };
-    
+
     const mockEntriesResponse3 = {
       data: {
         data: [
           {
             id: { entry_id: 'entry-5' },
             record_id: 'company-123',
-            values: { type: 'Enterprise' }
-          }
-        ]
-      }
+            values: { type: 'Enterprise' },
+          },
+        ],
+      },
     };
-    
+
     // Error for the second list
     const listError = new Error('List API Error');
     (listError as any).response = {
       status: 404,
       data: {
-        message: 'List not found'
-      }
+        message: 'List not found',
+      },
     };
     (listError as any).isAxiosError = true;
-    
+
     // Mock the axios calls with a failure for list-2
     mockedAxios.get.mockImplementation((url) => {
       if (url === '/lists?limit=20') {
@@ -325,7 +329,7 @@ describe('get-record-list-memberships integration test', () => {
       }
       return Promise.reject(new Error(`Unhandled URL: ${url}`));
     });
-    
+
     mockedAxios.post.mockImplementation((url) => {
       if (url.includes('list-1')) {
         return Promise.resolve(mockEntriesResponse1);
@@ -339,14 +343,14 @@ describe('get-record-list-memberships integration test', () => {
 
     // Create a mock request
     const mockRequest = {
-      method: "tools/call" as const,
+      method: 'tools/call' as const,
       params: {
         name: 'get-record-list-memberships',
         arguments: {
           recordId: 'company-123',
-          includeEntryValues: true
-        }
-      }
+          includeEntryValues: true,
+        },
+      },
     };
 
     // Execute the request
@@ -357,7 +361,7 @@ describe('get-record-list-memberships integration test', () => {
     expect(response.isError).toBeFalsy();
     expect(response.content).toBeDefined();
     expect(response.content[0].type).toBe('text');
-    
+
     // Should have found memberships in list-1 and list-3, but not list-2
     const textContent = response.content[0].text;
     expect(textContent).toContain('Found 2 list membership(s):');
@@ -367,10 +371,10 @@ describe('get-record-list-memberships integration test', () => {
     expect(textContent).toContain('List: Customers (ID: list-3)');
     expect(textContent).toContain('Entry ID: entry-5');
     expect(textContent).toContain('type: Enterprise');
-    
+
     // Should not contain the failed list
     expect(textContent).not.toContain('Marketing Contacts (Fails)');
-    
+
     // Check metadata
     expect(response.metadata.memberships).toHaveLength(2);
   });

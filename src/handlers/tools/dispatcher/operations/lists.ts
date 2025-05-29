@@ -1,6 +1,6 @@
 /**
  * List operation handlers for tool execution
- * 
+ *
  * Handles list-related operations including adding/removing records from lists
  */
 
@@ -34,11 +34,11 @@ export async function handleGetListsOperation(
 
 /**
  * Handle addRecordToList operations
- * 
+ *
  * This function extracts parameters from the tool request and passes them to the handler.
- * It supports both required parameters (listId, recordId) and optional parameters 
+ * It supports both required parameters (listId, recordId) and optional parameters
  * (objectType, initialValues) needed for proper API payload construction.
- * 
+ *
  * @param request - The tool request containing parameters
  * @param toolConfig - The tool configuration with handler function
  * @returns Formatted response with success or error information
@@ -50,7 +50,9 @@ export async function handleAddRecordToListOperation(
   const listId = request.params.arguments?.listId as string;
   const recordId = request.params.arguments?.recordId as string;
   const objectType = request.params.arguments?.objectType as string | undefined;
-  const initialValues = request.params.arguments?.initialValues as Record<string, any> | undefined;
+  const initialValues = request.params.arguments?.initialValues as
+    | Record<string, any>
+    | undefined;
 
   if (!listId) {
     return createErrorResult(
@@ -72,9 +74,14 @@ export async function handleAddRecordToListOperation(
 
   try {
     // Pass objectType and initialValues to the handler function
-    const result = await toolConfig.handler(listId, recordId, objectType, initialValues);
-    const formattedResult = toolConfig.formatResult 
-      ? toolConfig.formatResult(result) 
+    const result = await toolConfig.handler(
+      listId,
+      recordId,
+      objectType,
+      initialValues
+    );
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
       : `Successfully added record ${recordId} to list ${listId}`;
 
     return formatResponse(formattedResult);
@@ -118,8 +125,8 @@ export async function handleRemoveRecordFromListOperation(
 
   try {
     const result = await toolConfig.handler(listId, entryId);
-    const formattedResult = toolConfig.formatResult 
-      ? toolConfig.formatResult(result) 
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
       : `Successfully removed entry ${entryId} from list ${listId}`;
 
     return formatResponse(formattedResult);
@@ -173,7 +180,9 @@ export async function handleUpdateListEntryOperation(
 
   try {
     const result = await toolConfig.handler(listId, entryId, attributes);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -188,7 +197,7 @@ export async function handleUpdateListEntryOperation(
 
 /**
  * Handle filterListEntriesByParent operations
- * 
+ *
  * This handler extracts the required parameters from the tool request and passes them
  * to the handler function for filtering list entries based on parent record properties.
  */
@@ -198,7 +207,8 @@ export async function handleFilterListEntriesByParentOperation(
 ) {
   const listId = request.params.arguments?.listId as string;
   const parentObjectType = request.params.arguments?.parentObjectType as string;
-  const parentAttributeSlug = request.params.arguments?.parentAttributeSlug as string;
+  const parentAttributeSlug = request.params.arguments
+    ?.parentAttributeSlug as string;
   const condition = request.params.arguments?.condition as string;
   const value = request.params.arguments?.value;
   const limit = request.params.arguments?.limit as number;
@@ -228,7 +238,10 @@ export async function handleFilterListEntriesByParentOperation(
       new Error('parentAttributeSlug parameter is required'),
       `/lists/${listId}/entries`,
       'GET',
-      { status: 400, message: 'Missing required parameter: parentAttributeSlug' }
+      {
+        status: 400,
+        message: 'Missing required parameter: parentAttributeSlug',
+      }
     );
   }
 
@@ -261,9 +274,11 @@ export async function handleFilterListEntriesByParentOperation(
       limit,
       offset
     );
-    
+
     // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -278,7 +293,7 @@ export async function handleFilterListEntriesByParentOperation(
 
 /**
  * Handle filterListEntriesByParentId operations
- * 
+ *
  * This handler extracts the required parameters from the tool request and passes them
  * to the handler function for filtering list entries by parent record ID.
  */
@@ -312,15 +327,12 @@ export async function handleFilterListEntriesByParentIdOperation(
 
   try {
     // Call the handler function with all parameters
-    const result = await toolConfig.handler(
-      listId,
-      recordId,
-      limit,
-      offset
-    );
-    
+    const result = await toolConfig.handler(listId, recordId, limit, offset);
+
     // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -353,7 +365,9 @@ export async function handleGetListDetailsOperation(
 
   try {
     const result = await toolConfig.handler(listId);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -389,7 +403,9 @@ export async function handleGetListEntriesOperation(
 
   try {
     const result = await toolConfig.handler(listId, limit, offset, filters);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -453,8 +469,17 @@ export async function handleFilterListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, attributeSlug, condition, value, limit, offset);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const result = await toolConfig.handler(
+      listId,
+      attributeSlug,
+      condition,
+      value,
+      limit,
+      offset
+    );
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {
@@ -499,7 +524,9 @@ export async function handleAdvancedFilterListEntriesOperation(
 
   try {
     const result = await toolConfig.handler(listId, filters, limit, offset);
-    const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
 
     return formatResponse(formattedResult);
   } catch (error) {

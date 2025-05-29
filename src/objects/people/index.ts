@@ -13,7 +13,7 @@ export {
   updatePersonAttribute,
   deletePerson,
   getPersonDetails,
-  listPeople
+  listPeople,
 } from './basic.js';
 
 // Export search functionality
@@ -27,24 +27,18 @@ export {
   searchPeopleByCreationDate,
   searchPeopleByModificationDate,
   searchPeopleByLastInteraction,
-  searchPeopleByActivity
+  searchPeopleByActivity,
 } from './search.js';
 
 // Export relationship queries
 export {
   searchPeopleByCompany,
   searchPeopleByCompanyList,
-  searchPeopleByNotes
+  searchPeopleByNotes,
 } from './relationships.js';
 
 // Export batch operations
-export {
-  batchSearchPeople,
-  batchGetPeopleDetails
-} from './batch.js';
+export { batchSearchPeople, batchGetPeopleDetails } from './batch.js';
 
 // Export note operations
-export {
-  getPersonNotes,
-  createPersonNote
-} from './notes.js';
+export { getPersonNotes, createPersonNote } from './notes.js';

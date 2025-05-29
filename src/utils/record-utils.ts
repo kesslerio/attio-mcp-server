@@ -267,21 +267,21 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
 
 /**
  * Creates a path-based filter for filtering list entries by parent record properties
- * 
+ *
  * This function constructs a filter that follows paths through related objects,
  * which is necessary for filtering list entries based on properties of their parent records.
- * 
+ *
  * @param listSlug - The slug of the list (either the API slug or list ID)
  * @param parentObjectType - The type of the parent record (e.g., 'companies', 'people')
  * @param parentAttributeSlug - The attribute of the parent record to filter by
  * @param condition - The filter condition to apply
  * @param value - The value to filter by
  * @returns A filter object compatible with the Attio API for path-based filtering
- * 
+ *
  * @example
  * // Filter for companies in a list named "prospects" that have "Tech" in their industry
  * const filter = createPathBasedFilter('prospects', 'companies', 'industry', 'contains', 'Tech');
- * 
+ *
  * @example
  * // Filter for people in a list with ID "list_12345" who have an email from apple.com
  * const filter = createPathBasedFilter('list_12345', 'people', 'email_addresses', 'contains', '@apple.com');
@@ -298,12 +298,12 @@ export function createPathBasedFilter(
   // Second path element is [parentObjectType, parentAttributeSlug] to navigate to specific attribute
   const path = [
     [listSlug, 'parent_record'],
-    [parentObjectType, parentAttributeSlug]
+    [parentObjectType, parentAttributeSlug],
   ];
-  
+
   // Create constraints object based on condition and value
   let constraints: Record<string, any> = {};
-  
+
   // Handle different condition types appropriately
   if (condition === 'equals' || condition === 'eq') {
     // For exact equality on simple attributes
@@ -335,15 +335,15 @@ export function createPathBasedFilter(
     // Default to exact match if condition is unknown
     constraints = { value };
   }
-  
+
   // Special case for filtering by record ID
   if (parentAttributeSlug === 'id' || parentAttributeSlug === 'record_id') {
     return {
       path: [[listSlug, 'parent_record']],
-      constraints: { record_id: value }
+      constraints: { record_id: value },
     };
   }
-  
+
   // For filtering by name, we need to use full_name property
   if (parentAttributeSlug === 'name') {
     if (condition === 'equals') {
@@ -356,7 +356,7 @@ export function createPathBasedFilter(
       constraints = { full_name: { ends_with: value } };
     }
   }
-  
+
   // For email addresses, we need to use email_address property
   if (parentAttributeSlug === 'email_addresses') {
     if (condition === 'equals') {
@@ -369,6 +369,6 @@ export function createPathBasedFilter(
       constraints = { email_address: { ends_with: value } };
     }
   }
-  
+
   return { path, constraints };
 }

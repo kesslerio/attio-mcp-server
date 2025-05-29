@@ -1,4 +1,4 @@
-import { AttributeType } from "../attribute-validator.js";
+import { AttributeType } from '../attribute-validator.js';
 export interface CachedTypeInfo {
   fieldType: string;
   attioType: string;

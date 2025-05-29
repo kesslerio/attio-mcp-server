@@ -1,9 +1,9 @@
 /**
  * @module types
- * 
+ *
  * Consolidated filter type definitions for Attio API
  * Central location for all filter-related interfaces, types, enums, and constants
- * 
+ *
  * This module provides:
  * - Type definitions for filters and filter configurations
  * - Attribute constants for consistent field references
@@ -11,16 +11,19 @@
  * - Enums and interfaces from external dependencies
  */
 
-import { 
+import {
   FilterConditionType,
   DateRange,
   NumericRange,
   InteractionType,
   ActivityFilter,
   RelationshipType,
-  ResourceType
-} from "../../types/attio.js";
-import { ListEntryFilter, ListEntryFilters } from "../../api/operations/types.js";
+  ResourceType,
+} from '../../types/attio.js';
+import {
+  ListEntryFilter,
+  ListEntryFilters,
+} from '../../api/operations/types.js';
 
 /**
  * Attribute constants for better code readability and consistency
@@ -39,7 +42,7 @@ export const ATTRIBUTES = {
   EMPLOYEE_COUNT: 'employee_count',
   LIST_ID: 'list_id',
   NOTE_CONTENT: 'note_content',
-  RELATIONSHIP: '$relationship'
+  RELATIONSHIP: '$relationship',
 };
 
 /**
@@ -48,8 +51,8 @@ export const ATTRIBUTES = {
  */
 export type AttioApiFilter = {
   [attributeSlug: string]: {
-    [condition: string]: any
-  }
+    [condition: string]: any;
+  };
 };
 
 /**
@@ -64,7 +67,7 @@ export class RelationshipRateLimitError extends Error {
   ) {
     super(message);
     this.name = 'RelationshipRateLimitError';
-    
+
     // This line is needed to properly capture the stack trace
     Object.setPrototypeOf(this, RelationshipRateLimitError.prototype);
   }
@@ -76,13 +79,13 @@ export class RelationshipRateLimitError extends Error {
 export interface RelationshipFilterConfig {
   // The source record type
   sourceType: ResourceType;
-  
+
   // The target record type
   targetType: ResourceType;
-  
+
   // The relationship type connecting the records
   relationshipType: RelationshipType;
-  
+
   // Filters to apply to the target records
   targetFilters: ListEntryFilters;
 }
@@ -92,20 +95,20 @@ export interface RelationshipFilterConfig {
  */
 export const FIELD_SPECIAL_HANDLING: Record<string, any> = {
   // Special handling for B2B Segment field (type_persona)
-  'type_persona': {
-    'in': 'contains_any',
-    'contains_any': 'contains_any',
-    'not_empty': 'not_empty',
+  type_persona: {
+    in: 'contains_any',
+    contains_any: 'contains_any',
+    not_empty: 'not_empty',
     operators: ['in', 'contains_any', 'not_empty'],
     allowStringValue: true,
-    disableDebugLogging: true
+    disableDebugLogging: true,
   },
   // Other fields can be added here as needed
-  'segment': {
-    'in': 'contains_any',
-    'contains_any': 'contains_any',
-    operators: ['in', 'contains_any']
-  }
+  segment: {
+    in: 'contains_any',
+    contains_any: 'contains_any',
+    operators: ['in', 'contains_any'],
+  },
 };
 
 /**
@@ -117,16 +120,16 @@ export const VALID_INTERACTION_TYPES = new Set<InteractionType>([
   InteractionType.PHONE,
   InteractionType.MEETING,
   InteractionType.CUSTOM,
-  InteractionType.ANY
+  InteractionType.ANY,
 ]);
 
 /**
  * Common filter operation types
  */
-export type FilterOperation = 
-  | 'equals' 
+export type FilterOperation =
+  | 'equals'
   | 'not_equals'
-  | 'contains' 
+  | 'contains'
   | 'not_contains'
   | 'greater_than'
   | 'less_than'
@@ -140,7 +143,7 @@ export type FilterOperation =
 /**
  * Export reusable filter-related types from dependencies
  */
-export { 
+export {
   FilterConditionType,
   type DateRange,
   type NumericRange,
@@ -149,5 +152,5 @@ export {
   RelationshipType,
   ResourceType,
   type ListEntryFilter,
-  type ListEntryFilters
+  type ListEntryFilters,
 };

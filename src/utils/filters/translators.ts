@@ -166,7 +166,9 @@ export function transformFiltersToApiFormat(
 
   if (process.env.NODE_ENV === 'development') {
     console.log(
-      `[transformFiltersToApiFormat] Using ${useOrLogic ? 'OR' : 'AND'} logic for filters`
+      `[transformFiltersToApiFormat] Using ${
+        useOrLogic ? 'OR' : 'AND'
+      } logic for filters`
     );
     console.log(
       `[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`

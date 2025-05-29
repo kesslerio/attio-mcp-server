@@ -13,7 +13,11 @@ import {
   logToolFallback,
 } from '../../../src/handlers/tools/dispatcher/logging.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { PerformanceTimer, getLogContext, clearLogContext } from '../../../src/utils/logger.js';
+import {
+  PerformanceTimer,
+  getLogContext,
+  clearLogContext,
+} from '../../../src/utils/logger.js';
 
 // Mock console methods
 const mockConsoleLog = jest.fn();
@@ -33,12 +37,12 @@ describe('Tool Dispatcher Logging', () => {
     console.log = mockConsoleLog;
     console.warn = mockConsoleWarn;
     console.error = mockConsoleError;
-    
+
     // Clear all mocks
     mockConsoleLog.mockClear();
     mockConsoleWarn.mockClear();
     mockConsoleError.mockClear();
-    
+
     // Clear log context
     clearLogContext();
   });
@@ -73,7 +77,7 @@ describe('Tool Dispatcher Logging', () => {
   describe('Tool Logger Creation', () => {
     test('createToolLogger returns scoped logger', () => {
       const logger = createToolLogger('test-tool', 'search');
-      
+
       logger.debug('Test debug message');
 
       expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -83,17 +87,19 @@ describe('Tool Dispatcher Logging', () => {
             module: 'tool:test-tool',
             operation: 'search',
             operationType: 'tool_execution',
-          })
+          }),
         })
       );
     });
 
     test('createToolLogger works without toolType', () => {
       const logger = createToolLogger('test-tool');
-      
+
       logger.info('Test info message');
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('[tool:test-tool] [INFO] Test info message');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[tool:test-tool] [INFO] Test info message'
+      );
     });
   });
 
@@ -106,8 +112,8 @@ describe('Tool Dispatcher Logging', () => {
           arguments: {
             query: 'test search',
             limit: 10,
-          }
-        }
+          },
+        },
       };
 
       const timer = logToolRequest('search', 'test-tool', mockRequest);
@@ -126,7 +132,7 @@ describe('Tool Dispatcher Logging', () => {
             toolName: 'test-tool',
             argumentsCount: 2,
             hasArguments: true,
-          })
+          }),
         })
       );
     });
@@ -136,7 +142,7 @@ describe('Tool Dispatcher Logging', () => {
         method: 'tools/call',
         params: {
           name: 'test-tool',
-        }
+        },
       };
 
       const timer = logToolRequest('list', 'test-tool', mockRequest);
@@ -148,7 +154,7 @@ describe('Tool Dispatcher Logging', () => {
           data: expect.objectContaining({
             argumentsCount: 0,
             hasArguments: false,
-          })
+          }),
         })
       );
     });
@@ -161,8 +167,8 @@ describe('Tool Dispatcher Logging', () => {
         method: 'tools/call',
         params: {
           name: 'test-tool',
-          arguments: { query: 'test' }
-        }
+          arguments: { query: 'test' },
+        },
       };
 
       logToolRequest('search', 'test-tool', mockRequest);
@@ -171,8 +177,8 @@ describe('Tool Dispatcher Logging', () => {
         expect.anything(),
         expect.objectContaining({
           data: expect.objectContaining({
-            arguments: { query: 'test' }
-          })
+            arguments: { query: 'test' },
+          }),
         })
       );
 
@@ -182,16 +188,20 @@ describe('Tool Dispatcher Logging', () => {
 
   describe('Tool Success Logging', () => {
     test('logToolSuccess logs success with result summary', async () => {
-      const timer = new PerformanceTimer('tool:test-tool', 'execute', 'tool_execution' as any);
-      
+      const timer = new PerformanceTimer(
+        'tool:test-tool',
+        'execute',
+        'tool_execution' as any
+      );
+
       // Wait a bit to ensure some time passes
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const result = {
         content: [
           { type: 'text', text: 'Result 1' },
-          { type: 'text', text: 'Result 2' }
-        ]
+          { type: 'text', text: 'Result 2' },
+        ],
       };
 
       logToolSuccess('test-tool', 'search', result, timer);
@@ -209,14 +219,18 @@ describe('Tool Dispatcher Logging', () => {
             hasContent: true,
             contentLength: 2,
             resultType: 'array',
-          })
+          }),
         })
       );
     });
 
     test('logToolSuccess handles result without content', async () => {
-      const timer = new PerformanceTimer('tool:test-tool', 'execute', 'tool_execution' as any);
-      await new Promise(resolve => setTimeout(resolve, 10));
+      const timer = new PerformanceTimer(
+        'tool:test-tool',
+        'execute',
+        'tool_execution' as any
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const result = {};
 
@@ -230,7 +244,7 @@ describe('Tool Dispatcher Logging', () => {
             hasContent: false,
             contentLength: 0,
             resultType: 'undefined',
-          })
+          }),
         })
       );
     });
@@ -238,8 +252,12 @@ describe('Tool Dispatcher Logging', () => {
 
   describe('Tool Error Logging', () => {
     test('logToolError logs error with context and timing', async () => {
-      const timer = new PerformanceTimer('tool:test-tool', 'execute', 'tool_execution' as any);
-      await new Promise(resolve => setTimeout(resolve, 10));
+      const timer = new PerformanceTimer(
+        'tool:test-tool',
+        'execute',
+        'tool_execution' as any
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const testError = new Error('Tool execution failed');
       const additionalInfo = { parameter: 'value', attemptCount: 1 };
@@ -266,14 +284,18 @@ describe('Tool Dispatcher Logging', () => {
             message: 'Tool execution failed',
             name: 'Error',
             stack: expect.any(String),
-          })
+          }),
         })
       );
     });
 
     test('logToolError handles non-Error objects', async () => {
-      const timer = new PerformanceTimer('tool:test-tool', 'execute', 'tool_execution' as any);
-      await new Promise(resolve => setTimeout(resolve, 10));
+      const timer = new PerformanceTimer(
+        'tool:test-tool',
+        'execute',
+        'tool_execution' as any
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const errorString = 'String error message';
 
@@ -289,7 +311,7 @@ describe('Tool Dispatcher Logging', () => {
           error: expect.objectContaining({
             message: 'String error message',
             name: 'Unknown',
-          })
+          }),
         })
       );
     });
@@ -312,7 +334,7 @@ describe('Tool Dispatcher Logging', () => {
             operation: 'search',
             operationType: 'validation',
           }),
-          data: { missingParam: 'query' }
+          data: { missingParam: 'query' },
         })
       );
     });
@@ -320,11 +342,9 @@ describe('Tool Dispatcher Logging', () => {
 
   describe('Tool Configuration Error Logging', () => {
     test('logToolConfigError logs configuration errors', () => {
-      logToolConfigError(
-        'test-tool',
-        'Tool configuration not found',
-        { requestedTool: 'test-tool' }
-      );
+      logToolConfigError('test-tool', 'Tool configuration not found', {
+        requestedTool: 'test-tool',
+      });
 
       expect(mockConsoleError).toHaveBeenCalledWith(
         '[tool:registry] [ERROR] Configuration error for tool test-tool: Tool configuration not found',
@@ -334,7 +354,7 @@ describe('Tool Dispatcher Logging', () => {
             operation: 'config-lookup',
             operationType: 'system',
           }),
-          data: { requestedTool: 'test-tool' }
+          data: { requestedTool: 'test-tool' },
         })
       );
     });
@@ -360,7 +380,7 @@ describe('Tool Dispatcher Logging', () => {
           data: expect.objectContaining({
             reason: 'Primary API endpoint failed',
             fallbackMethod: 'fallback-search-endpoint',
-          })
+          }),
         })
       );
     });
@@ -380,7 +400,7 @@ describe('Tool Dispatcher Logging', () => {
             correlationId,
             operation: 'test-tool',
             operationType: 'tool_execution',
-          })
+          }),
         })
       );
     });
@@ -395,7 +415,7 @@ describe('Tool Dispatcher Logging', () => {
       logger2.debug('Message from tool2');
 
       expect(id1).not.toBe(id2);
-      
+
       const calls = mockConsoleLog.mock.calls;
       const metadata1 = calls[0][1].metadata;
       const metadata2 = calls[1][1].metadata;

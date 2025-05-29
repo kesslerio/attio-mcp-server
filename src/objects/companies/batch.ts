@@ -7,5 +7,5 @@ export {
   batchUpdateCompanies,
   batchDeleteCompanies,
   batchSearchCompanies,
-  batchGetCompanyDetails
-} from "../batch-companies.js";
+  batchGetCompanyDetails,
+} from '../batch-companies.js';

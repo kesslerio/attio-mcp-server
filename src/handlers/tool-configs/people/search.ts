@@ -5,7 +5,7 @@ import { AttioRecord } from '../../../types/attio.js';
 import {
   searchPeople,
   searchPeopleByEmail,
-  searchPeopleByPhone
+  searchPeopleByPhone,
 } from '../../../objects/people/index.js';
 import { SearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
@@ -16,8 +16,13 @@ export const searchToolConfigs = {
     handler: searchPeople,
     formatResult: (results: AttioRecord[]) =>
       results
-        .map((person: AttioRecord) => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')
+        .map(
+          (person: AttioRecord) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n'),
   } as SearchToolConfig,
 
   searchByEmail: {
@@ -25,8 +30,13 @@ export const searchToolConfigs = {
     handler: searchPeopleByEmail,
     formatResult: (results: AttioRecord[]) =>
       results
-        .map((person: AttioRecord) => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')
+        .map(
+          (person: AttioRecord) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n'),
   } as SearchToolConfig,
 
   searchByPhone: {
@@ -34,9 +44,14 @@ export const searchToolConfigs = {
     handler: searchPeopleByPhone,
     formatResult: (results: AttioRecord[]) =>
       results
-        .map((person: AttioRecord) => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')
-  } as SearchToolConfig
+        .map(
+          (person: AttioRecord) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n'),
+  } as SearchToolConfig,
 };
 
 export const searchToolDefinitions = [
@@ -46,10 +61,10 @@ export const searchToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        query: { type: 'string', description: 'Search query for people' }
+        query: { type: 'string', description: 'Search query for people' },
       },
-      required: ['query']
-    }
+      required: ['query'],
+    },
   },
   {
     name: 'search-people-by-email',
@@ -57,10 +72,10 @@ export const searchToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        email: { type: 'string', description: 'Email address to search for' }
+        email: { type: 'string', description: 'Email address to search for' },
       },
-      required: ['email']
-    }
+      required: ['email'],
+    },
   },
   {
     name: 'search-people-by-phone',
@@ -68,10 +83,9 @@ export const searchToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        phone: { type: 'string', description: 'Phone number to search for' }
+        phone: { type: 'string', description: 'Phone number to search for' },
       },
-      required: ['phone']
-    }
-  }
+      required: ['phone'],
+    },
+  },
 ];
-

@@ -1,174 +1,205 @@
 /**
  * Relationship-based tool configurations for companies
  */
-import { CompanyRecord } from "./types.js";
+import { CompanyRecord } from './types.js';
 import {
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
   searchCompaniesByNotes,
-  getCompanyLists
-} from "../../../objects/companies/index.js";
-import { AttioList } from "../../../types/attio.js";
-import { ToolConfig } from "../../tool-types.js";
+  getCompanyLists,
+} from '../../../objects/companies/index.js';
+import { AttioList } from '../../../types/attio.js';
+import { ToolConfig } from '../../tool-types.js';
 
 // Company relationship tool configurations
 export const relationshipToolConfigs = {
   searchByPeople: {
-    name: "search-companies-by-people",
+    name: 'search-companies-by-people',
     handler: searchCompaniesByPeople,
     formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies with matching people:\n${results.map((company: any) => 
-        `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
-    }
+      return `Found ${results.length} companies with matching people:\n${results
+        .map(
+          (company: any) =>
+            `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
+              company.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`;
+    },
   } as ToolConfig,
-  
+
   searchByPeopleList: {
-    name: "search-companies-by-people-list",
+    name: 'search-companies-by-people-list',
     handler: searchCompaniesByPeopleList,
     formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies with employees in the list:\n${results.map((company: any) => 
-        `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
-    }
+      return `Found ${
+        results.length
+      } companies with employees in the list:\n${results
+        .map(
+          (company: any) =>
+            `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
+              company.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`;
+    },
   } as ToolConfig,
-  
+
   searchByNotes: {
-    name: "search-companies-by-notes",
+    name: 'search-companies-by-notes',
     handler: searchCompaniesByNotes,
     formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies with matching notes:\n${results.map((company: any) =>
-        `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${company.id?.record_id || 'unknown'})`).join('\n')}`;
-    }
+      return `Found ${results.length} companies with matching notes:\n${results
+        .map(
+          (company: any) =>
+            `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
+              company.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`;
+    },
   } as ToolConfig,
 
   listsForCompany: {
-    name: "get-company-lists",
+    name: 'get-company-lists',
     handler: getCompanyLists,
     formatResult: (results: AttioList[]) => {
-      return `Company belongs to ${results.length} lists:\n${results.map((list: any) =>
-        `- ${list.name || list.title} (ID: ${list.id?.list_id || list.id || 'unknown'})`).join('\n')}`;
-    }
-  } as ToolConfig
+      return `Company belongs to ${results.length} lists:\n${results
+        .map(
+          (list: any) =>
+            `- ${list.name || list.title} (ID: ${
+              list.id?.list_id || list.id || 'unknown'
+            })`
+        )
+        .join('\n')}`;
+    },
+  } as ToolConfig,
 };
 
 // Relationship tool definitions
 export const relationshipToolDefinitions = [
   {
-    name: "search-companies-by-people",
-    description: "Search for companies based on attributes of their associated people",
+    name: 'search-companies-by-people',
+    description:
+      'Search for companies based on attributes of their associated people',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         peopleFilter: {
-          type: "object",
-          description: "Filter conditions to apply to people",
+          type: 'object',
+          description: 'Filter conditions to apply to people',
           properties: {
             filters: {
-              type: "array",
-              description: "Array of filter conditions",
+              type: 'array',
+              description: 'Array of filter conditions',
               items: {
-                type: "object",
+                type: 'object',
                 properties: {
                   attribute: {
-                    type: "object",
+                    type: 'object',
                     properties: {
                       slug: {
-                        type: "string",
-                        description: "Person attribute to filter on (e.g., 'name', 'email', 'phone')"
-                      }
+                        type: 'string',
+                        description:
+                          "Person attribute to filter on (e.g., 'name', 'email', 'phone')",
+                      },
                     },
-                    required: ["slug"]
+                    required: ['slug'],
                   },
                   condition: {
-                    type: "string",
-                    description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                    type: 'string',
+                    description:
+                      "Condition to apply (e.g., 'equals', 'contains', 'starts_with')",
                   },
                   value: {
-                    type: ["string", "number", "boolean"],
-                    description: "Value to filter by"
-                  }
+                    type: ['string', 'number', 'boolean'],
+                    description: 'Value to filter by',
+                  },
                 },
-                required: ["attribute", "condition", "value"]
-              }
+                required: ['attribute', 'condition', 'value'],
+              },
             },
             matchAny: {
-              type: "boolean",
-              description: "When true, matches any filter (OR logic). When false, matches all filters (AND logic)"
-            }
+              type: 'boolean',
+              description:
+                'When true, matches any filter (OR logic). When false, matches all filters (AND logic)',
+            },
           },
-          required: ["filters"]
+          required: ['filters'],
         },
         limit: {
-          type: "number",
-          description: "Maximum number of results to return (default: 20)"
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
         },
         offset: {
-          type: "number",
-          description: "Number of results to skip (default: 0)"
-        }
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ["peopleFilter"]
-    }
+      required: ['peopleFilter'],
+    },
   },
   {
-    name: "search-companies-by-people-list",
-    description: "Search for companies that have employees in a specific list",
+    name: 'search-companies-by-people-list',
+    description: 'Search for companies that have employees in a specific list',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         listId: {
-          type: "string",
-          description: "ID of the list containing people"
+          type: 'string',
+          description: 'ID of the list containing people',
         },
         limit: {
-          type: "number",
-          description: "Maximum number of results to return (default: 20)"
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
         },
         offset: {
-          type: "number",
-          description: "Number of results to skip (default: 0)"
-        }
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ["listId"]
-    }
+      required: ['listId'],
+    },
   },
   {
-    name: "search-companies-by-notes",
-    description: "Search for companies that have notes containing specific text",
+    name: 'search-companies-by-notes',
+    description:
+      'Search for companies that have notes containing specific text',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         searchText: {
-          type: "string",
-          description: "Text to search for in notes"
+          type: 'string',
+          description: 'Text to search for in notes',
         },
         limit: {
-          type: "number",
-          description: "Maximum number of results to return (default: 20)"
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
         },
         offset: {
-          type: "number",
-          description: "Number of results to skip (default: 0)"
-        }
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ["searchText"]
-    }
+      required: ['searchText'],
+    },
   },
   {
-    name: "get-company-lists",
-    description: "Get lists that a company belongs to",
+    name: 'get-company-lists',
+    description: 'Get lists that a company belongs to',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         companyId: {
-          type: "string",
-          description: "ID of the company"
+          type: 'string',
+          description: 'ID of the company',
         },
         limit: {
-          type: "number",
-          description: "Maximum number of list entries to check (default: 50)"
-        }
+          type: 'number',
+          description: 'Maximum number of list entries to check (default: 50)',
+        },
       },
-      required: ["companyId"]
-    }
-  }
+      required: ['companyId'],
+    },
+  },
 ];

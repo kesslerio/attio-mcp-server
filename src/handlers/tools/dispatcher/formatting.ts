@@ -1,6 +1,6 @@
 /**
  * Response formatting utilities for tool execution
- * 
+ *
  * Provides consistent formatting for success responses and result messages
  */
 

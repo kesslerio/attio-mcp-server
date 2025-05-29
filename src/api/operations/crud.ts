@@ -4,14 +4,14 @@
  */
 
 import { getAttioClient } from '../attio-client.js';
-import { 
+import {
   AttioRecord,
   ResourceType,
   AttioSingleResponse,
   AttioListResponse,
   RecordCreateParams,
   RecordUpdateParams,
-  RecordListParams
+  RecordListParams,
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 
@@ -26,20 +26,20 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
 
 /**
  * Generic function to get details for a specific record
- * 
+ *
  * @param objectType - The type of object to get (people or companies)
  * @param recordId - ID of the record
  * @param retryConfig - Optional retry configuration
  * @returns Record details
  */
 export async function getObjectDetails<T extends AttioRecord>(
-  objectType: ResourceType, 
+  objectType: ResourceType,
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<T> {
   const api = getAttioClient();
   const path = `/objects/${objectType}/records/${recordId}`;
-  
+
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioSingleResponse<T>>(path);
@@ -53,7 +53,7 @@ export async function getObjectDetails<T extends AttioRecord>(
 
 /**
  * Creates a new record
- * 
+ *
  * @param params - Record creation parameters
  * @param retryConfig - Optional retry configuration
  * @returns Created record
@@ -65,15 +65,15 @@ export async function createRecord<T extends AttioRecord>(
   const api = getAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records`;
-  
+
   return callWithRetry(async () => {
     try {
       const response = await api.post<AttioSingleResponse<T>>(path, {
         data: {
-          values: params.attributes
-        }
+          values: params.attributes,
+        },
       });
-      
+
       return response.data.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
@@ -84,7 +84,7 @@ export async function createRecord<T extends AttioRecord>(
 
 /**
  * Gets a specific record by ID
- * 
+ *
  * @param objectSlug - Object slug (e.g., 'companies', 'people')
  * @param recordId - ID of the record to retrieve
  * @param attributes - Optional list of attribute slugs to include
@@ -102,15 +102,15 @@ export async function getRecord<T extends AttioRecord>(
   const api = getAttioClient();
   const objectPath = getObjectPath(objectSlug, objectId);
   let path = `${objectPath}/records/${recordId}`;
-  
+
   // Add attributes parameter if provided
   if (attributes && attributes.length > 0) {
     // Use array syntax for multiple attributes
     const params = new URLSearchParams();
-    attributes.forEach(attr => params.append('attributes[]', attr));
+    attributes.forEach((attr) => params.append('attributes[]', attr));
     path += `?${params.toString()}`;
   }
-  
+
   return callWithRetry(async () => {
     try {
       if (process.env.NODE_ENV === 'development') {
@@ -127,7 +127,7 @@ export async function getRecord<T extends AttioRecord>(
 
 /**
  * Updates a specific record
- * 
+ *
  * @param params - Record update parameters
  * @param retryConfig - Optional retry configuration
  * @returns Updated record
@@ -139,18 +139,18 @@ export async function updateRecord<T extends AttioRecord>(
   const api = getAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/${params.recordId}`;
-  
+
   return callWithRetry(async () => {
     try {
       // The API expects 'data.values' structure
       const payload = {
         data: {
-          values: params.attributes
-        }
+          values: params.attributes,
+        },
       };
-      
+
       const response = await api.patch<AttioSingleResponse<T>>(path, payload);
-      
+
       return response.data.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
@@ -161,7 +161,7 @@ export async function updateRecord<T extends AttioRecord>(
 
 /**
  * Deletes a specific record
- * 
+ *
  * @param objectSlug - Object slug (e.g., 'companies', 'people')
  * @param recordId - ID of the record to delete
  * @param objectId - Optional object ID (alternative to slug)
@@ -177,7 +177,7 @@ export async function deleteRecord(
   const api = getAttioClient();
   const objectPath = getObjectPath(objectSlug, objectId);
   const path = `${objectPath}/records/${recordId}`;
-  
+
   return callWithRetry(async () => {
     try {
       await api.delete(path);
@@ -191,7 +191,7 @@ export async function deleteRecord(
 
 /**
  * Lists records with filtering options
- * 
+ *
  * @param params - Record listing parameters
  * @param retryConfig - Optional retry configuration
  * @returns Array of records
@@ -202,36 +202,38 @@ export async function listRecords<T extends AttioRecord>(
 ): Promise<T[]> {
   const api = getAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
-  
+
   // Build query parameters
   const queryParams = new URLSearchParams();
-  
+
   if (params.page) {
     queryParams.append('page', String(params.page));
   }
-  
+
   if (params.pageSize) {
     queryParams.append('pageSize', String(params.pageSize));
   }
-  
+
   if (params.query) {
     queryParams.append('query', params.query);
   }
-  
+
   if (params.attributes && params.attributes.length > 0) {
     queryParams.append('attributes', params.attributes.join(','));
   }
-  
+
   if (params.sort) {
     queryParams.append('sort', params.sort);
   }
-  
+
   if (params.direction) {
     queryParams.append('direction', params.direction);
   }
-  
-  const path = `${objectPath}/records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  
+
+  const path = `${objectPath}/records${
+    queryParams.toString() ? '?' + queryParams.toString() : ''
+  }`;
+
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioListResponse<T>>(path);

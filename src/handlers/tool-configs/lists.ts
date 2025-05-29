@@ -44,21 +44,24 @@ export const listsToolConfigs = {
       if (results.length === 0) {
         return 'Record is not a member of any lists.';
       }
-      
+
       return `Found ${results.length} list membership(s):\n${results
         .map((membership: ListMembership) => {
           // Format each membership with list name and IDs
           let membershipInfo = `- List: ${membership.listName} (ID: ${membership.listId})
   Entry ID: ${membership.entryId}`;
-          
+
           // Add entry values if available
-          if (membership.entryValues && Object.keys(membership.entryValues).length > 0) {
+          if (
+            membership.entryValues &&
+            Object.keys(membership.entryValues).length > 0
+          ) {
             const valuesString = Object.entries(membership.entryValues)
               .map(([key, value]) => `    ${key}: ${value}`)
               .join('\n');
             membershipInfo += `\n  Entry Values:\n${valuesString}`;
           }
-          
+
           return membershipInfo;
         })
         .join('\n')}`;
@@ -111,7 +114,9 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
               : ` (${recordDetails.name})`;
           }
 
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
+            entry.record_id || 'unknown'
+          }${displayInfo}`;
         })
         .join('\n')}`;
     },
@@ -156,7 +161,9 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
               : ` (${recordDetails.name})`;
           }
 
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
+            entry.record_id || 'unknown'
+          }${displayInfo}`;
         })
         .join('\n')}`;
     },
@@ -195,7 +202,9 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
               : ` (${recordDetails.name})`;
           }
 
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
+            entry.record_id || 'unknown'
+          }${displayInfo}`;
         })
         .join('\n')}`;
     },
@@ -207,7 +216,7 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     formatResult: (result: AttioListEntry) => {
       const entryId = result.id?.entry_id || 'unknown';
       const recordId = result.record_id || result.parent_record_id || 'unknown';
-      
+
       return `Successfully added record ${recordId} to list (Entry ID: ${entryId})`;
     },
   } as ToolConfig,
@@ -236,7 +245,7 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
       return `Successfully updated list entry ${entryId} for record ${recordId}${stageInfo}`;
     },
   } as ToolConfig,
-  
+
   filterListEntriesByParent: {
     name: 'filter-list-entries-by-parent',
     handler: filterListEntriesByParent,
@@ -244,8 +253,10 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
       if (results.length === 0) {
         return 'No entries found matching the filter criteria.';
       }
-      
-      return `Found ${results.length} entries matching the parent record filter:\n${results
+
+      return `Found ${
+        results.length
+      } entries matching the parent record filter:\n${results
         .map((entry, index) => {
           // Extract record details with improved name and type extraction
           const recordDetails = getRecordNameFromEntry(entry);
@@ -258,12 +269,14 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
               : ` (${recordDetails.name})`;
           }
 
-          return `${index + 1}. Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+          return `${index + 1}. Entry ID: ${
+            entry.id?.entry_id || 'unknown'
+          }, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
         })
         .join('\n')}`;
     },
   } as ToolConfig,
-  
+
   filterListEntriesByParentId: {
     name: 'filter-list-entries-by-parent-id',
     handler: filterListEntriesByParentId,
@@ -271,8 +284,10 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
       if (results.length === 0) {
         return 'No entries found with the specified parent record ID.';
       }
-      
-      return `Found ${results.length} entries with the specified parent record ID:\n${results
+
+      return `Found ${
+        results.length
+      } entries with the specified parent record ID:\n${results
         .map((entry, index) => {
           // Extract record details with improved name and type extraction
           const recordDetails = getRecordNameFromEntry(entry);
@@ -285,7 +300,9 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
               : ` (${recordDetails.name})`;
           }
 
-          return `${index + 1}. Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
+          return `${index + 1}. Entry ID: ${
+            entry.id?.entry_id || 'unknown'
+          }, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
         })
         .join('\n')}`;
     },
@@ -304,7 +321,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'get-record-list-memberships',
-    description: 'Find all lists that a specific record (company, person, etc.) belongs to',
+    description:
+      'Find all lists that a specific record (company, person, etc.) belongs to',
     inputSchema: {
       type: 'object',
       properties: {
@@ -319,16 +337,18 @@ export const listsToolDefinitions = [
         },
         includeEntryValues: {
           type: 'boolean',
-          description: 'Whether to include entry values in the response (e.g., stage, status)',
+          description:
+            'Whether to include entry values in the response (e.g., stage, status)',
           default: false,
         },
         batchSize: {
           type: 'number',
-          description: 'Number of lists to process in parallel (1-20, default: 5)',
+          description:
+            'Number of lists to process in parallel (1-20, default: 5)',
           minimum: 1,
           maximum: 20,
-          default: 5
-        }
+          default: 5,
+        },
       },
       required: ['recordId'],
     },
@@ -527,7 +547,8 @@ export const listsToolDefinitions = [
         },
         initialValues: {
           type: 'object',
-          description: 'Initial values for the list entry (e.g., {"stage": "Prospect"})',
+          description:
+            'Initial values for the list entry (e.g., {"stage": "Prospect"})',
         },
       },
       required: ['listId', 'recordId'],
@@ -594,16 +615,19 @@ export const listsToolDefinitions = [
         },
         parentObjectType: {
           type: 'string',
-          description: 'Type of the parent record (e.g., "companies", "people")',
+          description:
+            'Type of the parent record (e.g., "companies", "people")',
           enum: ['companies', 'people'],
         },
         parentAttributeSlug: {
           type: 'string',
-          description: 'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "industry")',
+          description:
+            'Attribute of the parent record to filter by (e.g., "name", "email_addresses", "industry")',
         },
         condition: {
           type: 'string',
-          description: 'Filter condition (e.g., "equals", "contains", "starts_with")',
+          description:
+            'Filter condition (e.g., "equals", "contains", "starts_with")',
           enum: [
             'equals',
             'not_equals',
@@ -633,7 +657,13 @@ export const listsToolDefinitions = [
           description: 'Number of entries to skip for pagination (default: 0)',
         },
       },
-      required: ['listId', 'parentObjectType', 'parentAttributeSlug', 'condition', 'value'],
+      required: [
+        'listId',
+        'parentObjectType',
+        'parentAttributeSlug',
+        'condition',
+        'value',
+      ],
     },
   },
   {

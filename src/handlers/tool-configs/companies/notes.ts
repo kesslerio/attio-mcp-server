@@ -19,7 +19,13 @@ export const notesToolConfigs = {
       return `Found ${notes.length} notes:\n${notes
         .map(
           (note: any) =>
-            `- ${note.title || 'Untitled'} (Created: ${note.timestamp || 'unknown'})\n  ${note.content ? note.content.substring(0, 100) + '...' : 'No content'}`
+            `- ${note.title || 'Untitled'} (Created: ${
+              note.timestamp || 'unknown'
+            })\n  ${
+              note.content
+                ? note.content.substring(0, 100) + '...'
+                : 'No content'
+            }`
         )
         .join('\n\n')}`;
     },
@@ -34,7 +40,15 @@ export const notesToolConfigs = {
         return 'Failed to create note.';
       }
       // Truncate content at 100 chars for readability in console output
-      return `Successfully created note: ${note.title || 'Untitled'}\nContent: ${note.content ? (note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content) : 'No content'}\nCreated at: ${note.timestamp || 'unknown'}`;
+      return `Successfully created note: ${
+        note.title || 'Untitled'
+      }\nContent: ${
+        note.content
+          ? note.content.length > 100
+            ? note.content.substring(0, 100) + '...'
+            : note.content
+          : 'No content'
+      }\nCreated at: ${note.timestamp || 'unknown'}`;
     },
   } as CreateNoteToolConfig,
 };

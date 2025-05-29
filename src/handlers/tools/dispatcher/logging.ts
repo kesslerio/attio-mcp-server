@@ -2,17 +2,20 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import { ToolExecutionRequest, ToolErrorContext } from '../../../types/tool-types.js';
-import { 
-  debug, 
-  error, 
-  info, 
-  warn, 
-  createScopedLogger, 
-  OperationType, 
-  setLogContext, 
+import {
+  ToolExecutionRequest,
+  ToolErrorContext,
+} from '../../../types/tool-types.js';
+import {
+  debug,
+  error,
+  info,
+  warn,
+  createScopedLogger,
+  OperationType,
+  setLogContext,
   generateCorrelationId,
-  PerformanceTimer 
+  PerformanceTimer,
 } from '../../../utils/logger.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
@@ -34,8 +37,8 @@ export function initializeToolContext(toolName: string): string {
  */
 export function createToolLogger(toolName: string, toolType?: string) {
   return createScopedLogger(
-    `tool:${toolName}`, 
-    toolType || toolName, 
+    `tool:${toolName}`,
+    toolType || toolName,
     OperationType.TOOL_EXECUTION
   );
 }
@@ -49,23 +52,29 @@ export function createToolLogger(toolName: string, toolType?: string) {
  * @returns PerformanceTimer for tracking execution duration
  */
 export function logToolRequest(
-  toolType: string, 
-  toolName: string, 
+  toolType: string,
+  toolName: string,
   request: CallToolRequest
 ): PerformanceTimer {
   const logger = createToolLogger(toolName, toolType);
-  
+
   const requestData = {
     toolType,
     toolName,
-    argumentsCount: request.params.arguments ? Object.keys(request.params.arguments).length : 0,
+    argumentsCount: request.params.arguments
+      ? Object.keys(request.params.arguments).length
+      : 0,
     hasArguments: !!request.params.arguments,
     ...(process.env.NODE_ENV === 'development' && {
-      arguments: request.params.arguments
-    })
+      arguments: request.params.arguments,
+    }),
   };
 
-  return logger.operationStart('execute', OperationType.TOOL_EXECUTION, requestData);
+  return logger.operationStart(
+    'execute',
+    OperationType.TOOL_EXECUTION,
+    requestData
+  );
 }
 
 /**
@@ -84,15 +93,22 @@ export function logToolSuccess(
 ): void {
   const logger = createToolLogger(toolName, toolType);
   const duration = timer.end();
-  
+
   const resultSummary = {
     success: true,
     hasContent: !!result?.content,
     contentLength: result?.content?.length || 0,
-    resultType: Array.isArray(result?.content) ? 'array' : typeof result?.content,
+    resultType: Array.isArray(result?.content)
+      ? 'array'
+      : typeof result?.content,
   };
 
-  logger.operationSuccess('execute', resultSummary, OperationType.TOOL_EXECUTION, duration);
+  logger.operationSuccess(
+    'execute',
+    resultSummary,
+    OperationType.TOOL_EXECUTION,
+    duration
+  );
 }
 
 /**
@@ -122,7 +138,13 @@ export function logToolError(
     ...additionalInfo,
   };
 
-  logger.operationFailure('execute', error, errorContext, OperationType.TOOL_EXECUTION, duration);
+  logger.operationFailure(
+    'execute',
+    error,
+    errorContext,
+    OperationType.TOOL_EXECUTION,
+    duration
+  );
 }
 
 /**
@@ -135,7 +157,7 @@ export function logToolValidationError(
   context?: any
 ): void {
   const logger = createToolLogger(toolName, toolType);
-  
+
   warn(
     `tool:${toolName}`,
     `Validation failed: ${validationError}`,
@@ -173,7 +195,7 @@ export function logToolFallback(
   fallbackMethod: string
 ): void {
   const logger = createToolLogger(toolName, toolType);
-  
+
   warn(
     `tool:${toolName}`,
     `Using fallback method: ${fallbackMethod}`,

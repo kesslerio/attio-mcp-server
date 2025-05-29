@@ -1,7 +1,7 @@
 import { AttioRecord } from '../../../types/attio.js';
 import {
   searchPeopleByCompanyList,
-  searchPeopleByNotes
+  searchPeopleByNotes,
 } from '../../../objects/people/index.js';
 import { searchCompanies } from '../../../objects/companies/index.js';
 import { getAttioClient } from '../../../api/attio-client.js';
@@ -28,18 +28,30 @@ export const relationshipToolConfigs = {
     name: 'search-people-by-company',
     handler: async (args: ToolRequestArguments) => {
       const companyFilter = args.companyFilter as any;
-      if (!companyFilter?.filters || !Array.isArray(companyFilter.filters) || companyFilter.filters.length === 0) {
-        throw new Error('Invalid companyFilter format. Expected filters array with at least one filter');
+      if (
+        !companyFilter?.filters ||
+        !Array.isArray(companyFilter.filters) ||
+        companyFilter.filters.length === 0
+      ) {
+        throw new Error(
+          'Invalid companyFilter format. Expected filters array with at least one filter'
+        );
       }
 
-      const filters: Array<{ company: { target_record_id: { $eq: string } } }> = [];
+      const filters: Array<{ company: { target_record_id: { $eq: string } } }> =
+        [];
       for (const filter of companyFilter.filters) {
         const typedFilter = filter as CompanyFilter;
         const slug = typedFilter.attribute?.slug;
         if (slug === 'companies.id') {
           let recordId: string;
-          if (typeof typedFilter.value === 'object' && typedFilter.value !== null && 'record_id' in typedFilter.value) {
-            recordId = (typedFilter.value as CompanyFilterValue).record_id || '';
+          if (
+            typeof typedFilter.value === 'object' &&
+            typedFilter.value !== null &&
+            'record_id' in typedFilter.value
+          ) {
+            recordId =
+              (typedFilter.value as CompanyFilterValue).record_id || '';
           } else {
             recordId = String(typedFilter.value);
           }
@@ -52,7 +64,9 @@ export const relationshipToolConfigs = {
           }
           const companyId = companies[0].id?.record_id;
           if (!companyId) {
-            throw new Error(`Company found but has no record ID: ${searchValue}`);
+            throw new Error(
+              `Company found but has no record ID: ${searchValue}`
+            );
           }
           filters.push({ company: { target_record_id: { $eq: companyId } } });
         } else {
@@ -63,24 +77,43 @@ export const relationshipToolConfigs = {
       }
 
       const apiFilter =
-        filters.length === 1 ? filters[0] : companyFilter.matchAny ? { $or: filters } : { $and: filters };
+        filters.length === 1
+          ? filters[0]
+          : companyFilter.matchAny
+            ? { $or: filters }
+            : { $and: filters };
       const api = getAttioClient();
-      const response = await api.post('/objects/people/records/query', { filter: apiFilter, limit: 50 });
+      const response = await api.post('/objects/people/records/query', {
+        filter: apiFilter,
+        limit: 50,
+      });
       return response.data.data || [];
     },
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people matching the company filter:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')}`
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`,
   } as ToolConfig,
 
   searchByCompanyList: {
     name: 'search-people-by-company-list',
     handler: searchPeopleByCompanyList,
     formatResult: (results: AttioRecord[]) =>
-      `Found ${results.length} people who work at companies in the specified list:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')}`
+      `Found ${
+        results.length
+      } people who work at companies in the specified list:\n${results
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`,
   } as ToolConfig,
 
   searchByNotes: {
@@ -88,25 +121,33 @@ export const relationshipToolConfigs = {
     handler: searchPeopleByNotes,
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people with matching notes:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
-        .join('\n')}`
-  } as SearchToolConfig
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
+        .join('\n')}`,
+  } as SearchToolConfig,
 };
 
 export const relationshipToolDefinitions = [
   {
     name: 'search-people-by-company',
-    description: 'Search for people based on attributes of their associated companies',
+    description:
+      'Search for people based on attributes of their associated companies',
     inputSchema: {
       type: 'object',
       properties: {
         companyFilter: {
           type: 'object',
-          description: "Filter conditions to apply to companies. Supported slugs: 'companies.id', 'companies.name'",
+          description:
+            "Filter conditions to apply to companies. Supported slugs: 'companies.id', 'companies.name'",
           properties: {
             filters: {
               type: 'array',
-              description: 'Array of filter conditions. The handler processes filters in order and uses the first valid one.',
+              description:
+                'Array of filter conditions. The handler processes filters in order and uses the first valid one.',
               items: {
                 type: 'object',
                 properties: {
@@ -115,35 +156,45 @@ export const relationshipToolDefinitions = [
                     properties: {
                       slug: {
                         type: 'string',
-                        description: "Company attribute to filter on. Currently supports: 'companies.id', 'companies.name'"
-                      }
+                        description:
+                          "Company attribute to filter on. Currently supports: 'companies.id', 'companies.name'",
+                      },
                     },
-                    required: ['slug']
+                    required: ['slug'],
                   },
                   condition: {
                     type: 'string',
-                    description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                    description:
+                      "Condition to apply (e.g., 'equals', 'contains', 'starts_with')",
                   },
                   value: {
                     type: ['string', 'number', 'boolean', 'object'],
-                    description: "Value to filter by. For company ID, use { record_id: 'id' }. For company name, use a string."
-                  }
+                    description:
+                      "Value to filter by. For company ID, use { record_id: 'id' }. For company name, use a string.",
+                  },
                 },
-                required: ['attribute', 'condition', 'value']
-              }
+                required: ['attribute', 'condition', 'value'],
+              },
             },
             matchAny: {
               type: 'boolean',
-              description: 'When true, matches any filter (OR logic). When false, matches all filters (AND logic)'
-            }
+              description:
+                'When true, matches any filter (OR logic). When false, matches all filters (AND logic)',
+            },
           },
-          required: ['filters']
+          required: ['filters'],
         },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['companyFilter']
-    }
+      required: ['companyFilter'],
+    },
   },
   {
     name: 'search-people-by-company-list',
@@ -151,12 +202,21 @@ export const relationshipToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        listId: { type: 'string', description: 'ID of the list containing companies' },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        listId: {
+          type: 'string',
+          description: 'ID of the list containing companies',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['listId']
-    }
+      required: ['listId'],
+    },
   },
   {
     name: 'search-people-by-notes',
@@ -164,11 +224,20 @@ export const relationshipToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        searchText: { type: 'string', description: 'Text to search for in notes' },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        searchText: {
+          type: 'string',
+          description: 'Text to search for in notes',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['searchText']
-    }
-  }
+      required: ['searchText'],
+    },
+  },
 ];
