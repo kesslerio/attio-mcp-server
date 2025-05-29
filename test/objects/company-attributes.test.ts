@@ -1,6 +1,7 @@
 /**
  * Tests for the company attributes functionality
  */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getCompanyAttributes } from '../../src/objects/companies/attributes';
 import { getCompanyDetails } from '../../src/objects/companies/basic';
 
