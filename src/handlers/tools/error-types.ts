@@ -31,7 +31,9 @@ export function isApiError(error: unknown): error is ApiError {
 /**
  * Type guard to check if error has response data
  */
-export function hasResponseData(error: unknown): error is { response: { data: any } } {
+export function hasResponseData(
+  error: unknown
+): error is { response: { data: any } } {
   return (
     error !== null &&
     typeof error === 'object' &&

@@ -4,7 +4,7 @@
 import { AttioRecord } from '../../../types/attio.js';
 import {
   searchPeopleByLastInteraction,
-  searchPeopleByActivity
+  searchPeopleByActivity,
 } from '../../../objects/people/index.js';
 import { DateBasedSearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
@@ -14,9 +14,19 @@ export const activitySearchToolConfigs = {
     name: 'search-people-by-last-interaction',
     handler: searchPeopleByLastInteraction,
     formatResult: (results: AttioRecord[]) =>
-      `Found ${results.length} people with interactions in the specified date range:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${(person.values as any)?.last_interaction?.interacted_at || 'unknown'})`)
-        .join('\n')}`
+      `Found ${
+        results.length
+      } people with interactions in the specified date range:\n${results
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            }, Last Interaction: ${
+              (person.values as any)?.last_interaction?.interacted_at ||
+              'unknown'
+            })`
+        )
+        .join('\n')}`,
   } as DateBasedSearchToolConfig,
 
   searchByActivity: {
@@ -24,9 +34,17 @@ export const activitySearchToolConfigs = {
     handler: searchPeopleByActivity,
     formatResult: (results: AttioRecord[]) =>
       `Found ${results.length} people with matching activity:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Last Interaction: ${(person.values as any)?.last_interaction?.interacted_at || 'unknown'})`)
-        .join('\n')}`
-  } as DateBasedSearchToolConfig
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            }, Last Interaction: ${
+              (person.values as any)?.last_interaction?.interacted_at ||
+              'unknown'
+            })`
+        )
+        .join('\n')}`,
+  } as DateBasedSearchToolConfig,
 };
 
 export const activitySearchToolDefinitions = [
@@ -40,21 +58,40 @@ export const activitySearchToolDefinitions = [
           type: 'object',
           description: 'Date range for filtering',
           properties: {
-            start: { type: 'string', description: "Start date in ISO format or relative date expression (e.g., '2023-01-01')" },
-            end: { type: 'string', description: "End date in ISO format or relative date expression (e.g., '2023-12-31')" },
-            preset: { type: 'string', description: "Predefined date range (e.g., 'today', 'this_week', 'last_month')" }
-          }
+            start: {
+              type: 'string',
+              description:
+                "Start date in ISO format or relative date expression (e.g., '2023-01-01')",
+            },
+            end: {
+              type: 'string',
+              description:
+                "End date in ISO format or relative date expression (e.g., '2023-12-31')",
+            },
+            preset: {
+              type: 'string',
+              description:
+                "Predefined date range (e.g., 'today', 'this_week', 'last_month')",
+            },
+          },
         },
         interactionType: {
           type: 'string',
-          description: 'Type of interaction to filter by (any, email, calendar, phone, meeting, custom)',
-          enum: ['any', 'email', 'calendar', 'phone', 'meeting', 'custom']
+          description:
+            'Type of interaction to filter by (any, email, calendar, phone, meeting, custom)',
+          enum: ['any', 'email', 'calendar', 'phone', 'meeting', 'custom'],
         },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['dateRange']
-    }
+      required: ['dateRange'],
+    },
   },
   {
     name: 'search-people-by-activity',
@@ -70,25 +107,43 @@ export const activitySearchToolDefinitions = [
               type: 'object',
               description: 'Date range for filtering',
               properties: {
-                start: { type: 'string', description: "Start date in ISO format or relative date expression (e.g., '2023-01-01')" },
-                end: { type: 'string', description: "End date in ISO format or relative date expression (e.g., '2023-12-31')" },
-                preset: { type: 'string', description: "Predefined date range (e.g., 'today', 'this_week', 'last_month')" }
+                start: {
+                  type: 'string',
+                  description:
+                    "Start date in ISO format or relative date expression (e.g., '2023-01-01')",
+                },
+                end: {
+                  type: 'string',
+                  description:
+                    "End date in ISO format or relative date expression (e.g., '2023-12-31')",
+                },
+                preset: {
+                  type: 'string',
+                  description:
+                    "Predefined date range (e.g., 'today', 'this_week', 'last_month')",
+                },
               },
-              required: ['start', 'end']
+              required: ['start', 'end'],
             },
             interactionType: {
               type: 'string',
-              description: 'Type of interaction to filter by (any, email, calendar, phone, meeting, custom)',
-              enum: ['any', 'email', 'calendar', 'phone', 'meeting', 'custom']
-            }
+              description:
+                'Type of interaction to filter by (any, email, calendar, phone, meeting, custom)',
+              enum: ['any', 'email', 'calendar', 'phone', 'meeting', 'custom'],
+            },
           },
-          required: ['dateRange']
+          required: ['dateRange'],
         },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['activityFilter']
-    }
-  }
+      required: ['activityFilter'],
+    },
+  },
 ];
-

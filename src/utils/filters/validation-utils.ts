@@ -28,7 +28,9 @@ export const ERROR_MESSAGES = {
   MISSING_ATTRIBUTE_SLUG: 'missing attribute.slug property',
   MISSING_CONDITION: 'missing condition property',
   INVALID_CONDITION: (condition: string, validConditions: string[]) =>
-    `Invalid filter condition '${condition}'. Valid conditions are: ${validConditions.join(', ')}`,
+    `Invalid filter condition '${condition}'. Valid conditions are: ${validConditions.join(
+      ', '
+    )}`,
   ALL_FILTERS_INVALID:
     'All filters are invalid. Please provide at least one valid filter.',
 };
@@ -148,7 +150,9 @@ export function collectInvalidFilters(
     if (!filter || typeof filter !== 'object') {
       invalidFilters.push({
         index,
-        reason: `Filter at index ${index} is ${filter === null ? 'null' : typeof filter}`,
+        reason: `Filter at index ${index} is ${
+          filter === null ? 'null' : typeof filter
+        }`,
         filter,
       });
       return;

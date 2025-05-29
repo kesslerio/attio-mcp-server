@@ -4,7 +4,7 @@
 import { AttioRecord } from '../../../types/attio.js';
 import {
   searchPeopleByCreationDate,
-  searchPeopleByModificationDate
+  searchPeopleByModificationDate,
 } from '../../../objects/people/index.js';
 import { DateBasedSearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
@@ -14,19 +14,33 @@ export const dateSearchToolConfigs = {
     name: 'search-people-by-creation-date',
     handler: searchPeopleByCreationDate,
     formatResult: (results: AttioRecord[]) =>
-      `Found ${results.length} people created in the specified date range:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Created: ${person.values?.created_at || 'unknown'})`)
-        .join('\n')}`
+      `Found ${
+        results.length
+      } people created in the specified date range:\n${results
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            }, Created: ${person.values?.created_at || 'unknown'})`
+        )
+        .join('\n')}`,
   } as DateBasedSearchToolConfig,
 
   searchByModificationDate: {
     name: 'search-people-by-modification-date',
     handler: searchPeopleByModificationDate,
     formatResult: (results: AttioRecord[]) =>
-      `Found ${results.length} people modified in the specified date range:\n${results
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'}, Modified: ${person.values?.updated_at || 'unknown'})`)
-        .join('\n')}`
-  } as DateBasedSearchToolConfig
+      `Found ${
+        results.length
+      } people modified in the specified date range:\n${results
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            }, Modified: ${person.values?.updated_at || 'unknown'})`
+        )
+        .join('\n')}`,
+  } as DateBasedSearchToolConfig,
 };
 
 export const dateSearchToolDefinitions = [
@@ -40,16 +54,34 @@ export const dateSearchToolDefinitions = [
           type: 'object',
           description: 'Date range for filtering',
           properties: {
-            start: { type: 'string', description: "Start date in ISO format or relative date expression (e.g., '2023-01-01')" },
-            end: { type: 'string', description: "End date in ISO format or relative date expression (e.g., '2023-12-31')" },
-            preset: { type: 'string', description: "Predefined date range (e.g., 'today', 'this_week', 'last_month')" }
-          }
+            start: {
+              type: 'string',
+              description:
+                "Start date in ISO format or relative date expression (e.g., '2023-01-01')",
+            },
+            end: {
+              type: 'string',
+              description:
+                "End date in ISO format or relative date expression (e.g., '2023-12-31')",
+            },
+            preset: {
+              type: 'string',
+              description:
+                "Predefined date range (e.g., 'today', 'this_week', 'last_month')",
+            },
+          },
         },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['dateRange']
-    }
+      required: ['dateRange'],
+    },
   },
   {
     name: 'search-people-by-modification-date',
@@ -61,16 +93,33 @@ export const dateSearchToolDefinitions = [
           type: 'object',
           description: 'Date range for filtering',
           properties: {
-            start: { type: 'string', description: "Start date in ISO format or relative date expression (e.g., '2023-01-01')" },
-            end: { type: 'string', description: "End date in ISO format or relative date expression (e.g., '2023-12-31')" },
-            preset: { type: 'string', description: "Predefined date range (e.g., 'today', 'this_week', 'last_month')" }
-          }
+            start: {
+              type: 'string',
+              description:
+                "Start date in ISO format or relative date expression (e.g., '2023-01-01')",
+            },
+            end: {
+              type: 'string',
+              description:
+                "End date in ISO format or relative date expression (e.g., '2023-12-31')",
+            },
+            preset: {
+              type: 'string',
+              description:
+                "Predefined date range (e.g., 'today', 'this_week', 'last_month')",
+            },
+          },
         },
-        limit: { type: 'number', description: 'Maximum number of results to return (default: 20)' },
-        offset: { type: 'number', description: 'Number of results to skip (default: 0)' }
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['dateRange']
-    }
-  }
+      required: ['dateRange'],
+    },
+  },
 ];
-

@@ -73,7 +73,9 @@ export async function getAvailableObjects(apiKey: string): Promise<string[]> {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(
-        `Failed to get objects: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`
+        `Failed to get objects: ${error.response.status} ${
+          error.response.statusText
+        }\n${JSON.stringify(error.response.data, null, 2)}`
       );
     }
     throw error;
@@ -110,7 +112,13 @@ export async function getObjectAttributes(
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(
-        `Failed to get attributes for object ${objectSlug}: ${error.response.status} ${error.response.statusText}\n${JSON.stringify(error.response.data, null, 2)}`
+        `Failed to get attributes for object ${objectSlug}: ${
+          error.response.status
+        } ${error.response.statusText}\n${JSON.stringify(
+          error.response.data,
+          null,
+          2
+        )}`
       );
     }
     throw error;
@@ -204,14 +212,18 @@ export async function discoverAttributes(
           }
 
           spinner.succeed(
-            `Found ${chalk.green(attributeCount.toString())} attributes for ${chalk.cyan(objectSlug)}`
+            `Found ${chalk.green(
+              attributeCount.toString()
+            )} attributes for ${chalk.cyan(objectSlug)}`
           );
         } else {
           spinner.warn(`No attributes found for ${chalk.cyan(objectSlug)}`);
         }
       } catch (error) {
         spinner.fail(
-          `Error fetching attributes for ${chalk.cyan(objectSlug)}: ${error instanceof Error ? error.message : String(error)}`
+          `Error fetching attributes for ${chalk.cyan(objectSlug)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`
         );
       }
     }
@@ -225,7 +237,9 @@ export async function discoverAttributes(
 
     // Write the updated config
     spinner.start(
-      `Writing configuration to ${chalk.cyan(argv.output || 'config/mappings/user.json')}...`
+      `Writing configuration to ${chalk.cyan(
+        argv.output || 'config/mappings/user.json'
+      )}...`
     );
     await writeMappingConfig(config, argv.output);
 
@@ -234,7 +248,9 @@ export async function discoverAttributes(
     );
   } catch (error) {
     spinner.fail(
-      `Discovery failed: ${error instanceof Error ? error.message : String(error)}`
+      `Discovery failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
     process.exit(1);
   }

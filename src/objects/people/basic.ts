@@ -191,7 +191,9 @@ export async function getPersonDetails(personId: string): Promise<Person> {
     return (await getObjectDetails(ResourceType.PEOPLE, personId)) as Person;
   } catch (error) {
     throw new Error(
-      `Failed to get person details: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to get person details: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -216,7 +218,9 @@ export async function listPeople(limit: number = 20): Promise<Person[]> {
     return response;
   } catch (error) {
     throw new Error(
-      `Failed to list people: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to list people: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }

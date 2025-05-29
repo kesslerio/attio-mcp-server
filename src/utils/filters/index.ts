@@ -4,33 +4,38 @@
  */
 
 // Export all types
-export * from "./types.js";
+export * from './types.js';
 
 // Export all validators
-export * from "./validators.js";
+export * from './validators.js';
 
 // Export all builders
-export * from "./builders.js";
+export * from './builders.js';
 
 // Export all translators
-export * from "./translators.js";
+export * from './translators.js';
 
 // Export all operators
-export * from "./operators.js";
+export * from './operators.js';
 
 // Export all utilities
-export * from "./utils.js";
+export * from './utils.js';
 
 // Export cache utilities
-export * from "./cache.js";
+export * from './cache.js';
 
 // Export relationship utilities
-export * from "./relationship.js";
+export * from './relationship.js';
 
 // Re-export namespaced Basic utilities for backward compatibility
-import { transformFiltersToApiFormat } from "./translators.js";
-import { validateFilterStructure } from "./validators.js";
-import { createEqualsFilter, createContainsFilter, combineWithAnd, combineWithOr } from "./builders.js";
+import { transformFiltersToApiFormat } from './translators.js';
+import { validateFilterStructure } from './validators.js';
+import {
+  createEqualsFilter,
+  createContainsFilter,
+  combineWithAnd,
+  combineWithOr,
+} from './builders.js';
 
 export const Basic = {
   validateFilterStructure,
@@ -38,18 +43,18 @@ export const Basic = {
   createEqualsFilter,
   createContainsFilter,
   combineWithAnd,
-  combineWithOr
+  combineWithOr,
 };
 
 // Re-export namespaced Range utilities for backward compatibility
-import { 
-  createDateRangeFilter, 
-  createCreatedDateFilter, 
+import {
+  createDateRangeFilter,
+  createCreatedDateFilter,
   createModifiedDateFilter,
   createNumericFilter,
   createRevenueFilter,
-  createEmployeeCountFilter
-} from "./builders.js";
+  createEmployeeCountFilter,
+} from './builders.js';
 
 export const Range = {
   createDateRangeFilter,
@@ -57,27 +62,30 @@ export const Range = {
   createModifiedDateFilter,
   createNumericFilter,
   createRevenueFilter,
-  createEmployeeCountFilter
+  createEmployeeCountFilter,
 };
 
 // Re-export namespaced Activity utilities for backward compatibility
-import { createActivityFilter, createLastInteractionFilter } from "./builders.js";
+import {
+  createActivityFilter,
+  createLastInteractionFilter,
+} from './builders.js';
 
 export const Activity = {
   createActivityFilter,
-  createLastInteractionFilter
+  createLastInteractionFilter,
 };
 
 // Re-export namespaced Relationship utilities for backward compatibility
-import { 
+import {
   applyRateLimit,
   createPeopleByCompanyFilter,
   createCompaniesByPeopleFilter,
   createRecordsByListFilter,
   createPeopleByCompanyListFilter,
   createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter
-} from "./relationship.js";
+  createRecordsByNotesFilter,
+} from './relationship.js';
 
 export const Relationship = {
   applyRateLimit,
@@ -86,14 +94,11 @@ export const Relationship = {
   createRecordsByListFilter,
   createPeopleByCompanyListFilter,
   createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter
+  createRecordsByNotesFilter,
 };
 
 // Legacy exports for backward compatibility
-import {
-  combineFiltersWithAnd,
-  combineFiltersWithOr
-} from "./builders.js";
+import { combineFiltersWithAnd, combineFiltersWithOr } from './builders.js';
 
 export {
   transformFiltersToApiFormat,
@@ -115,8 +120,8 @@ export {
   createRecordsByListFilter,
   createPeopleByCompanyListFilter,
   createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter
+  createRecordsByNotesFilter,
 };
 
 // Re-export ATTRIBUTES as FILTER_ATTRIBUTES for backward compatibility
-export { ATTRIBUTES as FILTER_ATTRIBUTES } from "./types.js";
+export { ATTRIBUTES as FILTER_ATTRIBUTES } from './types.js';

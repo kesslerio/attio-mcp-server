@@ -8,7 +8,7 @@ export {
   callWithRetry,
   calculateRetryDelay,
   isRetryableError,
-  DEFAULT_RETRY_CONFIG
+  DEFAULT_RETRY_CONFIG,
 } from './retry.js';
 export type { RetryConfig } from './retry.js';
 
@@ -19,15 +19,11 @@ export type {
   BatchResponse,
   BatchConfig,
   ListEntryFilter,
-  ListEntryFilters
+  ListEntryFilters,
 } from './types.js';
 
 // Re-export all search operations
-export {
-  searchObject,
-  advancedSearchObject,
-  listObjects
-} from './search.js';
+export { searchObject, advancedSearchObject, listObjects } from './search.js';
 
 // Re-export all CRUD operations
 export {
@@ -36,14 +32,11 @@ export {
   getRecord,
   updateRecord,
   deleteRecord,
-  listRecords
+  listRecords,
 } from './crud.js';
 
 // Re-export all notes operations
-export {
-  getObjectNotes,
-  createObjectNote
-} from './notes.js';
+export { getObjectNotes, createObjectNote } from './notes.js';
 
 // Re-export all list operations
 export {
@@ -52,7 +45,7 @@ export {
   getListEntries,
   addRecordToList,
   removeRecordFromList,
-  updateListEntry
+  updateListEntry,
 } from './lists.js';
 
 export {
@@ -62,7 +55,7 @@ export {
   updateTask,
   deleteTask,
   linkRecordToTask,
-  unlinkRecordFromTask
+  unlinkRecordFromTask,
 } from './tasks.js';
 
 // Re-export all batch operations
@@ -72,5 +65,5 @@ export {
   executeBatchOperations,
   batchSearchObjects,
   batchGetObjectDetails,
-  DEFAULT_BATCH_CONFIG
+  DEFAULT_BATCH_CONFIG,
 } from './batch.js';

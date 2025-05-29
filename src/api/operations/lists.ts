@@ -4,41 +4,41 @@
  */
 
 import { getAttioClient } from '../attio-client.js';
-import { 
+import {
   AttioList,
   AttioListEntry,
   AttioListResponse,
-  AttioSingleResponse
+  AttioSingleResponse,
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import { ListEntryFilters } from './types.js';
-import { 
-  processListEntries, 
-  transformFiltersToApiFormat
+import {
+  processListEntries,
+  transformFiltersToApiFormat,
 } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { executeWithListFallback } from '../../utils/api-fallback.js';
 
 /**
  * Gets all lists in the workspace
- * 
+ *
  * @param objectSlug - Optional object type to filter lists by (e.g., 'companies', 'people')
  * @param limit - Maximum number of lists to fetch (default: 20)
  * @param retryConfig - Optional retry configuration
  * @returns Array of list objects
  */
 export async function getAllLists(
-  objectSlug?: string, 
+  objectSlug?: string,
   limit: number = 20,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList[]> {
   const api = getAttioClient();
   let path = `/lists?limit=${limit}`;
-  
+
   if (objectSlug) {
     path += `&objectSlug=${objectSlug}`;
   }
-  
+
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioListResponse<AttioList>>(path);
@@ -52,7 +52,7 @@ export async function getAllLists(
 
 /**
  * Gets details for a specific list
- * 
+ *
  * @param listId - The ID of the list
  * @param retryConfig - Optional retry configuration
  * @returns List details
@@ -63,7 +63,7 @@ export async function getListDetails(
 ): Promise<AttioList> {
   const api = getAttioClient();
   const path = `/lists/${listId}`;
-  
+
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioSingleResponse<AttioList>>(path);
@@ -77,7 +77,7 @@ export async function getListDetails(
 
 /**
  * Gets entries in a list with pagination and filtering
- * 
+ *
  * @param listId - The ID of the list
  * @param limit - Maximum number of entries to fetch
  * @param offset - Number of entries to skip
@@ -86,86 +86,91 @@ export async function getListDetails(
  * @returns Array of list entries
  */
 export async function getListEntries(
-  listId: string, 
-  limit?: number, 
+  listId: string,
+  limit?: number,
   offset?: number,
   filters?: ListEntryFilters,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry[]> {
   const api = getAttioClient();
-  
+
   // Input validation - make sure we have a valid listId
   if (!listId) {
     throw new Error('Invalid list ID: No ID provided');
   }
-  
+
   // Coerce input parameters to ensure proper types
   const safeLimit = typeof limit === 'number' ? limit : undefined;
   const safeOffset = typeof offset === 'number' ? offset : undefined;
-  
+
   // Create request body with parameters and filters
   const createRequestBody = () => {
     // Start with base parameters
     const body: any = {
-      "expand": ["record"],
-      "limit": safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
-      "offset": safeOffset !== undefined ? safeOffset : 0 // Default to 0 if not specified
+      expand: ['record'],
+      limit: safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
+      offset: safeOffset !== undefined ? safeOffset : 0, // Default to 0 if not specified
     };
-    
+
     try {
       // Use our shared utility to transform filters to API format
       const filterObject = transformFiltersToApiFormat(filters, true);
-      
+
       // Add filter to body if it exists
       if (filterObject.filter) {
         body.filter = filterObject.filter;
-        
+
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
           console.error('[getListEntries] Transformed filters:', {
             originalFilters: JSON.stringify(filters),
             transformedFilters: JSON.stringify(filterObject.filter),
             useOrLogic: filters?.matchAny === true,
-            filterCount: filters?.filters?.length || 0
+            filterCount: filters?.filters?.length || 0,
           });
         }
       }
     } catch (err: any) {
       const error = err as Error;
-      
+
       if (error instanceof FilterValidationError) {
         // Log the problematic filters for debugging
         if (process.env.NODE_ENV === 'development') {
           console.error('[getListEntries] Filter validation error:', {
             error: error.message,
-            providedFilters: JSON.stringify(filters)
+            providedFilters: JSON.stringify(filters),
           });
         }
-        
+
         // Rethrow with more context
         throw new Error(`Filter validation failed: ${error.message}`);
       }
       throw error; // Rethrow other errors
     }
-    
+
     return body;
   };
-  
+
   // Enhanced logging function
   const logOperation = (stage: string, details: any, isError = false) => {
     if (process.env.NODE_ENV === 'development') {
-      const prefix = isError ? 'ERROR' : (stage.includes('failed') ? 'WARNING' : 'INFO');
+      const prefix = isError
+        ? 'ERROR'
+        : stage.includes('failed')
+          ? 'WARNING'
+          : 'INFO';
       console.error(`[getListEntries] ${prefix} - ${stage}`, {
         ...details,
         listId,
         limit: safeLimit,
         offset: safeOffset,
-        hasFilters: filters && filters.filters ? filters.filters.length > 0 : false,
-        timestamp: new Date().toISOString()
+        hasFilters:
+          filters && filters.filters ? filters.filters.length > 0 : false,
+        timestamp: new Date().toISOString(),
       });
     }
   };
-  
+
   // Define a function to try all endpoints with proper retry logic
   return callWithRetry(async () => {
     return executeWithListFallback(
@@ -180,7 +185,7 @@ export async function getListEntries(
 
 /**
  * Adds a record to a list
- * 
+ *
  * @param listId - The ID of the list
  * @param recordId - The ID of the record to add
  * @param objectType - Optional object type ('companies', 'people', etc.)
@@ -189,7 +194,7 @@ export async function getListEntries(
  * @returns The created list entry
  */
 export async function addRecordToList(
-  listId: string, 
+  listId: string,
   recordId: string,
   objectType?: string,
   initialValues?: Record<string, any>,
@@ -197,19 +202,19 @@ export async function addRecordToList(
 ): Promise<AttioListEntry> {
   const api = getAttioClient();
   const path = `/lists/${listId}/entries`;
-  
+
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
     throw new Error('Invalid list ID: Must be a non-empty string');
   }
-  
+
   if (!recordId || typeof recordId !== 'string') {
     throw new Error('Invalid record ID: Must be a non-empty string');
   }
-  
+
   // Default object type to 'companies' if not specified
   const safeObjectType = objectType || 'companies';
-  
+
   return callWithRetry(async () => {
     try {
       // Construct proper API payload according to Attio API requirements
@@ -220,49 +225,70 @@ export async function addRecordToList(
           parent_object: safeObjectType,
           // Only include entry_values if initialValues is provided
           ...(initialValues && { entry_values: initialValues }),
-        }
+        },
       };
-      
+
       if (process.env.NODE_ENV === 'development') {
         console.error(`[addRecordToList] Adding record to list at ${path}`);
         console.error(`- List ID: ${listId}`);
         console.error(`- Record ID: ${recordId}`);
         console.error(`- Object Type: ${safeObjectType}`);
-        console.error(`- Initial Values: ${initialValues ? JSON.stringify(initialValues) : 'none'}`);
+        console.error(
+          `- Initial Values: ${
+            initialValues ? JSON.stringify(initialValues) : 'none'
+          }`
+        );
         console.error(`- Request payload: ${JSON.stringify(payload)}`);
       }
-      
-      const response = await api.post<AttioSingleResponse<AttioListEntry>>(path, payload);
-      
+
+      const response = await api.post<AttioSingleResponse<AttioListEntry>>(
+        path,
+        payload
+      );
+
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[addRecordToList] Success: ${JSON.stringify(response.data)}`);
+        console.error(
+          `[addRecordToList] Success: ${JSON.stringify(response.data)}`
+        );
       }
-      
+
       return response.data.data || response.data;
     } catch (error: any) {
       // Enhanced error logging with detailed information
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[addRecordToList] Error adding record ${recordId} to list ${listId}:`, 
-          error.message || 'Unknown error');
+        console.error(
+          `[addRecordToList] Error adding record ${recordId} to list ${listId}:`,
+          error.message || 'Unknown error'
+        );
         console.error('Status:', error.response?.status);
-        console.error('Response data:', JSON.stringify(error.response?.data || {}));
-        
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response?.data || {})
+        );
+
         // Add additional debug information for validation errors
         if (error.response?.data?.validation_errors) {
-          console.error('Validation errors:', JSON.stringify(error.response.data.validation_errors));
+          console.error(
+            'Validation errors:',
+            JSON.stringify(error.response.data.validation_errors)
+          );
         }
       }
-      
+
       // Add more context to the error message
       if (error.response?.status === 400) {
         const validationErrors = error.response?.data?.validation_errors || [];
-        const errorDetails = validationErrors.map((e: any) => 
-          `${e.path.join('.')}: ${e.message}`
-        ).join('; ');
-        
-        throw new Error(`Validation error adding record to list: ${errorDetails || error.message}`);
+        const errorDetails = validationErrors
+          .map((e: any) => `${e.path.join('.')}: ${e.message}`)
+          .join('; ');
+
+        throw new Error(
+          `Validation error adding record to list: ${
+            errorDetails || error.message
+          }`
+        );
       }
-      
+
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }
@@ -271,7 +297,7 @@ export async function addRecordToList(
 
 /**
  * Updates a list entry (e.g., changing stage)
- * 
+ *
  * @param listId - The ID of the list
  * @param entryId - The ID of the list entry to update
  * @param attributes - The attributes to update (e.g., { stage: "Demo Scheduling" })
@@ -279,27 +305,31 @@ export async function addRecordToList(
  * @returns The updated list entry
  */
 export async function updateListEntry(
-  listId: string, 
+  listId: string,
   entryId: string,
   attributes: Record<string, any>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
   const api = getAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
-  
+
   // Input validation
   if (!listId || typeof listId !== 'string') {
     throw new Error('Invalid list ID: Must be a non-empty string');
   }
-  
+
   if (!entryId || typeof entryId !== 'string') {
     throw new Error('Invalid entry ID: Must be a non-empty string');
   }
-  
-  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+
+  if (
+    !attributes ||
+    typeof attributes !== 'object' ||
+    Array.isArray(attributes)
+  ) {
     throw new Error('Invalid attributes: Must be a non-empty object');
   }
-  
+
   return callWithRetry(async () => {
     try {
       if (process.env.NODE_ENV === 'development') {
@@ -308,38 +338,54 @@ export async function updateListEntry(
         console.error(`- Entry ID: ${entryId}`);
         console.error(`- Attributes: ${JSON.stringify(attributes)}`);
       }
-      
+
       // Attio API expects updates to list entries in the 'data.values' structure
       // This follows the same pattern as record updates in crud.ts
-      const response = await api.patch<AttioSingleResponse<AttioListEntry>>(path, {
-        data: {
-          values: attributes
+      const response = await api.patch<AttioSingleResponse<AttioListEntry>>(
+        path,
+        {
+          data: {
+            values: attributes,
+          },
         }
-      });
-      
+      );
+
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[updateListEntry] Success: ${JSON.stringify(response.data)}`);
+        console.error(
+          `[updateListEntry] Success: ${JSON.stringify(response.data)}`
+        );
       }
-      
+
       return response.data.data || response.data;
     } catch (error: any) {
       // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[updateListEntry] Error updating entry ${entryId} in list ${listId}:`, 
-          error.message || 'Unknown error');
+        console.error(
+          `[updateListEntry] Error updating entry ${entryId} in list ${listId}:`,
+          error.message || 'Unknown error'
+        );
         console.error('Status:', error.response?.status);
-        console.error('Response data:', JSON.stringify(error.response?.data || {}));
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response?.data || {})
+        );
       }
-      
+
       // Add more specific error types based on status codes
       if (error.response?.status === 404) {
         throw new Error(`List entry ${entryId} not found in list ${listId}`);
       } else if (error.response?.status === 400) {
-        throw new Error(`Invalid attributes for list entry update: ${error.response?.data?.message || 'Bad request'}`);
+        throw new Error(
+          `Invalid attributes for list entry update: ${
+            error.response?.data?.message || 'Bad request'
+          }`
+        );
       } else if (error.response?.status === 403) {
-        throw new Error(`Insufficient permissions to update list entry ${entryId} in list ${listId}`);
+        throw new Error(
+          `Insufficient permissions to update list entry ${entryId} in list ${listId}`
+        );
       }
-      
+
       // Let upstream handlers create specific, rich error objects.
       throw error;
     }
@@ -348,20 +394,20 @@ export async function updateListEntry(
 
 /**
  * Removes a record from a list
- * 
+ *
  * @param listId - The ID of the list
  * @param entryId - The ID of the list entry to remove
  * @param retryConfig - Optional retry configuration
  * @returns True if successful
  */
 export async function removeRecordFromList(
-  listId: string, 
+  listId: string,
   entryId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
   const api = getAttioClient();
   const path = `/lists/${listId}/entries/${entryId}`;
-  
+
   return callWithRetry(async () => {
     try {
       await api.delete(path);

@@ -11,16 +11,19 @@ const filters = {
   filters: [
     {
       attribute: {
-        slug: 'b2b_segment'
+        slug: 'b2b_segment',
       },
       condition: 'equals',
-      value: 'Aesthetics'
-    }
+      value: 'Aesthetics',
+    },
   ],
-  matchAny: false
+  matchAny: false,
 };
 
-console.log('Testing value matching with filter:', JSON.stringify(filters, null, 2));
+console.log(
+  'Testing value matching with filter:',
+  JSON.stringify(filters, null, 2)
+);
 
 try {
   // The advancedSearch error handler should be triggered
@@ -31,6 +34,9 @@ try {
   console.error('Error message:', error.message);
   console.log('Error stack:', error.stack);
   if (error.response?.data) {
-    console.log('Error response data:', JSON.stringify(error.response.data, null, 2));
+    console.log(
+      'Error response data:',
+      JSON.stringify(error.response.data, null, 2)
+    );
   }
 }

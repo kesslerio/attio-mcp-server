@@ -1,6 +1,6 @@
 /**
  * Tool dispatcher module - handles tool execution dispatch and routing
- * 
+ *
  * This module re-exports from the modular dispatcher implementation for backward compatibility.
  * The actual implementation has been broken down into focused modules under ./dispatcher/
  */
@@ -10,7 +10,10 @@ export { executeToolRequest } from './dispatcher/core.js';
 
 // Re-export utility functions from the modular implementation for backward compatibility
 export { logToolRequest, logToolError } from './dispatcher/logging.js';
-export { validateAttributes, validateResourceId } from './dispatcher/validation.js';
+export {
+  validateAttributes,
+  validateResourceId,
+} from './dispatcher/validation.js';
 export { formatSuccessResponse } from './dispatcher/formatting.js';
 
 // Note: Legacy implementation placeholders below will be moved to dedicated operation modules in Phase 2

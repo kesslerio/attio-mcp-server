@@ -5,12 +5,12 @@ import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../../types/attio.js';
 
 // Import utilities
-import { 
-  initializeToolContext, 
-  logToolRequest, 
-  logToolSuccess, 
-  logToolError, 
-  logToolConfigError 
+import {
+  initializeToolContext,
+  logToolRequest,
+  logToolSuccess,
+  logToolError,
+  logToolConfigError,
 } from './logging.js';
 
 // Import tool configurations
@@ -23,12 +23,12 @@ import {
   handleBasicSearch,
   handleSearchByEmail,
   handleSearchByPhone,
-  handleSmartSearch
+  handleSmartSearch,
 } from './operations/search.js';
 import { handleDetailsOperation } from './operations/details.js';
-import { 
-  handleNotesOperation, 
-  handleCreateNoteOperation 
+import {
+  handleNotesOperation,
+  handleCreateNoteOperation,
 } from './operations/notes.js';
 import { handleGetListsOperation } from './operations/lists.js';
 
@@ -37,7 +37,7 @@ import {
   handleCreateOperation,
   handleUpdateOperation,
   handleUpdateAttributeOperation,
-  handleDeleteOperation
+  handleDeleteOperation,
 } from './operations/crud.js';
 
 // Import List operation handlers (additional operations from emergency fix)
@@ -50,7 +50,7 @@ import {
   handleFilterListEntriesOperation,
   handleAdvancedFilterListEntriesOperation,
   handleFilterListEntriesByParentOperation,
-  handleFilterListEntriesByParentIdOperation
+  handleFilterListEntriesByParentIdOperation,
 } from './operations/lists.js';
 
 // Import Batch operation handlers
@@ -59,7 +59,7 @@ import {
   handleBatchCreateOperation,
   handleBatchDeleteOperation,
   handleBatchSearchOperation,
-  handleBatchGetDetailsOperation
+  handleBatchGetDetailsOperation,
 } from './operations/batch.js';
 
 // Import tool type definitions
@@ -83,7 +83,7 @@ import {
  */
 export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
-  
+
   // Initialize logging context for this tool execution
   const correlationId = initializeToolContext(toolName);
   let timer: PerformanceTimer | undefined;
@@ -99,7 +99,7 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     const { resourceType, toolConfig } = toolInfo;
     toolType = toolInfo.toolType; // Assign to outer scope variable
-    
+
     // Start tool execution logging with performance tracking
     timer = logToolRequest(toolType, toolName, request);
 
@@ -107,45 +107,106 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     // Handle search tools
     if (toolType === 'search') {
-      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleBasicSearch(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else if (toolType === 'searchByEmail') {
-      result = await handleSearchByEmail(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleSearchByEmail(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else if (toolType === 'searchByPhone') {
-      result = await handleSearchByPhone(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleSearchByPhone(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else if (toolType === 'smartSearch') {
-      result = await handleSmartSearch(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleSmartSearch(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else if (toolType === 'details') {
-      result = await handleDetailsOperation(request, toolConfig as DetailsToolConfig, resourceType);
+      result = await handleDetailsOperation(
+        request,
+        toolConfig as DetailsToolConfig,
+        resourceType
+      );
     } else if (toolType === 'notes') {
-      result = await handleNotesOperation(request, toolConfig as NotesToolConfig, resourceType);
+      result = await handleNotesOperation(
+        request,
+        toolConfig as NotesToolConfig,
+        resourceType
+      );
     } else if (toolType === 'createNote') {
-      result = await handleCreateNoteOperation(request, toolConfig as CreateNoteToolConfig, resourceType);
+      result = await handleCreateNoteOperation(
+        request,
+        toolConfig as CreateNoteToolConfig,
+        resourceType
+      );
     } else if (toolType === 'getLists') {
-      result = await handleGetListsOperation(request, toolConfig as GetListsToolConfig);
-    
-    // Handle CRUD operations (from emergency fix)
+      result = await handleGetListsOperation(
+        request,
+        toolConfig as GetListsToolConfig
+      );
+
+      // Handle CRUD operations (from emergency fix)
     } else if (toolType === 'create') {
-      result = await handleCreateOperation(request, toolConfig as ToolConfig, resourceType);
+      result = await handleCreateOperation(
+        request,
+        toolConfig as ToolConfig,
+        resourceType
+      );
     } else if (toolType === 'update') {
-      result = await handleUpdateOperation(request, toolConfig as ToolConfig, resourceType);
+      result = await handleUpdateOperation(
+        request,
+        toolConfig as ToolConfig,
+        resourceType
+      );
     } else if (toolType === 'updateAttribute') {
-      result = await handleUpdateAttributeOperation(request, toolConfig as ToolConfig, resourceType);
+      result = await handleUpdateAttributeOperation(
+        request,
+        toolConfig as ToolConfig,
+        resourceType
+      );
     } else if (toolType === 'delete') {
-      result = await handleDeleteOperation(request, toolConfig as ToolConfig, resourceType);
-    
-    // Handle additional info operations (from emergency fix)
-    } else if (toolType === 'basicInfo' || toolType === 'businessInfo' || toolType === 'contactInfo' || toolType === 'socialInfo' || toolType === 'json') {
+      result = await handleDeleteOperation(
+        request,
+        toolConfig as ToolConfig,
+        resourceType
+      );
+
+      // Handle additional info operations (from emergency fix)
+    } else if (
+      toolType === 'basicInfo' ||
+      toolType === 'businessInfo' ||
+      toolType === 'contactInfo' ||
+      toolType === 'socialInfo' ||
+      toolType === 'json'
+    ) {
       result = await handleInfoOperation(request, toolConfig, resourceType);
     } else if (toolType === 'fields') {
       result = await handleFieldsOperation(request, toolConfig, resourceType);
     } else if (toolType === 'getAttributes') {
-      result = await handleGetAttributesOperation(request, toolConfig, resourceType);
+      result = await handleGetAttributesOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'discoverAttributes') {
-      result = await handleDiscoverAttributesOperation(request, toolConfig, resourceType);
+      result = await handleDiscoverAttributesOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'customFields') {
       result = await handleInfoOperation(request, toolConfig, resourceType);
 
-    // Handle List operations (from emergency fix)
+      // Handle List operations (from emergency fix)
     } else if (toolType === 'addRecordToList') {
       result = await handleAddRecordToListOperation(request, toolConfig);
     } else if (toolType === 'removeRecordFromList') {
@@ -159,38 +220,76 @@ export async function executeToolRequest(request: CallToolRequest) {
     } else if (toolType === 'filterListEntries') {
       result = await handleFilterListEntriesOperation(request, toolConfig);
     } else if (toolType === 'advancedFilterListEntries') {
-      result = await handleAdvancedFilterListEntriesOperation(request, toolConfig);
+      result = await handleAdvancedFilterListEntriesOperation(
+        request,
+        toolConfig
+      );
     } else if (toolType === 'filterListEntriesByParent') {
-      result = await handleFilterListEntriesByParentOperation(request, toolConfig);
+      result = await handleFilterListEntriesByParentOperation(
+        request,
+        toolConfig
+      );
     } else if (toolType === 'filterListEntriesByParentId') {
-      result = await handleFilterListEntriesByParentIdOperation(request, toolConfig);
+      result = await handleFilterListEntriesByParentIdOperation(
+        request,
+        toolConfig
+      );
 
-    // Handle Batch operations (from emergency fix)
+      // Handle Batch operations (from emergency fix)
     } else if (toolType === 'batchUpdate') {
-      result = await handleBatchUpdateOperation(request, toolConfig, resourceType);
+      result = await handleBatchUpdateOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'batchCreate') {
-      result = await handleBatchCreateOperation(request, toolConfig, resourceType);
+      result = await handleBatchCreateOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'batchDelete') {
-      result = await handleBatchDeleteOperation(request, toolConfig, resourceType);
+      result = await handleBatchDeleteOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'batchSearch') {
-      result = await handleBatchSearchOperation(request, toolConfig, resourceType);
+      result = await handleBatchSearchOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
     } else if (toolType === 'batchGetDetails') {
-      result = await handleBatchGetDetailsOperation(request, toolConfig, resourceType);
+      result = await handleBatchGetDetailsOperation(
+        request,
+        toolConfig,
+        resourceType
+      );
 
-    // Handle other advanced search operations (from emergency fix)
+      // Handle other advanced search operations (from emergency fix)
     } else if (toolType === 'advancedSearch') {
-      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
+      result = await handleBasicSearch(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else if (toolType === 'searchByDomain') {
-      result = await handleBasicSearch(request, toolConfig as SearchToolConfig, resourceType);
-    
+      result = await handleBasicSearch(
+        request,
+        toolConfig as SearchToolConfig,
+        resourceType
+      );
     } else {
       // Placeholder for other operations - will be extracted to modules later
-      throw new Error(`Tool handler not implemented for tool type: ${toolType}`);
+      throw new Error(
+        `Tool handler not implemented for tool type: ${toolType}`
+      );
     }
 
     // Log successful execution
     logToolSuccess(toolName, toolType, result, timer);
-    
+
     // Ensure the response is safely serializable
     const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
@@ -221,15 +320,19 @@ export async function executeToolRequest(request: CallToolRequest) {
     // 'timer' (PerformanceTimer) from the try block should be used here.
     // If timer is undefined (e.g. error before timer initialization), create a new one.
     // toolType might also be undefined if error occurred before its assignment.
-    const finalTimer = timer 
-      ? timer 
-      : new PerformanceTimer('dispatcher_error_fallback', toolName, OperationType.TOOL_EXECUTION);
-    
+    const finalTimer = timer
+      ? timer
+      : new PerformanceTimer(
+          'dispatcher_error_fallback',
+          toolName,
+          OperationType.TOOL_EXECUTION
+        );
+
     logToolError(
-      toolName, 
-      toolType || 'unknown_type_on_error', 
-      error, 
-      finalTimer, 
+      toolName,
+      toolType || 'unknown_type_on_error',
+      error,
+      finalTimer,
       errorDetails
     );
 
@@ -249,16 +352,21 @@ export async function executeToolRequest(request: CallToolRequest) {
         details: errorDetails,
       },
     };
-    
+
     // Ensure the error response is safely serializable
     return sanitizeMcpResponse(errorResponse);
   }
 }
 
 // Placeholder functions that need to be implemented (missing from main branch)
-async function handleInfoOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+async function handleInfoOperation(
+  request: CallToolRequest,
+  toolConfig: any,
+  resourceType: ResourceType
+) {
   // This should be moved to an appropriate operations module
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const idParam =
+    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
   const id = request.params.arguments?.[idParam] as string;
 
   if (!id) {
@@ -266,17 +374,24 @@ async function handleInfoOperation(request: CallToolRequest, toolConfig: any, re
   }
 
   const result = await toolConfig.handler(id);
-  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-  
+  const formattedResult = toolConfig.formatResult
+    ? toolConfig.formatResult(result)
+    : result;
+
   return {
     content: [{ type: 'text', text: formattedResult }],
-    isError: false
+    isError: false,
   };
 }
 
-async function handleFieldsOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+async function handleFieldsOperation(
+  request: CallToolRequest,
+  toolConfig: any,
+  resourceType: ResourceType
+) {
   // This should be moved to an appropriate operations module
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const idParam =
+    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
   const id = request.params.arguments?.[idParam] as string;
   const fields = request.params.arguments?.fields as string[];
 
@@ -285,17 +400,24 @@ async function handleFieldsOperation(request: CallToolRequest, toolConfig: any, 
   }
 
   const result = await toolConfig.handler(id, fields);
-  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-  
+  const formattedResult = toolConfig.formatResult
+    ? toolConfig.formatResult(result)
+    : result;
+
   return {
     content: [{ type: 'text', text: formattedResult }],
-    isError: false
+    isError: false,
   };
 }
 
-async function handleGetAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+async function handleGetAttributesOperation(
+  request: CallToolRequest,
+  toolConfig: any,
+  resourceType: ResourceType
+) {
   // This should be moved to an appropriate operations module
-  const idParam = resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+  const idParam =
+    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
   const id = request.params.arguments?.[idParam] as string;
   const attributeName = request.params.arguments?.attributeName as string;
 
@@ -304,21 +426,29 @@ async function handleGetAttributesOperation(request: CallToolRequest, toolConfig
   }
 
   const result = await toolConfig.handler(id, attributeName);
-  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-  
+  const formattedResult = toolConfig.formatResult
+    ? toolConfig.formatResult(result)
+    : result;
+
   return {
     content: [{ type: 'text', text: formattedResult }],
-    isError: false
+    isError: false,
   };
 }
 
-async function handleDiscoverAttributesOperation(request: CallToolRequest, toolConfig: any, resourceType: ResourceType) {
+async function handleDiscoverAttributesOperation(
+  request: CallToolRequest,
+  toolConfig: any,
+  resourceType: ResourceType
+) {
   // This should be moved to an appropriate operations module
   const result = await toolConfig.handler();
-  const formattedResult = toolConfig.formatResult ? toolConfig.formatResult(result) : result;
-  
+  const formattedResult = toolConfig.formatResult
+    ? toolConfig.formatResult(result)
+    : result;
+
   return {
     content: [{ type: 'text', text: formattedResult }],
-    isError: false
+    isError: false,
   };
 }

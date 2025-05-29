@@ -100,7 +100,6 @@ export async function createObjectRecord<T extends AttioRecord>(
   }
 }
 
-
 /**
  * Gets details for a specific record
  *
@@ -480,9 +479,5 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
   }
 }
 
-
 // Re-export formatting utilities
-export {
-  formatRecordAttribute,
-  formatRecordAttributes,
-} from './formatters.js';
+export { formatRecordAttribute, formatRecordAttributes } from './formatters.js';

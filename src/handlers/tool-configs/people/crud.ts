@@ -1,7 +1,11 @@
 /**
  * CRUD operations for people
  */
-import { AttioRecord, Person, PersonCreateAttributes } from '../../../types/attio.js';
+import {
+  AttioRecord,
+  Person,
+  PersonCreateAttributes,
+} from '../../../types/attio.js';
 import { createPerson } from '../../../objects/people-write.js';
 import { getPersonDetails } from '../../../objects/people/index.js';
 import { ToolConfig } from '../../tool-types.js';
@@ -10,25 +14,33 @@ import { formatPersonDetails, getPersonName } from './formatters.js';
 export const crudToolConfigs = {
   create: {
     name: 'create-person',
-    handler: async (_slug: string, attributes: PersonCreateAttributes): Promise<Person> => {
+    handler: async (
+      _slug: string,
+      attributes: PersonCreateAttributes
+    ): Promise<Person> => {
       try {
         return await createPerson(attributes);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const contextualError = new Error(`Failed to create person via adapter: ${errorMessage}`);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const contextualError = new Error(
+          `Failed to create person via adapter: ${errorMessage}`
+        );
         (contextualError as any).cause = error;
         throw contextualError;
       }
     },
     formatResult: (result: Person) =>
-      `Person created: ${getPersonName(result as unknown as AttioRecord)} (ID: ${result.id?.record_id || result.id || 'unknown'})`
+      `Person created: ${getPersonName(
+        result as unknown as AttioRecord
+      )} (ID: ${result.id?.record_id || result.id || 'unknown'})`,
   } as ToolConfig,
 
   details: {
     name: 'get-person-details',
     handler: getPersonDetails,
-    formatResult: formatPersonDetails
-  } as ToolConfig
+    formatResult: formatPersonDetails,
+  } as ToolConfig,
 };
 
 export const crudToolDefinitions = [
@@ -43,15 +55,25 @@ export const crudToolDefinitions = [
           description: 'Person attributes to set',
           properties: {
             name: { type: 'string', description: 'Person name' },
-            email_addresses: { type: 'array', items: { type: 'string' }, description: 'Email address(es) - array of email strings. For single email, provide as single-item array.' },
-            phone_numbers: { type: 'array', items: { type: 'string' }, description: 'Phone number(s) - array of phone strings. For single phone, provide as single-item array.' },
+            email_addresses: {
+              type: 'array',
+              items: { type: 'string' },
+              description:
+                'Email address(es) - array of email strings. For single email, provide as single-item array.',
+            },
+            phone_numbers: {
+              type: 'array',
+              items: { type: 'string' },
+              description:
+                'Phone number(s) - array of phone strings. For single phone, provide as single-item array.',
+            },
             job_title: { type: 'string', description: 'Job title' },
-            company: { type: 'string', description: 'Company name' }
-          }
-        }
+            company: { type: 'string', description: 'Company name' },
+          },
+        },
       },
-      required: ['attributes']
-    }
+      required: ['attributes'],
+    },
   },
   {
     name: 'get-person-details',
@@ -59,10 +81,12 @@ export const crudToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        personId: { type: 'string', description: 'ID of the person to get details for' }
+        personId: {
+          type: 'string',
+          description: 'ID of the person to get details for',
+        },
       },
-      required: ['personId']
-    }
-  }
+      required: ['personId'],
+    },
+  },
 ];
-

@@ -1,6 +1,6 @@
 /**
  * Notes operation handlers for tool execution
- * 
+ *
  * Handles notes operations including retrieving and creating notes for records
  */
 
@@ -148,7 +148,9 @@ export async function handleCreateNoteOperation(
     const note = await toolConfig.handler(noteTargetId, title, content);
     const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(note)
-      : `Note added to ${resourceType.slice(0, -1)} ${noteTargetId}: ${note.title || 'Untitled'}`;
+      : `Note added to ${resourceType.slice(0, -1)} ${noteTargetId}: ${
+          note.title || 'Untitled'
+        }`;
 
     return formatResponse(formattedResult);
   } catch (error) {

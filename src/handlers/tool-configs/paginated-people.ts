@@ -38,7 +38,9 @@ function formatPaginatedPeopleResult(
   const resultList = results
     .map(
       (person: Person) =>
-        `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${person.id?.record_id || 'unknown'})`
+        `- ${person.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
+          person.id?.record_id || 'unknown'
+        })`
     )
     .join('\n');
 

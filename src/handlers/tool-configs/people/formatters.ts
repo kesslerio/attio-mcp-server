@@ -36,7 +36,13 @@ export function formatPersonDetails(person: Person): string {
   const personId = person.id.record_id || 'unknown';
   const values = person.values as any;
   const name = values.name?.[0]?.value || 'Unnamed';
-  const DISPLAYED_FIELDS = ['name', 'email_addresses', 'phone_numbers', 'job_title', 'company'];
+  const DISPLAYED_FIELDS = [
+    'name',
+    'email_addresses',
+    'phone_numbers',
+    'job_title',
+    'company',
+  ];
 
   const sections: string[] = [];
   sections.push(`# Person Details: ${name} (ID: ${personId})`);
@@ -68,7 +74,9 @@ export function formatPersonDetails(person: Person): string {
     professionalInfo.push(`Company: ${values.company[0].value}`);
   }
   if (professionalInfo.length) {
-    sections.push(`## Professional Information\n${professionalInfo.join('\n')}`);
+    sections.push(
+      `## Professional Information\n${professionalInfo.join('\n')}`
+    );
   }
 
   const additionalAttributes: string[] = [];
@@ -84,12 +92,16 @@ export function formatPersonDetails(person: Person): string {
           return String(v.value);
         })
         .join(', ');
-      const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const displayKey = key
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
       additionalAttributes.push(`${displayKey}: ${formattedValues}`);
     }
   }
   if (additionalAttributes.length) {
-    sections.push(`## Additional Attributes\n${additionalAttributes.join('\n')}`);
+    sections.push(
+      `## Additional Attributes\n${additionalAttributes.join('\n')}`
+    );
   }
 
   const timestamps: string[] = [];
@@ -105,4 +117,3 @@ export function formatPersonDetails(person: Person): string {
 
   return sections.join('\n\n');
 }
-

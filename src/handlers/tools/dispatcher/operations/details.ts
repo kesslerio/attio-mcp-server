@@ -1,6 +1,6 @@
 /**
  * Details operation handlers for tool execution
- * 
+ *
  * Handles details operations for retrieving detailed record information
  */
 

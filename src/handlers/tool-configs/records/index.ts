@@ -114,7 +114,9 @@ export const recordToolConfigs = {
       return `Found ${results.length} records:\n${results
         .map(
           (record: any) =>
-            `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${record.id?.record_id || 'unknown'})`
+            `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${
+              record.id?.record_id || 'unknown'
+            })`
         )
         .join('\n')}`;
     },
@@ -130,8 +132,12 @@ export const recordToolConfigs = {
         `${result.results
           .map((r: any, i: number) =>
             r.success
-              ? `✅ Record ${i + 1}: Created successfully (ID: ${r.data?.id?.record_id || 'unknown'})`
-              : `❌ Record ${i + 1}: Failed - ${r.error?.message || 'Unknown error'}`
+              ? `✅ Record ${i + 1}: Created successfully (ID: ${
+                  r.data?.id?.record_id || 'unknown'
+                })`
+              : `❌ Record ${i + 1}: Failed - ${
+                  r.error?.message || 'Unknown error'
+                }`
           )
           .join('\n')}`
       );
@@ -149,7 +155,9 @@ export const recordToolConfigs = {
           .map((r: any) =>
             r.success
               ? `✅ Record ${r.id}: Updated successfully`
-              : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`
+              : `❌ Record ${r.id}: Failed - ${
+                  r.error?.message || 'Unknown error'
+                }`
           )
           .join('\n')}`
       );

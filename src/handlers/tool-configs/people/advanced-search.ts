@@ -11,12 +11,18 @@ export const advancedSearchToolConfigs = {
     name: 'advanced-search-people',
     handler: advancedSearchPeople,
     formatResult: (response: any) => {
-      const results = (response as { results?: AttioRecord[] }).results || response;
+      const results =
+        (response as { results?: AttioRecord[] }).results || response;
       return (results as AttioRecord[])
-        .map(person => `- ${getPersonName(person)} (ID: ${person.id?.record_id || 'unknown'})`)
+        .map(
+          (person) =>
+            `- ${getPersonName(person)} (ID: ${
+              person.id?.record_id || 'unknown'
+            })`
+        )
         .join('\n');
-    }
-  } as ToolConfig
+    },
+  } as ToolConfig,
 };
 
 export const advancedSearchToolDefinitions = [
@@ -41,41 +47,43 @@ export const advancedSearchToolDefinitions = [
                     properties: {
                       slug: {
                         type: 'string',
-                        description: "Attribute to filter on (e.g., 'name', 'email', 'phone')"
-                      }
+                        description:
+                          "Attribute to filter on (e.g., 'name', 'email', 'phone')",
+                      },
                     },
-                    required: ['slug']
+                    required: ['slug'],
                   },
                   condition: {
                     type: 'string',
-                    description: "Condition to apply (e.g., 'equals', 'contains', 'starts_with')"
+                    description:
+                      "Condition to apply (e.g., 'equals', 'contains', 'starts_with')",
                   },
                   value: {
                     type: ['string', 'number', 'boolean'],
-                    description: 'Value to filter by'
-                  }
+                    description: 'Value to filter by',
+                  },
                 },
-                required: ['attribute', 'condition', 'value']
-              }
+                required: ['attribute', 'condition', 'value'],
+              },
             },
             matchAny: {
               type: 'boolean',
-              description: 'When true, matches any filter (OR logic). When false, matches all filters (AND logic)'
-            }
+              description:
+                'When true, matches any filter (OR logic). When false, matches all filters (AND logic)',
+            },
           },
-          required: ['filters']
+          required: ['filters'],
         },
         limit: {
           type: 'number',
-          description: 'Maximum number of results to return (default: 20)'
+          description: 'Maximum number of results to return (default: 20)',
         },
         offset: {
           type: 'number',
-          description: 'Number of results to skip (default: 0)'
-        }
+          description: 'Number of results to skip (default: 0)',
+        },
       },
-      required: ['filters']
-    }
-  }
+      required: ['filters'],
+    },
+  },
 ];
-

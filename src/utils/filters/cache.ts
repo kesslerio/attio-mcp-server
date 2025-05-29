@@ -2,8 +2,8 @@
  * Caching layer for filters, especially relationship-based filters
  * Provides an in-memory LRU cache for expensive filter operations
  */
-import { ListEntryFilters } from "../../api/operations/index.js";
-import { ResourceType, RelationshipType } from "../../types/attio.js";
+import { ListEntryFilters } from '../../api/operations/index.js';
+import { ResourceType, RelationshipType } from '../../types/attio.js';
 
 /**
  * Structure to represent a cache entry
@@ -24,7 +24,7 @@ class LRUCache<K, V> {
 
   /**
    * Create a new LRU cache
-   * 
+   *
    * @param maxSize - Maximum number of entries to store
    * @param ttlMs - Time to live in milliseconds
    */
@@ -36,7 +36,7 @@ class LRUCache<K, V> {
 
   /**
    * Generate a string key from any object
-   * 
+   *
    * @param key - Key object to stringify
    * @returns String representation
    */
@@ -46,7 +46,7 @@ class LRUCache<K, V> {
 
   /**
    * Get a value from the cache
-   * 
+   *
    * @param key - Cache key
    * @returns Cached value or undefined if not found or expired
    */
@@ -65,13 +65,13 @@ class LRUCache<K, V> {
 
     // Update hit count
     entry.hits++;
-    
+
     return entry.value;
   }
 
   /**
    * Store a value in the cache
-   * 
+   *
    * @param key - Cache key
    * @param value - Value to cache
    */
@@ -80,7 +80,7 @@ class LRUCache<K, V> {
     this.cleanExpired();
 
     const keyString = this.getKeyString(key);
-    
+
     // If we're at capacity and the key doesn't already exist,
     // remove the least recently used item
     if (this.cache.size >= this.maxSize && !this.cache.has(keyString)) {
@@ -91,7 +91,7 @@ class LRUCache<K, V> {
     this.cache.set(keyString, {
       value,
       timestamp: Date.now(),
-      hits: 1
+      hits: 1,
     });
   }
 
@@ -117,8 +117,10 @@ class LRUCache<K, V> {
 
     // Find the entry with lowest hit count, or oldest if tied
     for (const [key, entry] of this.cache.entries()) {
-      if (entry.hits < lowestHits || 
-         (entry.hits === lowestHits && entry.timestamp < oldestTimestamp)) {
+      if (
+        entry.hits < lowestHits ||
+        (entry.hits === lowestHits && entry.timestamp < oldestTimestamp)
+      ) {
         lruKey = key;
         lowestHits = entry.hits;
         oldestTimestamp = entry.timestamp;
@@ -152,7 +154,7 @@ class LRUCache<K, V> {
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
-      ttlMs: this.ttlMs
+      ttlMs: this.ttlMs,
     };
   }
 }
@@ -172,7 +174,10 @@ interface RelationshipFilterCacheKey {
 /**
  * Cache for relationship filters with a 5-minute TTL
  */
-const relationshipFilterCache = new LRUCache<RelationshipFilterCacheKey, ListEntryFilters>(
+const relationshipFilterCache = new LRUCache<
+  RelationshipFilterCacheKey,
+  ListEntryFilters
+>(
   100, // Store up to 100 filter configurations
   5 * 60 * 1000 // 5 minutes TTL
 );
@@ -188,51 +193,63 @@ const listMembershipCache = new LRUCache<string, ListEntryFilters>(
 
 /**
  * Gets a cached relationship filter if available
- * 
+ *
  * @param key - Filter cache key
  * @returns Cached filter or undefined if not found
  */
-export function getCachedRelationshipFilter(key: RelationshipFilterCacheKey): ListEntryFilters | undefined {
+export function getCachedRelationshipFilter(
+  key: RelationshipFilterCacheKey
+): ListEntryFilters | undefined {
   return relationshipFilterCache.get(key);
 }
 
 /**
  * Caches a relationship filter result
- * 
+ *
  * @param key - Filter cache key
  * @param filter - Filter to cache
  */
-export function cacheRelationshipFilter(key: RelationshipFilterCacheKey, filter: ListEntryFilters): void {
+export function cacheRelationshipFilter(
+  key: RelationshipFilterCacheKey,
+  filter: ListEntryFilters
+): void {
   relationshipFilterCache.set(key, filter);
 }
 
 /**
  * Gets a cached list membership filter if available
- * 
+ *
  * @param listId - ID of the list
  * @param resourceType - Type of records (people or companies)
  * @returns Cached filter or undefined if not found
  */
-export function getCachedListFilter(listId: string, resourceType: ResourceType): ListEntryFilters | undefined {
+export function getCachedListFilter(
+  listId: string,
+  resourceType: ResourceType
+): ListEntryFilters | undefined {
   const key = `${listId}:${resourceType}`;
   return listMembershipCache.get(key);
 }
 
 /**
  * Caches a list membership filter result
- * 
+ *
  * @param listId - ID of the list
  * @param resourceType - Type of records (people or companies)
  * @param filter - Filter to cache
  */
-export function cacheListFilter(listId: string, resourceType: ResourceType, filter: ListEntryFilters): void {
+export function cacheListFilter(
+  listId: string,
+  resourceType: ResourceType,
+  filter: ListEntryFilters
+): void {
   const key = `${listId}:${resourceType}`;
   listMembershipCache.set(key, filter);
 }
 
 /**
  * Creates a hash of filter configuration to use as part of the cache key
- * 
+ *
  * @param filters - Filter configuration to hash
  * @returns String representation of the filter for caching
  */
@@ -243,19 +260,27 @@ export function hashFilters(filters: ListEntryFilters): string {
 
 /**
  * Get statistics for the relationship filter cache
- * 
+ *
  * @returns Cache statistics
  */
-export function getRelationshipCacheStats(): { size: number; maxSize: number; ttlMs: number } {
+export function getRelationshipCacheStats(): {
+  size: number;
+  maxSize: number;
+  ttlMs: number;
+} {
   return relationshipFilterCache.getStats();
 }
 
 /**
  * Get statistics for the list membership cache
- * 
+ *
  * @returns Cache statistics
  */
-export function getListCacheStats(): { size: number; maxSize: number; ttlMs: number } {
+export function getListCacheStats(): {
+  size: number;
+  maxSize: number;
+  ttlMs: number;
+} {
   return listMembershipCache.getStats();
 }
 

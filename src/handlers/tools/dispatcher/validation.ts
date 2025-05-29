@@ -1,14 +1,14 @@
 /**
  * Validation utilities for tool execution
- * 
+ *
  * Provides parameter validation and resource ID validation for tool requests
  */
 
 import { createErrorResult } from '../../../utils/error-handler.js';
 import { ResourceType } from '../../../types/attio.js';
-import { 
+import {
   AttributeValidationParams,
-  ValidationResult
+  ValidationResult,
 } from '../../../types/tool-types.js';
 
 /**

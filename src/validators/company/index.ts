@@ -23,7 +23,10 @@ import {
 } from '../attribute-validator.js';
 import { InvalidRequestError } from '../../errors/api-errors.js';
 import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
-import { CompanyFieldValue, ProcessedFieldValue } from '../../types/tool-types.js';
+import {
+  CompanyFieldValue,
+  ProcessedFieldValue,
+} from '../../types/tool-types.js';
 import { processFieldValue } from './field_detector.js';
 import { TypeCache } from './type_cache.js';
 import { CachedTypeInfo } from './types.js';
@@ -58,7 +61,11 @@ export class CompanyValidator {
   static extractDomainFromWebsite(
     attributes: Record<string, CompanyFieldValue>
   ): Record<string, CompanyFieldValue> {
-    if (attributes.website && !attributes.domains && typeof attributes.website === 'string') {
+    if (
+      attributes.website &&
+      !attributes.domains &&
+      typeof attributes.website === 'string'
+    ) {
       const extractedDomain = extractDomain(attributes.website);
 
       if (extractedDomain) {
@@ -85,20 +92,25 @@ export class CompanyValidator {
       throw new MissingCompanyFieldError('name');
     }
 
-    const attributesWithDomain = CompanyValidator.extractDomainFromWebsite(attributes);
+    const attributesWithDomain =
+      CompanyValidator.extractDomainFromWebsite(attributes);
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
-    const processedAttributes = await CompanyValidator.processAttributeValues(cleanAttributes);
+    const processedAttributes =
+      await CompanyValidator.processAttributeValues(cleanAttributes);
     await CompanyValidator.performSpecialValidation(processedAttributes);
 
     try {
-      const validatedAttributes = await CompanyValidator.validateAttributeTypes(processedAttributes);
+      const validatedAttributes =
+        await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyCreateInput;
     } catch (error) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
-      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
+      throw new InvalidCompanyDataError(
+        `Attribute validation failed: ${(error as Error).message}`
+      );
     }
   }
 
@@ -112,20 +124,25 @@ export class CompanyValidator {
       );
     }
 
-    const attributesWithDomain = CompanyValidator.extractDomainFromWebsite(attributes);
+    const attributesWithDomain =
+      CompanyValidator.extractDomainFromWebsite(attributes);
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
-    const processedAttributes = await CompanyValidator.processAttributeValues(cleanAttributes);
+    const processedAttributes =
+      await CompanyValidator.processAttributeValues(cleanAttributes);
     await CompanyValidator.performSpecialValidation(processedAttributes);
 
     try {
-      const validatedAttributes = await CompanyValidator.validateAttributeTypes(processedAttributes);
+      const validatedAttributes =
+        await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyUpdateInput;
     } catch (error) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
-      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
+      throw new InvalidCompanyDataError(
+        `Attribute validation failed: ${(error as Error).message}`
+      );
     }
   }
 
@@ -147,7 +164,10 @@ export class CompanyValidator {
     }
 
     await CompanyValidator.validateFieldType(attributeName, attributeValue);
-    const processedValue = await processFieldValue(attributeName, attributeValue);
+    const processedValue = await processFieldValue(
+      attributeName,
+      attributeValue
+    );
 
     if (
       attributeName === 'name' &&
@@ -158,7 +178,11 @@ export class CompanyValidator {
       );
     }
 
-    if (attributeName === 'website' && processedValue && typeof processedValue === 'string') {
+    if (
+      attributeName === 'website' &&
+      processedValue &&
+      typeof processedValue === 'string'
+    ) {
       try {
         new URL(processedValue);
       } catch {
@@ -166,7 +190,11 @@ export class CompanyValidator {
       }
     }
 
-    if (attributeName === 'linkedin_url' && processedValue && typeof processedValue === 'string') {
+    if (
+      attributeName === 'linkedin_url' &&
+      processedValue &&
+      typeof processedValue === 'string'
+    ) {
       try {
         const url = new URL(processedValue);
         if (!url.hostname.includes('linkedin.com')) {
@@ -182,13 +210,16 @@ export class CompanyValidator {
     const attributeObj = { [attributeName]: processedValue };
 
     try {
-      const validatedObj = await CompanyValidator.validateAttributeTypes(attributeObj);
+      const validatedObj =
+        await CompanyValidator.validateAttributeTypes(attributeObj);
       return validatedObj[attributeName];
     } catch (error) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
-      throw new InvalidCompanyDataError(`Attribute validation failed: ${(error as Error).message}`);
+      throw new InvalidCompanyDataError(
+        `Attribute validation failed: ${(error as Error).message}`
+      );
     }
   }
 
@@ -275,7 +306,10 @@ export class CompanyValidator {
       }
     }
 
-    if (attributes.linkedin_url && typeof attributes.linkedin_url === 'string') {
+    if (
+      attributes.linkedin_url &&
+      typeof attributes.linkedin_url === 'string'
+    ) {
       try {
         const url = new URL(attributes.linkedin_url);
         if (!url.hostname.includes('linkedin.com')) {
@@ -295,7 +329,8 @@ export class CompanyValidator {
       );
       if (
         locationType === 'object' &&
-        (typeof attributes.location !== 'object' || Array.isArray(attributes.location))
+        (typeof attributes.location !== 'object' ||
+          Array.isArray(attributes.location))
       ) {
         throw new InvalidCompanyFieldTypeError(
           'location',
@@ -342,7 +377,14 @@ export class CompanyValidator {
       'rating',
     ];
 
-    const booleanFieldPatterns = ['is_', 'has_', 'enabled', 'active', 'verified', 'published'];
+    const booleanFieldPatterns = [
+      'is_',
+      'has_',
+      'enabled',
+      'active',
+      'verified',
+      'published',
+    ];
     const lowerField = field.toLowerCase();
 
     if (arrayFieldPatterns.some((pattern) => lowerField.includes(pattern))) {
@@ -359,7 +401,8 @@ export class CompanyValidator {
 
     if (
       booleanFieldPatterns.some(
-        (pattern) => lowerField.startsWith(pattern) || lowerField.includes(pattern)
+        (pattern) =>
+          lowerField.startsWith(pattern) || lowerField.includes(pattern)
       )
     ) {
       return 'boolean';
@@ -412,7 +455,9 @@ export class CompanyValidator {
           break;
         case 'object':
           validatorType =
-            typeInfo.attioType === 'record-reference' ? 'record-reference' : 'object';
+            typeInfo.attioType === 'record-reference'
+              ? 'record-reference'
+              : 'object';
           break;
         default:
           validatorType = 'string';
@@ -432,24 +477,24 @@ export class CompanyValidator {
         return fieldType === 'number'
           ? 'number'
           : fieldType === 'boolean'
-          ? 'boolean'
-          : fieldType === 'array'
-          ? 'array'
-          : fieldType === 'object'
-          ? 'object'
-          : 'string';
+            ? 'boolean'
+            : fieldType === 'array'
+              ? 'array'
+              : fieldType === 'object'
+                ? 'object'
+                : 'string';
       }
 
       const inferredType = this.inferFieldType(attributeName);
       return inferredType === 'number'
         ? 'number'
         : inferredType === 'boolean'
-        ? 'boolean'
-        : inferredType === 'array'
-        ? 'array'
-        : inferredType === 'object'
-        ? 'object'
-        : 'string';
+          ? 'boolean'
+          : inferredType === 'array'
+            ? 'array'
+            : inferredType === 'object'
+              ? 'object'
+              : 'string';
     }
   }
 
@@ -496,7 +541,9 @@ export class CompanyValidator {
         })
       );
 
-      for (const [attributeName, value] of Object.entries(attributesToValidate)) {
+      for (const [attributeName, value] of Object.entries(
+        attributesToValidate
+      )) {
         const validatorType = validatorTypes.get(attributeName) || 'string';
 
         const result: ValidationResult = validateAttributeValue(
@@ -509,7 +556,8 @@ export class CompanyValidator {
           validatedAttributes[attributeName] = result.convertedValue;
         } else {
           hasErrors = true;
-          errors[attributeName] = result.error || `Invalid value for ${attributeName}`;
+          errors[attributeName] =
+            result.error || `Invalid value for ${attributeName}`;
         }
       }
     } catch (error) {
@@ -518,7 +566,9 @@ export class CompanyValidator {
         (error as Error).message
       );
 
-      for (const [attributeName, value] of Object.entries(attributesToValidate)) {
+      for (const [attributeName, value] of Object.entries(
+        attributesToValidate
+      )) {
         try {
           let validatorType: AttributeType;
           try {
@@ -537,7 +587,8 @@ export class CompanyValidator {
             validatedAttributes[attributeName] = result.convertedValue;
           } else {
             hasErrors = true;
-            errors[attributeName] = result.error || `Invalid value for ${attributeName}`;
+            errors[attributeName] =
+              result.error || `Invalid value for ${attributeName}`;
           }
         } catch {
           console.warn(

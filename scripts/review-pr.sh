@@ -164,15 +164,26 @@ claude -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequent
 # Extract the actual review content from the JSON conversation log
 # The --allowedTools flag causes Claude to output an array of conversation objects
 # We need to find the last object with "type":"result" and extract its "result" field
-if cat /tmp/review_output_json_${PR_NUMBER}.md | jq -e '. | type == "array"' >/dev/null 2>&1; then
+
+# First, check if the output is valid JSON
+if ! cat /tmp/review_output_json_${PR_NUMBER}.md | jq empty >/dev/null 2>&1; then
+    echo "⚠️ Output is not valid JSON, treating as plain text"
+    cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+elif cat /tmp/review_output_json_${PR_NUMBER}.md | jq -e '. | type == "array"' >/dev/null 2>&1; then
     # Extract from conversation log array - get the last result object
-    cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.[] | select(.type == "result") | .result' | tail -1 > /tmp/review_output_${PR_NUMBER}.md
+    RESULT_CONTENT=$(cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.[] | select(.type == "result") | .result' | tail -1)
+    if [ -n "$RESULT_CONTENT" ] && [ "$RESULT_CONTENT" != "null" ]; then
+        echo "$RESULT_CONTENT" > /tmp/review_output_${PR_NUMBER}.md
+    else
+        echo "⚠️ No result content found in conversation log, using raw output"
+        cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+    fi
 else
     # Fallback: if it's not an array, try direct text extraction
     if cat /tmp/review_output_json_${PR_NUMBER}.md | jq -e '. | type == "string"' >/dev/null 2>&1; then
         cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.' > /tmp/review_output_${PR_NUMBER}.md
     else
-        # Last resort: use raw content
+        # Last resort: use raw content (might be plain text that looks like JSON)
         cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
     fi
 fi
@@ -181,7 +192,20 @@ fi
 if [ ! -s /tmp/review_output_${PR_NUMBER}.md ]; then
     echo "⚠️ Failed to extract review content from Claude output."
     echo "Raw output saved to /tmp/review_output_json_${PR_NUMBER}.md for debugging"
+    echo "First 200 characters of raw output:"
+    head -c 200 /tmp/review_output_json_${PR_NUMBER}.md
+    echo
     exit 1
+fi
+
+# Additional check: ensure the extracted content looks like a review (not empty or just JSON)
+EXTRACTED_SIZE=$(wc -c < /tmp/review_output_${PR_NUMBER}.md)
+if [ $EXTRACTED_SIZE -lt 50 ]; then
+    echo "⚠️ Extracted review content seems too short ($EXTRACTED_SIZE chars)"
+    echo "Content preview:"
+    cat /tmp/review_output_${PR_NUMBER}.md
+    echo
+    echo "This may indicate a parsing issue. Raw output saved to /tmp/review_output_json_${PR_NUMBER}.md"
 fi
 
 echo "📝 Posting review to PR..."

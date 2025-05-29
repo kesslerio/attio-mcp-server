@@ -53,21 +53,30 @@ declare module 'cacheable-request' {
       cb?: (response: ServerResponse | ResponseLike) => void
     ): Promise<void>;
 
-    on(event: 'request', listener: (request: Record<string, unknown>) => void): this;
+    on(
+      event: 'request',
+      listener: (request: Record<string, unknown>) => void
+    ): this;
     on(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     on(event: 'error', listener: (error: Error) => void): this;
 
-    once(event: 'request', listener: (request: Record<string, unknown>) => void): this;
+    once(
+      event: 'request',
+      listener: (request: Record<string, unknown>) => void
+    ): this;
     once(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     once(event: 'error', listener: (error: Error) => void): this;
 
-    addListener(event: 'request', listener: (request: Record<string, unknown>) => void): this;
+    addListener(
+      event: 'request',
+      listener: (request: Record<string, unknown>) => void
+    ): this;
     addListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
@@ -94,27 +103,37 @@ declare module 'cacheable-request' {
     ): this;
     prependOnceListener(event: 'error', listener: (error: Error) => void): this;
 
-    off(event: 'request', listener: (request: Record<string, unknown>) => void): this;
+    off(
+      event: 'request',
+      listener: (request: Record<string, unknown>) => void
+    ): this;
     off(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     off(event: 'error', listener: (error: Error) => void): this;
 
-    removeListener(event: 'request', listener: (request: Record<string, unknown>) => void): this;
+    removeListener(
+      event: 'request',
+      listener: (request: Record<string, unknown>) => void
+    ): this;
     removeListener(
       event: 'response',
       listener: (response: ServerResponse | ResponseLike) => void
     ): this;
     removeListener(event: 'error', listener: (error: Error) => void): this;
 
-    listeners(event: 'request'): Array<(request: Record<string, unknown>) => void>;
+    listeners(
+      event: 'request'
+    ): Array<(request: Record<string, unknown>) => void>;
     listeners(
       event: 'response'
     ): Array<(response: ServerResponse | ResponseLike) => void>;
     listeners(event: 'error'): Array<(error: Error) => void>;
 
-    rawListeners(event: 'request'): Array<(request: Record<string, unknown>) => void>;
+    rawListeners(
+      event: 'request'
+    ): Array<(request: Record<string, unknown>) => void>;
     rawListeners(
       event: 'response'
     ): Array<(response: ServerResponse | ResponseLike) => void>;

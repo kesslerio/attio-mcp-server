@@ -9,13 +9,13 @@
  */
 export const LEGACY_ATTRIBUTE_MAP: Record<string, string> = {
   // Company attributes
-  'Name': 'name',
-  'Website': 'website',
-  'Industry': 'industry',
-  'Revenue': 'annual_revenue',
+  Name: 'name',
+  Website: 'website',
+  Industry: 'industry',
+  Revenue: 'annual_revenue',
   'Annual Revenue': 'annual_revenue',
   'Employee Count': 'employee_count',
-  'Employees': 'employee_count',
+  Employees: 'employee_count',
   'Company Name': 'name',
   'Company Website': 'website',
   'B2B Segment': 'type_persona',
@@ -25,32 +25,32 @@ export const LEGACY_ATTRIBUTE_MAP: Record<string, string> = {
   'Last Interaction': 'last_interaction',
   'Interaction Type': 'interaction_type',
   'Company Type': 'company_type',
-  'Notes': 'notes',
-  'Address': 'address',
-  'City': 'city',
-  'State': 'state',
-  'Country': 'country',
-  'ZIP': 'postal_code',
+  Notes: 'notes',
+  Address: 'address',
+  City: 'city',
+  State: 'state',
+  Country: 'country',
+  ZIP: 'postal_code',
   'Postal Code': 'postal_code',
 
-  // People attributes 
+  // People attributes
   'First Name': 'first_name',
   'Last Name': 'last_name',
   'Full Name': 'name',
-  'Email': 'email',
-  'Phone': 'phone',
-  'Mobile': 'mobile',
-  'Title': 'title',
+  Email: 'email',
+  Phone: 'phone',
+  Mobile: 'mobile',
+  Title: 'title',
   'Job Title': 'title',
-  'Position': 'title',
-  'Department': 'department',
-  'Company': 'company',
-  
+  Position: 'title',
+  Department: 'department',
+  Company: 'company',
+
   // General attributes (date-based)
-  'Created': 'created_at',
-  'Modified': 'updated_at',
-  'Updated': 'updated_at',
-  'Last Activity': 'last_interaction'
+  Created: 'created_at',
+  Modified: 'updated_at',
+  Updated: 'updated_at',
+  'Last Activity': 'last_interaction',
 };
 
 // For backward compatibility
