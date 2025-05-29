@@ -158,15 +158,30 @@ EOF
 fi
 
 # Run claude with the prompt and data using the allowed-tools flag
-claude --verbose --output-format json -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_json_${PR_NUMBER}.md
+# Note: --allowedTools automatically outputs JSON conversation logs
+claude -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_json_${PR_NUMBER}.md
 
-# Extract the actual review content from the JSON output
-cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.result' > /tmp/review_output_${PR_NUMBER}.md
+# Extract the actual review content from the JSON conversation log
+# The --allowedTools flag causes Claude to output an array of conversation objects
+# We need to find the last object with "type":"result" and extract its "result" field
+if cat /tmp/review_output_json_${PR_NUMBER}.md | jq -e '. | type == "array"' >/dev/null 2>&1; then
+    # Extract from conversation log array - get the last result object
+    cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.[] | select(.type == "result") | .result' | tail -1 > /tmp/review_output_${PR_NUMBER}.md
+else
+    # Fallback: if it's not an array, try direct text extraction
+    if cat /tmp/review_output_json_${PR_NUMBER}.md | jq -e '. | type == "string"' >/dev/null 2>&1; then
+        cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.' > /tmp/review_output_${PR_NUMBER}.md
+    else
+        # Last resort: use raw content
+        cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+    fi
+fi
 
-# If extraction fails, provide a fallback
+# Check if review extraction succeeded
 if [ ! -s /tmp/review_output_${PR_NUMBER}.md ]; then
-    echo "⚠️ Failed to extract review content from JSON. Using raw output."
-    cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+    echo "⚠️ Failed to extract review content from Claude output."
+    echo "Raw output saved to /tmp/review_output_json_${PR_NUMBER}.md for debugging"
+    exit 1
 fi
 
 echo "📝 Posting review to PR..."
