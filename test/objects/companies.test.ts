@@ -195,8 +195,8 @@ describe('companies', () => {
       mockAxiosInstance.post.mockRejectedValue(mockError);
 
       // Mock the retry functionality directly in the test
-      vi.mock('../../src/api/attio-operations.js', () => {
-        const actual = vi.requireActual('../../src/api/attio-operations.js');
+      vi.mock('../../src/api/attio-operations.js', async () => {
+        const actual = await vi.importActual('../../src/api/attio-operations.js');
         return {
           ...actual,
           callWithRetry: (fn: any) => fn(),
