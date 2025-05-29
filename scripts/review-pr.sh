@@ -158,7 +158,16 @@ EOF
 fi
 
 # Run claude with the prompt and data using the allowed-tools flag
-claude --verbose --output-format json -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_${PR_NUMBER}.md
+claude --verbose --output-format json -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_json_${PR_NUMBER}.md
+
+# Extract the actual review content from the JSON output
+cat /tmp/review_output_json_${PR_NUMBER}.md | jq -r '.result' > /tmp/review_output_${PR_NUMBER}.md
+
+# If extraction fails, provide a fallback
+if [ ! -s /tmp/review_output_${PR_NUMBER}.md ]; then
+    echo "⚠️ Failed to extract review content from JSON. Using raw output."
+    cp /tmp/review_output_json_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+fi
 
 echo "📝 Posting review to PR..."
 
@@ -172,7 +181,7 @@ echo "✅ Review completed and posted to PR #$PR_NUMBER"
 echo "🔗 View at: $(gh pr view $PR_NUMBER --json url -q .url)"
 
 # Cleanup
-rm /tmp/pr_review_prompt_${PR_NUMBER}.md /tmp/pr_data_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md
+rm /tmp/pr_review_prompt_${PR_NUMBER}.md /tmp/pr_data_${PR_NUMBER}.md /tmp/review_output_${PR_NUMBER}.md /tmp/review_output_json_${PR_NUMBER}.md
 
 echo ""
 echo "💡 Full detailed analysis completed using claude -p"
