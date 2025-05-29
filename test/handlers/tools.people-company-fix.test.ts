@@ -11,6 +11,9 @@ vi.mock('../../src/objects/people/index');
 vi.mock('../../src/objects/companies/index');
 vi.mock('../../src/api/attio-client');
 
+const mockedPeopleModule = vi.mocked(peopleModule);
+const mockedCompaniesModule = vi.mocked(companiesModule);
+
 describe('People-Company Search Tool Fix', () => {
   const mockPeople = [
     {
@@ -34,7 +37,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle search-people-by-company with company ID filter', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+    mockedPeopleModule.searchPeopleByCompany.mockResolvedValue(
       mockPeople
     );
 
@@ -58,7 +61,7 @@ describe('People-Company Search Tool Fix', () => {
 
     const result = await executeToolRequest(request);
 
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+    expect(mockedPeopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
       '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
     );
     expect(result.content).toContain(
@@ -70,11 +73,11 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle search-people-by-company with company name filter', async () => {
     // Mock searchCompanies to return a company
-    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([
+    mockedCompaniesModule.searchCompanies.mockResolvedValue([
       mockCompany,
     ]);
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+    mockedPeopleModule.searchPeopleByCompany.mockResolvedValue(
       mockPeople
     );
 
@@ -98,10 +101,10 @@ describe('People-Company Search Tool Fix', () => {
 
     const result = await executeToolRequest(request);
 
-    expect(companiesModule.searchCompanies).toHaveBeenCalledWith(
+    expect(mockedCompaniesModule.searchCompanies).toHaveBeenCalledWith(
       'Oakwood Precision Medicine'
     );
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+    expect(mockedPeopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
       '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
     );
     expect(result.content).toContain(
@@ -111,7 +114,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle error when company not found', async () => {
     // Mock searchCompanies to return empty array
-    (companiesModule.searchCompanies as vi.Mock).mockResolvedValue([]);
+    mockedCompaniesModule.searchCompanies.mockResolvedValue([]);
 
     const request: CallToolRequest = {
       method: 'tools/call' as const,
@@ -133,7 +136,7 @@ describe('People-Company Search Tool Fix', () => {
 
     const result = await executeToolRequest(request);
 
-    expect(companiesModule.searchCompanies).toHaveBeenCalledWith(
+    expect(mockedCompaniesModule.searchCompanies).toHaveBeenCalledWith(
       'Non-existent Company'
     );
     expect(result.content).toContain(
@@ -161,7 +164,7 @@ describe('People-Company Search Tool Fix', () => {
 
   it('should handle multiple filters and use the first valid one', async () => {
     // Mock searchPeopleByCompany function
-    (peopleModule.searchPeopleByCompany as vi.Mock).mockResolvedValue(
+    mockedPeopleModule.searchPeopleByCompany.mockResolvedValue(
       mockPeople
     );
 
@@ -190,7 +193,7 @@ describe('People-Company Search Tool Fix', () => {
 
     const result = await executeToolRequest(request);
 
-    expect(peopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
+    expect(mockedPeopleModule.searchPeopleByCompany).toHaveBeenCalledWith(
       '0c472146-9c7b-5fde-96cd-5df8e5cf9575'
     );
     expect(result.content).toContain(

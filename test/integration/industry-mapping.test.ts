@@ -16,8 +16,8 @@ import {
 } from '../types/test-types';
 
 // Mock the attioClient module
-vi.mock('../../src/api/attio-client', () => {
-  const actual = vi.requireActual('../../src/api/attio-client');
+vi.mock('../../src/api/attio-client', async () => {
+  const actual = await vi.importActual('../../src/api/attio-client');
   return {
     ...(actual as any),
     getAttioClient: vi.fn(),
