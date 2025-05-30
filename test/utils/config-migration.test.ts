@@ -12,7 +12,6 @@ import {
   applyMigration,
   validateMigration,
   migrateUserConfig,
-  type MigrationConfig,
 } from '../../src/utils/config-migration.js';
 import logger from '../../src/utils/logger.js';
 
