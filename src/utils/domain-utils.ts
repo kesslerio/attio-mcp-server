@@ -88,7 +88,10 @@ export function normalizeDomain(domain: string): string {
     return '';
   }
 
-  return domain.trim().toLowerCase().replace(/^www\./, '');
+  return domain
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, '');
 }
 
 /**

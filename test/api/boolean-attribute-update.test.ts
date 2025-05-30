@@ -77,7 +77,6 @@ describe('Boolean Attribute API Tests', () => {
   test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates boolean attribute with string "false"',
     async () => {
-
       const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
@@ -108,7 +107,6 @@ describe('Boolean Attribute API Tests', () => {
   test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates boolean attribute with string "true"',
     async () => {
-
       const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
@@ -138,7 +136,6 @@ describe('Boolean Attribute API Tests', () => {
   test.skipIf(SKIP_TESTS || !process.env.ATTIO_API_KEY)(
     'updates multiple boolean attributes with string values',
     async () => {
-
       const companyId = testCompany?.id?.record_id;
       expect(companyId).toBeDefined();
 
