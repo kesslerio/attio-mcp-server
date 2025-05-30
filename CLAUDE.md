@@ -1,5 +1,40 @@
 ATTIO MCP SERVER GUIDELINES
 
+🚨 DOCUMENTATION-FIRST RULE (MANDATORY):
+Before building ANY custom solution around third-party libraries:
+1. [ ] Check official documentation for standard approach
+2. [ ] Research online for existing solutions/libraries that solve the problem
+3. [ ] Test the documented standard approach first
+4. [ ] Only build custom if standard approach demonstrably fails
+5. [ ] Document WHY standard approach is insufficient
+
+🔍 RESEARCH HIERARCHY (Follow this order):
+1. Official documentation of existing libraries
+2. Online search for existing solutions (GitHub, Stack Overflow, community forums)
+3. Evaluate proven third-party alternatives
+4. Consider hybrid approaches using existing tools
+5. Build custom solution ONLY as last resort
+
+🔍 COMPLEXITY AUDIT CHECKLIST:
+When encountering existing complex code:
+- [ ] Question: "Is this complexity actually necessary?"
+- [ ] Check: "Does official documentation suggest a simpler approach?"
+- [ ] Test: "Can we achieve the same result with standard APIs?"
+- [ ] Use: mcp__clear-thought-server__mentalmodel with First Principles to analyze why complex code exists
+
+⚠️  ENGINEERING RED FLAGS (Stop and reassess):
+- Building workarounds for third-party bugs instead of using different APIs
+- Spending >2 hours on a problem without checking official docs
+- Assuming existing complex code is necessary without testing alternatives
+- Continuing to invest in a solution just because you've already spent time on it (sunk cost fallacy)
+
+🎯 THIRD-PARTY INTEGRATION DECISION TREE:
+When integrating external libraries:
+1. Start with official examples and documentation
+2. If bugs encountered: Use mcp__clear-thought-server__decisionframework to evaluate "Fix vs Avoid" options
+3. Default to "avoid buggy code path" unless compelling reason to fix
+4. Never build complex wrappers without proving standard approach fails
+
 BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Build: `npm run build`
 - Watch mode: `npm run build:watch`

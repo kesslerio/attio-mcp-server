@@ -14,10 +14,23 @@ import {
   migrateUserConfig,
   type MigrationConfig,
 } from '../../src/utils/config-migration.js';
+import logger from '../../src/utils/logger.js';
 
 // Mock fs module
 vi.mock('fs');
 const mockFs = vi.mocked(fs);
+
+// Mock logger module
+vi.mock('../../src/utils/logger.js', () => ({
+  default: {
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  }
+}));
+
+const mockLogger = vi.mocked(logger);
 
 // Test data
 const TEST_CONFIG_PATH = path.resolve(
@@ -103,6 +116,12 @@ describe('Config Migration Utility', () => {
     mockFs.writeFileSync.mockImplementation(() => {});
     mockFs.copyFileSync.mockImplementation(() => {});
     mockFs.mkdirSync.mockImplementation(() => {});
+
+    // Reset logger mocks
+    mockLogger.warn.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.debug.mockClear();
   });
 
   afterEach(() => {
@@ -174,18 +193,18 @@ describe('Config Migration Utility', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{ invalid json }');
 
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const result = detectMigrationNeeds();
 
       expect(result.needsMigration).toBe(false);
       expect(result.exists).toBe(true);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Warning: Could not parse'),
-        expect.any(Error)
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'config-migration',
+        'Could not parse user configuration file for migration detection',
+        expect.objectContaining({
+          filePath: TEST_CONFIG_PATH,
+          error: expect.stringContaining('JSON'),
+        })
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('should handle missing attributes structure', () => {

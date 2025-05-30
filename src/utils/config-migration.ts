@@ -5,6 +5,10 @@
 import fs from 'fs';
 import path from 'path';
 import { MappingConfig } from './config-loader.js';
+import logger from './logger.js';
+
+// Re-export MappingConfig for external use
+export type { MappingConfig };
 
 export interface MigrationResult {
   success: boolean;
@@ -47,6 +51,23 @@ const CONFIG_PATHS = {
 
 /**
  * Detects if user.json needs migration for postal code mappings
+ * 
+ * Scans the user configuration file for outdated postal code mappings
+ * that use "zip" instead of the correct "postal_code" attribute name.
+ * 
+ * @returns MigrationDetection object containing:
+ *   - needsMigration: whether migration is required
+ *   - outdatedMappings: array of problematic mappings found
+ *   - filePath: path to the user config file
+ *   - exists: whether the config file exists
+ * 
+ * @example
+ * ```typescript
+ * const detection = detectMigrationNeeds();
+ * if (detection.needsMigration) {
+ *   console.log('Found outdated mappings:', detection.outdatedMappings);
+ * }
+ * ```
  */
 export function detectMigrationNeeds(): MigrationDetection {
   const result: MigrationDetection = {
@@ -82,7 +103,14 @@ export function detectMigrationNeeds(): MigrationDetection {
     }
   } catch (error) {
     // If we can't parse the file, we can't migrate it
-    console.warn(`Warning: Could not parse ${CONFIG_PATHS.user}:`, error);
+    logger.warn(
+      'config-migration',
+      'Could not parse user configuration file for migration detection',
+      {
+        filePath: CONFIG_PATHS.user,
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
   }
 
   return result;
@@ -90,6 +118,24 @@ export function detectMigrationNeeds(): MigrationDetection {
 
 /**
  * Creates a timestamped backup of the user.json file
+ * 
+ * Creates a backup in config/mappings/backup/ directory with ISO timestamp.
+ * Ensures the backup directory exists before creating the backup file.
+ * 
+ * @returns Object containing:
+ *   - success: whether backup creation succeeded
+ *   - backupPath: path to the created backup file (if successful)
+ *   - error: error message (if failed)
+ * 
+ * @example
+ * ```typescript
+ * const backup = createBackup();
+ * if (backup.success) {
+ *   console.log('Backup created at:', backup.backupPath);
+ * } else {
+ *   console.error('Backup failed:', backup.error);
+ * }
+ * ```
  */
 export function createBackup(): {
   success: boolean;
@@ -121,6 +167,30 @@ export function createBackup(): {
 
 /**
  * Applies the postal code mapping migration to user.json
+ * 
+ * Performs the complete migration workflow:
+ * 1. Detects if migration is needed
+ * 2. Creates a backup of the current configuration
+ * 3. Applies the postal code mapping fixes
+ * 4. Updates metadata to track migration history
+ * 
+ * @returns MigrationResult object containing:
+ *   - success: whether the migration succeeded
+ *   - message: descriptive message about the operation
+ *   - backupPath: path to the backup file (if created)
+ *   - changesApplied: array of changes that were made
+ *   - errors: array of error messages (if any failures occurred)
+ * 
+ * @example
+ * ```typescript
+ * const result = applyMigration();
+ * if (result.success) {
+ *   console.log('Migration completed:', result.message);
+ *   console.log('Changes:', result.changesApplied);
+ * } else {
+ *   console.error('Migration failed:', result.message);
+ * }
+ * ```
  */
 export function applyMigration(): MigrationResult {
   const detection = detectMigrationNeeds();
@@ -203,6 +273,21 @@ export function applyMigration(): MigrationResult {
 
 /**
  * Validates that the migration was applied correctly
+ * 
+ * Checks if the user configuration still contains any outdated postal
+ * code mappings after migration has been applied.
+ * 
+ * @returns Object containing:
+ *   - valid: whether the configuration passes validation
+ *   - issues: array of validation issues found (if any)
+ * 
+ * @example
+ * ```typescript
+ * const validation = validateMigration();
+ * if (!validation.valid) {
+ *   console.error('Validation failed:', validation.issues);
+ * }
+ * ```
  */
 export function validateMigration(): { valid: boolean; issues: string[] } {
   const detection = detectMigrationNeeds();
@@ -227,6 +312,27 @@ export function validateMigration(): { valid: boolean; issues: string[] } {
 
 /**
  * Complete migration workflow with validation
+ * 
+ * Main entry point for the migration process. Orchestrates detection,
+ * migration, and validation with optional dry-run mode.
+ * 
+ * @param options Configuration options for the migration:
+ *   - dryRun: if true, only shows what would be changed without applying
+ * 
+ * @returns MigrationResult object with complete operation status
+ * 
+ * @example
+ * ```typescript
+ * // Preview changes without applying
+ * const preview = migrateUserConfig({ dryRun: true });
+ * console.log('Would apply:', preview.changesApplied);
+ * 
+ * // Apply the migration
+ * const result = migrateUserConfig();
+ * if (result.success) {
+ *   console.log('Migration completed successfully');
+ * }
+ * ```
  */
 export function migrateUserConfig(
   options: { dryRun?: boolean } = {}

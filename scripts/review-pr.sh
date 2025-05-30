@@ -77,13 +77,13 @@ if [ $TOTAL_CHANGES -gt 10000 ] || [ $FILES_COUNT -gt 50 ]; then
     done
 else
     # Handle GitHub API diff size limits (20K lines max) for smaller PRs
-    echo "🔍 Attempting to get PR diff (with 15s timeout)..."
-    DIFF_OUTPUT=$(timeout 15s gh pr diff $PR_NUMBER 2>&1)
+    echo "🔍 Attempting to get PR diff (with 10s timeout)..."
+    DIFF_OUTPUT=$(timeout --signal=KILL 10s gh pr diff $PR_NUMBER 2>&1)
     DIFF_EXIT_CODE=$?
     
     # Check if timeout occurred or API limit hit
-    if [ $DIFF_EXIT_CODE -eq 124 ]; then
-        echo "⚠️ Timeout: PR diff took longer than 15 seconds - treating as very large PR"
+    if [ $DIFF_EXIT_CODE -eq 124 ] || [ $DIFF_EXIT_CODE -eq 137 ]; then
+        echo "⚠️ Timeout: PR diff took longer than 10 seconds - treating as very large PR"
         DIFF_SIZE=999999
         REVIEW_TYPE="VERY_LARGE_PR"
         FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')

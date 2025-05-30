@@ -8,21 +8,12 @@ import {
   detectMigrationNeeds, 
   migrateUserConfig 
 } from '../dist/utils/config-migration.js';
+import { colorize } from '../dist/utils/cli-colors.js';
 
-// ANSI color codes for console output
-const colors = {
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
-  reset: '\x1b[0m',
-  bold: '\x1b[1m'
-};
-
-function colorize(text, color) {
-  return `${colors[color]}${text}${colors.reset}`;
+function showProgress(step, total, message) {
+  const percentage = Math.round((step / total) * 100);
+  const bar = '█'.repeat(Math.floor(percentage / 5)) + '░'.repeat(20 - Math.floor(percentage / 5));
+  console.log(colorize(`[${bar}] ${percentage}% - ${message}`, 'blue'));
 }
 
 function printHeader() {
@@ -114,9 +105,13 @@ async function main() {
       });
     }
 
-    // Run the migration
+    // Run the migration with progress indicators
     console.log(colorize('\n🚀 Running migration...', 'blue'));
+    showProgress(1, 4, 'Creating backup...');
+    showProgress(2, 4, 'Applying migration...');
+    showProgress(3, 4, 'Validating changes...');
     const result = migrateUserConfig();
+    showProgress(4, 4, 'Migration complete!');
 
     if (result.success) {
       console.log(colorize('✅ Migration completed successfully!', 'green'));
