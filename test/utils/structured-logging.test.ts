@@ -62,16 +62,18 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test debug message',
-        metadata: expect.objectContaining({
-          timestamp: expect.any(String),
-          level: 'DEBUG',
-          module: 'test-module',
-        }),
-        data: { key: 'value' },
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test debug message',
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            level: 'DEBUG',
+            module: 'test-module',
+          }),
+          data: { key: 'value' },
+        })
+      );
     });
 
     test('info logs with structured format', () => {
@@ -80,14 +82,16 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test info message',
-        metadata: expect.objectContaining({
-          level: 'INFO',
-          module: 'test-module',
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test info message',
+          metadata: expect.objectContaining({
+            level: 'INFO',
+            module: 'test-module',
+          }),
+        })
+      );
     });
 
     test('warn logs with structured format', () => {
@@ -96,15 +100,17 @@ describe('Structured Logging System', () => {
       expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleWarn.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test warning message',
-        metadata: expect.objectContaining({
-          level: 'WARN',
-          module: 'test-module',
-        }),
-        data: { warning: true },
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test warning message',
+          metadata: expect.objectContaining({
+            level: 'WARN',
+            module: 'test-module',
+          }),
+          data: { warning: true },
+        })
+      );
     });
 
     test('error logs with structured format and error object', () => {
@@ -116,20 +122,21 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test error message',
-        metadata: expect.objectContaining({
-          level: 'ERROR',
-          module: 'test-module',
-        }),
-        data: { context: 'test' },
-        error: expect.objectContaining({
-          message: 'Test error',
-          name: 'Error',
-          stack: expect.any(String),
-        }),
-      })
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test error message',
+          metadata: expect.objectContaining({
+            level: 'ERROR',
+            module: 'test-module',
+          }),
+          data: { context: 'test' },
+          error: expect.objectContaining({
+            message: 'Test error',
+            name: 'Error',
+            stack: expect.any(String),
+          }),
+        })
       );
     });
   });
@@ -180,17 +187,19 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test message with context',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'test-module',
-          correlationId: 'test-correlation-id',
-          operation: 'test-operation',
-          operationType: OperationType.TOOL_EXECUTION,
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test message with context',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'test-module',
+            correlationId: 'test-correlation-id',
+            operation: 'test-operation',
+            operationType: OperationType.TOOL_EXECUTION,
+          }),
+        })
+      );
     });
   });
 
@@ -211,19 +220,21 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Operation completed',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'test-module',
-          operation: 'test-operation',
-          operationType: OperationType.API_CALL,
-        }),
-        data: expect.objectContaining({
-          duration: expect.stringMatching(/^\d+ms$/),
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Operation completed',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'test-module',
+            operation: 'test-operation',
+            operationType: OperationType.API_CALL,
+          }),
+          data: expect.objectContaining({
+            duration: expect.stringMatching(/^\d+ms$/),
+          }),
+        })
+      );
     });
   });
 
@@ -240,17 +251,19 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Starting operation: test-operation',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'test-module',
-          operation: 'test-operation',
-          operationType: OperationType.API_CALL,
-        }),
-        data: { param: 'value' },
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Starting operation: test-operation',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'test-module',
+            operation: 'test-operation',
+            operationType: OperationType.API_CALL,
+          }),
+          data: { param: 'value' },
+        })
+      );
     });
 
     test('operationSuccess logs success with duration', () => {
@@ -265,20 +278,22 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Operation successful: test-operation',
-        metadata: expect.objectContaining({
-          level: 'INFO',
-          module: 'test-module',
-          operation: 'test-operation',
-          operationType: OperationType.API_CALL,
-        }),
-        data: expect.objectContaining({
-          count: 5,
-          duration: '150ms',
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Operation successful: test-operation',
+          metadata: expect.objectContaining({
+            level: 'INFO',
+            module: 'test-module',
+            operation: 'test-operation',
+            operationType: OperationType.API_CALL,
+          }),
+          data: expect.objectContaining({
+            count: 5,
+            duration: '150ms',
+          }),
+        })
+      );
     });
 
     test('operationFailure logs failure with error and duration', () => {
@@ -296,25 +311,27 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Operation failed: test-operation',
-        metadata: expect.objectContaining({
-          level: 'ERROR',
-          module: 'test-module',
-          operation: 'test-operation',
-          operationType: OperationType.API_CALL,
-        }),
-        data: expect.objectContaining({
-          context: 'test',
-          duration: '100ms',
-        }),
-        error: expect.objectContaining({
-          message: 'Operation failed',
-          name: 'Error',
-          stack: expect.any(String),
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Operation failed: test-operation',
+          metadata: expect.objectContaining({
+            level: 'ERROR',
+            module: 'test-module',
+            operation: 'test-operation',
+            operationType: OperationType.API_CALL,
+          }),
+          data: expect.objectContaining({
+            context: 'test',
+            duration: '100ms',
+          }),
+          error: expect.objectContaining({
+            message: 'Operation failed',
+            name: 'Error',
+            stack: expect.any(String),
+          }),
+        })
+      );
     });
   });
 
@@ -331,17 +348,19 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Scoped debug message',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'scoped-module',
-          operation: 'scoped-operation',
-          operationType: OperationType.VALIDATION,
-        }),
-        data: { test: true },
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Scoped debug message',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'scoped-module',
+            operation: 'scoped-operation',
+            operationType: OperationType.VALIDATION,
+          }),
+          data: { test: true },
+        })
+      );
     });
 
     test('scoped logger operationStart works correctly', () => {
@@ -358,16 +377,18 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Starting operation: specific-operation',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'scoped-module',
-          operation: 'specific-operation',
-          operationType: OperationType.API_CALL,
-        }),
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Starting operation: specific-operation',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'scoped-module',
+            operation: 'specific-operation',
+            operationType: OperationType.API_CALL,
+          }),
+        })
+      );
     });
   });
 
@@ -388,16 +409,20 @@ describe('Structured Logging System', () => {
 
       // Should log operation start, timer end, and success (3 calls total)
       expect(mockConsoleError).toHaveBeenCalledTimes(3);
-      
+
       // Check operation start log
       const startLogCall = mockConsoleError.mock.calls[0][0];
       const startLogEntry = JSON.parse(startLogCall);
-      expect(startLogEntry.message).toContain('Starting operation: test-operation');
-      
+      expect(startLogEntry.message).toContain(
+        'Starting operation: test-operation'
+      );
+
       // Check operation success log (last call)
       const successLogCall = mockConsoleError.mock.calls[2][0];
       const successLogEntry = JSON.parse(successLogCall);
-      expect(successLogEntry.message).toContain('Operation successful: test-operation');
+      expect(successLogEntry.message).toContain(
+        'Operation successful: test-operation'
+      );
     });
 
     test('withLogging wraps failed operations', async () => {
@@ -418,16 +443,20 @@ describe('Structured Logging System', () => {
 
       // Should log operation start, timer end, and failure (3 calls total)
       expect(mockConsoleError).toHaveBeenCalledTimes(3);
-      
+
       // Check operation start log
       const startLogCall = mockConsoleError.mock.calls[0][0];
       const startLogEntry = JSON.parse(startLogCall);
-      expect(startLogEntry.message).toContain('Starting operation: test-operation');
-      
+      expect(startLogEntry.message).toContain(
+        'Starting operation: test-operation'
+      );
+
       // Check operation failure log (last call)
       const failureLogCall = mockConsoleError.mock.calls[2][0];
       const failureLogEntry = JSON.parse(failureLogCall);
-      expect(failureLogEntry.message).toContain('Operation failed: test-operation');
+      expect(failureLogEntry.message).toContain(
+        'Operation failed: test-operation'
+      );
     });
   });
 
@@ -451,9 +480,9 @@ describe('Structured Logging System', () => {
 
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
-      
-      expect(logCall).toMatch(/^\{.*\}$/) // Should be a JSON string
-      
+
+      expect(logCall).toMatch(/^\{.*\}$/); // Should be a JSON string
+
       const logEntry = JSON.parse(logCall);
       expect(logEntry).toMatchObject({
         message: 'Test JSON message',
@@ -489,17 +518,19 @@ describe('Structured Logging System', () => {
       expect(mockConsoleError).toHaveBeenCalledTimes(1);
       const logCall = mockConsoleError.mock.calls[0][0];
       const logEntry = JSON.parse(logCall);
-      
-      expect(logEntry).toEqual(expect.objectContaining({
-        message: 'Test with operation type',
-        metadata: expect.objectContaining({
-          level: 'DEBUG',
-          module: 'test-module',
-          operation: 'custom-operation',
-          operationType: OperationType.TRANSFORMATION,
-        }),
-        data: { data: 'test' },
-      }));
+
+      expect(logEntry).toEqual(
+        expect.objectContaining({
+          message: 'Test with operation type',
+          metadata: expect.objectContaining({
+            level: 'DEBUG',
+            module: 'test-module',
+            operation: 'custom-operation',
+            operationType: OperationType.TRANSFORMATION,
+          }),
+          data: { data: 'test' },
+        })
+      );
     });
   });
 });

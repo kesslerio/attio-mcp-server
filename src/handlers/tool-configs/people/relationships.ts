@@ -43,7 +43,7 @@ export const relationshipToolConfigs = {
       for (const filter of companyFilter.filters) {
         const typedFilter = filter as CompanyFilter;
         const slug = typedFilter.attribute?.slug;
-        
+
         if (slug === 'companies.id') {
           let recordId: string;
           if (
@@ -51,7 +51,8 @@ export const relationshipToolConfigs = {
             typedFilter.value !== null &&
             'record_id' in typedFilter.value
           ) {
-            recordId = (typedFilter.value as CompanyFilterValue).record_id || '';
+            recordId =
+              (typedFilter.value as CompanyFilterValue).record_id || '';
           } else {
             recordId = String(typedFilter.value);
           }
@@ -65,7 +66,9 @@ export const relationshipToolConfigs = {
           }
           const companyId = companies[0].id?.record_id;
           if (!companyId) {
-            throw new Error(`Company found but has no record ID: ${searchValue}`);
+            throw new Error(
+              `Company found but has no record ID: ${searchValue}`
+            );
           }
           // Use the searchPeopleByCompany function
           return await searchPeopleByCompany(companyId);
@@ -75,7 +78,7 @@ export const relationshipToolConfigs = {
           );
         }
       }
-      
+
       throw new Error('No valid filters found');
     },
     formatResult: (results: AttioRecord[]) =>

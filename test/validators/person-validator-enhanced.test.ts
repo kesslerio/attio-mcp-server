@@ -1,4 +1,7 @@
-import { PersonValidator, searchPeopleByEmails } from '../../src/objects/people-write.js';
+import {
+  PersonValidator,
+  searchPeopleByEmails,
+} from '../../src/objects/people-write.js';
 import { searchCompaniesByName } from '../../src/objects/companies/search.js';
 import * as attioClient from '../../src/api/attio-client.js';
 

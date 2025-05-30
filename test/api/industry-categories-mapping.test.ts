@@ -23,7 +23,8 @@ import {
 import { initializeAttioClient } from '../../src/api/attio-client';
 
 // These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+const SKIP_INTEGRATION_TESTS =
+  !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Industry-Categories Mapping - E2E Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {
@@ -40,130 +41,129 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
   });
 
   afterEach(async () => {
-      // Cleanup: Delete any test companies created
-      for (const companyId of testCompanies) {
-        try {
-          await deleteCompany(companyId);
-        } catch (error) {
-          // Ignore errors during cleanup
-        }
+    // Cleanup: Delete any test companies created
+    for (const companyId of testCompanies) {
+      try {
+        await deleteCompany(companyId);
+      } catch (error) {
+        // Ignore errors during cleanup
       }
-      testCompanies.length = 0;
+    }
+    testCompanies.length = 0;
+  });
+
+  describe('Company Creation with Industry Field', () => {
+    it('should create a company with industry field mapped to categories', async () => {
+      const testIndustry = 'Software & Technology';
+      const companyData = {
+        name: `Industry Mapping Test ${Date.now()}`,
+        industry: testIndustry,
+      };
+
+      // Create the company with industry field
+      const result = await createCompany(companyData);
+      expect(result).toBeDefined();
+      expect(result.id?.record_id).toBeDefined();
+
+      // Track for cleanup
+      testCompanies.push(result.id.record_id);
+
+      // Fetch the company details to verify mapping
+      const companyDetails = await getCompanyDetails(result.id.record_id);
+
+      // Verify that either:
+      // 1. The industry value shows up in categories field, OR
+      // 2. The industry field was successfully set if it exists in the account
+      const hasCategories =
+        companyDetails.values?.categories?.[0]?.value === testIndustry;
+      const hasIndustry =
+        companyDetails.values?.industry?.[0]?.value === testIndustry;
+
+      // One of these conditions must be true
+      expect(hasCategories || hasIndustry).toBe(true);
+
+      // Log for diagnostics
+      console.log('Company created:', {
+        name: companyDetails.values?.name?.[0]?.value,
+        categories: companyDetails.values?.categories?.[0]?.value,
+        industry: companyDetails.values?.industry?.[0]?.value,
+      });
     });
+  });
 
-    describe('Company Creation with Industry Field', () => {
-      it('should create a company with industry field mapped to categories', async () => {
-        const testIndustry = 'Software & Technology';
-        const companyData = {
-          name: `Industry Mapping Test ${Date.now()}`,
-          industry: testIndustry,
-        };
+  describe('Company Update with Industry Field', () => {
+    it('should update a company with industry field mapped to categories', async () => {
+      // First create a company without industry
+      const company = await createCompany({
+        name: `Industry Update Test ${Date.now()}`,
+      });
+      testCompanies.push(company.id.record_id);
 
-        // Create the company with industry field
-        const result = await createCompany(companyData);
-        expect(result).toBeDefined();
-        expect(result.id?.record_id).toBeDefined();
+      // Update with industry field
+      const testIndustry = 'Finance & Banking';
+      const updatedCompany = await updateCompany(company.id.record_id, {
+        industry: testIndustry,
+      });
 
-        // Track for cleanup
-        testCompanies.push(result.id.record_id);
+      // Fetch the company details to verify mapping
+      const companyDetails = await getCompanyDetails(company.id.record_id);
 
-        // Fetch the company details to verify mapping
-        const companyDetails = await getCompanyDetails(result.id.record_id);
+      // Verify that either categories or industry field has the value
+      const hasCategories =
+        companyDetails.values?.categories?.[0]?.value === testIndustry;
+      const hasIndustry =
+        companyDetails.values?.industry?.[0]?.value === testIndustry;
 
-        // Verify that either:
-        // 1. The industry value shows up in categories field, OR
-        // 2. The industry field was successfully set if it exists in the account
-        const hasCategories =
-          companyDetails.values?.categories?.[0]?.value === testIndustry;
-        const hasIndustry =
-          companyDetails.values?.industry?.[0]?.value === testIndustry;
+      // One of these conditions must be true
+      expect(hasCategories || hasIndustry).toBe(true);
 
-        // One of these conditions must be true
-        expect(hasCategories || hasIndustry).toBe(true);
-
-        // Log for diagnostics
-        console.log('Company created:', {
-          name: companyDetails.values?.name?.[0]?.value,
-          categories: companyDetails.values?.categories?.[0]?.value,
-          industry: companyDetails.values?.industry?.[0]?.value,
-        });
+      // Log for diagnostics
+      console.log('Company updated:', {
+        name: companyDetails.values?.name?.[0]?.value,
+        categories: companyDetails.values?.categories?.[0]?.value,
+        industry: companyDetails.values?.industry?.[0]?.value,
       });
     });
 
-    describe('Company Update with Industry Field', () => {
-      it('should update a company with industry field mapped to categories', async () => {
-        // First create a company without industry
-        const company = await createCompany({
-          name: `Industry Update Test ${Date.now()}`,
-        });
-        testCompanies.push(company.id.record_id);
+    it('should handle multiple industry values correctly', async () => {
+      // First create a company without industry
+      const company = await createCompany({
+        name: `Multiple Industries Test ${Date.now()}`,
+      });
+      testCompanies.push(company.id.record_id);
 
-        // Update with industry field
-        const testIndustry = 'Finance & Banking';
-        const updatedCompany = await updateCompany(company.id.record_id, {
-          industry: testIndustry,
-        });
-
-        // Fetch the company details to verify mapping
-        const companyDetails = await getCompanyDetails(company.id.record_id);
-
-        // Verify that either categories or industry field has the value
-        const hasCategories =
-          companyDetails.values?.categories?.[0]?.value === testIndustry;
-        const hasIndustry =
-          companyDetails.values?.industry?.[0]?.value === testIndustry;
-
-        // One of these conditions must be true
-        expect(hasCategories || hasIndustry).toBe(true);
-
-        // Log for diagnostics
-        console.log('Company updated:', {
-          name: companyDetails.values?.name?.[0]?.value,
-          categories: companyDetails.values?.categories?.[0]?.value,
-          industry: companyDetails.values?.industry?.[0]?.value,
-        });
+      // Update with multiple industry values (as an array)
+      const industryValues = ['Healthcare', 'Biotechnology'];
+      const updatedCompany = await updateCompany(company.id.record_id, {
+        industry: industryValues.join(', '),
       });
 
-      it('should handle multiple industry values correctly', async () => {
-        // First create a company without industry
-        const company = await createCompany({
-          name: `Multiple Industries Test ${Date.now()}`,
-        });
-        testCompanies.push(company.id.record_id);
+      // Fetch the company details to verify mapping
+      const companyDetails = await getCompanyDetails(company.id.record_id);
 
-        // Update with multiple industry values (as an array)
-        const industryValues = ['Healthcare', 'Biotechnology'];
-        const updatedCompany = await updateCompany(company.id.record_id, {
-          industry: industryValues.join(', '),
-        });
+      // Get the categories or industry values
+      const categoryValues =
+        companyDetails.values?.categories?.map((v: any) => v.value) || [];
+      const industryFieldValues =
+        companyDetails.values?.industry?.map((v: any) => v.value) || [];
 
-        // Fetch the company details to verify mapping
-        const companyDetails = await getCompanyDetails(company.id.record_id);
+      // Check if either field contains the values
+      const hasAllCategoriesValues = industryValues.every((v) =>
+        categoryValues.includes(v)
+      );
+      const hasAllIndustryValues = industryValues.every((v) =>
+        industryFieldValues.includes(v)
+      );
 
-        // Get the categories or industry values
-        const categoryValues =
-          companyDetails.values?.categories?.map((v: any) => v.value) || [];
-        const industryFieldValues =
-          companyDetails.values?.industry?.map((v: any) => v.value) || [];
+      // One of these conditions must be true
+      expect(hasAllCategoriesValues || hasAllIndustryValues).toBe(true);
 
-        // Check if either field contains the values
-        const hasAllCategoriesValues = industryValues.every((v) =>
-          categoryValues.includes(v)
-        );
-        const hasAllIndustryValues = industryValues.every((v) =>
-          industryFieldValues.includes(v)
-        );
-
-        // One of these conditions must be true
-        expect(hasAllCategoriesValues || hasAllIndustryValues).toBe(true);
-
-        // Log for diagnostics
-        console.log('Company with multiple values:', {
-          name: companyDetails.values?.name?.[0]?.value,
-          categories: categoryValues,
-          industry: industryFieldValues,
-        });
+      // Log for diagnostics
+      console.log('Company with multiple values:', {
+        name: companyDetails.values?.name?.[0]?.value,
+        categories: categoryValues,
+        industry: industryFieldValues,
       });
     });
-  }
-);
+  });
+});

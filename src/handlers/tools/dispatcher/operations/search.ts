@@ -173,20 +173,32 @@ export async function handleSearchByCompany(
   resourceType: ResourceType
 ) {
   const companyFilter = request.params.arguments?.companyFilter;
-  
+
   // Extract company identifier from filter
   let companyIdentifier: string;
-  
+
   if (typeof companyFilter === 'string') {
     companyIdentifier = companyFilter;
   } else if (typeof companyFilter === 'object' && companyFilter !== null) {
     // Handle object format with filters array
-    if ('filters' in companyFilter && Array.isArray(companyFilter.filters) && companyFilter.filters.length > 0) {
+    if (
+      'filters' in companyFilter &&
+      Array.isArray(companyFilter.filters) &&
+      companyFilter.filters.length > 0
+    ) {
       const firstFilter = companyFilter.filters[0];
-      if (typeof firstFilter === 'object' && firstFilter !== null && 'value' in firstFilter) {
+      if (
+        typeof firstFilter === 'object' &&
+        firstFilter !== null &&
+        'value' in firstFilter
+      ) {
         const value = firstFilter.value;
         // Extract record_id if it's an object with record_id, otherwise use the value directly
-        if (typeof value === 'object' && value !== null && 'record_id' in value) {
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          'record_id' in value
+        ) {
           companyIdentifier = value.record_id as string;
         } else {
           companyIdentifier = String(value);
@@ -203,12 +215,18 @@ export async function handleSearchByCompany(
         companyIdentifier = String(value);
       }
     } else {
-      throw new Error('Invalid companyFilter format: missing filters array or value');
+      throw new Error(
+        'Invalid companyFilter format: missing filters array or value'
+      );
     }
   } else if (Array.isArray(companyFilter) && companyFilter.length > 0) {
     // Handle array format - use the first valid filter
     const firstFilter = companyFilter[0];
-    if (typeof firstFilter === 'object' && firstFilter !== null && 'value' in firstFilter) {
+    if (
+      typeof firstFilter === 'object' &&
+      firstFilter !== null &&
+      'value' in firstFilter
+    ) {
       const value = firstFilter.value;
       if (typeof value === 'object' && value !== null && 'record_id' in value) {
         companyIdentifier = value.record_id as string;
@@ -221,7 +239,7 @@ export async function handleSearchByCompany(
   } else {
     throw new Error('Invalid companyFilter format');
   }
-  
+
   return handleSearchOperation(
     'searchByCompany',
     toolConfig,
