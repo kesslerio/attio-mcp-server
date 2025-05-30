@@ -95,8 +95,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
           typeof val === 'string'
             ? val.includes(testIndustry)
             : val &&
-                typeof val === 'object' &&
-                JSON.stringify(val).includes(testIndustry)
+              typeof val === 'object' &&
+              JSON.stringify(val).includes(testIndustry)
         );
         expect(hasOurIndustry).toBe(true);
       } else if (typeof industryValue === 'string') {
@@ -147,8 +147,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
           typeof val === 'string'
             ? val.includes(updateIndustry)
             : val &&
-                typeof val === 'object' &&
-                JSON.stringify(val).includes(updateIndustry)
+              typeof val === 'object' &&
+              JSON.stringify(val).includes(updateIndustry)
         );
         expect(hasOurIndustry).toBe(true);
       } else if (typeof industryValue === 'string') {
