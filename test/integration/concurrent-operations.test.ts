@@ -8,7 +8,6 @@ import {
   getCompanyDetails,
 } from '../../src/objects/companies/index';
 import { initializeAttioClient } from '../../src/api/attio-client';
-<<<<<<< HEAD
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;
@@ -19,30 +18,12 @@ describe('Concurrent Operations - Integration Tests', () => {
     return;
   }
 
-=======
-import { config } from 'dotenv';
-
-// Load environment variables for testing
-config({ path: '.env.test' });
-
-// Skip integration tests if no API key is available
-const skipIntegrationTests = !process.env.ATTIO_API_KEY;
-
-const testSuite = skipIntegrationTests ? describe.skip : describe;
-testSuite('Concurrent Operations - Integration Tests', () => {
->>>>>>> origin/main
   const testCompanies: string[] = [];
 
   beforeAll(() => {
     // Initialize the Attio client with test API key
-<<<<<<< HEAD
     const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
-=======
-    if (!skipIntegrationTests) {
-      initializeAttioClient(process.env.ATTIO_API_KEY!);
-    }
->>>>>>> origin/main
   });
 
   afterEach(async () => {

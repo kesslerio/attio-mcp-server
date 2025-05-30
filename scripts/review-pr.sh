@@ -47,17 +47,20 @@ DELETIONS=$(echo "$PR_INFO" | jq -r '.deletions')
 echo "✅ PR data parsed successfully"
 
 # Get all changed files
+echo "🔍 Getting changed files..."
 FILES_CHANGED=$(echo "$PR_INFO" | jq -r '.files[].path')
+echo "✅ Changed files retrieved"
 
 # Get file stats to determine review approach
-# Handle GitHub API diff size limits (20K lines max)
-DIFF_OUTPUT=$(gh pr diff $PR_NUMBER 2>&1)
-DIFF_EXIT_CODE=$?
+# Check if this is a very large PR based on file count and line changes
+echo "🔍 Calculating PR statistics..."
+TOTAL_CHANGES=$((ADDITIONS + DELETIONS))
+echo "📊 PR Statistics: $FILES_COUNT files, +$ADDITIONS/-$DELETIONS lines (total: $TOTAL_CHANGES changes)"
 
-if [ $DIFF_EXIT_CODE -ne 0 ] && echo "$DIFF_OUTPUT" | grep -q "diff exceeded the maximum number of lines"; then
-    echo "⚠️ Very large PR detected - diff exceeds GitHub's 20K line limit"
-    echo "📊 Using file-by-file analysis approach"
-    DIFF_SIZE=999999  # Set to very large to trigger large PR mode
+# Auto-detect very large PRs to avoid hanging on diff commands
+if [ $TOTAL_CHANGES -gt 10000 ] || [ $FILES_COUNT -gt 50 ]; then
+    echo "⚠️ Very large PR detected based on file count/changes - using file-by-file analysis"
+    DIFF_SIZE=999999
     REVIEW_TYPE="VERY_LARGE_PR"
     
     # Get file summaries for very large PRs
@@ -73,24 +76,42 @@ if [ $DIFF_EXIT_CODE -ne 0 ] && echo "$DIFF_OUTPUT" | grep -q "diff exceeded the
         PR_DIFF_SAMPLE="$PR_DIFF_SAMPLE\n## $file\n\`\`\`diff\n$(echo "$FILE_DIFF" | head -20)\n\`\`\`\n"
     done
 else
-    DIFF_SIZE=$(echo "$DIFF_OUTPUT" | wc -c)
-    echo "📊 Diff size: $DIFF_SIZE characters"
+    # Handle GitHub API diff size limits (20K lines max) for smaller PRs
+    echo "🔍 Attempting to get PR diff (with 15s timeout)..."
+    DIFF_OUTPUT=$(timeout 15s gh pr diff $PR_NUMBER 2>&1)
+    DIFF_EXIT_CODE=$?
     
-    # Determine review approach based on size
-    if [ $DIFF_SIZE -gt 100000 ]; then
-        echo "⚠️ Large PR detected - using focused review approach"
-        # For large PRs: get file summaries instead of full diff
+    # Check if timeout occurred or API limit hit
+    if [ $DIFF_EXIT_CODE -eq 124 ]; then
+        echo "⚠️ Timeout: PR diff took longer than 15 seconds - treating as very large PR"
+        DIFF_SIZE=999999
+        REVIEW_TYPE="VERY_LARGE_PR"
         FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
-        # Get just the diff headers and key changes
-        PR_DIFF_SAMPLE=$(echo "$DIFF_OUTPUT" | grep -E "^(diff|@@|\+\+\+|---|\+[^+]|\-[^-])" | head -200)
-        REVIEW_TYPE="LARGE_PR_SUMMARY"
+        PR_DIFF_SAMPLE="# Timeout occurred while fetching diff - file-level analysis only"
+    elif [ $DIFF_EXIT_CODE -ne 0 ] && echo "$DIFF_OUTPUT" | grep -q "diff exceeded the maximum number of lines"; then
+        echo "⚠️ GitHub API limit: diff exceeds 20K line limit - using file-by-file analysis"
+        DIFF_SIZE=999999
+        REVIEW_TYPE="VERY_LARGE_PR"
+        FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
+        PR_DIFF_SAMPLE="# GitHub API limit exceeded - file-level analysis only"
     else
-        echo "📝 Small/Medium PR - using detailed review approach"
-        # For smaller PRs: get full diff
-        PR_DIFF="$DIFF_OUTPUT"
-        REVIEW_TYPE="FULL_ANALYSIS"
+        DIFF_SIZE=$(echo "$DIFF_OUTPUT" | wc -c)
+        echo "📊 Diff size: $DIFF_SIZE characters"
+        
+        # Determine review approach based on size
+        if [ $DIFF_SIZE -gt 100000 ]; then
+            echo "⚠️ Large PR detected - using focused review approach"
+            FILE_STATS=$(echo "$PR_INFO" | jq -r '.files[] | "\(.path): +\(.additions)/-\(.deletions)"')
+            PR_DIFF_SAMPLE=$(echo "$DIFF_OUTPUT" | grep -E "^(diff|@@|\+\+\+|---|\+[^+]|\-[^-])" | head -200)
+            REVIEW_TYPE="LARGE_PR_SUMMARY"
+        else
+            echo "📝 Small/Medium PR - using detailed review approach"
+            PR_DIFF="$DIFF_OUTPUT"
+            REVIEW_TYPE="FULL_ANALYSIS"
+        fi
     fi
 fi
+
 
 echo "🔍 Running Claude analysis ($REVIEW_TYPE)..."
 
@@ -217,7 +238,7 @@ fi
 
 # Run claude with the prompt and data using the allowed-tools flag
 # Note: --allowedTools automatically outputs JSON conversation logs
-claude -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__mcp-sequentialthinking-tools__sequentialthinking_tools" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_json_${PR_NUMBER}.md
+claude -p /tmp/pr_review_prompt_${PR_NUMBER}.md --allowedTools "mcp__clear-thought-server__sequentialthinking" < /tmp/pr_data_${PR_NUMBER}.md > /tmp/review_output_json_${PR_NUMBER}.md
 
 # Extract the actual review content from the JSON conversation log
 # The --allowedTools flag causes Claude to output an array of conversation objects
