@@ -137,10 +137,41 @@ Required Labels:
 - Add implementation comment (details, lessons, challenges, future considerations).
 - Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
 
-AVAILABLE DOCUMENTATION SOURCES
-Indexed: docs.cognee.ai, docs.falkordb.com, modelcontextprotocol.io, github.com (MCP SDKs, etc.), yourls.org, docs.attio.com.
-Querying: Use `mcp_crawl4ai-rag_perform_rag_query(query="search query", source="optional_domain", match_count=N)`.
-  Examples: `mcp_crawl4ai-rag_perform_rag_query(query="bearer token", source="docs.attio.com")`, `mcp_crawl4ai-rag_perform_rag_query(query="webhook config", match_count=5)`.
+DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
+
+⚠️ CRITICAL: Documentation Search Priority
+NEVER use web search as the first option. ALWAYS follow this sequence:
+
+1. **PRIMARY: Check Existing Crawled Documentation**
+   - FIRST: Use `mcp_crawl4ai-rag_perform_rag_query(query="search terms", match_count=5)` to search ALL indexed sources
+   - Check available sources: `mcp_crawl4ai-rag_get_available_sources()`
+   - Try domain-specific searches: `mcp_crawl4ai-rag_perform_rag_query(query="search terms", source="docs.attio.com", match_count=5)`
+   - Examples:
+     * `mcp_crawl4ai-rag_perform_rag_query(query="bearer token authentication", source="docs.attio.com")`
+     * `mcp_crawl4ai-rag_perform_rag_query(query="MCP protocol schema validation", source="modelcontextprotocol.io")`
+     * `mcp_crawl4ai-rag_perform_rag_query(query="webhook configuration", match_count=8)`
+
+2. **SECONDARY: Crawl Additional Documentation (If Needed)**
+   - If existing docs don't contain the information, crawl new sources:
+   - Single page: `mcp_crawl4ai-rag_crawl_single_page(url="https://specific-doc-page.com")`
+   - Smart crawling: `mcp_crawl4ai-rag_smart_crawl_url(url="https://docs.example.com", max_depth=2, max_concurrent=5)`
+   - Target relevant documentation sites, GitHub repos, or API references
+   - After crawling, retry the search: `mcp_crawl4ai-rag_perform_rag_query(query="same search terms")`
+
+3. **TERTIARY: Web Search (Last Resort)**
+   - Only use web search tools if crawled documentation is insufficient
+   - Use for real-time information, recent updates, or community discussions
+   - Consider crawling any valuable sources found via web search for future use
+
+**Currently Indexed Sources:**
+- docs.cognee.ai, docs.falkordb.com, modelcontextprotocol.io, github.com (MCP SDKs), yourls.org, docs.attio.com
+- Verify current sources: `mcp_crawl4ai-rag_get_available_sources()`
+
+**Examples of Crawl Targets When Extending Documentation:**
+- API documentation: `https://docs.attio.com/api/`, `https://docs.github.com/en/rest`
+- Framework docs: `https://vitest.dev/guide/`, `https://nodejs.org/docs/`
+- MCP examples: GitHub repositories with MCP implementations
+- TypeScript references: `https://www.typescriptlang.org/docs/`
 
 CLEAR THOUGHT MCP INTEGRATION (Systematic Problem-Solving)
 - Purpose: Enhance problem analysis, design, implementation, and debugging.
