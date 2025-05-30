@@ -39,11 +39,15 @@ export interface TestListData {
 export class CompanyFactory {
   static create(overrides: Partial<TestCompanyData> = {}): TestCompanyData {
     const defaults: TestCompanyData = {
+<<<<<<< HEAD
       id: {
         record_id: `company_${Date.now()}_${Math.random()
           .toString(36)
           .substr(2, 9)}`,
       },
+=======
+      id: { record_id: `company_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` },
+>>>>>>> origin/main
       values: {
         name: [{ value: 'Test Company' }],
         industry: [{ value: 'Technology' }],
@@ -55,11 +59,16 @@ export class CompanyFactory {
     return this.mergeDeep(defaults, overrides);
   }
 
+<<<<<<< HEAD
   static createMany(
     count: number,
     overrides: Partial<TestCompanyData> = {}
   ): TestCompanyData[] {
     return Array.from({ length: count }, (_, i) =>
+=======
+  static createMany(count: number, overrides: Partial<TestCompanyData> = {}): TestCompanyData[] {
+    return Array.from({ length: count }, (_, i) => 
+>>>>>>> origin/main
       this.create({
         ...overrides,
         id: { record_id: `company_${Date.now()}_${i}` },
@@ -74,11 +83,15 @@ export class CompanyFactory {
   private static mergeDeep(target: any, source: any): any {
     const result = { ...target };
     for (const key in source) {
+<<<<<<< HEAD
       if (
         source[key] &&
         typeof source[key] === 'object' &&
         !Array.isArray(source[key])
       ) {
+=======
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+>>>>>>> origin/main
         result[key] = this.mergeDeep(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
@@ -94,11 +107,15 @@ export class CompanyFactory {
 export class PersonFactory {
   static create(overrides: Partial<TestPersonData> = {}): TestPersonData {
     const defaults: TestPersonData = {
+<<<<<<< HEAD
       id: {
         record_id: `person_${Date.now()}_${Math.random()
           .toString(36)
           .substr(2, 9)}`,
       },
+=======
+      id: { record_id: `person_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` },
+>>>>>>> origin/main
       values: {
         name: [{ value: 'Test Person' }],
         email_addresses: [{ value: 'test@example.com' }],
@@ -108,11 +125,16 @@ export class PersonFactory {
     return this.mergeDeep(defaults, overrides);
   }
 
+<<<<<<< HEAD
   static createMany(
     count: number,
     overrides: Partial<TestPersonData> = {}
   ): TestPersonData[] {
     return Array.from({ length: count }, (_, i) =>
+=======
+  static createMany(count: number, overrides: Partial<TestPersonData> = {}): TestPersonData[] {
+    return Array.from({ length: count }, (_, i) => 
+>>>>>>> origin/main
       this.create({
         ...overrides,
         id: { record_id: `person_${Date.now()}_${i}` },
@@ -128,11 +150,15 @@ export class PersonFactory {
   private static mergeDeep(target: any, source: any): any {
     const result = { ...target };
     for (const key in source) {
+<<<<<<< HEAD
       if (
         source[key] &&
         typeof source[key] === 'object' &&
         !Array.isArray(source[key])
       ) {
+=======
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+>>>>>>> origin/main
         result[key] = this.mergeDeep(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
@@ -148,11 +174,15 @@ export class PersonFactory {
 export class ListFactory {
   static create(overrides: Partial<TestListData> = {}): TestListData {
     const defaults: TestListData = {
+<<<<<<< HEAD
       id: {
         list_id: `list_${Date.now()}_${Math.random()
           .toString(36)
           .substr(2, 9)}`,
       },
+=======
+      id: { list_id: `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` },
+>>>>>>> origin/main
       name: 'Test List',
       parent_object: 'companies',
     };
@@ -160,11 +190,16 @@ export class ListFactory {
     return { ...defaults, ...overrides };
   }
 
+<<<<<<< HEAD
   static createMany(
     count: number,
     overrides: Partial<TestListData> = {}
   ): TestListData[] {
     return Array.from({ length: count }, (_, i) =>
+=======
+  static createMany(count: number, overrides: Partial<TestListData> = {}): TestListData[] {
+    return Array.from({ length: count }, (_, i) => 
+>>>>>>> origin/main
       this.create({
         ...overrides,
         id: { list_id: `list_${Date.now()}_${i}` },
@@ -209,7 +244,11 @@ export class ApiResponseFactory {
           page,
           page_size: pageSize,
           total: total ?? data.length,
+<<<<<<< HEAD
           has_more: page * pageSize < (total ?? data.length),
+=======
+          has_more: (page * pageSize) < (total ?? data.length),
+>>>>>>> origin/main
         },
       },
     };
@@ -247,4 +286,8 @@ export class MockRequestFactory {
       ...attributes,
     });
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

@@ -44,6 +44,7 @@ export const relationshipToolConfigs = {
         const typedFilter = filter as CompanyFilter;
         const slug = typedFilter.attribute?.slug;
 
+
         if (slug === 'companies.id') {
           let recordId: string;
           if (
@@ -78,6 +79,7 @@ export const relationshipToolConfigs = {
           );
         }
       }
+
 
       throw new Error('No valid filters found');
     },

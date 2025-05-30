@@ -31,7 +31,10 @@ fi
 echo "📋 Fetching comprehensive PR details..."
 
 # Get comprehensive PR information
+echo "🔍 Calling gh pr view..."
 PR_INFO=$(gh pr view $PR_NUMBER --json title,body,files,additions,deletions,author,createdAt,baseRefName,headRefName)
+echo "✅ PR info retrieved"
+echo "🔍 Parsing PR data..."
 PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
 PR_BODY=$(echo "$PR_INFO" | jq -r '.body // ""')
 PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
@@ -41,6 +44,7 @@ HEAD_BRANCH=$(echo "$PR_INFO" | jq -r '.headRefName')
 FILES_COUNT=$(echo "$PR_INFO" | jq -r '.files | length')
 ADDITIONS=$(echo "$PR_INFO" | jq -r '.additions')
 DELETIONS=$(echo "$PR_INFO" | jq -r '.deletions')
+echo "✅ PR data parsed successfully"
 
 # Get all changed files
 FILES_CHANGED=$(echo "$PR_INFO" | jq -r '.files[].path')

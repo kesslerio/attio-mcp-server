@@ -3,10 +3,14 @@
  * Handles API client initialization and test data cleanup
  */
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+<<<<<<< HEAD
 import {
   initializeAttioClient,
   getAttioClient,
 } from '../../src/api/attio-client.js';
+=======
+import { initializeAttioClient, getAttioClient } from '../../src/api/attio-client.js';
+>>>>>>> origin/main
 
 export interface IntegrationTestConfig {
   skipApiKey?: boolean;
@@ -58,7 +62,11 @@ export class IntegrationTestBase {
         }
         throw new Error(
           'ATTIO_API_KEY environment variable is required for integration tests. ' +
+<<<<<<< HEAD
             'Set SKIP_INTEGRATION_TESTS=true to skip these tests.'
+=======
+          'Set SKIP_INTEGRATION_TESTS=true to skip these tests.'
+>>>>>>> origin/main
         );
       }
 
@@ -76,7 +84,11 @@ export class IntegrationTestBase {
   private static async afterAllCleanup() {
     if (this.config.requiresRealApi && this.createdObjects.length > 0) {
       console.log(`Cleaning up ${this.createdObjects.length} test objects...`);
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> origin/main
       const client = getAttioClient();
       const cleanupPromises = this.createdObjects.map(async (obj) => {
         try {
@@ -135,14 +147,24 @@ export class IntegrationTestBase {
     interval: number = 100
   ): Promise<void> {
     const start = Date.now();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     while (Date.now() - start < timeout) {
       if (await condition()) {
         return;
       }
+<<<<<<< HEAD
       await new Promise((resolve) => setTimeout(resolve, interval));
     }
 
+=======
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    
+>>>>>>> origin/main
     throw new Error(`Condition not met within ${timeout}ms`);
   }
 
@@ -155,12 +177,17 @@ export class IntegrationTestBase {
     baseDelay: number = 1000
   ): Promise<T> {
     let lastError: Error;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
+<<<<<<< HEAD
 
         if (attempt === maxAttempts) {
           throw lastError;
@@ -172,6 +199,19 @@ export class IntegrationTestBase {
       }
     }
 
+=======
+        
+        if (attempt === maxAttempts) {
+          throw lastError;
+        }
+        
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+>>>>>>> origin/main
     throw lastError!;
   }
 }
@@ -196,10 +236,17 @@ export class IntegrationTestMocks {
       const response = await client.post('/objects/companies/records', {
         data: { values: company },
       });
+<<<<<<< HEAD
 
       const companyId = response.data.id.record_id;
       IntegrationTestBase.trackForCleanup('companies', companyId);
 
+=======
+      
+      const companyId = response.data.id.record_id;
+      IntegrationTestBase.trackForCleanup('companies', companyId);
+      
+>>>>>>> origin/main
       return response.data;
     } catch (error) {
       console.error('Failed to create test company:', error);
@@ -223,10 +270,17 @@ export class IntegrationTestMocks {
       const response = await client.post('/objects/people/records', {
         data: { values: person },
       });
+<<<<<<< HEAD
 
       const personId = response.data.id.record_id;
       IntegrationTestBase.trackForCleanup('people', personId);
 
+=======
+      
+      const personId = response.data.id.record_id;
+      IntegrationTestBase.trackForCleanup('people', personId);
+      
+>>>>>>> origin/main
       return response.data;
     } catch (error) {
       console.error('Failed to create test person:', error);
@@ -237,11 +291,15 @@ export class IntegrationTestMocks {
   /**
    * Create a mock note for testing
    */
+<<<<<<< HEAD
   static async createTestNote(
     parentObject: string,
     parentRecordId: string,
     attributes: any = {}
   ): Promise<any> {
+=======
+  static async createTestNote(parentObject: string, parentRecordId: string, attributes: any = {}): Promise<any> {
+>>>>>>> origin/main
     const testId = IntegrationTestBase.createTestId('note');
     const note = {
       title: `Test Note ${testId}`,
@@ -255,14 +313,25 @@ export class IntegrationTestMocks {
     try {
       const client = getAttioClient();
       const response = await client.post('/notes', { data: note });
+<<<<<<< HEAD
 
       const noteId = response.data.id.note_id;
       IntegrationTestBase.trackForCleanup('notes', noteId);
 
+=======
+      
+      const noteId = response.data.id.note_id;
+      IntegrationTestBase.trackForCleanup('notes', noteId);
+      
+>>>>>>> origin/main
       return response.data;
     } catch (error) {
       console.error('Failed to create test note:', error);
       throw error;
     }
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

@@ -240,6 +240,7 @@ export async function handleSearchByCompany(
     throw new Error('Invalid companyFilter format');
   }
 
+
   return handleSearchOperation(
     'searchByCompany',
     toolConfig,
