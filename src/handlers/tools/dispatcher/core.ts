@@ -128,7 +128,9 @@ export async function executeToolRequest(request: CallToolRequest) {
     } else if (toolType === 'searchByCompany') {
       // Use the tool config's own handler and format the result
       const rawResult = await toolConfig.handler(request.params.arguments);
-      const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
+      const formattedResult =
+        toolConfig.formatResult?.(rawResult) ||
+        JSON.stringify(rawResult, null, 2);
       result = { content: [{ type: 'text', text: formattedResult }] };
     } else if (toolType === 'smartSearch') {
       result = await handleSmartSearch(

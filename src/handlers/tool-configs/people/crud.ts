@@ -14,10 +14,7 @@ import { formatPersonDetails, getPersonName } from './formatters.js';
 export const crudToolConfigs = {
   create: {
     name: 'create-person',
-    handler: async (
-      _slug: string,
-      attributes: PersonCreateAttributes
-    ): Promise<Person> => {
+    handler: async (attributes: PersonCreateAttributes): Promise<Person> => {
       try {
         return await createPerson(attributes);
       } catch (error) {

@@ -8,7 +8,6 @@ import { createMockApiClient } from './types/test-types';
 // Global mock for attio-client
 vi.mock('../src/api/attio-client', async () => {
   const mockAxiosInstance = createMockApiClient();
-  
   return {
     getAttioClient: vi.fn(() => mockAxiosInstance),
     initializeAttioClient: vi.fn(() => {
@@ -38,10 +37,11 @@ vi.mock('../src/objects/people-write', async () => {
     ...actual,
     searchPeopleByEmails: vi.fn(async (emails: string[]) => {
       // Mock batch email search for PersonValidator tests
-      return emails.map(email => ({
+      return emails.map((email) => ({
         email,
         exists: email === 'dup@example.com',
-        personId: email === 'dup@example.com' ? 'existing-person-id' : undefined,
+        personId:
+          email === 'dup@example.com' ? 'existing-person-id' : undefined,
       }));
     }),
   };
@@ -116,10 +116,9 @@ beforeEach(() => {
   // Mock environment variables for API initialization
   vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
   vi.stubEnv('ATTIO_WORKSPACE_ID', 'test-workspace-id');
-  
+
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
-  
   // Reset console methods to original implementation to avoid interference
   console.log = originalConsole.log;
   console.error = originalConsole.error;
