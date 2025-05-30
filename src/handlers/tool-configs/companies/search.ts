@@ -83,7 +83,7 @@ export const searchToolDefinitions = [
   {
     name: 'search-companies',
     description:
-      'Search for companies in Attio with automatic domain prioritization. Supports company names, domains, URLs, and email addresses. When a domain is detected, results are prioritized by domain matches for better accuracy.',
+      'Search for companies in your CRM (Attio) with automatic domain prioritization. Supports company names, domains, URLs, and email addresses. When a domain is detected, results are prioritized by domain matches for better accuracy.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -98,7 +98,7 @@ export const searchToolDefinitions = [
   },
   {
     name: 'advanced-search-companies',
-    description: 'Search for companies using advanced filtering capabilities',
+    description: 'Search for companies in your CRM using advanced filtering capabilities',
     inputSchema: {
       type: 'object',
       properties: {
@@ -159,7 +159,7 @@ export const searchToolDefinitions = [
   {
     name: 'search-companies-by-domain',
     description:
-      'Search for companies by domain/website. Provides exact domain-based matching for highest accuracy.',
+      'Search for companies in your CRM by domain/website. Provides exact domain-based matching for highest accuracy.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -175,7 +175,7 @@ export const searchToolDefinitions = [
   {
     name: 'smart-search-companies',
     description:
-      'Intelligent company search that automatically detects and prioritizes domain-based searches. Best for queries that may contain mixed content (names, domains, emails, URLs).',
+      'Intelligent CRM company search that automatically detects and prioritizes domain-based searches. Best for queries that may contain mixed content (names, domains, emails, URLs).',
     inputSchema: {
       type: 'object',
       properties: {

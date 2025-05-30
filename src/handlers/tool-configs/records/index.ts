@@ -169,7 +169,7 @@ export const recordToolConfigs = {
 export const recordToolDefinitions = [
   {
     name: 'create-record',
-    description: 'Create a new record in Attio',
+    description: 'Create a new record in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
