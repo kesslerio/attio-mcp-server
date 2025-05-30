@@ -35,6 +35,7 @@
     "test:integration": "vitest --run test/integration/",
     "test:unit": "vitest --run test/handlers/ test/objects/ test/utils/ test/validators/",
     "check:offline": "tsc --project tsconfig.offline.json --noEmit",
+    "migrate-config": "node scripts/migrate-user-config.js",
     "codex:setup": "./scripts/codex-env-setup.sh",
     "codex:verify": "./scripts/verify-codex-env.sh",
     "test:people": "node test/objects/people.test.js",
