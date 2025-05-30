@@ -26,8 +26,8 @@
         "City": "city",
         "State": "state",
         "Country": "country",
-        "ZIP": "zip",
-        "Postal Code": "zip"
+        "ZIP": "postal_code",
+        "Postal Code": "postal_code"
       },
       "objects": {
         "companies": {
