@@ -165,6 +165,23 @@ export async function handleSearchByPhone(
 }
 
 /**
+ * Handle searchByDomain operations
+ */
+export async function handleSearchByDomain(
+  request: CallToolRequest,
+  toolConfig: SearchToolConfig,
+  resourceType: ResourceType
+) {
+  const domain = request.params.arguments?.domain as string;
+  return handleSearchOperation(
+    'searchByDomain',
+    toolConfig,
+    domain,
+    resourceType
+  );
+}
+
+/**
  * Handle searchByCompany operations
  */
 export async function handleSearchByCompany(

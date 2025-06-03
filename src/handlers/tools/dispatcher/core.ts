@@ -23,6 +23,7 @@ import {
   handleBasicSearch,
   handleSearchByEmail,
   handleSearchByPhone,
+  handleSearchByDomain,
   handleSearchByCompany,
   handleSmartSearch,
 } from './operations/search.js';
@@ -283,7 +284,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         resourceType
       );
     } else if (toolType === 'searchByDomain') {
-      result = await handleBasicSearch(
+      result = await handleSearchByDomain(
         request,
         toolConfig as SearchToolConfig,
         resourceType

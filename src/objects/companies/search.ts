@@ -128,7 +128,7 @@ export interface CompanySearchOptions {
  * // Returns companies with names containing "acme"
  *
  * const companies = await searchCompanies("acme.com", { prioritizeDomains: false });
- * // Disables domain prioritization, uses name search only
+ * // Disables domain prioritization, uses name-based search only
  * ```
  */
 export async function searchCompanies(
@@ -236,11 +236,11 @@ export async function searchCompaniesByDomain(
     );
   }
 
-  // Create filters for domain search
+  // Create filters for domain search - FIXED: Use 'domains' field instead of 'website'
   const filters: ListEntryFilters = {
     filters: [
       {
-        attribute: { slug: 'website' },
+        attribute: { slug: 'domains' },
         condition: FilterConditionType.CONTAINS,
         value: normalizedDomain,
       },
@@ -250,13 +250,13 @@ export async function searchCompaniesByDomain(
   try {
     return await advancedSearchCompanies(filters);
   } catch (error) {
-    // Fallback to direct API call
+    // Fallback to direct API call - FIXED: Use 'domains' field instead of 'website'
     const api = getAttioClient();
     const path = '/objects/companies/records/query';
 
     const response = await api.post(path, {
       filter: {
-        website: { $contains: normalizedDomain },
+        domains: { $contains: normalizedDomain },
       },
     });
     return response.data.data || [];
@@ -521,7 +521,7 @@ export function createDomainFilter(
   return {
     filters: [
       {
-        attribute: { slug: 'website' },
+        attribute: { slug: 'domains' },
         condition: condition,
         value: normalizedDomain,
       },
