@@ -43,7 +43,7 @@ export const crudToolConfigs = {
 export const crudToolDefinitions = [
   {
     name: 'create-person',
-    description: 'Create a new person in Attio',
+    description: 'Create a new person record in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
