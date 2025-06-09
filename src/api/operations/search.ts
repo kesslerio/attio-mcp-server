@@ -39,7 +39,7 @@ export async function searchObject<T extends AttioRecord>(
       $or: [
         { name: { $contains: query } },
         { email_addresses: { $contains: query } },
-        { phone: { $contains: query } },
+        { phone_numbers: { $contains: query } },
       ],
     };
   } else {

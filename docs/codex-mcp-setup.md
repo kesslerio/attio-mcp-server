@@ -1,262 +1,333 @@
-# OpenAI Codex CLI Setup Guide
+# OpenAI Codex CLI Environment Setup Guide
 
-This guide provides comprehensive setup instructions for OpenAI Codex CLI with optional MCP (Model Context Protocol) server integration.
+**⚠️ EXPERIMENTAL TECHNOLOGY DISCLAIMER**  
+OpenAI Codex CLI is an experimental project under active development. It may contain bugs, incomplete features, or undergo breaking changes. Always review changes before approval and work in Git repositories for safety.
 
-## Quick Start
+This guide addresses the specific requirements for running this project with OpenAI Codex CLI, particularly for network-restricted environments after initial setup.
+
+## Quick Setup for Codex CLI
+
+Run this **during the setup phase** when network access is available:
 
 ```bash
-# Run the automated setup script
+# Run the comprehensive Codex environment setup
 ./scripts/setup-codex.sh
-
-# Or use the quick setup for immediate usage
-./scripts/quick-setup.sh
-
-# Or use the minimal setup (Node.js only)
-./scripts/minimal-setup.sh
 ```
 
-## Manual Setup
+This script will:
+- ✅ Check system requirements (Node.js 22+, Python 3.12+)
+- ✅ Install OpenAI Codex CLI (`@openai/codex`)
+- ✅ Configure environment variables and pricing awareness
+- ✅ Set up project-specific AGENTS.md files
+- ✅ Create comprehensive usage examples
+- ✅ Configure sandboxing and security features
 
-### 1. System Requirements
+## System Requirements (Updated April 2025)
 
-**Operating Systems:**
-- macOS 12+
-- Ubuntu 20.04+/Debian 10+
-- Windows 11 (via WSL2)
+| Requirement | Details |
+|------------|---------|
+| **Node.js** | **22 or newer** (LTS recommended) |
+| **Operating System** | macOS 12+, Ubuntu 20.04+/Debian 10+, or Windows 11 via WSL2 |
+| **Git** | 2.23+ (recommended for safety features) |
+| **RAM** | 4GB minimum (8GB recommended) |
+| **Python** | 3.12+ (for MCP server components) |
 
-**Dependencies:**
-- Node.js 22+ (LTS recommended)
-- Python 3.12+
-- 4-8 GB RAM recommended
+## Installation & Configuration
 
-### 2. Install OpenAI Codex CLI
-
+### Manual Installation
 ```bash
+# Install globally (requires Node.js 22+)
 npm install -g @openai/codex
+
+# Set up API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# Verify installation
+codex --version
 ```
 
-### 3. Install MCP Dependencies
+### Configuration Files
 
-```bash
-# Install Python MCP requirements (optional, for custom servers only)
-pip install -r requirements-mcp.txt
+Codex CLI uses configuration in `~/.codex/`:
 
-# Or install individually
-pip install mcp httpx pydantic uvicorn fastapi python-dotenv
-```
-
-### 4. Environment Configuration
-
-Create a `.env` file in your project root:
-
-```bash
-# OpenAI API Configuration
-OPENAI_API_KEY=your-openai-api-key-here
-
-# Attio API Configuration (for this project)
-ATTIO_API_KEY=your-attio-api-key-here
-ATTIO_WORKSPACE_ID=your-workspace-id-here
-```
-
-Set environment variables:
-
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-### 5. Configure Codex CLI
-
-Create `~/.codex/config.json`:
-
+**~/.codex/config.json**
 ```json
 {
   "model": "o4-mini",
+  "provider": "openai", 
   "approvalMode": "suggest",
+  "fullAutoErrorMode": "ask-user",
   "notify": true,
   "maxTokens": 4096,
-  "temperature": 0.1
-}
-```
-
-## MCP Server Setup (Optional)
-
-MCP server integration is optional and can be added later if needed. The main Codex CLI works independently.
-
-### External MCP Servers
-This project can work with external MCP servers that provide additional capabilities. These are separate services, not npm dependencies.
-
-**Crawl4AI RAG MCP Server** (Optional):
-- Repository: https://github.com/coleam00/mcp-crawl4ai-rag
-- Purpose: Web crawling and RAG capabilities
-- Tools: crawl_single_page, smart_crawl_url, perform_rag_query
-- Setup: Follow the repository's installation guide
-
-**Other MCP Servers**:
-- YOURLS URL shortener: mcp__yourls__ namespace
-- Brave Search: mcp__brave-search__ namespace  
-- Tavily Search: mcp__tavily-mcp__ namespace
-- Attio CRM: This project's main functionality
-
-### Claude Desktop Integration
-
-For Claude Desktop integration, update `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "attio": {
-      "command": "node",
-      "args": ["./dist/index.js"],
-      "env": {
-        "ATTIO_API_KEY": "${ATTIO_API_KEY}",
-        "ATTIO_WORKSPACE_ID": "${ATTIO_WORKSPACE_ID}"
-      }
+  "temperature": 0.1,
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "baseURL": "https://api.openai.com/v1",
+      "envKey": "OPENAI_API_KEY"
     }
+  },
+  "history": {
+    "maxSize": 1000,
+    "saveHistory": true,
+    "sensitivePatterns": []
   }
 }
 ```
 
-## Usage Examples
+## Project Documentation with AGENTS.md
 
-### Basic Codex Commands
+Codex CLI uses `AGENTS.md` files for project-specific instructions:
 
-```bash
-# Interactive session
-codex
+1. **`~/.codex/AGENTS.md`** - Global personal preferences
+2. **`AGENTS.md`** (project root) - Shared project guidelines  
+3. **`AGENTS.md`** (current directory) - Feature-specific instructions
 
-# Generate code
-codex "Create a Python function to calculate fibonacci numbers"
+**Example Project AGENTS.md:**
+```markdown
+# Project-Specific Codex Instructions
 
-# Code explanation
-codex "Explain this JavaScript code" --file script.js
+## Coding Standards
+- Use TypeScript for all new files
+- Follow ESLint and Prettier configurations
+- Include comprehensive JSDoc comments
+- Write unit tests for all new functionality
 
-# Debugging
-codex "Debug this error" --file error.log
+## Architecture Guidelines  
+- Follow existing handler/tool patterns
+- Use proper error handling with custom error types
+- Implement proper logging and monitoring
+- Follow SOLID principles
+
+## Testing Requirements
+- Unit tests for all handlers and utilities
+- Integration tests for API interactions  
+- Mock external dependencies appropriately
+- Maintain >90% test coverage
 ```
 
-### With MCP Integration (Optional)
+## Usage Modes & Safety
+
+### Approval Modes
+- **`suggest`** (default): Shows proposed changes, asks for confirmation
+- **`auto-edit`**: Automatically applies approved file changes
+- **`full-auto`**: Executes without asking (use with extreme caution)
+
+### Security Features
+- **macOS**: Commands wrapped with Apple Seatbelt sandbox
+- **Linux**: No default sandboxing (Docker recommended)
+- **Windows**: Requires WSL2
+
+### Safety Best Practices
+1. Always start with `suggest` mode in new projects
+2. Work in Git repositories for easy rollback
+3. Review all changes before approval
+4. Use `full-auto` mode sparingly and only in safe environments
+5. Keep backups of important files
+
+## Testing the Setup
+
+After setup, verify everything works:
 
 ```bash
-# When MCP servers are configured, you can use them for enhanced functionality
-codex "Create a React component with current best practices"
+# Verify installation
+codex --version
 
-# API integration with available MCP servers  
-codex "Create an Attio API client using the available documentation"
+# Test basic functionality (suggest mode)
+codex --approval-mode suggest "create a simple hello world script"
+
+# Run our project-specific verification
+npm run codex:verify
 ```
 
-### Configuration Options
+## Offline Commands for Network-Restricted Environments
 
-**Approval Modes:**
-- `suggest` (default) - Shows suggestions for approval
-- `auto-edit` - Automatically applies code changes
-- `full-auto` - Fully automated execution
+Use these commands when network access is limited:
 
-**Model Options:**
-- `o4-mini` (default) - Fast and efficient
-- `o4` - More capable for complex tasks
-- `gpt-4o` - Alternative provider option
-
-## API Keys Setup
-
-### OpenAI API Key
-1. Visit https://platform.openai.com/api-keys
-2. Create a new API key
-3. Set as environment variable or in config
-
-# Brave Search API key setup removed (no longer needed)
-
-### Attio API Keys (for this project)
-1. Log into your Attio workspace
-2. Go to Settings → Developers → API Keys  
-3. Create new API key with required permissions
-
-## Troubleshooting
-
-### Common Issues
-
-**"Command not found: codex"**
+### Testing
 ```bash
-# Reinstall Codex CLI
-npm uninstall -g @openai/codex
-npm install -g @openai/codex
+# Run tests with offline configuration
+npm run test:offline
 
-# Check PATH
-echo $PATH
+# Or directly with npx
+npx vitest --config vitest.config.offline.ts
 ```
 
-**"API key not found"**
+### Type Checking
 ```bash
-# Verify environment variables
+# Run TypeScript checks with offline configuration
+npm run check:offline
+
+# Or directly with npx
+npx tsc --project tsconfig.offline.json --noEmit
+```
+
+### Building
+```bash
+# Build the project (should work offline after initial setup)
+npm run build
+```
+
+## Pricing Information (April 2025)
+
+**OpenAI Codex CLI Pricing:**
+- Input tokens: $1.50 per 1M tokens (~750k words)
+- Output tokens: $6.00 per 1M tokens
+- Default model: o4-mini
+
+**Cost Management Tips:**
+- Monitor usage via OpenAI dashboard
+- Use shorter, focused prompts
+- Consider using `suggest` mode to review before execution
+- Set up usage alerts in OpenAI account
+
+## Common Issues & Solutions
+
+### ❌ "codex: command not found"
+**Cause**: Node.js version too old or npm installation failed
+**Solution**: 
+1. Upgrade to Node.js 22+: https://nodejs.org/
+2. Reinstall: `npm install -g @openai/codex@latest`
+3. Check PATH: `which codex`
+
+### ❌ "Node.js version is X. Codex CLI requires Node.js 22 or newer"
+**Cause**: Outdated Node.js version
+**Solution**: Upgrade Node.js from https://nodejs.org/
+
+### ❌ API Key or model access errors
+**Cause**: Missing/invalid API key or unverified account
+**Solution**: 
+1. Set API key: `export OPENAI_API_KEY="your-key"`
+2. Verify account on OpenAI platform for o3/o4-mini access
+3. Try alternative model: `codex --model gpt-3.5-turbo`
+
+### ❌ "missing type definitions" or build errors
+**Cause**: Dependencies not properly installed
+**Solution**: Run full setup: `./scripts/setup-codex.sh`
+
+### ❌ Network timeouts during tests
+**Cause**: Tests trying to access external APIs
+**Solution**: Use offline config: `npm run test:offline`
+
+## What the Offline Configs Do
+
+### `vitest.config.offline.ts`
+- Skips integration tests requiring network
+- Excludes manual test files
+- Uses shorter timeouts
+- Focuses on unit tests only
+
+### `tsconfig.offline.json` 
+- Extends main TypeScript config
+- Skips library type checking for speed
+- Excludes network-dependent test files
+- Optimized for offline validation
+
+## Interactive Commands
+
+Once in Codex CLI interactive mode:
+- `/suggest` - Switch to suggest approval mode
+- `/autoedit` - Switch to auto-edit mode  
+- `/fullauto` - Switch to full-auto mode (careful!)
+- `/model` - Change AI model
+- `/help` - Show all commands
+- `/exit` - Exit Codex CLI
+
+## Environment Verification Checklist
+
+✅ Node.js 22+ available  
+✅ NPM available  
+✅ Codex CLI installed and accessible  
+✅ OpenAI API key configured  
+✅ Project dependencies installed  
+✅ TypeScript compilation works  
+✅ Testing framework works  
+✅ Build process works  
+✅ AGENTS.md files configured
+
+## Manual Verification Commands
+
+If automated verification fails:
+
+```bash
+# Check versions
+node --version  # Should be 22+
+npm --version
+codex --version
+
+# Check API key
 echo $OPENAI_API_KEY
 
-# Reload shell configuration
-source ~/.bashrc  # or ~/.zshrc
+# Test basic functionality
+codex --approval-mode suggest "explain what Node.js is"
+
+# Check project structure
+ls -la dist/
+ls -la node_modules/.bin/
+
+# Test builds and types
+npm run build
+npx tsc --noEmit
 ```
 
-**"MCP server not responding"**
-```bash
-# Check if MCP servers are configured properly in Claude Desktop
-# Restart Claude Desktop application if needed
-```
+## Integration with Main Setup Scripts
 
-### Debug Mode
-
-Enable verbose logging:
-
-```bash
-# Set debug environment variable
-export CODEX_DEBUG=true
-
-# Run with verbose output
-codex --verbose "your command here"
-```
-
-## Advanced Configuration
-
-### Custom MCP Server
-
-Create your own MCP server configuration:
-
-```json
-{
-  "name": "custom-server",
-  "command": "python",
-  "args": ["-m", "your_mcp_server"],
-  "env": {
-    "API_KEY": "${YOUR_API_KEY}"
-  }
-}
-```
-
-### Multiple Providers
-
-Configure alternative AI providers:
+The main setup scripts now include comprehensive Codex environment preparation:
 
 ```bash
-codex --provider anthropic "your command"
-codex --provider azure "your command"
+# Full setup (includes Codex environment setup)
+./scripts/setup-codex.sh
+
+# Quick setup
+./scripts/quick-setup.sh  
+
+# Minimal setup
+./scripts/minimal-setup.sh
 ```
 
-## Performance Tips
+## Advanced Usage Examples
 
-1. **Use appropriate models**: `o4-mini` for speed, `o4` for complexity
-2. **Optimize approval mode**: Use `auto-edit` for repetitive tasks
-3. **Cache MCP responses**: Enable caching for repeated queries
-4. **Batch operations**: Group related tasks together
+```bash
+# Multi-file refactoring
+codex "refactor the authentication module to use async/await"
 
-## Security Considerations
+# Documentation generation
+codex "generate comprehensive API documentation for this codebase"
 
-- Store API keys in environment variables, not in code
-- Use project-specific `.env` files
-- Regularly rotate API keys
-- Monitor API usage and costs
-- Enable approval mode for production environments
+# Security audit
+codex "review this code for security vulnerabilities"
 
-## Support and Resources
+# Test generation with project context
+codex "write unit tests for the user service following our testing guidelines"
+```
 
-- **Codex CLI Documentation**: https://github.com/openai/codex
-- **MCP Protocol**: https://modelcontextprotocol.io/
-- **Attio API**: https://docs.attio.com/
+## Best Practices for Codex Environments
 
-For issues with this setup, check the troubleshooting section or create an issue in the repository.
+1. **Run full setup during network-available phase**
+2. **Use offline commands in restricted environments** 
+3. **Always work in Git repositories for safety**
+4. **Start with `suggest` mode, graduate to `auto-edit` carefully**
+5. **Never use `full-auto` on production code without review**
+6. **Create comprehensive AGENTS.md files for consistent behavior**
+7. **Monitor API usage and costs regularly**
+8. **Keep Codex CLI updated**: `npm install -g @openai/codex@latest`
+
+## Troubleshooting Network Issues
+
+If you encounter network issues after setup:
+
+1. **Use offline configs**: All commands have offline alternatives
+2. **Check cached data**: Look in `.codex-cache/` for cached outputs  
+3. **Skip integration tests**: Use `test:offline` instead of `test`
+4. **Use local builds**: Avoid commands fetching external resources
+5. **Review sandbox settings**: Codex runs network-disabled on macOS by default
+
+---
+
+**Additional Resources:**
+- [OpenAI Codex CLI GitHub](https://github.com/openai/codex)
+- [NPM Package Documentation](https://www.npmjs.com/package/@openai/codex)
+- [Main Project README](./README.md)
+- [MCP Documentation](https://modelcontextprotocol.io/)
+
+**Remember**: Codex CLI is experimental software. Always review changes and maintain backups!

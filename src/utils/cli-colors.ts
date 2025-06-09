@@ -16,11 +16,11 @@ const colors = {
 
 /**
  * Applies ANSI color codes to text for terminal display
- * 
+ *
  * @param text The text to colorize
  * @param color The color to apply
  * @returns Colored text with reset codes
- * 
+ *
  * @example
  * ```typescript
  * console.log(colorize('Success!', 'green'));
