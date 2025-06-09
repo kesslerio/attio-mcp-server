@@ -23,9 +23,9 @@ describe('People Search Phone Field Fix', () => {
 
   it('should use phone_numbers field instead of phone for people search', async () => {
     const query = 'test@example.com';
-    
+
     await searchObject(ResourceType.PEOPLE, query);
-    
+
     expect(mockPost).toHaveBeenCalledWith('/objects/people/records/query', {
       filter: {
         $or: [
@@ -39,9 +39,9 @@ describe('People Search Phone Field Fix', () => {
 
   it('should use name field only for company search (not affected)', async () => {
     const query = 'test company';
-    
+
     await searchObject(ResourceType.COMPANIES, query);
-    
+
     expect(mockPost).toHaveBeenCalledWith('/objects/companies/records/query', {
       filter: {
         name: { $contains: query },
@@ -51,19 +51,21 @@ describe('People Search Phone Field Fix', () => {
 
   it('should not contain the incorrect phone field in people search', async () => {
     const query = 'john@example.com';
-    
+
     await searchObject(ResourceType.PEOPLE, query);
-    
+
     const callArgs = mockPost.mock.calls[0];
     const filterObject = callArgs[1].filter;
-    
+
     // Verify phone_numbers is used
-    const phoneNumbersFilter = filterObject.$or.find((f: any) => f.phone_numbers);
+    const phoneNumbersFilter = filterObject.$or.find(
+      (f: any) => f.phone_numbers
+    );
     expect(phoneNumbersFilter).toBeDefined();
     expect(phoneNumbersFilter.phone_numbers).toEqual({ $contains: query });
-    
+
     // Verify the incorrect 'phone' field is NOT used
     const incorrectPhoneFilter = filterObject.$or.find((f: any) => f.phone);
     expect(incorrectPhoneFilter).toBeUndefined();
   });
-}); 
+});
