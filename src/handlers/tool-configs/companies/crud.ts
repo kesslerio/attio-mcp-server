@@ -85,7 +85,7 @@ export const crudToolDefinitions = [
   // Adding it here would cause duplicate tool name conflict in MCP
   {
     name: 'create-company',
-    description: 'Create a new company in Attio',
+    description: 'Create a new company record in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -118,7 +118,7 @@ export const crudToolDefinitions = [
   },
   {
     name: 'update-company',
-    description: 'Update an existing company in Attio',
+    description: 'Update an existing company record in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -166,7 +166,7 @@ export const crudToolDefinitions = [
   },
   {
     name: 'delete-company',
-    description: 'Delete a company from Attio',
+    description: 'Delete a company record from your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
