@@ -26,7 +26,7 @@ vi.mock('../../src/utils/logger.js', () => ({
     error: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
-  },
+  }
 }));
 
 const mockLogger = vi.mocked(logger);

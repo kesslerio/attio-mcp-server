@@ -2,11 +2,7 @@
  * Tests for CLI color utilities
  */
 import { describe, it, expect } from 'vitest';
-import {
-  colorize,
-  colors,
-  type ColorName,
-} from '../../src/utils/cli-colors.js';
+import { colorize, colors, type ColorName } from '../../src/utils/cli-colors.js';
 
 describe('CLI Colors Utility', () => {
   describe('colorize function', () => {
@@ -16,18 +12,9 @@ describe('CLI Colors Utility', () => {
     });
 
     it('should handle all available colors', () => {
-      const colorNames: ColorName[] = [
-        'red',
-        'green',
-        'yellow',
-        'blue',
-        'cyan',
-        'white',
-        'bold',
-        'reset',
-      ];
-
-      colorNames.forEach((color) => {
+      const colorNames: ColorName[] = ['red', 'green', 'yellow', 'blue', 'cyan', 'white', 'bold', 'reset'];
+      
+      colorNames.forEach(color => {
         const result = colorize('test', color);
         expect(result).toContain('test');
         expect(result).toContain('\x1b[0m'); // Reset code
@@ -54,18 +41,9 @@ describe('CLI Colors Utility', () => {
     });
 
     it('should have all expected color properties', () => {
-      const expectedColors = [
-        'red',
-        'green',
-        'yellow',
-        'blue',
-        'cyan',
-        'white',
-        'reset',
-        'bold',
-      ];
-
-      expectedColors.forEach((color) => {
+      const expectedColors = ['red', 'green', 'yellow', 'blue', 'cyan', 'white', 'reset', 'bold'];
+      
+      expectedColors.forEach(color => {
         expect(colors).toHaveProperty(color);
         expect(typeof colors[color as keyof typeof colors]).toBe('string');
       });

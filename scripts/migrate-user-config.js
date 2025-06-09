@@ -24,16 +24,14 @@ function printHeader() {
 
 function printUsage() {
   console.log(colorize('Usage:', 'bold'));
-  console.log('  npm run migrate-config               Run migration');
-  console.log('  npm run migrate-config -- --dry-run     Check what would be migrated');
-  console.log('  npm run migrate-config -- --check       Check migration status only');
-  console.log('  npm run migrate-config -- --help        Show this help\n');
+  console.log('  npm run migrate-config          Run migration');
+  console.log('  npm run migrate-config -- --dry-run    Check what would be migrated');
+  console.log('  npm run migrate-config -- --help       Show this help\n');
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const checkOnly = args.includes('--check');
   const showHelp = args.includes('--help') || args.includes('-h');
 
   printHeader();
@@ -49,12 +47,6 @@ async function main() {
     const detection = detectMigrationNeeds();
 
     if (!detection.exists) {
-      if (checkOnly) {
-        console.log(colorize('\n📊 Check mode - reporting status only', 'cyan'));
-        console.log(colorize('Status: No config file found', 'green'));
-        console.log(colorize('No migration needed', 'green'));
-        process.exit(0);
-      }
       console.log(colorize('✅ No user.json file found - no migration needed', 'green'));
       process.exit(0);
     }
@@ -62,12 +54,6 @@ async function main() {
     console.log(colorize(`📁 Found user config: ${detection.filePath}`, 'white'));
 
     if (!detection.needsMigration) {
-      if (checkOnly) {
-        console.log(colorize('\n📊 Check mode - reporting status only', 'cyan'));
-        console.log(colorize('Status: No migration needed', 'green'));
-        console.log(colorize('Configuration is up to date', 'green'));
-        process.exit(0);
-      }
       console.log(colorize('✅ User configuration is already up to date!', 'green'));
       process.exit(0);
     }
@@ -78,14 +64,6 @@ async function main() {
     detection.outdatedMappings.forEach(mapping => {
       console.log(`  • ${mapping}`);
     });
-
-    if (checkOnly) {
-      console.log(colorize('\n📊 Check mode - reporting status only', 'cyan'));
-      console.log(colorize('Status: Migration needed', 'yellow'));
-      console.log(colorize(`Outdated mappings: ${detection.outdatedMappings.length}`, 'yellow'));
-      console.log(colorize('Run without --check flag to perform migration', 'blue'));
-      process.exit(1); // Exit code 1 indicates migration needed
-    }
 
     if (dryRun) {
       console.log(colorize('\n🔍 Dry run mode - no changes will be made', 'cyan'));

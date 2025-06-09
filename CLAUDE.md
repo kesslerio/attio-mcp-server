@@ -15,30 +15,12 @@ Before building ANY custom solution around third-party libraries:
 4. Consider hybrid approaches using existing tools
 5. Build custom solution ONLY as last resort
 
-🚨 ENHANCED THIRD-PARTY INTEGRATION PROTOCOL (MANDATORY):
-Phase 1: Research & Validation (Before ANY architectural decisions)
-- [ ] REVIEW Standard Documentation: Identify simplest API patterns/SDK functions
-- [ ] CREATE Minimal POC: Test with real/realistic data BEFORE designing larger system
-- [ ] Use `mcp_clear-thought-server_sequentialthinking({stage: "Prototyping"})` to document POC findings
-- [ ] ANALYZE Complexity: Use `mcp_clear-thought-server_mentalmodel({modelName: "First Principles", problem: "Analyze if standard integration approach is truly complex"})` if standard approach seems complex
-
-Phase 2: Decision & Custom Implementation (Only if POC proves standard insufficient)
-- [ ] EVALUATE Standard vs Custom: Use `mcp_clear-thought-server_decisionframework({decisionName: "Standard vs Custom Integration"})`
-- [ ] HANDLE Third-Party Bugs: Use `mcp_clear-thought-server_decisionframework({decisionName: "Fix vs Avoid Bug"})` - DEFAULT to "avoid buggy code path"
-- [ ] DOCUMENT Rationale: Create ADR for any custom solutions
-
-FORBIDDEN PATTERNS:
-- Building custom HTTP clients when maintained SDKs exist
-- Infrastructure-first development without API validation
-- Symptom-driven fixes without root cause analysis
-- Complex workarounds for simple API misunderstanding
-
 🔍 COMPLEXITY AUDIT CHECKLIST:
 When encountering existing complex code:
-- [ ] QUESTION if complexity is necessary
-- [ ] VERIFY if official documentation suggests a simpler approach
-- [ ] TEST if standard APIs achieve the same result
-- [ ] Use `mcp_clear-thought-server_mentalmodel({modelName: "First Principles", problem: "Analyze why this complex code exists"})`
+- [ ] Question: "Is this complexity actually necessary?"
+- [ ] Check: "Does official documentation suggest a simpler approach?"
+- [ ] Test: "Can we achieve the same result with standard APIs?"
+- [ ] Use: mcp__clear-thought-server__mentalmodel with First Principles to analyze why complex code exists
 
 ⚠️  ENGINEERING RED FLAGS (Stop and reassess):
 - Building workarounds for third-party bugs instead of using different APIs
@@ -46,33 +28,37 @@ When encountering existing complex code:
 - Assuming existing complex code is necessary without testing alternatives
 - Continuing to invest in a solution just because you've already spent time on it (sunk cost fallacy)
 
-🎯 QUICK ENGINEERING PRE-FLIGHT CHECKLIST (Before starting ANY coding):
-- [ ] VERIFY Problem Understanding (Use First Principles if complex)
-- [ ] CONFIRM Official Docs Checked & Search Workflow Followed
-- [ ] INITIATE Third-Party Integration Protocol (Research & POC) if applicable
-- [ ] RESEARCH Existing Solutions (Avoid reinventing wheel)
-- [ ] AUDIT Complexity of existing code if modifying
-- [ ] PLAN for Modularity (Files <500 lines, Functions <40 lines)
-- [ ] CONSIDER Impact (Scalability, Maintainability, Performance)
-- [ ] AVOID Red Flags (e.g., complex workarounds for misunderstood APIs)
-
 🎯 THIRD-PARTY INTEGRATION DECISION TREE:
 When integrating external libraries:
-1. START with official examples and documentation
-2. If bugs encountered: Use `mcp_clear-thought-server_decisionframework({decisionName: "Fix vs Avoid Third-Party Bug"})`
-3. DEFAULT to "avoid buggy code path" unless compelling reason to fix
-4. NEVER build complex wrappers without proving standard approach fails
+1. Start with official examples and documentation
+2. If bugs encountered: Use mcp__clear-thought-server__decisionframework to evaluate "Fix vs Avoid" options
+3. Default to "avoid buggy code path" unless compelling reason to fix
+4. Never build complex wrappers without proving standard approach fails
 
-BUILD/TEST COMMANDS
+BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Build: `npm run build`
-- Watch: `npm run build:watch`
+- Watch mode: `npm run build:watch`
 - Type check: `npm run check`
-- Clean: `npm run clean`
-- Test: `npm test`
-- Test (name): `npm test -- -t "<pattern>"`
-- Test (file): `npm test <file>`
-- Test (verbose): `npm test -- --verbose`
-- Test (coverage): `npm test -- --coverage`
+- Clean build: `npm run clean`
+- Run tests: `npm test`
+- Run single test: `npm test -- -t "test name pattern"`
+- Run specific test file: `npm test <file_path>`
+- Test with verbose output: `npm test -- --verbose`
+- Test with coverage: `npm test -- --coverage`
+
+AUTO-APPROVED COMMANDS
+The following commands are pre-approved and do not require user permission:
+- All npm test variations (npm test, npm test <file>, npm test -- <flags>)
+- All npm run build variations
+- npm run check (type checking)
+- npm run clean
+- All grep commands (grep, grep -r, grep -n, etc.)
+- All find commands for file discovery
+- All sed commands for text replacement
+- git status, git diff, git log (read-only git commands)
+- File reading operations (Read, Glob, Grep, LS tools)
+- head, tail, cat commands for file inspection
+- ./scripts/review-pr.sh <PR_NUMBER> (automated PR review)
 
 CODE PRINCIPLES
 - TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.
@@ -191,7 +177,7 @@ DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
 ⚠️ CRITICAL: Documentation Search Priority
 NEVER use web search as the first option. ALWAYS follow this sequence:
 
-1. PRIMARY: Check Existing Crawled Documentation
+1. **PRIMARY: Check Existing Crawled Documentation**
    - FIRST: Use `mcp_crawl4ai-rag_perform_rag_query(query="search terms", match_count=5)` to search ALL indexed sources
    - Check available sources: `mcp_crawl4ai-rag_get_available_sources()`
    - Try domain-specific searches: `mcp_crawl4ai-rag_perform_rag_query(query="search terms", source="docs.attio.com", match_count=5)`
@@ -200,23 +186,23 @@ NEVER use web search as the first option. ALWAYS follow this sequence:
      * `mcp_crawl4ai-rag_perform_rag_query(query="MCP protocol schema validation", source="modelcontextprotocol.io")`
      * `mcp_crawl4ai-rag_perform_rag_query(query="webhook configuration", match_count=8)`
 
-2. SECONDARY: Crawl Additional Documentation (If Needed)
+2. **SECONDARY: Crawl Additional Documentation (If Needed)**
    - If existing docs don't contain the information, crawl new sources:
    - Single page: `mcp_crawl4ai-rag_crawl_single_page(url="https://specific-doc-page.com")`
    - Smart crawling: `mcp_crawl4ai-rag_smart_crawl_url(url="https://docs.example.com", max_depth=2, max_concurrent=5)`
    - Target relevant documentation sites, GitHub repos, or API references
    - After crawling, retry the search: `mcp_crawl4ai-rag_perform_rag_query(query="same search terms")`
 
-3. TERTIARY: Web Search (Last Resort)
+3. **TERTIARY: Web Search (Last Resort)**
    - Only use web search tools if crawled documentation is insufficient
    - Use for real-time information, recent updates, or community discussions
    - Consider crawling any valuable sources found via web search for future use
 
-Currently Indexed Sources:
+**Currently Indexed Sources:**
 - docs.cognee.ai, docs.falkordb.com, modelcontextprotocol.io, github.com (MCP SDKs), yourls.org, docs.attio.com
 - Verify current sources: `mcp_crawl4ai-rag_get_available_sources()`
 
-Examples of Crawl Targets When Extending Documentation:
+**Examples of Crawl Targets When Extending Documentation:**
 - API documentation: `https://docs.attio.com/api/`, `https://docs.github.com/en/rest`
 - Framework docs: `https://vitest.dev/guide/`, `https://nodejs.org/docs/`
 - MCP examples: GitHub repositories with MCP implementations
@@ -251,33 +237,3 @@ EXTERNAL MCP SERVERS (Runtime Dependencies)
   * Purpose: Web crawling and RAG.
   * Tools: get_available_sources(), crawl_single_page(url), smart_crawl_url(url), perform_rag_query(q, source?, match_count?)
   * Setup: Install external server, configure in MCP client.
-
-DEVELOPMENT WORKFLOW & ISSUE LIFECYCLE (Enhanced with Clear Thought Integration)
-
-Phase 1: Issue Definition & Planning
-- UNDERSTAND Problem: For complex issues, Use `mcp_clear-thought-server_mentalmodel({modelName: "First Principles"})` or `mcp_clear-thought-server_sequentialthinking()`
-- EXECUTE Research & Documentation Check: Follow DOCUMENTATION SEARCH WORKFLOW + Third-Party Integration Protocol Phase 1 if applicable
-- ANALYZE Existing Code: Apply COMPLEXITY AUDIT CHECKLIST; Use `mcp_clear-thought-server_mentalmodel({modelName: "First Principles", problem: "Assess necessity of existing complex code"})`
-- DESIGN Solution: Consider `mcp_clear-thought-server_designpattern()` for structure; Use `mcp_clear-thought-server_decisionframework()` for architectural choices
-- CREATE Issue: Include Clear Thought analysis summary if performed
-
-Phase 2: Development & Implementation  
-- APPLY Core Principles:
-  * Modularity & Function Size: Ensure files <500 lines, functions <40 lines. Use `mcp_clear-thought-server_mentalmodel({modelName: "First Principles", problem: "Refactor complex function"})`
-  * Impact Analysis: For non-trivial changes, Use `mcp_clear-thought-server_decisionframework({decisionStatement: "Impact analysis for changes", criteria: ["scalability", "maintainability", "performance", "testability"]})`
-- FOLLOW Third-Party Integration Protocol
-- ADHERE to existing git workflow and regular commits
-
-Phase 3: Debugging & Testing
-- DEBUG Systematically: Apply `mcp_clear-thought-server_debuggingapproach({approachName: "e.g., Binary Search or Divide & Conquer"})`
-- STRATEGIZE Tests: Pre-test analysis with `mcp_clear-thought-server_mentalmodel({modelName: "Error Propagation"})`; failure analysis with `mcp_clear-thought-server_sequentialthinking()`
-- FOLLOW existing testing guidelines with enhanced analysis
-
-Phase 4: Pull Request & Issue Closure
-- DESCRIBE PR: Mention core principles compliance, reference Clear Thought tools used for design decisions
-- FOLLOW existing PR review and issue closure guidelines
-
-LEARNING FROM EXPERIENCE:
-- CONDUCT Post-Mortems: For critical issues, Use `mcp_clear-thought-server_sequentialthinking()` to identify root causes
-- DOCUMENT Anti-Patterns: Add common pitfalls to project documentation
-- REVIEW Past Difficulties: Research previous related challenges before tackling similar tasks
