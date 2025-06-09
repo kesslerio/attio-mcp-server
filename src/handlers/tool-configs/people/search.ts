@@ -57,7 +57,7 @@ export const searchToolConfigs = {
 export const searchToolDefinitions = [
   {
     name: 'search-people',
-    description: 'Search for people in Attio',
+    description: 'Search for people in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -68,7 +68,7 @@ export const searchToolDefinitions = [
   },
   {
     name: 'search-people-by-email',
-    description: 'Search for people by email in Attio',
+    description: 'Search for people by email in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -79,7 +79,7 @@ export const searchToolDefinitions = [
   },
   {
     name: 'search-people-by-phone',
-    description: 'Search for people by phone number in Attio',
+    description: 'Search for people by phone number in your CRM (Attio)',
     inputSchema: {
       type: 'object',
       properties: {
