@@ -25,6 +25,8 @@ export function registerToolHandlers(server: Server): void {
         ...TOOL_DEFINITIONS[ResourceType.COMPANIES],
         ...TOOL_DEFINITIONS[ResourceType.PEOPLE],
         ...TOOL_DEFINITIONS[ResourceType.LISTS],
+        ...TOOL_DEFINITIONS[ResourceType.TASKS],
+        ...TOOL_DEFINITIONS[ResourceType.RECORDS],
       ],
     };
   });
