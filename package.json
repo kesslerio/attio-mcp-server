@@ -18,8 +18,8 @@
     "build:watch": "tsc --watch",
     "lint:check": "wireit",
     "lint:fix": "wireit",
-    "format": "npx prettier --write --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
-    "check:format": "npx prettier --check --config .prettierrc src/**/*.{ts,js} test/**/*.{ts,js} *.ts *.js",
+    "format": "npx prettier --write --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
+    "check:format": "npx prettier --check --config .prettierrc src/**/*.ts test/**/*.ts *.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:offline": "vitest --config vitest.config.offline.ts",
@@ -105,12 +105,11 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint . --ext .ts,.js",
+      "command": "npx eslint . --ext .ts",
       "files": [
-        "src/**/*.{ts,js}",
-        "test/**/*.{ts,js}",
+        "src/**/*.ts",
+        "test/**/*.ts",
         "*.ts",
-        "*.js",
         ".eslintrc.cjs",
         ".eslintignore",
         "tsconfig.json",
@@ -119,12 +118,11 @@
       "output": []
     },
     "lint:fix": {
-      "command": "npx eslint . --ext .ts,.js --fix",
+      "command": "npx eslint . --ext .ts --fix",
       "files": [
-        "src/**/*.{ts,js}",
-        "test/**/*.{ts,js}",
+        "src/**/*.ts",
+        "test/**/*.ts",
         "*.ts",
-        "*.js",
         ".eslintrc.cjs",
         ".eslintignore",
         "tsconfig.json",
