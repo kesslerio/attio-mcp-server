@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp-server",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
   "main": "dist/index.js",
   "module": "dist/index.js",
