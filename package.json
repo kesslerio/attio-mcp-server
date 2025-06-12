@@ -82,7 +82,7 @@
     "yargs": "^17.7.2"
   },
   "author": "@hmk",
-  "license": "BSD-3-Clause",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^5.0.2",
     "@types/jest": "^29.5.14",
