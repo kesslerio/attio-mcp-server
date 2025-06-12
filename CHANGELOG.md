@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated LICENSE from BSD-3-Clause to Apache-2.0 while preserving original BSD license attribution
+- Updated package.json author field to @kesslerio
 
 ## [0.1.0] - 2025-01-06
 

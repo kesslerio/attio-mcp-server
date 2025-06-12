@@ -81,7 +81,7 @@
     "safe-stable-stringify": "^2.5.0",
     "yargs": "^17.7.2"
   },
-  "author": "@hmk",
+  "author": "@kesslerio",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^5.0.2",
