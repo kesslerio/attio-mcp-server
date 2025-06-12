@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -42,7 +42,7 @@
     "test:search": "node test/api/search.test.js",
     "test:lists": "node test/objects/lists.test.js",
     "setup-hooks": "chmod +x build/install-hooks.sh && ./build/install-hooks.sh",
-    "postinstall": "npm run setup-hooks",
+    "postinstall": "[ -d .git ] && npm run setup-hooks || echo 'Skipping git hooks setup (not a git repository)'",
     "test-hooks": "chmod +x build/test-hooks.sh && ./build/test-hooks.sh",
     "docker:build": "chmod +x scripts/docker-build.sh && ./scripts/docker-build.sh",
     "docker:run": "docker run -p 3000:3000 -e ATTIO_API_KEY=${ATTIO_API_KEY} -e ATTIO_WORKSPACE_ID=${ATTIO_WORKSPACE_ID} attio-mcp-server:latest",

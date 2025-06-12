@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-01-06
+
+### Fixed
+- Fixed npm installation failing due to postinstall script trying to setup git hooks in non-git environments
+- Postinstall script now only runs git hooks setup when .git directory exists
+
 ### Changed
 - Updated LICENSE from BSD-3-Clause to Apache-2.0 while preserving original BSD license attribution
 - Updated package.json author field to @kesslerio
@@ -58,5 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Troubleshooting guides
 - Development and contribution guidelines
 
-[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/kesslerio/attio-mcp-server/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kesslerio/attio-mcp-server/releases/tag/v0.1.0
