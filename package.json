@@ -1,5 +1,5 @@
 {
-  "name": "attio-mcp-server",
+  "name": "attio-mcp",
   "version": "0.1.0",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "type": "module",
   "access": "public",
   "bin": {
-    "attio-mcp-server": "dist/index.js",
+    "attio-mcp": "dist/index.js",
     "attio-discover": "dist/cli/discover.js"
   },
   "scripts": {
@@ -68,8 +68,32 @@
     "prepare": "husky"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "attio",
+    "crm",
+    "claude",
+    "ai",
+    "automation",
+    "typescript",
+    "llm",
+    "sales",
+    "marketing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kesslerio/attio-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kesslerio/attio-mcp-server/issues"
+  },
+  "homepage": "https://github.com/kesslerio/attio-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1",
     "@types/handlebars": "^4.0.40",
@@ -79,6 +103,7 @@
     "handlebars": "^4.7.8",
     "ora": "^7.0.1",
     "safe-stable-stringify": "^2.5.0",
+    "user": "^0.0.0",
     "yargs": "^17.7.2"
   },
   "author": "@kesslerio",
