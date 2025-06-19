@@ -1,0 +1,26 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP
+    type: object
+    required:
+      - ATTIO_API_KEY
+    properties:
+      ATTIO_API_KEY:
+        type: string
+        description: "The API key for the Attio CRM server"
+      ATTIO_WORKSPACE_ID:
+        type: string
+        description: "The workspace ID for the Attio CRM server"
+  commandFunction: |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: {
+        ATTIO_API_KEY: config.ATTIO_API_KEY,
+        ATTIO_WORKSPACE_ID: config.ATTIO_WORKSPACE_ID || '',
+        NODE_ENV: 'production'
+      }
+    })

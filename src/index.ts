@@ -142,135 +142,56 @@ async function main() {
     registerToolHandlers(mcpServer);
     registerPromptHandlers(mcpServer);
 
-    // Start health check server (for Docker)
-    let healthCheckPort = 3000; // Default port
-
-    if (process.env.HEALTH_PORT) {
-      healthCheckPort = parseInt(process.env.HEALTH_PORT, 10);
-    } else {
-      // Optional: log a warning if HEALTH_PORT is expected but not found
-      console.warn(
-        '[Main] HEALTH_PORT environment variable not set, defaulting health check to port 3000. Set HEALTH_PORT in your environment if a specific port is needed.'
-      ); // Changed to console.warn
-    }
-
-    const healthServer = startHealthServer({
-      port: healthCheckPort, // Use the determined healthCheckPort
-      maxRetries: 2, // Reduced retries, e.g., try initial + 2 alternatives
-      maxRetryTime: 10000, // Shorter retry window
-      retryBackoff: 500,
-    });
-
-    // If health server started successfully, write current PID
-    // We need to confirm the server is listening before writing the PID.
-    // The startHealthServer would need to be modified to return a promise that resolves on successful listen,
-    // or emit an event. For now, let's assume if no error is thrown by startHealthServer and it returns,
-    // we can write the PID. A more robust approach would involve a callback or promise from startHealthServer.
-
-    let healthServerSuccessfullyStarted = false;
-    if (healthServer) {
-      // Check if healthServer object exists
-      healthServer.on('listening', () => {
-        if (!healthServerSuccessfullyStarted) {
-          // Ensure this runs only once
-          const address = healthServer.address();
-          let listeningPort = 'unknown';
-          if (address && typeof address !== 'string') {
-            // Type guard for AddressInfo
-            listeningPort = address.port.toString();
-          }
-          console.error(
-            `[Main] Health server confirmed listening on port ${listeningPort}. Writing PID: ${process.pid}`
-          ); // Changed to console.error
-          writePidFile(process.pid);
-          healthServerSuccessfullyStarted = true;
-        }
-      });
-      // Handle the case where it might error out immediately if port is taken and no retries succeed.
-      healthServer.on('error', (err: NodeJS.ErrnoException) => {
-        if (!healthServer.listening && !healthServerSuccessfullyStarted) {
-          // Check if it never started listening
-          console.error(
-            '[Main] Health server failed to start listening. PID file will not be written.',
-            err
-          ); // Changed to console.error
-        }
-      });
-    } else {
-      console.error(
-        '[Main] Health server instance was not created. PID file will not be written.'
-      ); // Changed to console.error
-    }
-
-    // Handle graceful shutdown
-    const shutdown = (signal: string) => {
-      // Add signal for logging
-      console.error(`[Shutdown] Received ${signal}. Shutting down servers...`); // Changed to console.error
-      const healthSrv = healthServer as any; // Cast to any to access our custom 'shutdown'
-
-      // Create a promise that resolves when shutdown is complete or times out
-      new Promise<void>((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          console.error(
-            '[Shutdown] Health server shutdown timed out after 5 seconds. Forcing exit.'
-          ); // Changed to console.error
-          reject(new Error('Shutdown timeout')); // Reject on timeout
-        }, 5000);
-
-        if (healthSrv && typeof healthSrv.shutdown === 'function') {
-          healthSrv.shutdown((err?: Error) => {
-            clearTimeout(timeoutId);
-            if (err) {
-              console.error(
-                '[Shutdown] Health server shutdown reported an error:',
-                err
-              ); // Changed to console.error
-              reject(err); // Propagate error
-            } else {
-              console.error('[Shutdown] Health server shutdown complete.'); // Changed to console.error
-              resolve();
-            }
-          });
-        } else if (healthSrv && typeof healthSrv.close === 'function') {
-          // Fallback if our custom shutdown isn't there for some reason
-          console.error('[Shutdown] Health server: Using direct close method.'); // Changed to console.error
-          healthSrv.close((err?: Error) => {
-            clearTimeout(timeoutId);
-            if (err) {
-              console.error(
-                '[Shutdown] Health server direct close reported an error:',
-                err
-              ); // Changed to console.error
-              reject(err);
-            } else {
-              console.error('[Shutdown] Health server direct close complete.'); // Changed to console.error
-              resolve();
-            }
-          });
-        } else {
-          console.warn(
-            '[Shutdown] Health server or its shutdown/close method not found. Exiting directly.'
-          ); // Changed to console.warn
-          clearTimeout(timeoutId);
-          resolve(); // Nothing to shut down, resolve immediately
-        }
-      })
-        .catch((error) => {
-          console.error('[Shutdown] Error during shutdown sequence:', error); // Changed to console.error
-        })
-        .finally(() => {
-          console.error('[Shutdown] Exiting process.'); // Changed to console.error
-          deletePidFile(); // Ensure PID file is deleted on exit
-          process.exit(0);
-        });
-    };
-
-    process.on('SIGINT', () => shutdown('SIGINT')); // Pass signal name
-    process.on('SIGTERM', () => shutdown('SIGTERM')); // Pass signal name
-
-    // Connect to transport
+    // Connect to MCP transport FIRST - critical for Smithery
     const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
+
+    // Write PID file after successful MCP connection
+    writePidFile(process.pid);
+
+    // Start health check server AFTER MCP is connected (for Docker compatibility)
+    // Only start if not running in stdio mode for Smithery
+    if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_HEALTH_SERVER === 'true') {
+      let healthCheckPort = 3000;
+      if (process.env.HEALTH_PORT) {
+        healthCheckPort = parseInt(process.env.HEALTH_PORT, 10);
+      }
+
+      const healthServer = startHealthServer({
+        port: healthCheckPort,
+        maxRetries: 2,
+        maxRetryTime: 5000, // Reduced for faster startup
+        retryBackoff: 250,
+      });
+
+      // Handle graceful shutdown
+      const shutdown = (signal: string) => {
+        console.error(`[Shutdown] Received ${signal}. Shutting down...`);
+        const healthSrv = healthServer as any;
+        
+        if (healthSrv && typeof healthSrv.shutdown === 'function') {
+          healthSrv.shutdown(() => {
+            deletePidFile();
+            process.exit(0);
+          });
+        } else {
+          deletePidFile();
+          process.exit(0);
+        }
+      };
+
+      process.on('SIGINT', () => shutdown('SIGINT'));
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+    } else {
+      // Minimal shutdown handling for stdio mode
+      const cleanup = () => {
+        deletePidFile();
+        process.exit(0);
+      };
+      
+      process.on('SIGINT', cleanup);
+      process.on('SIGTERM', cleanup);
+    }
   } catch (error) {
     console.error('[Main] Error starting server:', error); // Changed to console.error
     deletePidFile(); // Ensure PID file is deleted on error
