@@ -114,7 +114,8 @@ export async function getListEntries(
 
     try {
       // Use our shared utility to transform filters to API format
-      const filterObject = transformFiltersToApiFormat(filters, true);
+      // Pass isListEntryContext=true since we're filtering list entries
+      const filterObject = transformFiltersToApiFormat(filters, true, true);
 
       // Add filter to body if it exists
       if (filterObject.filter) {

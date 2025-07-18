@@ -34,6 +34,7 @@ import {
   ERROR_MESSAGES,
   getFilterExample,
 } from './validation-utils.js';
+import { isListSpecificAttribute } from './utils.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -101,7 +102,8 @@ import {
  */
 export function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
-  validateConditions: boolean = true
+  validateConditions: boolean = true,
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   // Handle undefined/null filters gracefully
   if (!filters) {
@@ -179,12 +181,13 @@ export function transformFiltersToApiFormat(
   if (useOrLogic) {
     return createOrFilterStructure(
       validatedFilters.filters,
-      validateConditions
+      validateConditions,
+      isListEntryContext
     );
   }
 
   // Standard AND logic
-  return createAndFilterStructure(validatedFilters.filters, validateConditions);
+  return createAndFilterStructure(validatedFilters.filters, validateConditions, isListEntryContext);
 }
 
 /**
@@ -197,7 +200,8 @@ export function transformFiltersToApiFormat(
  */
 function createOrFilterStructure(
   filters: ListEntryFilter[],
-  validateConditions: boolean
+  validateConditions: boolean,
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   const orConditions: any[] = [];
 
@@ -248,8 +252,22 @@ function createOrFilterStructure(
     // Create a condition object for this individual filter
     const condition: any = {};
 
-    // Check for special case handling
-    if (
+    // Check if we're in list entry context and this is a list-specific attribute
+    if (isListEntryContext && isListSpecificAttribute(slug)) {
+      // For list-specific attributes, we don't need any path prefix
+      // The API expects these attributes directly at the entry level
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[OR Logic] Using list-specific attribute format for field ${slug}`
+        );
+      }
+
+      // List-specific attributes use direct field access
+      const operator = filter.condition;
+      condition[slug] = {
+        [`$${operator}`]: filter.value,
+      };
+    } else if (
       FIELD_SPECIAL_HANDLING[slug] &&
       FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
     ) {
@@ -266,10 +284,17 @@ function createOrFilterStructure(
       // Standard operator handling for normal fields
       const operator = filter.condition;
 
-      // Create the condition with operator
-      condition[slug] = {
-        [`$${operator}`]: filter.value,
-      };
+      // For parent record attributes in list context, we need to use the record path
+      if (isListEntryContext && !isListSpecificAttribute(slug)) {
+        condition[`record.values.${slug}`] = {
+          [`$${operator}`]: filter.value,
+        };
+      } else {
+        // Standard field access for non-list contexts
+        condition[slug] = {
+          [`$${operator}`]: filter.value,
+        };
+      }
     }
 
     // Add to the OR conditions array
@@ -297,7 +322,8 @@ function createOrFilterStructure(
  */
 function createAndFilterStructure(
   filters: ListEntryFilter[],
-  validateConditions: boolean
+  validateConditions: boolean,
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   const apiFilter: AttioApiFilter = {};
 
@@ -348,8 +374,26 @@ function createAndFilterStructure(
 
     const { slug } = filter.attribute;
 
-    // Check for special case handling
-    if (
+    // Check if we're in list entry context and this is a list-specific attribute
+    if (isListEntryContext && isListSpecificAttribute(slug)) {
+      // For list-specific attributes, we don't need any path prefix
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `[AND Logic] Using list-specific attribute format for field ${slug}`
+        );
+      }
+
+      // List-specific attributes use direct field access
+      const operator = filter.condition;
+      
+      // Initialize attribute entry if needed
+      if (!apiFilter[slug]) {
+        apiFilter[slug] = {};
+      }
+
+      // Add operator with $ prefix
+      apiFilter[slug][`$${operator}`] = filter.value;
+    } else if (
       FIELD_SPECIAL_HANDLING[slug] &&
       FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
     ) {
@@ -373,13 +417,28 @@ function createAndFilterStructure(
       // Standard operator handling for normal fields
       const operator = filter.condition;
 
-      // Initialize attribute entry if needed for operator-based filtering
-      if (!apiFilter[slug]) {
-        apiFilter[slug] = {};
-      }
+      // For parent record attributes in list context, we need to use the record path
+      if (isListEntryContext && !isListSpecificAttribute(slug)) {
+        const fieldPath = `record.values.${slug}`;
+        
+        // Initialize attribute entry if needed for operator-based filtering
+        if (!apiFilter[fieldPath]) {
+          apiFilter[fieldPath] = {};
+        }
 
-      // Add operator with $ prefix as required by Attio API
-      apiFilter[slug][`$${operator}`] = filter.value;
+        // Add operator with $ prefix as required by Attio API
+        apiFilter[fieldPath][`$${operator}`] = filter.value;
+      } else {
+        // Standard field access for non-list contexts
+        
+        // Initialize attribute entry if needed for operator-based filtering
+        if (!apiFilter[slug]) {
+          apiFilter[slug] = {};
+        }
+
+        // Add operator with $ prefix as required by Attio API
+        apiFilter[slug][`$${operator}`] = filter.value;
+      }
     }
 
     hasValidFilters = true;

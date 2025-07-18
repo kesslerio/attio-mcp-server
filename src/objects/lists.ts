@@ -712,6 +712,115 @@ export async function getRecordListMemberships(
 }
 
 /**
+ * Filters list entries by a specific attribute
+ *
+ * This function allows filtering list entries based on any attribute, including
+ * list-specific attributes (like stage, status) and parent record attributes.
+ *
+ * @param listId - The ID of the list to filter entries from
+ * @param attributeSlug - The attribute to filter by (e.g., 'stage', 'status', 'name')
+ * @param condition - The filter condition to apply
+ * @param value - The value to filter by
+ * @param limit - Maximum number of entries to fetch (default: 20)
+ * @param offset - Number of entries to skip (default: 0)
+ * @returns Array of filtered list entries
+ *
+ * @example
+ * // Filter by list-specific stage attribute
+ * const entries = await filterListEntries(
+ *   'list_12345',
+ *   'stage',
+ *   'equals',
+ *   'Contacted'
+ * );
+ */
+export async function filterListEntries(
+  listId: string,
+  attributeSlug: string,
+  condition: string,
+  value: any,
+  limit: number = 20,
+  offset: number = 0
+): Promise<AttioListEntry[]> {
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+
+  if (!attributeSlug || typeof attributeSlug !== 'string') {
+    throw new Error('Invalid attribute slug: Must be a non-empty string');
+  }
+
+  if (!condition || typeof condition !== 'string') {
+    throw new Error('Invalid condition: Must be a non-empty string');
+  }
+
+  // Create filter structure
+  const filters = {
+    filters: [
+      {
+        attribute: { slug: attributeSlug },
+        condition,
+        value,
+      },
+    ],
+    matchAny: false,
+  };
+
+  // Use getListEntries with filters
+  return getListEntries(listId, limit, offset, filters);
+}
+
+/**
+ * Advanced filtering of list entries with multiple conditions
+ *
+ * This function allows filtering list entries using complex filter logic with
+ * multiple conditions, AND/OR operators, and support for both list-specific
+ * and parent record attributes.
+ *
+ * @param listId - The ID of the list to filter entries from
+ * @param filters - Advanced filter configuration with multiple conditions
+ * @param limit - Maximum number of entries to fetch (default: 20)
+ * @param offset - Number of entries to skip (default: 0)
+ * @returns Array of filtered list entries
+ *
+ * @example
+ * // Filter by multiple conditions with OR logic
+ * const entries = await advancedFilterListEntries(
+ *   'list_12345',
+ *   {
+ *     filters: [
+ *       { attribute: { slug: 'stage' }, condition: 'equals', value: 'Contacted' },
+ *       { attribute: { slug: 'stage' }, condition: 'equals', value: 'Demo' }
+ *     ],
+ *     matchAny: true
+ *   }
+ * );
+ */
+export async function advancedFilterListEntries(
+  listId: string,
+  filters: ListEntryFilters,
+  limit: number = 20,
+  offset: number = 0
+): Promise<AttioListEntry[]> {
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+
+  if (!filters || typeof filters !== 'object') {
+    throw new Error('Invalid filters: Must be an object');
+  }
+
+  if (!filters.filters || !Array.isArray(filters.filters)) {
+    throw new Error('Invalid filters: Must contain a filters array');
+  }
+
+  // Use getListEntries with filters
+  return getListEntries(listId, limit, offset, filters);
+}
+
+/**
  * Filters list entries based on parent record properties using path-based filtering
  *
  * This function allows filtering list entries based on properties of their parent records,

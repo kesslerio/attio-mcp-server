@@ -157,6 +157,63 @@ export function isTextAttribute(attributeSlug: string): boolean {
 }
 
 /**
+ * List-specific attributes that are stored directly on list entries
+ * These attributes are not part of the parent record but are specific to the list context
+ */
+const LIST_SPECIFIC_ATTRIBUTES = [
+  'stage',
+  'Stage',
+  'status',
+  'Status',
+  'priority',
+  'Priority',
+  'score',
+  'Score',
+  'rating',
+  'Rating',
+  'lead_rating',
+  'Lead Rating',
+  'value',
+  'Value',
+  'notes',
+  'Notes',
+  'list_notes',
+  'List Notes',
+];
+
+/**
+ * Determines if an attribute is list-specific (stored on the list entry itself)
+ * rather than on the parent record (company, person, etc.)
+ *
+ * @param attributeSlug - The attribute slug to check
+ * @returns True if the attribute is list-specific
+ */
+export function isListSpecificAttribute(attributeSlug: string): boolean {
+  // Check if it's in our known list-specific attributes
+  if (LIST_SPECIFIC_ATTRIBUTES.includes(attributeSlug)) {
+    return true;
+  }
+  
+  // Check if it's a UUID (attribute IDs are list-specific)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(attributeSlug)) {
+    return true;
+  }
+  
+  // Check for common patterns in list-specific attribute names
+  const listPatterns = [
+    /^list[_\s]/i,
+    /[_\s]stage$/i,
+    /[_\s]status$/i,
+    /[_\s]priority$/i,
+    /[_\s]score$/i,
+    /[_\s]rating$/i,
+  ];
+  
+  return listPatterns.some(pattern => pattern.test(attributeSlug));
+}
+
+/**
  * Helper function to extract attribute mappings as needed
  * Re-exports builder functions as utilities for backward compatibility
  */
