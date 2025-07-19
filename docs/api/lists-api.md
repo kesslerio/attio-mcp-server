@@ -32,18 +32,36 @@ Who's in our "High Priority Prospects" list?
 
 ### Filtering List Entries
 
-You can filter list entries by their attributes to find specific records:
+You can filter list entries by their attributes to find specific records. It's important to understand that there are two types of attributes you can filter by:
 
+#### List-Specific Attributes
+
+These are attributes that belong to the list entry itself, not the parent record. Common examples include:
+- `stage` - The current stage in a pipeline (e.g., "Contacted", "Demo", "Negotiation")
+- `status` - The status of an entry (e.g., "Active", "On Hold", "Completed")
+- `priority` - Priority level (e.g., "High", "Medium", "Low")
+- `rating` or `lead_rating` - Rating values specific to the list
+- `notes` - Notes added to the list entry
+- `value` - Value fields for deal amounts or scores
+
+Example:
 ```
 Find all companies in the "Sales Pipeline" list with stage equal to "Discovery"
 ```
 
-```
-Show me people in the "Candidates" list with status equal to "Interview Scheduled"
-```
+#### Parent Record Attributes
 
+These are attributes of the parent record (company, person, etc.) that the list entry references:
+- `name` - Name of the company or person
+- `email` - Email address
+- `website` - Company website
+- `industry` - Company industry
+- `phone` - Phone number
+- Any custom fields on the parent record
+
+Example:
 ```
-List deals in our "Q3 Opportunities" list with value greater than 50000
+Show me companies in the "Sales Pipeline" list where the company industry contains "Technology"
 ```
 
 The filter-list-entries tool supports these conditions:
@@ -76,7 +94,7 @@ For comprehensive documentation on advanced filtering capabilities, including ex
 
 #### Complex Filter Examples
 
-Here are some examples of advanced filter scenarios:
+Here are some examples of advanced filter scenarios. Note that when filtering list entries, the system automatically distinguishes between list-specific attributes (like stage, status) and parent record attributes (like company name, email):
 
 **Combined Conditions with AND logic:**
 ```javascript
@@ -131,6 +149,57 @@ const filters = {
       attribute: { slug: "created_at" },
       condition: "greater_than",
       value: "2023-01-01T00:00:00Z"
+    }
+  ]
+};
+```
+
+**List-Specific vs Parent Record Filtering:**
+```javascript
+// Filter by list-specific attributes (stage, status, priority)
+const listSpecificFilter = {
+  filters: [
+    {
+      attribute: { slug: "stage" },
+      condition: "equals",
+      value: "Contacted"
+    },
+    {
+      attribute: { slug: "priority" },
+      condition: "equals",
+      value: "High"
+    }
+  ]
+};
+
+// Filter by parent record attributes (company fields)
+const parentRecordFilter = {
+  filters: [
+    {
+      attribute: { slug: "name" },  // Company name
+      condition: "contains",
+      value: "Tech"
+    },
+    {
+      attribute: { slug: "industry" },  // Company industry
+      condition: "equals",
+      value: "Software"
+    }
+  ]
+};
+
+// Combine both types in one filter
+const combinedFilter = {
+  filters: [
+    {
+      attribute: { slug: "stage" },  // List-specific
+      condition: "equals",
+      value: "Demo"
+    },
+    {
+      attribute: { slug: "industry" },  // Parent company attribute
+      condition: "contains",
+      value: "Healthcare"
     }
   ]
 };

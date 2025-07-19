@@ -121,6 +121,33 @@ Troubleshooting:
 git rm --cached <path> && git commit --amend && git push -f origin <branch>
 git fetch upstream && git rebase upstream/main && git push -f origin <branch>
 
+RELEASE PROCESS (AUTO-APPROVED)
+
+Automated Release Workflow:
+1. Use scripts/release.sh for automated releases:
+   ./scripts/release.sh
+   - Validates clean branch state
+   - Prompts for version bump (major.minor.patch)
+   - Updates package.json version
+   - Builds and tests project
+   - Updates CHANGELOG.md with release notes
+   - Creates git tag and GitHub release
+   - Publishes to npm registry
+
+2. Manual Release Commands:
+   npm version patch|minor|major     # Bump version
+   npm run build && npm test         # Validate
+   git add . && git commit -m "Release: vX.X.X"
+   git tag vX.X.X && git push origin vX.X.X
+   gh release create vX.X.X --notes "Release notes"
+   npm publish                       # Publish to npm
+
+3. CHANGELOG.md Management:
+   - Follow Keep a Changelog format (https://keepachangelog.com/)
+   - Update [Unreleased] section during development
+   - Move to versioned section during release
+   - Include: Added, Changed, Deprecated, Removed, Fixed, Security sections
+
 ISSUE MANAGEMENT (ENHANCED WITH CLEAR THOUGHT)
 
 ⚠️ CRITICAL WORKFLOW: Issue Work Checklist

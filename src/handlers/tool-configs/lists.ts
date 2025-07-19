@@ -7,6 +7,8 @@ import {
   getLists,
   getListDetails,
   getListEntries,
+  filterListEntries,
+  advancedFilterListEntries,
   addRecordToList,
   removeRecordFromList,
   updateListEntry,
@@ -123,30 +125,7 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
-    handler: (
-      listId: string,
-      attributeSlug: string,
-      condition: string,
-      value: any,
-      limit?: number,
-      offset?: number
-    ) => {
-      // Create filter structure
-      const filters = {
-        filters: [
-          {
-            attribute: {
-              slug: attributeSlug,
-            },
-            condition: condition,
-            value: value,
-          },
-        ],
-      };
-
-      // Call getListEntries with filters
-      return getListEntries(listId, limit || 20, offset || 0, filters);
-    },
+    handler: filterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       return `Found ${results.length} filtered entries in list:\n${results
         .map((entry: AttioListEntry) => {
@@ -171,23 +150,7 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
 
   advancedFilterListEntries: {
     name: 'advanced-filter-list-entries',
-    handler: (
-      listId: string,
-      filters: {
-        filters: Array<{
-          attribute: { slug: string };
-          condition: string;
-          value: any;
-          logicalOperator?: 'and' | 'or';
-        }>;
-        matchAny?: boolean;
-      },
-      limit?: number,
-      offset?: number
-    ) => {
-      // Call getListEntries with the advanced filters
-      return getListEntries(listId, limit || 20, offset || 0, filters);
-    },
+    handler: advancedFilterListEntries,
     formatResult: (results: AttioListEntry[]) => {
       return `Found ${results.length} filtered entries in list:\n${results
         .map((entry: AttioListEntry) => {
