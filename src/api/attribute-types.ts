@@ -287,9 +287,12 @@ export async function getFieldValidationRules(
     const config = typeInfo.metadata.config;
     if (typeInfo.attioType === 'select') {
       // Handle both direct options and nested select.options
-      const options = (config as any)?.options || (config as any)?.select?.options;
+      const options =
+        (config as any)?.options || (config as any)?.select?.options;
       if (options) {
-        rules.enum = options.map((opt: { value: string | number | boolean }) => opt.value);
+        rules.enum = options.map(
+          (opt: { value: string | number | boolean }) => opt.value
+        );
       }
     }
   }
