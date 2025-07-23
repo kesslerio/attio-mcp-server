@@ -29,11 +29,11 @@ export function createAttioApiClient(
 
   instance.interceptors.response.use(
     (response: AxiosResponse) => response,
-    async (error: AxiosError | any) => {
+    async (error: unknown) => {
       // Enhanced logging to inspect the error object thoroughly
       console.error(
         '[Interceptor] Raw error received by interceptor. Message:',
-        error?.message
+        error instanceof Error ? error.message : 'Unknown error'
       );
       console.error('[Interceptor] Is Axios Error:', axios.isAxiosError(error));
 
@@ -58,8 +58,9 @@ export function createAttioApiClient(
           console.error(
             `[Interceptor] API Error: ${
               axiosError.response.status
-            } ${axiosError.config?.method?.toUpperCase()} ${axiosError.config
-              ?.url}`
+            } ${axiosError.config?.method?.toUpperCase()} ${
+              axiosError.config?.url
+            }`
           );
           // console.error('[Interceptor] Full error.response object:', JSON.stringify(axiosError.response)); // Can be very verbose
 

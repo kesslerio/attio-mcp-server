@@ -98,7 +98,8 @@ export const searchToolDefinitions = [
   },
   {
     name: 'advanced-search-companies',
-    description: 'Search for companies in your CRM using advanced filtering capabilities',
+    description:
+      'Search for companies in your CRM using advanced filtering capabilities',
     inputSchema: {
       type: 'object',
       properties: {

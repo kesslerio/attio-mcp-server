@@ -23,8 +23,11 @@ export interface AttioAttributeMetadata {
   is_multiselect?: boolean;
   is_default_value_enabled?: boolean;
   is_archived?: boolean;
-  default_value?: any;
-  relationship?: any;
+  default_value?: string | number | boolean | null | Record<string, unknown>;
+  relationship?: {
+    object?: string;
+    cardinality?: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
+  } | null;
   created_at?: string;
   config?: {
     currency?: {
@@ -108,7 +111,13 @@ export async function detectFieldType(
 
   // Map Attio types to our internal types
   const isMultiple =
-    attrMetadata.is_multiselect || (attrMetadata as any).allow_multiple_values;
+    attrMetadata.is_multiselect ||
+    ('allow_multiple_values' in attrMetadata &&
+      (
+        attrMetadata as AttioAttributeMetadata & {
+          allow_multiple_values?: boolean;
+        }
+      ).allow_multiple_values);
 
   switch (attrMetadata.type) {
     case 'text':
@@ -249,11 +258,11 @@ export async function getFieldValidationRules(
   pattern?: string;
   minLength?: number;
   maxLength?: number;
-  enum?: any[];
+  enum?: (string | number | boolean)[];
 }> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
-  const rules: any = {
+  const rules: Record<string, unknown> = {
     type: typeInfo.fieldType,
     required: typeInfo.isRequired,
     unique: typeInfo.isUnique,
@@ -275,13 +284,29 @@ export async function getFieldValidationRules(
     }
 
     // Add enum values for select fields
-    const config = typeInfo.metadata.config as any;
-    if (typeInfo.attioType === 'select' && config?.options) {
-      rules.enum = config.options.map((opt: any) => opt.value);
+    const config = typeInfo.metadata.config;
+    if (typeInfo.attioType === 'select') {
+      // Handle both direct options and nested select.options
+      const options =
+        (config as any)?.options || (config as any)?.select?.options;
+      if (options) {
+        rules.enum = options.map(
+          (opt: { value: string | number | boolean }) => opt.value
+        );
+      }
     }
   }
 
-  return rules;
+  return rules as {
+    type: string;
+    required: boolean;
+    unique: boolean;
+    allowMultiple: boolean;
+    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
+    enum?: (string | number | boolean)[];
+  };
 }
 
 /**
@@ -295,7 +320,14 @@ export async function getFieldValidationRules(
 export async function formatAttributeValue(
   objectSlug: string,
   attributeSlug: string,
-  value: any
+  value:
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | Array<string | number | boolean>
+    | Record<string, unknown>
 ): Promise<any> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
@@ -334,7 +366,7 @@ export async function formatAttributeValue(
       // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue.map((v: any) => ({ value: v }));
+        return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };
       }
@@ -361,10 +393,11 @@ export async function formatAttributeValue(
         return value;
       }
 
-    case 'email-address':
+    case 'email-address': {
       // Email is an array field but doesn't need value wrapping
       const emails = Array.isArray(value) ? value : [value];
       return emails;
+    }
 
     case 'domain':
       // Domain fields are like email - array but no value wrapping
@@ -421,14 +454,25 @@ export async function formatAttributeValue(
  */
 export async function formatAllAttributes(
   objectSlug: string,
-  attributes: Record<string, any>
-): Promise<Record<string, any>> {
-  const formatted: Record<string, any> = {};
+  attributes: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const formatted: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(attributes)) {
     if (value !== undefined) {
       // Handle null values explicitly - format them according to Attio's expected structure
-      formatted[key] = await formatAttributeValue(objectSlug, key, value);
+      formatted[key] = await formatAttributeValue(
+        objectSlug,
+        key,
+        value as
+          | string
+          | number
+          | boolean
+          | null
+          | undefined
+          | Array<string | number | boolean>
+          | Record<string, unknown>
+      );
     }
   }
 

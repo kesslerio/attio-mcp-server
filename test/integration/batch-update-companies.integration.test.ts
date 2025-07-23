@@ -3,7 +3,7 @@
  * Verifies that the fix for issue #154 works with the actual API
  *
  * This test requires a valid ATTIO_API_KEY in environment variables
- * To run: ATTIO_API_KEY=your_key npm test -- integration/batch-update-companies.integration.test.js
+ * To run: ATTIO_API_KEY=your_key npm test -- integration/batch-update-companies.integration.test.ts
  *
  * The test performs the following steps:
  * 1. Creates test companies to work with
@@ -12,12 +12,13 @@
  * 4. Cleans up by deleting the test companies
  */
 
-const {
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import {
   batchCreateCompanies,
   batchUpdateCompanies,
   batchDeleteCompanies,
-} = require('../../dist/objects/batch-companies');
-const { ResourceType } = require('../../dist/types/attio');
+} from '../../src/objects/batch-companies.js';
+import { ResourceType } from '../../src/types/attio.js';
 
 // Skip tests if no API key is available or SKIP_INTEGRATION_TESTS is set
 const shouldRunTests =
@@ -55,7 +56,7 @@ describe('Batch Company Operations - Integration', () => {
   });
 
   // Prepare test data and cleanup afterward
-  let createdCompanies = [];
+  let createdCompanies: Array<{ id: string; name: string }> = [];
 
   beforeAll(async () => {
     if (!shouldRunTests) return;
@@ -66,8 +67,8 @@ describe('Batch Company Operations - Integration', () => {
 
       // Store created companies for later use
       createdCompanies = createResult.results
-        .filter((r) => r.success)
-        .map((r) => ({
+        .filter((r: any) => r.success)
+        .map((r: any) => ({
           id: r.data.id?.record_id,
           name: r.data.values?.name?.[0]?.value,
         }));
@@ -117,7 +118,7 @@ describe('Batch Company Operations - Integration', () => {
       expect(updateResult.summary.failed).toBe(0);
 
       // Verify each company was updated successfully
-      updateResult.results.forEach((result) => {
+      updateResult.results.forEach((result: any) => {
         expect(result.success).toBe(true);
         expect(result.data.values?.industry?.[0]?.value).toBe(
           'Updated Batch Industry'

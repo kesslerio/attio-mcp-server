@@ -360,12 +360,13 @@ describe('Date Utils', () => {
       expect(yearRange).toHaveProperty('start');
       expect(yearRange).toHaveProperty('end');
 
-      // All end dates should be the same (now)
+      // All end dates should be approximately the same (now)
+      // Allow for small timing differences (up to 100ms) between calls
       const endTime = new Date(dayRange.end).getTime();
-      expect(new Date(weekRange.end).getTime()).toBe(endTime);
-      expect(new Date(monthRange.end).getTime()).toBe(endTime);
-      expect(new Date(quarterRange.end).getTime()).toBe(endTime);
-      expect(new Date(yearRange.end).getTime()).toBe(endTime);
+      expect(new Date(weekRange.end).getTime()).toBeCloseTo(endTime, -2); // within 100ms
+      expect(new Date(monthRange.end).getTime()).toBeCloseTo(endTime, -2);
+      expect(new Date(quarterRange.end).getTime()).toBeCloseTo(endTime, -2);
+      expect(new Date(yearRange.end).getTime()).toBeCloseTo(endTime, -2);
 
       // Start dates should be ordered correctly (relative to each other)
       // Year should be oldest, then quarter, month, week, day

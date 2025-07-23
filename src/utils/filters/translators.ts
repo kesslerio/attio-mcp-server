@@ -187,7 +187,11 @@ export function transformFiltersToApiFormat(
   }
 
   // Standard AND logic
-  return createAndFilterStructure(validatedFilters.filters, validateConditions, isListEntryContext);
+  return createAndFilterStructure(
+    validatedFilters.filters,
+    validateConditions,
+    isListEntryContext
+  );
 }
 
 /**
@@ -385,7 +389,7 @@ function createAndFilterStructure(
 
       // List-specific attributes use direct field access
       const operator = filter.condition;
-      
+
       // Initialize attribute entry if needed
       if (!apiFilter[slug]) {
         apiFilter[slug] = {};
@@ -420,7 +424,7 @@ function createAndFilterStructure(
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         const fieldPath = `record.values.${slug}`;
-        
+
         // Initialize attribute entry if needed for operator-based filtering
         if (!apiFilter[fieldPath]) {
           apiFilter[fieldPath] = {};
@@ -430,7 +434,7 @@ function createAndFilterStructure(
         apiFilter[fieldPath][`$${operator}`] = filter.value;
       } else {
         // Standard field access for non-list contexts
-        
+
         // Initialize attribute entry if needed for operator-based filtering
         if (!apiFilter[slug]) {
           apiFilter[slug] = {};

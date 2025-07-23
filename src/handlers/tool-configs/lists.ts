@@ -276,7 +276,8 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
 export const listsToolDefinitions = [
   {
     name: 'get-lists',
-    description: 'Get all CRM lists from Attio (sales pipelines, lead stages, customer segments, etc.)',
+    description:
+      'Get all CRM lists from Attio (sales pipelines, lead stages, customer segments, etc.)',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -318,7 +319,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'get-list-details',
-    description: 'Get details for a specific CRM list (pipeline stages, field configuration, etc.)',
+    description:
+      'Get details for a specific CRM list (pipeline stages, field configuration, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -491,7 +493,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'add-record-to-list',
-    description: 'Add a company or person to a CRM list (sales pipeline, lead list, etc.)',
+    description:
+      'Add a company or person to a CRM list (sales pipeline, lead list, etc.)',
     inputSchema: {
       type: 'object',
       properties: {

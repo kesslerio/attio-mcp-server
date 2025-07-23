@@ -91,6 +91,9 @@ export async function executeToolRequest(request: CallToolRequest) {
   let timer: PerformanceTimer | undefined;
   let toolType: string | undefined;
 
+  // Note: Argument normalization is handled in the request handler (Issue #344)
+  // This dispatcher expects normalized requests with proper arguments structure
+
   try {
     const toolInfo = findToolConfig(toolName);
 

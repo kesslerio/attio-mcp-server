@@ -151,7 +151,10 @@ async function main() {
 
     // Start health check server AFTER MCP is connected (for Docker compatibility)
     // Only start if not running in stdio mode for Smithery
-    if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_HEALTH_SERVER === 'true') {
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      process.env.ENABLE_HEALTH_SERVER === 'true'
+    ) {
       let healthCheckPort = 3000;
       if (process.env.HEALTH_PORT) {
         healthCheckPort = parseInt(process.env.HEALTH_PORT, 10);
@@ -168,7 +171,7 @@ async function main() {
       const shutdown = (signal: string) => {
         console.error(`[Shutdown] Received ${signal}. Shutting down...`);
         const healthSrv = healthServer as any;
-        
+
         if (healthSrv && typeof healthSrv.shutdown === 'function') {
           healthSrv.shutdown(() => {
             deletePidFile();
@@ -188,7 +191,7 @@ async function main() {
         deletePidFile();
         process.exit(0);
       };
-      
+
       process.on('SIGINT', cleanup);
       process.on('SIGTERM', cleanup);
     }
