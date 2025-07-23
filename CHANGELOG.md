@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-01-23
+
+### Fixed
+- Fixed MCP tool calls failing with missing arguments wrapper (#344, #345)
+- Fixed list filtering for list-specific attributes (#341)
+- Fixed MCP stdio communication for Smithery deployment
+- Fixed TypeScript type issues and improved type safety
+- Fixed unnecessary try/catch warnings
+- Fixed lexical declaration in case block
+- Fixed flaky date test for Node v22.x
+
+### Changed
+- Updated form-data dependency from 4.0.1 to 4.0.4 for security
+- Improved error handling and logging for tool dispatch
+- Enhanced list filtering with proper attribute type handling
+- Better CI/CD with prettier formatting and type checking
+
+### Added
+- Claude PR Assistant workflow for automated PR reviews (#342)
+- Enhanced MCP tool argument handling with automatic wrapper
+- Improved documentation for list filtering and attribute types
+
 ## [0.1.1] - 2025-01-06
 
 ### Fixed
