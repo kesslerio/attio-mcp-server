@@ -58,6 +58,9 @@ export function logToolRequest(
 ): PerformanceTimer {
   const logger = createToolLogger(toolName, toolType);
 
+  // Enhanced logging to debug MCP protocol issues
+  const debugMode = process.env.MCP_DEBUG_REQUESTS === 'true';
+  
   const requestData = {
     toolType,
     toolName,
@@ -65,10 +68,34 @@ export function logToolRequest(
       ? Object.keys(request.params.arguments).length
       : 0,
     hasArguments: !!request.params.arguments,
+    // Log full request structure in debug mode
+    ...(debugMode && {
+      rawRequest: {
+        method: (request as any).method,
+        params: request.params,
+        jsonrpc: (request as any).jsonrpc,
+        id: (request as any).id,
+      },
+      paramsKeys: Object.keys(request.params || {}),
+      argumentsStructure: request.params.arguments 
+        ? Object.keys(request.params.arguments)
+        : 'missing',
+    }),
     ...(process.env.NODE_ENV === 'development' && {
       arguments: request.params.arguments,
     }),
   };
+
+  // Log warning if arguments are missing (helps diagnose protocol issues)
+  if (!request.params.arguments && debugMode) {
+    warn(
+      `tool:${toolName}`,
+      `Tool called without arguments wrapper - params keys: ${Object.keys(request.params || {}).join(', ')}`,
+      { params: request.params },
+      toolType,
+      OperationType.TOOL_EXECUTION
+    );
+  }
 
   return logger.operationStart(
     'execute',

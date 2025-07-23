@@ -91,6 +91,14 @@ export async function executeToolRequest(request: CallToolRequest) {
   let timer: PerformanceTimer | undefined;
   let toolType: string | undefined;
 
+  // Additional safety check for missing arguments wrapper (Issue #344)
+  if (!request.params.arguments && process.env.MCP_DEBUG_REQUESTS === 'true') {
+    console.error('[Dispatcher] Warning: Tool request missing arguments wrapper', {
+      tool: toolName,
+      params: request.params,
+    });
+  }
+
   try {
     const toolInfo = findToolConfig(toolName);
 
@@ -128,7 +136,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
     } else if (toolType === 'searchByCompany') {
       // Use the tool config's own handler and format the result
-      const rawResult = await toolConfig.handler(request.params.arguments);
+      // Add fallback for missing arguments wrapper (Issue #344)
+      const args = request.params.arguments || {};
+      const rawResult = await toolConfig.handler(args);
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
