@@ -46,18 +46,13 @@ export async function batchCreateRecords<T extends AttioRecord>(
   const path = `${objectPath}/records/batch`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.post<AttioListResponse<T>>(path, {
-        records: params.records.map((record) => ({
-          attributes: record.attributes,
-        })),
-      });
+    const response = await api.post<AttioListResponse<T>>(path, {
+      records: params.records.map((record) => ({
+        attributes: record.attributes,
+      })),
+    });
 
-      return response.data.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    return response.data.data || [];
   }, retryConfig);
 }
 
@@ -77,19 +72,14 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   const path = `${objectPath}/records/batch`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.patch<AttioListResponse<T>>(path, {
-        records: params.records.map((record) => ({
-          id: record.id,
-          attributes: record.attributes,
-        })),
-      });
+    const response = await api.patch<AttioListResponse<T>>(path, {
+      records: params.records.map((record) => ({
+        id: record.id,
+        attributes: record.attributes,
+      })),
+    });
 
-      return response.data.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    return response.data.data || [];
   }, retryConfig);
 }
 
