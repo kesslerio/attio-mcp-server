@@ -150,11 +150,10 @@ describe('Real API Integration Tests', () => {
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
 
-      const foundPerson = results.find(
-        (p) =>
-          p.values.email_addresses?.some(
-            (e: any) => e.email_address === testPersonEmail
-          )
+      const foundPerson = results.find((p) =>
+        p.values.email_addresses?.some(
+          (e: any) => e.email_address === testPersonEmail
+        )
       );
       expect(foundPerson).toBeDefined();
     });

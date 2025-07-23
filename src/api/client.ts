@@ -58,8 +58,9 @@ export function createAttioApiClient(
           console.error(
             `[Interceptor] API Error: ${
               axiosError.response.status
-            } ${axiosError.config?.method?.toUpperCase()} ${axiosError.config
-              ?.url}`
+            } ${axiosError.config?.method?.toUpperCase()} ${
+              axiosError.config?.url
+            }`
           );
           // console.error('[Interceptor] Full error.response object:', JSON.stringify(axiosError.response)); // Can be very verbose
 

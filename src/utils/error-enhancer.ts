@@ -61,8 +61,9 @@ interface ErrorContext {
 function parseApiError(error: any): ErrorContext {
   console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
   console.error(
-    `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${error
-      ?.constructor?.name}`
+    `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${
+      error?.constructor?.name
+    }`
   );
 
   if (error && typeof error === 'object') {
