@@ -60,7 +60,7 @@ export function logToolRequest(
 
   // Enhanced logging to debug MCP protocol issues
   const debugMode = process.env.MCP_DEBUG_REQUESTS === 'true';
-  
+
   const requestData = {
     toolType,
     toolName,
@@ -77,7 +77,7 @@ export function logToolRequest(
         id: (request as any).id,
       },
       paramsKeys: Object.keys(request.params || {}),
-      argumentsStructure: request.params.arguments 
+      argumentsStructure: request.params.arguments
         ? Object.keys(request.params.arguments)
         : 'missing',
     }),
@@ -90,7 +90,9 @@ export function logToolRequest(
   if (!request.params.arguments && debugMode) {
     warn(
       `tool:${toolName}`,
-      `Tool called without arguments wrapper - params keys: ${Object.keys(request.params || {}).join(', ')}`,
+      `Tool called without arguments wrapper - params keys: ${Object.keys(
+        request.params || {}
+      ).join(', ')}`,
       { params: request.params },
       toolType,
       OperationType.TOOL_EXECUTION

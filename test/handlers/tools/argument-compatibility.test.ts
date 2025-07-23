@@ -22,7 +22,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Create a mock server
     server = {
       setRequestHandler: vi.fn((schema, handler) => {
@@ -48,7 +48,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       };
 
       const result = await requestHandler(request);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     });
@@ -63,7 +63,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     });
@@ -77,7 +77,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       };
 
       const result = await requestHandler(request);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     });
@@ -95,15 +95,17 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     });
 
     it('should preserve properly wrapped arguments without modification', async () => {
-      const { executeToolRequest } = await import('../../../src/handlers/tools/dispatcher.js');
+      const { executeToolRequest } = await import(
+        '../../../src/handlers/tools/dispatcher.js'
+      );
       const mockedExecute = vi.mocked(executeToolRequest);
-      
+
       const request: CallToolRequest = {
         params: {
           name: 'search-companies',
@@ -115,7 +117,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       };
 
       await requestHandler(request);
-      
+
       // Verify the normalized request preserves the wrapped structure
       const calledWith = mockedExecute.mock.calls[0][0];
       expect(calledWith.params.arguments).toEqual({
@@ -125,9 +127,11 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     });
 
     it('should wrap loose arguments correctly', async () => {
-      const { executeToolRequest } = await import('../../../src/handlers/tools/dispatcher.js');
+      const { executeToolRequest } = await import(
+        '../../../src/handlers/tools/dispatcher.js'
+      );
       const mockedExecute = vi.mocked(executeToolRequest);
-      
+
       const request = {
         params: {
           name: 'search-companies',
@@ -137,7 +141,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       await requestHandler(request);
-      
+
       // Verify the arguments were wrapped
       const calledWith = mockedExecute.mock.calls[0][0];
       expect(calledWith.params.name).toBe('search-companies');
@@ -157,7 +161,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
     });
@@ -171,15 +175,17 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       // Should still return a result (error handling is in the dispatcher)
       expect(result).toBeDefined();
     });
 
     it('should not wrap arguments if they already exist', async () => {
-      const { executeToolRequest } = await import('../../../src/handlers/tools/dispatcher.js');
+      const { executeToolRequest } = await import(
+        '../../../src/handlers/tools/dispatcher.js'
+      );
       const mockedExecute = vi.mocked(executeToolRequest);
-      
+
       const request = {
         params: {
           name: 'search-companies',
@@ -189,7 +195,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       await requestHandler(request);
-      
+
       const calledWith = mockedExecute.mock.calls[0][0];
       expect(calledWith.params.arguments).toEqual({
         query: 'Already wrapped',
@@ -206,7 +212,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       expect(result.isError).toBe(true);
       expect(result.error?.type).toBe('normalization_error');
       expect(result.error?.message).toContain('missing params or tool name');
@@ -224,7 +230,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       } as any;
 
       const result = await requestHandler(request);
-      
+
       expect(result.isError).toBe(true);
       expect(result.error?.type).toBe('normalization_error');
       expect(result.error?.message).toContain('Tool arguments too large');

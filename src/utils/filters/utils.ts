@@ -193,13 +193,14 @@ export function isListSpecificAttribute(attributeSlug: string): boolean {
   if (LIST_SPECIFIC_ATTRIBUTES.includes(attributeSlug)) {
     return true;
   }
-  
+
   // Check if it's a UUID (attribute IDs are list-specific)
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (uuidRegex.test(attributeSlug)) {
     return true;
   }
-  
+
   // Check for common patterns in list-specific attribute names
   const listPatterns = [
     /^list[_\s]/i,
@@ -209,8 +210,8 @@ export function isListSpecificAttribute(attributeSlug: string): boolean {
     /[_\s]score$/i,
     /[_\s]rating$/i,
   ];
-  
-  return listPatterns.some(pattern => pattern.test(attributeSlug));
+
+  return listPatterns.some((pattern) => pattern.test(attributeSlug));
 }
 
 /**
