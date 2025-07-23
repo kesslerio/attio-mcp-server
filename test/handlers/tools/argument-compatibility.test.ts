@@ -197,5 +197,37 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       // The loose 'query' parameter should not be included
       expect((calledWith.params as any).query).toBeUndefined();
     });
+
+    it('should validate request structure', async () => {
+      const request = {
+        params: {
+          // Missing name
+        },
+      } as any;
+
+      const result = await requestHandler(request);
+      
+      expect(result.isError).toBe(true);
+      expect(result.error?.type).toBe('normalization_error');
+      expect(result.error?.message).toContain('missing params or tool name');
+    });
+
+    it('should reject oversized arguments', async () => {
+      const largeString = 'x'.repeat(1024 * 1024 + 1); // Over 1MB
+      const request = {
+        params: {
+          name: 'search-companies',
+          arguments: {
+            query: largeString,
+          },
+        },
+      } as any;
+
+      const result = await requestHandler(request);
+      
+      expect(result.isError).toBe(true);
+      expect(result.error?.type).toBe('normalization_error');
+      expect(result.error?.message).toContain('Tool arguments too large');
+    });
   });
 });

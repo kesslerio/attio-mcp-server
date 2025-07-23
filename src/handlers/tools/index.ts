@@ -8,22 +8,54 @@ import {
   CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../types/attio.js';
+import { warn } from '../../utils/logger.js';
 
 // Import from modular components
 import { TOOL_DEFINITIONS } from './registry.js';
 import { executeToolRequest } from './dispatcher.js';
 
+// Constants for configuration
+const DEBUG_ENV_VAR = 'MCP_DEBUG_REQUESTS';
+const MAX_ARGUMENT_SIZE = 1024 * 1024; // 1MB limit for arguments
+
+/**
+ * Extended type to handle requests with loose arguments
+ */
+interface LooseCallToolRequest extends Omit<CallToolRequest, 'params'> {
+  params: {
+    name: string;
+    arguments?: Record<string, unknown>;
+    [key: string]: unknown; // Allow additional properties
+  };
+}
+
 /**
  * Normalize tool request to handle missing arguments wrapper
  * Fixes Issue #344: MCP protocol mismatch where arguments are not wrapped
  * 
- * @param request - The incoming tool request
+ * This function handles two cases:
+ * 1. Standard format: { name: "tool", arguments: { query: "value" } }
+ * 2. Loose format: { name: "tool", query: "value" }
+ * 
+ * @param request - The incoming tool request (may have loose arguments)
  * @returns Normalized request with proper arguments structure
  */
-function normalizeToolRequest(request: CallToolRequest): CallToolRequest {
-  // If arguments are already properly wrapped, clean up any extra params
-  if (request.params.arguments) {
+function normalizeToolRequest(request: CallToolRequest | LooseCallToolRequest): CallToolRequest {
+  // Validate request structure
+  if (!request.params || typeof request.params.name !== 'string') {
+    throw new Error('Invalid tool request: missing params or tool name');
+  }
+
+  // Type guard to check if arguments are already properly wrapped
+  if ('arguments' in request.params && request.params.arguments !== undefined) {
+    // Validate argument size to prevent DoS
+    const argSize = JSON.stringify(request.params.arguments).length;
+    if (argSize > MAX_ARGUMENT_SIZE) {
+      throw new Error(`Tool arguments too large: ${argSize} bytes (max: ${MAX_ARGUMENT_SIZE})`);
+    }
+
     // Return clean request with only name and arguments
+    // This ensures no extra parameters pollute the request
     return {
       ...request,
       params: {
@@ -33,20 +65,33 @@ function normalizeToolRequest(request: CallToolRequest): CallToolRequest {
     };
   }
 
-  // Extract the tool name to exclude it from arguments
-  const { name, ...potentialArgs } = request.params as any;
+  // Handle loose arguments format
+  const params = request.params as LooseCallToolRequest['params'];
+  const { name, arguments: _, ...potentialArgs } = params;
   
   // If there are additional params beyond 'name', treat them as arguments
   const hasAdditionalParams = Object.keys(potentialArgs).length > 0;
   
   if (hasAdditionalParams) {
-    // Log the normalization for debugging
-    if (process.env.MCP_DEBUG_REQUESTS === 'true') {
-      console.error('[MCP Normalization] Wrapping loose arguments:', {
-        tool: name,
-        originalParams: request.params,
-        wrappedArgs: potentialArgs,
-      });
+    // Validate argument size
+    const argSize = JSON.stringify(potentialArgs).length;
+    if (argSize > MAX_ARGUMENT_SIZE) {
+      throw new Error(`Tool arguments too large: ${argSize} bytes (max: ${MAX_ARGUMENT_SIZE})`);
+    }
+
+    // Use structured logging instead of console.error
+    if (process.env[DEBUG_ENV_VAR] === 'true') {
+      warn(
+        'tool:normalization',
+        'Normalizing loose arguments format (Issue #344)',
+        {
+          tool: name,
+          originalParamKeys: Object.keys(request.params),
+          normalizedArgKeys: Object.keys(potentialArgs),
+          argumentCount: Object.keys(potentialArgs).length,
+        },
+        'normalization'
+      );
     }
     
     // Create normalized request with wrapped arguments
@@ -60,7 +105,13 @@ function normalizeToolRequest(request: CallToolRequest): CallToolRequest {
   }
   
   // No additional params, tool might not need arguments
-  return request;
+  return {
+    ...request,
+    params: {
+      name: request.params.name,
+      arguments: undefined,
+    },
+  };
 }
 
 /**
@@ -84,9 +135,27 @@ export function registerToolHandlers(server: Server): void {
 
   // Handler for calling tools
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    // Normalize request to handle missing arguments wrapper (Issue #344)
-    const normalizedRequest = normalizeToolRequest(request);
-    return await executeToolRequest(normalizedRequest);
+    try {
+      // Normalize request to handle missing arguments wrapper (Issue #344)
+      // Cast is safe because we're handling the protocol mismatch
+      const normalizedRequest = normalizeToolRequest(request as CallToolRequest | LooseCallToolRequest);
+      return await executeToolRequest(normalizedRequest);
+    } catch (error) {
+      // Handle normalization errors
+      const errorMessage = error instanceof Error ? error.message : 'Unknown normalization error';
+      return {
+        content: [{
+          type: 'text',
+          text: `Error normalizing tool request: ${errorMessage}`,
+        }],
+        isError: true,
+        error: {
+          code: 400,
+          message: errorMessage,
+          type: 'normalization_error',
+        },
+      };
+    }
   });
 }
 

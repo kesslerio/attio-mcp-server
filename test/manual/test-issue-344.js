@@ -15,8 +15,8 @@ process.env.MCP_DEBUG_REQUESTS = 'true';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { initializeAttioClient } from '../../dist/api/attio-client.js';
-import { registerToolHandlers } from '../../dist/handlers/tools/index.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { registerToolHandlers } from '../../src/handlers/tools/index.js';
 
 console.error('\n=== Issue #344 Test Script ===\n');
 console.error('This script tests both wrapped and unwrapped argument formats.\n');
