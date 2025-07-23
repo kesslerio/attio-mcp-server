@@ -23,8 +23,11 @@ export interface AttioAttributeMetadata {
   is_multiselect?: boolean;
   is_default_value_enabled?: boolean;
   is_archived?: boolean;
-  default_value?: any;
-  relationship?: any;
+  default_value?: string | number | boolean | null | Record<string, unknown>;
+  relationship?: {
+    object?: string;
+    cardinality?: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
+  } | null;
   created_at?: string;
   config?: {
     currency?: {
@@ -108,7 +111,7 @@ export async function detectFieldType(
 
   // Map Attio types to our internal types
   const isMultiple =
-    attrMetadata.is_multiselect || (attrMetadata as any).allow_multiple_values;
+    attrMetadata.is_multiselect || ('allow_multiple_values' in attrMetadata && (attrMetadata as AttioAttributeMetadata & { allow_multiple_values?: boolean }).allow_multiple_values);
 
   switch (attrMetadata.type) {
     case 'text':
@@ -249,11 +252,11 @@ export async function getFieldValidationRules(
   pattern?: string;
   minLength?: number;
   maxLength?: number;
-  enum?: any[];
+  enum?: (string | number | boolean)[];
 }> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
-  const rules: any = {
+  const rules: Record<string, unknown> = {
     type: typeInfo.fieldType,
     required: typeInfo.isRequired,
     unique: typeInfo.isUnique,
@@ -277,7 +280,7 @@ export async function getFieldValidationRules(
     // Add enum values for select fields
     const config = typeInfo.metadata.config as any;
     if (typeInfo.attioType === 'select' && config?.options) {
-      rules.enum = config.options.map((opt: any) => opt.value);
+      rules.enum = config.options.map((opt) => opt.value);
     }
   }
 
@@ -295,8 +298,8 @@ export async function getFieldValidationRules(
 export async function formatAttributeValue(
   objectSlug: string,
   attributeSlug: string,
-  value: any
-): Promise<any> {
+  value: string | number | boolean | null | undefined | Array<string | number | boolean> | Record<string, unknown>
+): Promise<string | number | boolean | null | Array<string | number | boolean | { value: string | number | boolean }> | { value: string | number | boolean } | Record<string, unknown>> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
   // Handle null/undefined values
@@ -334,7 +337,7 @@ export async function formatAttributeValue(
       // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue.map((v: any) => ({ value: v }));
+        return arrayValue.map((v) => ({ value: v }));
       } else {
         return { value };
       }
