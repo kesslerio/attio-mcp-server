@@ -43,7 +43,7 @@ export const tasksToolConfigs = {
 export const tasksToolDefinitions = [
   {
     name: 'list-tasks',
-    description: 'List tasks in the workspace',
+    description: 'List CRM tasks in the workspace (follow-ups, meetings, sales activities)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -56,7 +56,7 @@ export const tasksToolDefinitions = [
   },
   {
     name: 'create-task',
-    description: 'Create a new task',
+    description: 'Create a new CRM task (follow-up, meeting, sales activity)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -70,7 +70,7 @@ export const tasksToolDefinitions = [
   },
   {
     name: 'update-task',
-    description: 'Update an existing task',
+    description: 'Update an existing CRM task (change status, due date, assignment)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -85,7 +85,7 @@ export const tasksToolDefinitions = [
   },
   {
     name: 'delete-task',
-    description: 'Delete a task',
+    description: 'Delete a CRM task from the workspace',
     inputSchema: {
       type: 'object',
       properties: { taskId: { type: 'string' } },
