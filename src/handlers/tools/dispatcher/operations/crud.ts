@@ -56,10 +56,15 @@ export async function handleUpdateOperation(
   resourceType: ResourceType
 ) {
   try {
+    // Support multiple parameter names for ID
+    // recordId is the generic parameter used by update-record
+    // companyId/personId are resource-specific parameters
+    const recordId = request.params.arguments?.recordId as string;
     const id =
-      resourceType === ResourceType.COMPANIES
+      recordId ||
+      (resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
-        : (request.params.arguments?.personId as string);
+        : (request.params.arguments?.personId as string));
 
     const attributes = request.params.arguments?.attributes;
 
@@ -67,10 +72,17 @@ export async function handleUpdateOperation(
       const idParamName =
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
-        new Error(`${idParamName} parameter is required for update operation`),
+        new Error(
+          `ID parameter is required for update operation. ` +
+          `Expected 'recordId' or '${idParamName}' parameter.`
+        ),
         `/${resourceType}`,
         'PUT',
-        { status: 400, message: `Missing required parameter: ${idParamName}` }
+        {
+          status: 400,
+          message: `Missing required parameter: recordId or ${idParamName}`,
+          hint: `For generic record updates use 'recordId', for specific resource types use '${idParamName}'`,
+        }
       );
     }
 
@@ -108,10 +120,13 @@ export async function handleUpdateAttributeOperation(
   resourceType: ResourceType
 ) {
   try {
+    // Support multiple parameter names for ID
+    const recordId = request.params.arguments?.recordId as string;
     const id =
-      resourceType === ResourceType.COMPANIES
+      recordId ||
+      (resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
-        : (request.params.arguments?.personId as string);
+        : (request.params.arguments?.personId as string));
 
     const attributeName = request.params.arguments?.attributeName as string;
     const value = request.params.arguments?.value;
@@ -121,11 +136,16 @@ export async function handleUpdateAttributeOperation(
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(
-          `${idParamName} parameter is required for updateAttribute operation`
+          `ID parameter is required for updateAttribute operation. ` +
+          `Expected 'recordId' or '${idParamName}' parameter.`
         ),
         `/${resourceType}`,
         'PATCH',
-        { status: 400, message: `Missing required parameter: ${idParamName}` }
+        {
+          status: 400,
+          message: `Missing required parameter: recordId or ${idParamName}`,
+          hint: `For generic record updates use 'recordId', for specific resource types use '${idParamName}'`,
+        }
       );
     }
 

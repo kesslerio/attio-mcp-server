@@ -72,6 +72,13 @@ export async function processFieldValue(
       return convertToBoolean(value);
     }
 
+    if (fieldType === 'number' && typeof value === 'string') {
+      const numValue = Number(value);
+      if (!isNaN(numValue)) {
+        return numValue;
+      }
+    }
+
     if (fieldType === 'array' && typeof value === 'string') {
       return [value];
     }
@@ -84,6 +91,23 @@ export async function processFieldValue(
         return convertToBoolean(value);
       } catch {
         // swallow errors and fall through to return original value
+      }
+    }
+
+    // Fallback for number fields based on field name patterns
+    if (
+      (fieldName.toLowerCase().includes('score') ||
+        fieldName.toLowerCase().includes('count') ||
+        fieldName.toLowerCase().includes('amount') ||
+        fieldName.toLowerCase().includes('revenue') ||
+        fieldName.toLowerCase().includes('employees') ||
+        fieldName.toLowerCase().includes('funding') ||
+        fieldName.toLowerCase().includes('rating')) &&
+      typeof value === 'string'
+    ) {
+      const numValue = Number(value);
+      if (!isNaN(numValue)) {
+        return numValue;
       }
     }
 

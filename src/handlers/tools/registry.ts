@@ -25,6 +25,10 @@ import {
   recordToolConfigs,
   recordToolDefinitions,
 } from '../tool-configs/records/index.js';
+import {
+  generalToolConfigs,
+  generalToolDefinitions,
+} from '../tool-configs/general/index.js';
 
 /**
  * Consolidated tool configurations from modular files
@@ -35,6 +39,7 @@ export const TOOL_CONFIGS = {
   [ResourceType.LISTS]: listsToolConfigs,
   [ResourceType.TASKS]: tasksToolConfigs,
   [ResourceType.RECORDS]: recordToolConfigs,
+  GENERAL: generalToolConfigs,
   // Add other resource types as needed
 };
 
@@ -47,6 +52,7 @@ export const TOOL_DEFINITIONS = {
   [ResourceType.LISTS]: listsToolDefinitions,
   [ResourceType.TASKS]: tasksToolDefinitions,
   [ResourceType.RECORDS]: recordToolDefinitions,
+  GENERAL: generalToolDefinitions,
   // Add other resource types as needed
 };
 
@@ -71,6 +77,7 @@ export function findToolConfig(toolName: string):
     console.error(`[findToolConfig] Looking for tool: ${toolName}`);
   }
 
+  // Search in resource-specific tools first
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
@@ -134,6 +141,26 @@ export function findToolConfig(toolName: string):
 
         return {
           resourceType: resourceType as ResourceType,
+          toolConfig: config as ToolConfig,
+          toolType,
+        };
+      }
+    }
+  }
+
+  // Search in general tools if not found in resource-specific tools
+  const generalConfig = TOOL_CONFIGS.GENERAL;
+  if (generalConfig) {
+    for (const [toolType, config] of Object.entries(generalConfig)) {
+      if (config && config.name === toolName) {
+        if (debugMode) {
+          console.error(
+            `[findToolConfig] Found tool: ${toolName}, type: ${toolType}, category: GENERAL`
+          );
+        }
+
+        return {
+          resourceType: 'GENERAL' as any, // Using 'GENERAL' as a special marker
           toolConfig: config as ToolConfig,
           toolType,
         };
