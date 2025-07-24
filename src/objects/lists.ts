@@ -280,7 +280,9 @@ export async function addRecordToList(
 
   // Validate required objectType parameter
   if (!objectType || typeof objectType !== 'string') {
-    throw new Error('Object type is required: Must be a non-empty string (e.g., "companies", "people")');
+    throw new Error(
+      'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
+    );
   }
 
   if (!Object.values(ResourceType).includes(objectType as ResourceType)) {

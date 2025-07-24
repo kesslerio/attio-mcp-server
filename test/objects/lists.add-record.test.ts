@@ -104,18 +104,18 @@ describe('addRecordToList Tests', () => {
   });
 
   it('should throw an error for invalid listId', async () => {
-    await expect(addRecordToList('', 'valid-record-id', 'companies')).rejects.toThrow(
-      'Invalid list ID'
-    );
+    await expect(
+      addRecordToList('', 'valid-record-id', 'companies')
+    ).rejects.toThrow('Invalid list ID');
     await expect(
       addRecordToList(null as unknown as string, 'valid-record-id', 'companies')
     ).rejects.toThrow('Invalid list ID');
   });
 
   it('should throw an error for invalid recordId', async () => {
-    await expect(addRecordToList('valid-list-id', '', 'companies')).rejects.toThrow(
-      'Invalid record ID'
-    );
+    await expect(
+      addRecordToList('valid-list-id', '', 'companies')
+    ).rejects.toThrow('Invalid record ID');
     await expect(
       addRecordToList('valid-list-id', null as unknown as string, 'companies')
     ).rejects.toThrow('Invalid record ID');
