@@ -244,7 +244,7 @@ export function formatErrorResponse(
 
   // Prevent "undefined" from being returned as an error message
   let errorMessage = normalizedError.message || 'An unknown error occurred';
-  
+
   // Enhance error message with examples if details contain context
   if (details && (details.toolName || details.paramName || details.path)) {
     errorMessage = enhanceErrorMessage(errorMessage, type, {
@@ -360,7 +360,10 @@ export function createErrorResult(
   error: Error | any,
   url: string,
   method: string,
-  responseData: AttioErrorResponse & { toolName?: string; paramName?: string } = {}
+  responseData: AttioErrorResponse & {
+    toolName?: string;
+    paramName?: string;
+  } = {}
 ) {
   // Ensure we have a valid error object to work with
   const normalizedError =

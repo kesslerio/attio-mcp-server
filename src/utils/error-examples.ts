@@ -1,6 +1,6 @@
 /**
  * Error examples utility
- * 
+ *
  * Provides helpful examples for common error scenarios to enhance error messages
  */
 
@@ -45,7 +45,10 @@ export function getErrorExamples(
           },
           tip: 'The filters parameter must contain a "filters" property with an array of filter conditions',
         });
-      } else if (context.paramName === 'updates' || context.paramName === 'attributes') {
+      } else if (
+        context.paramName === 'updates' ||
+        context.paramName === 'attributes'
+      ) {
         examples.push({
           description: 'Correct attributes format',
           example: {
@@ -68,12 +71,16 @@ export function getErrorExamples(
       break;
 
     case ErrorType.VALIDATION_ERROR:
-      if (context.expectedType === 'number' && typeof context.actualValue === 'string') {
+      if (
+        context.expectedType === 'number' &&
+        typeof context.actualValue === 'string'
+      ) {
         examples.push({
-          description: 'String values for numeric fields are automatically converted',
+          description:
+            'String values for numeric fields are automatically converted',
           example: {
             lead_score: '90', // Will be converted to 90
-            team_size: '50',  // Will be converted to 50
+            team_size: '50', // Will be converted to 50
           },
           tip: 'You can provide numeric values as strings - they will be converted automatically',
         });
@@ -82,8 +89,8 @@ export function getErrorExamples(
           description: 'Boolean field formats',
           example: {
             is_customer: true,
-            active: 'true',     // String 'true' is accepted
-            verified: 1,        // 1 is accepted as true
+            active: 'true', // String 'true' is accepted
+            verified: 1, // 1 is accepted as true
           },
           tip: 'Boolean fields accept: true/false, "true"/"false", 1/0',
         });
@@ -137,13 +144,13 @@ export function enhanceErrorMessage(
   }
 ): string {
   const examples = getErrorExamples(errorType, context);
-  
+
   if (examples.length === 0) {
     return originalMessage;
   }
 
   let enhancedMessage = originalMessage;
-  
+
   examples.forEach((example) => {
     enhancedMessage += `\n\n${example.description}:`;
     enhancedMessage += `\n${JSON.stringify(example.example, null, 2)}`;
