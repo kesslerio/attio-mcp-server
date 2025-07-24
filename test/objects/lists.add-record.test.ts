@@ -54,42 +54,14 @@ describe('addRecordToList Tests', () => {
     });
   });
 
-  it('should use default objectType if not provided', async () => {
-    // Mock the API client
-    const mockPost = vi.fn().mockResolvedValue({
-      data: {
-        data: {
-          id: { entry_id: 'new-entry-id' },
-          parent_record_id: 'test-record-id',
-        },
-      },
-    });
-
-    vi.spyOn(attioClient, 'getAttioClient').mockReturnValue({
-      post: mockPost,
-      get: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    });
-
-    // Mock the generic function to throw so we test the fallback
-    vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
-      new Error('Test error')
-    );
-
-    // Call the function without objectType
+  it('should throw error when objectType is not provided', async () => {
+    // Call the function without objectType - should throw validation error
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
 
-    await addRecordToList(listId, recordId);
-
-    // Verify API was called with default objectType 'companies'
-    expect(mockPost).toHaveBeenCalledWith(`/lists/${listId}/entries`, {
-      data: {
-        parent_record_id: recordId,
-        parent_object: 'companies',
-      },
-    });
+    await expect(addRecordToList(listId, recordId)).rejects.toThrow(
+      'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
+    );
   });
 
   it('should omit entry_values if initialValues not provided', async () => {
@@ -132,20 +104,20 @@ describe('addRecordToList Tests', () => {
   });
 
   it('should throw an error for invalid listId', async () => {
-    await expect(addRecordToList('', 'valid-record-id')).rejects.toThrow(
+    await expect(addRecordToList('', 'valid-record-id', 'companies')).rejects.toThrow(
       'Invalid list ID'
     );
     await expect(
-      addRecordToList(null as unknown as string, 'valid-record-id')
+      addRecordToList(null as unknown as string, 'valid-record-id', 'companies')
     ).rejects.toThrow('Invalid list ID');
   });
 
   it('should throw an error for invalid recordId', async () => {
-    await expect(addRecordToList('valid-list-id', '')).rejects.toThrow(
+    await expect(addRecordToList('valid-list-id', '', 'companies')).rejects.toThrow(
       'Invalid record ID'
     );
     await expect(
-      addRecordToList('valid-list-id', null as unknown as string)
+      addRecordToList('valid-list-id', null as unknown as string, 'companies')
     ).rejects.toThrow('Invalid record ID');
   });
 
@@ -233,12 +205,13 @@ describe('addRecordToList Tests', () => {
       new Error('Test error')
     );
 
-    // Call the function
+    // Call the function with required objectType parameter
     const listId = 'test-list-id';
     const recordId = 'invalid-id';
+    const objectType = 'companies';
 
     // Should throw with formatted validation errors
-    await expect(addRecordToList(listId, recordId)).rejects.toThrow(
+    await expect(addRecordToList(listId, recordId, objectType)).rejects.toThrow(
       'Validation error adding record to list: data.parent_record_id: Invalid record ID format; data.parent_object: Invalid object type'
     );
   });

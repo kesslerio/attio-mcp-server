@@ -334,7 +334,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'get-list-entries',
-    description: 'Get entries for a specific list',
+    description: 'Get entries for a specific CRM list (companies, people, etc. in sales pipelines)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -356,7 +356,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries',
-    description: 'Filter entries in a list by a specific attribute',
+    description: 'Filter entries in a CRM list by a specific attribute (e.g., stage, status)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -407,7 +407,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'advanced-filter-list-entries',
-    description: 'Filter entries in a list with advanced multiple conditions',
+    description: 'Filter entries in a CRM list with advanced multiple conditions (complex sales pipeline queries)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -522,7 +522,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'remove-record-from-list',
-    description: 'Remove a record from a list',
+    description: 'Remove a company or person from a CRM list (sales pipeline, lead list, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -571,7 +571,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent',
-    description: 'Filter list entries based on parent record properties',
+    description: 'Filter CRM list entries based on parent record properties (find companies by industry, people by role, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -634,7 +634,7 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent-id',
-    description: 'Filter list entries by parent record ID',
+    description: 'Filter CRM list entries by parent record ID (find all lists containing a specific company or person)',
     inputSchema: {
       type: 'object',
       properties: {

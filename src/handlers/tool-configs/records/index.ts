@@ -169,7 +169,7 @@ export const recordToolConfigs = {
 export const recordToolDefinitions = [
   {
     name: 'create-record',
-    description: 'Create a new record in Attio',
+    description: 'Create a new CRM record in Attio (company, person, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -191,7 +191,7 @@ export const recordToolDefinitions = [
   },
   {
     name: 'get-record',
-    description: 'Get details of a specific record',
+    description: 'Get details of a specific CRM record (company, person, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -220,7 +220,7 @@ export const recordToolDefinitions = [
   },
   {
     name: 'update-record',
-    description: 'Update a specific record',
+    description: 'Update a specific CRM record (company, person, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -268,7 +268,7 @@ export const recordToolDefinitions = [
   },
   {
     name: 'list-records',
-    description: 'List records with filtering options',
+    description: 'List CRM records with filtering options (companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -314,7 +314,7 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-create-records',
-    description: 'Create multiple records in a single batch operation',
+    description: 'Create multiple CRM records in a single batch operation (bulk import companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -339,7 +339,7 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-update-records',
-    description: 'Update multiple records in a single batch operation',
+    description: 'Update multiple CRM records in a single batch operation (bulk update companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {

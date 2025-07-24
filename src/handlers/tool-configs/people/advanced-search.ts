@@ -28,7 +28,7 @@ export const advancedSearchToolConfigs = {
 export const advancedSearchToolDefinitions = [
   {
     name: 'advanced-search-people',
-    description: 'Search for people using advanced filtering capabilities',
+    description: 'Search for people in your CRM using advanced filtering capabilities (contacts, leads, team members)',
     inputSchema: {
       type: 'object',
       properties: {

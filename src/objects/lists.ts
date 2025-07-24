@@ -259,14 +259,14 @@ export async function getListEntries(
  *
  * @param listId - The ID of the list
  * @param recordId - The ID of the record to add
- * @param objectType - Optional object type ('companies', 'people', etc.)
+ * @param objectType - Required object type ('companies', 'people', etc.)
  * @param initialValues - Optional initial values for the list entry (e.g., stage)
  * @returns The created list entry
  */
 export async function addRecordToList(
   listId: string,
   recordId: string,
-  objectType?: string,
+  objectType: string,
   initialValues?: Record<string, any>
 ): Promise<AttioListEntry> {
   // Input validation to ensure required parameters
@@ -278,11 +278,12 @@ export async function addRecordToList(
     throw new Error('Invalid record ID: Must be a non-empty string');
   }
 
-  // Validate objectType if provided
-  if (
-    objectType &&
-    !Object.values(ResourceType).includes(objectType as ResourceType)
-  ) {
+  // Validate required objectType parameter
+  if (!objectType || typeof objectType !== 'string') {
+    throw new Error('Object type is required: Must be a non-empty string (e.g., "companies", "people")');
+  }
+
+  if (!Object.values(ResourceType).includes(objectType as ResourceType)) {
     const validTypes = Object.values(ResourceType).join(', ');
     throw new Error(
       `Invalid object type: "${objectType}". Must be one of: ${validTypes}`
@@ -311,15 +312,12 @@ export async function addRecordToList(
     const api = getAttioClient();
     const path = `/lists/${listId}/entries`;
 
-    // Default object type to 'companies' if not specified
-    const safeObjectType = objectType || 'companies';
-
     // Construct the proper API payload according to Attio API requirements
     // The API expects parent_record_id, parent_object, and optionally entry_values
     const payload = {
       data: {
         parent_record_id: recordId,
-        parent_object: safeObjectType,
+        parent_object: objectType,
         // Only include entry_values if initialValues is provided
         ...(initialValues && { entry_values: initialValues }),
       },
@@ -330,7 +328,7 @@ export async function addRecordToList(
         `[addRecordToList:fallback] Request to ${path} with payload:`,
         JSON.stringify(payload)
       );
-      console.log(`Object Type: ${safeObjectType}`);
+      console.log(`Object Type: ${objectType}`);
       if (initialValues) {
         console.log(`Initial Values: ${JSON.stringify(initialValues)}`);
       }
