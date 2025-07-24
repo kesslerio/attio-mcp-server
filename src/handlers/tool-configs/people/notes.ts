@@ -23,7 +23,9 @@ export const notesToolConfigs = {
               note.timestamp || 'unknown'
             })\n  ${
               note.content
-                ? note.content.substring(0, 100) + '...'
+                ? note.content.length > 100
+                  ? note.content.substring(0, 100) + '...'
+                  : note.content
                 : 'No content'
             }`
         )
@@ -63,9 +65,13 @@ export const notesToolDefinitions = [
           type: 'string',
           description: 'ID of the person to create a note for',
         },
+        title: {
+          type: 'string',
+          description: 'Title of the note (required)',
+        },
         content: { type: 'string', description: 'Content of the note' },
       },
-      required: ['personId', 'content'],
+      required: ['personId', 'title', 'content'],
     },
   },
 ];

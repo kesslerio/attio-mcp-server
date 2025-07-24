@@ -5,7 +5,7 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
+import { createErrorResult, ErrorType } from '../../../../utils/error-handler.js';
 import { ResourceType } from '../../../../types/attio.js';
 import { AdvancedSearchToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';

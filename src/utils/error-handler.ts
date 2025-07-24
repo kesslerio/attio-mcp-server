@@ -3,6 +3,7 @@
  */
 import { AttioErrorResponse } from '../types/attio.js';
 import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
+import { enhanceErrorMessage } from './error-examples.js';
 
 /**
  * Enum for categorizing different types of errors
@@ -242,7 +243,18 @@ export function formatErrorResponse(
       : new Error(typeof error === 'string' ? error : 'Unknown error');
 
   // Prevent "undefined" from being returned as an error message
-  const errorMessage = normalizedError.message || 'An unknown error occurred';
+  let errorMessage = normalizedError.message || 'An unknown error occurred';
+  
+  // Enhance error message with examples if details contain context
+  if (details && (details.toolName || details.paramName || details.path)) {
+    errorMessage = enhanceErrorMessage(errorMessage, type, {
+      toolName: details.toolName,
+      paramName: details.paramName,
+      expectedType: details.expectedType,
+      actualValue: details.actualValue,
+      path: details.path || details.url,
+    });
+  }
 
   // Determine appropriate status code based on error type
   const errorCode =
@@ -348,7 +360,7 @@ export function createErrorResult(
   error: Error | any,
   url: string,
   method: string,
-  responseData: AttioErrorResponse = {}
+  responseData: AttioErrorResponse & { toolName?: string; paramName?: string } = {}
 ) {
   // Ensure we have a valid error object to work with
   const normalizedError =
@@ -394,6 +406,8 @@ export function createErrorResult(
         detail: apiError.detail,
         responseData: apiError.responseData,
         originalError: normalizedError.message,
+        toolName: responseData.toolName,
+        paramName: responseData.paramName,
       };
 
       return formatErrorResponse(apiError, apiError.type, errorDetails);
