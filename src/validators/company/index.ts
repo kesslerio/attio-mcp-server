@@ -268,7 +268,16 @@ export class CompanyValidator {
         break;
       case 'number':
         if (typeof value !== 'number') {
-          throw new InvalidCompanyFieldTypeError(field, 'number', actualType);
+          // Allow strings that can be converted to numbers
+          if (typeof value === 'string') {
+            const numValue = Number(value);
+            if (isNaN(numValue)) {
+              throw new InvalidCompanyFieldTypeError(field, 'number', actualType);
+            }
+            // String is convertible to number, allow it
+          } else {
+            throw new InvalidCompanyFieldTypeError(field, 'number', actualType);
+          }
         }
         break;
       case 'boolean':

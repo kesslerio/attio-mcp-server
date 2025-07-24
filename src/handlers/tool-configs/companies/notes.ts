@@ -27,21 +27,10 @@ export const notesToolConfigs = {
 
       return `Found ${notes.length} notes:\n${notes
         .map((note: any) => {
-          // Handle different possible field structures from the API
-          const title =
-            note.title || note.data?.title || note.values?.title || 'Untitled';
-          const content =
-            note.content ||
-            note.data?.content ||
-            note.values?.content ||
-            note.text ||
-            note.body;
-          const timestamp =
-            note.timestamp ||
-            note.created_at ||
-            note.data?.created_at ||
-            note.values?.created_at ||
-            'unknown';
+          // The AttioNote interface shows these are direct properties
+          const title = note.title || 'Untitled';
+          const content = note.content || '';
+          const timestamp = note.created_at || 'unknown';
 
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
@@ -85,7 +74,7 @@ export const notesToolConfigs = {
             ? note.content.substring(0, 100) + '...'
             : note.content
           : 'No content'
-      }\nCreated at: ${note.timestamp || 'unknown'}`;
+      }\nCreated at: ${note.created_at || 'unknown'}`;
     },
   } as CreateNoteToolConfig,
 };
@@ -137,14 +126,14 @@ export const notesToolDefinitions = [
         },
         title: {
           type: 'string',
-          description: 'Title of the note (optional)',
+          description: 'Title of the note (required)',
         },
         content: {
           type: 'string',
           description: 'Content of the note',
         },
       },
-      required: ['content'],
+      required: ['title', 'content'],
     },
   },
 ];

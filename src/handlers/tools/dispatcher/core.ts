@@ -27,6 +27,7 @@ import {
   handleSearchByCompany,
   handleSmartSearch,
 } from './operations/search.js';
+import { handleAdvancedSearch } from './operations/advanced-search.js';
 import { handleDetailsOperation } from './operations/details.js';
 import {
   handleNotesOperation,
@@ -281,9 +282,9 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Handle other advanced search operations (from emergency fix)
     } else if (toolType === 'advancedSearch') {
-      result = await handleBasicSearch(
+      result = await handleAdvancedSearch(
         request,
-        toolConfig as SearchToolConfig,
+        toolConfig as AdvancedSearchToolConfig,
         resourceType
       );
     } else if (toolType === 'searchByDomain') {
@@ -292,6 +293,29 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolConfig as SearchToolConfig,
         resourceType
       );
+    
+    // Handle General tools (relationship helpers, etc.)
+    } else if (resourceType === 'GENERAL' as any) {
+      // For general tools, use the tool's own handler directly
+      const args = request.params.arguments;
+      let handlerArgs: any[] = [];
+      
+      // Map arguments based on tool type
+      if (toolType === 'linkPersonToCompany' || toolType === 'unlinkPersonFromCompany') {
+        handlerArgs = [args?.personId, args?.companyId];
+      } else if (toolType === 'getPersonCompanies') {
+        handlerArgs = [args?.personId];
+      } else if (toolType === 'getCompanyTeam') {
+        handlerArgs = [args?.companyId];
+      } else {
+        // For other general tools, pass arguments as is
+        handlerArgs = [args];
+      }
+      
+      const rawResult = await toolConfig.handler(...handlerArgs);
+      const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
+      result = { content: [{ type: 'text', text: formattedResult }] };
+      
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(
