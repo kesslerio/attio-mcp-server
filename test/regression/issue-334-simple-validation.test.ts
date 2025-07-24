@@ -1,6 +1,6 @@
 /**
  * Simple validation test for Issue #334: Company search domain regression fix
- * 
+ *
  * This test validates that the searchCompaniesByDomain function can handle
  * the multiple fallback scenarios properly without requiring an API key.
  */
@@ -18,8 +18,14 @@ describe('Issue #334: Domain Search Fix Validation', () => {
       const testCases = [
         { input: 'tbeau.ca', expected: 'tbeau.ca' },
         { input: 'WWW.TBEAU.CA', expected: 'tbeau.ca' },
-        { input: 'www.championchiropractic.org', expected: 'championchiropractic.org' },
-        { input: 'CHAMPIONCHIROPRACTIC.ORG', expected: 'championchiropractic.org' },
+        {
+          input: 'www.championchiropractic.org',
+          expected: 'championchiropractic.org',
+        },
+        {
+          input: 'CHAMPIONCHIROPRACTIC.ORG',
+          expected: 'championchiropractic.org',
+        },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -48,9 +54,11 @@ describe('Issue #334: Domain Search Fix Validation', () => {
       expect(searchFileContent).toContain('REGRESSION FIX');
       expect(searchFileContent).toContain('issue #334');
       expect(searchFileContent).toContain('multiple query formats');
-      
+
       // Verify it contains the specific attribute ID from the error message
-      expect(searchFileContent).toContain('cef4b6ae-2046-48b3-b3b6-9adf0ab251b8');
+      expect(searchFileContent).toContain(
+        'cef4b6ae-2046-48b3-b3b6-9adf0ab251b8'
+      );
     });
 
     it('should implement the multiple fallback strategy', async () => {
@@ -64,9 +72,11 @@ describe('Issue #334: Domain Search Fix Validation', () => {
       expect(searchFileContent).toContain('queryFormats');
       expect(searchFileContent).toContain('domains: { $contains');
       expect(searchFileContent).toContain('website: { $contains');
-      
+
       // Verify enhanced logging for debugging
-      expect(searchFileContent).toContain('searchCompaniesByDomain] Trying direct API query format');
+      expect(searchFileContent).toContain(
+        'searchCompaniesByDomain] Trying direct API query format'
+      );
       expect(searchFileContent).toContain('SUCCESS: Found');
     });
   });
@@ -74,8 +84,8 @@ describe('Issue #334: Domain Search Fix Validation', () => {
   describe('Integration readiness', () => {
     it('should handle the known problematic domains from the original issue', () => {
       const problematicDomains = ['tbeau.ca', 'championchiropractic.org'];
-      
-      problematicDomains.forEach(domain => {
+
+      problematicDomains.forEach((domain) => {
         // Verify these domains normalize correctly
         const normalized = normalizeDomain(domain);
         expect(normalized).toBe(domain); // Should be already normalized
@@ -87,24 +97,26 @@ describe('Issue #334: Domain Search Fix Validation', () => {
     it('should demonstrate the fix addresses the root cause', () => {
       // The original issue was: searchCompaniesByDomain returns 0 results
       // for existing domains due to attribute/format mismatch
-      
+
       // Verify the fix addresses both issues mentioned in the GitHub issue:
       const issueData = {
         testCase1: { domain: 'championchiropractic.org', shouldFind: true },
         testCase2: { domain: 'tbeau.ca', shouldFind: true },
       };
 
-      Object.entries(issueData).forEach(([testCase, { domain, shouldFind }]) => {
-        // The key insight: normalized domain should be searchable
-        const normalizedDomain = normalizeDomain(domain);
-        expect(normalizedDomain).toBeTruthy();
-        expect(normalizedDomain.length).toBeGreaterThan(0);
-        
-        if (shouldFind) {
-          // These domains should now be findable after the fix
-          expect(normalizedDomain).toBe(domain);
+      Object.entries(issueData).forEach(
+        ([testCase, { domain, shouldFind }]) => {
+          // The key insight: normalized domain should be searchable
+          const normalizedDomain = normalizeDomain(domain);
+          expect(normalizedDomain).toBeTruthy();
+          expect(normalizedDomain.length).toBeGreaterThan(0);
+
+          if (shouldFind) {
+            // These domains should now be findable after the fix
+            expect(normalizedDomain).toBe(domain);
+          }
         }
-      });
+      );
     });
   });
 });
