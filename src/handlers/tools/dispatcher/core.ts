@@ -65,6 +65,12 @@ import {
   handleBatchGetDetailsOperation,
 } from './operations/batch.js';
 
+// Import Record operation handlers
+import {
+  handleListOperation,
+  handleGetOperation,
+} from './operations/records.js';
+
 // Import tool type definitions
 import {
   ToolConfig,
@@ -292,6 +298,18 @@ export async function executeToolRequest(request: CallToolRequest) {
         request,
         toolConfig as SearchToolConfig,
         resourceType
+      );
+
+      // Handle generic record operations
+    } else if (toolType === 'list') {
+      result = await handleListOperation(
+        request,
+        toolConfig as ToolConfig
+      );
+    } else if (toolType === 'get') {
+      result = await handleGetOperation(
+        request,
+        toolConfig as ToolConfig
       );
     
     // Handle General tools (relationship helpers, etc.)
