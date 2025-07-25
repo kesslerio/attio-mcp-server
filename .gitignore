@@ -28,6 +28,7 @@ dist/
 
 # Temporary directories
 /temp/
+/tmp/
 /scripts/fix/
 
 # Temporary markdown files

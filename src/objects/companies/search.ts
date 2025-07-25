@@ -214,678 +214,6 @@ export async function searchCompanies(
 }
 
 /**
- * Configuration for domain search strategies
- */
-interface DomainSearchConfig {
-  domainAttributeId: string;
-  enableDebugLogging: boolean;
-  searchTimeout?: number;
-  enableMetrics?: boolean;
-  enableCircuitBreaker?: boolean;
-  circuitBreakerThreshold?: number;
-  circuitBreakerWindowMs?: number;
-}
-
-/**
- * Error categories for domain search operations
- */
-enum DomainSearchErrorCategory {
-  TIMEOUT = 'timeout',
-  CIRCUIT_BREAKER = 'circuit_breaker',
-  API_ERROR = 'api_error',
-  NETWORK_ERROR = 'network_error',
-  VALIDATION_ERROR = 'validation_error',
-  NO_RESULTS = 'no_results',
-  UNKNOWN = 'unknown'
-}
-
-/**
- * Enhanced error information for domain search operations
- */
-interface DomainSearchError {
-  category: DomainSearchErrorCategory;
-  message: string;
-  originalError?: any;
-  context?: Record<string, any>;
-  timestamp: number;
-  strategy: 'domain' | 'website' | 'direct_api';
-  domain: string;
-}
-
-/**
- * Performance tracking for domain search strategies
- */
-interface SearchStrategyMetrics {
-  strategy: 'domain' | 'website' | 'direct_api';
-  domain: string;
-  startTime: number;
-  endTime?: number;
-  success: boolean;
-  resultCount?: number;
-  error?: DomainSearchError;
-  executionTimeMs?: number;
-}
-
-/**
- * Categorize errors for better monitoring and debugging
- */
-function categorizeError(error: any, strategy: SearchStrategyMetrics['strategy'], domain: string): DomainSearchError {
-  const timestamp = Date.now();
-  
-  if (typeof error === 'string') {
-    if (error.includes('timeout')) {
-      return {
-        category: DomainSearchErrorCategory.TIMEOUT,
-        message: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-    if (error.includes('No results found')) {
-      return {
-        category: DomainSearchErrorCategory.NO_RESULTS,
-        message: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-    if (error.includes('circuit breaker') || error.includes('Skipping')) {
-      return {
-        category: DomainSearchErrorCategory.CIRCUIT_BREAKER,
-        message: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-  }
-  
-  if (error instanceof Error) {
-    const errorMessage = error.message.toLowerCase();
-    
-    if (errorMessage.includes('timeout')) {
-      return {
-        category: DomainSearchErrorCategory.TIMEOUT,
-        message: error.message,
-        originalError: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-    
-    if (errorMessage.includes('network') || errorMessage.includes('enotfound') || errorMessage.includes('econnrefused')) {
-      return {
-        category: DomainSearchErrorCategory.NETWORK_ERROR,
-        message: error.message,
-        originalError: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-    
-    if (errorMessage.includes('400') || errorMessage.includes('bad request')) {
-      return {
-        category: DomainSearchErrorCategory.VALIDATION_ERROR,
-        message: error.message,
-        originalError: error,
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-    
-    if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
-      return {
-        category: DomainSearchErrorCategory.API_ERROR,
-        message: error.message,
-        originalError: error,
-        context: {
-          status: errorMessage.includes('401') ? 401 : errorMessage.includes('403') ? 403 : 500,
-        },
-        timestamp,
-        strategy,
-        domain,
-      };
-    }
-  }
-  
-  return {
-    category: DomainSearchErrorCategory.UNKNOWN,
-    message: String(error),
-    originalError: error,
-    timestamp,
-    strategy,
-    domain,
-  };
-}
-
-/**
- * Simple metrics collector for domain search operations
- */
-class DomainSearchMetrics {
-  private static metrics: SearchStrategyMetrics[] = [];
-  private static readonly MAX_METRICS = 1000; // Keep last 1000 operations
-
-  static startOperation(strategy: SearchStrategyMetrics['strategy'], domain: string): SearchStrategyMetrics {
-    const metric: SearchStrategyMetrics = {
-      strategy,
-      domain,
-      startTime: Date.now(),
-      success: false,
-    };
-    
-    this.metrics.push(metric);
-    
-    // Keep only the most recent metrics
-    if (this.metrics.length > this.MAX_METRICS) {
-      this.metrics = this.metrics.slice(-this.MAX_METRICS);
-    }
-    
-    return metric;
-  }
-
-  static endOperation(metric: SearchStrategyMetrics, success: boolean, resultCount?: number, error?: any) {
-    metric.endTime = Date.now();
-    metric.executionTimeMs = metric.endTime - metric.startTime;
-    metric.success = success;
-    metric.resultCount = resultCount;
-    
-    if (error) {
-      metric.error = categorizeError(error, metric.strategy, metric.domain);
-    }
-  }
-
-  static getMetrics(): SearchStrategyMetrics[] {
-    return [...this.metrics];
-  }
-
-  static getSuccessRates(): Record<string, { total: number; successful: number; rate: number; avgTime: number }> {
-    const stats: Record<string, { total: number; successful: number; totalTime: number }> = {};
-    
-    for (const metric of this.metrics) {
-      if (!metric.endTime) continue; // Skip incomplete operations
-      
-      if (!stats[metric.strategy]) {
-        stats[metric.strategy] = { total: 0, successful: 0, totalTime: 0 };
-      }
-      
-      stats[metric.strategy].total++;
-      if (metric.success) {
-        stats[metric.strategy].successful++;
-      }
-      stats[metric.strategy].totalTime += metric.executionTimeMs || 0;
-    }
-    
-    const result: Record<string, { total: number; successful: number; rate: number; avgTime: number }> = {};
-    for (const [strategy, data] of Object.entries(stats)) {
-      result[strategy] = {
-        total: data.total,
-        successful: data.successful,
-        rate: data.total > 0 ? data.successful / data.total : 0,
-        avgTime: data.total > 0 ? data.totalTime / data.total : 0,
-      };
-    }
-    
-    return result;
-  }
-
-  /**
-   * Get error statistics by category for monitoring and alerting
-   */
-  static getErrorStats(): Record<string, { count: number; rate: number; recentCount: number }> {
-    const windowMs = 300000; // 5 minutes
-    const cutoffTime = Date.now() - windowMs;
-    
-    const errorStats: Record<string, { count: number; recentCount: number }> = {};
-    let totalOperations = 0;
-    let recentOperations = 0;
-    
-    for (const metric of this.metrics) {
-      if (!metric.endTime) continue;
-      
-      totalOperations++;
-      if (metric.endTime > cutoffTime) {
-        recentOperations++;
-      }
-      
-      if (metric.error) {
-        const category = metric.error.category;
-        if (!errorStats[category]) {
-          errorStats[category] = { count: 0, recentCount: 0 };
-        }
-        errorStats[category].count++;
-        
-        if (metric.endTime > cutoffTime) {
-          errorStats[category].recentCount++;
-        }
-      }
-    }
-    
-    const result: Record<string, { count: number; rate: number; recentCount: number }> = {};
-    for (const [category, data] of Object.entries(errorStats)) {
-      result[category] = {
-        count: data.count,
-        rate: totalOperations > 0 ? data.count / totalOperations : 0,
-        recentCount: data.recentCount,
-      };
-    }
-    
-    return result;
-  }
-
-  /**
-   * Get recent errors for debugging
-   */
-  static getRecentErrors(limit: number = 50): DomainSearchError[] {
-    return this.metrics
-      .filter(m => m.error)
-      .map(m => m.error!)
-      .slice(-limit)
-      .reverse(); // Most recent first
-  }
-
-  /**
-   * Check if a strategy should be skipped based on recent failure rate
-   */
-  static shouldSkipStrategy(strategy: SearchStrategyMetrics['strategy'], config: DomainSearchConfig): boolean {
-    if (!config.enableCircuitBreaker) {
-      return false;
-    }
-
-    const windowMs = config.circuitBreakerWindowMs || 60000; // 1 minute default
-    const threshold = config.circuitBreakerThreshold || 0.8; // 80% failure rate default
-    const cutoffTime = Date.now() - windowMs;
-
-    // Get recent metrics for this strategy
-    const recentMetrics = this.metrics.filter(
-      (m) => m.strategy === strategy && m.endTime && m.endTime > cutoffTime
-    );
-
-    // Need at least 5 operations to make a decision
-    if (recentMetrics.length < 5) {
-      return false;
-    }
-
-    const failureRate = recentMetrics.filter((m) => !m.success).length / recentMetrics.length;
-    return failureRate >= threshold;
-  }
-}
-
-/**
- * Circuit breaker and timeout wrapper for search operations
- */
-async function withTimeoutAndCircuitBreaker<T>(
-  operation: () => Promise<T>,
-  strategy: SearchStrategyMetrics['strategy'],
-  config: DomainSearchConfig,
-  domain: string
-): Promise<T | null> {
-  // Check circuit breaker
-  if (DomainSearchMetrics.shouldSkipStrategy(strategy, config)) {
-    logDomainSearchEvent('warn', 'circuit_breaker_skip', {
-      domain,
-      strategy,
-      reason: 'circuit_breaker',
-    });
-    return null;
-  }
-
-  // Apply timeout if configured
-  if (config.searchTimeout) {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`${strategy} search timeout after ${config.searchTimeout}ms`)), config.searchTimeout)
-    );
-    
-    return Promise.race([operation(), timeoutPromise]);
-  }
-
-  return operation();
-}
-
-/**
- * Get domain search configuration from environment or defaults
- */
-function getDomainSearchConfig(): DomainSearchConfig {
-  return {
-    domainAttributeId: process.env.ATTIO_DOMAIN_ATTRIBUTE_ID || 'cef4b6ae-2046-48b3-b3b6-9adf0ab251b8',
-    enableDebugLogging: process.env.NODE_ENV === 'development' || Boolean(process.env.DEBUG),
-    searchTimeout: process.env.DOMAIN_SEARCH_TIMEOUT_MS ? parseInt(process.env.DOMAIN_SEARCH_TIMEOUT_MS) : undefined,
-    enableMetrics: process.env.DISABLE_DOMAIN_SEARCH_METRICS !== 'true', // Enabled by default, can be disabled
-    enableCircuitBreaker: process.env.DISABLE_DOMAIN_SEARCH_CIRCUIT_BREAKER !== 'true', // Enabled by default
-    circuitBreakerThreshold: process.env.DOMAIN_SEARCH_CIRCUIT_BREAKER_THRESHOLD ? 
-      parseFloat(process.env.DOMAIN_SEARCH_CIRCUIT_BREAKER_THRESHOLD) : 0.8, // 80% failure rate
-    circuitBreakerWindowMs: process.env.DOMAIN_SEARCH_CIRCUIT_BREAKER_WINDOW_MS ? 
-      parseInt(process.env.DOMAIN_SEARCH_CIRCUIT_BREAKER_WINDOW_MS) : 60000, // 1 minute
-  };
-}
-
-/**
- * Build query formats for direct API search fallback
- */
-function buildQueryFormats(normalizedDomain: string, config: DomainSearchConfig): Record<string, any>[] {
-  return [
-    // Format 1: Simple array contains
-    { domains: { $contains: normalizedDomain } },
-    // Format 2: Object structure (from error message pattern)
-    { domains: { $contains: { domain: normalizedDomain } } },
-    // Format 3: Website field fallback
-    { website: { $contains: normalizedDomain } },
-    // Format 4: Try the specific attribute ID from error message if other formats fail
-    { [config.domainAttributeId]: { $contains: normalizedDomain } },
-  ];
-}
-
-/**
- * Try primary domain attribute search
- */
-async function tryDomainAttributeSearch(
-  normalizedDomain: string,
-  config: DomainSearchConfig
-): Promise<Company[] | null> {
-  const metric = config.enableMetrics ? DomainSearchMetrics.startOperation('domain', normalizedDomain) : null;
-  
-  const searchOperation = async (): Promise<Company[]> => {
-    const domainFilters: ListEntryFilters = {
-      filters: [
-        {
-          attribute: { slug: 'domains' },
-          condition: FilterConditionType.CONTAINS,
-          value: normalizedDomain,
-        },
-      ],
-    };
-
-    const results = await advancedSearchCompanies(domainFilters);
-    if (!results || results.length === 0) {
-      throw new Error('No results found');
-    }
-    return results;
-  };
-
-  try {
-    const results = await withTimeoutAndCircuitBreaker(searchOperation, 'domain', config, normalizedDomain);
-    
-    if (results && results.length > 0) {
-      const executionTime = Date.now() - (metric?.startTime || 0);
-      
-      if (config.enableDebugLogging) {
-        logDomainSearchEvent('info', 'strategy_success', {
-          domain: normalizedDomain,
-          strategy: 'domain',
-          executionTimeMs: executionTime,
-          resultCount: results.length,
-        });
-      }
-      
-      if (metric) {
-        DomainSearchMetrics.endOperation(metric, true, results.length);
-      }
-      return results;
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, 'No results found');
-    }
-    return null;
-  } catch (error) {
-    const categorizedError = categorizeError(error, 'domain', normalizedDomain);
-    
-    if (config.enableDebugLogging) {
-      logDomainSearchEvent('warn', 'strategy_failure', {
-        domain: normalizedDomain,
-        strategy: 'domain',
-        error: categorizedError,
-      });
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, error);
-    }
-    return null;
-  }
-}
-
-/**
- * Try website attribute search fallback
- */
-async function tryWebsiteAttributeSearch(
-  normalizedDomain: string,
-  config: DomainSearchConfig
-): Promise<Company[] | null> {
-  const metric = config.enableMetrics ? DomainSearchMetrics.startOperation('website', normalizedDomain) : null;
-  
-  const searchOperation = async (): Promise<Company[]> => {
-    const websiteFilters: ListEntryFilters = {
-      filters: [
-        {
-          attribute: { slug: 'website' },
-          condition: FilterConditionType.CONTAINS,
-          value: normalizedDomain,
-        },
-      ],
-    };
-
-    const results = await advancedSearchCompanies(websiteFilters);
-    if (!results || results.length === 0) {
-      throw new Error('No results found');
-    }
-    return results;
-  };
-
-  try {
-    const results = await withTimeoutAndCircuitBreaker(searchOperation, 'website', config, normalizedDomain);
-    
-    if (results && results.length > 0) {
-      const executionTime = Date.now() - (metric?.startTime || 0);
-      
-      if (config.enableDebugLogging) {
-        logDomainSearchEvent('info', 'strategy_success', {
-          domain: normalizedDomain,
-          strategy: 'website',
-          executionTimeMs: executionTime,
-          resultCount: results.length,
-        });
-      }
-      
-      if (metric) {
-        DomainSearchMetrics.endOperation(metric, true, results.length);
-      }
-      return results;
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, 'No results found');
-    }
-    return null;
-  } catch (error) {
-    const categorizedError = categorizeError(error, 'website', normalizedDomain);
-    
-    if (config.enableDebugLogging) {
-      logDomainSearchEvent('warn', 'strategy_failure', {
-        domain: normalizedDomain,
-        strategy: 'website',
-        error: categorizedError,
-      });
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, error);
-    }
-    return null;
-  }
-}
-
-/**
- * Try direct API search with multiple query formats
- */
-async function tryDirectApiSearch(
-  normalizedDomain: string,
-  config: DomainSearchConfig
-): Promise<Company[] | null> {
-  const metric = config.enableMetrics ? DomainSearchMetrics.startOperation('direct_api', normalizedDomain) : null;
-  
-  const searchOperation = async (): Promise<Company[]> => {
-    const api = getAttioClient();
-    const path = '/objects/companies/records/query';
-    const queryFormats = buildQueryFormats(normalizedDomain, config);
-
-    for (const [index, filter] of queryFormats.entries()) {
-      try {
-        if (config.enableDebugLogging) {
-          console.log(
-            `[searchCompaniesByDomain] Trying direct API query format ${index + 1} for "${normalizedDomain}":`,
-            JSON.stringify(filter)
-          );
-        }
-        
-        const response = await api.post(path, { filter });
-        const results = response.data.data || [];
-        
-        if (results.length > 0) {
-          if (config.enableDebugLogging) {
-            console.log(
-              `[searchCompaniesByDomain] SUCCESS: Found ${results.length} results with query format ${index + 1}`
-            );
-          }
-          return results;
-        }
-      } catch (formatError) {
-        if (config.enableDebugLogging) {
-          console.warn(
-            `[searchCompaniesByDomain] Query format ${index + 1} failed:`,
-            formatError
-          );
-        }
-        // Continue to next format
-      }
-    }
-    
-    throw new Error('All query formats failed');
-  };
-
-  try {
-    const results = await withTimeoutAndCircuitBreaker(searchOperation, 'direct_api', config, normalizedDomain);
-    
-    if (results && results.length > 0) {
-      const executionTime = Date.now() - (metric?.startTime || 0);
-      
-      if (config.enableDebugLogging) {
-        logDomainSearchEvent('info', 'strategy_success', {
-          domain: normalizedDomain,
-          strategy: 'direct_api',
-          executionTimeMs: executionTime,
-          resultCount: results.length,
-        });
-      }
-      
-      if (metric) {
-        DomainSearchMetrics.endOperation(metric, true, results.length);
-      }
-      return results;
-    }
-    
-    if (config.enableDebugLogging) {
-      logDomainSearchEvent('warn', 'strategy_no_results', {
-        domain: normalizedDomain,
-        strategy: 'direct_api',
-        message: 'All query formats failed to find results',
-      });
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, 'All query formats failed');
-    }
-    return null;
-    
-  } catch (error) {
-    const categorizedError = categorizeError(error, 'direct_api', normalizedDomain);
-    
-    if (config.enableDebugLogging) {
-      logDomainSearchEvent('error', 'strategy_failure', {
-        domain: normalizedDomain,
-        strategy: 'direct_api',
-        error: categorizedError,
-      });
-    }
-    
-    if (metric) {
-      DomainSearchMetrics.endOperation(metric, false, 0, error);
-    }
-    return null;
-  }
-}
-
-/**
- * Enhanced structured logging for domain search operations
- */
-function logDomainSearchEvent(
-  level: 'debug' | 'info' | 'warn' | 'error',
-  event: string,
-  data: {
-    domain: string;
-    strategy?: SearchStrategyMetrics['strategy'];
-    executionTimeMs?: number;
-    resultCount?: number;
-    error?: DomainSearchError;
-    [key: string]: any;
-  }
-) {
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    level,
-    event,
-    service: 'domain-search',
-    ...data,
-  };
-
-  // For development, use formatted console output
-  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-    const prefix = `[${level.toUpperCase()}] [domain-search]`;
-    const message = `${event} - domain: ${data.domain}`;
-    
-    switch (level) {
-      case 'debug':
-        console.debug(prefix, message, data);
-        break;
-      case 'info':
-        console.info(prefix, message, data);
-        break;
-      case 'warn':
-        console.warn(prefix, message, data);
-        break;
-      case 'error':
-        console.error(prefix, message, data);
-        break;
-    }
-  } else {
-    // For production, use structured JSON logging
-    console.log(JSON.stringify(logEntry));
-  }
-}
-
-/**
- * Get domain search performance metrics
- * @returns Performance metrics for domain search operations
- */
-export function getDomainSearchMetrics(): {
-  recent: SearchStrategyMetrics[];
-  successRates: Record<string, { total: number; successful: number; rate: number; avgTime: number }>;
-  errorStats: Record<string, { count: number; rate: number; recentCount: number }>;
-  recentErrors: DomainSearchError[];
-} {
-  return {
-    recent: DomainSearchMetrics.getMetrics(),
-    successRates: DomainSearchMetrics.getSuccessRates(),
-    errorStats: DomainSearchMetrics.getErrorStats(),
-    recentErrors: DomainSearchMetrics.getRecentErrors(20), // Last 20 errors
-  };
-}
-
-/**
  * Searches for companies by domain/website
  *
  * @param domain - Domain to search for
@@ -900,67 +228,141 @@ export async function searchCompaniesByDomain(
   }
 
   const normalizedDomain = normalizeDomain(domain);
-  const config = getDomainSearchConfig();
-  const overallStartTime = Date.now();
 
   // Enhanced debug logging for domain search (issue #334 regression tracking)
-  logDomainSearchEvent('debug', 'search_start', {
-    domain: normalizedDomain,
-    originalDomain: domain,
-    searchStrategies: ['domain', 'website', 'direct_api'],
-    issueReference: '#334',
-  });
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+    console.debug(
+      `[searchCompaniesByDomain] Searching for domain: "${normalizedDomain}" (original: "${domain}")`
+    );
+    console.debug(
+      `[searchCompaniesByDomain] Will try multiple search strategies to handle regression issue #334`
+    );
+  }
 
-  // REGRESSION FIX: Use multiple search strategies to handle different domain storage formats
+  // Create filters for domain search - REGRESSION FIX: Use correct domain attribute and format
   // From issue #334: domains are stored as structured objects with specific attribute ID
+  // Try multiple approaches to find domains stored in different formats
   
-  // Strategy 1: Try primary domain attribute search
-  const domainResults = await tryDomainAttributeSearch(normalizedDomain, config);
-  if (domainResults) {
-    const totalTime = Date.now() - overallStartTime;
-    logDomainSearchEvent('info', 'overall_success', {
-      domain: normalizedDomain,
-      strategy: 'domain',
-      executionTimeMs: totalTime,
-      resultCount: domainResults.length,
-    });
-    return domainResults;
+  // First try: Use 'domains' attribute with array-based search (domain type stores as arrays)
+  const domainFilters: ListEntryFilters = {
+    filters: [
+      {
+        attribute: { slug: 'domains' },
+        condition: FilterConditionType.CONTAINS,
+        value: normalizedDomain,
+      },
+    ],
+  };
+
+  try {
+    const results = await advancedSearchCompanies(domainFilters);
+    if (results && results.length > 0) {
+      return results;
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+      console.warn(
+        `[searchCompaniesByDomain] Primary domain search failed for "${normalizedDomain}":`,
+        error
+      );
+    }
   }
 
-  // Strategy 2: Try website attribute search fallback
-  const websiteResults = await tryWebsiteAttributeSearch(normalizedDomain, config);
-  if (websiteResults) {
-    const totalTime = Date.now() - overallStartTime;
-    logDomainSearchEvent('info', 'overall_success', {
-      domain: normalizedDomain,
-      strategy: 'website',
-      executionTimeMs: totalTime,
-      resultCount: websiteResults.length,
-    });
-    return websiteResults;
+  // Fallback 1: Try website attribute search as domains might be extracted from website  
+  try {
+    const websiteFilters: ListEntryFilters = {
+      filters: [
+        {
+          attribute: { slug: 'website' },
+          condition: FilterConditionType.CONTAINS,
+          value: normalizedDomain,
+        },
+      ],
+    };
+    
+    const websiteResults = await advancedSearchCompanies(websiteFilters);
+    if (websiteResults && websiteResults.length > 0) {
+      if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+        console.log(
+          `[searchCompaniesByDomain] Found results via website search for "${normalizedDomain}"`
+        );
+      }
+      return websiteResults;
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+      console.warn(
+        `[searchCompaniesByDomain] Website search failed for "${normalizedDomain}":`,
+        error
+      );
+    }
   }
 
-  // Strategy 3: Try direct API search with multiple query formats
-  const directResults = await tryDirectApiSearch(normalizedDomain, config);
-  if (directResults) {
-    const totalTime = Date.now() - overallStartTime;
-    logDomainSearchEvent('info', 'overall_success', {
-      domain: normalizedDomain,
-      strategy: 'direct_api',
-      executionTimeMs: totalTime,
-      resultCount: directResults.length,
-    });
-    return directResults;
-  }
+  // Fallback 2: Direct API call with multiple query formats
+  try {
+    const api = getAttioClient();
+    const path = '/objects/companies/records/query';
 
-  // All strategies failed - return empty array
-  const totalTime = Date.now() - overallStartTime;
-  logDomainSearchEvent('warn', 'all_strategies_failed', {
-    domain: normalizedDomain,
-    executionTimeMs: totalTime,
-    resultCount: 0,
-  });
-  return [];
+    // Try different query formats based on how domains might be stored
+    const queryFormats = [
+      // Format 1: Simple array contains
+      { domains: { $contains: normalizedDomain } },
+      // Format 2: Object structure (from error message pattern)
+      { domains: { $contains: { domain: normalizedDomain } } },
+      // Format 3: Website field fallback
+      { website: { $contains: normalizedDomain } },
+      // Format 4: Try the specific attribute ID from error message if other formats fail
+      { 'cef4b6ae-2046-48b3-b3b6-9adf0ab251b8': { $contains: normalizedDomain } },
+    ];
+
+    for (const [index, filter] of queryFormats.entries()) {
+      try {
+        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+          console.log(
+            `[searchCompaniesByDomain] Trying direct API query format ${index + 1} for "${normalizedDomain}":`,
+            JSON.stringify(filter)
+          );
+        }
+        
+        const response = await api.post(path, { filter });
+        const results = response.data.data || [];
+        
+        if (results.length > 0) {
+          if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+            console.log(
+              `[searchCompaniesByDomain] SUCCESS: Found ${results.length} results with query format ${index + 1}`
+            );
+          }
+          return results;
+        }
+      } catch (formatError) {
+        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+          console.warn(
+            `[searchCompaniesByDomain] Query format ${index + 1} failed:`,
+            formatError
+          );
+        }
+        // Continue to next format
+      }
+    }
+    
+    // If all formats failed, return empty array
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+      console.warn(
+        `[searchCompaniesByDomain] All query formats failed for "${normalizedDomain}"`
+      );
+    }
+    return [];
+    
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+      console.error(
+        `[searchCompaniesByDomain] All fallback attempts failed for "${normalizedDomain}":`,
+        error
+      );
+    }
+    return [];
+  }
 }
 
 /**
