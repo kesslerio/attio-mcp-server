@@ -462,27 +462,6 @@ export function createNameFilter(
   };
 }
 
-/**
- * Helper function to create filters for searching companies by website
- *
- * @param website - Website to search for
- * @param condition - Condition type (default: CONTAINS)
- * @returns ListEntryFilters object configured for website search
- */
-export function createWebsiteFilter(
-  website: string,
-  condition: FilterConditionType = FilterConditionType.CONTAINS
-): ListEntryFilters {
-  return {
-    filters: [
-      {
-        attribute: { slug: 'website' },
-        condition: condition,
-        value: website,
-      },
-    ],
-  };
-}
 
 /**
  * Helper function to create filters for searching companies by industry
