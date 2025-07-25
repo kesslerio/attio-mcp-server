@@ -229,22 +229,15 @@ export async function searchCompaniesByDomain(
 
   const normalizedDomain = normalizeDomain(domain);
 
-  // Enhanced debug logging for domain search (issue #334 regression tracking)
+  // Debug logging for domain search
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
     console.debug(
       `[searchCompaniesByDomain] Searching for domain: "${normalizedDomain}" (original: "${domain}")`
     );
-    console.debug(
-      `[searchCompaniesByDomain] Will try multiple search strategies to handle regression issue #334`
-    );
   }
 
-  // Create filters for domain search - REGRESSION FIX: Use correct domain attribute and format
-  // From issue #334: domains are stored as structured objects with specific attribute ID
-  // Try multiple approaches to find domains stored in different formats
-  
-  // First try: Use 'domains' attribute with array-based search (domain type stores as arrays)
-  const domainFilters: ListEntryFilters = {
+  // Create filters for domain search - FIXED: Use 'domains' field instead of 'website'
+  const filters: ListEntryFilters = {
     filters: [
       {
         attribute: { slug: 'domains' },
@@ -255,113 +248,18 @@ export async function searchCompaniesByDomain(
   };
 
   try {
-    const results = await advancedSearchCompanies(domainFilters);
-    if (results && results.length > 0) {
-      return results;
-    }
+    return await advancedSearchCompanies(filters);
   } catch (error) {
-    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-      console.warn(
-        `[searchCompaniesByDomain] Primary domain search failed for "${normalizedDomain}":`,
-        error
-      );
-    }
-  }
-
-  // Fallback 1: Try website attribute search as domains might be extracted from website  
-  try {
-    const websiteFilters: ListEntryFilters = {
-      filters: [
-        {
-          attribute: { slug: 'website' },
-          condition: FilterConditionType.CONTAINS,
-          value: normalizedDomain,
-        },
-      ],
-    };
-    
-    const websiteResults = await advancedSearchCompanies(websiteFilters);
-    if (websiteResults && websiteResults.length > 0) {
-      if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-        console.log(
-          `[searchCompaniesByDomain] Found results via website search for "${normalizedDomain}"`
-        );
-      }
-      return websiteResults;
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-      console.warn(
-        `[searchCompaniesByDomain] Website search failed for "${normalizedDomain}":`,
-        error
-      );
-    }
-  }
-
-  // Fallback 2: Direct API call with multiple query formats
-  try {
+    // Fallback to direct API call - FIXED: Use 'domains' field instead of 'website'
     const api = getAttioClient();
     const path = '/objects/companies/records/query';
 
-    // Try different query formats based on how domains might be stored
-    const queryFormats = [
-      // Format 1: Simple array contains
-      { domains: { $contains: normalizedDomain } },
-      // Format 2: Object structure (from error message pattern)
-      { domains: { $contains: { domain: normalizedDomain } } },
-      // Format 3: Website field fallback
-      { website: { $contains: normalizedDomain } },
-      // Format 4: Try the specific attribute ID from error message if other formats fail
-      { 'cef4b6ae-2046-48b3-b3b6-9adf0ab251b8': { $contains: normalizedDomain } },
-    ];
-
-    for (const [index, filter] of queryFormats.entries()) {
-      try {
-        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-          console.log(
-            `[searchCompaniesByDomain] Trying direct API query format ${index + 1} for "${normalizedDomain}":`,
-            JSON.stringify(filter)
-          );
-        }
-        
-        const response = await api.post(path, { filter });
-        const results = response.data.data || [];
-        
-        if (results.length > 0) {
-          if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-            console.log(
-              `[searchCompaniesByDomain] SUCCESS: Found ${results.length} results with query format ${index + 1}`
-            );
-          }
-          return results;
-        }
-      } catch (formatError) {
-        if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-          console.warn(
-            `[searchCompaniesByDomain] Query format ${index + 1} failed:`,
-            formatError
-          );
-        }
-        // Continue to next format
-      }
-    }
-    
-    // If all formats failed, return empty array
-    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-      console.warn(
-        `[searchCompaniesByDomain] All query formats failed for "${normalizedDomain}"`
-      );
-    }
-    return [];
-    
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-      console.error(
-        `[searchCompaniesByDomain] All fallback attempts failed for "${normalizedDomain}":`,
-        error
-      );
-    }
-    return [];
+    const response = await api.post(path, {
+      filter: {
+        domains: { $contains: normalizedDomain },
+      },
+    });
+    return response.data.data || [];
   }
 }
 
@@ -610,7 +508,6 @@ export function createIndustryFilter(
 
 /**
  * Helper function to create filters for searching companies by domain
- * REGRESSION FIX: Updated to handle domain storage format correctly
  *
  * @param domain - Domain to search for
  * @param condition - Condition type (default: CONTAINS)
@@ -621,9 +518,6 @@ export function createDomainFilter(
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   const normalizedDomain = normalizeDomain(domain);
-  
-  // Issue #334 fix: Use the corrected approach for domain filters
-  // This helper now aligns with the searchCompaniesByDomain implementation
   return {
     filters: [
       {
