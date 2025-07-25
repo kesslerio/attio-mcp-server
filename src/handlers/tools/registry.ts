@@ -30,12 +30,6 @@ import {
   generalToolDefinitions,
 } from '../tool-configs/general/index.js';
 
-// Import universal tool configurations for consolidated operations
-import {
-  universalToolConfigs,
-  universalToolDefinitions,
-} from '../tool-configs/universal/index.js';
-
 /**
  * Consolidated tool configurations from modular files
  */
@@ -46,8 +40,6 @@ export const TOOL_CONFIGS = {
   [ResourceType.TASKS]: tasksToolConfigs,
   [ResourceType.RECORDS]: recordToolConfigs,
   GENERAL: generalToolConfigs,
-  // Universal tools for consolidated operations (Issue #352)
-  UNIVERSAL: universalToolConfigs,
   // Add other resource types as needed
 };
 
@@ -61,8 +53,6 @@ export const TOOL_DEFINITIONS = {
   [ResourceType.TASKS]: tasksToolDefinitions,
   [ResourceType.RECORDS]: recordToolDefinitions,
   GENERAL: generalToolDefinitions,
-  // Universal tools for consolidated operations (Issue #352)
-  UNIVERSAL: universalToolDefinitions,
   // Add other resource types as needed
 };
 
@@ -158,27 +148,7 @@ export function findToolConfig(toolName: string):
     }
   }
 
-  // Search in universal tools (high priority for consolidation)
-  const universalConfig = TOOL_CONFIGS.UNIVERSAL;
-  if (universalConfig) {
-    for (const [toolType, config] of Object.entries(universalConfig)) {
-      if (config && config.name === toolName) {
-        if (debugMode) {
-          console.error(
-            `[findToolConfig] Found universal tool: ${toolName}, type: ${toolType}, category: UNIVERSAL`
-          );
-        }
-
-        return {
-          resourceType: 'UNIVERSAL' as any, // Using 'UNIVERSAL' as a special marker
-          toolConfig: config as ToolConfig,
-          toolType,
-        };
-      }
-    }
-  }
-
-  // Search in general tools if not found in resource-specific or universal tools
+  // Search in general tools if not found in resource-specific tools
   const generalConfig = TOOL_CONFIGS.GENERAL;
   if (generalConfig) {
     for (const [toolType, config] of Object.entries(generalConfig)) {
