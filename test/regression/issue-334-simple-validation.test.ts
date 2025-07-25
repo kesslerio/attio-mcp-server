@@ -43,41 +43,37 @@ describe('Issue #334: Domain Search Fix Validation', () => {
   });
 
   describe('Code structure validation', () => {
-    it('should contain the regression fix comments', async () => {
+    it('should use domains attribute instead of website (minimal fix)', async () => {
       const fs = await import('fs/promises');
       const searchFileContent = await fs.readFile(
         'src/objects/companies/search.ts',
         'utf-8'
       );
 
-      // Verify the fix contains the expected regression fix comments
-      expect(searchFileContent).toContain('REGRESSION FIX');
-      expect(searchFileContent).toContain('issue #334');
-      expect(searchFileContent).toContain('multiple query formats');
-
-      // Verify it contains the specific attribute ID from the error message
-      expect(searchFileContent).toContain(
-        'cef4b6ae-2046-48b3-b3b6-9adf0ab251b8'
-      );
+      // Verify the minimal fix: uses 'domains' attribute correctly
+      expect(searchFileContent).toContain("attribute: { slug: 'domains' }");
+      expect(searchFileContent).toContain('domains: { $contains');
+      
+      // Verify fix comments are present but minimal
+      expect(searchFileContent).toContain('FIXED: Use \'domains\' field instead of \'website\'');
     });
 
-    it('should implement the multiple fallback strategy', async () => {
+    it('should have clean, minimal implementation (no over-engineering)', async () => {
       const fs = await import('fs/promises');
       const searchFileContent = await fs.readFile(
         'src/objects/companies/search.ts',
         'utf-8'
       );
 
-      // Verify the fix contains multiple query formats
-      expect(searchFileContent).toContain('queryFormats');
-      expect(searchFileContent).toContain('domains: { $contains');
-      expect(searchFileContent).toContain('website: { $contains');
-
-      // Verify enhanced logging for debugging
-      expect(searchFileContent).toContain(
-        'searchCompaniesByDomain] Trying direct API query format'
-      );
-      expect(searchFileContent).toContain('SUCCESS: Found');
+      // Verify over-engineering was removed
+      expect(searchFileContent).not.toContain('DomainSearchErrorCategory');
+      expect(searchFileContent).not.toContain('circuitBreaker');
+      expect(searchFileContent).not.toContain('cef4b6ae-2046-48b3-b3b6-9adf0ab251b8');
+      expect(searchFileContent).not.toContain('SearchStrategyMetrics');
+      
+      // Should have simple, clean implementation
+      expect(searchFileContent).toContain('normalizeDomain');
+      expect(searchFileContent).toContain('advancedSearchCompanies');
     });
   });
 
