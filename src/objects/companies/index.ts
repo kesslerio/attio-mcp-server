@@ -22,7 +22,6 @@ export {
   smartSearchCompanies,
   advancedSearchCompanies,
   createNameFilter,
-  createWebsiteFilter,
   createIndustryFilter,
   createDomainFilter,
 } from './search.js';
