@@ -2,122 +2,166 @@
 
 ## Current State Assessment
 
-**Total Tool Count**: 50 exported tools (not 74 as initially estimated)
+**Total Tool Count**: 71 actual MCP tools (verified via registry analysis)
 **Current Architecture**: Modular tool configuration system with clear separation
 
-### Tool Distribution by Category
+> **Note**: Previous estimates of 23-50 tools were incorrect due to incomplete analysis methods. 
+> The accurate count of 71 tools is based on actual MCP registry inspection.
 
-#### Companies Module (14 tools)
-- **Search Operations**: 2 tools
-  - `search-companies-toolConfig` / `search-companies-toolDefinition`
-  - `domain-based-company-search-toolConfig` / `domain-based-company-search-toolDefinition`
-- **CRUD Operations**: 2 tools  
-  - `create-company-toolConfig` / `create-company-toolDefinition`
-  - `update-company-toolConfig` / `update-company-toolDefinition`
-- **Attributes**: 2 tools
-  - `discover-company-attributes-toolConfig` / `discover-company-attributes-toolDefinition`
-  - `update-company-attribute-toolConfig` / `update-company-attribute-toolDefinition`
-- **Notes**: 2 tools
-  - `create-company-note-toolConfig` / `create-company-note-toolDefinition`
-  - `get-company-notes-toolConfig` / `get-company-notes-toolDefinition`
-- **Relationships**: 2 tools
-  - `get-company-relationships-toolConfig` / `get-company-relationships-toolDefinition`
-  - `create-company-relationship-toolConfig` / `create-company-relationship-toolDefinition`
-- **Batch Operations**: 2 tools
-  - `batch-update-companies-toolConfig` / `batch-update-companies-toolDefinition`
-  - `batch-create-companies-toolConfig` / `batch-create-companies-toolDefinition`
-- **Utilities**: 2 tools
-  - `get-company-basic-info-toolConfig` / `get-company-basic-info-toolDefinition`
-  - `formatCompanyToolDefinition` (formatter only)
+### Tool Distribution by Category (Accurate Count)
 
-#### People Module (14 tools)
-- **Search Operations**: 8 tools
-  - `search-people-toolConfig` / `search-people-toolDefinition`
-  - `advanced-search-people-toolConfig` / `advanced-search-people-toolDefinition` 
-  - `search-people-by-activity-toolConfig` / `search-people-by-activity-toolDefinition`
-  - `search-people-by-date-range-toolConfig` / `search-people-by-date-range-toolDefinition`
-- **CRUD Operations**: 2 tools
-  - `create-person-toolConfig` / `create-person-toolDefinition`
-  - `update-person-toolConfig` / `update-person-toolDefinition`
-- **Notes**: 2 tools
-  - `create-person-note-toolConfig` / `create-person-note-toolDefinition`
-  - `get-person-notes-toolConfig` / `get-person-notes-toolDefinition`
-- **Relationships**: 2 tools
-  - `get-person-relationships-toolConfig` / `get-person-relationships-toolDefinition`
-  - `create-person-relationship-toolConfig` / `create-person-relationship-toolDefinition`
+#### Companies Module (29 tools - 40.8% of total)
+**Search Operations (6 tools)**:
+- `search-companies`, `advanced-search-companies`, `smart-search-companies`
+- `search-companies-by-domain`, `search-companies-by-notes`, `search-companies-by-people`
 
-#### General/Utility Modules (22 tools)
-- **Lists**: 2 tools (`get-list-details`, `add-record-to-list`)
-- **Tasks**: 2 tools (`get-tasks`, `create-task`)
-- **Records**: 2 tools (`get-records`, `update-record`)
-- **Relationships**: 2 tools (`get-cross-entity-relationships`, `create-cross-entity-relationship`)
-- **General**: 2 tools (`get-workspace-info`, `bulk-operation`)
-- **Deprecated/Legacy**: 10+ tools (paginated-people, rate-limited variants, etc.)
+**CRUD Operations (4 tools)**:
+- `create-company`, `update-company`, `delete-company`, `get-company-details`
 
-## Consolidation Strategy Analysis
+**Attribute Management (8 tools)**:
+- `discover-company-attributes`, `get-company-attributes`, `update-company-attribute`
+- `get-company-basic-info`, `get-company-business-info`, `get-company-contact-info`
+- `get-company-social-info`, `get-company-fields`
 
-### Phase 1: Low-Risk Consolidations (Target: 50→40 tools)
+**Notes (2 tools)**:
+- `create-company-note`, `get-company-notes`
 
-#### Immediate Consolidation Opportunities
+**Batch Operations (6 tools)**:
+- `batch-create-companies`, `batch-update-companies`, `batch-delete-companies`
+- `batch-search-companies`, `batch-get-company-details`
 
-1. **Duplicate/Legacy Tools** (Remove 6 tools)
-   - Remove `paginated-people` tools - functionality covered by main search
-   - Remove `rate-limited-people` tools - handled by core rate limiting
-   - Consolidate formatter-only tools
+**Utilities (3 tools)**:
+- `get-company-json`, `get-company-lists`, `get-company-custom-fields`
 
-2. **Similar Search Operations** (Consolidate 4 tools)
-   - Merge `advanced-search-people` and `search-people` into unified `search-people`
-   - Merge activity/date range searches into main search with filters
+#### People Module (15 tools - 21.1% of total)
+**Search Operations (10 tools)**:
+- `search-people`, `advanced-search-people`
+- `search-people-by-company`, `search-people-by-email`, `search-people-by-phone`
+- `search-people-by-activity`, `search-people-by-notes`, `search-people-by-company-list`
+- `search-people-by-creation-date`, `search-people-by-modification-date`, `search-people-by-last-interaction`
 
-#### Risk Assessment: **LOW** 
-- No functional changes
-- Clear duplicates and legacy code
-- Minimal schema changes needed
+**CRUD Operations (2 tools)**:
+- `create-person`, `get-person-details`
 
-### Phase 2: Medium-Risk CRUD Consolidations (Target: 40→30 tools)
+**Notes (2 tools)**:
+- `create-person-note`, `get-person-notes`
 
-#### CRUD Operation Unification
+#### Lists Module (11 tools - 15.5% of total)
+- `get-lists`, `get-list-details`, `get-list-entries`
+- `add-record-to-list`, `remove-record-from-list`, `update-list-entry`
+- `filter-list-entries`, `advanced-filter-list-entries`
+- `filter-list-entries-by-parent`, `filter-list-entries-by-parent-id`
+- `get-record-list-memberships`
 
-1. **Company Operations** (8→3 tools)
-   - `manage-company`: Unify create/update/get operations
-   - `company-attributes`: Unify discover/update attribute operations  
-   - `company-relationships`: Unify get/create relationship operations
+#### Records Module (7 tools - 9.9% of total)
+- `create-record`, `update-record`, `delete-record`, `get-record`
+- `list-records`, `batch-create-records`, `batch-update-records`
 
-2. **People Operations** (6→3 tools)
-   - `manage-person`: Unify create/update operations
-   - `person-relationships`: Unify get/create relationship operations
-   - `person-notes`: Unify create/get note operations
+#### Tasks Module (5 tools - 7.0% of total)
+- `create-task`, `update-task`, `delete-task`, `list-tasks`
+- `link-record-to-task`
 
-#### Schema Design Pattern
+#### General/Cross-Entity Module (4 tools - 5.6% of total)
+- `get-company-team`, `get-person-companies`
+- `link-person-to-company`, `unlink-person-from-company`
+
+## Consolidation Strategy Analysis (Based on 71 Actual Tools)
+
+### Revised Consolidation Target
+**Current**: 71 tools → **Target**: 45-50 tools (30-35% reduction)
+
+This represents a more realistic and achievable optimization compared to the original 74→30 goal.
+
+### Phase 1: Low-Risk Consolidations (Target: 71→60 tools, -11 tools)
+
+#### People Search Consolidation (10→3 tools, -7 tools)
+**High Impact Opportunity**: People module has 10 search tools with significant overlap
+
+**Consolidation Strategy**:
+- **Base Search Tool**: `search-people` (keep as primary)
+- **Advanced Search Tool**: `advanced-search-people` (enhanced with filters)
+- **Domain-Specific Tool**: `search-people-by-company` (specialized relationship search)
+
+**Tools to Consolidate**:
+- `search-people-by-email` → filter in base search
+- `search-people-by-phone` → filter in base search  
+- `search-people-by-activity` → filter in advanced search
+- `search-people-by-notes` → filter in advanced search
+- `search-people-by-creation-date` → filter in advanced search
+- `search-people-by-modification-date` → filter in advanced search
+- `search-people-by-last-interaction` → filter in advanced search
+
+#### Company Attribute Consolidation (8→4 tools, -4 tools)
+**Medium Impact**: Company module has 8 attribute tools with overlapping functionality
+
+**Consolidation Strategy**:
+- **General Attributes**: `get-company-attributes` (primary)
+- **Specific Info**: `get-company-basic-info` (core fields)
+- **Discovery**: `discover-company-attributes` (schema discovery)
+- **Updates**: `update-company-attribute` (modifications)
+
+**Tools to Consolidate**:
+- `get-company-business-info` → field filter in general attributes
+- `get-company-contact-info` → field filter in general attributes
+- `get-company-social-info` → field filter in general attributes
+- `get-company-fields` → merge with general attributes
+
+#### Risk Assessment: **LOW**
+- No breaking schema changes
+- Backward compatibility via parameter filters
+- Clear consolidation paths
+
+### Phase 2: Medium-Risk CRUD Consolidations (Target: 60→50 tools, -10 tools)
+
+#### Universal CRUD Operations
+
+1. **Company CRUD Consolidation** (4→2 tools)
+   - `manage-company`: Unify create/update/delete operations
+   - `get-company-details`: Keep specialized for complex queries
+
+2. **Record CRUD Consolidation** (7→3 tools)
+   - `manage-record`: Unify create/update/delete/get operations
+   - `list-records`: Keep specialized for listing/filtering
+   - `batch-records`: Unify batch create/update operations
+
+3. **Task CRUD Consolidation** (5→3 tools)
+   - `manage-task`: Unify create/update/delete operations
+   - `list-tasks`: Keep specialized for filtering
+   - `task-relationships`: Keep `link-record-to-task` specialized
+
+#### Consolidated Schema Pattern
 ```typescript
-interface ManageEntityTool {
-  operation: 'create' | 'update' | 'get' | 'delete';
-  entity_id?: string;      // required for update/get/delete
+interface ManageCRUDTool {
+  operation: 'create' | 'update' | 'delete' | 'get';
+  entity_type: 'company' | 'person' | 'record' | 'task';
+  entity_id?: string;      // required for update/delete/get
   entity_data?: EntityData; // required for create/update
-  // Additional operation-specific fields
+  fields?: string[];       // optional field selection for get
 }
 ```
 
 #### Risk Assessment: **MEDIUM**
 - Requires careful schema design
 - More complex parameter validation
-- Backward compatibility considerations
+- Need comprehensive testing
 
-### Phase 3: Advanced Consolidations (Target: 30→25 tools)
+### Phase 3: Advanced Consolidations (Target: 50→45 tools, -5 tools)
 
-#### Cross-Domain Operations
+#### Cross-Category Operations
 
-1. **Universal Entity Manager** (6→2 tools)
-   - `manage-entity`: Universal CRUD for companies/people/records
-   - `entity-relationships`: Universal relationship management
+1. **Batch Operations Unification** (9→3 tools)
+   - `batch-companies`: All company batch operations
+   - `batch-records`: All record batch operations  
+   - `batch-search`: Cross-entity batch searching
 
-2. **Batch Operations Hub** (4→1 tool)
-   - `batch-operations`: Unified batch processing for all entity types
+2. **List Operations Streamlining** (11→9 tools)
+   - Merge filter variations: `filter-list-entries-by-parent` and `filter-list-entries-by-parent-id`
+   - Combine: `filter-list-entries` and `advanced-filter-list-entries`
 
 #### Risk Assessment: **HIGH**
-- Complex parameter validation
-- Significant schema changes
-- Performance considerations
+- Complex parameter validation across entity types
+- Performance implications for unified tools
+- Extensive testing required
 
 ## Technical Implementation Details
 

@@ -1,0 +1,162 @@
+{
+  "timestamp": "2025-07-25T01:39:05.753Z",
+  "summary": {
+    "totalTools": 71,
+    "totalCategories": 6,
+    "method": "registry-import"
+  },
+  "categories": {
+    "companies": {
+      "total": 29,
+      "breakdown": {
+        "search": [
+          "search-companies",
+          "advanced-search-companies",
+          "search-companies-by-domain",
+          "smart-search-companies",
+          "search-companies-by-people",
+          "search-companies-by-people-list",
+          "search-companies-by-notes",
+          "batch-search-companies"
+        ],
+        "create": [
+          "create-company",
+          "create-company-note",
+          "batch-create-companies"
+        ],
+        "update": [
+          "update-company",
+          "update-company-attribute",
+          "batch-update-companies"
+        ],
+        "other": [
+          "delete-company"
+        ],
+        "read": [
+          "get-company-fields",
+          "get-company-custom-fields",
+          "get-company-attributes",
+          "get-company-notes",
+          "get-company-lists",
+          "batch-get-company-details",
+          "get-company-details",
+          "get-company-json",
+          "get-company-basic-info",
+          "get-company-contact-info",
+          "get-company-business-info",
+          "get-company-social-info"
+        ],
+        "attributes": [
+          "discover-company-attributes"
+        ],
+        "batch": [
+          "batch-delete-companies"
+        ]
+      }
+    },
+    "people": {
+      "total": 15,
+      "breakdown": {
+        "create": [
+          "create-person",
+          "create-person-note"
+        ],
+        "read": [
+          "get-person-details",
+          "get-person-notes"
+        ],
+        "search": [
+          "search-people",
+          "search-people-by-email",
+          "search-people-by-phone",
+          "advanced-search-people",
+          "search-people-by-creation-date",
+          "search-people-by-modification-date",
+          "search-people-by-last-interaction",
+          "search-people-by-activity",
+          "search-people-by-company",
+          "search-people-by-company-list",
+          "search-people-by-notes"
+        ]
+      }
+    },
+    "lists": {
+      "total": 11,
+      "breakdown": {
+        "read": [
+          "get-lists",
+          "get-record-list-memberships",
+          "get-list-details",
+          "get-list-entries"
+        ],
+        "other": [
+          "filter-list-entries",
+          "advanced-filter-list-entries",
+          "add-record-to-list",
+          "remove-record-from-list",
+          "filter-list-entries-by-parent",
+          "filter-list-entries-by-parent-id"
+        ],
+        "update": [
+          "update-list-entry"
+        ]
+      }
+    },
+    "tasks": {
+      "total": 5,
+      "breakdown": {
+        "other": [
+          "list-tasks",
+          "delete-task",
+          "link-record-to-task"
+        ],
+        "create": [
+          "create-task"
+        ],
+        "update": [
+          "update-task"
+        ]
+      }
+    },
+    "records": {
+      "total": 7,
+      "breakdown": {
+        "create": [
+          "create-record",
+          "batch-create-records"
+        ],
+        "read": [
+          "get-record"
+        ],
+        "update": [
+          "update-record",
+          "batch-update-records"
+        ],
+        "other": [
+          "delete-record",
+          "list-records"
+        ]
+      }
+    },
+    "GENERAL": {
+      "total": 4,
+      "breakdown": {
+        "other": [
+          "link-person-to-company",
+          "unlink-person-from-company"
+        ],
+        "read": [
+          "get-person-companies",
+          "get-company-team"
+        ]
+      }
+    }
+  },
+  "comparisonAnalysis": {
+    "actualTools": 71,
+    "scriptCount": 23,
+    "documentationClaim": 50,
+    "discrepancy": 48,
+    "rootCause": "Script uses incomplete regex patterns instead of importing registry"
+  }
+}

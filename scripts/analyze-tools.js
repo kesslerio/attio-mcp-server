@@ -4,6 +4,8 @@
  * 
  * Analyzes the current MCP tool configuration to identify consolidation opportunities
  * and measure the impact of proposed optimizations.
+ * 
+ * FIXED: Now imports actual registry instead of parsing files to get accurate tool count.
  */
 
 import fs from 'fs';
@@ -14,7 +16,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const TOOL_CONFIGS_DIR = path.join(__dirname, '../src/handlers/tool-configs');
 const OUTPUT_FILE = path.join(__dirname, '../tmp/tool-analysis-results.json');
 
 class ToolAnalyzer {
@@ -22,14 +23,131 @@ class ToolAnalyzer {
     this.tools = [];
     this.categories = {};
     this.consolidationCandidates = [];
+    this.actualToolCount = 0;
   }
 
   /**
-   * Scan all tool configuration files
+   * Load actual tools from MCP registry (accurate method)
    */
-  async scanToolConfigs() {
-    console.log('🔍 Scanning tool configurations...');
+  async loadActualTools() {
+    console.log('🔍 Loading actual MCP tools from registry...');
     
+    try {
+      // Import the actual tool registry
+      const registryPath = path.join(__dirname, '../src/handlers/tools/registry.js');
+      const { TOOL_DEFINITIONS, TOOL_CONFIGS } = await import(registryPath);
+      
+      let totalTools = 0;
+      const categoryBreakdown = {};
+      
+      // Count tools from actual registry
+      Object.entries(TOOL_DEFINITIONS).forEach(([category, definitions]) => {
+        if (definitions && typeof definitions === 'object') {
+          const toolsInCategory = Array.isArray(definitions) ? 
+            definitions.length : 
+            Object.keys(definitions).length;
+          
+          totalTools += toolsInCategory;
+          categoryBreakdown[category] = toolsInCategory;
+          
+          // Extract individual tools for detailed analysis
+          if (Array.isArray(definitions)) {
+            definitions.forEach(tool => this.addToolFromRegistry(tool, category));
+          } else {
+            Object.entries(definitions).forEach(([key, tool]) => {
+              this.addToolFromRegistry(tool, category, key);
+            });
+          }
+        }
+      });
+      
+      this.actualToolCount = totalTools;
+      console.log(`✅ Found ${totalTools} actual MCP tools across ${Object.keys(categoryBreakdown).length} categories`);
+      console.log('📊 Category breakdown:', categoryBreakdown);
+      
+      return { totalTools, categoryBreakdown };
+      
+    } catch (error) {
+      console.warn('⚠️  Could not load from registry, falling back to file scanning:', error.message);
+      return this.scanToolConfigsFallback();
+    }
+  }
+
+  /**
+   * Add tool from registry to analysis
+   */
+  addToolFromRegistry(tool, category, key = null) {
+    if (!tool || !tool.name) return;
+    
+    const toolInfo = {
+      name: tool.name,
+      description: tool.description || 'No description',
+      category,
+      registryKey: key,
+      complexity: this.assessComplexityFromTool(tool),
+      operations: this.extractOperationsFromTool(tool),
+      inputSchema: tool.inputSchema,
+      hasHandler: !!(tool.handler || (key && category)),
+      source: 'registry'
+    };
+    
+    this.tools.push(toolInfo);
+    
+    if (!this.categories[category]) {
+      this.categories[category] = [];
+    }
+    this.categories[category].push(toolInfo);
+  }
+
+  /**
+   * Assess complexity from tool definition
+   */
+  assessComplexityFromTool(tool) {
+    let score = 0;
+    
+    if (tool.inputSchema) {
+      const schemaStr = JSON.stringify(tool.inputSchema);
+      score += (schemaStr.match(/properties/g) || []).length;
+      score += (schemaStr.match(/required/g) || []).length * 2;
+      score += (schemaStr.match(/enum/g) || []).length;
+    }
+    
+    if (tool.description && tool.description.includes('batch')) score += 3;
+    if (tool.description && tool.description.includes('search')) score += 2;
+    if (tool.description && tool.description.includes('advanced')) score += 2;
+    
+    if (score < 3) return 'low';
+    if (score < 8) return 'medium';
+    return 'high';
+  }
+
+  /**
+   * Extract operations from tool definition
+   */
+  extractOperationsFromTool(tool) {
+    const operations = [];
+    const text = `${tool.name} ${tool.description || ''}`.toLowerCase();
+    
+    if (text.includes('create') || text.includes('add')) operations.push('create');
+    if (text.includes('update') || text.includes('edit')) operations.push('update');
+    if (text.includes('get') || text.includes('fetch') || text.includes('search')) operations.push('read');
+    if (text.includes('delete') || text.includes('remove')) operations.push('delete');
+    if (text.includes('batch') || text.includes('bulk')) operations.push('batch');
+    if (text.includes('relationship')) operations.push('relationship');
+    if (text.includes('note')) operations.push('notes');
+    if (text.includes('attribute')) operations.push('attributes');
+    if (text.includes('list')) operations.push('lists');
+    
+    return operations.length > 0 ? operations : ['other'];
+  }
+
+  /**
+   * Fallback: Scan tool configuration files (legacy method)
+   */
+  async scanToolConfigsFallback() {
+    console.log('🔍 Fallback: Scanning tool configuration files...');
+    
+    const TOOL_CONFIGS_DIR = path.join(__dirname, '../src/handlers/tool-configs');
     const scanDirectory = async (dir, category = '') => {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       
@@ -45,7 +163,7 @@ class ToolAnalyzer {
     };
 
     await scanDirectory(TOOL_CONFIGS_DIR);
-    console.log(`✅ Found ${this.tools.length} tools across ${Object.keys(this.categories).length} categories`);
+    console.log(`✅ Found ${this.tools.length} tools across ${Object.keys(this.categories).length} categories (fallback method)`);
   }
 
   /**
@@ -416,13 +534,14 @@ class ToolAnalyzer {
     console.log('🚀 Starting MCP Tool Analysis - Issue #352\n');
     
     try {
-      await this.scanToolConfigs();
+      await this.loadActualTools();
       this.identifyConsolidationOpportunities();
       const report = this.generateReport();
       await this.saveResults(report);
       this.printSummary(report);
       
       console.log('\n✅ Analysis complete! Check the generated report for detailed findings.');
+      console.log(`\n🎯 CORRECTED TOOL COUNT: ${this.actualToolCount} actual MCP tools`);
       return report;
       
     } catch (error) {
