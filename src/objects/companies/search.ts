@@ -36,8 +36,12 @@ export async function searchCompanies(
   query: string,
   options: CompanySearchOptions = {}
 ): Promise<Company[]> {
-  if (!query || !query.trim()) {
+  if (!query || typeof query !== 'string' || !query.trim()) {
     return [];
+  }
+
+  if (options.maxResults !== undefined && (typeof options.maxResults !== 'number' || options.maxResults < 0 || !Number.isInteger(options.maxResults))) {
+    throw new Error('maxResults must be a non-negative integer');
   }
 
   const results = await searchObject<Company>(ResourceType.COMPANIES, query);
@@ -53,7 +57,7 @@ export async function searchCompanies(
  * @returns Array of matching company objects
  */
 export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
-  if (!domain || !domain.trim()) {
+  if (!domain || typeof domain !== 'string' || !domain.trim()) {
     return [];
   }
 
@@ -86,6 +90,18 @@ export async function advancedSearchCompanies(
   limit?: number,
   offset?: number
 ): Promise<Company[]> {
+  if (!filters) {
+    throw new Error('Filters parameter is required');
+  }
+  
+  if (limit !== undefined && (typeof limit !== 'number' || limit < 0 || !Number.isInteger(limit))) {
+    throw new Error('Limit must be a non-negative integer');
+  }
+  
+  if (offset !== undefined && (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset))) {
+    throw new Error('Offset must be a non-negative integer');
+  }
+  
   return await advancedSearchObject<Company>(
     ResourceType.COMPANIES,
     filters,
@@ -101,6 +117,10 @@ export function createNameFilter(
   name: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
+  if (!name || typeof name !== 'string') {
+    throw new Error('Name parameter must be a non-empty string');
+  }
+  
   return {
     filters: [
       {
@@ -119,6 +139,10 @@ export function createDomainFilter(
   domain: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
+  if (!domain || typeof domain !== 'string') {
+    throw new Error('Domain parameter must be a non-empty string');
+  }
+  
   const normalizedDomain = normalizeDomain(domain);
   return {
     filters: [
@@ -138,6 +162,10 @@ export function createIndustryFilter(
   industry: string,
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
+  if (!industry || typeof industry !== 'string') {
+    throw new Error('Industry parameter must be a non-empty string');
+  }
+  
   return {
     filters: [
       {
