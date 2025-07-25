@@ -5,7 +5,6 @@ import { CompanyRecord } from './types.js';
 import {
   searchCompanies,
   searchCompaniesByDomain,
-  smartSearchCompanies,
   advancedSearchCompanies,
 } from '../../../objects/companies/index.js';
 import {
@@ -35,21 +34,6 @@ export const searchToolConfigs = {
     handler: searchCompaniesByDomain,
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies by domain:\n${results
-        .map((company: any) => {
-          const name = company.values?.name?.[0]?.value || 'Unnamed';
-          const website = company.values?.website?.[0]?.value || '';
-          const id = company.id?.record_id || 'unknown';
-          return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
-        })
-        .join('\n')}`;
-    },
-  } as SearchToolConfig,
-
-  smartSearch: {
-    name: 'smart-search-companies',
-    handler: smartSearchCompanies,
-    formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies (smart search):\n${results
         .map((company: any) => {
           const name = company.values?.name?.[0]?.value || 'Unnamed';
           const website = company.values?.website?.[0]?.value || '';
@@ -171,22 +155,6 @@ export const searchToolDefinitions = [
         },
       },
       required: ['domain'],
-    },
-  },
-  {
-    name: 'smart-search-companies',
-    description:
-      'Intelligent CRM company search that automatically detects and prioritizes domain-based searches. Best for queries that may contain mixed content (names, domains, emails, URLs).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description:
-            'Search query that may contain company names, domains, URLs, email addresses, or any combination. The search will automatically extract domains and prioritize exact matches.',
-        },
-      },
-      required: ['query'],
     },
   },
 ];

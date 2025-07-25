@@ -12,7 +12,7 @@ import {
 import { AttioApiError } from '../utils/error-handler.js';
 import { getAttributeSlugById } from '../api/attribute-types.js';
 import { searchPeopleByEmail } from './people/search.js';
-import { searchCompaniesByName } from './companies/search.js';
+import { searchCompanies } from './companies/search.js';
 import { getAttioClient } from '../api/attio-client.js';
 
 // Error classes for people operations
@@ -160,7 +160,7 @@ export class PersonValidator {
 
     // Resolve company name to record reference
     if (attributes.company && typeof attributes.company === 'string') {
-      const results = await searchCompaniesByName(attributes.company);
+      const results = await searchCompanies(attributes.company);
       if (results.length === 1) {
         attributes.company = { record_id: results[0].id?.record_id } as any;
       } else if (results.length === 0) {

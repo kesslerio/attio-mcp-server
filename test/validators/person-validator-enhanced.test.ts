@@ -2,7 +2,7 @@ import {
   PersonValidator,
   searchPeopleByEmails,
 } from '../../src/objects/people-write.js';
-import { searchCompaniesByName } from '../../src/objects/companies/search.js';
+import { searchCompanies } from '../../src/objects/companies/search.js';
 import * as attioClient from '../../src/api/attio-client.js';
 
 // Mock the API client to avoid initialization issues
@@ -19,7 +19,7 @@ vi.mock('../../src/objects/people-write.js', async () => {
 
 // Mock companies search
 vi.mock('../../src/objects/companies/search.js', () => ({
-  searchCompaniesByName: vi.fn(),
+  searchCompanies: vi.fn(),
 }));
 
 describe('PersonValidator.validateCreate', () => {
@@ -41,7 +41,7 @@ describe('PersonValidator.validateCreate', () => {
     (searchPeopleByEmails as vi.Mock).mockResolvedValue([
       { email: 'a@b.com', exists: false },
     ]);
-    (searchCompaniesByName as vi.Mock).mockResolvedValue([
+    (searchCompanies as vi.Mock).mockResolvedValue([
       { id: { record_id: 'comp_1' } },
     ]);
     const attrs = {
@@ -57,7 +57,7 @@ describe('PersonValidator.validateCreate', () => {
     (searchPeopleByEmails as vi.Mock).mockResolvedValue([
       { email: 'a@b.com', exists: false },
     ]);
-    (searchCompaniesByName as vi.Mock).mockResolvedValue([]);
+    (searchCompanies as vi.Mock).mockResolvedValue([]);
     const attrs = {
       name: 'Test',
       company: 'None',
