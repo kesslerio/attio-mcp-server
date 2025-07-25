@@ -18,8 +18,6 @@ export {
 export {
   searchCompanies,
   searchCompaniesByDomain,
-  searchCompaniesByName,
-  smartSearchCompanies,
   advancedSearchCompanies,
   createNameFilter,
   createIndustryFilter,
