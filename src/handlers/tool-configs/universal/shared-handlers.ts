@@ -42,6 +42,11 @@ import {
 } from '../../../objects/people/index.js';
 
 import {
+  updatePerson,
+  deletePerson
+} from '../../../objects/people-write.js';
+
+import {
   createObjectRecord,
   getObjectRecord,
   updateObjectRecord,
@@ -56,7 +61,72 @@ import {
   listTasks
 } from '../../../objects/tasks.js';
 
-import { AttioRecord } from '../../../types/attio.js';
+import { AttioRecord, AttioTask } from '../../../types/attio.js';
+import { getAttioClient } from '../../../api/attio-client.js';
+
+/**
+ * Converts an AttioTask to an AttioRecord for universal tool compatibility
+ * This provides proper type conversion without unsafe casting
+ */
+function convertTaskToRecord(task: AttioTask): AttioRecord {
+  return {
+    id: {
+      record_id: task.id.task_id,
+      object_id: task.id.object_id || 'tasks',
+      workspace_id: task.id.workspace_id
+    },
+    values: {
+      // Ensure the values object satisfies the AttioRecord.values interface
+      ...(task.values || {}),
+    } as AttioRecord['values'],
+    created_at: task.created_at,
+    updated_at: task.updated_at
+  };
+}
+
+/**
+ * Generic attribute discovery for any resource type
+ */
+async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<any> {
+  const client = getAttioClient();
+  
+  try {
+    const response = await client.get(`/objects/${resourceType}/attributes`);
+    const attributes = response.data.data || [];
+    
+    // Create mapping from title to api_slug for compatibility
+    const mappings: Record<string, string> = {};
+    attributes.forEach((attr: any) => {
+      if (attr.title && attr.api_slug) {
+        mappings[attr.title] = attr.api_slug;
+      }
+    });
+    
+    return {
+      attributes: attributes,
+      mappings: mappings,
+      count: attributes.length
+    };
+  } catch (error) {
+    console.error(`Failed to discover attributes for ${resourceType}:`, error);
+    throw new Error(`Attribute discovery failed for ${resourceType}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Get attributes for a specific record of any resource type
+ */
+async function getAttributesForRecord(resourceType: UniversalResourceType, recordId: string): Promise<any> {
+  const client = getAttioClient();
+  
+  try {
+    const response = await client.get(`/objects/${resourceType}/records/${recordId}`);
+    return response.data.data?.values || {};
+  } catch (error) {
+    console.error(`Failed to get attributes for ${resourceType} record ${recordId}:`, error);
+    throw new Error(`Failed to get record attributes: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 /**
  * Universal search handler - routes to appropriate resource-specific search
@@ -83,12 +153,8 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
       
     case UniversalResourceType.TASKS:
       const tasks = await listTasks();
-      // Convert AttioTask[] to AttioRecord[] by adding values property and mapping ID
-      return tasks.map((task: any) => ({
-        ...task,
-        id: { record_id: task.id.task_id, ...task.id },
-        values: task.values || {}
-      }));
+      // Convert AttioTask[] to AttioRecord[] using proper type conversion
+      return tasks.map(convertTaskToRecord);
       
     default:
       throw new Error(`Unsupported resource type for search: ${resource_type}`);
@@ -118,12 +184,8 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       if (!task) {
         throw new Error(`Task not found with ID: ${record_id}`);
       }
-      // Convert AttioTask to AttioRecord by adding values property and mapping ID
-      return {
-        ...task,
-        id: { record_id: task.id.task_id, ...task.id },
-        values: task.values || {}
-      } as unknown as AttioRecord;
+      // Convert AttioTask to AttioRecord using proper type conversion
+      return convertTaskToRecord(task);
       
     default:
       throw new Error(`Unsupported resource type for get details: ${resource_type}`);
@@ -155,12 +217,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         recordId: record_data.recordId
       };
       const createdTask = await createTask(content, options);
-      // Convert AttioTask to AttioRecord by adding values property and mapping ID
-      return {
-        ...createdTask,
-        id: { record_id: createdTask.id.task_id, ...createdTask.id },
-        values: createdTask.values || {}
-      } as unknown as AttioRecord;
+      // Convert AttioTask to AttioRecord using proper type conversion
+      return convertTaskToRecord(createdTask);
       
     default:
       throw new Error(`Unsupported resource type for create: ${resource_type}`);
@@ -178,20 +236,15 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       return updateCompany(record_id, record_data);
       
     case UniversalResourceType.PEOPLE:
-      // People module doesn't have direct update, so use companies pattern
-      throw new Error('People update not yet implemented in universal handler');
+      return updatePerson(record_id, record_data);
       
     case UniversalResourceType.RECORDS:
       return updateObjectRecord('records', record_id, record_data);
       
     case UniversalResourceType.TASKS:
       const updatedTask = await updateTask(record_id, record_data);
-      // Convert AttioTask to AttioRecord by adding values property and mapping ID
-      return {
-        ...updatedTask,
-        id: { record_id: updatedTask.id.task_id, ...updatedTask.id },
-        values: updatedTask.values || {}
-      } as unknown as AttioRecord;
+      // Convert AttioTask to AttioRecord using proper type conversion
+      return convertTaskToRecord(updatedTask);
       
     default:
       throw new Error(`Unsupported resource type for update: ${resource_type}`);
@@ -210,8 +263,8 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
       return { success: true, record_id };
       
     case UniversalResourceType.PEOPLE:
-      // People module doesn't have direct delete, implement if needed
-      throw new Error('People delete not yet implemented in universal handler');
+      await deletePerson(record_id);
+      return { success: true, record_id };
       
     case UniversalResourceType.RECORDS:
       await deleteObjectRecord('records', record_id);
@@ -241,16 +294,23 @@ export async function handleUniversalGetAttributes(params: UniversalAttributesPa
       return discoverCompanyAttributes();
       
     case UniversalResourceType.PEOPLE:
-      // People attributes would be implemented here
-      throw new Error('People attributes not yet implemented in universal handler');
+      if (record_id) {
+        return getAttributesForRecord(resource_type, record_id);
+      }
+      // Return schema-level attributes if no record_id provided
+      return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.RECORDS:
-      // Records attributes would be implemented here
-      throw new Error('Records attributes not yet implemented in universal handler');
+      if (record_id) {
+        return getAttributesForRecord(resource_type, record_id);
+      }
+      return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.TASKS:
-      // Tasks attributes would be implemented here  
-      throw new Error('Tasks attributes not yet implemented in universal handler');
+      if (record_id) {
+        return getAttributesForRecord(resource_type, record_id);
+      }
+      return discoverAttributesForResourceType(resource_type);
       
     default:
       throw new Error(`Unsupported resource type for get attributes: ${resource_type}`);
@@ -266,16 +326,13 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
       return discoverCompanyAttributes();
       
     case UniversalResourceType.PEOPLE:
-      // People attribute discovery would be implemented here
-      throw new Error('People attribute discovery not yet implemented in universal handler');
+      return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.RECORDS:
-      // Records attribute discovery would be implemented here
-      throw new Error('Records attribute discovery not yet implemented in universal handler');
+      return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.TASKS:
-      // Tasks attribute discovery would be implemented here
-      throw new Error('Tasks attribute discovery not yet implemented in universal handler');
+      return discoverAttributesForResourceType(resource_type);
       
     default:
       throw new Error(`Unsupported resource type for discover attributes: ${resource_type}`);
