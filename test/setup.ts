@@ -20,15 +20,19 @@ vi.mock('../src/api/attio-client', async () => {
 });
 
 // Global mock for people search functions to fix PersonValidator tests
-vi.mock('../src/objects/people/search', () => ({
-  searchPeopleByEmail: vi.fn(async (email: string) => {
-    // Mock behavior based on email for testing
-    if (email === 'dup@example.com') {
-      return [{ id: { record_id: 'existing-person-id' } }];
-    }
-    return [];
-  }),
-}));
+vi.mock('../src/objects/people/search', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchPeopleByEmail: vi.fn(async (email: string) => {
+      // Mock behavior based on email for testing
+      if (email === 'dup@example.com') {
+        return [{ id: { record_id: 'existing-person-id' } }];
+      }
+      return [];
+    }),
+  };
+});
 
 // Mock the entire people-write module to avoid API initialization issues
 vi.mock('../src/objects/people-write', async () => {

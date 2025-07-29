@@ -47,13 +47,17 @@ import {
 
 import {
   searchPeopleByCompany,
-  searchPeopleByActivity,
   searchPeopleByNotes,
+  advancedSearchPeople
+} from '../../../objects/people/index.js';
+
+// Import date-related functions directly from search module to avoid potential circular imports
+import {
   searchPeopleByCreationDate,
   searchPeopleByModificationDate,
   searchPeopleByLastInteraction,
-  advancedSearchPeople
-} from '../../../objects/people/index.js';
+  searchPeopleByActivity
+} from '../../../objects/people/search.js';
 
 import { AttioRecord, ActivityFilter, InteractionType } from '../../../types/attio.js';
 import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
