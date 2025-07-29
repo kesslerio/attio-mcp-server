@@ -409,3 +409,76 @@ export function formatDate(
       return date.toISOString();
   }
 }
+
+/**
+ * Validates and creates a date range object for API requests
+ * Ensures dates are properly formatted and handles missing values gracefully
+ *
+ * @param startDate - Optional start date (ISO string or empty)
+ * @param endDate - Optional end date (ISO string or empty)
+ * @returns Validated date range object or throws error
+ * @throws Error when dates are invalid or illogical
+ */
+export function validateAndCreateDateRange(
+  startDate?: string,
+  endDate?: string
+): { start?: string; end?: string } | null {
+  // If both dates are missing or empty, return null (no date filtering)
+  if ((!startDate || startDate.trim() === '') && (!endDate || endDate.trim() === '')) {
+    return null;
+  }
+
+  const result: { start?: string; end?: string } = {};
+
+  // Validate and process start date
+  if (startDate && startDate.trim() !== '') {
+    const trimmedStart = startDate.trim();
+    if (!isValidISODateString(trimmedStart)) {
+      throw new Error(
+        `Invalid start date format. Expected ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ), got: "${trimmedStart}"`
+      );
+    }
+    result.start = trimmedStart;
+  }
+
+  // Validate and process end date
+  if (endDate && endDate.trim() !== '') {
+    const trimmedEnd = endDate.trim();
+    if (!isValidISODateString(trimmedEnd)) {
+      throw new Error(
+        `Invalid end date format. Expected ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ), got: "${trimmedEnd}"`
+      );
+    }
+    result.end = trimmedEnd;
+  }
+
+  // If only one date is provided, it's still valid for open-ended ranges
+  if ((result.start && !result.end) || (!result.start && result.end)) {
+    console.info(
+      `Creating open-ended date range: ${result.start ? `from ${result.start}` : `until ${result.end}`}`
+    );
+  }
+
+  // Validate logical consistency if both dates are provided
+  if (result.start && result.end) {
+    const startDate = new Date(result.start);
+    const endDate = new Date(result.end);
+
+    if (startDate > endDate) {
+      throw new Error(
+        `Invalid date range: start date (${result.start}) must be before or equal to end date (${result.end})`
+      );
+    }
+
+    // Warn if the date range is suspiciously large
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365);
+    if (diffYears > 10) {
+      console.warn(
+        `Large date range detected: ${diffYears.toFixed(1)} years. This may impact performance.`
+      );
+    }
+  }
+
+  return result;
+}

@@ -56,6 +56,7 @@ import {
 } from '../../../objects/people/index.js';
 
 import { AttioRecord, ActivityFilter, InteractionType } from '../../../types/attio.js';
+import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
 
 // Performance and safety constants
 const MAX_BATCH_SIZE = 50; // Maximum number of records per batch operation
@@ -214,9 +215,12 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
         case RelationshipType.COMPANY_TO_TASKS:
           // Task relationship search requires filtering tasks by linked records
           // This functionality depends on the Attio API's task filtering capabilities
-          // Current implementation: Return empty results with helpful message
-          console.warn(`Task relationship search (${relationship_type}) not available - requires enhanced API filtering`);
-          return [];
+          throw new Error(
+            `Task relationship search (${relationship_type}) is not currently available. ` +
+            `This feature requires enhanced API filtering capabilities. ` +
+            `As a workaround, you can use the 'search-records' tool with resource_type='tasks' to find all tasks, ` +
+            `then filter the results programmatically.`
+          );
           
         default:
           throw new Error(`Unsupported relationship type: ${relationship_type}`);
@@ -288,8 +292,11 @@ export const searchByContentConfig: UniversalToolConfig = {
         case ContentSearchType.INTERACTIONS:
           // Interaction-based content search requires access to interaction/activity APIs
           // This functionality may require additional Attio API endpoints
-          console.warn(`Interaction content search not available for ${resource_type} - requires interaction API access`);
-          return [];
+          throw new Error(
+            `Interaction content search is not currently available for ${resource_type}. ` +
+            `This feature requires access to interaction/activity API endpoints. ` +
+            `As an alternative, try searching by notes content or using timeframe search with 'last_interaction' type.`
+          );
           
         default:
           throw new Error(`Unsupported content type: ${content_type}`);
@@ -342,8 +349,11 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             return await searchPeopleByModificationDate({ start: start_date, end: end_date });
             
           case TimeframeType.LAST_INTERACTION:
-            // Create a DateRange object
-            const dateRange = start_date && end_date ? { start: start_date, end: end_date } : { start: start_date || '', end: end_date || '' };
+            // Validate and create date range object
+            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            if (!dateRange) {
+              throw new Error('At least one date (start or end) is required for last interaction search');
+            }
             return await searchPeopleByLastInteraction(dateRange);
             
           default:
@@ -356,13 +366,11 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           case UniversalResourceType.COMPANIES:
           case UniversalResourceType.RECORDS:
           case UniversalResourceType.TASKS:
-            console.warn(`Timeframe search for ${resource_type} using basic filtering - may need API enhancement`);
-            // Return basic search results - timeframe filtering would need API support
-            return await handleUniversalSearch({
-              resource_type,
-              limit: params.limit,
-              offset: params.offset
-            });
+            throw new Error(
+              `Timeframe search is not currently optimized for ${resource_type}. ` +
+              `The Attio API does not provide native date filtering for this resource type. ` +
+              `As a workaround, you can use 'advanced-search' with custom filter conditions or retrieve all records and filter programmatically.`
+            );
             
           default:
             throw new Error(`Timeframe search not supported for resource type: ${resource_type}`);
