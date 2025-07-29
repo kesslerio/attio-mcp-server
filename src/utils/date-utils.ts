@@ -424,7 +424,10 @@ export function validateAndCreateDateRange(
   endDate?: string
 ): { start?: string; end?: string } | null {
   // If both dates are missing or empty, return null (no date filtering)
-  if ((!startDate || startDate.trim() === '') && (!endDate || endDate.trim() === '')) {
+  if (
+    (!startDate || startDate.trim() === '') &&
+    (!endDate || endDate.trim() === '')
+  ) {
     return null;
   }
 
