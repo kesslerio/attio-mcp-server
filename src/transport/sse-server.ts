@@ -53,7 +53,7 @@ export class SSEServer {
       if (this.options.requireAuth) {
         const authResult = this.authenticateRequest(req);
         if (!authResult.success) {
-          this.sendErrorResponse(res, 401, 'Unauthorized', authResult.error);
+          this.sendErrorResponse(res, 401, 'Unauthorized', authResult.error || 'Authentication failed');
           return;
         }
       }

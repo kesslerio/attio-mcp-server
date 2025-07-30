@@ -3,7 +3,7 @@
  * Used for ChatGPT connector compatibility
  */
 
-import { IncomingMessage, ServerResponse } from 'http';
+import { IncomingMessage, ServerResponse as HttpServerResponse } from 'http';
 
 /**
  * SSE connection information for a connected client
@@ -12,7 +12,7 @@ export interface SSEConnection {
   /** Unique client identifier */
   clientId: string;
   /** HTTP response object for sending SSE messages */
-  response: ServerResponse;
+  response: HttpServerResponse;
   /** Timestamp of last activity */
   lastActivity: number;
   /** Whether the connection is authenticated */
@@ -149,7 +149,7 @@ export interface SSEEndpoint {
   /** HTTP method */
   method: 'GET' | 'POST' | 'OPTIONS';
   /** Handler function */
-  handler: (req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
+  handler: (req: IncomingMessage, res: HttpServerResponse) => void | Promise<void>;
   /** Whether authentication is required */
   requireAuth?: boolean;
   /** Rate limit override (requests per minute) */
