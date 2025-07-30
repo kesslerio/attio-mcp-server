@@ -47,13 +47,17 @@ import {
 
 import {
   searchPeopleByCompany,
-  searchPeopleByActivity,
   searchPeopleByNotes,
+  advancedSearchPeople
+} from '../../../objects/people/index.js';
+
+// Import date-related functions directly from search module to avoid potential circular imports
+import {
   searchPeopleByCreationDate,
   searchPeopleByModificationDate,
   searchPeopleByLastInteraction,
-  advancedSearchPeople
-} from '../../../objects/people/index.js';
+  searchPeopleByActivity
+} from '../../../objects/people/search.js';
 
 import { AttioRecord, ActivityFilter, InteractionType } from '../../../types/attio.js';
 import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
@@ -281,7 +285,7 @@ export const searchByContentConfig: UniversalToolConfig = {
             // Create proper ActivityFilter with required dateRange property
             const activityFilter: ActivityFilter = {
               dateRange: {
-                preset: 'last_30_days' // Default to last 30 days for activity search
+                preset: 'last_month' // Default to last month for activity search
               },
               interactionType: InteractionType.ANY // Search all interaction types
             };

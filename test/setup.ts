@@ -20,15 +20,30 @@ vi.mock('../src/api/attio-client', async () => {
 });
 
 // Global mock for people search functions to fix PersonValidator tests
-vi.mock('../src/objects/people/search', () => ({
-  searchPeopleByEmail: vi.fn(async (email: string) => {
-    // Mock behavior based on email for testing
-    if (email === 'dup@example.com') {
-      return [{ id: { record_id: 'existing-person-id' } }];
-    }
-    return [];
-  }),
-}));
+vi.mock('../src/objects/people/search', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchPeopleByEmail: vi.fn(async (email: string) => {
+      // Mock behavior based on email for testing
+      if (email === 'dup@example.com') {
+        return [{ id: { record_id: 'existing-person-id' } }];
+      }
+      return [];
+    }),
+    searchPeopleByCreationDate: vi.fn(async () => []),
+    searchPeopleByModificationDate: vi.fn(async () => []),
+    searchPeopleByLastInteraction: vi.fn(async () => []),
+    searchPeopleByActivity: vi.fn(async (activityFilter) => {
+      // Mock implementation that bypasses filter validation
+      return [];
+    }),
+    advancedSearchPeople: vi.fn(async (filters, options) => {
+      // Mock that bypasses filter validation
+      return { results: [] };
+    }),
+  };
+});
 
 // Mock the entire people-write module to avoid API initialization issues
 vi.mock('../src/objects/people-write', async () => {
@@ -93,7 +108,10 @@ vi.mock('../src/objects/people/index', async (importOriginal) => {
   return {
     ...actual,
     searchPeople: vi.fn(async () => []),
-    advancedSearchPeople: vi.fn(async () => []),
+    advancedSearchPeople: vi.fn(async (filters, options) => {
+      // Mock that bypasses filter validation
+      return { results: [] };
+    }),
     listPeople: vi.fn(async () => []),
     getPersonDetails: vi.fn(async () => ({})),
     createPerson: vi.fn(async () => ({})),

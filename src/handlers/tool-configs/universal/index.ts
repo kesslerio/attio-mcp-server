@@ -18,6 +18,14 @@ import {
   advancedOperationsToolDefinitions
 } from './advanced-operations.js';
 
+// Re-export individual tool config objects for testing
+export {
+  coreOperationsToolConfigs,
+  coreOperationsToolDefinitions,
+  advancedOperationsToolConfigs,
+  advancedOperationsToolDefinitions
+};
+
 // Re-export types for external use
 export * from './types.js';
 export * from './schemas.js';
