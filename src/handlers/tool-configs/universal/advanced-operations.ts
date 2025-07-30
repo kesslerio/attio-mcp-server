@@ -147,9 +147,9 @@ export const advancedSearchConfig: UniversalToolConfig = {
   name: 'advanced-search',
   handler: async (params: AdvancedSearchParams): Promise<AttioRecord[]> => {
     try {
-      validateUniversalToolParams('advanced-search', params);
+      const sanitizedParams = validateUniversalToolParams('advanced-search', params);
       
-      const { resource_type, query, filters, sort_by, sort_order, limit, offset } = params;
+      const { resource_type, query, filters, sort_by, sort_order, limit, offset } = sanitizedParams;
       
       // Use the universal search handler with advanced filtering
       return await handleUniversalSearch({
@@ -204,9 +204,9 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
   name: 'search-by-relationship',
   handler: async (params: RelationshipSearchParams): Promise<AttioRecord[]> => {
     try {
-      validateUniversalToolParams('search-by-relationship', params);
+      const sanitizedParams = validateUniversalToolParams('search-by-relationship', params);
       
-      const { relationship_type, source_id, target_resource_type, limit, offset } = params;
+      const { relationship_type, source_id, target_resource_type, limit, offset } = sanitizedParams;
       
       switch (relationship_type) {
         case RelationshipType.COMPANY_TO_PEOPLE:
@@ -267,9 +267,9 @@ export const searchByContentConfig: UniversalToolConfig = {
   name: 'search-by-content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
     try {
-      validateUniversalToolParams('search-by-content', params);
+      const sanitizedParams = validateUniversalToolParams('search-by-content', params);
       
-      const { resource_type, content_type, search_query, limit, offset } = params;
+      const { resource_type, content_type, search_query, limit, offset } = sanitizedParams;
       
       switch (content_type) {
         case ContentSearchType.NOTES:
@@ -340,9 +340,9 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
   name: 'search-by-timeframe',
   handler: async (params: TimeframeSearchParams): Promise<AttioRecord[]> => {
     try {
-      validateUniversalToolParams('search-by-timeframe', params);
+      const sanitizedParams = validateUniversalToolParams('search-by-timeframe', params);
       
-      const { resource_type, timeframe_type, start_date, end_date, limit, offset } = params;
+      const { resource_type, timeframe_type, start_date, end_date, limit, offset } = sanitizedParams;
       
       if (resource_type === UniversalResourceType.PEOPLE) {
         switch (timeframe_type) {
@@ -424,9 +424,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
   handler: async (params: BatchOperationsParams): Promise<any> => {
     try {
-      validateUniversalToolParams('batch-operations', params);
+      const sanitizedParams = validateUniversalToolParams('batch-operations', params);
       
-      const { resource_type, operation_type, records, record_ids, limit, offset } = params;
+      const { resource_type, operation_type, records, record_ids, limit, offset } = sanitizedParams;
       
       switch (operation_type) {
         case BatchOperationType.CREATE:
@@ -440,7 +440,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData) => {
+            async (recordData: Record<string, any>) => {
               return await handleUniversalCreate({
                 resource_type,
                 record_data: recordData,
@@ -460,7 +460,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData) => {
+            async (recordData: Record<string, any>) => {
               if (!recordData.id) {
                 throw new Error('Record ID is required for update operation');
               }
@@ -485,7 +485,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             record_ids,
-            async (recordId) => {
+            async (recordId: string) => {
               return await handleUniversalDelete({
                 resource_type,
                 record_id: recordId
@@ -504,7 +504,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             record_ids,
-            async (recordId) => {
+            async (recordId: string) => {
               return await handleUniversalGetDetails({
                 resource_type,
                 record_id: recordId

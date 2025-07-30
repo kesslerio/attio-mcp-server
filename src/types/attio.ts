@@ -26,14 +26,13 @@ export enum FilterConditionType {
   ENDS_WITH = 'ends_with',
 
   // Numeric/Date conditions
-  GREATER_THAN = 'greater_than',
-  LESS_THAN = 'less_than',
-  GREATER_THAN_OR_EQUALS = 'greater_than_or_equals',
-  LESS_THAN_OR_EQUALS = 'less_than_or_equals',
+  GREATER_THAN = 'gt',
+  LESS_THAN = 'lt',
+  GREATER_THAN_OR_EQUALS = 'gte',
+  LESS_THAN_OR_EQUALS = 'lte',
 
-  // Date range specific conditions
-  BEFORE = 'before',
-  AFTER = 'after',
+  // Date range specific conditions (using proper API operators)
+  // Note: BEFORE uses LESS_THAN, AFTER uses GREATER_THAN_OR_EQUALS
   BETWEEN = 'between',
 
   // Existence conditions

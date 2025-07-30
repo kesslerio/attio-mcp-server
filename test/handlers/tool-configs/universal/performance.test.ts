@@ -36,7 +36,7 @@ describe('Universal Tools Performance Tests', () => {
   });
 
   const timestamp = Date.now();
-  let createdTestRecords: string[] = [];
+  const createdTestRecords: string[] = [];
 
 
   afterAll(async () => {

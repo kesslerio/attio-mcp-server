@@ -9,7 +9,6 @@ import {
   deleteCompany,
 } from '../../../objects/companies/index.js';
 import { ToolConfig } from '../../tool-types.js';
-import { formatterConfigs } from './formatters.js';
 
 /**
  * Helper function to safely extract company display information

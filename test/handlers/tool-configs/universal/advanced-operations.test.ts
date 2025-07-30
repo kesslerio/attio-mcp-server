@@ -56,18 +56,18 @@ vi.mock('../../../../src/objects/people/index.js', async (importOriginal) => {
 });
 
 // Mock validation and date utils
-vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    validateUniversalToolParams: vi.fn(() => {}), // Default: do nothing
-    advancedSearchSchema: { type: 'object', properties: {}, required: [] },
-    searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
-    searchByContentSchema: { type: 'object', properties: {}, required: [] },
-    searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
-    batchOperationsSchema: { type: 'object', properties: {}, required: [] }
-  };
-});
+vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
+  validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+    // Just return the params as-is (simulating successful validation)
+    // This matches the expected behavior in tests
+    return params || {};
+  }),
+  advancedSearchSchema: { type: 'object', properties: {}, required: [] },
+  searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
+  searchByContentSchema: { type: 'object', properties: {}, required: [] },
+  searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
+  batchOperationsSchema: { type: 'object', properties: {}, required: [] }
+}));
 
 vi.mock('../../../../src/utils/date-utils.js', async (importOriginal) => {
   const actual = await importOriginal();
@@ -121,7 +121,7 @@ describe('Universal Advanced Operations Tests', () => {
     vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: any) => 
       new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
     );
-    vi.mocked(validateUniversalToolParams).mockImplementation(() => {}); // Default: do nothing
+    // Removed the problematic validateUniversalToolParams override that was causing undefined destructuring
   });
 
   afterEach(() => {
@@ -758,6 +758,10 @@ describe('Universal Advanced Operations Tests', () => {
   describe('Error handling and edge cases', () => {
     it('should handle validation errors in all advanced tools', async () => {
       const { validateUniversalToolParams } = await import('../../../../src/handlers/tool-configs/universal/schemas.js');
+      
+      // Store the original mock implementation to restore it later
+      const originalMock = vi.mocked(validateUniversalToolParams);
+      
       vi.mocked(validateUniversalToolParams).mockImplementation(() => {
         throw new Error('Validation failed');
       });
@@ -773,6 +777,11 @@ describe('Universal Advanced Operations Tests', () => {
       for (const { tool, params } of tools) {
         await expect(tool.handler(params)).rejects.toThrow('Validation failed');
       }
+      
+      // Restore the original mock behavior to not affect other tests
+      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: any) => {
+        return params || {};
+      });
     });
 
     it('should handle empty results gracefully', async () => {

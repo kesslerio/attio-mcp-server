@@ -63,6 +63,7 @@ import {
 
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
+import { UniversalValidationError, ErrorType } from './schemas.js';
 
 /**
  * Converts an AttioTask to an AttioRecord for universal tool compatibility
@@ -404,11 +405,61 @@ export function isValidResourceType(resourceType: string): resourceType is Unive
 }
 
 /**
- * Error handling utility for universal operations
+ * Enhanced error handling utility for universal operations
  */
 export function createUniversalError(operation: string, resourceType: string, originalError: any): Error {
+  // If it's already a UniversalValidationError, pass it through
+  if (originalError instanceof UniversalValidationError) {
+    return originalError;
+  }
+  
+  // Classify the error type based on the original error
+  let errorType = ErrorType.SYSTEM_ERROR;
+  
+  if (originalError?.message?.includes('not found') || 
+      originalError?.message?.includes('invalid') ||
+      originalError?.message?.includes('required') ||
+      originalError?.status === 400) {
+    errorType = ErrorType.USER_ERROR;
+  } else if (originalError?.status >= 500 || 
+             originalError?.message?.includes('network') ||
+             originalError?.message?.includes('timeout')) {
+    errorType = ErrorType.API_ERROR;
+  }
+  
   const message = `Universal ${operation} failed for resource type ${resourceType}: ${originalError.message}`;
-  const error = new Error(message);
-  error.cause = originalError;
-  return error;
+  
+  return new UniversalValidationError(
+    message,
+    errorType,
+    {
+      suggestion: getOperationSuggestion(operation, resourceType, originalError),
+      cause: originalError
+    }
+  );
+}
+
+/**
+ * Get helpful suggestions based on the operation and error
+ */
+function getOperationSuggestion(operation: string, resourceType: string, error: any): string | undefined {
+  const errorMessage = error?.message?.toLowerCase() || '';
+  
+  if (errorMessage.includes('not found')) {
+    return `Verify that the ${resourceType} record exists and you have access to it`;
+  }
+  
+  if (errorMessage.includes('unauthorized') || errorMessage.includes('forbidden')) {
+    return 'Check your API permissions and authentication credentials';
+  }
+  
+  if (errorMessage.includes('rate limit')) {
+    return 'Wait a moment before retrying - you may be making requests too quickly';
+  }
+  
+  if (operation === 'create' && errorMessage.includes('duplicate')) {
+    return `A ${resourceType} record with these details may already exist. Try searching first`;
+  }
+  
+  return undefined;
 }
