@@ -7,6 +7,7 @@ import {
   validateUniversalToolParams,
   UniversalValidationError,
   ErrorType,
+  HttpStatusCode,
   InputSanitizer,
   CrossResourceValidator
 } from '../src/handlers/tool-configs/universal/schemas.js';
@@ -163,9 +164,16 @@ describe('Cross-Resource Validation', () => {
         company_id: 'comp_123'
       };
 
-      // Mock the company validation to return false for this test
+      // Mock the company validation to return failure result for this test
       const originalValidate = CrossResourceValidator.validateCompanyExists;
-      CrossResourceValidator.validateCompanyExists = async () => false;
+      CrossResourceValidator.validateCompanyExists = async () => ({
+        exists: false,
+        error: {
+          type: 'not_found' as const,
+          message: 'Company with ID \'comp_123\' does not exist',
+          httpStatusCode: HttpStatusCode.NOT_FOUND
+        }
+      });
 
       try {
         await CrossResourceValidator.validateRecordRelationships(
