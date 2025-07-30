@@ -26,13 +26,29 @@ export enum ErrorType {
 }
 
 /**
- * Enhanced error class with classification and suggestions
+ * HTTP status codes for error classification
+ */
+export enum HttpStatusCode {
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  CONFLICT = 409,
+  UNPROCESSABLE_ENTITY = 422,
+  INTERNAL_SERVER_ERROR = 500,
+  BAD_GATEWAY = 502,
+  SERVICE_UNAVAILABLE = 503
+}
+
+/**
+ * Enhanced error class with classification, suggestions, and HTTP status mapping
  */
 export class UniversalValidationError extends Error {
   public readonly errorType: ErrorType;
   public readonly suggestion?: string;
   public readonly example?: string;
   public readonly field?: string;
+  public readonly httpStatusCode: HttpStatusCode;
 
   constructor(
     message: string,
@@ -42,6 +58,7 @@ export class UniversalValidationError extends Error {
       example?: string;
       field?: string;
       cause?: Error;
+      httpStatusCode?: HttpStatusCode;
     } = {}
   ) {
     super(message);
@@ -51,18 +68,73 @@ export class UniversalValidationError extends Error {
     this.example = options.example;
     this.field = options.field;
     this.cause = options.cause;
+    
+    // Map error types to appropriate HTTP status codes
+    this.httpStatusCode = options.httpStatusCode ?? this.getDefaultHttpStatus(errorType);
+  }
+
+  /**
+   * Get default HTTP status code based on error type
+   */
+  private getDefaultHttpStatus(errorType: ErrorType): HttpStatusCode {
+    switch (errorType) {
+      case ErrorType.USER_ERROR:
+        return HttpStatusCode.BAD_REQUEST;
+      case ErrorType.API_ERROR:
+        return HttpStatusCode.BAD_GATEWAY;
+      case ErrorType.SYSTEM_ERROR:
+        return HttpStatusCode.INTERNAL_SERVER_ERROR;
+      default:
+        return HttpStatusCode.INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  /**
+   * Get structured error response for API consumers
+   */
+  toErrorResponse() {
+    return {
+      error: {
+        type: this.errorType,
+        message: this.message,
+        field: this.field,
+        suggestion: this.suggestion,
+        example: this.example,
+        httpStatusCode: this.httpStatusCode,
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 }
 
 /**
- * Input sanitization utilities
+ * Supported sanitized value types
+ */
+export type SanitizedValue = string | number | boolean | null | SanitizedObject | SanitizedValue[];
+
+/**
+ * Interface for sanitized objects with proper typing
+ */
+export interface SanitizedObject extends Record<string, SanitizedValue> {
+  [key: string]: SanitizedValue;
+}
+
+/**
+ * Input sanitization utilities with enhanced type safety
  */
 export class InputSanitizer {
   /**
    * Sanitize string input to prevent XSS attacks
    */
-  static sanitizeString(input: string): string {
-    if (typeof input !== 'string') return input;
+  /**
+   * Sanitize string input to prevent XSS attacks
+   * @param input - Input to sanitize (converted to string if not already)
+   * @returns Sanitized string
+   */
+  static sanitizeString(input: unknown): string {
+    if (typeof input !== 'string') {
+      return String(input);
+    }
     
     return input
       .trim()
@@ -74,16 +146,29 @@ export class InputSanitizer {
   /**
    * Normalize email addresses
    */
-  static normalizeEmail(email: string): string {
-    if (typeof email !== 'string') return email;
+  /**
+   * Normalize email addresses to consistent format
+   * @param email - Email address to normalize
+   * @returns Normalized email address
+   */
+  static normalizeEmail(email: unknown): string {
+    if (typeof email !== 'string') {
+      return String(email).trim().toLowerCase();
+    }
     return email.trim().toLowerCase();
   }
 
   /**
    * Sanitize object recursively 
    */
-  static sanitizeObject(obj: any): any {
-    if (obj === null || obj === undefined) return obj;
+  /**
+   * Sanitize object recursively with proper type safety
+   * @param obj - Object to sanitize
+   * @returns Sanitized object with type safety
+   */
+  static sanitizeObject(obj: unknown): SanitizedValue {
+    if (obj === null) return null;
+    if (obj === undefined) return null;
     
     if (typeof obj === 'string') {
       return this.sanitizeString(obj);
@@ -93,11 +178,15 @@ export class InputSanitizer {
       return obj.map(item => this.sanitizeObject(item));
     }
     
+    if (typeof obj === 'number' || typeof obj === 'boolean') {
+      return obj;
+    }
+    
     if (typeof obj === 'object') {
-      const sanitized: any = {};
+      const sanitized: SanitizedObject = {};
       for (const [key, value] of Object.entries(obj)) {
         // Sanitize email fields specifically
-        if (key.toLowerCase().includes('email') && typeof value === 'string') {
+        if (key.toLowerCase().includes('email') && value !== null && value !== undefined) {
           sanitized[key] = this.normalizeEmail(value);
         } else {
           sanitized[key] = this.sanitizeObject(value);
@@ -106,7 +195,8 @@ export class InputSanitizer {
       return sanitized;
     }
     
-    return obj;
+    // For any other types, convert to string and sanitize
+    return this.sanitizeString(obj);
   }
 }
 
@@ -449,15 +539,55 @@ export const batchOperationsSchema = {
 export class CrossResourceValidator {
   /**
    * Validate that a company ID exists before creating/updating people
+   * @param companyId - The company ID to validate
+   * @returns Promise resolving to validation result with detailed error info
    */
-  static async validateCompanyExists(companyId: string): Promise<boolean> {
+  static async validateCompanyExists(companyId: string): Promise<{
+    exists: boolean;
+    error?: {
+      type: 'not_found' | 'api_error' | 'invalid_format';
+      message: string;
+      httpStatusCode: HttpStatusCode;
+    };
+  }> {
+    // Basic format validation
+    if (!companyId || typeof companyId !== 'string' || companyId.trim().length === 0) {
+      return {
+        exists: false,
+        error: {
+          type: 'invalid_format',
+          message: 'Company ID must be a non-empty string',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
+        }
+      };
+    }
+
     try {
       const { getAttioClient } = await import('../../../api/attio-client.js');
       const client = getAttioClient();
-      await client.get(`/objects/companies/records/${companyId}`);
-      return true;
-    } catch (error) {
-      return false;
+      await client.get(`/objects/companies/records/${companyId.trim()}`);
+      return { exists: true };
+    } catch (error: any) {
+      // Classify the error based on response
+      if (error?.response?.status === 404) {
+        return {
+          exists: false,
+          error: {
+            type: 'not_found',
+            message: `Company with ID '${companyId}' does not exist`,
+            httpStatusCode: HttpStatusCode.NOT_FOUND
+          }
+        };
+      }
+      
+      return {
+        exists: false,
+        error: {
+          type: 'api_error',
+          message: `Failed to validate company existence: ${error?.message || 'Unknown API error'}`,
+          httpStatusCode: HttpStatusCode.BAD_GATEWAY
+        }
+      };
     }
   }
 
@@ -471,16 +601,23 @@ export class CrossResourceValidator {
       case UniversalResourceType.PEOPLE:
         // Check if company_id is provided and validate it exists
         const companyId = recordData.company_id || recordData.company?.id || recordData.company;
-        if (companyId && typeof companyId === 'string') {
-          const companyExists = await this.validateCompanyExists(companyId);
-          if (!companyExists) {
+        if (companyId) {
+          const companyIdString = String(companyId);
+          const validationResult = await this.validateCompanyExists(companyIdString);
+          if (!validationResult.exists) {
+            const error = validationResult.error!;
             throw new UniversalValidationError(
-              `Referenced company not found: ${companyId}`,
-              ErrorType.USER_ERROR,
+              error.message,
+              error.type === 'api_error' ? ErrorType.API_ERROR : ErrorType.USER_ERROR,
               {
                 field: 'company_id',
-                suggestion: 'Verify the company ID exists, or create the company first',
-                example: `Try searching for companies first: search-records with resource_type: 'companies'`
+                suggestion: error.type === 'not_found' 
+                  ? 'Verify the company ID exists, or create the company first'
+                  : 'Check your API connection and try again',
+                example: error.type === 'not_found' 
+                  ? `Try searching for companies first: search-records with resource_type: 'companies'`
+                  : undefined,
+                httpStatusCode: error.httpStatusCode
               }
             );
           }
@@ -595,22 +732,41 @@ function getEditDistance(str1: string, str2: string): number {
  */
 export function validateUniversalToolParams(toolName: string, params: any): any {
   // Sanitize input parameters first
-  const sanitizedParams = InputSanitizer.sanitizeObject(params);
+  const sanitizedValue = InputSanitizer.sanitizeObject(params);
   
-  // Validate resource_type if present
-  if (sanitizedParams.resource_type && !Object.values(UniversalResourceType).includes(sanitizedParams.resource_type)) {
-    const suggestion = suggestResourceType(sanitizedParams.resource_type);
-    const validTypes = Object.values(UniversalResourceType).join(', ');
-    
+  // Ensure we have a valid object to work with
+  if (!sanitizedValue || typeof sanitizedValue !== 'object' || Array.isArray(sanitizedValue)) {
     throw new UniversalValidationError(
-      `Invalid resource_type: '${sanitizedParams.resource_type}'`,
+      'Invalid parameters: expected an object',
       ErrorType.USER_ERROR,
       {
-        field: 'resource_type',
-        suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
-        example: `Expected one of: ${validTypes}`
+        suggestion: 'Provide parameters as an object',
+        example: '{ resource_type: "companies", ... }',
+        httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
       }
     );
+  }
+  
+  const sanitizedParams = sanitizedValue as SanitizedObject;
+  
+  // Validate resource_type if present
+  if (sanitizedParams.resource_type) {
+    const resourceType = String(sanitizedParams.resource_type);
+    if (!Object.values(UniversalResourceType).includes(resourceType as UniversalResourceType)) {
+      const suggestion = suggestResourceType(resourceType);
+      const validTypes = Object.values(UniversalResourceType).join(', ');
+      
+      throw new UniversalValidationError(
+        `Invalid resource_type: '${resourceType}'`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
+          example: `Expected one of: ${validTypes}`,
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
+        }
+      );
+    }
   }
   
   switch (toolName) {
@@ -743,24 +899,25 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           }
         );
       }
-      if (['create', 'update'].includes(sanitizedParams.operation_type) && !sanitizedParams.records) {
+      const operationType = String(sanitizedParams.operation_type);
+      if (['create', 'update'].includes(operationType) && !sanitizedParams.records) {
         throw new UniversalValidationError(
-          `Missing required parameter for ${sanitizedParams.operation_type} operations: records`,
+          `Missing required parameter for ${operationType} operations: records`,
           ErrorType.USER_ERROR,
           {
             field: 'records',
-            suggestion: `Provide an array of record data for ${sanitizedParams.operation_type} operations`,
+            suggestion: `Provide an array of record data for ${operationType} operations`,
             example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`
           }
         );
       }
-      if (['delete', 'get'].includes(sanitizedParams.operation_type) && !sanitizedParams.record_ids) {
+      if (['delete', 'get'].includes(operationType) && !sanitizedParams.record_ids) {
         throw new UniversalValidationError(
-          `Missing required parameter for ${sanitizedParams.operation_type} operations: record_ids`,
+          `Missing required parameter for ${operationType} operations: record_ids`,
           ErrorType.USER_ERROR,
           {
             field: 'record_ids',
-            suggestion: `Provide an array of record IDs for ${sanitizedParams.operation_type} operations`,
+            suggestion: `Provide an array of record IDs for ${operationType} operations`,
             example: `record_ids: ['comp_abc123', 'comp_def456']`
           }
         );
