@@ -21,7 +21,7 @@ export default defineConfig({
       forks: {
         minForks: 1,
         maxForks: 1, // Single fork for API rate limiting
-        singleFork: true // Force sequential execution
+        singleFork: true, // Force sequential execution
       },
     },
     // Retry failed tests once for API flakiness

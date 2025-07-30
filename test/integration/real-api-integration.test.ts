@@ -13,12 +13,12 @@ import {
   getPersonDetails,
   deletePerson,
 } from '../../src/objects/people/index.js';
-import { 
-  setupIntegrationTests, 
-  trackTestRecord, 
-  generateTestData, 
+import {
+  setupIntegrationTests,
+  trackTestRecord,
+  generateTestData,
   expectIntegrationError,
-  waitForApiIndexing
+  waitForApiIndexing,
 } from '../helpers/integration-test-setup.js';
 
 describe('Real API Integration Tests', () => {
@@ -26,7 +26,7 @@ describe('Real API Integration Tests', () => {
   const testSetup = setupIntegrationTests({
     skipOnMissingApiKey: true,
     timeout: 30000,
-    verbose: true
+    verbose: true,
   });
 
   if (testSetup.shouldSkip) {
@@ -50,11 +50,23 @@ describe('Real API Integration Tests', () => {
       const company = await createCompany(companyData);
 
       // Enhanced validation with better error reporting
-      expect(company, 'Company creation should return a valid object').toBeDefined();
+      expect(
+        company,
+        'Company creation should return a valid object'
+      ).toBeDefined();
       expect(company.id, 'Company should have an ID object').toBeDefined();
-      expect(company.id.record_id, 'Company should have a record_id').toBeDefined();
-      expect(company.values?.name, 'Company should have a name field').toBeDefined();
-      expect(company.values.name?.[0]?.value, 'Company name should match input').toBe(testData.companyName);
+      expect(
+        company.id.record_id,
+        'Company should have a record_id'
+      ).toBeDefined();
+      expect(
+        company.values?.name,
+        'Company should have a name field'
+      ).toBeDefined();
+      expect(
+        company.values.name?.[0]?.value,
+        'Company name should match input'
+      ).toBe(testData.companyName);
 
       createdCompanyId = company.id.record_id;
       trackTestRecord('company', createdCompanyId);
@@ -68,20 +80,32 @@ describe('Real API Integration Tests', () => {
 
       expect(results, 'Search should return results array').toBeDefined();
       expect(Array.isArray(results), 'Results should be an array').toBe(true);
-      expect(results.length, 'Should find at least one company').toBeGreaterThan(0);
+      expect(
+        results.length,
+        'Should find at least one company'
+      ).toBeGreaterThan(0);
 
       const foundCompany = results.find(
         (c) => c.values.name?.[0]?.value === testData.companyName
       );
-      expect(foundCompany, 'Should find the created company in search results').toBeDefined();
+      expect(
+        foundCompany,
+        'Should find the created company in search results'
+      ).toBeDefined();
     });
 
     it('should get company details', async () => {
       const details = await getCompanyDetails(createdCompanyId);
 
       expect(details, 'Company details should be returned').toBeDefined();
-      expect(details.id?.record_id, 'Details should have correct record ID').toBe(createdCompanyId);
-      expect(details.values?.name?.[0]?.value, 'Details should have correct name').toBe(testData.companyName);
+      expect(
+        details.id?.record_id,
+        'Details should have correct record ID'
+      ).toBe(createdCompanyId);
+      expect(
+        details.values?.name?.[0]?.value,
+        'Details should have correct name'
+      ).toBe(testData.companyName);
     });
 
     it('should update the company', async () => {
@@ -116,13 +140,25 @@ describe('Real API Integration Tests', () => {
 
       const person = await createPerson(personData);
 
-      expect(person, 'Person creation should return a valid object').toBeDefined();
+      expect(
+        person,
+        'Person creation should return a valid object'
+      ).toBeDefined();
       expect(person.id, 'Person should have an ID object').toBeDefined();
-      expect(person.id.record_id, 'Person should have a record_id').toBeDefined();
-      expect(person.values?.email_addresses, 'Person should have email addresses').toBeDefined();
-      
+      expect(
+        person.id.record_id,
+        'Person should have a record_id'
+      ).toBeDefined();
+      expect(
+        person.values?.email_addresses,
+        'Person should have email addresses'
+      ).toBeDefined();
+
       if (person.values.email_addresses) {
-        expect(person.values.email_addresses[0]?.email_address, 'Email should match input').toBe(testData.personEmail);
+        expect(
+          person.values.email_addresses[0]?.email_address,
+          'Email should match input'
+        ).toBe(testData.personEmail);
       }
 
       createdPersonId = person.id.record_id;
@@ -137,24 +173,35 @@ describe('Real API Integration Tests', () => {
 
       expect(results, 'Search should return results array').toBeDefined();
       expect(Array.isArray(results), 'Results should be an array').toBe(true);
-      expect(results.length, 'Should find at least one person').toBeGreaterThan(0);
+      expect(results.length, 'Should find at least one person').toBeGreaterThan(
+        0
+      );
 
       const foundPerson = results.find((p) =>
         p.values.email_addresses?.some(
           (e: any) => e.email_address === testData.personEmail
         )
       );
-      expect(foundPerson, 'Should find the created person in search results').toBeDefined();
+      expect(
+        foundPerson,
+        'Should find the created person in search results'
+      ).toBeDefined();
     });
 
     it('should get person details', async () => {
       const details = await getPersonDetails(createdPersonId);
 
       expect(details, 'Person details should be returned').toBeDefined();
-      expect(details.id?.record_id, 'Details should have correct record ID').toBe(createdPersonId);
-      
+      expect(
+        details.id?.record_id,
+        'Details should have correct record ID'
+      ).toBe(createdPersonId);
+
       if (details.values?.email_addresses) {
-        expect(details.values.email_addresses[0]?.email_address, 'Details should have correct email').toBe(testData.personEmail);
+        expect(
+          details.values.email_addresses[0]?.email_address,
+          'Details should have correct email'
+        ).toBe(testData.personEmail);
       }
     });
 
@@ -209,9 +256,12 @@ describe('Real API Integration Tests', () => {
         const isValidError = expectIntegrationError(error, [
           'not found',
           'invalid',
-          'non-existent'
+          'non-existent',
         ]);
-        expect(isValidError || error instanceof Error, 'Should throw a proper error').toBe(true);
+        expect(
+          isValidError || error instanceof Error,
+          'Should throw a proper error'
+        ).toBe(true);
       }
     });
 
@@ -226,9 +276,12 @@ describe('Real API Integration Tests', () => {
         const isValidError = expectIntegrationError(error, [
           'required',
           'name',
-          'missing'
+          'missing',
         ]);
-        expect(isValidError || error instanceof Error, 'Should provide validation error').toBe(true);
+        expect(
+          isValidError || error instanceof Error,
+          'Should provide validation error'
+        ).toBe(true);
       }
     });
 
@@ -240,9 +293,12 @@ describe('Real API Integration Tests', () => {
         const isValidError = expectIntegrationError(error, [
           'not found',
           'invalid',
-          'non-existent'
+          'non-existent',
         ]);
-        expect(isValidError || error instanceof Error, 'Should throw a proper error').toBe(true);
+        expect(
+          isValidError || error instanceof Error,
+          'Should throw a proper error'
+        ).toBe(true);
       }
     });
 
@@ -258,9 +314,12 @@ describe('Real API Integration Tests', () => {
           'required',
           'email',
           'name',
-          'missing'
+          'missing',
         ]);
-        expect(isValidError || error instanceof Error, 'Should provide validation guidance').toBe(true);
+        expect(
+          isValidError || error instanceof Error,
+          'Should provide validation guidance'
+        ).toBe(true);
       }
     });
   });

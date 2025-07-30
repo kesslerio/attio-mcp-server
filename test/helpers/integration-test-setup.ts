@@ -1,6 +1,6 @@
 /**
  * Integration Test Setup Helper
- * 
+ *
  * Provides robust environment setup and validation for integration tests
  * that require real API access with proper error handling and cleanup.
  */
@@ -49,9 +49,11 @@ class TestDataTracker {
 
   async cleanup() {
     // Import cleanup functions dynamically to avoid circular dependencies
-    const { deleteCompany } = await import('../../src/objects/companies/index.js');
+    const { deleteCompany } = await import(
+      '../../src/objects/companies/index.js'
+    );
     const { deletePerson } = await import('../../src/objects/people/index.js');
-    
+
     for (const record of this.createdRecords.reverse()) {
       try {
         switch (record.type) {
@@ -76,27 +78,31 @@ const testDataTracker = new TestDataTracker();
 /**
  * Setup integration tests with proper environment validation and cleanup
  */
-export function setupIntegrationTests(config: IntegrationTestConfig = {}): IntegrationTestSetup {
+export function setupIntegrationTests(
+  config: IntegrationTestConfig = {}
+): IntegrationTestSetup {
   const {
     skipOnMissingApiKey = true,
     timeout = 30000,
-    verbose = false
+    verbose = false,
   } = config;
 
   // Check for API key
   const apiKey = process.env.ATTIO_API_KEY;
-  
+
   if (!apiKey && skipOnMissingApiKey) {
     return {
       shouldSkip: true,
       skipReason: 'No ATTIO_API_KEY found in environment variables',
       timestamp: Date.now(),
-      cleanup: async () => {}
+      cleanup: async () => {},
     };
   }
 
   if (!apiKey) {
-    throw new Error('ATTIO_API_KEY environment variable is required for integration tests');
+    throw new Error(
+      'ATTIO_API_KEY environment variable is required for integration tests'
+    );
   }
 
   // Validate API key format
@@ -105,7 +111,7 @@ export function setupIntegrationTests(config: IntegrationTestConfig = {}): Integ
       shouldSkip: true,
       skipReason: 'Invalid ATTIO_API_KEY format',
       timestamp: Date.now(),
-      cleanup: async () => {}
+      cleanup: async () => {},
     };
   }
 
@@ -128,7 +134,9 @@ export function setupIntegrationTests(config: IntegrationTestConfig = {}): Integ
         console.log('✅ API client initialized successfully');
       }
     } catch (error) {
-      throw new Error(`Failed to initialize API client: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to initialize API client: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   });
 
@@ -150,14 +158,17 @@ export function setupIntegrationTests(config: IntegrationTestConfig = {}): Integ
   return {
     shouldSkip: false,
     timestamp,
-    cleanup: () => testDataTracker.cleanup()
+    cleanup: () => testDataTracker.cleanup(),
   };
 }
 
 /**
  * Track a created record for automatic cleanup
  */
-export function trackTestRecord(type: 'company' | 'person' | 'record' | 'task', id: string) {
+export function trackTestRecord(
+  type: 'company' | 'person' | 'record' | 'task',
+  id: string
+) {
   testDataTracker.track(type, id);
 }
 
@@ -170,21 +181,24 @@ export function generateTestData(timestamp: number) {
     personName: `Test Person ${timestamp}`,
     personEmail: `test${timestamp}@example.com`,
     websiteUrl: `https://test${timestamp}.com`,
-    description: `Integration test data created at ${new Date(timestamp).toISOString()}`
+    description: `Integration test data created at ${new Date(timestamp).toISOString()}`,
   };
 }
 
 /**
  * Enhanced error handling for integration tests
  */
-export function expectIntegrationError(error: any, expectedPatterns: string[] = []) {
+export function expectIntegrationError(
+  error: any,
+  expectedPatterns: string[] = []
+) {
   // Check if it's our enhanced UniversalValidationError
   if (error?.name === 'UniversalValidationError') {
     console.log('✅ Enhanced validation error caught:', {
       type: error.errorType,
       message: error.message,
       suggestion: error.suggestion,
-      field: error.field
+      field: error.field,
     });
     return true;
   }
@@ -206,5 +220,5 @@ export function expectIntegrationError(error: any, expectedPatterns: string[] = 
  * Wait for API indexing (some operations need time to be searchable)
  */
 export async function waitForApiIndexing(milliseconds: number = 2000) {
-  await new Promise(resolve => setTimeout(resolve, milliseconds));
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
