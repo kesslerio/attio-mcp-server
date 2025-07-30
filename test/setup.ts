@@ -3,7 +3,7 @@
  * Handles API client mocking and common test configuration
  */
 import { vi, beforeEach } from 'vitest';
-import { createMockApiClient } from './types/test-types';
+import { createMockApiClient } from './types/test-types.js';
 
 // Global mock for attio-client
 vi.mock('../src/api/attio-client', async () => {
