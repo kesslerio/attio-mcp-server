@@ -59,6 +59,6 @@ jobs:
           #   Use TypeScript for new files
           
           # Optional: Custom environment variables for Claude
-          # claude_env: |
-          #   NODE_ENV: test
+          claude_env: |
+            CLAUDE_CODE_INCLUDE_CO_AUTHORED_BY: false
 
