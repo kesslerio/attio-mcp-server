@@ -6,7 +6,7 @@ import { vi, beforeEach } from 'vitest';
 import { createMockApiClient } from './types/test-types.js';
 
 // Global mock for attio-client
-vi.mock('../src/api/attio-client', async () => {
+vi.mock('../src/api/attio-client.js', async () => {
   const mockAxiosInstance = createMockApiClient();
   return {
     getAttioClient: vi.fn(() => mockAxiosInstance),
@@ -20,8 +20,8 @@ vi.mock('../src/api/attio-client', async () => {
 });
 
 // Global mock for people search functions to fix PersonValidator tests
-vi.mock('../src/objects/people/search', async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock('../src/objects/people/search.js', async (importOriginal) => {
+  const actual = await importOriginal() as typeof import('../src/objects/people/search.js');
   return {
     ...actual,
     searchPeopleByEmail: vi.fn(async (email: string) => {
@@ -34,11 +34,11 @@ vi.mock('../src/objects/people/search', async (importOriginal) => {
     searchPeopleByCreationDate: vi.fn(async () => []),
     searchPeopleByModificationDate: vi.fn(async () => []),
     searchPeopleByLastInteraction: vi.fn(async () => []),
-    searchPeopleByActivity: vi.fn(async (activityFilter) => {
+    searchPeopleByActivity: vi.fn(async (_activityFilter: any) => {
       // Mock implementation that bypasses filter validation
       return [];
     }),
-    advancedSearchPeople: vi.fn(async (filters, options) => {
+    advancedSearchPeople: vi.fn(async (_filters: any, _options?: any) => {
       // Mock that bypasses filter validation
       return { results: [] };
     }),
@@ -46,8 +46,8 @@ vi.mock('../src/objects/people/search', async (importOriginal) => {
 });
 
 // Mock the entire people-write module to avoid API initialization issues
-vi.mock('../src/objects/people-write', async () => {
-  const actual = await vi.importActual('../src/objects/people-write');
+vi.mock('../src/objects/people-write.js', async () => {
+  const actual = await vi.importActual('../src/objects/people-write.js') as typeof import('../src/objects/people-write.js');
   return {
     ...actual,
     searchPeopleByEmails: vi.fn(async (emails: string[]) => {
@@ -63,8 +63,8 @@ vi.mock('../src/objects/people-write', async () => {
 });
 
 // Global mock for companies module
-vi.mock('../src/objects/companies/index', async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock('../src/objects/companies/index.js', async (importOriginal) => {
+  const actual = await importOriginal() as typeof import('../src/objects/companies/index.js');
   return {
     ...actual,
     searchCompanies: vi.fn(async () => []),
@@ -87,7 +87,7 @@ vi.mock('../src/objects/companies/index', async (importOriginal) => {
 });
 
 // Global mock for companies search module
-vi.mock('../src/objects/companies/search', () => ({
+vi.mock('../src/objects/companies/search.js', () => ({
   searchCompaniesByName: vi.fn(async (name: string) => {
     // Mock behavior based on company name for testing
     if (name === 'Test Company' || name === 'Existing Company') {
@@ -103,12 +103,12 @@ vi.mock('../src/objects/companies/search', () => ({
 }));
 
 // Global mock for people module
-vi.mock('../src/objects/people/index', async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock('../src/objects/people/index.js', async (importOriginal) => {
+  const actual = await importOriginal() as typeof import('../src/objects/people/index.js');
   return {
     ...actual,
     searchPeople: vi.fn(async () => []),
-    advancedSearchPeople: vi.fn(async (filters, options) => {
+    advancedSearchPeople: vi.fn(async (_filters: any, _options?: any) => {
       // Mock that bypasses filter validation
       return { results: [] };
     }),
