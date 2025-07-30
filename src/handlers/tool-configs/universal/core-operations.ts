@@ -54,8 +54,8 @@ export const searchRecordsConfig: UniversalToolConfig = {
   name: 'search-records',
   handler: async (params: UniversalSearchParams): Promise<AttioRecord[]> => {
     try {
-      validateUniversalToolParams('search-records', params);
-      return await handleUniversalSearch(params);
+      const sanitizedParams = validateUniversalToolParams('search-records', params);
+      return await handleUniversalSearch(sanitizedParams);
     } catch (error) {
       throw createUniversalError('search', params.resource_type, error);
     }
@@ -95,8 +95,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
   name: 'get-record-details',
   handler: async (params: UniversalRecordDetailsParams): Promise<AttioRecord> => {
     try {
-      validateUniversalToolParams('get-record-details', params);
-      return await handleUniversalGetDetails(params);
+      const sanitizedParams = validateUniversalToolParams('get-record-details', params);
+      return await handleUniversalGetDetails(sanitizedParams);
     } catch (error) {
       throw createUniversalError('get details', params.resource_type, error);
     }
@@ -150,8 +150,16 @@ export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
-      validateUniversalToolParams('create-record', params);
-      return await handleUniversalCreate(params);
+      const sanitizedParams = validateUniversalToolParams('create-record', params);
+      
+      // Perform cross-resource validation for create operations
+      const { CrossResourceValidator } = await import('./schemas.js');
+      await CrossResourceValidator.validateRecordRelationships(
+        sanitizedParams.resource_type,
+        sanitizedParams.record_data
+      );
+      
+      return await handleUniversalCreate(sanitizedParams);
     } catch (error) {
       throw createUniversalError('create', params.resource_type, error);
     }
@@ -179,8 +187,16 @@ export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
   handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
     try {
-      validateUniversalToolParams('update-record', params);
-      return await handleUniversalUpdate(params);
+      const sanitizedParams = validateUniversalToolParams('update-record', params);
+      
+      // Perform cross-resource validation for update operations
+      const { CrossResourceValidator } = await import('./schemas.js');
+      await CrossResourceValidator.validateRecordRelationships(
+        sanitizedParams.resource_type,
+        sanitizedParams.record_data
+      );
+      
+      return await handleUniversalUpdate(sanitizedParams);
     } catch (error) {
       throw createUniversalError('update', params.resource_type, error);
     }
@@ -208,8 +224,8 @@ export const deleteRecordConfig: UniversalToolConfig = {
   name: 'delete-record',
   handler: async (params: UniversalDeleteParams): Promise<{ success: boolean; record_id: string }> => {
     try {
-      validateUniversalToolParams('delete-record', params);
-      return await handleUniversalDelete(params);
+      const sanitizedParams = validateUniversalToolParams('delete-record', params);
+      return await handleUniversalDelete(sanitizedParams);
     } catch (error) {
       throw createUniversalError('delete', params.resource_type, error);
     }
@@ -232,8 +248,8 @@ export const getAttributesConfig: UniversalToolConfig = {
   name: 'get-attributes',
   handler: async (params: UniversalAttributesParams): Promise<any> => {
     try {
-      validateUniversalToolParams('get-attributes', params);
-      return await handleUniversalGetAttributes(params);
+      const sanitizedParams = validateUniversalToolParams('get-attributes', params);
+      return await handleUniversalGetAttributes(sanitizedParams);
     } catch (error) {
       throw createUniversalError('get attributes', params.resource_type, error);
     }
@@ -274,8 +290,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
   name: 'discover-attributes',
   handler: async (params: { resource_type: UniversalResourceType }): Promise<any> => {
     try {
-      validateUniversalToolParams('discover-attributes', params);
-      return await handleUniversalDiscoverAttributes(params.resource_type);
+      const sanitizedParams = validateUniversalToolParams('discover-attributes', params);
+      return await handleUniversalDiscoverAttributes(sanitizedParams.resource_type);
     } catch (error) {
       throw createUniversalError('discover attributes', params.resource_type, error);
     }
@@ -310,8 +326,8 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
   handler: async (params: UniversalDetailedInfoParams): Promise<any> => {
     try {
-      validateUniversalToolParams('get-detailed-info', params);
-      return await handleUniversalGetDetailedInfo(params);
+      const sanitizedParams = validateUniversalToolParams('get-detailed-info', params);
+      return await handleUniversalGetDetailedInfo(sanitizedParams);
     } catch (error) {
       throw createUniversalError('get detailed info', params.resource_type, error);
     }

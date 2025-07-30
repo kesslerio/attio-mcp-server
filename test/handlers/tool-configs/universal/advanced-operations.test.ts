@@ -60,7 +60,7 @@ vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (imp
   const actual = await importOriginal();
   return {
     ...actual,
-    validateUniversalToolParams: vi.fn(() => {}), // Default: do nothing
+    validateUniversalToolParams: vi.fn((operation: string, params: any) => params), // Return sanitized params
     advancedSearchSchema: { type: 'object', properties: {}, required: [] },
     searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
     searchByContentSchema: { type: 'object', properties: {}, required: [] },

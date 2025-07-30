@@ -17,6 +17,100 @@ import {
 } from './types.js';
 
 /**
+ * Error classification for better error handling
+ */
+export enum ErrorType {
+  USER_ERROR = 'USER_ERROR',
+  SYSTEM_ERROR = 'SYSTEM_ERROR', 
+  API_ERROR = 'API_ERROR'
+}
+
+/**
+ * Enhanced error class with classification and suggestions
+ */
+export class UniversalValidationError extends Error {
+  public readonly errorType: ErrorType;
+  public readonly suggestion?: string;
+  public readonly example?: string;
+  public readonly field?: string;
+
+  constructor(
+    message: string,
+    errorType: ErrorType = ErrorType.USER_ERROR,
+    options: {
+      suggestion?: string;
+      example?: string;
+      field?: string;
+      cause?: Error;
+    } = {}
+  ) {
+    super(message);
+    this.name = 'UniversalValidationError';
+    this.errorType = errorType;
+    this.suggestion = options.suggestion;
+    this.example = options.example;
+    this.field = options.field;
+    this.cause = options.cause;
+  }
+}
+
+/**
+ * Input sanitization utilities
+ */
+export class InputSanitizer {
+  /**
+   * Sanitize string input to prevent XSS attacks
+   */
+  static sanitizeString(input: string): string {
+    if (typeof input !== 'string') return input;
+    
+    return input
+      .trim()
+      .replace(/<[^>]*>/g, '') // Remove HTML tags completely
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+=/gi, ''); // Remove event handlers
+  }
+
+  /**
+   * Normalize email addresses
+   */
+  static normalizeEmail(email: string): string {
+    if (typeof email !== 'string') return email;
+    return email.trim().toLowerCase();
+  }
+
+  /**
+   * Sanitize object recursively 
+   */
+  static sanitizeObject(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    
+    if (typeof obj === 'string') {
+      return this.sanitizeString(obj);
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeObject(item));
+    }
+    
+    if (typeof obj === 'object') {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        // Sanitize email fields specifically
+        if (key.toLowerCase().includes('email') && typeof value === 'string') {
+          sanitized[key] = this.normalizeEmail(value);
+        } else {
+          sanitized[key] = this.sanitizeObject(value);
+        }
+      }
+      return sanitized;
+    }
+    
+    return obj;
+  }
+}
+
+/**
  * Base resource type schema property
  */
 const resourceTypeProperty = {
@@ -350,52 +444,326 @@ export const batchOperationsSchema = {
 };
 
 /**
- * Schema validation utility function
+ * Cross-resource validation utilities
  */
-export function validateUniversalToolParams(toolName: string, params: any): void {
-  // Runtime validation logic will be implemented here
-  // This ensures operation-specific parameter requirements are met
+export class CrossResourceValidator {
+  /**
+   * Validate that a company ID exists before creating/updating people
+   */
+  static async validateCompanyExists(companyId: string): Promise<boolean> {
+    try {
+      const { getAttioClient } = await import('../../../api/attio-client.js');
+      const client = getAttioClient();
+      await client.get(`/objects/companies/records/${companyId}`);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Validate record relationships based on resource type and data
+   */
+  static async validateRecordRelationships(resourceType: UniversalResourceType, recordData: any): Promise<void> {
+    if (!recordData || typeof recordData !== 'object') return;
+
+    switch (resourceType) {
+      case UniversalResourceType.PEOPLE:
+        // Check if company_id is provided and validate it exists
+        const companyId = recordData.company_id || recordData.company?.id || recordData.company;
+        if (companyId && typeof companyId === 'string') {
+          const companyExists = await this.validateCompanyExists(companyId);
+          if (!companyExists) {
+            throw new UniversalValidationError(
+              `Referenced company not found: ${companyId}`,
+              ErrorType.USER_ERROR,
+              {
+                field: 'company_id',
+                suggestion: 'Verify the company ID exists, or create the company first',
+                example: `Try searching for companies first: search-records with resource_type: 'companies'`
+              }
+            );
+          }
+        }
+        break;
+        
+      case UniversalResourceType.RECORDS:
+        // Validate any object references in custom records
+        if (recordData.parent_id || recordData.related_records) {
+          // Add validation for custom record relationships if needed
+        }
+        break;
+        
+      case UniversalResourceType.TASKS:
+        // Validate task assignments and record associations
+        if (recordData.recordId) {
+          // Could validate the referenced record exists
+        }
+        break;
+        
+      default:
+        // No cross-resource validation needed for other types
+        break;
+    }
+  }
+}
+
+/**
+ * Helper function to suggest closest resource type
+ */
+function suggestResourceType(invalid: string): string | undefined {
+  const validTypes = Object.values(UniversalResourceType);
+  const lower = invalid.toLowerCase();
+  
+  // Check for common mistakes
+  const suggestions: Record<string, string> = {
+    'company': 'companies',
+    'person': 'people',
+    'record': 'records',
+    'task': 'tasks',
+    'user': 'people',
+    'contact': 'people',
+    'organization': 'companies',
+    'org': 'companies'
+  };
+  
+  if (suggestions[lower]) {
+    return suggestions[lower];
+  }
+  
+  // Find closest match by character similarity
+  let bestMatch = '';
+  let bestScore = 0;
+  
+  for (const validType of validTypes) {
+    const score = getStringSimilarity(lower, validType);
+    if (score > bestScore && score > 0.5) {
+      bestScore = score;
+      bestMatch = validType;
+    }
+  }
+  
+  return bestMatch || undefined;
+}
+
+/**
+ * Simple string similarity calculation
+ */
+function getStringSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+/**
+ * Calculate edit distance between two strings
+ */
+function getEditDistance(str1: string, str2: string): number {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+/**
+ * Enhanced schema validation utility function with better error messages
+ */
+export function validateUniversalToolParams(toolName: string, params: any): any {
+  // Sanitize input parameters first
+  const sanitizedParams = InputSanitizer.sanitizeObject(params);
+  
+  // Validate resource_type if present
+  if (sanitizedParams.resource_type && !Object.values(UniversalResourceType).includes(sanitizedParams.resource_type)) {
+    const suggestion = suggestResourceType(sanitizedParams.resource_type);
+    const validTypes = Object.values(UniversalResourceType).join(', ');
+    
+    throw new UniversalValidationError(
+      `Invalid resource_type: '${sanitizedParams.resource_type}'`,
+      ErrorType.USER_ERROR,
+      {
+        field: 'resource_type',
+        suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
+        example: `Expected one of: ${validTypes}`
+      }
+    );
+  }
   
   switch (toolName) {
     case 'search-records':
-      if (!params.resource_type) {
-        throw new Error('resource_type is required for search-records');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          {
+            field: 'resource_type',
+            suggestion: 'Specify which type of records to search',
+            example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`
+          }
+        );
       }
       break;
       
     case 'get-record-details':
-      if (!params.resource_type || !params.record_id) {
-        throw new Error('resource_type and record_id are required for get-record-details');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          {
+            field: 'resource_type',
+            example: `resource_type: 'companies'`
+          }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_id',
+            suggestion: 'Provide the unique identifier of the record to retrieve',
+            example: `record_id: 'comp_abc123'`
+          }
+        );
       }
       break;
       
     case 'create-record':
-      if (!params.resource_type || !params.record_data) {
-        throw new Error('resource_type and record_data are required for create-record');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          {
+            field: 'resource_type',
+            example: `resource_type: 'companies'`
+          }
+        );
+      }
+      if (!sanitizedParams.record_data) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_data',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_data',
+            suggestion: 'Provide the data for creating the new record',
+            example: `record_data: { name: 'Company Name', domain: 'example.com' }`
+          }
+        );
       }
       break;
       
     case 'update-record':
-      if (!params.resource_type || !params.record_id || !params.record_data) {
-        throw new Error('resource_type, record_id, and record_data are required for update-record');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'companies'` }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          { field: 'record_id', example: `record_id: 'comp_abc123'` }
+        );
+      }
+      if (!sanitizedParams.record_data) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_data',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_data',
+            suggestion: 'Provide the data to update the record with',
+            example: `record_data: { name: 'Updated Name' }`
+          }
+        );
       }
       break;
       
     case 'delete-record':
-      if (!params.resource_type || !params.record_id) {
-        throw new Error('resource_type and record_id are required for delete-record');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'companies'` }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_id',
+            suggestion: 'Provide the ID of the record to delete',
+            example: `record_id: 'comp_abc123'`
+          }
+        );
       }
       break;
       
     case 'batch-operations':
-      if (!params.resource_type || !params.operation_type) {
-        throw new Error('resource_type and operation_type are required for batch-operations');
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'companies'` }
+        );
       }
-      if (['create', 'update'].includes(params.operation_type) && !params.records) {
-        throw new Error('records array is required for batch create/update operations');
+      if (!sanitizedParams.operation_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: operation_type',
+          ErrorType.USER_ERROR,
+          {
+            field: 'operation_type',
+            example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`
+          }
+        );
       }
-      if (['delete', 'get'].includes(params.operation_type) && !params.record_ids) {
-        throw new Error('record_ids array is required for batch delete/get operations');
+      if (['create', 'update'].includes(sanitizedParams.operation_type) && !sanitizedParams.records) {
+        throw new UniversalValidationError(
+          `Missing required parameter for ${sanitizedParams.operation_type} operations: records`,
+          ErrorType.USER_ERROR,
+          {
+            field: 'records',
+            suggestion: `Provide an array of record data for ${sanitizedParams.operation_type} operations`,
+            example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`
+          }
+        );
+      }
+      if (['delete', 'get'].includes(sanitizedParams.operation_type) && !sanitizedParams.record_ids) {
+        throw new UniversalValidationError(
+          `Missing required parameter for ${sanitizedParams.operation_type} operations: record_ids`,
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_ids',
+            suggestion: `Provide an array of record IDs for ${sanitizedParams.operation_type} operations`,
+            example: `record_ids: ['comp_abc123', 'comp_def456']`
+          }
+        );
       }
       break;
       
@@ -403,4 +771,6 @@ export function validateUniversalToolParams(toolName: string, params: any): void
       // Additional validation for other tools can be added here
       break;
   }
+  
+  return sanitizedParams;
 }
