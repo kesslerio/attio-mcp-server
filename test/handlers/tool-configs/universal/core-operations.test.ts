@@ -27,7 +27,11 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
 
 // Mock validation and schemas
 vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
-  validateUniversalToolParams: vi.fn((operation: string, params: any) => params), // Return sanitized params
+  validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+    // Just return the params as-is (simulating successful validation)
+    // This matches the expected behavior in tests
+    return params || {};
+  }),
   searchRecordsSchema: {},
   getRecordDetailsSchema: {},
   createRecordSchema: {},
