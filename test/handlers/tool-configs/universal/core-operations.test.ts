@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+// Import enhanced error types
+import { UniversalValidationError, ErrorType } from '../../../../src/handlers/tool-configs/universal/schemas.js';
+
 // Mock the shared handlers
 vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', () => ({
   handleUniversalSearch: vi.fn(),
@@ -21,26 +24,34 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
   }),
   getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
   createUniversalError: vi.fn((operation: string, resourceType: string, error: any) => 
-    new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
+    new UniversalValidationError(
+      `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`,
+      ErrorType.API_ERROR,
+      { cause: error }
+    )
   )
 }));
 
 // Mock validation and schemas
-vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
-  validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-    // Just return the params as-is (simulating successful validation)
-    // This matches the expected behavior in tests
-    return params || {};
-  }),
-  searchRecordsSchema: {},
-  getRecordDetailsSchema: {},
-  createRecordSchema: {},
-  updateRecordSchema: {},
-  deleteRecordSchema: {},
-  getAttributesSchema: {},
-  discoverAttributesSchema: {},
-  getDetailedInfoSchema: {}
-}));
+vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+      // Just return the params as-is (simulating successful validation)
+      // This matches the expected behavior in tests
+      return params || {};
+    }),
+    searchRecordsSchema: {},
+    getRecordDetailsSchema: {},
+    createRecordSchema: {},
+    updateRecordSchema: {},
+    deleteRecordSchema: {},
+    getAttributesSchema: {},
+    discoverAttributesSchema: {},
+    getDetailedInfoSchema: {}
+  };
+});
 
 import {
   searchRecordsConfig,
@@ -127,14 +138,20 @@ describe('Universal Core Operations Tests', () => {
       const mockError = new Error('API error');
       const { handleUniversalSearch, createUniversalError } = await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockRejectedValue(mockError);
-      vi.mocked(createUniversalError).mockReturnValue(new Error('search failed for companies: API error'));
+      vi.mocked(createUniversalError).mockReturnValue(
+        new UniversalValidationError(
+          'Universal search failed for resource type companies: API error',
+          ErrorType.API_ERROR,
+          { cause: mockError }
+        )
+      );
 
       const params: UniversalSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test'
       };
 
-      await expect(searchRecordsConfig.handler(params)).rejects.toThrow('search failed for companies: API error');
+      await expect(searchRecordsConfig.handler(params)).rejects.toThrow('Universal search failed for resource type companies: API error');
       expect(vi.mocked(createUniversalError)).toHaveBeenCalledWith('search', UniversalResourceType.COMPANIES, mockError);
     });
 
