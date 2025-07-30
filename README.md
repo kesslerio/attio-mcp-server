@@ -115,6 +115,14 @@ Add to your Claude Desktop MCP configuration:
 }
 ```
 
+## 🔌 Integration Features
+
+### **ChatGPT Connector (New!)**
+- **OpenAI-Compatible Tools**: Search and fetch Attio data using ChatGPT's native tool interface
+- **SSE Transport Layer**: Real-time communication with Server-Sent Events support
+- **Universal Tool Integration**: Leverages the same powerful universal tools through OpenAI API format
+- **Cross-Platform**: Works with ChatGPT, OpenAI API, and any OpenAI-compatible client
+
 ## 🌟 Example Use Cases
 
 ### **For Sales Teams**
@@ -167,6 +175,7 @@ Comprehensive documentation is available in the [docs directory](./docs):
 ### **Getting Started**
 - [Installation & Setup](./docs/getting-started.md)
 - [Claude Desktop Configuration](./docs/claude-desktop-config.md)
+- [ChatGPT Connector Setup](./docs/chatgpt-connector.md)
 - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
 ### **API Reference**
@@ -220,6 +229,8 @@ We welcome contributions! Please see our [Contributing Guidelines](./CONTRIB.md)
 
 This initial release provides a solid foundation for CRM automation. Future versions will include:
 
+- ✅ **ChatGPT Integration**: OpenAI-compatible search and fetch tools (Phase 2 Complete)
+- **OAuth Authentication**: Secure authentication flow for ChatGPT (Phase 3 In Progress)
 - **Enhanced AI Insights**: AI-powered data analysis and recommendations
 - **Custom Workflow Builders**: Visual workflow creation for complex automations
 - **Advanced Reporting**: Comprehensive analytics and dashboard integrations

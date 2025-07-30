@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- ChatGPT connector with OpenAI-compatible search and fetch tools (#2)
+- SSE (Server-Sent Events) transport layer for real-time communication
+- OpenAI API endpoints at `/openai/tools` and `/openai/execute`
+- Universal tools integration for OpenAI endpoints
+- Data transformers for companies, people, lists, and tasks to OpenAI format
+- CORS support for browser-based ChatGPT access
+- Comprehensive integration tests for OpenAI endpoints
+- ChatGPT connector setup documentation
+
+### Fixed
+- Universal tools handler now supports UNIVERSAL resource type in dispatcher
+- Text parsing for universal tool outputs that return formatted text
+- ID extraction in transformers to properly handle record_id format
+
 ## [0.1.2] - 2025-01-23
 
 ### Fixed

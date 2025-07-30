@@ -85,6 +85,32 @@ curl -X POST http://localhost:3000/openai/execute \
 3. **Parallel Search**: Search queries all resource types in parallel for better performance
 4. **Backwards Compatibility**: All changes maintain compatibility with existing MCP protocol
 
+## Key Implementation Challenges Solved
+
+1. **Universal Tools Integration**: The initial implementation failed because the dispatcher didn't handle UNIVERSAL resource types. Added support in `dispatcher/core.ts`.
+
+2. **Text Parsing**: Universal tools return formatted text rather than JSON arrays. Implemented robust regex parsing to extract structured data from text output.
+
+3. **ID Format Handling**: Fixed transformer issues where IDs were showing as `tasks:[object Object]`. Now properly extracts `record_id` from parsed objects.
+
+4. **Backwards Compatibility**: All changes maintain full compatibility with existing MCP protocol while adding OpenAI endpoints.
+
+## Testing Results
+
+All integration tests passing (5/5):
+- ✅ Tools list endpoint returns search and fetch tools
+- ✅ Search tool finds and returns records in OpenAI format
+- ✅ Fetch tool retrieves detailed record information
+- ✅ Error handling returns appropriate error responses
+- ✅ CORS headers present for browser compatibility
+
+## Architecture Benefits
+
+1. **Leverages Existing Infrastructure**: Uses universal tools rather than duplicating functionality
+2. **Minimal Code Addition**: Adds only necessary OpenAI-specific formatting
+3. **Extensible Design**: Easy to add more OpenAI tools in future phases
+4. **Performance**: Parallel search across all resource types
+
 ## Next Steps
 - Phase 3: OAuth Authentication & Security
 - Phase 4: Comprehensive Testing & Documentation
