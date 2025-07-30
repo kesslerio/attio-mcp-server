@@ -42,6 +42,18 @@ export function wrapMCPNotification(mcpMessage: any): MCPSSEMessage {
 }
 
 /**
+ * Generic wrapper for MCP messages based on event type
+ */
+export function wrapMCPMessage(mcpMessage: any, eventType: MCPSSEMessage['event']): MCPSSEMessage {
+  return {
+    event: eventType,
+    timestamp: new Date().toISOString(),
+    mcp: mcpMessage,
+    version: '1.4.1',
+  };
+}
+
+/**
  * Create status message for SSE transport
  */
 export function createStatusMessage(

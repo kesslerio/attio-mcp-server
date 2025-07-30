@@ -312,6 +312,14 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolConfig as ToolConfig
       );
     
+    // Handle Universal tools (consolidated operations)
+    } else if (resourceType === 'UNIVERSAL' as any) {
+      // For universal tools, use the tool's own handler directly
+      const args = request.params.arguments;
+      const rawResult = await toolConfig.handler(args);
+      const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
+      result = { content: [{ type: 'text', text: formattedResult }] };
+      
     // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === 'GENERAL' as any) {
       // For general tools, use the tool's own handler directly

@@ -2,6 +2,8 @@ import http from 'http';
 import { URL } from 'url';
 import { SSEServer } from '../transport/sse-server.js';
 import { SSEServerOptions } from '../types/sse-types.js';
+import { openAITools, openAIToolDefinitions } from '../openai/index.js';
+import type { OpenAIErrorResponse } from '../openai/types.js';
 
 /**
  * Interface for health server options
@@ -100,6 +102,22 @@ export function startExtendedHealthServer(
           }
           break;
 
+        case '/openai/tools':
+          if (req.method === 'GET') {
+            handleOpenAIToolsList(req, res);
+          } else {
+            sendErrorResponse(res, 405, 'Method not allowed');
+          }
+          break;
+        case '/openai/execute':
+          if (req.method === 'POST') {
+            await handleOpenAIExecute(req, res);
+          } else if (req.method === 'OPTIONS') {
+            handleCorsOptions(req, res);
+          } else {
+            sendErrorResponse(res, 405, 'Method not allowed');
+          }
+          break;
         case '/mcp/stats':
           if (sseServer && req.method === 'GET') {
             handleStatsRequest(req, res, sseServer);
@@ -287,4 +305,116 @@ function sendErrorResponse(
     'Content-Length': Buffer.byteLength(jsonResponse),
   });
   res.end(jsonResponse);
+}
+
+/**
+ * Handle OpenAI tools list request
+ */
+function handleOpenAIToolsList(
+  req: http.IncomingMessage,
+  res: http.ServerResponse
+): void {
+  const response = {
+    tools: openAIToolDefinitions
+  };
+  
+  const jsonResponse = JSON.stringify(response);
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(jsonResponse),
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  });
+  res.end(jsonResponse);
+}
+
+/**
+ * Handle OpenAI tool execution request
+ */
+async function handleOpenAIExecute(
+  req: http.IncomingMessage,
+  res: http.ServerResponse
+): Promise<void> {
+  let body = '';
+  
+  req.on('data', chunk => {
+    body += chunk.toString();
+  });
+  
+  req.on('end', async () => {
+    try {
+      const request = JSON.parse(body);
+      const { tool, arguments: args } = request;
+      
+      if (!tool || !args) {
+        throw new Error('Missing tool name or arguments');
+      }
+      
+      let result: any;
+      
+      switch (tool) {
+        case 'search':
+          if (!args.query) {
+            throw new Error('Missing required parameter: query');
+          }
+          result = await openAITools.search(args.query);
+          break;
+          
+        case 'fetch':
+          if (!args.id) {
+            throw new Error('Missing required parameter: id');
+          }
+          result = await openAITools.fetch(args.id);
+          break;
+          
+        default:
+          throw new Error(`Unknown tool: ${tool}`);
+      }
+      
+      const response = { result };
+      const jsonResponse = JSON.stringify(response);
+      
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(jsonResponse),
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      });
+      res.end(jsonResponse);
+      
+    } catch (error: any) {
+      const errorResponse: OpenAIErrorResponse = {
+        error: {
+          message: error.message || 'Tool execution failed',
+          type: 'api_error'
+        }
+      };
+      
+      const jsonResponse = JSON.stringify(errorResponse);
+      res.writeHead(400, {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(jsonResponse),
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(jsonResponse);
+    }
+  });
+}
+
+/**
+ * Handle CORS preflight requests
+ */
+function handleCorsOptions(
+  req: http.IncomingMessage,
+  res: http.ServerResponse
+): void {
+  res.writeHead(204, {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+    'Access-Control-Max-Age': '86400',
+  });
+  res.end();
 }
