@@ -121,7 +121,7 @@ describe('Universal Advanced Operations Tests', () => {
     vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: any) => 
       new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
     );
-    vi.mocked(validateUniversalToolParams).mockImplementation(() => {}); // Default: do nothing
+    // Removed the problematic validateUniversalToolParams override that was causing undefined destructuring
   });
 
   afterEach(() => {
@@ -758,6 +758,10 @@ describe('Universal Advanced Operations Tests', () => {
   describe('Error handling and edge cases', () => {
     it('should handle validation errors in all advanced tools', async () => {
       const { validateUniversalToolParams } = await import('../../../../src/handlers/tool-configs/universal/schemas.js');
+      
+      // Store the original mock implementation to restore it later
+      const originalMock = vi.mocked(validateUniversalToolParams);
+      
       vi.mocked(validateUniversalToolParams).mockImplementation(() => {
         throw new Error('Validation failed');
       });
@@ -773,6 +777,11 @@ describe('Universal Advanced Operations Tests', () => {
       for (const { tool, params } of tools) {
         await expect(tool.handler(params)).rejects.toThrow('Validation failed');
       }
+      
+      // Restore the original mock behavior to not affect other tests
+      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: any) => {
+        return params || {};
+      });
     });
 
     it('should handle empty results gracefully', async () => {
