@@ -75,6 +75,27 @@ CODE STYLE/STRUCTURE
 - Formatting: Follow project style, 2-space indentation.
 - Types/Docs: Mandatory type hints. Use JSDoc for public API.
 - Imports: Node.js standard modules -> external -> internal.
+
+LINT COMPLIANCE (CRITICAL)
+- ZERO errors allowed in lint:check (all errors must be fixed before commit)
+- Warnings should be addressed systematically (target <100 total warnings)
+- NEVER use `any` type without justification - create proper interfaces instead
+- Remove unused variables and imports immediately
+- Use `@ts-expect-error` instead of `@ts-ignore` with explanatory comments
+- Replace useless try/catch blocks that only re-throw errors
+- Run `npm run lint:fix` to auto-fix simple issues before manual review
+
+SYSTEMATIC ANY TYPE REDUCTION PLAN:
+Current status: ~778 warnings (mostly `any` types)
+Priority order for fixing `any` types:
+1. **API Response Types** (src/api/operations/*.ts) - Create proper response interfaces
+2. **Error Handling** (src/errors/*.ts) - Define specific error parameter types  
+3. **Handler Parameters** (src/handlers/*.ts) - Create typed parameter interfaces
+4. **Universal Tool Types** (src/handlers/tool-configs/universal/*.ts) - Enhance existing types
+5. **Test Files** (test/**/*.ts) - Use proper mock types instead of any
+
+Strategy: Create reusable interfaces in types/ directory, then systematically replace any types
+Target: Reduce from 778 to <100 warnings over time (not blocking for commits)
 - Testing:
   * ALWAYS place ALL tests in the `/test` directory - never in project root
   * Use Vitest (NOT Jest) for TypeScript tests (*.test.ts)
@@ -105,6 +126,27 @@ NEVER create PRs to hmk/attio-mcp-server without explicit instructions.
 NEVER assume PR should go to upstream repository.
 ALWAYS check all config files and templates use kesslerio URLs, not hmk URLs.
 
+🚨 ENHANCED GIT ACP PROCESS (MANDATORY)
+Before any commit, ALWAYS run this validation pipeline:
+```bash
+# Full validation pipeline (recommended)
+npm run lint:check && npm run build && npm run test:offline && git add . && git commit -m "message" && git push
+
+# Quick validation (for minor changes)  
+npm run build && npm run test:offline && git add . && git commit -m "message" && git push
+
+# Emergency bypass (critical fixes only, requires justification in commit message)
+git add . && git commit --no-verify -m "EMERGENCY: description of critical issue" && git push
+```
+
+⚠️ VALIDATION PIPELINE RULES:
+- `npm run lint:check` - MUST pass (0 errors allowed, warnings reviewed)
+- `npm run build` - MUST pass (no TypeScript compilation errors)  
+- `npm run test:offline` - MUST pass (offline tests only, no API required)
+- Commit only proceeds if ALL validations pass
+- Use `--no-verify` ONLY for critical production fixes with justification
+
+Standard Commands:
 git checkout -b feature/<name> && git add . && git commit -m "Feature: <desc>" && git push -u origin HEAD && gh pr create -R kesslerio/attio-mcp-server -t "Feature: <desc>" -b "<details>"
 git fetch upstream && git checkout main && git merge upstream/main && git push origin main
 

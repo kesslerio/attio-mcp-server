@@ -10,7 +10,6 @@
  * Using console.log will break the MCP protocol, as it writes to stdout
  * which is used for client-server communication.
  */
-// @ts-ignore - Fast-safe-stringify has CommonJS exports
 import fastSafeStringify from 'fast-safe-stringify';
 
 /**

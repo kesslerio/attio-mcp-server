@@ -32,8 +32,7 @@ export enum FilterConditionType {
   LESS_THAN_OR_EQUALS = 'lte',
 
   // Date range specific conditions (using proper API operators)
-  BEFORE = 'lt',
-  AFTER = 'gte',
+  // Note: BEFORE uses LESS_THAN, AFTER uses GREATER_THAN_OR_EQUALS
   BETWEEN = 'between',
 
   // Existence conditions
