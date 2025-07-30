@@ -129,8 +129,8 @@ ALWAYS check all config files and templates use kesslerio URLs, not hmk URLs.
 🚨 ENHANCED GIT ACP PROCESS (MANDATORY)
 Before any commit, ALWAYS run this validation pipeline:
 ```bash
-# Full validation pipeline (recommended)
-npm run lint:check && npm run build && npm run test:offline && git add . && git commit -m "message" && git push
+# Full validation pipeline (recommended) 
+npm run lint:check && npm run check:format && npm run build && npm run test:offline && git add . && git commit -m "message" && git push
 
 # Quick validation (for minor changes)  
 npm run build && npm run test:offline && git add . && git commit -m "message" && git push
@@ -140,16 +140,19 @@ git add . && git commit --no-verify -m "EMERGENCY: description of critical issue
 ```
 
 ⚠️ VALIDATION PIPELINE RULES:
-- `npm run lint:check` - MUST pass (0 errors allowed, warnings reviewed) ⚠️ ESLint/TypeScript ONLY, does NOT run tests
-- `npm run build` - MUST pass (no TypeScript compilation errors)
-- `npm run test:offline` - MUST pass (offline tests only, no API required) ⚠️ Test execution with assertions  
-- Commit only proceeds if ALL validations pass (lint + build + tests)
+- `npm run lint:check` - MUST pass (ESLint/TypeScript errors/warnings)
+- `npm run check:format` - MUST pass (Prettier code formatting)
+- `npm run build` - MUST pass (TypeScript compilation)
+- `npm run test:offline` - MUST pass (offline tests, no API required)
+- Commit only proceeds if ALL validations pass
 - Use `--no-verify` ONLY for critical production fixes with justification
 
 🔍 CRITICAL DISTINCTION:
-- `lint:check` = Code style/compilation checks (ESLint rules, TypeScript errors)
-- `test:offline` = Test execution with assertions (catches logic errors, test failures)
-- BOTH are required for complete validation - lint catches different issues than tests
+- `npm run lint:check` = ESLint and TypeScript checks
+- `npm run check:format` = Prettier formatting validation
+- `npm run build` = TypeScript compilation  
+- `npm run test:offline` = Test execution (catches logic/assertion failures)
+- `npm run check` = ALL above + full test suite (not suitable for git workflow due to API tests)
 
 Standard Commands:
 git checkout -b feature/<name> && git add . && git commit -m "Feature: <desc>" && git push -u origin HEAD && gh pr create -R kesslerio/attio-mcp-server -t "Feature: <desc>" -b "<details>"
