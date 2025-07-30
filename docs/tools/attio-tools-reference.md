@@ -1,194 +1,327 @@
-# Attio MCP Tools Reference
+# Attio MCP Universal Tools Reference
 
-This document provides a comprehensive guide to all Attio MCP tools available, their capabilities, and when to use each one.
+This document provides a comprehensive guide to the **13 Universal Tools** in the Attio MCP Server - a modern, streamlined replacement for the previous 40+ individual tools.
 
-## People Tools
+## 🎯 Universal Tools Overview
 
-### Basic Search Tools
+Universal tools provide consistent operations across all resource types (companies, people, tasks, records) using a single set of tools with `resource_type` parameters. This approach offers:
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `search-people` | Simple text-based search across people records | Quick searches by name, email, or phone | `query`: Text to search for |
-| `search-people-by-email` | Search specifically for people by email address | When you need to find people with a specific email address | `email`: Email to search for |
-| `search-people-by-phone` | Search specifically for people by phone number | When you need to find people with a specific phone number | `phone`: Phone number to search for |
+- **68% Tool Reduction**: From 40+ tools to 13 universal operations
+- **Consistent API**: Same patterns across all resource types
+- **Better Performance**: Fewer tools for AI systems to evaluate
+- **Future-Proof**: Easy to add new resource types
 
-### Advanced Search Tools
+## 📚 Quick Navigation
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `advanced-search-people` | Complex, multi-attribute filtering with logical operators | Precise searches with multiple criteria | `filters`: Object with filter conditions, `matchAny`: Boolean for OR/AND logic |
-| `search-people-by-creation-date` | Find people created within a date range | When you need to find people based on when they were created | `dateRange`: Date range object |
-| `search-people-by-modification-date` | Find people modified within a date range | When you need to find people based on when they were last updated | `dateRange`: Date range object |
-| `search-people-by-last-interaction` | Find people with interactions in a date range | When you need to find people based on interaction history | `dateRange`: Date range object, `interactionType`: Type of interaction |
-| `search-people-by-activity` | Find people with specific activity history | For detailed activity-based filtering | `activityFilter`: Activity filter configuration |
+| Need to... | Use This Tool | Key Parameters |
+|------------|---------------|----------------|
+| **Search any resource** | `search-records` | `resource_type`, `query` |
+| **Get record details** | `get-record-details` | `resource_type`, `record_id` |
+| **Create new record** | `create-record` | `resource_type`, `record_data` |
+| **Update existing record** | `update-record` | `resource_type`, `record_id`, `updates` |
+| **Delete record** | `delete-record` | `resource_type`, `record_id` |
+| **Complex searches** | `advanced-search` | `resource_type`, `filters` |
+| **Cross-resource searches** | `search-by-relationship` | `resource_type`, `related_resource_type` |
+| **Content-based searches** | `search-by-content` | `resource_type`, `content_query` |
+| **Time-based searches** | `search-by-timeframe` | `resource_type`, `date_range` |
+| **Bulk operations** | `batch-operations` | `operation_type`, `records` |
+| **Get attributes** | `get-attributes` | `resource_type`, `record_id` |
+| **Discover schema** | `discover-attributes` | `resource_type` |
+| **Get specialized info** | `get-detailed-info` | `resource_type`, `record_id`, `info_type` |
 
-### Relationship-Based Search Tools
+## 🛠 Core Operations (8 Tools)
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `search-people-by-company` | Find people associated with specific companies | When you need to find people who work at particular companies | `companyFilter`: Company filter criteria |
-| `search-people-by-company-list` | Find people associated with companies in a list | When you need to find people who work at companies in a particular list | `listId`: ID of list containing companies |
-| `search-people-by-notes` | Find people with notes containing specific text | When you need to find people based on note content | `searchText`: Text to search for in notes |
+### 1. `search-records`
+**Universal search across all resource types**
 
-### Person Details and Notes
+```typescript
+{
+  "name": "search-records",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "query": "search term",
+    "limit": 20,
+    "fields": ["name", "email"] // Optional: specific fields to search
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `get-person-details` | Get comprehensive information about a person | When you need complete details for a specific person | `personId`: Person record ID |
-| `get-person-notes` | Get notes associated with a person | When you need to see the note history for a person | `personId`: Person record ID |
-| `create-person-note` | Create a new note for a person | When you need to add a note to a person's record | `personId`: Person ID, `content`: Note text |
+**Use Cases:**
+- Find companies by name: `resource_type: "companies", query: "acme"`
+- Find people by email: `resource_type: "people", query: "john@example.com"`
+- Find tasks by title: `resource_type: "tasks", query: "follow up"`
 
-## Company Tools
+### 2. `get-record-details`
+**Get comprehensive information for any record type**
 
-### Basic Search Tools
+```typescript
+{
+  "name": "get-record-details",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "record_id": "record_123456",
+    "include_relationships": true // Optional: include related records
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `search-companies` | Simple text-based search across company records | Quick searches by company name | `query`: Text to search for |
-| `search-companies-by-website` | Search specifically for companies by website URL | When you need to find companies with a specific website | `website`: Website to search for |
-| `search-companies-by-industry` | Search specifically for companies by industry | When you need to find companies in a specific industry | `industry`: Industry to search for |
+### 3. `create-record`
+**Create new records of any supported type**
 
-### Advanced Search Tools
+```typescript
+{
+  "name": "create-record",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "record_data": {
+      "name": "New Company",
+      "website": "https://example.com"
+      // ... other attributes
+    }
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `advanced-search-companies` | Complex, multi-attribute filtering with logical operators | Precise searches with multiple criteria | `filters`: Object with filter conditions, `matchAny`: Boolean for OR/AND logic |
-| `search-companies-by-creation-date` | Find companies created within a date range | When you need to find companies based on when they were created | `dateRange`: Date range object |
-| `search-companies-by-modification-date` | Find companies modified within a date range | When you need to find companies based on when they were last updated | `dateRange`: Date range object |
+### 4. `update-record`
+**Update existing records**
 
-### Relationship-Based Search Tools
+```typescript
+{
+  "name": "update-record",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "record_id": "record_123456",
+    "updates": {
+      "name": "Updated Name",
+      "status": "active"
+    }
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `search-companies-by-people` | Find companies with employees matching criteria | When you need to find companies based on their people | `peopleFilter`: Filter criteria for people |
-| `search-companies-by-people-list` | Find companies with employees in a specific list | When you need to find companies with people in a list | `listId`: List ID containing people |
-| `search-companies-by-notes` | Find companies with notes containing specific text | When you need to find companies based on note content | `searchText`: Text to search for in notes |
+### 5. `delete-record`
+**Delete records safely**
 
-### Company Details and Notes
+```typescript
+{
+  "name": "delete-record",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "record_id": "record_123456",
+    "force": false // Optional: bypass safety checks
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `get-company-details` | Get comprehensive information about a company | When you need complete details for a specific company | `companyId`: Company record ID |
-| `get-company-basic-info` | Get basic information about a company | When you only need essential details for a company | `companyId`: Company record ID |
-| `get-company-business-info` | Get business information about a company | When you need industry, revenue, and employee data | `companyId`: Company record ID |
-| `get-company-contact-info` | Get contact information for a company | When you need address and phone details | `companyId`: Company record ID |
-| `get-company-social-info` | Get social media information for a company | When you need links to social profiles | `companyId`: Company record ID |
-| `get-company-lists` | List the Attio lists that include a company | When you need to know a company's list memberships | `companyId`: Company record ID |
-| `get-company-json` | Get raw JSON representation of a company | When you need the complete data structure for a company | `companyId`: Company record ID |
-| `get-company-notes` | Get notes associated with a company | When you need to see the note history for a company | `companyId`: Company record ID |
-| `create-company-note` | Create a new note for a company | When you need to add a note to a company's record | `companyId`: Company ID, `title`: Optional note title, `content`: Note text |
+### 6. `get-attributes`
+**Get all attributes for a specific record**
 
-## List Tools
+```typescript
+{
+  "name": "get-attributes",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "record_id": "record_123456",
+    "attribute_names": ["name", "email"] // Optional: specific attributes
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `get-lists` | Get all available lists | When you need to see all lists in the workspace | None |
-| `get-list-entries` | Get entries from a specific list | When you need to see the contents of a list | `listId`: List ID |
-| `add-record-to-list` | Add a record to a list | When you need to add a person or company to a list | `listId`: List ID, `recordId`: Record ID |
-| `remove-record-from-list` | Remove a record from a list | When you need to remove a person or company from a list | `listId`: List ID, `entryId`: Entry ID |
-| `advanced-filter-list-entries` | Filter list entries with complex criteria | When you need to filter entries in a list with specific conditions | `listId`: List ID, `filters`: Filter criteria |
+### 7. `discover-attributes`
+**Discover available attributes for a resource type**
 
-## Record Tools
+```typescript
+{
+  "name": "discover-attributes",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "include_schema": true // Optional: include attribute schemas
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `create-record` | Create a generic record in any object type | When you need to create a custom record | `objectSlug`: Object type, `recordData`: Record attributes |
-| `get-record` | Get a generic record by ID | When you need to retrieve a record by ID | `objectSlug`: Object type, `recordId`: Record ID |
-| `update-record` | Update a generic record | When you need to modify an existing record | `objectSlug`: Object type, `recordId`: Record ID, `recordData`: Updated attributes |
-| `delete-record` | Delete a generic record | When you need to remove a record | `objectSlug`: Object type, `recordId`: Record ID |
-| `list-records` | List records of a specific object type | When you need to list records of a specific type | `objectSlug`: Object type |
+### 8. `get-detailed-info`
+**Get specialized information (contact, business, social)**
 
-## Task Tools
+```typescript
+{
+  "name": "get-detailed-info",
+  "arguments": {
+    "resource_type": "companies" | "people",
+    "record_id": "record_123456",
+    "info_type": "contact" | "business" | "social" | "all"
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `list-tasks` | List tasks in the workspace | View existing tasks | Optional filters |
-| `create-task` | Create a new task | Add follow ups | `content`, optional assignee |
-| `update-task` | Update an existing task | Modify details or status | `taskId` plus fields |
-| `delete-task` | Delete a task | Remove obsolete task | `taskId` |
-| `link-record-to-task` | Link a record to a task | Associate records | `taskId`, `recordId` |
+## 🚀 Advanced Operations (5 Tools)
 
-## Object-Specific Operations
+### 9. `advanced-search`
+**Complex searches with sorting and advanced filtering**
 
-### People Operations
+```typescript
+{
+  "name": "advanced-search",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "filters": {
+      "name": { "$contains": "tech" },
+      "employees": { "$gte": 50 },
+      "$or": [
+        { "industry": "Technology" },
+        { "industry": "Software" }
+      ]
+    },
+    "sort": [{ "name": "asc" }],
+    "limit": 50
+  }
+}
+```
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `create-person` | Create a new person record | When you need to add a person to the system | `attributes`: Person attributes |
-| `update-person` | Update an existing person record | When you need to modify a person's information | `personId`: Person ID, `attributes`: Updated attributes |
-| `delete-person` | Delete a person record | When you need to remove a person | `personId`: Person ID |
+**Filter Operators:**
+- `$contains`, `$starts_with`, `$ends_with` (text)
+- `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` (comparisons)
+- `$in`, `$nin` (arrays)
+- `$and`, `$or` (logical)
 
-### Company Operations
+### 10. `search-by-relationship`
+**Cross-resource relationship searches**
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `create-company` | Create a new company record | When you need to add a company to the system | `attributes`: Company attributes |
-| `update-company` | Update an existing company record | When you need to modify a company's information | `companyId`: Company ID, `attributes`: Updated attributes |
-| `update-company-attribute` | Update a specific attribute of a company | When you need to modify just one field | `companyId`: Company ID, `attributeName`: Name of attribute, `value`: New value |
-| `delete-company` | Delete a company record | When you need to remove a company | `companyId`: Company ID |
+```typescript
+{
+  "name": "search-by-relationship",
+  "arguments": {
+    "resource_type": "people",
+    "related_resource_type": "companies",
+    "relationship_filter": {
+      "company_name": { "$contains": "acme" }
+    },
+    "include_related": true
+  }
+}
+```
 
-### Batch Company Operations
+### 11. `search-by-content`
+**Content-based searches (notes, activity)**
 
-| Tool Name | Description | When to Use | Key Parameters |
-|-----------|-------------|------------|----------------|
-| `batch-create-companies` | Create multiple companies in a single operation | When you need to add many companies at once | `companies`: Array of company data |
-| `batch-update-companies` | Update multiple companies in a single operation | When you need to modify many companies at once | `updates`: Array of company updates with IDs |
-| `batch-delete-companies` | Delete multiple companies in a single operation | When you need to remove many companies at once | `companyIds`: Array of company IDs |
-| `batch-search-companies` | Perform multiple company searches at once | When you need to run multiple search queries | `queries`: Array of search terms |
-| `batch-get-company-details` | Get details for multiple companies at once | When you need details for many companies | `companyIds`: Array of company IDs |
+```typescript
+{
+  "name": "search-by-content",
+  "arguments": {
+    "resource_type": "companies" | "people",
+    "content_query": "quarterly review",
+    "content_types": ["notes", "activities"],
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2023-12-31"
+    }
+  }
+}
+```
 
-## Search Tool Comparison
+### 12. `search-by-timeframe`
+**Time-based searches with date ranges**
 
-### `search-people` vs `advanced-search-people`
+```typescript
+{
+  "name": "search-by-timeframe",
+  "arguments": {
+    "resource_type": "companies" | "people" | "tasks",
+    "date_field": "created_at" | "updated_at" | "last_contacted",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2023-12-31"
+    },
+    "relative_range": "last_30_days" // Alternative to absolute dates
+  }
+}
+```
 
-The main differences between these tools are:
+### 13. `batch-operations`
+**Bulk operations on multiple records**
 
-1. **Search Scope**:
-   - `search-people`: General search across common fields (name, email, phone)
-   - `advanced-search-people`: Can search across any attribute with precise control
+```typescript
+{
+  "name": "batch-operations",
+  "arguments": {
+    "operation_type": "create" | "update" | "delete" | "search",
+    "resource_type": "companies" | "people" | "tasks" | "records",
+    "records": [
+      {
+        "record_id": "record_123", // For update/delete
+        "data": { ... } // For create/update
+      }
+    ],
+    "batch_size": 10,
+    "continue_on_error": true
+  }
+}
+```
 
-2. **Filtering Capabilities**:
-   - `search-people`: Simple text match, primarily for names
-   - `advanced-search-people`: Complex filters with multiple conditions and operators
+## 🎯 Resource Types
 
-3. **Input Structure**:
-   - `search-people`: Simple string query
-   - `advanced-search-people`: Structured filter object with conditions
+### Companies (`resource_type: "companies"`)
+Common attributes: `name`, `website`, `industry`, `employees`, `revenue`, `address`
 
-4. **When to Use Each**:
-   - Use `search-people` for quick, simple searches by name, email, or phone
-   - Use `advanced-search-people` when you need precise filtering with multiple criteria, logical operators, or specific attribute matching
+### People (`resource_type: "people"`)
+Common attributes: `name`, `email`, `phone`, `job_title`, `company`, `linkedin_url`
 
-### `search-companies` vs `advanced-search-companies`
+### Tasks (`resource_type: "tasks"`)
+Common attributes: `title`, `content`, `assignee`, `due_date`, `status`, `priority`
 
-Similar differences apply to company search tools:
+### Records (`resource_type: "records"`)
+Generic records with custom attributes defined in your Attio workspace
 
-1. **Search Scope**:
-   - `search-companies`: Primarily searches company names
-   - `advanced-search-companies`: Can search across any company attribute
+## 📊 Tool Selection Guide
 
-2. **Filtering Capabilities**:
-   - `search-companies`: Simple text match on company name
-   - `advanced-search-companies`: Complex filters with multiple conditions and operators
+### For Simple Operations
+- **Basic search**: Use `search-records`
+- **Get details**: Use `get-record-details`
+- **CRUD operations**: Use `create-record`, `update-record`, `delete-record`
 
-3. **When to Use Each**:
-   - Use `search-companies` for quick searches by company name
-   - Use `advanced-search-companies` for precise filtering by industry, size, revenue, etc.
+### For Complex Searches
+- **Multi-criteria**: Use `advanced-search`
+- **Cross-resource**: Use `search-by-relationship`
+- **Content-based**: Use `search-by-content`
+- **Time-based**: Use `search-by-timeframe`
 
-## Best Practices
+### For Bulk Operations
+- **Multiple records**: Use `batch-operations`
+- **Schema discovery**: Use `discover-attributes`
+- **Specialized info**: Use `get-detailed-info`
 
-1. **Start Simple**: Begin with the basic search tools. If your search needs are straightforward, they provide the simplest interface.
+## 🔄 Migration from Individual Tools
 
-2. **Use Advanced Search Thoughtfully**: The advanced search tools are powerful but require more complex input. Use them when you need precise filtering or multiple conditions.
+All previous individual tools have been consolidated:
 
-3. **Relationship Filtering**: When searching for people related to companies or in lists, use the specialized relationship search tools rather than trying to construct complex filters.
+| Old Pattern | New Universal Pattern |
+|-------------|----------------------|
+| `search-companies` | `search-records` with `resource_type: "companies"` |
+| `search-people` | `search-records` with `resource_type: "people"` |
+| `get-company-details` | `get-record-details` with `resource_type: "companies"` |
+| `create-person` | `create-record` with `resource_type: "people"` |
+| `advanced-search-companies` | `advanced-search` with `resource_type: "companies"` |
 
-4. **Date-Based Searching**: For time-sensitive queries, use the date-specific search tools which handle date formatting and relative date expressions.
+**Complete Migration Guide**: See [Migration Guide](../universal-tools/migration-guide.md) for all 40+ tool mappings.
 
-5. **Consider Performance**: More complex filters may take longer to process. When possible, use more specific filters to reduce the result set size.
+## 🚀 Best Practices
 
-6. **Tool Selection Guide**:
-   - For general searches: Use basic search tools
-   - For multi-criteria searches: Use advanced search tools
-   - For date-based filters: Use date-specific search tools
-   - For relationship-based queries: Use relationship search tools
+1. **Start with Basic Tools**: Use `search-records` and `get-record-details` for most operations
+2. **Use Appropriate Resource Types**: Always specify the correct `resource_type`
+3. **Leverage Advanced Search**: Use `advanced-search` for complex filtering
+4. **Batch for Efficiency**: Use `batch-operations` for multiple records
+5. **Discover Schema**: Use `discover-attributes` to understand available fields
+6. **Handle Errors**: All tools include comprehensive error handling
+
+## 🔗 Additional Resources
+
+- [Universal Tools Overview](../universal-tools/README.md)
+- [Complete API Reference](../universal-tools/api-reference.md)
+- [Migration Guide](../universal-tools/migration-guide.md)
+- [User Guide](../universal-tools/user-guide.md)
+- [Developer Guide](../universal-tools/developer-guide.md)
+- [Troubleshooting](../universal-tools/troubleshooting.md)
+
+---
+
+*This reference reflects the universal tools consolidation completed in Issue #352. All functionality from previous 40+ individual tools is preserved and improved in this universal system.*

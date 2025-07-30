@@ -2,6 +2,8 @@
 
 The Records API allows you to create, read, update, and delete records in Attio. Records are instances of objects with specific attribute values.
 
+> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate record operations into 13 powerful tools with `resource_type: 'records'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
+
 ## Required Scopes
 
 Most record operations require the following scopes:

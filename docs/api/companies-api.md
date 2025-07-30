@@ -2,45 +2,63 @@
 
 The Companies API allows you to manage company records in Attio. Companies are a standard object type that represents organizations in your CRM.
 
+> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate company operations into 13 powerful tools with `resource_type: 'companies'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
+
 ## Using Claude with the Companies API
 
-Claude can help you interact with company records in Attio through the MCP server. Here are some common tasks and example prompts:
+Claude can help you interact with company records in Attio through the MCP server using both the direct API and the new universal tools system. Here are some common tasks and example prompts:
 
-### Advanced Filtering Capabilities
+### Universal Tools for Company Operations
 
-The MCP server now provides enhanced filtering capabilities for company records through the `advanced-search-companies` tool. This feature supports:
+The MCP server provides enhanced filtering capabilities for company records through the **universal tools system**. Key tools for companies include:
 
+- **`search-records`** with `resource_type: 'companies'` - Replaces `search-companies`
+- **`advanced-search`** with `resource_type: 'companies'` - Complex filtering with multiple conditions
+- **`get-record-details`** with `resource_type: 'companies'` - Replaces `get-company-details`
+- **`create-record`** with `resource_type: 'companies'` - Replaces `create-company`
+- **`batch-operations`** with `resource_type: 'companies'` - Bulk company operations
+
+**Features:**
 - Complex filtering with multiple conditions
 - Logical operators (AND/OR)
 - All comparison operators (equals, contains, starts_with, etc.)
 - Filtering by any company attribute including name, website, and industry
+- Consistent API across all resource types
 
-See the [Advanced Filtering documentation](./advanced-filtering.md) for detailed information about these capabilities.
+See the [Universal Tools API Reference](../universal-tools/api-reference.md) for detailed schemas and the [Advanced Filtering documentation](./advanced-filtering.md) for filtering capabilities.
 
 ### Searching for Companies
 
-You can ask Claude to search for companies using various criteria:
+You can ask Claude to search for companies using various criteria with both the direct API and universal tools:
+
+**Using Universal Tools (Recommended):**
+```
+Find companies in the technology industry using search-records
+```
 
 ```
-Find companies in the technology industry
+Search for companies with "software" in their name using advanced-search
 ```
 
-```
-Search for companies with "software" in their name
-```
-
+**Using Direct API:**
 ```
 Look up Microsoft in our CRM
 ```
 
 ### Viewing Company Details
 
-Once Claude has found a company, you can ask for specific details:
+Once Claude has found a company, you can ask for specific details using either approach:
+
+**Using Universal Tools (Recommended):**
+```
+Get company details using get-record-details for attio://companies/record_01abcdefghijklmnopqrstuv
+```
 
 ```
-Tell me more about attio://companies/record_01abcdefghijklmnopqrstuv
+Get company contact info using get-detailed-info for Acme Corporation
 ```
 
+**Using Direct API:**
 ```
 What's the website for Acme Corporation?
 ```
@@ -464,6 +482,38 @@ const headers = {
 ```
 
 All operations performed in test mode will be isolated from your production data.
+
+## Migration to Universal Tools
+
+For new implementations, consider using the Universal Tools system which provides:
+
+- **Simplified Integration**: Single tool names across all resource types
+- **Better Performance**: 68% reduction in tool count and faster AI evaluation
+- **Future-Proof**: Easy to add new resource types without API changes
+- **Consistent Patterns**: Same parameter structure across operations
+
+### Quick Migration Examples
+
+**Old Way (Deprecated):**
+```javascript
+// Multiple resource-specific tools
+await client.callTool('search-companies', { query: 'tech' });
+await client.callTool('get-company-details', { record_id: 'comp_123' });
+await client.callTool('create-company', { record_data: {...} });
+```
+
+**New Way (Universal Tools):**
+```javascript
+// Single tools with resource_type parameter
+await client.callTool('search-records', { resource_type: 'companies', query: 'tech' });
+await client.callTool('get-record-details', { resource_type: 'companies', record_id: 'comp_123' });
+await client.callTool('create-record', { resource_type: 'companies', record_data: {...} });
+```
+
+**See Also:**
+- [Universal Tools User Guide](../universal-tools/user-guide.md) - Complete usage examples
+- [Migration Guide](../universal-tools/migration-guide.md) - Step-by-step migration instructions
+- [API Reference](../universal-tools/api-reference.md) - Detailed schemas and parameters
 
 ## Related Resources
 

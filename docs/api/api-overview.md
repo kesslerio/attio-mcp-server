@@ -2,6 +2,8 @@
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
+> **🚀 Universal Tools Now Available**: The MCP server has been enhanced with [Universal Tools](../universal-tools/user-guide.md) that consolidate 40+ resource-specific operations into 13 powerful universal tools. This provides better performance, consistent APIs, and simplified integration. See the [Migration Guide](../universal-tools/migration-guide.md) for details.
+
 ## Understanding the Model Context Protocol (MCP)
 
 The Attio MCP server acts as a bridge between Claude (or other AI assistants) and the Attio API. This integration allows Claude to interact with your CRM data without requiring you to manually copy and paste information.
@@ -26,15 +28,25 @@ Claude uses these URIs to reference specific records when performing operations.
 
 ### Available Tools
 
-Claude can interact with Attio using various tools provided by the MCP server:
+Claude can interact with Attio using the Universal Tools system provided by the MCP server:
 
-- **Search tools**: Find companies, people, and other records
-- **Advanced search tools**: Use complex filters including date ranges, numeric values, and relationships
-- **Read tools**: View details of specific records
-- **Write tools**: Create notes and update records
-- **List management tools**: Work with Attio lists
+#### Universal Tools (Recommended)
+- **`search-records`**: Universal search across companies, people, records, and tasks
+- **`advanced-search`**: Complex filtering with multiple conditions and sorting
+- **`get-record-details`**: Retrieve detailed information for any record type
+- **`create-record`**: Create new records across all resource types
+- **`update-record`**: Update existing records with validation
+- **`batch-operations`**: Bulk operations for multiple records
+- **`search-by-relationship`**: Cross-resource relationship searches
+- **`search-by-content`**: Content-based searches (notes, activity)
+- **`search-by-timeframe`**: Time-based searches with date ranges
 
-See the specific API documentation for details on each tool.
+#### Legacy Tools (Deprecated)
+- Search tools: `search-companies`, `search-people` (use `search-records` instead)
+- Detail tools: `get-company-details`, `get-person-details` (use `get-record-details` instead)
+- Create tools: `create-company`, `create-person` (use `create-record` instead)
+
+**Migration:** See the [Universal Tools Migration Guide](../universal-tools/migration-guide.md) for complete migration instructions.
 
 ### Advanced Filtering Capabilities
 

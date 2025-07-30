@@ -15,19 +15,22 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 ## ✨ Core Features
 
-### 📊 **Company Management** (27 Tools)
-- **Smart Search**: Find companies by domain, text, or complex filters
-- **Full CRUD**: Create, read, update, and delete company records
-- **Relationship Discovery**: Find companies through their people's attributes
-- **Batch Operations**: Process hundreds of companies efficiently
-- **Notes & Activities**: Track all company interactions
+### 🎯 **Universal Tools Architecture** (13 Tools)
+**68% Tool Reduction**: Consolidated 40+ resource-specific tools into 13 universal operations for consistent, powerful CRM management.
 
-### 👥 **People Management** (15 Tools)  
-- **Contact Search**: Find people by email, phone, name, or activity history
-- **Relationship Tracking**: Link people to companies with role management
-- **Activity Timeline**: Track all interactions and touchpoints
-- **Advanced Filtering**: Multi-attribute search with date ranges
-- **Bulk Operations**: Efficiently manage large contact databases
+### 📊 **Company Management**
+- **Universal Search**: Find companies with `search-records` and `advanced-search`
+- **Full CRUD**: Create, read, update, and delete with universal record operations
+- **Relationship Discovery**: Find companies through `search-by-relationship`
+- **Batch Operations**: Process hundreds of companies with `batch-operations`
+- **Detailed Information**: Get contact, business, and social info with `get-detailed-info`
+
+### 👥 **People Management**
+- **Universal Contact Search**: Find people by any criteria using universal search tools
+- **Relationship Tracking**: Link people to companies with `search-by-relationship`
+- **Activity Timeline**: Track interactions with `search-by-content` and `search-by-timeframe`
+- **Advanced Filtering**: Multi-attribute search with universal filtering
+- **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
 ### 📋 **Lists & Pipeline Management** (11 Tools)
 - **Pipeline Operations**: Move deals through sales stages
@@ -36,11 +39,11 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Entry Management**: Add, remove, and update list memberships
 - **Deal Tracking**: Monitor opportunities and revenue pipeline
 
-### ✅ **Task Management** (5 Tools)
-- **Assignment System**: Create and assign tasks to team members
-- **Record Linking**: Associate tasks with CRM records
-- **Progress Tracking**: Monitor completion and deadlines
-- **Team Coordination**: Streamline follow-ups and activities
+### ✅ **Task Management**
+- **Universal Task Operations**: Create, update, and manage tasks with universal tools
+- **Record Linking**: Associate tasks with any record type using `resource_type` parameter
+- **Progress Tracking**: Monitor completion with universal search and filtering
+- **Team Coordination**: Streamline follow-ups with consistent universal operations
 
 ### 🔧 **Advanced Capabilities**
 - **Batch Processing**: Handle bulk operations with error tracking
@@ -152,6 +155,14 @@ Add to your Claude Desktop MCP configuration:
 ## 📚 Documentation
 
 Comprehensive documentation is available in the [docs directory](./docs):
+
+### **Universal Tools (Recommended)**
+- [Universal Tools Overview](./docs/universal-tools/README.md) - Start here for the new universal tools system
+- [Migration Guide](./docs/universal-tools/migration-guide.md) - Migrate from deprecated individual tools
+- [API Reference](./docs/universal-tools/api-reference.md) - Complete reference for all 13 universal tools
+- [User Guide](./docs/universal-tools/user-guide.md) - Best practices and common use cases
+- [Developer Guide](./docs/universal-tools/developer-guide.md) - Extending and customizing universal tools
+- [Troubleshooting](./docs/universal-tools/troubleshooting.md) - Common issues and solutions
 
 ### **Getting Started**
 - [Installation & Setup](./docs/getting-started.md)

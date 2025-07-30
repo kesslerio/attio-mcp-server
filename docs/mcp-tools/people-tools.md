@@ -1,6 +1,18 @@
-# Attio MCP People Tools
+# ⚠️ DEPRECATED: Attio MCP People Tools
 
-The Attio MCP server provides several tools for working with people records in Attio:
+> **🚨 IMPORTANT NOTICE**: These individual people tools have been **deprecated** and consolidated into universal tools.
+> 
+> **📖 New Universal Tools**: Use [Universal Tools](../universal-tools/README.md) instead for better performance and consistency.
+>
+> **🔄 Migration**: See the [Migration Guide](../universal-tools/migration-guide.md) for complete mappings from these deprecated tools to their universal equivalents.
+>
+> **✅ Zero Breaking Changes**: All functionality is preserved in the universal tools system.
+
+---
+
+## Legacy People Tools (DEPRECATED)
+
+The following tools have been **replaced by universal tools** that work across all resource types:
 
 ## Available Tools
 
