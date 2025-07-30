@@ -5,7 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: [
       'test/handlers/tool-configs/universal/integration.test.ts',
-      'test/handlers/tool-configs/universal/performance.test.ts'
+      'test/handlers/tool-configs/universal/performance.test.ts',
     ],
     globals: true,
     testTimeout: 60000, // Extended timeout for API calls

@@ -31,6 +31,17 @@ vi.mock('../src/objects/people/search', async (importOriginal) => {
       }
       return [];
     }),
+    searchPeopleByCreationDate: vi.fn(async () => []),
+    searchPeopleByModificationDate: vi.fn(async () => []),
+    searchPeopleByLastInteraction: vi.fn(async () => []),
+    searchPeopleByActivity: vi.fn(async (activityFilter) => {
+      // Mock implementation that bypasses filter validation
+      return [];
+    }),
+    advancedSearchPeople: vi.fn(async (filters, options) => {
+      // Mock that bypasses filter validation
+      return { results: [] };
+    }),
   };
 });
 
@@ -97,7 +108,10 @@ vi.mock('../src/objects/people/index', async (importOriginal) => {
   return {
     ...actual,
     searchPeople: vi.fn(async () => []),
-    advancedSearchPeople: vi.fn(async () => []),
+    advancedSearchPeople: vi.fn(async (filters, options) => {
+      // Mock that bypasses filter validation
+      return { results: [] };
+    }),
     listPeople: vi.fn(async () => []),
     getPersonDetails: vi.fn(async () => ({})),
     createPerson: vi.fn(async () => ({})),

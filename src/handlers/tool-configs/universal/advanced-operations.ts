@@ -285,7 +285,7 @@ export const searchByContentConfig: UniversalToolConfig = {
             // Create proper ActivityFilter with required dateRange property
             const activityFilter: ActivityFilter = {
               dateRange: {
-                preset: 'last_30_days' // Default to last 30 days for activity search
+                preset: 'last_month' // Default to last month for activity search
               },
               interactionType: InteractionType.ANY // Search all interaction types
             };

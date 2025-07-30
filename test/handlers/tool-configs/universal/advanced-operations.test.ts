@@ -34,35 +34,58 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
 }));
 
 // Mock specialized handlers
-vi.mock('../../../../src/objects/companies/index.js', () => ({
-  searchCompaniesByNotes: vi.fn(),
-  searchCompaniesByPeople: vi.fn(),
-  advancedSearchCompanies: vi.fn()
-}));
+vi.mock('../../../../src/objects/companies/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchCompaniesByNotes: vi.fn(),
+    searchCompaniesByPeople: vi.fn(),
+    advancedSearchCompanies: vi.fn()
+  };
+});
 
-vi.mock('../../../../src/objects/people/index.js', () => ({
-  searchPeopleByCompany: vi.fn(),
-  searchPeopleByActivity: vi.fn(),
-  searchPeopleByNotes: vi.fn(),
-  searchPeopleByCreationDate: vi.fn(),
-  searchPeopleByModificationDate: vi.fn(),
-  searchPeopleByLastInteraction: vi.fn(),
-  advancedSearchPeople: vi.fn()
-}));
+vi.mock('../../../../src/objects/people/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    searchPeopleByCompany: vi.fn(),
+    searchPeopleByActivity: vi.fn(),
+    searchPeopleByNotes: vi.fn(),
+    advancedSearchPeople: vi.fn()
+  };
+});
 
 // Mock validation and date utils
-vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
-  validateUniversalToolParams: vi.fn(() => {}), // Default: do nothing
-  advancedSearchSchema: { type: 'object', properties: {}, required: [] },
-  searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
-  searchByContentSchema: { type: 'object', properties: {}, required: [] },
-  searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
-  batchOperationsSchema: { type: 'object', properties: {}, required: [] }
-}));
+vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    validateUniversalToolParams: vi.fn(() => {}), // Default: do nothing
+    advancedSearchSchema: { type: 'object', properties: {}, required: [] },
+    searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
+    searchByContentSchema: { type: 'object', properties: {}, required: [] },
+    searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
+    batchOperationsSchema: { type: 'object', properties: {}, required: [] }
+  };
+});
 
-vi.mock('../../../../src/utils/date-utils.js', () => ({
-  validateAndCreateDateRange: vi.fn()
-}));
+vi.mock('../../../../src/utils/date-utils.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    validateAndCreateDateRange: vi.fn((start?: string, end?: string) => {
+      // Return a valid date range object for testing
+      return {
+        start: start || '2024-01-01T00:00:00.000Z',
+        end: end || '2024-01-31T23:59:59.999Z'
+      };
+    }),
+    isValidISODateString: vi.fn((dateString: string) => {
+      // Simple validation for testing
+      return dateString && typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateString);
+    })
+  };
+});
 
 describe('Universal Advanced Operations Tests', () => {
   beforeEach(async () => {
@@ -124,15 +147,13 @@ describe('Universal Advanced Operations Tests', () => {
       const params: AdvancedSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         query: 'technology',
-        filters: {
-          filters: [
-            {
-              attribute: { slug: 'industry' },
-              condition: 'equals',
-              value: 'Technology'
-            }
-          ]
-        },
+        filters: [
+          {
+            attribute: { slug: 'industry' },
+            condition: 'equals',
+            value: 'Technology'
+          }
+        ],
         sort_by: 'name',
         sort_order: 'asc',
         limit: 20
@@ -334,7 +355,7 @@ describe('Universal Advanced Operations Tests', () => {
         }
       ];
 
-      const { searchPeopleByActivity } = await import('../../../../src/objects/people/index.js');
+      const { searchPeopleByActivity } = await import('../../../../src/objects/people/search.js');
       vi.mocked(searchPeopleByActivity).mockResolvedValue(mockResults);
 
       const params: ContentSearchParams = {
@@ -347,7 +368,7 @@ describe('Universal Advanced Operations Tests', () => {
       expect(result).toEqual(mockResults);
       expect(searchPeopleByActivity).toHaveBeenCalledWith({
         dateRange: {
-          preset: 'last_30_days'
+          preset: 'last_month'
         },
         interactionType: 'any'
       });
