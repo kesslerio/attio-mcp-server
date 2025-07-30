@@ -2,6 +2,8 @@
 
 The Tasks API allows you to manage tasks within Attio. Tasks can be assigned to users, linked to records, and scheduled with due dates.
 
+> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate task operations into 13 powerful tools with `resource_type: 'tasks'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
+
 ## Required Scopes
 
 Most task operations require the following scopes:

@@ -84,11 +84,267 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 | `batch-search-companies` | `batch-operations` | `companies` | `operation_type: 'search'` |
 | `batch-get-company-details` | `batch-operations` | `companies` | `operation_type: 'get'` |
 
+## Visual Migration Comparison
+
+### 🎯 Quick Before/After Reference
+
+<table>
+<tr>
+<th>❌ Before (Deprecated)</th>
+<th>✅ After (Universal)</th>
+<th>Key Changes</th>
+</tr>
+
+<tr>
+<td>
+
+```typescript
+// 40+ individual tools
+search-companies
+search-people  
+get-company-details
+get-person-details
+create-company
+create-person
+// ... 34+ more tools
+```
+
+</td>
+<td>
+
+```typescript
+// 13 universal tools
+search-records
+get-record-details
+create-record
+update-record
+delete-record
+advanced-search
+// ... 7 more tools
+```
+
+</td>
+<td>
+
+- **68% tool reduction**
+- **Consistent naming**
+- **Parameter-based routing**
+- **Same functionality**
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```typescript
+// Resource-specific parameters
+await callTool('search-companies', {
+  query: 'tech',
+  limit: 10
+});
+
+await callTool('search-people', {
+  query: 'john',
+  limit: 10
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Universal with resource_type
+await callTool('search-records', {
+  resource_type: 'companies',
+  query: 'tech',
+  limit: 10
+});
+
+await callTool('search-records', {
+  resource_type: 'people', 
+  query: 'john',
+  limit: 10
+});
+```
+
+</td>
+<td>
+
+- **Add `resource_type`**
+- **Single tool for all resources**
+- **Consistent API patterns**
+- **Same search functionality**
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```typescript
+// Different tools for similar operations
+await callTool('get-company-basic-info', {
+  record_id: 'comp_123'
+});
+
+await callTool('get-company-contact-info', {
+  record_id: 'comp_123'
+});
+
+await callTool('get-company-social-info', {
+  record_id: 'comp_123'
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Single tool with info_type parameter
+await callTool('get-detailed-info', {
+  resource_type: 'companies',
+  record_id: 'comp_123',
+  info_type: 'basic'
+});
+
+await callTool('get-detailed-info', {
+  resource_type: 'companies', 
+  record_id: 'comp_123',
+  info_type: 'contact'
+});
+
+await callTool('get-detailed-info', {
+  resource_type: 'companies',
+  record_id: 'comp_123', 
+  info_type: 'social'
+});
+```
+
+</td>
+<td>
+
+- **Single tool replaces 3+**
+- **Consistent parameters**
+- **Add `info_type` parameter**
+- **Same data returned**
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```typescript
+// Old date operators (fail with API)
+await callTool('advanced-search-companies', {
+  filters: {
+    and: [{
+      attribute: 'created_at',
+      condition: 'greater_than_or_equals',
+      value: '2024-01-01'
+    }]
+  }
+});
+```
+
+</td>
+<td>
+
+```typescript
+// New date operators (API compatible)
+await callTool('advanced-search', {
+  resource_type: 'companies',
+  filters: {
+    and: [{
+      attribute: 'created_at', 
+      condition: FilterConditionType.AFTER,
+      value: '2024-01-01T00:00:00Z'
+    }]
+  }
+});
+```
+
+</td>
+<td>
+
+- **Updated date operators**
+- **ISO 8601 timestamps**
+- **FilterConditionType enum**
+- **API compatibility**
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```typescript
+// Batch operations per resource
+await callTool('batch-create-companies', {
+  companies: [
+    { name: 'Company 1' },
+    { name: 'Company 2' }
+  ]
+});
+
+await callTool('batch-create-people', {
+  people: [
+    { name: 'Person 1' },
+    { name: 'Person 2' }
+  ]
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Universal batch operations
+await callTool('batch-operations', {
+  resource_type: 'companies',
+  operation_type: 'create',
+  records: [
+    { name: 'Company 1' },
+    { name: 'Company 2' }
+  ]
+});
+
+await callTool('batch-operations', {
+  resource_type: 'people',
+  operation_type: 'create',
+  records: [
+    { name: 'Person 1' },
+    { name: 'Person 2' }
+  ]
+});
+```
+
+</td>
+<td>
+
+- **Single batch tool**
+- **Add `operation_type`**
+- **Consistent `records` parameter**
+- **Same batch processing**
+
+</td>
+</tr>
+
+</table>
+
 ## Step-by-Step Migration Examples
 
 ### Example 1: Basic Company Search
 
-**Before (deprecated)**:
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
 ```typescript
 await client.callTool('search-companies', {
   query: 'tech startup',
@@ -96,12 +352,366 @@ await client.callTool('search-companies', {
 });
 ```
 
-**After (universal)**:
+</td>
+<td>
+
 ```typescript
 await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'tech startup',
   limit: 10
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Change tool name: `search-companies` → `search-records`
+2. Add parameter: `resource_type: 'companies'`
+3. Keep all other parameters the same
+
+</td>
+</tr>
+</table>
+
+### Example 2: Advanced People Search with Filters
+
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+await client.callTool('advanced-search-people', {
+  filters: {
+    and: [
+      { 
+        attribute: 'job_title', 
+        condition: 'contains', 
+        value: 'Manager' 
+      },
+      { 
+        attribute: 'created_at', 
+        condition: 'greater_than_or_equals', 
+        value: '2024-01-01' 
+      }
+    ]
+  },
+  limit: 25
+});
+```
+
+</td>
+<td>
+
+```typescript
+await client.callTool('advanced-search', {
+  resource_type: 'people',
+  filters: {
+    and: [
+      { 
+        attribute: 'job_title', 
+        condition: FilterConditionType.CONTAINS, 
+        value: 'Manager' 
+      },
+      { 
+        attribute: 'created_at', 
+        condition: FilterConditionType.AFTER, 
+        value: '2024-01-01T00:00:00Z' 
+      }
+    ]
+  },
+  limit: 25
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Change tool name: `advanced-search-people` → `advanced-search`
+2. Add parameter: `resource_type: 'people'`
+3. Update date operator: `greater_than_or_equals` → `FilterConditionType.AFTER`
+4. Use ISO 8601 timestamp: `2024-01-01` → `2024-01-01T00:00:00Z`
+5. Use enum for conditions: `'contains'` → `FilterConditionType.CONTAINS`
+
+</td>
+</tr>
+</table>
+
+### Example 3: Company Information Retrieval
+
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+// Multiple tool calls for different info types
+const basic = await client.callTool('get-company-basic-info', {
+  record_id: 'comp_123'
+});
+
+const contact = await client.callTool('get-company-contact-info', {
+  record_id: 'comp_123'
+});
+
+const business = await client.callTool('get-company-business-info', {
+  record_id: 'comp_123'
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Single tool with info_type parameter
+const basic = await client.callTool('get-detailed-info', {
+  resource_type: 'companies',
+  record_id: 'comp_123',
+  info_type: 'basic'
+});
+
+const contact = await client.callTool('get-detailed-info', {
+  resource_type: 'companies', 
+  record_id: 'comp_123',
+  info_type: 'contact'
+});
+
+const business = await client.callTool('get-detailed-info', {
+  resource_type: 'companies',
+  record_id: 'comp_123', 
+  info_type: 'business'
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Replace all info tools: `get-company-*-info` → `get-detailed-info`
+2. Add parameter: `resource_type: 'companies'`
+3. Add parameter: `info_type` with appropriate value (`'basic'`, `'contact'`, `'business'`, `'social'`)
+4. Keep `record_id` parameter the same
+
+</td>
+</tr>
+</table>
+
+### Example 4: Batch Company Operations
+
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+// Create multiple companies
+await client.callTool('batch-create-companies', {
+  companies: [
+    { 
+      name: 'TechCorp Inc.', 
+      website: 'techcorp.com',
+      industry: 'Technology' 
+    },
+    { 
+      name: 'DataSoft LLC', 
+      website: 'datasoft.io',
+      industry: 'Software' 
+    }
+  ]
+});
+
+// Get multiple company details
+await client.callTool('batch-get-company-details', {
+  company_ids: ['comp_123', 'comp_456']
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Create multiple companies
+await client.callTool('batch-operations', {
+  resource_type: 'companies',
+  operation_type: 'create',
+  records: [
+    { 
+      name: 'TechCorp Inc.', 
+      website: 'techcorp.com',
+      industry: 'Technology' 
+    },
+    { 
+      name: 'DataSoft LLC', 
+      website: 'datasoft.io',
+      industry: 'Software' 
+    }
+  ]
+});
+
+// Get multiple company details
+await client.callTool('batch-operations', {
+  resource_type: 'companies',
+  operation_type: 'get',
+  record_ids: ['comp_123', 'comp_456']
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Replace all batch tools: `batch-*-companies` → `batch-operations`
+2. Add parameter: `resource_type: 'companies'`
+3. Add parameter: `operation_type` (`'create'`, `'update'`, `'delete'`, `'get'`, `'search'`)
+4. Rename data parameter: `companies` → `records`
+5. Rename ID parameter: `company_ids` → `record_ids`
+
+</td>
+</tr>
+</table>
+
+### Example 5: Date-Based Searches
+
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+// Search people by creation date
+await client.callTool('search-people-by-creation-date', {
+  dateRange: {
+    start: '2024-01-01',
+    end: '2024-01-31'
+  }
+});
+
+// Search companies by modification date
+await client.callTool('search-companies-by-modification-date', {
+  preset: 'last_30_days'  // Invalid preset!
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Search people by creation date
+await client.callTool('search-by-timeframe', {
+  resource_type: 'people',
+  timeframe_type: 'created',
+  date_range: {
+    start_date: '2024-01-01T00:00:00Z',
+    end_date: '2024-01-31T23:59:59Z'
+  }
+});
+
+// Search companies by modification date
+await client.callTool('search-by-timeframe', {
+  resource_type: 'companies',
+  timeframe_type: 'modified',
+  preset: 'last_month'  // Valid preset!
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Replace date-specific tools: `search-*-by-*-date` → `search-by-timeframe`
+2. Add parameter: `resource_type` (appropriate resource type)
+3. Add parameter: `timeframe_type` (`'created'`, `'modified'`, `'last_contacted'`)
+4. Update date format: `'2024-01-01'` → `'2024-01-01T00:00:00Z'`
+5. Use valid presets: `'last_30_days'` → `'last_month'`
+
+</td>
+</tr>
+</table>
+
+### Example 6: Content and Relationship Searches
+
+<table>
+<tr>
+<th width="50%">❌ Before (Deprecated)</th>
+<th width="50%">✅ After (Universal)</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+// Search companies by notes
+await client.callTool('search-companies-by-notes', {
+  searchText: 'quarterly review'
+});
+
+// Search people by company
+await client.callTool('search-people-by-company', {
+  company_id: 'comp_123'
+});
+```
+
+</td>
+<td>
+
+```typescript
+// Search companies by notes
+await client.callTool('search-by-content', {
+  resource_type: 'companies',
+  content_type: 'notes',
+  search_query: 'quarterly review'
+});
+
+// Search people by company
+await client.callTool('search-by-relationship', {
+  resource_type: 'people',
+  related_resource_type: 'companies',
+  relationship_filter: {
+    record_id: 'comp_123'
+  }
+});
+```
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Migration Steps:**
+1. Content searches: `search-*-by-notes` → `search-by-content`
+2. Add parameters: `resource_type`, `content_type: 'notes'`
+3. Rename parameter: `searchText` → `search_query`
+4. Relationship searches: `search-*-by-*` → `search-by-relationship` 
+5. Add parameters: `resource_type`, `related_resource_type`
+6. Wrap ID in filter: `company_id` → `relationship_filter: { record_id }`
+
+</td>
+</tr>
+</table>
 });
 ```
 

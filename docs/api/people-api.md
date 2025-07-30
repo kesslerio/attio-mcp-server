@@ -2,35 +2,48 @@
 
 The People API allows you to manage person records in Attio. Person records represent individual contacts and can be linked to companies, opportunities, and other objects.
 
+> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate people operations into 13 powerful tools with `resource_type: 'people'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
+
 ## MCP Integration for People Records
 
 ### Special Considerations for Email and Phone Searches
 
 When searching for people by email or phone through the MCP server, Claude handles this differently than direct API calls. While the Attio API doesn't support direct filtering by `email` or `phone` attributes, the MCP server implements a client-side search to overcome this limitation.
 
-### Advanced Filtering Capabilities
+### Universal Tools for People Operations
 
-The MCP server now provides enhanced filtering capabilities for people records through the `advanced-search-people` tool. This feature supports:
+The MCP server provides enhanced filtering capabilities for people records through the **universal tools system**. Key tools for people include:
 
+- **`search-records`** with `resource_type: 'people'` - Replaces `search-people`
+- **`advanced-search`** with `resource_type: 'people'` - Complex filtering with multiple conditions
+- **`get-record-details`** with `resource_type: 'people'` - Replaces `get-person-details`
+- **`create-record`** with `resource_type: 'people'` - Replaces `create-person`
+- **`search-by-relationship`** - Find people by company relationships
+- **`search-by-timeframe`** - Time-based people searches
+
+**Features:**
 - Complex filtering with multiple conditions
 - Logical operators (AND/OR)
 - All comparison operators (equals, contains, starts_with, etc.)
 - Special handling for email and phone attributes with client-side filtering
+- Consistent API across all resource types
 
-See the [Advanced Filtering documentation](./advanced-filtering.md) for detailed information about these capabilities.
+See the [Universal Tools API Reference](../universal-tools/api-reference.md) for detailed schemas and the [Advanced Filtering documentation](./advanced-filtering.md) for filtering capabilities.
 
 ### Example Claude Interactions
 
 #### Searching for People
 
+**Using Universal Tools (Recommended):**
 ```
-Find contacts from XYZ Company
-```
-
-```
-Look up people with the title "CEO"
+Find contacts from XYZ Company using search-by-relationship
 ```
 
+```
+Look up people with the title "CEO" using advanced-search
+```
+
+**Using Direct API:**
 ```
 Search for someone named Sarah
 ```
@@ -508,3 +521,38 @@ curl -X POST \
     "limit": 10
   }'
 ```
+
+## Migration to Universal Tools
+
+For new implementations, consider using the Universal Tools system which provides:
+
+- **Simplified Integration**: Single tool names across all resource types
+- **Better Performance**: 68% reduction in tool count and faster AI evaluation
+- **Enhanced Relationships**: Easy people-to-company relationship searches
+- **Consistent Patterns**: Same parameter structure across operations
+
+### Quick Migration Examples
+
+**Old Way (Deprecated):**
+```javascript
+// Multiple resource-specific tools
+await client.callTool('search-people', { query: 'CEO' });
+await client.callTool('get-person-details', { record_id: 'person_123' });
+await client.callTool('search-people-by-company', { company_id: 'comp_456' });
+```
+
+**New Way (Universal Tools):**
+```javascript
+// Single tools with resource_type parameter
+await client.callTool('search-records', { resource_type: 'people', query: 'CEO' });
+await client.callTool('get-record-details', { resource_type: 'people', record_id: 'person_123' });
+await client.callTool('search-by-relationship', { 
+  relationship_type: 'company_to_people', 
+  source_id: 'comp_456' 
+});
+```
+
+**See Also:**
+- [Universal Tools User Guide](../universal-tools/user-guide.md) - Complete usage examples
+- [Migration Guide](../universal-tools/migration-guide.md) - Step-by-step migration instructions
+- [API Reference](../universal-tools/api-reference.md) - Detailed schemas and parameters

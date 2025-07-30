@@ -10,12 +10,20 @@ Attio MCP Server is a Model Context Protocol (MCP) server that enables AI assist
 
 This documentation is organized into the following sections:
 
+### Universal Tools (Recommended) ⭐
+- [Universal Tools Overview](./universal-tools/README.md) - **Start here** for the new universal tools system
+- [Migration Guide](./universal-tools/migration-guide.md) - Migrate from deprecated individual tools
+- [API Reference](./universal-tools/api-reference.md) - Complete reference for all 13 universal tools
+- [User Guide](./universal-tools/user-guide.md) - Best practices and common use cases
+- [Developer Guide](./universal-tools/developer-guide.md) - Extending and customizing universal tools
+- [Troubleshooting](./universal-tools/troubleshooting.md) - Common issues and solutions
+
 ### Getting Started
 - [Installation & Setup](./getting-started.md)
 - [Claude Desktop Configuration](./claude-desktop-config.md)
 - [Troubleshooting Common Issues](./troubleshooting.md)
 
-### API Reference
+### API Reference (Legacy)
 - [API Overview](./api/api-overview.md) - Introduction to the API
 - [Error Handling](./api/error-handling.md) - How errors are handled and reported
 - [People API](./api/people-api.md) - Working with people records
