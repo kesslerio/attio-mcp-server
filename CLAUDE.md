@@ -140,11 +140,16 @@ git add . && git commit --no-verify -m "EMERGENCY: description of critical issue
 ```
 
 ⚠️ VALIDATION PIPELINE RULES:
-- `npm run lint:check` - MUST pass (0 errors allowed, warnings reviewed)
-- `npm run build` - MUST pass (no TypeScript compilation errors)  
-- `npm run test:offline` - MUST pass (offline tests only, no API required)
-- Commit only proceeds if ALL validations pass
+- `npm run lint:check` - MUST pass (0 errors allowed, warnings reviewed) ⚠️ ESLint/TypeScript ONLY, does NOT run tests
+- `npm run build` - MUST pass (no TypeScript compilation errors)
+- `npm run test:offline` - MUST pass (offline tests only, no API required) ⚠️ Test execution with assertions  
+- Commit only proceeds if ALL validations pass (lint + build + tests)
 - Use `--no-verify` ONLY for critical production fixes with justification
+
+🔍 CRITICAL DISTINCTION:
+- `lint:check` = Code style/compilation checks (ESLint rules, TypeScript errors)
+- `test:offline` = Test execution with assertions (catches logic errors, test failures)
+- BOTH are required for complete validation - lint catches different issues than tests
 
 Standard Commands:
 git checkout -b feature/<name> && git add . && git commit -m "Feature: <desc>" && git push -u origin HEAD && gh pr create -R kesslerio/attio-mcp-server -t "Feature: <desc>" -b "<details>"

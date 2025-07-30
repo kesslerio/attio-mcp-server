@@ -66,7 +66,7 @@ describe('transformFiltersToApiFormat', () => {
           $equals: 'discovery',
         },
         value: {
-          $greater_than: 10000,
+          $gt: 10000,
         },
       },
     });
@@ -132,7 +132,7 @@ describe('transformFiltersToApiFormat', () => {
           $contains: 'Tech',
         },
         created_at: {
-          $greater_than: '2023-01-01',
+          $gt: '2023-01-01',
         },
         is_active: {
           $is_set: null,
