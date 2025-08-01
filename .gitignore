@@ -42,3 +42,5 @@ docs/shapescale-attio-crm.md
 # Test coverage reports
 coverage/
 *.lcov
+.specstory
+.cursorindexingignore

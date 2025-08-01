@@ -1,1 +1,3 @@
 npm run test:offline
+
+npx ultracite format
