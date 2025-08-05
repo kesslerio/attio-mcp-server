@@ -91,7 +91,7 @@ export async function createObjectRecord<T extends AttioRecord>(
         },
       });
 
-      return response.data.data;
+      return response?.data?.data || response?.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
         ? fallbackError
@@ -136,7 +136,7 @@ export async function getObjectRecord<T extends AttioRecord>(
       }
 
       const response = await api.get(path);
-      return response.data.data;
+      return response?.data?.data || response?.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
         ? fallbackError
@@ -183,7 +183,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
         attributes,
       });
 
-      return response.data.data;
+      return response?.data?.data || response?.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
         ? fallbackError

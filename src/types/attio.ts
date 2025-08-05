@@ -358,6 +358,9 @@ export interface AttioListResponse<T> {
 
 /**
  * API response containing a single record
+ * Note: Attio API sometimes returns nested structure { data: { data: T } }
+ * and sometimes returns direct structure { data: T }. Use fallback logic:
+ * `response?.data?.data || response?.data`
  */
 export interface AttioSingleResponse<T> {
   data: T;
