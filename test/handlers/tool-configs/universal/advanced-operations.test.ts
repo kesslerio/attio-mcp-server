@@ -225,7 +225,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = advancedSearchConfig.formatResult(mockResults);
+			const formatted = advancedSearchConfig.formatResult(mockResults, UniversalResourceType.COMPANIES);
 
 			expect(formatted).toContain("Advanced search found 1 company");
 			expect(formatted).toContain(
@@ -335,7 +335,7 @@ describe("Universal Advanced Operations Tests", () => {
 				},
 			];
 
-			const formatted = searchByRelationshipConfig.formatResult(mockResults);
+			const formatted = searchByRelationshipConfig.formatResult(mockResults, RelationshipType.COMPANY_TO_PEOPLE);
 
 			expect(formatted).toContain("Found 1 records for company to people");
 			expect(formatted).toContain(
@@ -457,7 +457,11 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = searchByContentConfig.formatResult(mockResults);
+			const formatted = searchByContentConfig.formatResult(
+				mockResults, 
+				ContentSearchType.NOTES,
+				UniversalResourceType.COMPANIES
+			);
 
 			expect(formatted).toContain("Found 1 companys with matching notes");
 			expect(formatted).toContain("1. Company with Content (ID: comp-1)");
@@ -614,7 +618,11 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("person");
 
-			const formatted = searchByTimeframeConfig.formatResult(mockResults);
+			const formatted = searchByTimeframeConfig.formatResult(
+				mockResults,
+				TimeframeType.CREATED,
+				UniversalResourceType.PEOPLE
+			);
 
 			expect(formatted).toContain("Found 1 persons by created");
 			expect(formatted).toContain(
@@ -825,7 +833,11 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = batchOperationsConfig.formatResult(mockResults);
+			const formatted = batchOperationsConfig.formatResult(
+				mockResults,
+				BatchOperationType.CREATE,
+				UniversalResourceType.COMPANIES
+			);
 
 			expect(formatted).toContain(
 				"Batch create completed: 1 successful, 1 failed",
@@ -853,7 +865,11 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = batchOperationsConfig.formatResult(mockResults);
+			const formatted = batchOperationsConfig.formatResult(
+				mockResults,
+				BatchOperationType.SEARCH,
+				UniversalResourceType.COMPANIES
+			);
 
 			expect(formatted).toContain("Batch search found 2 companys");
 			expect(formatted).toContain("1. Company 1 (ID: comp-1)");
