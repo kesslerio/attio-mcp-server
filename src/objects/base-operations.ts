@@ -88,8 +88,11 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 
   try {
     // Create the object
-    const result = await createObjectRecord<T>(objectType, transformedAttributes);
-    
+    const result = await createObjectRecord<T>(
+      objectType,
+      transformedAttributes
+    );
+
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `[createObjectWithDynamicFields:${objectType}] Result from createObjectRecord:`,
@@ -98,11 +101,11 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
           hasId: !!result?.id,
           hasValues: !!result?.values,
           resultType: typeof result,
-          isEmptyObject: result && Object.keys(result).length === 0
+          isEmptyObject: result && Object.keys(result).length === 0,
         }
       );
     }
-    
+
     return result;
   } catch (error) {
     console.error(
