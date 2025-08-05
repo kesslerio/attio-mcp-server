@@ -169,11 +169,23 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
     
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
-    const plural = results.length === 1 ? resourceTypeName : `${resourceTypeName}s`;
+    // Handle proper pluralization
+    let plural = resourceTypeName;
+    if (results.length !== 1) {
+      if (resourceTypeName === 'company') {
+        plural = 'companies';
+      } else if (resourceTypeName === 'person') {
+        plural = 'people';
+      } else {
+        plural = `${resourceTypeName}s`;
+      }
+    }
     
     return `Advanced search found ${results.length} ${plural}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -243,6 +255,8 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
     return `Found ${results.length} records for ${relationshipName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -322,6 +336,8 @@ export const searchByContentConfig: UniversalToolConfig = {
     return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -395,6 +411,8 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';

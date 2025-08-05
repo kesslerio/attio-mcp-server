@@ -33,14 +33,29 @@ export async function searchCompaniesByPeople(
   offset: number | string = 0
 ): Promise<Company[]> {
   try {
-    // Ensure peopleFilter is a properly structured filter object
-    if (
-      typeof peopleFilter !== 'object' ||
-      !peopleFilter ||
-      !peopleFilter.filters
+    // Handle the case where we receive just a person ID (from search-by-relationship)
+    let filterObject: ListEntryFilters;
+    
+    if (typeof peopleFilter === 'string') {
+      // Create a filter to find companies associated with this person ID
+      filterObject = {
+        filters: [
+          {
+            attribute: { slug: 'associated_people' },
+            condition: 'contains',
+            value: peopleFilter
+          }
+        ]
+      };
+    } else if (
+      typeof peopleFilter === 'object' &&
+      peopleFilter &&
+      peopleFilter.filters
     ) {
+      filterObject = peopleFilter;
+    } else {
       throw new FilterValidationError(
-        'People filter must be a valid ListEntryFilters object with at least one filter'
+        'People filter must be a valid ListEntryFilters object or a person ID string'
       );
     }
 
@@ -49,7 +64,7 @@ export async function searchCompaniesByPeople(
     const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
     // Create the relationship-based filter and perform the search
-    const filters = createCompaniesByPeopleFilter(peopleFilter);
+    const filters = createCompaniesByPeopleFilter(filterObject);
     const results = await advancedSearchCompanies(
       filters,
       validatedLimit,

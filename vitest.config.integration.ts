@@ -4,6 +4,9 @@ import { config } from 'dotenv';
 // Load environment variables from .env file for integration tests
 config();
 
+// Also load test-specific environment variables
+config({ path: '.env.test' });
+
 export default defineConfig({
   test: {
     environment: 'node',

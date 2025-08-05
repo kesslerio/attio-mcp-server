@@ -41,7 +41,8 @@ import {
   searchPeople,
   advancedSearchPeople,
   getPersonDetails,
-  createPerson
+  createPerson,
+  listPeople
 } from '../../../objects/people/index.js';
 
 import {
@@ -61,6 +62,7 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  getTask,
   listTasks
 } from '../../../objects/tasks.js';
 
@@ -176,7 +178,11 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
         const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
         return paginatedResult.results;
       }
-      return await searchPeople(query || '');
+      // If no query provided, use listPeople instead of searchPeople
+      if (!query || query.trim().length === 0) {
+        return await listPeople(limit || 20);
+      }
+      return await searchPeople(query);
       
     case UniversalResourceType.RECORDS:
       return listObjectRecords('records', { pageSize: limit, page: Math.floor((offset || 0) / (limit || 10)) + 1 });
@@ -441,10 +447,25 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
 export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<any> {
   const { resource_type, record_id, info_type } = params;
   
+  // For now, we'll return the full record for non-company resource types
+  // TODO: Implement specialized detailed info methods for other resource types
   if (resource_type !== UniversalResourceType.COMPANIES) {
-    throw new Error(`Detailed info only supported for companies currently, got: ${resource_type}`);
+    // Return the full record as a fallback for other resource types
+    switch (resource_type) {
+      case UniversalResourceType.PEOPLE:
+        return getPersonDetails(record_id);
+      case UniversalResourceType.DEALS:
+        return getObjectRecord('deals', record_id);
+      case UniversalResourceType.TASKS:
+        return getTask(record_id);
+      case UniversalResourceType.RECORDS:
+        return getObjectRecord('records', record_id);
+      default:
+        throw new Error(`Unsupported resource type for detailed info: ${resource_type}`);
+    }
   }
   
+  // Company-specific detailed info
   switch (info_type) {
     case DetailedInfoType.BASIC:
       return getCompanyBasicInfo(record_id);

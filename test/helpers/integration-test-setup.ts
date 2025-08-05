@@ -18,6 +18,38 @@ export interface IntegrationTestConfig {
   timeout?: number;
   /** Whether to enable verbose logging */
   verbose?: boolean;
+  /** Whether to require test configuration from .env.test */
+  requireTestConfig?: boolean;
+}
+
+/**
+ * Test configuration loaded from environment
+ */
+export interface TestConfiguration {
+  /** Test company ID */
+  companyId?: string;
+  /** Test person ID */
+  personId?: string;
+  /** Test list ID */
+  listId?: string;
+  /** Empty test list ID */
+  emptyListId?: string;
+  /** Test deal ID */
+  dealId?: string;
+  /** Test task ID */
+  taskId?: string;
+  /** Test note ID */
+  noteId?: string;
+  /** Test data values */
+  testCompanyName?: string;
+  testPersonEmail?: string;
+  testPersonFirstName?: string;
+  testPersonLastName?: string;
+  testDomain?: string;
+  /** Test behavior settings */
+  skipIncompleteTests?: boolean;
+  cleanupTestData?: boolean;
+  testDataPrefix?: string;
 }
 
 /**
@@ -32,6 +64,8 @@ export interface IntegrationTestSetup {
   timestamp: number;
   /** Cleanup function to call after tests */
   cleanup: () => Promise<void>;
+  /** Test configuration loaded from environment */
+  testConfig?: TestConfiguration;
 }
 
 /**
@@ -76,6 +110,29 @@ class TestDataTracker {
 const testDataTracker = new TestDataTracker();
 
 /**
+ * Load test configuration from environment
+ */
+function loadTestConfiguration(): TestConfiguration {
+  return {
+    companyId: process.env.TEST_COMPANY_ID,
+    personId: process.env.TEST_PERSON_ID,
+    listId: process.env.TEST_LIST_ID,
+    emptyListId: process.env.TEST_EMPTY_LIST_ID,
+    dealId: process.env.TEST_DEAL_ID,
+    taskId: process.env.TEST_TASK_ID,
+    noteId: process.env.TEST_NOTE_ID,
+    testCompanyName: process.env.TEST_COMPANY_NAME || 'Integration Test Company',
+    testPersonEmail: process.env.TEST_PERSON_EMAIL || 'integration-test@example.com',
+    testPersonFirstName: process.env.TEST_PERSON_FIRST_NAME || 'Integration',
+    testPersonLastName: process.env.TEST_PERSON_LAST_NAME || 'Test',
+    testDomain: process.env.TEST_DOMAIN || 'integration-test.com',
+    skipIncompleteTests: process.env.SKIP_INCOMPLETE_TESTS === 'true',
+    cleanupTestData: process.env.CLEANUP_TEST_DATA !== 'false', // Default true
+    testDataPrefix: process.env.TEST_DATA_PREFIX || 'E2E_TEST_',
+  };
+}
+
+/**
  * Setup integration tests with proper environment validation and cleanup
  */
 export function setupIntegrationTests(
@@ -85,6 +142,7 @@ export function setupIntegrationTests(
     skipOnMissingApiKey = true,
     timeout = 30000,
     verbose = false,
+    requireTestConfig = false,
   } = config;
 
   // Check for API key
@@ -112,6 +170,20 @@ export function setupIntegrationTests(
       skipReason: 'Invalid ATTIO_API_KEY format',
       timestamp: Date.now(),
       cleanup: async () => {},
+    };
+  }
+
+  // Load test configuration
+  const testConfig = loadTestConfiguration();
+
+  // Check if required test configuration is present
+  if (requireTestConfig && (!testConfig.companyId || !testConfig.personId || !testConfig.listId)) {
+    return {
+      shouldSkip: true,
+      skipReason: 'Required test configuration missing. Please run: npm run setup:test-data',
+      timestamp: Date.now(),
+      cleanup: async () => {},
+      testConfig,
     };
   }
 
@@ -159,6 +231,7 @@ export function setupIntegrationTests(
     shouldSkip: false,
     timestamp,
     cleanup: () => testDataTracker.cleanup(),
+    testConfig,
   };
 }
 
