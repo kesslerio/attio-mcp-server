@@ -87,7 +87,7 @@ describe('Universal Tools Integration Tests', () => {
             resource_type: UniversalResourceType.COMPANIES,
             record_data: {
               name: testCompanyName,
-              website: `https://${testDomain}`,
+              domains: testDomain,
               description: 'Universal tool integration test company'
             },
             return_details: true

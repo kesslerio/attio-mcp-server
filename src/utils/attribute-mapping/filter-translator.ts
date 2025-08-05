@@ -58,7 +58,7 @@ function isDirectFilterObject(filter: any): boolean {
  */
 function translateDirectFilter(filter: any, objectType?: string): any {
   // Determine the object type to use for translation
-  // Priority: filter's own objectType > parent objectType
+  // Priority: filter's own objectType > passed objectType > parent objectType
   const typeToUse = filter.objectType || objectType;
 
   // Create a new object with translated slug

@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "workspace": "brex-dev",
+  "workspaceUrl": "https://app.attio.com/brex-dev",
+  "mappings": {
+    "attributes": {
+      "common": {
+        "Name": "name",
+        "Email": "email_addresses",
+        "Phone": "phone_numbers",
+        "Company": "primary_company",
+        "Domain": "domains",
+        "Domains": "domains",
+        "Website": "domains",
+        "Description": "description",
+        "Team": "team",
+        "Categories": "categories",
+        "Industry": "categories",
+        "Location": "primary_location",
+        "Logo": "logo_url",
+        "Founded": "foundation_date",
+        "Employees": "employee_range",
+        "ARR": "estimated_arr_usd",
+        "Funding": "funding_raised_usd"
+      },
+      "objects": {
+        "companies": {
+          "Name": "name",
+          "Domain": "domains",
+          "Domains": "domains",
+          "Website": "domains",
+          "Industry": "categories",
+          "Categories": "categories",
+          "Description": "description",
+          "Team": "team",
+          "Location": "primary_location",
+          "Logo": "logo_url",
+          "Founded": "foundation_date",
+          "Employees": "employee_range",
+          "ARR": "estimated_arr_usd",
+          "Funding": "funding_raised_usd"
+        },
+        "people": {
+          "Name": "name",
+          "Email": "email_addresses",
+          "Phone": "phone_numbers",
+          "Company": "primary_company",
+          "Title": "job_title",
+          "Location": "primary_location"
+        }
+      },
+      "custom": {}
+    },
+    "objects": {
+      "Companies": "companies",
+      "People": "people",
+      "Deals": "deals",
+      "Lists": "lists",
+      "Tasks": "tasks",
+      "Notes": "notes"
+    },
+    "lists": {},
+    "relationships": {
+      "associated_deals": "deals",
+      "primary_company": "companies",
+      "team": "workspace-members"
+    }
+  }
+}
