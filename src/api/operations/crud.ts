@@ -68,7 +68,16 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
-    return response.data.data;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createRecord] API response structure:', {
+        hasData: !!response?.data,
+        hasNestedData: !!response?.data?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : [],
+        nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : []
+      });
+    }
+
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 
@@ -106,7 +115,7 @@ export async function getRecord<T extends AttioRecord>(
       console.error('[getRecord] Final request path:', path);
     }
     const response = await api.get<AttioSingleResponse<T>>(path);
-    return response?.data?.data;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 
@@ -135,7 +144,7 @@ export async function updateRecord<T extends AttioRecord>(
 
     const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-    return response?.data?.data;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 

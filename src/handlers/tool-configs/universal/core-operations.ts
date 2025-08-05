@@ -198,7 +198,15 @@ export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Input params:', params);
+      }
+      
       const sanitizedParams = validateUniversalToolParams('create-record', params);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Sanitized params:', sanitizedParams);
+      }
       
       // Perform cross-resource validation for create operations
       const { CrossResourceValidator } = await import('./schemas.js');
@@ -207,8 +215,23 @@ export const createRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
       
-      return await handleUniversalCreate(sanitizedParams);
+      const result = await handleUniversalCreate(sanitizedParams);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Final result:', {
+          result,
+          hasId: !!result?.id,
+          hasValues: !!result?.values,
+          resultType: typeof result,
+          isEmptyObject: Object.keys(result || {}).length === 0
+        });
+      }
+      
+      return result;
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[createRecordConfig:handler] Error:', error);
+      }
       throw createUniversalError('create', params.resource_type, error);
     }
   },
