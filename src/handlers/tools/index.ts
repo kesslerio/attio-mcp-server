@@ -128,14 +128,17 @@ function normalizeToolRequest(
 export function registerToolHandlers(server: Server): void {
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    // Dynamically collect all available tool definitions
+    const allTools = [];
+    
+    for (const [key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
+      if (toolDefs && Array.isArray(toolDefs)) {
+        allTools.push(...toolDefs);
+      }
+    }
+    
     return {
-      tools: [
-        ...TOOL_DEFINITIONS[ResourceType.COMPANIES],
-        ...TOOL_DEFINITIONS[ResourceType.PEOPLE],
-        ...TOOL_DEFINITIONS[ResourceType.LISTS],
-        ...TOOL_DEFINITIONS[ResourceType.TASKS],
-        ...TOOL_DEFINITIONS[ResourceType.RECORDS],
-      ],
+      tools: allTools,
     };
   });
 

@@ -37,32 +37,46 @@ import {
 } from '../tool-configs/universal/index.js';
 
 /**
+ * Universal tool consolidation (Issue #352): Only expose universal tools
+ * This replaces the legacy resource-specific tools with consolidated universal tools
+ * that can handle all resource types (companies, people, records, tasks) through
+ * a single, consistent interface.
+ * 
+ * Legacy tools are kept for backward compatibility but not exposed by default.
+ */
+const USE_UNIVERSAL_TOOLS_ONLY = process.env.DISABLE_UNIVERSAL_TOOLS !== 'true';
+
+/**
  * Consolidated tool configurations from modular files
  */
-export const TOOL_CONFIGS = {
+export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY ? {
+  // Universal tools for consolidated operations (Issue #352)
+  UNIVERSAL: universalToolConfigs,
+} : {
+  // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
   [ResourceType.COMPANIES]: companyToolConfigs,
   [ResourceType.PEOPLE]: peopleToolConfigs,
   [ResourceType.LISTS]: listsToolConfigs,
   [ResourceType.TASKS]: tasksToolConfigs,
   [ResourceType.RECORDS]: recordToolConfigs,
   GENERAL: generalToolConfigs,
-  // Universal tools for consolidated operations (Issue #352)
-  UNIVERSAL: universalToolConfigs,
   // Add other resource types as needed
 };
 
 /**
  * Consolidated tool definitions from modular files
  */
-export const TOOL_DEFINITIONS = {
+export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY ? {
+  // Universal tools for consolidated operations (Issue #352)
+  UNIVERSAL: universalToolDefinitions,
+} : {
+  // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
   [ResourceType.COMPANIES]: companyToolDefinitions,
   [ResourceType.PEOPLE]: peopleToolDefinitions,
   [ResourceType.LISTS]: listsToolDefinitions,
   [ResourceType.TASKS]: tasksToolDefinitions,
   [ResourceType.RECORDS]: recordToolDefinitions,
   GENERAL: generalToolDefinitions,
-  // Universal tools for consolidated operations (Issue #352)
-  UNIVERSAL: universalToolDefinitions,
   // Add other resource types as needed
 };
 
