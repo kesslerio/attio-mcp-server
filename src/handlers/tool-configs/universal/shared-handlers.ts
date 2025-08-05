@@ -17,6 +17,9 @@ import {
   DetailedInfoType
 } from './types.js';
 
+// Import deal defaults configuration
+import { applyDealDefaults, applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
+
 // Import existing handlers by resource type
 import {
   searchCompanies,
@@ -64,6 +67,32 @@ import {
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
+
+/**
+ * Query deal records using the proper Attio API endpoint
+ */
+async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord[]> {
+  const client = getAttioClient();
+  
+  try {
+    // Use POST to /objects/deals/records/query (the correct Attio endpoint)
+    const response = await client.post('/objects/deals/records/query', {
+      limit,
+      offset,
+      // Add any additional query parameters as needed
+    });
+    
+    return response.data.data || [];
+  } catch (error: any) {
+    console.error('Failed to query deal records:', error);
+    // If the query endpoint also fails, try the simpler approach
+    if (error?.response?.status === 404) {
+      console.error('Deal query endpoint not found, falling back to empty results');
+      return [];
+    }
+    throw error;
+  }
+}
 
 /**
  * Converts an AttioTask to an AttioRecord for universal tool compatibility
@@ -152,6 +181,10 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
     case UniversalResourceType.RECORDS:
       return listObjectRecords('records', { pageSize: limit, page: Math.floor((offset || 0) / (limit || 10)) + 1 });
       
+    case UniversalResourceType.DEALS:
+      // Use POST query endpoint for deals since GET /objects/deals/records doesn't exist
+      return await queryDealRecords({ limit, offset });
+      
     case UniversalResourceType.TASKS:
       const tasks = await listTasks();
       // Convert AttioTask[] to AttioRecord[] using proper type conversion
@@ -177,6 +210,9 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       
     case UniversalResourceType.RECORDS:
       return getObjectRecord('records', record_id);
+      
+    case UniversalResourceType.DEALS:
+      return getObjectRecord('deals', record_id);
       
     case UniversalResourceType.TASKS:
       // Tasks don't have a direct get details function, so we'll use list with filter
@@ -208,6 +244,47 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
     case UniversalResourceType.RECORDS:
       return createObjectRecord('records', record_data);
+      
+    case UniversalResourceType.DEALS:
+      // Handle deal-specific requirements with configured defaults and validation
+      let dealData = { ...record_data };
+      
+      // Validate input and log suggestions (but don't block execution)
+      const validation = validateDealInput(dealData);
+      if (validation.suggestions.length > 0) {
+        console.error('Deal input suggestions:', validation.suggestions.join('; '));
+      }
+      if (validation.warnings.length > 0) {
+        console.error('Deal input warnings:', validation.warnings.join('; '));
+      }
+      if (!validation.isValid) {
+        console.error('Deal input errors:', validation.errors.join('; '));
+        // Continue anyway - the conversions might fix the issues
+      }
+      
+      // Apply configured defaults with proactive stage validation
+      dealData = await applyDealDefaultsWithValidation(dealData);
+      
+      try {
+        return await createObjectRecord('deals', dealData);
+      } catch (error: any) {
+        // If stage still fails after validation, try with default stage
+        if (error?.message?.includes('Cannot find Status') && dealData.stage) {
+          const defaults = getDealDefaults();
+          const invalidStage = dealData.stage[0]?.status;
+          console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
+          
+          // Use default stage if available, otherwise remove stage (will fail since it's required)
+          if (defaults.stage) {
+            dealData.stage = [{ status: defaults.stage }];
+          } else {
+            delete dealData.stage;
+          }
+          
+          return await createObjectRecord('deals', dealData);
+        }
+        throw error;
+      }
       
     case UniversalResourceType.TASKS:
       // Extract content from record_data for task creation
@@ -242,6 +319,11 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     case UniversalResourceType.RECORDS:
       return updateObjectRecord('records', record_id, record_data);
       
+    case UniversalResourceType.DEALS:
+      // Apply deal defaults and validation for updates too
+      const updatedDealData = await applyDealDefaultsWithValidation(record_data);
+      return updateObjectRecord('deals', record_id, updatedDealData);
+      
     case UniversalResourceType.TASKS:
       const updatedTask = await updateTask(record_id, record_data);
       // Convert AttioTask to AttioRecord using proper type conversion
@@ -269,6 +351,10 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
       
     case UniversalResourceType.RECORDS:
       await deleteObjectRecord('records', record_id);
+      return { success: true, record_id };
+      
+    case UniversalResourceType.DEALS:
+      await deleteObjectRecord('deals', record_id);
       return { success: true, record_id };
       
     case UniversalResourceType.TASKS:
@@ -307,6 +393,12 @@ export async function handleUniversalGetAttributes(params: UniversalAttributesPa
       }
       return discoverAttributesForResourceType(resource_type);
       
+    case UniversalResourceType.DEALS:
+      if (record_id) {
+        return getAttributesForRecord(resource_type, record_id);
+      }
+      return discoverAttributesForResourceType(resource_type);
+      
     case UniversalResourceType.TASKS:
       if (record_id) {
         return getAttributesForRecord(resource_type, record_id);
@@ -330,6 +422,9 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
       return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.RECORDS:
+      return discoverAttributesForResourceType(resource_type);
+      
+    case UniversalResourceType.DEALS:
       return discoverAttributesForResourceType(resource_type);
       
     case UniversalResourceType.TASKS:
@@ -383,6 +478,8 @@ export function formatResourceType(resourceType: UniversalResourceType): string 
       return 'person';
     case UniversalResourceType.RECORDS:
       return 'record';
+    case UniversalResourceType.DEALS:
+      return 'deal';
     case UniversalResourceType.TASKS:
       return 'task';
     default:
@@ -445,6 +542,79 @@ export function createUniversalError(operation: string, resourceType: string, or
 function getOperationSuggestion(operation: string, resourceType: string, error: any): string | undefined {
   const errorMessage = error?.message?.toLowerCase() || '';
   
+  // Deal-specific suggestions
+  if (resourceType === 'deals') {
+    if (errorMessage.includes('cannot find attribute with slug/id "company_id"')) {
+      return 'Use "associated_company" instead of "company_id" for linking deals to companies';
+    }
+    
+    if (errorMessage.includes('cannot find attribute with slug/id "company"')) {
+      return 'Use "associated_company" instead of "company" for linking deals to companies';
+    }
+    
+    if (errorMessage.includes('cannot find status')) {
+      return 'Invalid deal stage. Check available stages with discover-attributes tool or use the default stage';
+    }
+    
+    if (errorMessage.includes('invalid value was passed to attribute with slug "value"')) {
+      return 'Deal value should be a simple number (e.g., 9780). Attio automatically handles currency formatting.';
+    }
+    
+    if (errorMessage.includes('deal_stage')) {
+      return 'Use "stage" instead of "deal_stage" for deal status';
+    }
+    
+    if (errorMessage.includes('deal_value')) {
+      return 'Use "value" instead of "deal_value" for deal amount';
+    }
+    
+    if (errorMessage.includes('deal_name')) {
+      return 'Use "name" instead of "deal_name" for deal title';
+    }
+    
+    if (errorMessage.includes('description')) {
+      return 'Deals do not have a "description" field. Available fields: name, stage, value, owner, associated_company, associated_people';
+    }
+    
+    if (errorMessage.includes('expected_close_date') || errorMessage.includes('close_date')) {
+      return 'Deals do not have a built-in close date field. Consider using a custom field or tracking this separately';
+    }
+    
+    if (errorMessage.includes('probability') || errorMessage.includes('likelihood')) {
+      return 'Deals do not have a built-in probability field. Consider using custom fields or tracking probability in stage names';
+    }
+    
+    if (errorMessage.includes('source') || errorMessage.includes('lead_source')) {
+      return 'Deals do not have a built-in source field. Consider using custom fields to track deal sources';
+    }
+    
+    if (errorMessage.includes('currency') && !errorMessage.includes('currency_code')) {
+      return 'Currency is set automatically based on workspace settings. Just provide a numeric value for the deal amount';
+    }
+    
+    if (errorMessage.includes('contact') || errorMessage.includes('primary_contact')) {
+      return 'Use "associated_people" to link contacts/people to deals';
+    }
+    
+    if (errorMessage.includes('notes') || errorMessage.includes('comments')) {
+      return 'Deal notes should be created separately using the notes API after the deal is created';
+    }
+    
+    if (errorMessage.includes('tags') || errorMessage.includes('labels')) {
+      return 'Deals do not have a built-in tags field. Consider using custom fields or categories';
+    }
+    
+    if (errorMessage.includes('type') || errorMessage.includes('deal_type')) {
+      return 'Deal types are not built-in. Use stages or custom fields to categorize deals';
+    }
+    
+    // Generic unknown field error
+    if (errorMessage.includes('cannot find attribute')) {
+      return 'Unknown deal field. Core fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes tool to see all available fields including custom ones';
+    }
+  }
+  
+  // General suggestions
   if (errorMessage.includes('not found')) {
     return `Verify that the ${resourceType} record exists and you have access to it`;
   }
@@ -459,6 +629,17 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
   
   if (operation === 'create' && errorMessage.includes('duplicate')) {
     return `A ${resourceType} record with these details may already exist. Try searching first`;
+  }
+  
+  if (errorMessage.includes('cannot find attribute')) {
+    const match = errorMessage.match(/cannot find attribute with slug\/id["\s]*([^"]*)/);
+    if (match && match[1]) {
+      // Provide resource-specific field suggestions
+      if (resourceType === 'deals') {
+        return `Unknown field "${match[1]}". Available deal fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes for full list`;
+      }
+      return `Unknown field "${match[1]}". Use discover-attributes tool to see available fields for ${resourceType}`;
+    }
   }
   
   return undefined;

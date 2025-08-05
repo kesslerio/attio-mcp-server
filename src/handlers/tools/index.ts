@@ -132,8 +132,14 @@ export function registerToolHandlers(server: Server): void {
     const allTools = [];
     
     for (const [key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
-      if (toolDefs && Array.isArray(toolDefs)) {
-        allTools.push(...toolDefs);
+      if (toolDefs) {
+        if (Array.isArray(toolDefs)) {
+          // Legacy format: array of tool definitions
+          allTools.push(...toolDefs);
+        } else if (typeof toolDefs === 'object') {
+          // Universal format: object with tool definitions as values
+          allTools.push(...Object.values(toolDefs));
+        }
       }
     }
     

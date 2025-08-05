@@ -312,6 +312,30 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolConfig as ToolConfig
       );
     
+    // Handle Universal tools (Issue #352 - Universal tool consolidation)
+    } else if (resourceType === 'UNIVERSAL' as any) {
+      // For universal tools, use the tool's own handler directly
+      const args = request.params.arguments;
+      
+      // Universal tools have their own parameter validation and handling
+      const rawResult = await toolConfig.handler(args);
+      
+      // Universal tools may have different formatResult signatures - handle flexibly
+      let formattedResult: string;
+      if (toolConfig.formatResult) {
+        try {
+          // Try with all possible parameters (result, resourceType, infoType)
+          formattedResult = (toolConfig.formatResult as any)(rawResult, args?.resource_type, args?.info_type);
+        } catch {
+          // Fallback to just result if signature mismatch
+          formattedResult = (toolConfig.formatResult as any)(rawResult);
+        }
+      } else {
+        formattedResult = JSON.stringify(rawResult, null, 2);
+      }
+      
+      result = { content: [{ type: 'text', text: formattedResult }] };
+      
     // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === 'GENERAL' as any) {
       // For general tools, use the tool's own handler directly
