@@ -98,7 +98,7 @@ export async function getCompanyNotes(
         }
 
         const response = await api.get(path);
-        return response.data.data || [];
+        return response?.data?.data || [];
       } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
           console.error(`[getCompanyNotes] All attempts failed:`, {

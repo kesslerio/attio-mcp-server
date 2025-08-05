@@ -44,7 +44,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
         },
       ],
     });
-    return response.data.data || [];
+    return response?.data?.data || [];
   }
 }
 
@@ -436,6 +436,11 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
  * @throws Error if the URI format is invalid
  */
 export function extractCompanyId(companyIdOrUri: string): string {
+  // Validate input
+  if (!companyIdOrUri || typeof companyIdOrUri !== 'string') {
+    throw new Error(`Invalid company ID or URI: expected non-empty string, got ${typeof companyIdOrUri}: ${companyIdOrUri}`);
+  }
+
   // Determine if the input is a URI or a direct ID
   const isUri = companyIdOrUri.startsWith('attio://');
 

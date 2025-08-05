@@ -54,7 +54,7 @@ export async function searchObject<T extends AttioRecord>(
       const response = await api.post<AttioListResponse<T>>(path, {
         filter,
       });
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       // Handle 404 errors with custom message
       if (error.response && error.response.status === 404) {
@@ -182,7 +182,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
     try {
       const requestBody = await createRequestBody();
       const response = await api.post<AttioListResponse<T>>(path, requestBody);
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -220,7 +220,7 @@ export async function listObjects<T extends AttioRecord>(
       };
 
       const response = await api.post<AttioListResponse<T>>(path, body);
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       throw error;
     }

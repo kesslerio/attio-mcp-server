@@ -42,7 +42,7 @@ export async function getAllLists(
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioListResponse<AttioList>>(path);
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -67,7 +67,7 @@ export async function getListDetails(
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioSingleResponse<AttioList>>(path);
-      return response.data.data || response.data;
+      return response?.data?.data || response?.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -253,7 +253,7 @@ export async function addRecordToList(
         );
       }
 
-      return response.data.data || response.data;
+      return response?.data?.data || response?.data;
     } catch (error: any) {
       // Enhanced error logging with detailed information
       if (process.env.NODE_ENV === 'development') {
@@ -357,7 +357,7 @@ export async function updateListEntry(
         );
       }
 
-      return response.data.data || response.data;
+      return response?.data?.data || response?.data;
     } catch (error: any) {
       // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {

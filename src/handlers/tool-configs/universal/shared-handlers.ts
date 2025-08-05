@@ -84,7 +84,7 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
       // Add any additional query parameters as needed
     });
     
-    return response.data.data || [];
+    return response?.data?.data || [];
   } catch (error: any) {
     console.error('Failed to query deal records:', error);
     // If the query endpoint also fails, try the simpler approach
@@ -153,7 +153,7 @@ async function getAttributesForRecord(resourceType: UniversalResourceType, recor
   
   try {
     const response = await client.get(`/objects/${resourceType}/records/${recordId}`);
-    return response.data.data?.values || {};
+    return response?.data?.data?.values || {};
   } catch (error) {
     console.error(`Failed to get attributes for ${resourceType} record ${recordId}:`, error);
     throw new Error(`Failed to get record attributes: ${error instanceof Error ? error.message : String(error)}`);

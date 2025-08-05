@@ -121,8 +121,10 @@ function loadTestConfiguration(): TestConfiguration {
     dealId: process.env.TEST_DEAL_ID,
     taskId: process.env.TEST_TASK_ID,
     noteId: process.env.TEST_NOTE_ID,
-    testCompanyName: process.env.TEST_COMPANY_NAME || 'Integration Test Company',
-    testPersonEmail: process.env.TEST_PERSON_EMAIL || 'integration-test@example.com',
+    testCompanyName:
+      process.env.TEST_COMPANY_NAME || 'Integration Test Company',
+    testPersonEmail:
+      process.env.TEST_PERSON_EMAIL || 'integration-test@example.com',
     testPersonFirstName: process.env.TEST_PERSON_FIRST_NAME || 'Integration',
     testPersonLastName: process.env.TEST_PERSON_LAST_NAME || 'Test',
     testDomain: process.env.TEST_DOMAIN || 'integration-test.com',
@@ -177,10 +179,14 @@ export function setupIntegrationTests(
   const testConfig = loadTestConfiguration();
 
   // Check if required test configuration is present
-  if (requireTestConfig && (!testConfig.companyId || !testConfig.personId || !testConfig.listId)) {
+  if (
+    requireTestConfig &&
+    (!testConfig.companyId || !testConfig.personId || !testConfig.listId)
+  ) {
     return {
       shouldSkip: true,
-      skipReason: 'Required test configuration missing. Please run: npm run setup:test-data',
+      skipReason:
+        'Required test configuration missing. Please run: npm run setup:test-data',
       timestamp: Date.now(),
       cleanup: async () => {},
       testConfig,
