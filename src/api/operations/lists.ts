@@ -62,7 +62,7 @@ export async function getListDetails(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<AttioList>>(path);
-    return (response?.data?.data || response?.data) as AttioList;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 
@@ -244,7 +244,7 @@ export async function addRecordToList(
         );
       }
 
-      return (response?.data?.data || response?.data) as AttioListEntry;
+      return response?.data?.data || response?.data;
     } catch (error: unknown) {
       const listError = error as ListErrorResponse;
       // Enhanced error logging with detailed information
@@ -349,7 +349,7 @@ export async function updateListEntry(
         );
       }
 
-      return (response?.data?.data || response?.data) as AttioListEntry;
+      return response?.data?.data || response?.data;
     } catch (error: unknown) {
       const updateError = error as ListErrorResponse;
       // Enhanced error logging with specific error types

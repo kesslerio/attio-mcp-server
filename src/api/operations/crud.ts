@@ -42,7 +42,7 @@ export async function getObjectDetails<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<T>>(path);
-    return (response?.data?.data || response?.data) as T;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 

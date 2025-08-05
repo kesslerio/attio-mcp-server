@@ -68,6 +68,6 @@ export async function createObjectNote(
         content: noteText,
       },
     });
-    return (response?.data?.data || response?.data) as AttioNote;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
