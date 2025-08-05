@@ -243,7 +243,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
-      return createCompany(record_data);
+      return await createCompany(record_data);
       
     case UniversalResourceType.PEOPLE:
       return createPerson(record_data);
