@@ -62,7 +62,12 @@ The following commands are pre-approved and do not require user permission:
 
 CODE PRINCIPLES
 - TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.
+  * NEVER use `any` type - create proper interfaces/types instead
+  * Define explicit return types for all functions
+  * Use generics for reusable code patterns
 - API: Handle errors with detailed error responses using `createErrorResult`. Implement resilience with try/catch blocks.
+  * Avoid useless try/catch that only re-throws - let errors propagate naturally
+  * Only wrap in try/catch when adding error context or transformation
 - Config: Use environment variables (`process.env.ATTIO_API_KEY`). No hardcoding secrets.
 - Errors: Use specific `try/catch` blocks. Allow continuation on non-critical errors.
 - Logging: Use console.error for critical errors, with process.exit(1) for fatal errors.
@@ -75,6 +80,8 @@ CODE STYLE/STRUCTURE
 - Formatting: Follow project style, 2-space indentation.
 - Types/Docs: Mandatory type hints. Use JSDoc for public API.
 - Imports: Node.js standard modules -> external -> internal.
+- Switch statements: Wrap case blocks in braces `{}` when declaring variables
+- Remove unused imports and variables immediately
 
 LINT COMPLIANCE (CRITICAL)
 - ZERO errors allowed in lint:check (all errors must be fixed before commit)
