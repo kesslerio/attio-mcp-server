@@ -2,51 +2,84 @@
  * Integration test for the add-record-to-list tool
  * Tests the entire flow from tool invocation to API call with proper parameters
  */
-import { describe, test, expect, beforeAll, vi } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import { getAttioClient } from '../../../src/api/attio-client';
 import { addRecordToList } from '../../../src/objects/lists';
 import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
 import { listsToolConfigs } from '../../../src/handlers/tool-configs/lists';
 
-// These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS =
-  !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
-
-// Mock data for testing
-const TEST_LIST_ID = 'list_your_test_list_id_here'; // Replace with a real list ID for testing
-const TEST_RECORD_ID = 'company_your_test_company_id_here'; // Replace with a real company ID for testing
-
 // Mock axios for API client in case we're skipping real API tests
-vi.mock('axios', () => {
-  // Only mock if we're skipping tests
-  if (SKIP_INTEGRATION_TESTS) {
+vi.mock('axios', async () => {
+  const actual = await vi.importActual('axios');
+  
+  // Check if we should mock based on environment
+  const shouldMock = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+  
+  if (shouldMock) {
     return {
-      create: vi.fn(() => ({
-        get: vi.fn().mockResolvedValue({ data: { data: {} } }),
-        post: vi.fn().mockResolvedValue({
-          data: {
+      default: {
+        create: vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ data: { data: {} } }),
+          post: vi.fn().mockResolvedValue({
             data: {
-              id: { entry_id: 'mock-entry-id' },
-              record_id: TEST_RECORD_ID,
-              values: { stage: 'Mock Stage' },
+              data: {
+                id: { entry_id: 'mock-entry-id' },
+                record_id: process.env.TEST_COMPANY_ID || 'mock-record-id',
+                values: { stage: 'Mock Stage' },
+              },
             },
+          }),
+          interceptors: {
+            request: { use: vi.fn() },
+            response: { use: vi.fn() },
           },
-        }),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      })),
+        })),
+      },
     };
   }
 
   // Otherwise use the real axios
-  return vi.importActual('axios');
+  return actual;
 });
+
+// These tests use real API calls - only run when API key is available
+const SKIP_INTEGRATION_TESTS =
+  !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+
+// Load test configuration from environment
+const TEST_LIST_ID = process.env.TEST_LIST_ID || '';
+const TEST_RECORD_ID = process.env.TEST_COMPANY_ID || '';
+
+// Check if test configuration is complete
+const TEST_CONFIG_MISSING = !TEST_LIST_ID || !TEST_RECORD_ID;
+const CONFIG_ERROR_MESSAGE = `
+⚠️  Integration test configuration missing!
+
+To run these tests, you need to set up test data:
+
+1. Copy the test configuration template:
+   cp .env.test.example .env.test
+
+2. Fill in your workspace-specific IDs:
+   - TEST_LIST_ID: A list ID for testing add/remove operations
+   - TEST_COMPANY_ID: A company record ID for testing
+
+3. Run the tests again:
+   npm test:integration
+
+For more information, see: docs/testing.md
+`;
 
 describe('Add Record To List Integration', () => {
   if (SKIP_INTEGRATION_TESTS) {
     test.skip('Skipping integration tests - no API key found', () => {});
+    return;
+  }
+
+  if (TEST_CONFIG_MISSING) {
+    test.skip('Skipping integration tests - test configuration missing', () => {
+      console.error(CONFIG_ERROR_MESSAGE);
+    });
     return;
   }
 

@@ -4,6 +4,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts', 'test/**/*.test.js'],
+    exclude: [
+      // Exclude integration tests from default config - use vitest.config.integration.ts instead
+      'test/integration/**/*.test.ts',
+      'test/handlers/tool-configs/universal/integration.test.ts',
+      'test/handlers/tool-configs/universal/performance.test.ts',
+    ],
     globals: true,
     testTimeout: 30000,
     setupFiles: ['./test/setup.ts'],

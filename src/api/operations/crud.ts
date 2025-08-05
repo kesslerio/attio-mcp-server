@@ -42,7 +42,7 @@ export async function getObjectDetails<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<T>>(path);
-    return response.data.data || response.data;
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 
@@ -107,7 +107,7 @@ export async function getRecord<T extends AttioRecord>(
         console.error('[getRecord] Final request path:', path);
       }
       const response = await api.get<AttioSingleResponse<T>>(path);
-      return response.data.data;
+      return response?.data?.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -141,7 +141,7 @@ export async function updateRecord<T extends AttioRecord>(
 
       const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-      return response.data.data;
+      return response?.data?.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -227,7 +227,7 @@ export async function listRecords<T extends AttioRecord>(
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioListResponse<T>>(path);
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;

@@ -35,7 +35,7 @@ export async function getObjectNotes(
   return callWithRetry(async () => {
     try {
       const response = await api.get<AttioListResponse<AttioNote>>(path);
-      return response.data.data || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;
@@ -74,7 +74,7 @@ export async function createObjectNote(
           content: noteText,
         },
       });
-      return response.data.data || response.data;
+      return response?.data?.data || response?.data;
     } catch (error: any) {
       // Let upstream handlers create specific, rich error objects.
       throw error;

@@ -221,6 +221,23 @@ npm run build
 npm run test:offline
 ```
 
+### **Testing**
+
+The project includes comprehensive unit and integration tests:
+
+```bash
+# Unit Tests (no API required)
+npm test                    # Run all tests
+npm run test:offline        # Run only offline tests
+npm run test:watch          # Watch mode for development
+
+# Integration Tests (requires API key and test data)
+npm run test:integration    # Run all integration tests
+npm run setup:test-data     # Create test data in your workspace
+```
+
+See the [Testing Guide](./docs/testing.md) for detailed instructions on setting up and running integration tests.
+
 ### **Available Scripts**
 ```bash
 npm run build          # Build TypeScript
@@ -228,6 +245,7 @@ npm run test           # Run all tests
 npm run test:offline   # Run tests without API calls
 npm run lint           # Check code style
 npm run check          # Full quality check
+npm run setup:test-data # Create test data for integration tests
 ```
 
 ## 🤝 Contributing
