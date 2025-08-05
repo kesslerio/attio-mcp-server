@@ -8,7 +8,7 @@ export default defineConfig({
       // Exclude integration tests from default config - use vitest.config.integration.ts instead
       'test/integration/**/*.test.ts',
       'test/handlers/tool-configs/universal/integration.test.ts',
-      'test/handlers/tool-configs/universal/performance.test.ts'
+      'test/handlers/tool-configs/universal/performance.test.ts',
     ],
     globals: true,
     testTimeout: 30000,
