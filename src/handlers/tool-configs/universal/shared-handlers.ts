@@ -245,13 +245,37 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
 export async function handleUniversalCreate(params: UniversalCreateParams): Promise<AttioRecord> {
   const { resource_type, record_data } = params;
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
+  }
+  
   switch (resource_type) {
     case UniversalResourceType.COMPANIES: {
       try {
         // Apply format conversions for common mistakes
         const correctedData = convertAttributeFormats('companies', record_data);
-        return await createCompany(correctedData);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleUniversalCreate] Corrected data for companies:', correctedData);
+        }
+        
+        const result = await createCompany(correctedData);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleUniversalCreate] createCompany result:', {
+            result,
+            hasId: !!result?.id,
+            hasValues: !!result?.values,
+            resultType: typeof result
+          });
+        }
+        
+        return result;
       } catch (error: any) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[handleUniversalCreate] Error in companies case:', error);
+        }
+        
         // Enhance error messages with format help
         if (error?.message?.includes('Cannot find attribute')) {
           const match = error.message.match(/slug\/ID "([^"]+)"/);

@@ -57,12 +57,35 @@ export async function createObjectRecord<T extends AttioRecord>(
 
   try {
     // Use the core API function
-    return await createRecord<T>({
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createObjectRecord] Calling createRecord with:', {
+        objectSlug: normalizedSlug,
+        objectId,
+        attributes
+      });
+    }
+    
+    const result = await createRecord<T>({
       objectSlug: normalizedSlug,
       objectId,
       attributes,
     });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createObjectRecord] createRecord returned:', {
+        result,
+        hasId: !!result?.id,
+        hasValues: !!result?.values,
+        resultType: typeof result
+      });
+    }
+    
+    return result;
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createObjectRecord] Primary createRecord failed, trying fallback:', error);
+    }
+    
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -90,6 +113,15 @@ export async function createObjectRecord<T extends AttioRecord>(
           values: attributes,
         },
       });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createObjectRecord:fallback] API response structure:', {
+          hasData: !!response?.data,
+          hasNestedData: !!response?.data?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+          nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : []
+        });
+      }
 
       return response?.data?.data || response?.data;
     } catch (fallbackError) {

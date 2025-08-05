@@ -68,6 +68,15 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createRecord] API response structure:', {
+        hasData: !!response?.data,
+        hasNestedData: !!response?.data?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : [],
+        nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : []
+      });
+    }
+
     return response?.data?.data || response?.data;
   }, retryConfig);
 }

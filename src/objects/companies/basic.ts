@@ -230,13 +230,33 @@ export async function getCompanyDetails(
 export async function createCompany(
   attributes: CompanyAttributes
 ): Promise<Company> {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[createCompany] Input attributes:', attributes);
+  }
+  
   try {
-    return await createObjectWithDynamicFields<Company>(
+    const result = await createObjectWithDynamicFields<Company>(
       ResourceType.COMPANIES,
       attributes,
       CompanyValidator.validateCreate
     );
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createCompany] Result from createObjectWithDynamicFields:', {
+        result,
+        hasId: !!result?.id,
+        hasValues: !!result?.values,
+        resultType: typeof result,
+        isEmptyObject: result && Object.keys(result).length === 0
+      });
+    }
+    
+    return result;
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[createCompany] Error caught:', error);
+    }
+    
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
