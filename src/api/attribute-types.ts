@@ -284,12 +284,14 @@ export async function getFieldValidationRules(
     }
 
     // Add enum values for select fields
-    const config = typeInfo.metadata.config as { 
-      options?: Array<{ value: string | number | boolean }>;
-      select?: { 
-        options?: Array<{ value: string | number | boolean }>;
-      };
-    } | undefined;
+    const config = typeInfo.metadata.config as
+      | {
+          options?: Array<{ value: string | number | boolean }>;
+          select?: {
+            options?: Array<{ value: string | number | boolean }>;
+          };
+        }
+      | undefined;
     if (typeInfo.attioType === 'select') {
       // Handle both direct options and nested select.options
       const options = config?.options || config?.select?.options;

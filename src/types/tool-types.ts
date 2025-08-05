@@ -3,7 +3,6 @@
  * Replaces explicit any types with proper interfaces
  */
 
-
 /**
  * Generic tool request arguments interface
  */

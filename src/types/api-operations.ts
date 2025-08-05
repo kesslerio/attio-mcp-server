@@ -97,12 +97,12 @@ export interface ValidationErrorDetails {
 /**
  * Filter value types that can be used in list entry filters
  */
-export type FilterValue = 
-  | string 
-  | number 
-  | boolean 
-  | Date 
-  | null 
+export type FilterValue =
+  | string
+  | number
+  | boolean
+  | Date
+  | null
   | undefined
   | string[]
   | number[]

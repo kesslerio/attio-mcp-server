@@ -1,20 +1,23 @@
 /**
  * Attribute format helpers to convert common user mistakes to correct API formats
- * 
+ *
  * This module provides automatic format conversion for common attribute mistakes
  * to improve user experience and reduce errors.
  */
 
 /**
  * Converts common attribute format mistakes to correct API format
- * 
+ *
  * @param resourceType - The type of resource (companies, people, etc.)
  * @param attributes - The attributes object with potential format issues
  * @returns Corrected attributes object
  */
-export function convertAttributeFormats(resourceType: string, attributes: any): any {
+export function convertAttributeFormats(
+  resourceType: string,
+  attributes: any
+): any {
   let corrected = { ...attributes };
-  
+
   switch (resourceType) {
     case 'companies':
       corrected = convertCompanyAttributes(corrected);
@@ -23,7 +26,7 @@ export function convertAttributeFormats(resourceType: string, attributes: any): 
       corrected = convertPeopleAttributes(corrected);
       break;
   }
-  
+
   return corrected;
 }
 
@@ -32,29 +35,29 @@ export function convertAttributeFormats(resourceType: string, attributes: any): 
  */
 function convertCompanyAttributes(attributes: any): any {
   const corrected = { ...attributes };
-  
+
   // Convert 'domain' to 'domains' array
   if ('domain' in corrected && !('domains' in corrected)) {
-    corrected.domains = Array.isArray(corrected.domain) 
-      ? corrected.domain 
+    corrected.domains = Array.isArray(corrected.domain)
+      ? corrected.domain
       : [corrected.domain];
     delete corrected.domain;
     console.log(`[Format Helper] Converted 'domain' to 'domains' array`);
   }
-  
+
   // Ensure domains is always an array
   if (corrected.domains && !Array.isArray(corrected.domains)) {
     corrected.domains = [corrected.domains];
     console.log(`[Format Helper] Converted domains to array format`);
   }
-  
+
   // Handle common typos
   if ('typpe' in corrected && !('type' in corrected)) {
     corrected.type = corrected.typpe;
     delete corrected.typpe;
     console.log(`[Format Helper] Fixed typo: 'typpe' -> 'type'`);
   }
-  
+
   return corrected;
 }
 
@@ -63,18 +66,20 @@ function convertCompanyAttributes(attributes: any): any {
  */
 function convertPeopleAttributes(attributes: any): any {
   const corrected = { ...attributes };
-  
+
   // Convert name from object format to string
   if (corrected.name && typeof corrected.name === 'object') {
     const nameObj = corrected.name;
     let fullName = '';
-    
+
     // Handle various name object formats
     if (nameObj.first_name || nameObj.firstName) {
       fullName = nameObj.first_name || nameObj.firstName;
     }
     if (nameObj.last_name || nameObj.lastName) {
-      fullName = fullName ? `${fullName} ${nameObj.last_name || nameObj.lastName}` : (nameObj.last_name || nameObj.lastName);
+      fullName = fullName
+        ? `${fullName} ${nameObj.last_name || nameObj.lastName}`
+        : nameObj.last_name || nameObj.lastName;
     }
     if (nameObj.middle_name || nameObj.middleName) {
       // Insert middle name between first and last
@@ -84,11 +89,13 @@ function convertPeopleAttributes(attributes: any): any {
         fullName = parts.join(' ');
       }
     }
-    
+
     corrected.name = fullName.trim() || 'Unknown';
-    console.log(`[Format Helper] Converted name object to string: "${corrected.name}"`);
+    console.log(
+      `[Format Helper] Converted name object to string: "${corrected.name}"`
+    );
   }
-  
+
   // Convert email_addresses from object format to string array
   if (corrected.email_addresses && Array.isArray(corrected.email_addresses)) {
     const converted = corrected.email_addresses.map((item: any) => {
@@ -100,13 +107,13 @@ function convertPeopleAttributes(attributes: any): any {
     });
     corrected.email_addresses = converted;
   }
-  
+
   // Ensure email_addresses is always an array
   if (corrected.email_addresses && !Array.isArray(corrected.email_addresses)) {
     corrected.email_addresses = [corrected.email_addresses];
     console.log(`[Format Helper] Converted email_addresses to array format`);
   }
-  
+
   // Convert phone_numbers from object format to string array
   if (corrected.phone_numbers && Array.isArray(corrected.phone_numbers)) {
     const converted = corrected.phone_numbers.map((item: any) => {
@@ -118,14 +125,18 @@ function convertPeopleAttributes(attributes: any): any {
     });
     corrected.phone_numbers = converted;
   }
-  
+
   return corrected;
 }
 
 /**
  * Generates helpful error message with correct format examples
  */
-export function getFormatErrorHelp(resourceType: string, attributeName: string, error: string): string {
+export function getFormatErrorHelp(
+  resourceType: string,
+  attributeName: string,
+  error: string
+): string {
   const examples: Record<string, Record<string, string>> = {
     companies: {
       domains: `
@@ -165,11 +176,11 @@ Correct format for 'company' (record reference):
 - NOT: company: "Company Name" (use ID, not name)`,
     },
   };
-  
+
   const helpText = examples[resourceType]?.[attributeName];
   if (helpText) {
     return `${error}\n${helpText}`;
   }
-  
+
   return error;
 }
