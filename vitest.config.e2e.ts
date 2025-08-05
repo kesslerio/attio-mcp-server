@@ -10,10 +10,7 @@ config({ path: '.env.e2e' });
 export default defineConfig({
   test: {
     environment: 'node',
-    include: [
-      'test/e2e/suites/**/*.e2e.test.ts',
-      'test/e2e/**/*.e2e.test.ts',
-    ],
+    include: ['test/e2e/suites/**/*.e2e.test.ts', 'test/e2e/**/*.e2e.test.ts'],
     exclude: [
       // Exclude non-E2E tests
       'test/unit/**',
@@ -30,7 +27,7 @@ export default defineConfig({
     ],
     globals: true,
     testTimeout: 120000, // 2 minutes for E2E operations
-    hookTimeout: 30000,  // 30 seconds for setup/cleanup
+    hookTimeout: 30000, // 30 seconds for setup/cleanup
     // No setupFiles - E2E tests handle their own setup
     pool: 'forks',
     poolOptions: {
@@ -43,14 +40,14 @@ export default defineConfig({
     // Retry configuration for flaky E2E tests
     retry: 2, // Retry failed tests up to 2 times
     bail: 10, // Stop after 10 failures to avoid overwhelming the API
-    
+
     // Environment variables for E2E tests
     env: {
       NODE_ENV: 'test',
       E2E_MODE: 'true',
       // ATTIO_API_KEY loaded from .env via dotenv
     },
-    
+
     // Coverage configuration for E2E tests
     coverage: {
       provider: 'v8',
@@ -81,27 +78,27 @@ export default defineConfig({
       all: true,
       clean: true,
     },
-    
+
     // Test isolation and cleanup
     isolate: true,
     sequence: {
       concurrent: false, // Run tests sequentially to avoid API conflicts
-      shuffle: false,    // Maintain test order for dependencies
+      shuffle: false, // Maintain test order for dependencies
     },
-    
+
     // Reporting configuration
     silent: false,
     reporter: ['verbose', 'json'],
     outputFile: {
       json: './test-results/e2e-results.json',
     },
-    
+
     // Watch configuration (disable for E2E by default)
     watch: false,
-    
+
     // Test name pattern matching
     testNamePattern: undefined, // Run all E2E tests by default
-    
+
     // File watching exclusions for performance
     watchExclude: [
       'node_modules/**',
@@ -121,42 +118,42 @@ export default defineConfig({
       'test/objects/**',
       'test/manual/**',
     ],
-    
+
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup
-    setupFiles: undefined,  // E2E tests handle their own setup per suite
-    
+    setupFiles: undefined, // E2E tests handle their own setup per suite
+
     // Performance optimizations
     minWorkers: 1,
     maxWorkers: 1,
-    
+
     // Error handling
     dangerouslyIgnoreUnhandledErrors: false,
     passWithNoTests: false,
-    
+
     // Debugging support
     inspect: false,
     inspectBrk: false,
-    
+
     // Custom matchers and utilities
     typecheck: {
       enabled: false, // Skip typechecking for E2E tests (handled by build)
     },
   },
-  
+
   // Module resolution
   resolve: {
     alias: {
       '^(\\.{1,2}/.*)\\.js$': '$1',
     },
   },
-  
+
   // Define custom test environment for E2E
   define: {
     __E2E_MODE__: true,
     __TEST_ENV__: '"e2e"',
   },
-  
+
   // Esbuild configuration for E2E tests
   esbuild: {
     target: 'node18',

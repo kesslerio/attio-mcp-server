@@ -1,13 +1,21 @@
 /**
  * E2E Test Setup and Initialization
- * 
+ *
  * Provides setup utilities for E2E tests including environment validation,
  * API client initialization, and test data preparation.
  */
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { loadE2EConfig, getE2EConfig, type E2EConfig } from './utils/config-loader.js';
-import { initializeAttioClient, getAttioClient } from '../../src/api/attio-client.js';
+import {
+  loadE2EConfig,
+  getE2EConfig,
+  type E2EConfig,
+} from './utils/config-loader.js';
+import {
+  initializeAttioClient,
+  getAttioClient,
+} from '../../src/api/attio-client.js';
 import type { AxiosInstance } from 'axios';
+import type { AnyTestData } from './types/index.js';
 
 export interface E2ESetupOptions {
   skipApiKey?: boolean;
@@ -23,7 +31,7 @@ export interface E2ESetupOptions {
 export interface CreatedTestObject {
   type: 'company' | 'person' | 'list' | 'task' | 'note';
   id: string;
-  data?: any;
+  data?: AnyTestData;
   createdAt: Date;
 }
 
@@ -47,9 +55,9 @@ export class E2ETestBase {
       timeout: 60000,
       retryConfig: {
         maxRetries: 3,
-        retryDelay: 1000
+        retryDelay: 1000,
       },
-      ...options
+      ...options,
     };
 
     beforeAll(async () => {
@@ -114,7 +122,10 @@ export class E2ETestBase {
    * Global cleanup after all tests
    */
   private static async afterAllCleanup(): Promise<void> {
-    if (!this.setupOptions.cleanupAfterTests || !this.config?.testSettings.cleanupAfterTests) {
+    if (
+      !this.setupOptions.cleanupAfterTests ||
+      !this.config?.testSettings.cleanupAfterTests
+    ) {
       console.log('⚠️  Skipping cleanup - disabled in configuration');
       return;
     }
@@ -127,16 +138,22 @@ export class E2ETestBase {
     console.log(`🧹 Cleaning up ${this.createdObjects.length} test objects...`);
 
     const cleanupResults = await Promise.allSettled(
-      this.createdObjects.map(obj => this.cleanupObject(obj))
+      this.createdObjects.map((obj) => this.cleanupObject(obj))
     );
 
-    const successful = cleanupResults.filter(r => r.status === 'fulfilled').length;
-    const failed = cleanupResults.filter(r => r.status === 'rejected').length;
+    const successful = cleanupResults.filter(
+      (r) => r.status === 'fulfilled'
+    ).length;
+    const failed = cleanupResults.filter((r) => r.status === 'rejected').length;
 
-    console.log(`✅ Cleanup completed: ${successful} successful, ${failed} failed`);
+    console.log(
+      `✅ Cleanup completed: ${successful} successful, ${failed} failed`
+    );
 
     if (failed > 0) {
-      console.warn('⚠️  Some cleanup operations failed - manual cleanup may be required');
+      console.warn(
+        '⚠️  Some cleanup operations failed - manual cleanup may be required'
+      );
     }
 
     // Reset state
@@ -182,12 +199,14 @@ export class E2ETestBase {
     try {
       // Simple API call to validate connectivity
       const response = await this.apiClient.get('/objects');
-      
+
       if (!response.data || !Array.isArray(response.data.data)) {
         throw new Error('Invalid API response structure');
       }
 
-      console.log(`📊 API validation: Found ${response.data.data.length} objects`);
+      console.log(
+        `📊 API validation: Found ${response.data.data.length} objects`
+      );
     } catch (error) {
       throw new Error(`API connectivity validation failed: ${error}`);
     }
@@ -196,12 +215,16 @@ export class E2ETestBase {
   /**
    * Track created object for cleanup
    */
-  static trackForCleanup(type: CreatedTestObject['type'], id: string, data?: any): void {
+  static trackForCleanup(
+    type: CreatedTestObject['type'],
+    id: string,
+    data?: AnyTestData
+  ): void {
     this.createdObjects.push({
       type,
       id,
       data,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     if (this.config?.testSettings.verboseLogging) {
@@ -251,8 +274,10 @@ export class E2ETestBase {
     maxRetries?: number,
     baseDelay?: number
   ): Promise<T> {
-    const retries = maxRetries ?? this.setupOptions.retryConfig?.maxRetries ?? 3;
-    const delay = baseDelay ?? this.setupOptions.retryConfig?.retryDelay ?? 1000;
+    const retries =
+      maxRetries ?? this.setupOptions.retryConfig?.maxRetries ?? 3;
+    const delay =
+      baseDelay ?? this.setupOptions.retryConfig?.retryDelay ?? 1000;
 
     let lastError: Error;
 
@@ -267,7 +292,9 @@ export class E2ETestBase {
         }
 
         const backoffDelay = delay * Math.pow(2, attempt - 1);
-        console.log(`⏳ Attempt ${attempt} failed, retrying in ${backoffDelay}ms...`);
+        console.log(
+          `⏳ Attempt ${attempt} failed, retrying in ${backoffDelay}ms...`
+        );
         await this.sleep(backoffDelay);
       }
     }
@@ -299,7 +326,7 @@ export class E2ETestBase {
    * Sleep for specified milliseconds
    */
   static sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -345,7 +372,9 @@ export class E2ETestBase {
    */
   static skipIfNoApiKey(): boolean {
     if (!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true') {
-      console.log('⏭️  Skipping test - no API key provided or E2E tests disabled');
+      console.log(
+        '⏭️  Skipping test - no API key provided or E2E tests disabled'
+      );
       return true;
     }
     return false;
@@ -409,17 +438,21 @@ export class E2ESetupUtils {
     // Check for workspace-specific settings
     const config = getE2EConfig();
     if (!config.workspace.customFields.companies.length) {
-      warnings.push('No custom company fields configured - some tests may be limited');
+      warnings.push(
+        'No custom company fields configured - some tests may be limited'
+      );
     }
 
     if (!config.workspace.customFields.people.length) {
-      warnings.push('No custom people fields configured - some tests may be limited');
+      warnings.push(
+        'No custom people fields configured - some tests may be limited'
+      );
     }
 
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -439,10 +472,10 @@ export class E2ESetupUtils {
     const report = {
       timestamp: new Date().toISOString(),
       totalTests: results.length,
-      passed: results.filter(r => r.status === 'passed').length,
-      failed: results.filter(r => r.status === 'failed').length,
-      skipped: results.filter(r => r.status === 'skipped').length,
-      results
+      passed: results.filter((r) => r.status === 'passed').length,
+      failed: results.filter((r) => r.status === 'failed').length,
+      skipped: results.filter((r) => r.status === 'skipped').length,
+      results,
     };
 
     return JSON.stringify(report, null, 2);

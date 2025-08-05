@@ -1,10 +1,13 @@
 /**
  * E2E Test Cleanup Utilities
- * 
+ *
  * Provides utilities for cleaning up test data from Attio workspace,
  * including bulk cleanup operations and orphaned data detection.
  */
-import { getAttioClient, initializeAttioClient } from '../../src/api/attio-client.js';
+import {
+  getAttioClient,
+  initializeAttioClient,
+} from '../../src/api/attio-client.js';
 import { loadE2EConfig, type E2EConfig } from './utils/config-loader.js';
 import type { AxiosInstance } from 'axios';
 
@@ -51,7 +54,7 @@ export class E2ECleanup {
       excludeTypes: [],
       verbose: false,
       force: false,
-      ...options
+      ...options,
     };
   }
 
@@ -75,7 +78,9 @@ export class E2ECleanup {
    */
   async runCleanup(): Promise<CleanupResult[]> {
     if (!this.options.force && !this.config.testSettings.cleanupAfterTests) {
-      throw new Error('Cleanup is disabled in configuration. Use --force to override.');
+      throw new Error(
+        'Cleanup is disabled in configuration. Use --force to override.'
+      );
     }
 
     this.log('🧹 Starting E2E test data cleanup...');
@@ -121,7 +126,7 @@ export class E2ECleanup {
       attempted: 0,
       successful: 0,
       failed: 0,
-      errors: []
+      errors: [],
     };
 
     try {
@@ -136,20 +141,27 @@ export class E2ECleanup {
       this.log(`Found ${orphanedObjects.length} orphaned ${type} objects`);
 
       if (this.options.dryRun) {
-        this.log(`🔍 DRY RUN: Would delete ${orphanedObjects.length} ${type} objects`);
+        this.log(
+          `🔍 DRY RUN: Would delete ${orphanedObjects.length} ${type} objects`
+        );
         result.successful = orphanedObjects.length;
         return result;
       }
 
       // Process in batches
-      const batches = this.createBatches(orphanedObjects, this.options.batchSize);
+      const batches = this.createBatches(
+        orphanedObjects,
+        this.options.batchSize
+      );
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
-        this.log(`Processing batch ${i + 1}/${batches.length} (${batch.length} items)`);
+        this.log(
+          `Processing batch ${i + 1}/${batches.length} (${batch.length} items)`
+        );
 
         const batchResults = await Promise.allSettled(
-          batch.map(obj => this.deleteObject(type, obj.id))
+          batch.map((obj) => this.deleteObject(type, obj.id))
         );
 
         // Count results
@@ -168,8 +180,9 @@ export class E2ECleanup {
         }
       }
 
-      this.log(`✅ Cleanup completed: ${result.successful} successful, ${result.failed} failed`);
-
+      this.log(
+        `✅ Cleanup completed: ${result.successful} successful, ${result.failed} failed`
+      );
     } catch (error) {
       result.errors.push(`Failed to cleanup ${type}: ${error}`);
       this.log(`❌ Error cleaning ${type}: ${error}`);
@@ -181,7 +194,9 @@ export class E2ECleanup {
   /**
    * Find orphaned objects of specific type
    */
-  private async findOrphanedObjectsOfType(type: string): Promise<OrphanedObject[]> {
+  private async findOrphanedObjectsOfType(
+    type: string
+  ): Promise<OrphanedObject[]> {
     const orphanedObjects: OrphanedObject[] = [];
 
     try {
@@ -194,11 +209,10 @@ export class E2ECleanup {
             id: this.extractObjectId(obj, type),
             name: this.extractObjectName(obj, type),
             createdAt: this.extractCreatedAt(obj),
-            matchesPattern: this.matchesTestPattern(obj)
+            matchesPattern: this.matchesTestPattern(obj),
           });
         }
       }
-
     } catch (error) {
       this.log(`⚠️  Error fetching ${type}: ${error}`);
     }
@@ -222,9 +236,13 @@ export class E2ECleanup {
 
           switch (type) {
             case 'companies':
-              return await this.apiClient.get('/objects/companies/records', { params });
+              return await this.apiClient.get('/objects/companies/records', {
+                params,
+              });
             case 'people':
-              return await this.apiClient.get('/objects/people/records', { params });
+              return await this.apiClient.get('/objects/people/records', {
+                params,
+              });
             case 'lists':
               return await this.apiClient.get('/lists', { params });
             case 'tasks':
@@ -243,8 +261,9 @@ export class E2ECleanup {
         cursor = response.data.pagination?.cursor;
         hasMore = response.data.pagination?.has_more || false;
 
-        this.log(`Fetched ${data.length} ${type} (total: ${allObjects.length})`);
-
+        this.log(
+          `Fetched ${data.length} ${type} (total: ${allObjects.length})`
+        );
       } catch (error) {
         this.log(`Error fetching ${type}: ${error}`);
         break;
@@ -267,7 +286,8 @@ export class E2ECleanup {
     if (this.options.maxAge > 0) {
       const createdAt = this.extractCreatedAt(obj);
       if (createdAt) {
-        const ageInHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+        const ageInHours =
+          (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
         if (ageInHours < this.options.maxAge) {
           return false;
         }
@@ -373,9 +393,9 @@ export class E2ECleanup {
    */
   private getTypesToClean(): string[] {
     let types = [...this.options.includeTypes];
-    
+
     if (this.options.excludeTypes.length > 0) {
-      types = types.filter(type => !this.options.excludeTypes.includes(type));
+      types = types.filter((type) => !this.options.excludeTypes.includes(type));
     }
 
     return types;
@@ -405,7 +425,7 @@ export class E2ECleanup {
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -430,10 +450,10 @@ export class E2ECleanup {
     console.log(`   Total objects processed: ${totalAttempted}`);
     console.log(`   Successfully cleaned: ${totalSuccessful}`);
     console.log(`   Failed: ${totalFailed}`);
-    
+
     if (totalErrors > 0) {
       console.log(`   Errors: ${totalErrors}`);
-      results.forEach(result => {
+      results.forEach((result) => {
         if (result.errors.length > 0) {
           console.log(`   ${result.type} errors:`, result.errors);
         }
@@ -449,9 +469,11 @@ export class E2ECleanup {
 /**
  * CLI-style cleanup function
  */
-export async function runE2ECleanup(options: CleanupOptions = {}): Promise<void> {
+export async function runE2ECleanup(
+  options: CleanupOptions = {}
+): Promise<void> {
   const cleanup = new E2ECleanup(options);
-  
+
   try {
     await cleanup.initialize();
     await cleanup.runCleanup();
@@ -464,9 +486,11 @@ export async function runE2ECleanup(options: CleanupOptions = {}): Promise<void>
 /**
  * Find orphaned objects without cleaning
  */
-export async function findOrphanedE2EObjects(options: CleanupOptions = {}): Promise<OrphanedObject[]> {
+export async function findOrphanedE2EObjects(
+  options: CleanupOptions = {}
+): Promise<OrphanedObject[]> {
   const cleanup = new E2ECleanup(options);
-  
+
   try {
     await cleanup.initialize();
     return await cleanup.findOrphanedObjects();

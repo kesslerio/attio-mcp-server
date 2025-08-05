@@ -6,6 +6,14 @@
  */
 import { expect } from 'vitest';
 import { configLoader } from './config-loader.js';
+import type { 
+  McpResponseData, 
+  ExpectedDataShape, 
+  AttioRecordValues,
+  TestDataObject,
+  SearchResultItem,
+  BatchOperationResult
+} from '../types/index.js';
 
 /**
  * MCP Tool Response Interface
@@ -14,7 +22,7 @@ export interface McpToolResponse {
   content?: Array<{
     type: string;
     text?: string;
-    data?: any;
+    data?: McpResponseData;
   }>;
   isError?: boolean;
   error?: string;
@@ -32,7 +40,7 @@ export interface AttioRecord {
     record_id: string;
     object_id?: string;
   };
-  values: Record<string, any>;
+  values: AttioRecordValues;
   created_at?: string;
   updated_at?: string;
 }
@@ -69,7 +77,7 @@ export class E2EAssertions {
   /**
    * Assert that MCP tool response contains expected data
    */
-  static expectMcpData(response: McpToolResponse, expectedDataShape?: any): any {
+  static expectMcpData(response: McpToolResponse, expectedDataShape?: ExpectedDataShape): McpResponseData | undefined {
     this.expectMcpSuccess(response);
     
     const content = response.content!;
@@ -116,7 +124,7 @@ export class E2EAssertions {
   /**
    * Assert that Attio record has required structure
    */
-  static expectAttioRecord(record: any, resourceType?: string): void {
+  static expectAttioRecord(record: TestDataObject, resourceType?: string): void {
     expect(record, 'Record should be defined').toBeDefined();
     expect(record.id, 'Record should have id object').toBeDefined();
     expect(record.id.record_id, 'Record should have record_id').toBeDefined();
@@ -146,7 +154,7 @@ export class E2EAssertions {
   /**
    * Assert that company record has expected structure
    */
-  static expectCompanyRecord(company: any): void {
+  static expectCompanyRecord(company: TestDataObject): void {
     this.expectAttioRecord(company);
     
     // Companies should typically have a name
@@ -159,7 +167,7 @@ export class E2EAssertions {
   /**
    * Assert that person record has expected structure
    */
-  static expectPersonRecord(person: any): void {
+  static expectPersonRecord(person: TestDataObject): void {
     this.expectAttioRecord(person);
     
     // People should typically have a name
@@ -172,7 +180,7 @@ export class E2EAssertions {
   /**
    * Assert that list record has expected structure
    */
-  static expectListRecord(list: any): void {
+  static expectListRecord(list: TestDataObject): void {
     expect(list, 'List should be defined').toBeDefined();
     expect(list.id, 'List should have id object').toBeDefined();
     expect(list.id.list_id, 'List should have list_id').toBeDefined();
@@ -183,7 +191,7 @@ export class E2EAssertions {
   /**
    * Assert that task record has expected structure
    */
-  static expectTaskRecord(task: any): void {
+  static expectTaskRecord(task: TestDataObject): void {
     this.expectAttioRecord(task);
     
     // Tasks should typically have a title
@@ -195,7 +203,7 @@ export class E2EAssertions {
   /**
    * Assert that response is paginated list
    */
-  static expectPaginatedResponse(response: any, minItems: number = 0): void {
+  static expectPaginatedResponse(response: TestDataObject, minItems: number = 0): void {
     expect(response, 'Response should be defined').toBeDefined();
     expect(response.data, 'Response should have data array').toBeDefined();
     expect(Array.isArray(response.data), 'Response data should be array').toBe(true);
@@ -213,7 +221,7 @@ export class E2EAssertions {
   /**
    * Assert that object has expected shape/structure
    */
-  static expectObjectShape(obj: any, expectedShape: any): void {
+  static expectObjectShape(obj: TestDataObject, expectedShape: ExpectedDataShape): void {
     expect(obj, 'Object should be defined').toBeDefined();
     
     for (const [key, expectedType] of Object.entries(expectedShape)) {
@@ -234,7 +242,7 @@ export class E2EAssertions {
   /**
    * Assert that test data has proper prefixing
    */
-  static expectTestDataPrefix(data: any, prefix?: string): void {
+  static expectTestDataPrefix(data: TestDataObject, prefix?: string): void {
     const config = configLoader.getConfig();
     const expectedPrefix = prefix || config.testData.testDataPrefix;
 
@@ -245,7 +253,7 @@ export class E2EAssertions {
   /**
    * Assert that test data does NOT have test prefixing (for production data)
    */
-  static expectNoTestDataPrefix(data: any): void {
+  static expectNoTestDataPrefix(data: TestDataObject): void {
     const config = configLoader.getConfig();
     const testPrefix = config.testData.testDataPrefix;
 
@@ -256,7 +264,7 @@ export class E2EAssertions {
   /**
    * Helper to check if data contains test prefix
    */
-  private static hasTestPrefix(data: any, prefix: string): boolean {
+  private static hasTestPrefix(data: TestDataObject, prefix: string): boolean {
     if (typeof data === 'string') {
       return data.includes(prefix);
     }
@@ -305,7 +313,7 @@ export class E2EAssertions {
   /**
    * Assert that search results are relevant to query
    */
-  static expectRelevantSearchResults(results: any[], query: string, minRelevance: number = 0.5): void {
+  static expectRelevantSearchResults(results: SearchResultItem[], query: string, minRelevance: number = 0.5): void {
     expect(results, 'Search results should be defined').toBeDefined();
     expect(Array.isArray(results), 'Search results should be array').toBe(true);
     
@@ -329,7 +337,7 @@ export class E2EAssertions {
   /**
    * Assert that operation was idempotent
    */
-  static expectIdempotentOperation(firstResult: any, secondResult: any): void {
+  static expectIdempotentOperation(firstResult: TestDataObject, secondResult: TestDataObject): void {
     expect(firstResult, 'First operation result should be defined').toBeDefined();
     expect(secondResult, 'Second operation result should be defined').toBeDefined();
     
@@ -340,7 +348,7 @@ export class E2EAssertions {
   /**
    * Assert that batch operation results are consistent
    */
-  static expectConsistentBatchResults(results: any[], expectedCount: number): void {
+  static expectConsistentBatchResults(results: BatchOperationResult[], expectedCount: number): void {
     expect(results, 'Batch results should be defined').toBeDefined();
     expect(Array.isArray(results), 'Batch results should be array').toBe(true);
     expect(results.length, `Batch should have ${expectedCount} results`).toBe(expectedCount);
@@ -359,7 +367,7 @@ export class E2EAssertions {
 /**
  * Helper function to create fluent assertion chains
  */
-export function expectE2E(actual: any) {
+export function expectE2E(actual: TestDataObject) {
   return {
     toBeValidMcpResponse: () => E2EAssertions.expectMcpSuccess(actual),
     toBeValidAttioRecord: (resourceType?: string) => E2EAssertions.expectAttioRecord(actual, resourceType),
@@ -367,7 +375,7 @@ export function expectE2E(actual: any) {
     toBeTestEmail: () => E2EAssertions.expectTestEmail(actual),
     toBeTestDomain: () => E2EAssertions.expectTestDomain(actual),
     toBePaginatedResponse: (minItems?: number) => E2EAssertions.expectPaginatedResponse(actual, minItems),
-    toHaveShape: (expectedShape: any) => E2EAssertions.expectObjectShape(actual, expectedShape),
+    toHaveShape: (expectedShape: ExpectedDataShape) => E2EAssertions.expectObjectShape(actual, expectedShape),
     toBeRelevantSearchResults: (query: string, minRelevance?: number) => 
       E2EAssertions.expectRelevantSearchResults(actual, query, minRelevance)
   };
