@@ -275,7 +275,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         if (process.env.NODE_ENV === 'development') {
           console.error('[handleUniversalCreate] Error in companies case:', error);
         }
-        
         // Enhance error messages with format help
         if (error?.message?.includes('Cannot find attribute')) {
           const match = error.message.match(/slug\/ID "([^"]+)"/);
