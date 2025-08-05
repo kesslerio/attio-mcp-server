@@ -47,10 +47,22 @@ export interface TestMockRequest {
 
 export function createMockApiClient(): MockApiClient {
   return {
-    post: vi.fn().mockResolvedValue({ data: { data: { id: { record_id: 'test-id' }, values: {} } } }),
+    post: vi
+      .fn()
+      .mockResolvedValue({
+        data: { data: { id: { record_id: 'test-id' }, values: {} } },
+      }),
     get: vi.fn().mockResolvedValue({ data: { data: [] } }),
-    put: vi.fn().mockResolvedValue({ data: { data: { id: { record_id: 'test-id' }, values: {} } } }),
-    patch: vi.fn().mockResolvedValue({ data: { data: { id: { record_id: 'test-id' }, values: {} } } }),
+    put: vi
+      .fn()
+      .mockResolvedValue({
+        data: { data: { id: { record_id: 'test-id' }, values: {} } },
+      }),
+    patch: vi
+      .fn()
+      .mockResolvedValue({
+        data: { data: { id: { record_id: 'test-id' }, values: {} } },
+      }),
     delete: vi.fn().mockResolvedValue({ data: { success: true } }),
     defaults: {},
     interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },

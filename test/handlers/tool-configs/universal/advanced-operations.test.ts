@@ -18,6 +18,7 @@ import {
 	TimeframeType,
 	UniversalResourceType,
 } from "../../../../src/handlers/tool-configs/universal/types.js";
+import type { AttioRecord } from "../../../../src/types/attio.js";
 
 // Mock the shared handlers
 vi.mock(
@@ -31,9 +32,9 @@ vi.mock(
 		formatResourceType: vi.fn((type: string) => type),
 		getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
 		createUniversalError: vi.fn(
-			(operation: string, resourceType: string, error: any) =>
+			(operation: string, resourceType: string, error: Error | unknown) =>
 				new Error(
-					`${operation} failed for ${resourceType}: ${error.message || error}`,
+					`${operation} failed for ${resourceType}: ${(error as Error).message || error}`,
 				),
 		),
 	}),
@@ -43,7 +44,7 @@ vi.mock(
 vi.mock(
 	"../../../../src/objects/companies/index.js",
 	async (importOriginal) => {
-		const actual = await importOriginal();
+		const actual = (await importOriginal()) as Record<string, unknown>;
 		return {
 			...actual,
 			searchCompaniesByNotes: vi.fn(),
@@ -54,7 +55,7 @@ vi.mock(
 );
 
 vi.mock("../../../../src/objects/people/index.js", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = (await importOriginal()) as Record<string, unknown>;
 	return {
 		...actual,
 		searchPeopleByCompany: vi.fn(),
@@ -66,11 +67,13 @@ vi.mock("../../../../src/objects/people/index.js", async (importOriginal) => {
 
 // Mock validation and date utils
 vi.mock("../../../../src/handlers/tool-configs/universal/schemas.js", () => ({
-	validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-		// Just return the params as-is (simulating successful validation)
-		// This matches the expected behavior in tests
-		return params || {};
-	}),
+	validateUniversalToolParams: vi.fn(
+		(operation: string, params: Record<string, unknown>) => {
+			// Just return the params as-is (simulating successful validation)
+			// This matches the expected behavior in tests
+			return params || {};
+		},
+	),
 	advancedSearchSchema: { type: "object", properties: {}, required: [] },
 	searchByRelationshipSchema: { type: "object", properties: {}, required: [] },
 	searchByContentSchema: { type: "object", properties: {}, required: [] },
@@ -79,7 +82,7 @@ vi.mock("../../../../src/handlers/tool-configs/universal/schemas.js", () => ({
 }));
 
 vi.mock("../../../../src/utils/date-utils.js", async (importOriginal) => {
-	const actual = await importOriginal();
+	const actual = (await importOriginal()) as Record<string, unknown>;
 	return {
 		...actual,
 		validateAndCreateDateRange: vi.fn((start?: string, end?: string) => {
@@ -122,9 +125,9 @@ describe("Universal Advanced Operations Tests", () => {
 		);
 
 		vi.mocked(handleUniversalSearch).mockResolvedValue([]);
-		vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
-		vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);
-		vi.mocked(handleUniversalUpdate).mockResolvedValue({} as any);
+		vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as AttioRecord);
+		vi.mocked(handleUniversalCreate).mockResolvedValue({} as AttioRecord);
+		vi.mocked(handleUniversalUpdate).mockResolvedValue({} as AttioRecord);
 		vi.mocked(handleUniversalDelete).mockResolvedValue({
 			success: true,
 			record_id: "test",
@@ -146,9 +149,9 @@ describe("Universal Advanced Operations Tests", () => {
 			}
 		});
 		vi.mocked(createUniversalError).mockImplementation(
-			(operation: string, resourceType: string, error: any) =>
+			(operation: string, resourceType: string, error: Error | unknown) =>
 				new Error(
-					`${operation} failed for ${resourceType}: ${error.message || error}`,
+					`${operation} failed for ${resourceType}: ${(error as Error).message || error}`,
 				),
 		);
 		// Removed the problematic validateUniversalToolParams override that was causing undefined destructuring
@@ -179,13 +182,15 @@ describe("Universal Advanced Operations Tests", () => {
 			const params: AdvancedSearchParams = {
 				resource_type: UniversalResourceType.COMPANIES,
 				query: "technology",
-				filters: [
-					{
-						attribute: { slug: "industry" },
-						condition: "equals",
-						value: "Technology",
-					},
-				],
+				filters: {
+					filters: [
+						{
+							attribute: { slug: "industry" },
+							condition: "equals",
+							value: "Technology",
+						},
+					],
+				},
 				sort_by: "name",
 				sort_order: "asc",
 				limit: 20,
@@ -220,10 +225,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = advancedSearchConfig.formatResult(
-				mockResults,
-				UniversalResourceType.COMPANIES,
-			);
+			const formatted = advancedSearchConfig.formatResult(mockResults);
 
 			expect(formatted).toContain("Advanced search found 1 company");
 			expect(formatted).toContain(
@@ -333,10 +335,7 @@ describe("Universal Advanced Operations Tests", () => {
 				},
 			];
 
-			const formatted = searchByRelationshipConfig.formatResult(
-				mockResults,
-				RelationshipType.COMPANY_TO_PEOPLE,
-			);
+			const formatted = searchByRelationshipConfig.formatResult(mockResults);
 
 			expect(formatted).toContain("Found 1 records for company to people");
 			expect(formatted).toContain(
@@ -458,11 +457,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = searchByContentConfig.formatResult(
-				mockResults,
-				ContentSearchType.NOTES,
-				UniversalResourceType.COMPANIES,
-			);
+			const formatted = searchByContentConfig.formatResult(mockResults);
 
 			expect(formatted).toContain("Found 1 companys with matching notes");
 			expect(formatted).toContain("1. Company with Content (ID: comp-1)");
@@ -619,11 +614,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("person");
 
-			const formatted = searchByTimeframeConfig.formatResult(
-				mockResults,
-				TimeframeType.CREATED,
-				UniversalResourceType.PEOPLE,
-			);
+			const formatted = searchByTimeframeConfig.formatResult(mockResults);
 
 			expect(formatted).toContain("Found 1 persons by created");
 			expect(formatted).toContain(
@@ -834,11 +825,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = batchOperationsConfig.formatResult(
-				mockResults,
-				BatchOperationType.CREATE,
-				UniversalResourceType.COMPANIES,
-			);
+			const formatted = batchOperationsConfig.formatResult(mockResults);
 
 			expect(formatted).toContain(
 				"Batch create completed: 1 successful, 1 failed",
@@ -866,11 +853,7 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = batchOperationsConfig.formatResult(
-				mockResults,
-				BatchOperationType.SEARCH,
-				UniversalResourceType.COMPANIES,
-			);
+			const formatted = batchOperationsConfig.formatResult(mockResults);
 
 			expect(formatted).toContain("Batch search found 2 companys");
 			expect(formatted).toContain("1. Company 1 (ID: comp-1)");
@@ -956,14 +939,14 @@ describe("Universal Advanced Operations Tests", () => {
 
 			// Restore the original mock behavior to not affect other tests
 			vi.mocked(validateUniversalToolParams).mockImplementation(
-				(operation: string, params: any) => {
+				(operation: string, params: Record<string, unknown>) => {
 					return params || {};
 				},
 			);
 		});
 
 		it("should handle empty results gracefully", async () => {
-			const emptyResults: any[] = [];
+			const emptyResults: AttioRecord[] = [];
 
 			// For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
 			expect(advancedSearchConfig.formatResult(emptyResults)).toContain(
@@ -982,7 +965,7 @@ describe("Universal Advanced Operations Tests", () => {
 
 		it("should handle invalid resource types", async () => {
 			const invalidParams = {
-				resource_type: "invalid-type" as any,
+				resource_type: "invalid-type" as UniversalResourceType,
 				content_type: ContentSearchType.NOTES,
 				search_query: "test",
 			};
@@ -1054,4 +1037,3 @@ describe("Universal Advanced Operations Tests", () => {
 		});
 	});
 });
-

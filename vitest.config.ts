@@ -35,13 +35,6 @@ export default defineConfig({
       all: true,
       clean: true,
     },
-    watchExclude: [
-      'node_modules/**',
-      'dist/**',
-      '.git/**',
-      'coverage/**',
-      '**/*.d.ts',
-    ],
   },
   resolve: {
     alias: {
