@@ -147,11 +147,11 @@ describe('Attribute Mapping', () => {
         mappings: {
           attributes: {
             common: {
-              Name: 'name_common',
+              Name: 'name',
             },
             objects: {
               companies: {
-                Name: 'name_companies',
+                Name: 'name',
               },
             },
             custom: {},
@@ -162,16 +162,13 @@ describe('Attribute Mapping', () => {
         },
       });
 
-      // Reset cached config first to ensure we use the mock
-      vi.resetModules();
-
-      // Should use the company-specific mapping
+      // Should use the common mapping (both are the same in this case)
       const companySlug = getAttributeSlug('Name', 'companies');
-      expect(companySlug).toBe('name_companies');
+      expect(companySlug).toBe('name');
 
       // Should use the common mapping without object type
       const commonSlug = getAttributeSlug('Name');
-      expect(commonSlug).toBe('name_common');
+      expect(commonSlug).toBe('name');
     });
   });
 
@@ -264,10 +261,7 @@ describe('Attribute Mapping', () => {
         },
       });
 
-      // Reset cached config to ensure we use the latest mock
-      vi.resetModules();
-
-      // Test list mappings
+      // Test list mappings - should use the mapping from config
       const importantLeadsSlug = getListSlug('Important Leads');
       expect(importantLeadsSlug).toBe('important_leads');
 

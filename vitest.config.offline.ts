@@ -6,7 +6,9 @@ export default defineConfig({
     include: ['test/**/*.test.ts', 'test/**/*.test.js'],
     exclude: [
       'node_modules/**',
-      'test/integration/real-api/**',
+      'test/integration/**/*.test.ts',
+      'test/handlers/tool-configs/universal/integration.test.ts',
+      'test/handlers/tool-configs/universal/performance.test.ts',
       'test/manual/**',
       'test/**/*.manual.*',
       'test/**/*real-api-integration*',

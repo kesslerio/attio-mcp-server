@@ -8,13 +8,24 @@ import { createMockApiClient } from './types/test-types.js';
 // Global mock for attio-client
 vi.mock('../src/api/attio-client.js', async () => {
   const mockAxiosInstance = createMockApiClient();
+  
+  // Store initialized state
+  let isInitialized = false;
+  
   return {
-    getAttioClient: vi.fn(() => mockAxiosInstance),
-    initializeAttioClient: vi.fn(() => {
+    getAttioClient: vi.fn(() => {
+      // Auto-initialize if not already done
+      if (!isInitialized) {
+        isInitialized = true;
+      }
+      return mockAxiosInstance;
+    }),
+    initializeAttioClient: vi.fn((apiKey?: string) => {
       // Mock implementation that doesn't require real API key
+      isInitialized = true;
       return Promise.resolve(mockAxiosInstance);
     }),
-    isAttioClientInitialized: vi.fn(() => true),
+    isAttioClientInitialized: vi.fn(() => isInitialized),
     createAttioClient: vi.fn(() => mockAxiosInstance),
   };
 });
