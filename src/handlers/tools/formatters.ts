@@ -1,7 +1,7 @@
 /**
  * Result formatting module - handles transformation and formatting of tool results
  */
-import { AttioRecord, AttioListEntry, AttioValue } from '../../types/attio.js';
+import { AttioRecord, AttioListEntry } from '../../types/attio.js';
 import { processListEntries } from '../../utils/record-utils.js';
 import {
   safeJsonStringify,

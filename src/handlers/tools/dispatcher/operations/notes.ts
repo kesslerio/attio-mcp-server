@@ -38,13 +38,13 @@ export async function handleNotesOperation(
   }
 
   let notesTargetId = directId;
-  let notesResourceType = resourceType;
+  let _notesResourceType = resourceType;
 
   try {
     if (uri) {
       try {
         const [uriType, uriId] = parseResourceUri(uri);
-        notesResourceType = uriType as ResourceType;
+        _notesResourceType = uriType as ResourceType;
         notesTargetId = uriId;
       } catch (error) {
         return createErrorResult(
@@ -127,13 +127,13 @@ export async function handleCreateNoteOperation(
   }
 
   let noteTargetId = directId;
-  let noteResourceType = resourceType;
+  let _noteResourceType = resourceType;
 
   try {
     if (uri) {
       try {
         const [uriType, uriId] = parseResourceUri(uri);
-        noteResourceType = uriType as ResourceType;
+        _noteResourceType = uriType as ResourceType;
         noteTargetId = uriId;
       } catch (error) {
         return createErrorResult(

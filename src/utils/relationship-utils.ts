@@ -2,7 +2,7 @@
  * Relationship utility functions for working with related records in Attio
  * Provides functions for creating filters based on relationships between records.
  */
-import { ListEntryFilter, ListEntryFilters } from '../api/operations/index.js';
+import { ListEntryFilters } from '../api/operations/index.js';
 import {
   ResourceType,
   FilterConditionType,

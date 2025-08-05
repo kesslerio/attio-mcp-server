@@ -8,6 +8,7 @@ import {
   AttioSingleResponse,
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
+import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 
 export async function listTasks(
   status?: string,
@@ -37,7 +38,7 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    return res.data.data || res.data;
+    return (res.data.data || res.data) as AttioTask;
   }, retryConfig);
 }
 
@@ -48,14 +49,14 @@ export async function createTask(
 ): Promise<AttioTask> {
   const api = getAttioClient();
   const path = '/tasks';
-  const data: any = { content };
+  const data: TaskCreateData = { content };
   if (options.assigneeId)
     data.assignee = { id: options.assigneeId, type: 'workspace-member' };
   if (options.dueDate) data.due_date = options.dueDate;
   if (options.recordId) data.linked_records = [{ id: options.recordId }];
   return callWithRetry(async () => {
     const res = await api.post<AttioSingleResponse<AttioTask>>(path, data);
-    return res.data.data || res.data;
+    return (res.data.data || res.data) as AttioTask;
   }, retryConfig);
 }
 
@@ -72,7 +73,7 @@ export async function updateTask(
 ): Promise<AttioTask> {
   const api = getAttioClient();
   const path = `/tasks/${taskId}`;
-  const data: any = {};
+  const data: TaskUpdateData = {};
   if (updates.content) data.content = updates.content;
   if (updates.status) data.status = updates.status;
   if (updates.assigneeId)
@@ -82,7 +83,7 @@ export async function updateTask(
     data.linked_records = updates.recordIds.map((id) => ({ id }));
   return callWithRetry(async () => {
     const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
-    return res.data.data || res.data;
+    return (res.data.data || res.data) as AttioTask;
   }, retryConfig);
 }
 

@@ -13,7 +13,6 @@ import {
   createActivityFilter,
   createNumericFilter,
   FILTER_ATTRIBUTES,
-  FilterConditionType,
 } from './filters/index.js';
 
 // Re-export filter utilities for backwards compatibility

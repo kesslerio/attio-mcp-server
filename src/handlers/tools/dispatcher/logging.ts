@@ -3,13 +3,10 @@
  */
 
 import {
-  ToolExecutionRequest,
   ToolErrorContext,
 } from '../../../types/tool-types.js';
 import {
-  debug,
   error,
-  info,
   warn,
   createScopedLogger,
   OperationType,
@@ -185,7 +182,7 @@ export function logToolValidationError(
   validationError: string,
   context?: any
 ): void {
-  const logger = createToolLogger(toolName, toolType);
+  const _logger = createToolLogger(toolName, toolType);
 
   warn(
     `tool:${toolName}`,
@@ -223,7 +220,7 @@ export function logToolFallback(
   reason: string,
   fallbackMethod: string
 ): void {
-  const logger = createToolLogger(toolName, toolType);
+  const _logger = createToolLogger(toolName, toolType);
 
   warn(
     `tool:${toolName}`,

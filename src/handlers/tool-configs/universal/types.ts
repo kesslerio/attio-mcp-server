@@ -5,7 +5,7 @@
  * tool count from 70 to ~30 tools while maintaining full functionality.
  */
 
-import { AttioRecord, AttioNote } from '../../../types/attio.js';
+import { AttioRecord } from '../../../types/attio.js';
 import { ToolConfig } from '../../tool-types.js';
 import { ListEntryFilters } from '../../../api/operations/index.js';
 
