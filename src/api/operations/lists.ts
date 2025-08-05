@@ -18,6 +18,7 @@ import {
 } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { executeWithListFallback } from '../../utils/api-fallback.js';
+import { SearchRequestBody, LogDetails, ValidationErrorDetails, ListErrorResponse } from '../../types/api-operations.js';
 
 /**
  * Gets all lists in the workspace
@@ -40,13 +41,8 @@ export async function getAllLists(
   }
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.get<AttioListResponse<AttioList>>(path);
-      return response?.data?.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.get<AttioListResponse<AttioList>>(path);
+    return response?.data?.data || [];
   }, retryConfig);
 }
 
@@ -65,13 +61,8 @@ export async function getListDetails(
   const path = `/lists/${listId}`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.get<AttioSingleResponse<AttioList>>(path);
-      return response?.data?.data || response?.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.get<AttioSingleResponse<AttioList>>(path);
+    return (response?.data?.data || response?.data) as AttioList;
   }, retryConfig);
 }
 
@@ -106,7 +97,7 @@ export async function getListEntries(
   // Create request body with parameters and filters
   const createRequestBody = () => {
     // Start with base parameters
-    const body: any = {
+    const body: SearchRequestBody = {
       expand: ['record'],
       limit: safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
       offset: safeOffset !== undefined ? safeOffset : 0, // Default to 0 if not specified
@@ -131,7 +122,7 @@ export async function getListEntries(
           });
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err as Error;
 
       if (error instanceof FilterValidationError) {
@@ -153,7 +144,7 @@ export async function getListEntries(
   };
 
   // Enhanced logging function
-  const logOperation = (stage: string, details: any, isError = false) => {
+  const logOperation = (stage: string, details?: LogDetails, isError = false) => {
     if (process.env.NODE_ENV === 'development') {
       const prefix = isError
         ? 'ERROR'
@@ -198,7 +189,7 @@ export async function addRecordToList(
   listId: string,
   recordId: string,
   objectType?: string,
-  initialValues?: Record<string, any>,
+  initialValues?: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
   const api = getAttioClient();
@@ -253,39 +244,40 @@ export async function addRecordToList(
         );
       }
 
-      return response?.data?.data || response?.data;
-    } catch (error: any) {
+      return (response?.data?.data || response?.data) as AttioListEntry;
+    } catch (error: unknown) {
+      const listError = error as ListErrorResponse;
       // Enhanced error logging with detailed information
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[addRecordToList] Error adding record ${recordId} to list ${listId}:`,
-          error.message || 'Unknown error'
+          listError.message || 'Unknown error'
         );
-        console.error('Status:', error.response?.status);
+        console.error('Status:', listError.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response?.data || {})
+          JSON.stringify(listError.response?.data || {})
         );
 
         // Add additional debug information for validation errors
-        if (error.response?.data?.validation_errors) {
+        if (listError.response?.data?.validation_errors) {
           console.error(
             'Validation errors:',
-            JSON.stringify(error.response.data.validation_errors)
+            JSON.stringify(listError.response.data.validation_errors)
           );
         }
       }
 
       // Add more context to the error message
-      if (error.response?.status === 400) {
-        const validationErrors = error.response?.data?.validation_errors || [];
+      if (listError.response?.status === 400) {
+        const validationErrors = listError.response?.data?.validation_errors || [];
         const errorDetails = validationErrors
-          .map((e: any) => `${e.path.join('.')}: ${e.message}`)
+          .map((e: ValidationErrorDetails) => `${e.path.join('.')}: ${e.message}`)
           .join('; ');
 
         throw new Error(
           `Validation error adding record to list: ${
-            errorDetails || error.message
+            errorDetails || listError.message
           }`
         );
       }
@@ -308,7 +300,7 @@ export async function addRecordToList(
 export async function updateListEntry(
   listId: string,
   entryId: string,
-  attributes: Record<string, any>,
+  attributes: Record<string, unknown>,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioListEntry> {
   const api = getAttioClient();
@@ -357,31 +349,32 @@ export async function updateListEntry(
         );
       }
 
-      return response?.data?.data || response?.data;
-    } catch (error: any) {
+      return (response?.data?.data || response?.data) as AttioListEntry;
+    } catch (error: unknown) {
+      const updateError = error as ListErrorResponse;
       // Enhanced error logging with specific error types
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[updateListEntry] Error updating entry ${entryId} in list ${listId}:`,
-          error.message || 'Unknown error'
+          updateError.message || 'Unknown error'
         );
-        console.error('Status:', error.response?.status);
+        console.error('Status:', updateError.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response?.data || {})
+          JSON.stringify(updateError.response?.data || {})
         );
       }
 
       // Add more specific error types based on status codes
-      if (error.response?.status === 404) {
+      if (updateError.response?.status === 404) {
         throw new Error(`List entry ${entryId} not found in list ${listId}`);
-      } else if (error.response?.status === 400) {
+      } else if (updateError.response?.status === 400) {
         throw new Error(
           `Invalid attributes for list entry update: ${
-            error.response?.data?.message || 'Bad request'
+            updateError.response?.data?.message || 'Bad request'
           }`
         );
-      } else if (error.response?.status === 403) {
+      } else if (updateError.response?.status === 403) {
         throw new Error(
           `Insufficient permissions to update list entry ${entryId} in list ${listId}`
         );
@@ -410,12 +403,7 @@ export async function removeRecordFromList(
   const path = `/lists/${listId}/entries/${entryId}`;
 
   return callWithRetry(async () => {
-    try {
-      await api.delete(path);
-      return true;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    await api.delete(path);
+    return true;
   }, retryConfig);
 }

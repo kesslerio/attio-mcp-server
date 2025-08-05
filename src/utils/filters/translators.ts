@@ -409,13 +409,15 @@ function createAndFilterStructure(
       }
 
       // Direct value assignment for shorthand format
-      if (!apiFilter[slug]) {
-        apiFilter[slug] = filter.value;
-      } else {
-        console.warn(
-          `Multiple filters for ${slug} using shorthand format will overwrite previous values`
-        );
-        apiFilter[slug] = filter.value;
+      if (filter.value !== undefined && filter.value !== null) {
+        if (!apiFilter[slug]) {
+          apiFilter[slug] = filter.value as { [condition: string]: any; };
+        } else {
+          console.warn(
+            `Multiple filters for ${slug} using shorthand format will overwrite previous values`
+          );
+          apiFilter[slug] = filter.value as { [condition: string]: any; };
+        }
       }
     } else {
       // Standard operator handling for normal fields

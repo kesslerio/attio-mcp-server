@@ -24,7 +24,6 @@ import {
   handleSearchByEmail,
   handleSearchByPhone,
   handleSearchByDomain,
-  handleSearchByCompany,
   handleSmartSearch,
 } from './operations/search.js';
 import { handleAdvancedSearch } from './operations/advanced-search.js';
@@ -80,8 +79,6 @@ import {
   NotesToolConfig,
   CreateNoteToolConfig,
   GetListsToolConfig,
-  GetListEntriesToolConfig,
-  DateBasedSearchToolConfig,
 } from '../../tool-types.js';
 
 /**
@@ -94,7 +91,7 @@ export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
 
   // Initialize logging context for this tool execution
-  const correlationId = initializeToolContext(toolName);
+  const _correlationId = initializeToolContext(toolName);
   let timer: PerformanceTimer | undefined;
   let toolType: string | undefined;
 
@@ -517,7 +514,7 @@ async function handleGetAttributesOperation(
 async function handleDiscoverAttributesOperation(
   request: CallToolRequest,
   toolConfig: any,
-  resourceType: ResourceType
+  _resourceType: ResourceType
 ) {
   // This should be moved to an appropriate operations module
   const result = await toolConfig.handler();

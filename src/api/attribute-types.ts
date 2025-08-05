@@ -284,11 +284,15 @@ export async function getFieldValidationRules(
     }
 
     // Add enum values for select fields
-    const config = typeInfo.metadata.config;
+    const config = typeInfo.metadata.config as { 
+      options?: Array<{ value: string | number | boolean }>;
+      select?: { 
+        options?: Array<{ value: string | number | boolean }>;
+      };
+    } | undefined;
     if (typeInfo.attioType === 'select') {
       // Handle both direct options and nested select.options
-      const options =
-        (config as any)?.options || (config as any)?.select?.options;
+      const options = config?.options || config?.select?.options;
       if (options) {
         rules.enum = options.map(
           (opt: { value: string | number | boolean }) => opt.value
@@ -328,7 +332,7 @@ export async function formatAttributeValue(
     | undefined
     | Array<string | number | boolean>
     | Record<string, unknown>
-): Promise<any> {
+): Promise<unknown> {
   const typeInfo = await getAttributeTypeInfo(objectSlug, attributeSlug);
 
   // Handle null/undefined values

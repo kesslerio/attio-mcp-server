@@ -598,7 +598,7 @@ export class CrossResourceValidator {
     if (!recordData || typeof recordData !== 'object') return;
 
     switch (resourceType) {
-      case UniversalResourceType.PEOPLE:
+      case UniversalResourceType.PEOPLE: {
         // Check if company_id is provided and validate it exists
         const companyId = recordData.company_id || recordData.company?.id || recordData.company;
         if (companyId) {
@@ -622,6 +622,7 @@ export class CrossResourceValidator {
             );
           }
         }
+      }
         break;
         
       case UniversalResourceType.RECORDS:
@@ -881,7 +882,7 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
       }
       break;
       
-    case 'batch-operations':
+    case 'batch-operations': {
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
           'Missing required parameter: resource_type',
@@ -922,6 +923,7 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           }
         );
       }
+    }
       break;
       
     default:

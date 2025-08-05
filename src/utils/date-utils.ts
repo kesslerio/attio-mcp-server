@@ -130,18 +130,20 @@ export function createDateRangeFromPreset(preset: string): {
       end.setDate(today.getDate() - 1);
       break;
 
-    case DateRangePreset.THIS_WEEK:
+    case DateRangePreset.THIS_WEEK: {
       // Set start to beginning of current week (Sunday)
       const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
       start.setDate(today.getDate() - dayOfWeek);
       break;
+    }
 
-    case DateRangePreset.LAST_WEEK:
+    case DateRangePreset.LAST_WEEK: {
       // Set start to beginning of last week
       const lastWeekDay = today.getDay();
       start.setDate(today.getDate() - lastWeekDay - 7);
       end.setDate(today.getDate() - lastWeekDay - 1);
       break;
+    }
 
     case DateRangePreset.THIS_MONTH:
       // Set start to beginning of current month
@@ -155,14 +157,15 @@ export function createDateRangeFromPreset(preset: string): {
       end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
       break;
 
-    case DateRangePreset.THIS_QUARTER:
+    case DateRangePreset.THIS_QUARTER: {
       // Set start to beginning of current quarter
       const currentQuarter = Math.floor(today.getMonth() / 3);
       start.setMonth(currentQuarter * 3);
       start.setDate(1);
       break;
+    }
 
-    case DateRangePreset.LAST_QUARTER:
+    case DateRangePreset.LAST_QUARTER: {
       // Set start to beginning of last quarter
       const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
       const lastQuarterYear =
@@ -180,6 +183,7 @@ export function createDateRangeFromPreset(preset: string): {
         999
       );
       break;
+    }
 
     case DateRangePreset.THIS_YEAR:
       // Set start to beginning of current year
@@ -394,7 +398,7 @@ export function formatDate(
         month: 'long',
         day: 'numeric',
       });
-    case 'relative':
+    case 'relative': {
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -405,6 +409,7 @@ export function formatDate(
       if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
       if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
       return `${Math.floor(diffDays / 365)} years ago`;
+    }
     default:
       return date.toISOString();
   }

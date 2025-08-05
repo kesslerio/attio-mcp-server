@@ -6,11 +6,9 @@
  * which direction the relationship needs to be updated.
  */
 import { ToolConfig } from '../../tool-types.js';
-import { getAttioClient } from '../../../api/attio-client.js';
 import { getCompanyDetails } from '../../../objects/companies/index.js';
 import { getPersonDetails } from '../../../objects/people/index.js';
 import { updateCompany } from '../../../objects/companies/index.js';
-import { createErrorResult } from '../../../utils/error-handler.js';
 
 export interface LinkPersonToCompanyToolConfig extends ToolConfig {
   handler: (personId: string, companyId: string) => Promise<any>;
@@ -58,7 +56,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
     const updatedTeamIds = [...currentTeamIds, personId];
     
     // Update company with new team
-    const updatedCompany = await updateCompany(companyId, {
+    const _updatedCompany = await updateCompany(companyId, {
       team: updatedTeamIds.map(id => ({ target_record_id: id }))
     });
     
@@ -104,7 +102,7 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
     const updatedTeamIds = currentTeamIds.filter(id => id !== personId);
     
     // Update company with new team
-    const updatedCompany = await updateCompany(companyId, {
+    const _updatedCompany = await updateCompany(companyId, {
       team: updatedTeamIds.map(id => ({ target_record_id: id }))
     });
     

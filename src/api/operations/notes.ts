@@ -33,13 +33,8 @@ export async function getObjectNotes(
   const path = `/notes?limit=${limit}&offset=${offset}&parent_object=${objectType}&parent_record_id=${recordId}`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.get<AttioListResponse<AttioNote>>(path);
-      return response?.data?.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.get<AttioListResponse<AttioNote>>(path);
+    return response?.data?.data || [];
   }, retryConfig);
 }
 
@@ -64,20 +59,15 @@ export async function createObjectNote(
   const path = '/notes';
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.post<AttioSingleResponse<AttioNote>>(path, {
-        data: {
-          format: 'plaintext',
-          parent_object: objectType,
-          parent_record_id: recordId,
-          title: `[AI] ${noteTitle}`,
-          content: noteText,
-        },
-      });
-      return response?.data?.data || response?.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.post<AttioSingleResponse<AttioNote>>(path, {
+      data: {
+        format: 'plaintext',
+        parent_object: objectType,
+        parent_record_id: recordId,
+        title: `[AI] ${noteTitle}`,
+        content: noteText,
+      },
+    });
+    return (response?.data?.data || response?.data) as AttioNote;
   }, retryConfig);
 }

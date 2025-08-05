@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import fs from 'fs'; // Added for PID file
-import { AddressInfo } from 'net'; // Import AddressInfo for type checking
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { startHealthServer } from './health/http-server.js';

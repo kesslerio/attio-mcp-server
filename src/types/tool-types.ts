@@ -3,7 +3,6 @@
  * Replaces explicit any types with proper interfaces
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Generic tool request arguments interface

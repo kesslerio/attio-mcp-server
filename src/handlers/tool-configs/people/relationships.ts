@@ -5,7 +5,6 @@ import {
   searchPeopleByNotes,
 } from '../../../objects/people/index.js';
 import { searchCompanies } from '../../../objects/companies/index.js';
-import { getAttioClient } from '../../../api/attio-client.js';
 import { ToolRequestArguments } from '../../../types/tool-types.js';
 import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
