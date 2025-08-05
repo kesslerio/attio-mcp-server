@@ -101,7 +101,7 @@ describe(`Attribute Validation with Real Attio API (${
     clearAttributeCache();
 
     // Set longer timeout for API tests
-    vi.setTimeout(30_000); // 30 seconds
+    vi.setConfig({ testTimeout: 30000 }); // 30 seconds
   });
 
   // Clean up after tests if they ran

@@ -225,7 +225,10 @@ describe("Universal Advanced Operations Tests", () => {
 			);
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
-			const formatted = advancedSearchConfig.formatResult(mockResults, UniversalResourceType.COMPANIES);
+			const formatted = advancedSearchConfig.formatResult(
+				mockResults,
+				UniversalResourceType.COMPANIES,
+			);
 
 			expect(formatted).toContain("Advanced search found 1 company");
 			expect(formatted).toContain(
@@ -335,7 +338,10 @@ describe("Universal Advanced Operations Tests", () => {
 				},
 			];
 
-			const formatted = searchByRelationshipConfig.formatResult(mockResults, RelationshipType.COMPANY_TO_PEOPLE);
+			const formatted = searchByRelationshipConfig.formatResult(
+				mockResults,
+				RelationshipType.COMPANY_TO_PEOPLE,
+			);
 
 			expect(formatted).toContain("Found 1 records for company to people");
 			expect(formatted).toContain(
@@ -458,9 +464,9 @@ describe("Universal Advanced Operations Tests", () => {
 			vi.mocked(formatResourceType).mockReturnValue("company");
 
 			const formatted = searchByContentConfig.formatResult(
-				mockResults, 
+				mockResults,
 				ContentSearchType.NOTES,
-				UniversalResourceType.COMPANIES
+				UniversalResourceType.COMPANIES,
 			);
 
 			expect(formatted).toContain("Found 1 companys with matching notes");
@@ -621,7 +627,7 @@ describe("Universal Advanced Operations Tests", () => {
 			const formatted = searchByTimeframeConfig.formatResult(
 				mockResults,
 				TimeframeType.CREATED,
-				UniversalResourceType.PEOPLE
+				UniversalResourceType.PEOPLE,
 			);
 
 			expect(formatted).toContain("Found 1 persons by created");
@@ -836,7 +842,7 @@ describe("Universal Advanced Operations Tests", () => {
 			const formatted = batchOperationsConfig.formatResult(
 				mockResults,
 				BatchOperationType.CREATE,
-				UniversalResourceType.COMPANIES
+				UniversalResourceType.COMPANIES,
 			);
 
 			expect(formatted).toContain(
@@ -868,7 +874,7 @@ describe("Universal Advanced Operations Tests", () => {
 			const formatted = batchOperationsConfig.formatResult(
 				mockResults,
 				BatchOperationType.SEARCH,
-				UniversalResourceType.COMPANIES
+				UniversalResourceType.COMPANIES,
 			);
 
 			expect(formatted).toContain("Batch search found 2 companys");

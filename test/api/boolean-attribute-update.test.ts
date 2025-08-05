@@ -43,8 +43,8 @@ describe('Boolean Attribute API Tests', () => {
     try {
       testCompany = await createCompany({
         name: TEST_COMPANY_NAME,
-        is_active: true,
-        uses_body_composition: true,
+        is_active: 'true',
+        uses_body_composition: 'true',
       });
 
       console.log(`Created test company: ${testCompany.id?.record_id}`);
