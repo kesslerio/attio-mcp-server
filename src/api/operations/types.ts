@@ -9,6 +9,7 @@ import type {
   BatchRequestItem as BatchRequestItemType,
   BatchResponse as BatchResponseType,
 } from '../../types/attio.js';
+import { FilterValue } from '../../types/api-operations.js';
 
 // Re-export batch types for convenience
 export type BatchRequestItem<T> = BatchRequestItemType<T>;
@@ -24,7 +25,7 @@ export interface ListEntryFilter {
     slug: string;
   };
   condition: string;
-  value: any;
+  value: FilterValue;
   /**
    * Optional logical operator to use when combined with other filters
    * If not provided, default is 'and'
@@ -53,7 +54,7 @@ export interface ListEntryFilters {
     attributes: ListEntryFilter[];
     logicalOperator?: 'and' | 'or';
   }[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

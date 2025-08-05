@@ -7,20 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-08-04
+
+This is a major release featuring the Universal Tool Consolidation, which dramatically simplifies the MCP interface by replacing 50+ resource-specific tools with a unified set of universal tools that work across all resource types.
+
 ### Added
-- ChatGPT connector with OpenAI-compatible search and fetch tools (#2)
-- SSE (Server-Sent Events) transport layer for real-time communication
-- OpenAI API endpoints at `/openai/tools` and `/openai/execute`
-- Universal tools integration for OpenAI endpoints
-- Data transformers for companies, people, lists, and tasks to OpenAI format
-- CORS support for browser-based ChatGPT access
-- Comprehensive integration tests for OpenAI endpoints
-- ChatGPT connector setup documentation
+
+#### Universal Tool System (#352, #358)
+- **Universal Tools**: New consolidated tools that work across all resource types (companies, people, deals, tasks, records)
+  - `search-records`: Search any resource type with consistent interface
+  - `get-record-details`: Get details for any record type
+  - `create-record`: Create records of any type
+  - `update-record`: Update records of any type
+  - `delete-record`: Delete records of any type
+  - `discover-attributes`: Discover attributes for any resource type
+  - `get-detailed-info`: Get categorized information (basic, contact, business, social)
+- **Advanced Operations**: New tools for complex operations
+  - `advanced-search`: Multi-attribute search with complex filters
+  - `search-by-relationship`: Find records by their relationships
+  - `search-by-content`: Search by notes or interaction content
+  - `search-by-timeframe`: Search by creation/update dates
+  - `batch-operations`: Perform bulk operations efficiently
+- **Resource Type Support**: Full support for companies, people, deals, tasks, and generic records
+- **Backwards Compatibility**: All existing tool names continue to work via intelligent routing
+
+#### Enhanced Error Handling System (#362)
+- Comprehensive error categorization (USER_ERROR, SYSTEM_ERROR, API_ERROR)
+- Detailed error messages with examples and suggestions
+- Field-specific guidance for common mistakes
+- HTTP status code mapping for better API integration
+- Structured error responses with actionable feedback
+
+#### Deal Management Improvements
+- Comprehensive deal field error messages for common mistakes (description, probability, source, close_date, tags, etc.)
+- Deal field documentation showing available vs non-existent fields
+- Currency handling guidance - Attio automatically formats currency based on workspace settings
+- Field name conversions for backwards compatibility:
+  - `company_id` → `associated_company`
+  - `deal_stage` → `stage`
+  - `deal_value` → `value`
+  - `deal_name` → `name`
+
+#### Documentation & Testing (#360, #359)
+- Complete universal tools documentation with examples
+- Comprehensive integration test suite for all universal operations
+- Performance benchmarks for batch operations
+- Migration guide from resource-specific to universal tools
+
+#### Developer Experience
+- Config migration tool for postal code mapping fix (#330)
+- Enhanced validation pipeline with mandatory pre-commit checks
+- Systematic lint reduction plan (targeting <100 warnings from ~800)
+- Improved environment setup for API integration testing
+
+### Changed
+
+#### API & Tool Behavior
+- **Simplified Currency Handling**: Deal values now accept plain numbers (e.g., `value: 9780`) instead of complex objects
+- **Consistent Search Interface**: All search operations now use the same filter structure
+- **Unified Response Format**: All tools return consistent response structures
+- **Better Field Validation**: Proactive validation with helpful suggestions before API calls
+- **Improved Error Messages**: Context-aware error messages that guide users to solutions
+
+#### Infrastructure & Performance
+- Consolidated 50+ individual tool handlers into modular universal handlers
+- Reduced code duplication by ~70% through shared implementations
+- Improved response times through optimized routing
+- Better memory usage with streamlined tool definitions
+- Enhanced TypeScript type safety throughout the codebase
 
 ### Fixed
-- Universal tools handler now supports UNIVERSAL resource type in dispatcher
-- Text parsing for universal tool outputs that return formatted text
-- ID extraction in transformers to properly handle record_id format
+
+#### Critical Fixes
+- Fixed deal currency format errors by accepting simple numeric values (#352)
+- Fixed company domain search regression - now correctly uses `domains` field instead of `website` (#334, #353)
+- Fixed "Format Error: An invalid value was passed to attribute with slug 'value'" issue
+- Fixed missing generic record operation handlers (#343, #349)
+- Fixed people search phone field regression (P0 hotfix)
+- Fixed list filtering for list-specific attributes (#341)
+
+#### Search & Filter Fixes
+- Fixed date filter operators to match Attio API requirements
+- Fixed domain search implementation by removing over-engineering
+- Fixed company search validation and enhanced error handling
+- Fixed filter condition type enum values for API compatibility
+
+#### API Integration Fixes
+- Fixed MCP tool calls failing with missing arguments wrapper (#344, #345)
+- Fixed relationship helper tools and type conversion issues (#347)
+- Fixed note formatting and content extraction (#338, #347)
+- Fixed schema alignment for add-record-to-list tool (#332)
+
+#### Testing & CI/CD Fixes
+- Fixed integration test failures with proper mock management
+- Fixed CI test compatibility with simplified mocks
+- Fixed flaky date tests for Node v22.x
+- Fixed TypeScript type issues and unnecessary try/catch warnings
+
+### Security
+- Updated form-data dependency from 4.0.1 to 4.0.4 for security patches (#346)
+
+### Deprecated
+- Resource-specific tool names (e.g., `search-companies`, `create-person`) are deprecated but still functional
+- Legacy field names for deals are deprecated but automatically converted
+- Individual resource type handlers are deprecated in favor of universal handlers
+
+### Migration Guide
+Users upgrading from v0.1.x should note:
+1. All existing tools continue to work - no breaking changes
+2. Consider migrating to universal tools for new implementations
+3. Deal currency values should now be simple numbers
+4. Use `associated_company` instead of `company_id` for deals
+5. Check error messages for field name guidance when creating records
 
 ## [0.1.2] - 2025-01-23
 

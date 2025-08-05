@@ -41,13 +41,8 @@ export async function getObjectDetails<T extends AttioRecord>(
   const path = `/objects/${objectType}/records/${recordId}`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.get<AttioSingleResponse<T>>(path);
-      return response.data.data || response.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.get<AttioSingleResponse<T>>(path);
+    return response?.data?.data || response?.data;
   }, retryConfig);
 }
 
@@ -67,18 +62,13 @@ export async function createRecord<T extends AttioRecord>(
   const path = `${objectPath}/records`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.post<AttioSingleResponse<T>>(path, {
-        data: {
-          values: params.attributes,
-        },
-      });
+    const response = await api.post<AttioSingleResponse<T>>(path, {
+      data: {
+        values: params.attributes,
+      },
+    });
 
-      return response.data.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    return response.data.data;
   }, retryConfig);
 }
 
@@ -112,16 +102,11 @@ export async function getRecord<T extends AttioRecord>(
   }
 
   return callWithRetry(async () => {
-    try {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[getRecord] Final request path:', path);
-      }
-      const response = await api.get<AttioSingleResponse<T>>(path);
-      return response.data.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[getRecord] Final request path:', path);
     }
+    const response = await api.get<AttioSingleResponse<T>>(path);
+    return response?.data?.data;
   }, retryConfig);
 }
 
@@ -141,21 +126,16 @@ export async function updateRecord<T extends AttioRecord>(
   const path = `${objectPath}/records/${params.recordId}`;
 
   return callWithRetry(async () => {
-    try {
-      // The API expects 'data.values' structure
-      const payload = {
-        data: {
-          values: params.attributes,
-        },
-      };
+    // The API expects 'data.values' structure
+    const payload = {
+      data: {
+        values: params.attributes,
+      },
+    };
 
-      const response = await api.patch<AttioSingleResponse<T>>(path, payload);
+    const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-      return response.data.data;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    return response?.data?.data;
   }, retryConfig);
 }
 
@@ -179,13 +159,8 @@ export async function deleteRecord(
   const path = `${objectPath}/records/${recordId}`;
 
   return callWithRetry(async () => {
-    try {
-      await api.delete(path);
-      return true;
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    await api.delete(path);
+    return true;
   }, retryConfig);
 }
 
@@ -235,12 +210,7 @@ export async function listRecords<T extends AttioRecord>(
   }`;
 
   return callWithRetry(async () => {
-    try {
-      const response = await api.get<AttioListResponse<T>>(path);
-      return response.data.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const response = await api.get<AttioListResponse<T>>(path);
+    return response?.data?.data || [];
   }, retryConfig);
 }

@@ -38,6 +38,7 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Advanced Filtering**: Complex multi-condition filtering with AND/OR logic
 - **Entry Management**: Add, remove, and update list memberships
 - **Deal Tracking**: Monitor opportunities and revenue pipeline
+- **Deal Defaults**: Configurable default stage, owner, and currency for streamlined deal creation
 
 ### ✅ **Task Management**
 - **Universal Task Operations**: Create, update, and manage tasks with universal tools
@@ -86,6 +87,11 @@ npm run build
 ```bash
 export ATTIO_API_KEY="your_api_key_here"
 export ATTIO_WORKSPACE_ID="your_workspace_id_here"
+
+# Optional: Deal defaults configuration
+export ATTIO_DEFAULT_DEAL_STAGE="Interested"      # Default stage for new deals
+export ATTIO_DEFAULT_DEAL_OWNER="member_id_here"  # Default owner workspace member ID (see below)
+export ATTIO_DEFAULT_CURRENCY="USD"               # Default currency for deal values
 ```
 
 ### 2. Test the Installation
@@ -101,6 +107,20 @@ attio-discover attributes
 
 Add to your Claude Desktop MCP configuration:
 
+#### Finding Required IDs
+
+**Workspace Member ID** (for deal owner defaults):
+```bash
+# Use the Attio API to list workspace members
+curl -H "Authorization: Bearer $ATTIO_API_KEY" \
+  https://api.attio.com/v2/workspace-members
+
+# Look for your name in the response to find your member ID
+```
+
+**Deal Stages**: 
+Deal stages are specific to your workspace. Check your Attio workspace settings or use the `discover-attributes` command to find available stages for deals.
+
 ```json
 {
   "mcpServers": {
@@ -108,7 +128,10 @@ Add to your Claude Desktop MCP configuration:
       "command": "attio-mcp",
       "env": {
         "ATTIO_API_KEY": "your_api_key_here",
-        "ATTIO_WORKSPACE_ID": "your_workspace_id_here"
+        "ATTIO_WORKSPACE_ID": "your_workspace_id_here",
+        "ATTIO_DEFAULT_DEAL_STAGE": "Interested",
+        "ATTIO_DEFAULT_DEAL_OWNER": "member_id_here",
+        "ATTIO_DEFAULT_CURRENCY": "USD"
       }
     }
   }
@@ -207,6 +230,23 @@ npm run build
 npm run test:offline
 ```
 
+### **Testing**
+
+The project includes comprehensive unit and integration tests:
+
+```bash
+# Unit Tests (no API required)
+npm test                    # Run all tests
+npm run test:offline        # Run only offline tests
+npm run test:watch          # Watch mode for development
+
+# Integration Tests (requires API key and test data)
+npm run test:integration    # Run all integration tests
+npm run setup:test-data     # Create test data in your workspace
+```
+
+See the [Testing Guide](./docs/testing.md) for detailed instructions on setting up and running integration tests.
+
 ### **Available Scripts**
 ```bash
 npm run build          # Build TypeScript
@@ -214,6 +254,7 @@ npm run test           # Run all tests
 npm run test:offline   # Run tests without API calls
 npm run lint           # Check code style
 npm run check          # Full quality check
+npm run setup:test-data # Create test data for integration tests
 ```
 
 ## 🤝 Contributing

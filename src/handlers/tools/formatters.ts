@@ -1,16 +1,12 @@
 /**
  * Result formatting module - handles transformation and formatting of tool results
  */
-import {
-  type AttioListEntry,
-  type AttioRecord,
-  AttioValue,
-} from '../../types/attio.js';
+import { AttioRecord, AttioListEntry } from '../../types/attio.js';
+import { processListEntries } from '../../utils/record-utils.js';
 import {
   safeJsonStringify,
   sanitizeMcpResponse,
 } from '../../utils/json-serializer.js';
-import { processListEntries } from '../../utils/record-utils.js';
 
 /**
  * Safely extract value from record attributes
@@ -49,8 +45,7 @@ function getAttributeValue(
       return (firstValue.value as string) || 'Unknown';
     }
     return String(firstValue) || 'Unknown';
-  }
-  if (
+  } else if (
     typeof fieldValue === 'object' &&
     fieldValue !== null &&
     'value' in fieldValue
@@ -164,7 +159,10 @@ export function formatBatchResults(result: any, operation: string): string {
  * @param isError - Whether this is an error response
  * @returns Formatted response object
  */
-export function formatResponse(content: string | any, isError = false) {
+export function formatResponse(
+  content: string | any,
+  isError: boolean = false
+) {
   // Handle non-string content by converting it to a string
   let formattedContent: string;
 

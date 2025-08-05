@@ -24,7 +24,7 @@ describe('Activity and Historical filtering', () => {
 
       expect(filter.filters).toHaveLength(1);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
-      expect(filter.filters![0].condition).toBe('after');
+      expect(filter.filters![0].condition).toBe('gte');
       expect(filter.filters![0].value).toBe(startDate);
     });
 
@@ -35,7 +35,7 @@ describe('Activity and Historical filtering', () => {
 
       expect(filter.filters).toHaveLength(1);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
-      expect(filter.filters![0].condition).toBe('before');
+      expect(filter.filters![0].condition).toBe('lt');
       expect(filter.filters![0].value).toBe(endDate);
     });
 
@@ -47,10 +47,10 @@ describe('Activity and Historical filtering', () => {
 
       expect(filter.filters).toHaveLength(2);
       expect(filter.filters![0].attribute.slug).toBe('created_at');
-      expect(filter.filters![0].condition).toBe('after');
+      expect(filter.filters![0].condition).toBe('gte');
       expect(filter.filters![0].value).toBe(startDate);
       expect(filter.filters![1].attribute.slug).toBe('created_at');
-      expect(filter.filters![1].condition).toBe('before');
+      expect(filter.filters![1].condition).toBe('lt');
       expect(filter.filters![1].value).toBe(endDate);
       expect(filter.matchAny).toBe(false);
     });

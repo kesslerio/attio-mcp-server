@@ -141,7 +141,7 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
 export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
   try {
     // Format the phone number for search
-    const cleanedPhone = phone.replace(/\D/g, '');
+    const _cleanedPhone = phone.replace(/\D/g, '');
 
     const response = await searchObject<Person>(ResourceType.PEOPLE, phone);
 
@@ -307,9 +307,7 @@ export async function searchPeopleByLastInteraction(
     }
 
     const filters = createLastInteractionFilter(dateRange, interactionType);
-    const response = await advancedSearchPeople(filters.filter, {
-      ...(filters.sorts && { sorts: filters.sorts }),
-    });
+    const response = await advancedSearchPeople(filters);
 
     return response.results;
   } catch (error) {
@@ -345,9 +343,7 @@ export async function searchPeopleByActivity(
     }
 
     const filters = createActivityFilter(activityFilter);
-    const response = await advancedSearchPeople(filters.filter, {
-      ...(filters.sorts && { sorts: filters.sorts }),
-    });
+    const response = await advancedSearchPeople(filters);
 
     return response.results;
   } catch (error) {

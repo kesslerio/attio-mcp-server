@@ -3,6 +3,8 @@
  * Handles retryable errors with configurable backoff strategies
  */
 
+import { ApiError } from '../../types/api-operations.js';
+
 /**
  * Configuration options for API call retry
  */
@@ -71,7 +73,7 @@ function sleep(ms: number): Promise<void> {
  * @param config - Retry configuration
  * @returns Whether the error should trigger a retry
  */
-export function isRetryableError(error: any, config: RetryConfig): boolean {
+export function isRetryableError(error: ApiError, config: RetryConfig): boolean {
   // Network errors should be retried
   if (!error.response) {
     return true;
@@ -100,7 +102,7 @@ export async function callWithRetry<T>(
   };
 
   let attempt = 0;
-  let lastError: any;
+  let lastError: unknown;
 
   while (attempt <= retryConfig.maxRetries) {
     try {
@@ -111,7 +113,7 @@ export async function callWithRetry<T>(
       // Check if we should retry
       if (
         attempt >= retryConfig.maxRetries ||
-        !isRetryableError(error, retryConfig)
+        !isRetryableError(error as ApiError, retryConfig)
       ) {
         throw error;
       }

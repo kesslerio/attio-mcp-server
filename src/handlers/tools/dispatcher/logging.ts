@@ -2,22 +2,19 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import {
-  type ToolErrorContext,
-  ToolExecutionRequest,
+  ToolErrorContext,
 } from '../../../types/tool-types.js';
 import {
-  createScopedLogger,
-  debug,
   error,
-  generateCorrelationId,
-  info,
-  OperationType,
-  type PerformanceTimer,
-  setLogContext,
   warn,
+  createScopedLogger,
+  OperationType,
+  setLogContext,
+  generateCorrelationId,
+  PerformanceTimer,
 } from '../../../utils/logger.js';
+import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * Initialize tool execution context with correlation ID
@@ -185,7 +182,7 @@ export function logToolValidationError(
   validationError: string,
   context?: any
 ): void {
-  const logger = createToolLogger(toolName, toolType);
+  const _logger = createToolLogger(toolName, toolType);
 
   warn(
     `tool:${toolName}`,
@@ -223,7 +220,7 @@ export function logToolFallback(
   reason: string,
   fallbackMethod: string
 ): void {
-  const logger = createToolLogger(toolName, toolType);
+  const _logger = createToolLogger(toolName, toolType);
 
   warn(
     `tool:${toolName}`,

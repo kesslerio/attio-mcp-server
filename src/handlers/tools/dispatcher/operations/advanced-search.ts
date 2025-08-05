@@ -4,16 +4,13 @@
  * Handles advanced search operations with complex filter structures
  */
 
-import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import type { ListEntryFilters } from '../../../../api/operations/index.js';
-import type { ResourceType } from '../../../../types/attio.js';
-import {
-  createErrorResult,
-  ErrorType,
-} from '../../../../utils/error-handler.js';
-import type { AdvancedSearchToolConfig } from '../../../tool-types.js';
-import { hasResponseData } from '../../error-types.js';
+import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { createErrorResult } from '../../../../utils/error-handler.js';
+import { ResourceType } from '../../../../types/attio.js';
+import { AdvancedSearchToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
+import { hasResponseData } from '../../error-types.js';
+import { ListEntryFilters } from '../../../../api/operations/index.js';
 
 /**
  * Handle advanced search operations

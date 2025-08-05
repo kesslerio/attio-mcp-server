@@ -1,22 +1,23 @@
 /**
  * Universal tool type definitions for consolidated MCP operations
- *
+ * 
  * These types support the universal tool consolidation effort to reduce
  * tool count from 70 to ~30 tools while maintaining full functionality.
  */
 
-import type { ListEntryFilters } from '../../../api/operations/index.js';
-import { AttioNote, type AttioRecord } from '../../../types/attio.js';
-import type { ToolConfig } from '../../tool-types.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { ToolConfig } from '../../tool-types.js';
+import { ListEntryFilters } from '../../../api/operations/index.js';
 
 /**
  * Supported resource types for universal operations
  */
 export enum UniversalResourceType {
   COMPANIES = 'companies',
-  PEOPLE = 'people',
+  PEOPLE = 'people', 
   RECORDS = 'records',
   TASKS = 'tasks',
+  DEALS = 'deals'
 }
 
 /**
@@ -24,10 +25,10 @@ export enum UniversalResourceType {
  */
 export enum DetailedInfoType {
   CONTACT = 'contact',
-  BUSINESS = 'business',
+  BUSINESS = 'business', 
   SOCIAL = 'social',
   BASIC = 'basic',
-  CUSTOM = 'custom',
+  CUSTOM = 'custom'
 }
 
 /**
@@ -38,7 +39,7 @@ export enum BatchOperationType {
   UPDATE = 'update',
   DELETE = 'delete',
   SEARCH = 'search',
-  GET = 'get',
+  GET = 'get'
 }
 
 /**
@@ -46,8 +47,8 @@ export enum BatchOperationType {
  */
 export enum TimeframeType {
   CREATED = 'created',
-  MODIFIED = 'modified',
-  LAST_INTERACTION = 'last_interaction',
+  MODIFIED = 'modified', 
+  LAST_INTERACTION = 'last_interaction'
 }
 
 /**
@@ -56,7 +57,7 @@ export enum TimeframeType {
 export enum ContentSearchType {
   NOTES = 'notes',
   ACTIVITY = 'activity',
-  INTERACTIONS = 'interactions',
+  INTERACTIONS = 'interactions'
 }
 
 /**
@@ -66,7 +67,7 @@ export enum RelationshipType {
   COMPANY_TO_PEOPLE = 'company_to_people',
   PEOPLE_TO_COMPANY = 'people_to_company',
   PERSON_TO_TASKS = 'person_to_tasks',
-  COMPANY_TO_TASKS = 'company_to_tasks',
+  COMPANY_TO_TASKS = 'company_to_tasks'
 }
 
 /**
@@ -216,29 +217,10 @@ export interface ResourceTypeHandler {
  * Universal tool result formatting interface
  */
 export interface UniversalResultFormatter {
-  formatSearch: (
-    results: AttioRecord[],
-    resourceType: UniversalResourceType
-  ) => string;
-  formatDetails: (
-    record: AttioRecord,
-    resourceType: UniversalResourceType
-  ) => string;
-  formatCreate: (
-    record: AttioRecord,
-    resourceType: UniversalResourceType
-  ) => string;
-  formatUpdate: (
-    record: AttioRecord,
-    resourceType: UniversalResourceType
-  ) => string;
-  formatDelete: (
-    success: boolean,
-    recordId: string,
-    resourceType: UniversalResourceType
-  ) => string;
-  formatAttributes: (
-    attributes: any,
-    resourceType: UniversalResourceType
-  ) => string;
+  formatSearch: (results: AttioRecord[], resourceType: UniversalResourceType) => string;
+  formatDetails: (record: AttioRecord, resourceType: UniversalResourceType) => string;
+  formatCreate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
+  formatUpdate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
+  formatDelete: (success: boolean, recordId: string, resourceType: UniversalResourceType) => string;
+  formatAttributes: (attributes: any, resourceType: UniversalResourceType) => string;
 }

@@ -2,9 +2,9 @@
  * Tests for filter transformation utilities
  */
 import { describe, expect, test } from 'vitest';
-import { FilterValidationError } from '../../src/errors/api-errors';
 import { FilterConditionType } from '../../src/types/attio';
 import { transformFiltersToApiFormat } from '../../src/utils/record-utils';
+import { FilterValidationError } from '../../src/errors/api-errors';
 
 describe('transformFiltersToApiFormat', () => {
   // Test basic filter transformation
@@ -53,7 +53,7 @@ describe('transformFiltersToApiFormat', () => {
         {
           attribute: { slug: 'value' },
           condition: FilterConditionType.GREATER_THAN,
-          value: 10_000,
+          value: 10000,
         },
       ],
     };
@@ -66,7 +66,7 @@ describe('transformFiltersToApiFormat', () => {
           $equals: 'discovery',
         },
         value: {
-          $greater_than: 10_000,
+          $gt: 10000,
         },
       },
     });
@@ -132,7 +132,7 @@ describe('transformFiltersToApiFormat', () => {
           $contains: 'Tech',
         },
         created_at: {
-          $greater_than: '2023-01-01',
+          $gt: '2023-01-01',
         },
         is_active: {
           $is_set: null,

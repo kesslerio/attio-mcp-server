@@ -14,27 +14,27 @@
 
 // External dependencies
 import {
-  FilterErrorCategory,
   FilterValidationError,
+  FilterErrorCategory,
 } from '../../errors/api-errors.js';
 
 // Internal module dependencies
 import {
-  type AttioApiFilter,
-  FIELD_SPECIAL_HANDLING,
+  ListEntryFilters,
+  ListEntryFilter,
+  AttioApiFilter,
   FilterConditionType,
-  type ListEntryFilter,
-  type ListEntryFilters,
+  FIELD_SPECIAL_HANDLING,
 } from './types.js';
-import { isListSpecificAttribute } from './utils.js';
-import {
-  collectInvalidFilters,
-  ERROR_MESSAGES,
-  formatInvalidFiltersError,
-  getFilterExample,
-  validateFilters,
-} from './validation-utils.js';
 import { validateFilterStructure } from './validators.js';
+import {
+  validateFilters,
+  collectInvalidFilters,
+  formatInvalidFiltersError,
+  ERROR_MESSAGES,
+  getFilterExample,
+} from './validation-utils.js';
+import { isListSpecificAttribute } from './utils.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -102,8 +102,8 @@ import { validateFilterStructure } from './validators.js';
  */
 export function transformFiltersToApiFormat(
   filters: ListEntryFilters | undefined,
-  validateConditions = true,
-  isListEntryContext = false
+  validateConditions: boolean = true,
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   // Handle undefined/null filters gracefully
   if (!filters) {
@@ -111,7 +111,7 @@ export function transformFiltersToApiFormat(
   }
 
   // Check if filters has a filters property and it's an array
-  if (!('filters' in filters && Array.isArray(filters.filters))) {
+  if (!('filters' in filters) || !Array.isArray(filters.filters)) {
     return {};
   }
 
@@ -205,7 +205,7 @@ export function transformFiltersToApiFormat(
 function createOrFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext = false
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   const orConditions: any[] = [];
 
@@ -327,7 +327,7 @@ function createOrFilterStructure(
 function createAndFilterStructure(
   filters: ListEntryFilter[],
   validateConditions: boolean,
-  isListEntryContext = false
+  isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
   const apiFilter: AttioApiFilter = {};
 
@@ -409,13 +409,15 @@ function createAndFilterStructure(
       }
 
       // Direct value assignment for shorthand format
-      if (apiFilter[slug]) {
-        console.warn(
-          `Multiple filters for ${slug} using shorthand format will overwrite previous values`
-        );
-        apiFilter[slug] = filter.value;
-      } else {
-        apiFilter[slug] = filter.value;
+      if (filter.value !== undefined && filter.value !== null) {
+        if (!apiFilter[slug]) {
+          apiFilter[slug] = filter.value as { [condition: string]: any; };
+        } else {
+          console.warn(
+            `Multiple filters for ${slug} using shorthand format will overwrite previous values`
+          );
+          apiFilter[slug] = filter.value as { [condition: string]: any; };
+        }
       }
     } else {
       // Standard operator handling for normal fields
@@ -497,7 +499,7 @@ export function processFilterValue(
     condition === FilterConditionType.IS_SET ||
     condition === FilterConditionType.IS_NOT_SET
   ) {
-    return;
+    return undefined;
   }
 
   // Return value as-is for other conditions

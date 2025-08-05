@@ -7,7 +7,6 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { ResourceType } from '../../types/attio.js';
 import { warn } from '../../utils/logger.js';
 import { executeToolRequest } from './dispatcher.js';
 // Import from modular components
@@ -70,7 +69,7 @@ function normalizeToolRequest(
 
   // Handle loose arguments format
   const params = request.params as LooseCallToolRequest['params'];
-  const { name, arguments: _, ...potentialArgs } = params;
+  const { name, arguments: _arguments, ...potentialArgs } = params;
 
   // If there are additional params beyond 'name', treat them as arguments
   const hasAdditionalParams = Object.keys(potentialArgs).length > 0;
@@ -127,14 +126,23 @@ function normalizeToolRequest(
 export function registerToolHandlers(server: Server): void {
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    // Dynamically collect all available tool definitions
+    const allTools = [];
+    
+    for (const [_key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
+      if (toolDefs) {
+        if (Array.isArray(toolDefs)) {
+          // Legacy format: array of tool definitions
+          allTools.push(...toolDefs);
+        } else if (typeof toolDefs === 'object') {
+          // Universal format: object with tool definitions as values
+          allTools.push(...Object.values(toolDefs));
+        }
+      }
+    }
+    
     return {
-      tools: [
-        ...TOOL_DEFINITIONS[ResourceType.COMPANIES],
-        ...TOOL_DEFINITIONS[ResourceType.PEOPLE],
-        ...TOOL_DEFINITIONS[ResourceType.LISTS],
-        ...TOOL_DEFINITIONS[ResourceType.TASKS],
-        ...TOOL_DEFINITIONS[ResourceType.RECORDS],
-      ],
+      tools: allTools,
     };
   });
 

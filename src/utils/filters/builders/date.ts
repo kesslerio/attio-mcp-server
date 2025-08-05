@@ -30,7 +30,7 @@ export function createDateRangeFilter(
     if (resolved.start) {
       filters.push({
         attribute: { slug: attributeSlug },
-        condition: FilterConditionType.AFTER,
+        condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
         value: resolved.start,
       });
     }
@@ -38,7 +38,7 @@ export function createDateRangeFilter(
     if (resolved.end) {
       filters.push({
         attribute: { slug: attributeSlug },
-        condition: FilterConditionType.BEFORE,
+        condition: FilterConditionType.LESS_THAN,
         value: resolved.end,
       });
     }
