@@ -23,7 +23,7 @@ export default defineConfig({
       'test/manual/**',
       'test/**/*.test.ts',
       'test/**/*.test.js',
-      // Keep only E2E tests
+      // Keep only E2E tests (*.e2e.test.ts files)
     ],
     globals: true,
     testTimeout: 120000, // 2 minutes for E2E operations

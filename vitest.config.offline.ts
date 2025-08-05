@@ -8,6 +8,7 @@ export default defineConfig({
       'node_modules/**',
       'test/integration/**',
       'test/manual/**',
+      'test/e2e/**',
       'test/**/*.manual.*',
       'test/**/*real-api-integration*',
       'test/**/*claude-desktop-scenario*',
