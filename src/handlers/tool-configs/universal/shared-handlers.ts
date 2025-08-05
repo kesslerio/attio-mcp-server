@@ -17,6 +17,9 @@ import {
   DetailedInfoType
 } from './types.js';
 
+// Import format helpers
+import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attribute-format-helpers.js';
+
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
@@ -243,11 +246,41 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   const { resource_type, record_data } = params;
   
   switch (resource_type) {
-    case UniversalResourceType.COMPANIES:
-      return await createCompany(record_data);
+    case UniversalResourceType.COMPANIES: {
+      try {
+        // Apply format conversions for common mistakes
+        const correctedData = convertAttributeFormats('companies', record_data);
+        return await createCompany(correctedData);
+      } catch (error: any) {
+        // Enhance error messages with format help
+        if (error?.message?.includes('Cannot find attribute')) {
+          const match = error.message.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const enhancedError = getFormatErrorHelp('companies', match[1], error.message);
+            throw new Error(enhancedError);
+          }
+        }
+        throw error;
+      }
+    }
       
-    case UniversalResourceType.PEOPLE:
-      return createPerson(record_data);
+    case UniversalResourceType.PEOPLE: {
+      try {
+        // Apply format conversions for common mistakes
+        const correctedData = convertAttributeFormats('people', record_data);
+        return await createPerson(correctedData);
+      } catch (error: any) {
+        // Enhance error messages with format help
+        if (error?.message?.includes('invalid value') || error?.message?.includes('Format Error')) {
+          const match = error.message.match(/slug "([^"]+)"/);
+          if (match && match[1]) {
+            const enhancedError = getFormatErrorHelp('people', match[1], error.message);
+            throw new Error(enhancedError);
+          }
+        }
+        throw error;
+      }
+    }
       
     case UniversalResourceType.RECORDS:
       return createObjectRecord('records', record_data);
