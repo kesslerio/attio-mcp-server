@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-02-04
+
+### Fixed
+- Fixed deal currency format errors by accepting simple numeric values (#352)
+- Fixed "Format Error: An invalid value was passed to attribute with slug 'value'" issue
+- Enhanced error messages for invalid deal fields with specific guidance
+
+### Added
+- Comprehensive deal field error messages for common mistakes (description, probability, source, etc.)
+- Deal field documentation showing available vs non-existent fields
+- Currency handling guidance - Attio automatically formats currency based on workspace settings
+- Field name conversions for backwards compatibility (company_id → associated_company, etc.)
+
+### Changed
+- Simplified currency value handling - now accepts plain numbers instead of complex objects
+- Improved deal creation workflow with better field validation and suggestions
+- Enhanced error messages to guide users toward correct field usage
+
 ## [0.1.2] - 2025-01-23
 
 ### Fixed
