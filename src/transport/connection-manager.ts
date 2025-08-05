@@ -3,15 +3,15 @@
  * Manages Server-Sent Events connections for ChatGPT connector compatibility
  */
 
-import { ServerResponse } from 'http';
+import type { ServerResponse } from 'http';
 import {
-  SSEConnection,
+  type ConnectionHealth,
+  type ConnectionManagerStats,
+  type MCPSSEMessage,
+  type RateLimitInfo,
+  type SSEConnection,
   SSEMessage,
-  MCPSSEMessage,
-  RateLimitInfo,
-  ConnectionManagerStats,
-  ConnectionHealth,
-  SSEServerOptions,
+  type SSEServerOptions,
 } from '../types/sse-types.js';
 
 /**
@@ -30,8 +30,8 @@ export class SSEConnectionManager {
   constructor(private options: SSEServerOptions = {}) {
     // Set default options
     this.options = {
-      heartbeatInterval: 30000, // 30 seconds
-      connectionTimeout: 300000, // 5 minutes
+      heartbeatInterval: 30_000, // 30 seconds
+      connectionTimeout: 300_000, // 5 minutes
       rateLimitPerMinute: 100,
       maxConnections: 1000,
       ...options,
@@ -54,13 +54,17 @@ export class SSEConnectionManager {
   ): boolean {
     // Check connection limits
     if (this.connections.size >= (this.options.maxConnections || 1000)) {
-      console.warn(`[SSE] Connection limit reached, rejecting client ${clientId}`);
+      console.warn(
+        `[SSE] Connection limit reached, rejecting client ${clientId}`
+      );
       return false;
     }
 
     // Check if client already connected
     if (this.connections.has(clientId)) {
-      console.warn(`[SSE] Client ${clientId} already connected, replacing connection`);
+      console.warn(
+        `[SSE] Client ${clientId} already connected, replacing connection`
+      );
       this.removeConnection(clientId);
     }
 
@@ -75,7 +79,9 @@ export class SSEConnectionManager {
     };
 
     this.connections.set(clientId, connection);
-    console.log(`[SSE] Client ${clientId} connected (${this.connections.size} total)`);
+    console.log(
+      `[SSE] Client ${clientId} connected (${this.connections.size} total)`
+    );
 
     // Send welcome message
     this.sendToClient(clientId, {
@@ -118,7 +124,9 @@ export class SSEConnectionManager {
 
       this.connections.delete(clientId);
       this.rateLimits.delete(clientId);
-      console.log(`[SSE] Client ${clientId} disconnected (${this.connections.size} remaining)`);
+      console.log(
+        `[SSE] Client ${clientId} disconnected (${this.connections.size} remaining)`
+      );
     }
   }
 
@@ -127,7 +135,7 @@ export class SSEConnectionManager {
    */
   checkRateLimit(clientId: string): boolean {
     const now = Date.now();
-    const windowStart = now - 60000; // 1 minute window
+    const windowStart = now - 60_000; // 1 minute window
     const maxRequests = this.options.rateLimitPerMinute || 100;
 
     if (!this.rateLimits.has(clientId)) {
@@ -142,7 +150,9 @@ export class SSEConnectionManager {
     const rateLimit = this.rateLimits.get(clientId)!;
 
     // Clean old requests outside the window
-    rateLimit.requests = rateLimit.requests.filter(time => time > windowStart);
+    rateLimit.requests = rateLimit.requests.filter(
+      (time) => time > windowStart
+    );
     rateLimit.count = rateLimit.requests.length;
 
     // Check if rate limited
@@ -227,7 +237,7 @@ export class SSEConnectionManager {
    */
   getConnectionHealth(): ConnectionHealth[] {
     const now = Date.now();
-    const staleThreshold = this.options.connectionTimeout || 300000;
+    const staleThreshold = this.options.connectionTimeout || 300_000;
 
     return Array.from(this.connections.entries()).map(([clientId, conn]) => {
       const timeSinceActivity = now - conn.lastActivity;
@@ -245,8 +255,9 @@ export class SSEConnectionManager {
    * Get connection manager statistics
    */
   getStats(): ConnectionManagerStats {
-    const authenticatedCount = Array.from(this.connections.values())
-      .filter(conn => conn.authenticated).length;
+    const authenticatedCount = Array.from(this.connections.values()).filter(
+      (conn) => conn.authenticated
+    ).length;
 
     return {
       totalConnections: this.connections.size,
@@ -314,7 +325,7 @@ export class SSEConnectionManager {
       };
 
       this.broadcast(pingMessage);
-    }, this.options.heartbeatInterval || 30000);
+    }, this.options.heartbeatInterval || 30_000);
   }
 
   /**
@@ -327,7 +338,7 @@ export class SSEConnectionManager {
 
     this.cleanupInterval = setInterval(() => {
       const healthChecks = this.getConnectionHealth();
-      const staleConnections = healthChecks.filter(health => health.stale);
+      const staleConnections = healthChecks.filter((health) => health.stale);
 
       for (const stale of staleConnections) {
         console.log(`[SSE] Removing stale connection: ${stale.clientId}`);
@@ -336,13 +347,16 @@ export class SSEConnectionManager {
 
       // Clean up old rate limit data
       const now = Date.now();
-      const oneHourAgo = now - 3600000;
+      const oneHourAgo = now - 3_600_000;
       for (const [clientId, rateLimit] of this.rateLimits.entries()) {
-        if (rateLimit.windowStart < oneHourAgo && !this.connections.has(clientId)) {
+        if (
+          rateLimit.windowStart < oneHourAgo &&
+          !this.connections.has(clientId)
+        ) {
           this.rateLimits.delete(clientId);
         }
       }
-    }, 60000); // Run every minute
+    }, 60_000); // Run every minute
   }
 
   /**
@@ -356,7 +370,7 @@ export class SSEConnectionManager {
     this.statsResetInterval = setInterval(() => {
       this.messagesLastMinute = 0;
       this.errorsLastMinute = 0;
-    }, 60000); // Reset every minute
+    }, 60_000); // Reset every minute
   }
 
   /**

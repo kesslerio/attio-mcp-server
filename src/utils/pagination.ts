@@ -2,7 +2,7 @@
  * Pagination utilities for Attio MCP server
  * Provides functions for implementing efficient pagination with filtered results
  */
-import { AttioRecord } from '../types/attio.js';
+import type { AttioRecord } from '../types/attio.js';
 
 /**
  * Standard pagination metadata interface
@@ -54,8 +54,8 @@ export interface PaginatedResponse<T> {
 export function createPaginatedResponse<T>(
   results: T[],
   totalCount: number,
-  page: number = 1,
-  pageSize: number = 20,
+  page = 1,
+  pageSize = 20,
   baseUrl?: string
 ): PaginatedResponse<T> {
   // Calculate total pages
@@ -106,8 +106,8 @@ export function createPaginatedResponse<T>(
  */
 export function paginateRecords<T>(
   records: T[],
-  page: number = 1,
-  pageSize: number = 20
+  page = 1,
+  pageSize = 20
 ): PaginatedResponse<T> {
   // Ensure valid pagination parameters
   const validPage = Math.max(1, page);
@@ -185,8 +185,8 @@ export function getPaginationParams(
 export function processCursorPagination<T extends AttioRecord>(
   apiResponse: any,
   records: T[],
-  page: number = 1,
-  pageSize: number = 20,
+  page = 1,
+  pageSize = 20,
   baseUrl?: string
 ): PaginatedResponse<T> {
   // Extract pagination metadata from the API response
@@ -247,8 +247,8 @@ export function processCursorPagination<T extends AttioRecord>(
  */
 export async function fetchAllPages<T>(
   queryFn: (limit: number, offset: number) => Promise<T[]>,
-  pageSize: number = 20,
-  maxPages: number = 10
+  pageSize = 20,
+  maxPages = 10
 ): Promise<T[]> {
   let allResults: T[] = [];
   let currentPage = 1;

@@ -12,11 +12,11 @@
  * 4. Cleans up by deleting the test companies
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   batchCreateCompanies,
-  batchUpdateCompanies,
   batchDeleteCompanies,
+  batchUpdateCompanies,
 } from '../../src/objects/batch-companies.js';
 import { ResourceType } from '../../src/types/attio.js';
 
@@ -78,7 +78,7 @@ describe('Batch Company Operations - Integration', () => {
       console.error('Error in test setup:', error);
       throw error;
     }
-  }, 30000); // 30 second timeout
+  }, 30_000); // 30 second timeout
 
   // Clean up after tests
   afterAll(async () => {
@@ -92,7 +92,7 @@ describe('Batch Company Operations - Integration', () => {
     } catch (error) {
       console.error('Error in test cleanup:', error);
     }
-  }, 30000); // 30 second timeout
+  }, 30_000); // 30 second timeout
 
   // Test batch update functionality
   it('should update multiple companies in a batch', async () => {
@@ -132,5 +132,5 @@ describe('Batch Company Operations - Integration', () => {
       console.error('Batch update failed:', error);
       throw error;
     }
-  }, 30000); // 30 second timeout
+  }, 30_000); // 30 second timeout
 });

@@ -3,23 +3,27 @@
  */
 import { getAttioClient } from '../api/attio-client.js';
 import {
-  getAllLists as getGenericLists,
+  addRecordToList as addGenericRecordToList,
+  type BatchConfig,
+  type BatchRequestItem,
+  type BatchResponse,
+  executeBatchOperations,
   getListDetails as getGenericListDetails,
   getListEntries as getGenericListEntries,
-  addRecordToList as addGenericRecordToList,
+  getAllLists as getGenericLists,
+  type ListEntryFilters,
   removeRecordFromList as removeGenericRecordFromList,
   updateListEntry as updateGenericListEntry,
-  BatchConfig,
-  BatchResponse,
-  executeBatchOperations,
-  BatchRequestItem,
-  ListEntryFilters,
 } from '../api/operations/index.js';
-import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
 import {
+  type AttioList,
+  type AttioListEntry,
+  ResourceType,
+} from '../types/attio.js';
+import {
+  createPathBasedFilter,
   processListEntries,
   transformFiltersToApiFormat,
-  createPathBasedFilter,
 } from '../utils/record-utils.js';
 
 /**
@@ -41,7 +45,7 @@ export interface ListMembership {
  */
 export async function getLists(
   objectSlug?: string,
-  limit: number = 20
+  limit = 20
 ): Promise<AttioList[]> {
   // Use the generic operation with fallback to direct implementation
   try {
@@ -109,8 +113,8 @@ async function tryMultipleListEntryEndpoints(
 
   // Prepare the base data for POST requests
   const baseData = {
-    limit: limit,
-    offset: offset,
+    limit,
+    offset,
     expand: ['record'],
   };
 
@@ -128,7 +132,7 @@ async function tryMultipleListEntryEndpoints(
     // Path 2: General lists entries query endpoint with explicit parameters
     {
       method: 'post',
-      path: `/lists-entries/query`,
+      path: '/lists-entries/query',
       data: {
         ...baseData,
         ...filterData,
@@ -138,7 +142,7 @@ async function tryMultipleListEntryEndpoints(
   ];
 
   // Only add the GET endpoint if we don't have filters, as it doesn't support them
-  if (!filters || !filters.filters || filters.filters.length === 0) {
+  if (!(filters && filters.filters) || filters.filters.length === 0) {
     endpoints.push({
       method: 'get',
       path: `/lists-entries?list_id=${listId}&limit=${limit}&offset=${offset}&expand=record`,
@@ -204,8 +208,6 @@ async function tryMultipleListEntryEndpoints(
           }
         );
       }
-      // Continue to next endpoint on failure
-      continue;
     }
   }
 
@@ -226,8 +228,8 @@ async function tryMultipleListEntryEndpoints(
  */
 export async function getListEntries(
   listId: string,
-  limit: number = 20,
-  offset: number = 0,
+  limit = 20,
+  offset = 0,
   filters?: ListEntryFilters
 ): Promise<AttioListEntry[]> {
   // Use the generic operation with fallback to direct implementation
@@ -341,7 +343,7 @@ export async function addRecordToList(
 
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `[addRecordToList:fallback] Success response:`,
+          '[addRecordToList:fallback] Success response:',
           JSON.stringify(response.data || {})
         );
       }
@@ -453,7 +455,7 @@ export async function updateListEntry(
 
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `[updateListEntry:fallback] Success response:`,
+        '[updateListEntry:fallback] Success response:',
         JSON.stringify(response.data || {})
       );
     }
@@ -577,8 +579,8 @@ export async function batchGetListsEntries(
 export async function getRecordListMemberships(
   recordId: string,
   objectType?: string,
-  includeEntryValues: boolean = false,
-  batchSize: number = 5
+  includeEntryValues = false,
+  batchSize = 5
 ): Promise<ListMembership[]> {
   // Input validation
   if (!recordId || typeof recordId !== 'string') {
@@ -739,8 +741,8 @@ export async function filterListEntries(
   attributeSlug: string,
   condition: string,
   value: any,
-  limit: number = 20,
-  offset: number = 0
+  limit = 20,
+  offset = 0
 ): Promise<AttioListEntry[]> {
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -800,8 +802,8 @@ export async function filterListEntries(
 export async function advancedFilterListEntries(
   listId: string,
   filters: ListEntryFilters,
-  limit: number = 20,
-  offset: number = 0
+  limit = 20,
+  offset = 0
 ): Promise<AttioListEntry[]> {
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -812,7 +814,7 @@ export async function advancedFilterListEntries(
     throw new Error('Invalid filters: Must be an object');
   }
 
-  if (!filters.filters || !Array.isArray(filters.filters)) {
+  if (!(filters.filters && Array.isArray(filters.filters))) {
     throw new Error('Invalid filters: Must contain a filters array');
   }
 
@@ -851,8 +853,8 @@ export async function filterListEntriesByParent(
   parentAttributeSlug: string,
   condition: string,
   value: any,
-  limit: number = 20,
-  offset: number = 0
+  limit = 20,
+  offset = 0
 ): Promise<AttioListEntry[]> {
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -889,8 +891,8 @@ export async function filterListEntriesByParent(
 
     // Construct the request payload
     const payload = {
-      limit: limit,
-      offset: offset,
+      limit,
+      offset,
       expand: ['record'],
       path,
       constraints,
@@ -946,7 +948,8 @@ export async function filterListEntriesByParent(
       throw new Error(
         `Invalid filter parameters: ${error.message || 'Bad request'}`
       );
-    } else if (error.response?.status === 404) {
+    }
+    if (error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
     }
 
@@ -969,8 +972,8 @@ export async function filterListEntriesByParent(
 export async function filterListEntriesByParentId(
   listId: string,
   recordId: string,
-  limit: number = 20,
-  offset: number = 0
+  limit = 20,
+  offset = 0
 ): Promise<AttioListEntry[]> {
   return filterListEntriesByParent(
     listId,

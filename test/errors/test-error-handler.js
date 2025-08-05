@@ -110,7 +110,7 @@ function createErrorResult(error, url, method, responseData = {}) {
     status: responseData.status || 'Unknown',
     rawError:
       typeof error === 'object'
-        ? (function () {
+        ? (() => {
             try {
               return JSON.stringify(error);
             } catch (e) {

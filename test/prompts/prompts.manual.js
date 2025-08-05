@@ -16,7 +16,7 @@ const { spawn } = require('child_process');
  * @param {number} timeoutMs - Maximum time to wait for server to be ready
  * @returns {Promise<void>} Resolves when server is ready, rejects on timeout
  */
-function waitForServerReady(serverProcess, timeoutMs = 10000) {
+function waitForServerReady(serverProcess, timeoutMs = 10_000) {
   return new Promise((resolve, reject) => {
     // Set timeout for overall startup
     const timeout = setTimeout(() => {

@@ -3,6 +3,7 @@
  */
 
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 // Test the domain extraction functionality

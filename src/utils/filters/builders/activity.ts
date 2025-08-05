@@ -5,19 +5,18 @@
 // External imports
 import { FilterValidationError } from '../../../errors/api-errors.js';
 import { resolveDateRange } from '../../date-utils.js';
-
-// Internal imports
-import {
-  FilterConditionType,
-  ListEntryFilter,
-  ListEntryFilters,
-  DateRange,
-  ActivityFilter,
-  InteractionType,
-  ATTRIBUTES,
-} from './types.js';
 import { validateActivityFilter } from '../validators.js';
 import { createDateRangeFilter } from './date.js';
+// Internal imports
+import {
+  type ActivityFilter,
+  ATTRIBUTES,
+  type DateRange,
+  FilterConditionType,
+  InteractionType,
+  type ListEntryFilter,
+  type ListEntryFilters,
+} from './types.js';
 
 /**
  * Creates an activity filter for finding records with specific interaction types within a date range.

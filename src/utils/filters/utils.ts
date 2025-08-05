@@ -3,13 +3,13 @@
  * Consolidates utilities from filter-utils.ts and filter-utils-additions.ts
  */
 
-import {
-  DateRange,
-  NumericRange,
-  ATTRIBUTES,
-  FilterConditionType,
-} from './types.js';
 import { resolveDateRange } from '../date-utils.js';
+import {
+  ATTRIBUTES,
+  type DateRange,
+  FilterConditionType,
+  type NumericRange,
+} from './types.js';
 
 /**
  * Creates a filter for records based on their creation date
@@ -219,9 +219,9 @@ export function isListSpecificAttribute(attributeSlug: string): boolean {
  * Re-exports builder functions as utilities for backward compatibility
  */
 import {
+  createContainsFilter,
   createDateRangeFilter,
   createEqualsFilter,
-  createContainsFilter,
 } from './builders.js';
 
 export { createDateRangeFilter, createEqualsFilter, createContainsFilter };

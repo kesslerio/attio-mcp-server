@@ -1,8 +1,8 @@
 /**
  * Shared formatting utilities for people-related tool results
  */
-import { AttioRecord, Person } from '../../../types/attio.js';
-import { ContactValue } from '../../../types/tool-types.js';
+import type { AttioRecord, Person } from '../../../types/attio.js';
+import type { ContactValue } from '../../../types/tool-types.js';
 
 /**
  * Safely extract a person's name from an Attio record
@@ -29,7 +29,7 @@ export function getPersonName(person: AttioRecord): string {
  * @returns Formatted person details
  */
 export function formatPersonDetails(person: Person): string {
-  if (!person || !person.id || !person.values) {
+  if (!(person && person.id && person.values)) {
     return 'No person details found.';
   }
 

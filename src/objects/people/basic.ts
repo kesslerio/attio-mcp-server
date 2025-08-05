@@ -1,20 +1,20 @@
 /**
  * Basic CRUD operations for People
  */
-import { listObjects, getObjectDetails } from '../../api/operations/index.js';
-import { ResourceType, Person } from '../../types/attio.js';
+import { getObjectDetails, listObjects } from '../../api/operations/index.js';
+import { type Person, ResourceType } from '../../types/attio.js';
 import { isValidId } from '../../utils/validation.js';
 import {
   createObjectWithDynamicFields,
-  updateObjectWithDynamicFields,
-  updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
+  updateObjectAttributeWithDynamicFields,
+  updateObjectWithDynamicFields,
 } from '../base-operations.js';
 import {
-  PersonValidator,
   InvalidPersonDataError,
+  type PersonAttributes,
   PersonOperationError,
-  PersonAttributes,
+  PersonValidator,
 } from './types.js';
 
 /**
@@ -212,7 +212,7 @@ export async function getPersonDetails(personId: string): Promise<Person> {
  * // Get up to 100 people
  * const morePeople = await listPeople(100);
  */
-export async function listPeople(limit: number = 20): Promise<Person[]> {
+export async function listPeople(limit = 20): Promise<Person[]> {
   try {
     const response = await listObjects<Person>(ResourceType.PEOPLE, limit);
     return response;

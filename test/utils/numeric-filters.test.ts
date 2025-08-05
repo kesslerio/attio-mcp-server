@@ -1,8 +1,9 @@
 /**
  * Tests for numeric filtering functionality
  */
+
+import { FilterConditionType, type NumericRange } from '../../src/types/attio';
 import { createNumericFilter } from '../../src/utils/record-utils';
-import { FilterConditionType, NumericRange } from '../../src/types/attio';
 
 describe('Numeric Filtering', () => {
   describe('createNumericFilter', () => {

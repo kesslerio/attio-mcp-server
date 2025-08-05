@@ -3,21 +3,21 @@
  * Handles list management and list entry operations
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
+import { FilterValidationError } from '../../errors/api-errors.js';
+import type {
   AttioList,
   AttioListEntry,
   AttioListResponse,
   AttioSingleResponse,
 } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
+import { executeWithListFallback } from '../../utils/api-fallback.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
 } from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { executeWithListFallback } from '../../utils/api-fallback.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, type RetryConfig } from './retry.js';
+import type { ListEntryFilters } from './types.js';
 
 /**
  * Gets all lists in the workspace
@@ -29,7 +29,7 @@ import { executeWithListFallback } from '../../utils/api-fallback.js';
  */
 export async function getAllLists(
   objectSlug?: string,
-  limit: number = 20,
+  limit = 20,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioList[]> {
   const api = getAttioClient();
@@ -375,13 +375,15 @@ export async function updateListEntry(
       // Add more specific error types based on status codes
       if (error.response?.status === 404) {
         throw new Error(`List entry ${entryId} not found in list ${listId}`);
-      } else if (error.response?.status === 400) {
+      }
+      if (error.response?.status === 400) {
         throw new Error(
           `Invalid attributes for list entry update: ${
             error.response?.data?.message || 'Bad request'
           }`
         );
-      } else if (error.response?.status === 403) {
+      }
+      if (error.response?.status === 403) {
         throw new Error(
           `Insufficient permissions to update list entry ${entryId} in list ${listId}`
         );

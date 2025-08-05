@@ -1,19 +1,24 @@
 // Simple test to verify error enhancement
-import { isValueMismatchError, enhanceApiError } from './dist/utils/error-enhancer.js';
+
 import { interceptAndEnhanceError } from './dist/handlers/error-interceptor.js';
+import {
+  enhanceApiError,
+  isValueMismatchError,
+} from './dist/utils/error-enhancer.js';
 
 // Create a mock error similar to what Attio returns
 const mockError = {
-  message: "Unknown select option name for option field constraint: Aesthetics",
+  message: 'Unknown select option name for option field constraint: Aesthetics',
   response: {
     data: {
       status_code: 400,
-      type: "invalid_request_error",
-      code: "unknown_filter_select_option_slug",
-      message: "Unknown select option name for option field constraint: Aesthetics",
-      path: ["type_persona"]
-    }
-  }
+      type: 'invalid_request_error',
+      code: 'unknown_filter_select_option_slug',
+      message:
+        'Unknown select option name for option field constraint: Aesthetics',
+      path: ['type_persona'],
+    },
+  },
 };
 
 console.log('Testing with mock error:', mockError.message);

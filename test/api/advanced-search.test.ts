@@ -6,17 +6,18 @@
  * Tests will be skipped if SKIP_INTEGRATION_TESTS is set to true or
  * if ATTIO_API_KEY is not provided.
  */
-import { advancedSearchCompanies } from '../../src/objects/companies/index';
-import { advancedSearchObject } from '../../src/api/operations/search';
-import { FilterConditionType, ResourceType } from '../../src/types/attio';
+
 import { initializeAttioClient } from '../../src/api/attio-client';
+import { advancedSearchObject } from '../../src/api/operations/search';
 import { FilterValidationError } from '../../src/errors/api-errors';
+import { advancedSearchCompanies } from '../../src/objects/companies/index';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
 
 // Skip tests if no API key or if explicitly disabled
 const SKIP_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
-describe('Advanced Search API Tests', { timeout: 30000 }, () => {
+describe('Advanced Search API Tests', { timeout: 30_000 }, () => {
   // Initialize API client if not skipping tests
   beforeAll(() => {
     if (!SKIP_TESTS) {

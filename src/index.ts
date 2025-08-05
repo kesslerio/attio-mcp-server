@@ -2,16 +2,20 @@
 
 // Load environment variables from .env file
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-import fs from 'fs'; // Added for PID file
-import { AddressInfo } from 'net'; // Import AddressInfo for type checking
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { startHealthServer, startExtendedHealthServer } from './health/http-server.js';
+import fs from 'fs'; // Added for PID file
+import { AddressInfo } from 'net'; // Import AddressInfo for type checking
 import { initializeAttioClient } from './api/attio-client.js';
 import { registerResourceHandlers } from './handlers/resources.js';
 import { registerToolHandlers } from './handlers/tools/index.js';
+import {
+  startExtendedHealthServer,
+  startHealthServer,
+} from './health/http-server.js';
 import { registerPromptHandlers } from './prompts/handlers.js';
 
 // Use /tmp directory for PID file, which is generally writable
@@ -21,7 +25,7 @@ const PID_FILE_PATH = '/tmp/attio-mcp-server.pid'; // Define PID file path
 function readPidFile(): number | null {
   try {
     if (fs.existsSync(PID_FILE_PATH)) {
-      const pid = parseInt(fs.readFileSync(PID_FILE_PATH, 'utf-8'), 10);
+      const pid = Number.parseInt(fs.readFileSync(PID_FILE_PATH, 'utf-8'), 10);
       return isNaN(pid) ? null : pid;
     }
   } catch (error) {
@@ -157,12 +161,14 @@ async function main() {
     ) {
       let healthCheckPort = 3000;
       if (process.env.HEALTH_PORT) {
-        healthCheckPort = parseInt(process.env.HEALTH_PORT, 10);
+        healthCheckPort = Number.parseInt(process.env.HEALTH_PORT, 10);
       }
 
       // Check if SSE transport should be enabled
       const enableSSE = process.env.ENABLE_SSE_TRANSPORT === 'true';
-      console.error(`[Main] SSE transport ${enableSSE ? 'enabled' : 'disabled'}`);
+      console.error(
+        `[Main] SSE transport ${enableSSE ? 'enabled' : 'disabled'}`
+      );
 
       const healthServer = startExtendedHealthServer({
         port: healthCheckPort,
@@ -172,12 +178,24 @@ async function main() {
         enableSSE,
         sseOptions: {
           enableCors: process.env.SSE_ENABLE_CORS !== 'false', // Default true
-          heartbeatInterval: parseInt(process.env.SSE_HEARTBEAT_INTERVAL || '30000', 10),
-          connectionTimeout: parseInt(process.env.SSE_CONNECTION_TIMEOUT || '300000', 10),
-          rateLimitPerMinute: parseInt(process.env.SSE_RATE_LIMIT_PER_MINUTE || '100', 10),
-          maxConnections: parseInt(process.env.SSE_MAX_CONNECTIONS || '1000', 10),
+          heartbeatInterval: Number.parseInt(
+            process.env.SSE_HEARTBEAT_INTERVAL || '30000',
+            10
+          ),
+          connectionTimeout: Number.parseInt(
+            process.env.SSE_CONNECTION_TIMEOUT || '300000',
+            10
+          ),
+          rateLimitPerMinute: Number.parseInt(
+            process.env.SSE_RATE_LIMIT_PER_MINUTE || '100',
+            10
+          ),
+          maxConnections: Number.parseInt(
+            process.env.SSE_MAX_CONNECTIONS || '1000',
+            10
+          ),
           requireAuth: process.env.SSE_REQUIRE_AUTH === 'true', // Default false for development
-          allowedOrigins: process.env.SSE_ALLOWED_ORIGINS 
+          allowedOrigins: process.env.SSE_ALLOWED_ORIGINS
             ? process.env.SSE_ALLOWED_ORIGINS.split(',')
             : ['*'],
         },

@@ -30,24 +30,23 @@ try {
       name: 'search-records',
       arguments: {
         resource_type: 'companies',
-        limit: 5
-      }
-    }
+        limit: 5,
+      },
+    },
   };
-  
+
   const result = await executeToolRequest(request);
-  
-  console.log(`✅ Search successful!`);
+
+  console.log('✅ Search successful!');
   console.log('Result type:', result.toolResult?.type);
-  
+
   if (result.toolResult?.type === 'text') {
     const content = result.toolResult.content;
     console.log('\nResponse preview:', content.substring(0, 200) + '...');
   }
-  
+
   console.log('\n✅ API connectivity test passed!');
   console.log('✅ SSE server is compatible with real Attio API');
-  
 } catch (error) {
   console.error('❌ Error:', error.message);
   process.exit(1);

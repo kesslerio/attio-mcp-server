@@ -2,13 +2,13 @@
  * Base operations for all Attio objects with dynamic field detection
  */
 import { formatAllAttributes } from '../api/attribute-types.js';
+import type { AttioRecord, ResourceType } from '../types/attio.js';
+import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
 import {
   createObjectRecord,
-  updateObjectRecord,
   deleteObjectRecord,
+  updateObjectRecord,
 } from './records/index.js';
-import { ResourceType, AttioRecord } from '../types/attio.js';
-import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
 
 /**
  * Translates all attribute names in a record using the attribute mapping system

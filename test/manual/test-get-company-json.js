@@ -78,13 +78,12 @@ async function testInvalidRequest() {
           '✅ Test passed: Tool correctly returned an error for missing companyId'
         );
         return true;
-      } else {
-        console.error(
-          '❌ Test failed: Tool returned an error, but not the expected one:',
-          result.error
-        );
-        return false;
       }
+      console.error(
+        '❌ Test failed: Tool returned an error, but not the expected one:',
+        result.error
+      );
+      return false;
     }
 
     console.error(

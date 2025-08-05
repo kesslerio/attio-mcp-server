@@ -2,12 +2,12 @@
  * Command handler for discovering Attio attributes
  */
 import axios from 'axios';
-import ora from 'ora';
 import chalk from 'chalk';
+import ora from 'ora';
 import {
   loadMappingConfig,
+  type MappingConfig,
   writeMappingConfig,
-  MappingConfig,
 } from '../../utils/config-loader.js';
 
 /**

@@ -6,7 +6,7 @@
  * attributes use the record.values path.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { transformFiltersToApiFormat } from '../../src/utils/filters/translators.js';
 import { isListSpecificAttribute } from '../../src/utils/filters/utils.js';
 

@@ -1,8 +1,8 @@
-import {
-  parseResourceUri,
-  formatResourceUri,
-} from '../../src/utils/uri-parser';
 import { ResourceType } from '../../src/types/attio';
+import {
+  formatResourceUri,
+  parseResourceUri,
+} from '../../src/utils/uri-parser';
 
 describe('uri-parser', () => {
   describe('parseResourceUri', () => {

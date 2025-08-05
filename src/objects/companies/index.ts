@@ -3,66 +3,60 @@
  * Re-exports all company-related functionality from modular files
  */
 
-// Basic CRUD operations
-export {
-  listCompanies,
-  getCompanyDetails,
-  createCompany,
-  updateCompany,
-  updateCompanyAttribute,
-  deleteCompany,
-  extractCompanyId,
-} from './basic.js';
-
-// Search functionality
-export {
-  searchCompanies,
-  searchCompaniesByDomain,
-  advancedSearchCompanies,
-  createNameFilter,
-  createIndustryFilter,
-  createDomainFilter,
-} from './search.js';
-
-// Search types
-export type { CompanySearchOptions } from './search.js';
-
-// Relationship-based queries
-export {
-  searchCompaniesByPeople,
-  searchCompaniesByPeopleList,
-  searchCompaniesByNotes,
-  getCompanyLists,
-} from './relationships.js';
-
-// Note operations
-export { getCompanyNotes, createCompanyNote } from './notes.js';
-
 // Attribute management
 export {
-  getCompanyFields,
-  getCompanyBasicInfo,
-  getCompanyContactInfo,
-  getCompanyBusinessInfo,
-  getCompanySocialInfo,
-  getCompanyCustomFields,
   discoverCompanyAttributes,
   getCompanyAttributes,
+  getCompanyBasicInfo,
+  getCompanyBusinessInfo,
+  getCompanyContactInfo,
+  getCompanyCustomFields,
+  getCompanyFields,
+  getCompanySocialInfo,
 } from './attributes.js';
-
+// Basic CRUD operations
+export {
+  createCompany,
+  deleteCompany,
+  extractCompanyId,
+  getCompanyDetails,
+  listCompanies,
+  updateCompany,
+  updateCompanyAttribute,
+} from './basic.js';
 // Batch operations (re-export from separate module)
 export {
   batchCreateCompanies,
-  batchUpdateCompanies,
   batchDeleteCompanies,
-  batchSearchCompanies,
   batchGetCompanyDetails,
+  batchSearchCompanies,
+  batchUpdateCompanies,
 } from './batch.js';
+// Note operations
+export { createCompanyNote, getCompanyNotes } from './notes.js';
+// Relationship-based queries
+export {
+  getCompanyLists,
+  searchCompaniesByNotes,
+  searchCompaniesByPeople,
+  searchCompaniesByPeopleList,
+} from './relationships.js';
+// Search types
+export type { CompanySearchOptions } from './search.js';
+// Search functionality
+export {
+  advancedSearchCompanies,
+  createDomainFilter,
+  createIndustryFilter,
+  createNameFilter,
+  searchCompanies,
+  searchCompaniesByDomain,
+} from './search.js';
 
 // Re-export types for convenience
 export type {
   Company,
+  CompanyAttributeUpdate,
   CompanyCreateInput,
   CompanyUpdateInput,
-  CompanyAttributeUpdate,
 } from './types.js';

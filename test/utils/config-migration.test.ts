@@ -3,15 +3,16 @@
  *
  * Tests the migration tool that fixes postal code mappings from issue #219
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import fs from 'fs';
 import path from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  detectMigrationNeeds,
-  createBackup,
   applyMigration,
-  validateMigration,
+  createBackup,
+  detectMigrationNeeds,
   migrateUserConfig,
+  validateMigration,
 } from '../../src/utils/config-migration.js';
 import logger from '../../src/utils/logger.js';
 

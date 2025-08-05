@@ -1,14 +1,15 @@
 /**
  * CRUD operations for people
  */
-import {
+
+import { getPersonDetails } from '../../../objects/people/index.js';
+import { createPerson } from '../../../objects/people-write.js';
+import type {
   AttioRecord,
   Person,
   PersonCreateAttributes,
 } from '../../../types/attio.js';
-import { createPerson } from '../../../objects/people-write.js';
-import { getPersonDetails } from '../../../objects/people/index.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { ToolConfig } from '../../tool-types.js';
 import { formatPersonDetails, getPersonName } from './formatters.js';
 
 export const crudToolConfigs = {

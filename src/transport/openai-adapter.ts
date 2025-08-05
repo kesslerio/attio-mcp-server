@@ -3,13 +3,13 @@
  * Integrates OpenAI tools with the SSE server for ChatGPT connector
  */
 
-import { IncomingMessage, ServerResponse as HttpServerResponse } from 'http';
-import { openAITools, openAIToolDefinitions } from '../openai/index.js';
-import { OpenAIErrorResponse } from '../openai/types.js';
-import { SSEServer } from './sse-server.js';
-import { MCPSSEMessage, ClientMessage } from '../types/sse-types.js';
-import { wrapMCPMessage } from './message-wrapper.js';
+import { ServerResponse as HttpServerResponse, IncomingMessage } from 'http';
+import { openAIToolDefinitions, openAITools } from '../openai/index.js';
+import type { OpenAIErrorResponse } from '../openai/types.js';
+import type { ClientMessage, MCPSSEMessage } from '../types/sse-types.js';
 import { debug, warn } from '../utils/logger.js';
+import { wrapMCPMessage } from './message-wrapper.js';
+import type { SSEServer } from './sse-server.js';
 
 /**
  * Handle OpenAI tool requests through SSE
@@ -30,15 +30,20 @@ export class OpenAISSEAdapter {
   ): Promise<MCPSSEMessage> {
     try {
       const { tool, arguments: args } = message.payload || {};
-      
-      if (!tool || !args) {
+
+      if (!(tool && args)) {
         throw new Error('Missing tool name or arguments');
       }
 
-      debug('OpenAI Adapter', `Executing tool: ${tool}`, { tool, args }, 'handleToolRequest');
+      debug(
+        'OpenAI Adapter',
+        `Executing tool: ${tool}`,
+        { tool, args },
+        'handleToolRequest'
+      );
 
       let result: any;
-      
+
       switch (tool) {
         case 'search':
           if (!args.query) {
@@ -46,46 +51,51 @@ export class OpenAISSEAdapter {
           }
           result = await openAITools.search(args.query);
           break;
-          
+
         case 'fetch':
           if (!args.id) {
             throw new Error('Missing required parameter: id');
           }
           result = await openAITools.fetch(args.id);
           break;
-          
+
         default:
           throw new Error(`Unknown tool: ${tool}`);
       }
 
       // Wrap successful result
-      return wrapMCPMessage({
-        jsonrpc: '2.0',
-        id: message.id,
-        result: {
-          type: 'tool_result',
-          tool_name: tool,
-          content: result
-        }
-      }, 'mcp_response');
-
+      return wrapMCPMessage(
+        {
+          jsonrpc: '2.0',
+          id: message.id,
+          result: {
+            type: 'tool_result',
+            tool_name: tool,
+            content: result,
+          },
+        },
+        'mcp_response'
+      );
     } catch (error: any) {
       warn('[OpenAI Adapter] Tool execution failed:', error);
-      
+
       // Return error response in OpenAI format
       const errorResponse: OpenAIErrorResponse = {
         error: {
           message: error.message || 'Tool execution failed',
           type: 'api_error',
-          code: error.code
-        }
+          code: error.code,
+        },
       };
 
-      return wrapMCPMessage({
-        jsonrpc: '2.0',
-        id: message.id,
-        error: errorResponse
-      }, 'error');
+      return wrapMCPMessage(
+        {
+          jsonrpc: '2.0',
+          id: message.id,
+          error: errorResponse,
+        },
+        'error'
+      );
     }
   }
 
@@ -96,15 +106,23 @@ export class OpenAISSEAdapter {
     clientId: string,
     message: ClientMessage
   ): Promise<MCPSSEMessage> {
-    debug('OpenAI Adapter', 'Listing available tools', {}, 'handleToolsListRequest');
+    debug(
+      'OpenAI Adapter',
+      'Listing available tools',
+      {},
+      'handleToolsListRequest'
+    );
 
-    return wrapMCPMessage({
-      jsonrpc: '2.0',
-      id: message.id,
-      result: {
-        tools: openAIToolDefinitions
-      }
-    }, 'mcp_response');
+    return wrapMCPMessage(
+      {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          tools: openAIToolDefinitions,
+        },
+      },
+      'mcp_response'
+    );
   }
 
   /**

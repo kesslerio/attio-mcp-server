@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAttioClient } from '../../src/api/attio-client';
+import * as attioOperations from '../../src/api/operations/index';
+import * as listsModule from '../../src/objects/lists';
 import {
   batchGetListsDetails,
   batchGetListsEntries,
 } from '../../src/objects/lists';
-import * as attioOperations from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
-import { AttioList, AttioListEntry } from '../../src/types/attio';
-import * as listsModule from '../../src/objects/lists';
+import type { AttioList, AttioListEntry } from '../../src/types/attio';
 
 // Mock the attio-operations module
 vi.mock('../../src/api/operations/index');
@@ -88,7 +88,7 @@ describe('Lists Batch Operations', () => {
                 id: op.id,
                 success: !!data,
                 data,
-                error: !data ? new Error('List not found') : undefined,
+                error: data ? undefined : new Error('List not found'),
               };
             })
           );

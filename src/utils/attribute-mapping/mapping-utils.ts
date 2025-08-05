@@ -175,5 +175,5 @@ export function handleSpecialCases(key: string): string | undefined {
   }
 
   // No special case found
-  return undefined;
+  return;
 }

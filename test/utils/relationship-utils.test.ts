@@ -1,18 +1,19 @@
 /**
  * Tests for relationship utility functions
  */
-import {
-  RelationshipType,
-  createPeopleByCompanyFilter,
-  createCompaniesByPeopleFilter,
-  createRecordsByListFilter,
-  createPeopleByCompanyListFilter,
-  createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter,
-} from '../../src/utils/relationship-utils';
-import { ResourceType, FilterConditionType } from '../../src/types/attio';
-import { ListEntryFilters } from '../../src/api/operations/index';
+
+import type { ListEntryFilters } from '../../src/api/operations/index';
 import { FilterValidationError } from '../../src/errors/api-errors';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import {
+  createCompaniesByPeopleFilter,
+  createCompaniesByPeopleListFilter,
+  createPeopleByCompanyFilter,
+  createPeopleByCompanyListFilter,
+  createRecordsByListFilter,
+  createRecordsByNotesFilter,
+  RelationshipType,
+} from '../../src/utils/relationship-utils';
 
 // Helper function to safely extract first filter with runtime validation
 function getFirstFilterSafely(result: any) {

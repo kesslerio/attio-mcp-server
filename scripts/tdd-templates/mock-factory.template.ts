@@ -14,7 +14,9 @@ interface MockDataInterface {
 /**
  * Factory function to create mock data
  */
-export function createMockData(overrides: Partial<MockDataInterface> = {}): MockDataInterface {
+export function createMockData(
+  overrides: Partial<MockDataInterface> = {}
+): MockDataInterface {
   return {
     id: 'test-id-123',
     name: 'Test Name',
@@ -25,7 +27,10 @@ export function createMockData(overrides: Partial<MockDataInterface> = {}): Mock
 /**
  * Factory function to create multiple mock data items
  */
-export function createMockDataArray(count: number, overrides: Partial<MockDataInterface> = {}): MockDataInterface[] {
+export function createMockDataArray(
+  count: number,
+  overrides: Partial<MockDataInterface> = {}
+): MockDataInterface[] {
   return Array.from({ length: count }, (_, index) =>
     createMockData({
       id: `test-id-${index}`,
@@ -50,5 +55,5 @@ export const mockApiClient = {
  * Reset all mocks - call this in beforeEach
  */
 export function resetAllMocks(): void {
-  Object.values(mockApiClient).forEach(mock => mock.mockReset());
+  Object.values(mockApiClient).forEach((mock) => mock.mockReset());
 }

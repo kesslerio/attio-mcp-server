@@ -1,9 +1,9 @@
+import { ErrorType } from '../../src/utils/error-handler';
 import {
+  type ValidationSchema,
   validateInput,
   validateRequest,
-  ValidationSchema,
 } from '../../src/utils/validation';
-import { ErrorType } from '../../src/utils/error-handler';
 
 describe('validation', () => {
   describe('validateInput', () => {
@@ -77,7 +77,7 @@ describe('validation', () => {
         address: {
           street: '123 Main St',
           city: 'Testville',
-          zip: 12345,
+          zip: 12_345,
         },
       };
 

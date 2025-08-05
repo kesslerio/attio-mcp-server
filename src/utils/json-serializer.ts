@@ -10,7 +10,6 @@
  * Using console.log will break the MCP protocol, as it writes to stdout
  * which is used for client-server communication.
  */
-// @ts-ignore - Fast-safe-stringify has CommonJS exports
 import fastSafeStringify from 'fast-safe-stringify';
 
 /**
@@ -34,7 +33,7 @@ export interface SerializationOptions {
  */
 const DEFAULT_OPTIONS: Required<SerializationOptions> = {
   maxDepth: 20, // Kept for backward compatibility
-  maxStringLength: 25000, // 25KB max string length - more reasonable for MCP
+  maxStringLength: 25_000, // 25KB max string length - more reasonable for MCP
   includeStackTraces: false,
   replacer: (key, value) => value,
   indent: 2,
@@ -183,10 +182,7 @@ export function validateJsonString(jsonString: string): {
  * @param maxDepth - Maximum depth to check
  * @returns True if circular references are detected
  */
-export function hasCircularReferences(
-  obj: any,
-  maxDepth: number = 10
-): boolean {
+export function hasCircularReferences(obj: any, maxDepth = 10): boolean {
   const seen = new WeakSet();
 
   function check(value: any, depth: number): boolean {
@@ -200,9 +196,8 @@ export function hasCircularReferences(
     try {
       if (Array.isArray(value)) {
         return value.some((item) => check(item, depth + 1));
-      } else {
-        return Object.values(value).some((val) => check(val, depth + 1));
       }
+      return Object.values(value).some((val) => check(val, depth + 1));
     } finally {
       seen.delete(value);
     }
@@ -275,7 +270,7 @@ export function sanitizeMcpResponse(response: any): any {
   try {
     // Create safe copy with MCP-specific options optimized for Attio responses
     return createSafeCopy(response, {
-      maxStringLength: 40000, // 40KB for response content - reasonable limit
+      maxStringLength: 40_000, // 40KB for response content - reasonable limit
       includeStackTraces: process.env.NODE_ENV === 'development',
     });
   } catch (error) {

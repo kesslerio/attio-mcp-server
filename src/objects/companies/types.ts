@@ -2,16 +2,16 @@
  * Shared types for company modules
  */
 export type {
-  Company,
   AttioNote,
+  Company,
   FilterConditionType,
   RecordAttributes,
 } from '../../types/attio.js';
 
 export type {
+  CompanyAttributeUpdate,
   CompanyCreateInput,
   CompanyUpdateInput,
-  CompanyAttributeUpdate,
 } from '../../types/company-types.js';
 
 // Define more specific types for company attributes

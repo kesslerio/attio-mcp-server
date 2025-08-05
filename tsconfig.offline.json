@@ -6,12 +6,10 @@
     "incremental": false,
     "tsBuildInfoFile": null
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
-    "dist", 
+    "dist",
     "build",
     "test/integration/real-api*",
     "test/manual",

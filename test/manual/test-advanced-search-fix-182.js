@@ -7,8 +7,8 @@
  * 2. Run with: node test/manual/test-advanced-search-fix-182.js
  */
 import 'dotenv/config';
-import { advancedSearchCompanies } from '../../dist/objects/companies/index.js';
 import { initializeAttioClient } from '../../dist/api/attio-client.js';
+import { advancedSearchCompanies } from '../../dist/objects/companies/index.js';
 
 // Ensure API key is set
 if (!process.env.ATTIO_API_KEY) {

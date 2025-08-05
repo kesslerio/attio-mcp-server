@@ -1,7 +1,7 @@
 /**
  * Common type definitions for Attio API responses and entities
  */
-import { RetryConfig } from '../api/operations/index.js';
+import type { RetryConfig } from '../api/operations/index.js';
 
 /**
  * Base interface for Attio record values

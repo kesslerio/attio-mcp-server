@@ -4,11 +4,11 @@
  * Handles list-related operations including adding/removing records from lists
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type { GetListsToolConfig, ToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle getLists operations

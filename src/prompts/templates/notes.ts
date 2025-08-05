@@ -1,7 +1,7 @@
 /**
  * Notes-related prompt templates
  */
-import { PromptTemplate } from '../types.js';
+import type { PromptTemplate } from '../types.js';
 
 /**
  * Prompt templates for note operations

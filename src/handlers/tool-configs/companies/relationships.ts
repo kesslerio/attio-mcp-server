@@ -1,15 +1,16 @@
 /**
  * Relationship-based tool configurations for companies
  */
-import { CompanyRecord } from './types.js';
+
 import {
+  getCompanyLists,
+  searchCompaniesByNotes,
   searchCompaniesByPeople,
   searchCompaniesByPeopleList,
-  searchCompaniesByNotes,
-  getCompanyLists,
 } from '../../../objects/companies/index.js';
-import { AttioList } from '../../../types/attio.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { AttioList } from '../../../types/attio.js';
+import type { ToolConfig } from '../../tool-types.js';
+import type { CompanyRecord } from './types.js';
 
 // Company relationship tool configurations
 export const relationshipToolConfigs = {

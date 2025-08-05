@@ -1,5 +1,5 @@
-import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 import { initializeAttioClient } from '../../dist/api/attio-client.js';
+import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 
 // This test file verifies the fixed search-people-by-company tool functionality
 // It requires ATTIO_API_KEY to be set in the environment

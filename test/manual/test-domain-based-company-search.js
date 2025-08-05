@@ -9,9 +9,9 @@ import {
   smartSearchCompanies,
 } from '../../src/objects/companies/index.js';
 import {
+  extractAllDomains,
   extractDomain,
   hasDomainIndicators,
-  extractAllDomains,
 } from '../../src/utils/domain-utils.js';
 
 // Test configuration

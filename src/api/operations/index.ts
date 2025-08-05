@@ -3,67 +3,61 @@
  * Maintains backward compatibility with the original attio-operations.ts
  */
 
-// Re-export all retry functionality
-export {
-  callWithRetry,
-  calculateRetryDelay,
-  isRetryableError,
-  DEFAULT_RETRY_CONFIG,
-} from './retry.js';
-export type { RetryConfig } from './retry.js';
-
-// Re-export all types
-export type {
-  BatchRequestItem,
-  BatchItemResult,
-  BatchResponse,
-  BatchConfig,
-  ListEntryFilter,
-  ListEntryFilters,
-} from './types.js';
-
-// Re-export all search operations
-export { searchObject, advancedSearchObject, listObjects } from './search.js';
-
-// Re-export all CRUD operations
-export {
-  getObjectDetails,
-  createRecord,
-  getRecord,
-  updateRecord,
-  deleteRecord,
-  listRecords,
-} from './crud.js';
-
-// Re-export all notes operations
-export { getObjectNotes, createObjectNote } from './notes.js';
-
-// Re-export all list operations
-export {
-  getAllLists,
-  getListDetails,
-  getListEntries,
-  addRecordToList,
-  removeRecordFromList,
-  updateListEntry,
-} from './lists.js';
-
-export {
-  listTasks,
-  getTask,
-  createTask,
-  updateTask,
-  deleteTask,
-  linkRecordToTask,
-  unlinkRecordFromTask,
-} from './tasks.js';
-
 // Re-export all batch operations
 export {
   batchCreateRecords,
-  batchUpdateRecords,
-  executeBatchOperations,
-  batchSearchObjects,
   batchGetObjectDetails,
+  batchSearchObjects,
+  batchUpdateRecords,
   DEFAULT_BATCH_CONFIG,
+  executeBatchOperations,
 } from './batch.js';
+// Re-export all CRUD operations
+export {
+  createRecord,
+  deleteRecord,
+  getObjectDetails,
+  getRecord,
+  listRecords,
+  updateRecord,
+} from './crud.js';
+// Re-export all list operations
+export {
+  addRecordToList,
+  getAllLists,
+  getListDetails,
+  getListEntries,
+  removeRecordFromList,
+  updateListEntry,
+} from './lists.js';
+// Re-export all notes operations
+export { createObjectNote, getObjectNotes } from './notes.js';
+export type { RetryConfig } from './retry.js';
+// Re-export all retry functionality
+export {
+  calculateRetryDelay,
+  callWithRetry,
+  DEFAULT_RETRY_CONFIG,
+  isRetryableError,
+} from './retry.js';
+// Re-export all search operations
+export { advancedSearchObject, listObjects, searchObject } from './search.js';
+
+export {
+  createTask,
+  deleteTask,
+  getTask,
+  linkRecordToTask,
+  listTasks,
+  unlinkRecordFromTask,
+  updateTask,
+} from './tasks.js';
+// Re-export all types
+export type {
+  BatchConfig,
+  BatchItemResult,
+  BatchRequestItem,
+  BatchResponse,
+  ListEntryFilter,
+  ListEntryFilters,
+} from './types.js';

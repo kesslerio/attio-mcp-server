@@ -3,7 +3,7 @@
  * Verifies that searchObject uses correct 'phone_numbers' field instead of 'phone'
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { searchObject } from '../../src/api/operations/search.js';
 import { ResourceType } from '../../src/types/attio.js';
 

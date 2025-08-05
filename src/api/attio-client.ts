@@ -1,7 +1,7 @@
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import { createAttioError } from '../utils/error-handler.js';
 
 // Global API client instance

@@ -42,7 +42,7 @@ const testCases = [
 
   createTestCase('Functions', {
     a: 1,
-    fn: function test() {
+    fn() {
       return 'test';
     },
     arrow: () => 'arrow',
@@ -63,7 +63,7 @@ const testCases = [
   createTestCase(
     'Deep object',
     (() => {
-      let deepObj = { value: 1 };
+      const deepObj = { value: 1 };
       let current = deepObj;
 
       // Create an object that's 100 levels deep
@@ -76,7 +76,7 @@ const testCases = [
   ),
 
   createTestCase('Large array', {
-    array: Array.from({ length: 10000 }, (_, i) => ({
+    array: Array.from({ length: 10_000 }, (_, i) => ({
       id: i,
       value: `Item ${i}`,
     })),

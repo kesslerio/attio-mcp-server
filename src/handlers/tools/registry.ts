@@ -2,39 +2,37 @@
  * Tool registry module - handles tool registration mechanics and discovery
  */
 import { ResourceType } from '../../types/attio.js';
-import { ToolConfig } from '../tool-types.js';
-
 // Import consolidated tool configurations from modular files
 import {
   companyToolConfigs,
   companyToolDefinitions,
 } from '../tool-configs/companies/index.js';
 import {
-  peopleToolConfigs,
-  peopleToolDefinitions,
-} from '../tool-configs/people/index.js';
+  generalToolConfigs,
+  generalToolDefinitions,
+} from '../tool-configs/general/index.js';
 import {
   listsToolConfigs,
   listsToolDefinitions,
 } from '../tool-configs/lists.js';
 import {
-  tasksToolConfigs,
-  tasksToolDefinitions,
-} from '../tool-configs/tasks.js';
+  peopleToolConfigs,
+  peopleToolDefinitions,
+} from '../tool-configs/people/index.js';
 import {
   recordToolConfigs,
   recordToolDefinitions,
 } from '../tool-configs/records/index.js';
 import {
-  generalToolConfigs,
-  generalToolDefinitions,
-} from '../tool-configs/general/index.js';
-
+  tasksToolConfigs,
+  tasksToolDefinitions,
+} from '../tool-configs/tasks.js';
 // Import universal tool configurations for consolidated operations
 import {
   universalToolConfigs,
   universalToolDefinitions,
 } from '../tool-configs/universal/index.js';
+import type { ToolConfig } from '../tool-types.js';
 
 /**
  * Consolidated tool configurations from modular files
@@ -104,7 +102,7 @@ export function findToolConfig(toolName: string):
       const toolTypes = Object.keys(resourceConfig);
       if (toolTypes.includes(toolName.replace(/-/g, ''))) {
         console.error(
-          `[findToolConfig] Tool might be found under a different name. Available tool types:`,
+          '[findToolConfig] Tool might be found under a different name. Available tool types:',
           toolTypes
         );
       }
@@ -202,5 +200,5 @@ export function findToolConfig(toolName: string):
     console.warn(`[findToolConfig] Tool not found: ${toolName}`);
   }
 
-  return undefined;
+  return;
 }

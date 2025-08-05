@@ -2,12 +2,13 @@
  * Test to replicate the exact Claude Desktop scenario
  * This mimics what happens in Claude Desktop when using update-company-attribute
  */
-import {
-  updateCompanyAttribute,
-  getCompanyAttributes,
-} from '../dist/objects/companies.js';
-import { initializeAttioClient } from '../dist/api/attio-client.js';
+
 import dotenv from 'dotenv';
+import { initializeAttioClient } from '../dist/api/attio-client.js';
+import {
+  getCompanyAttributes,
+  updateCompanyAttribute,
+} from '../dist/objects/companies.js';
 
 dotenv.config();
 

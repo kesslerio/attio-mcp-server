@@ -3,6 +3,7 @@
  */
 
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 async function testSpecificQuery() {
@@ -24,7 +25,7 @@ async function testSpecificQuery() {
       params: {
         name: 'search-companies',
         arguments: {
-          query: query,
+          query,
         },
       },
     };

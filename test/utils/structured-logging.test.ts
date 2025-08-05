@@ -1,24 +1,24 @@
 /**
  * Tests for enhanced structured logging system
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  debug,
-  info,
-  warn,
-  error,
-  setLogContext,
-  getLogContext,
   clearLogContext,
-  generateCorrelationId,
   createScopedLogger,
-  withLogging,
-  PerformanceTimer,
+  debug,
+  error,
+  generateCorrelationId,
+  getLogContext,
+  info,
   LogLevel,
   OperationType,
+  operationFailure,
   operationStart,
   operationSuccess,
-  operationFailure,
+  PerformanceTimer,
+  setLogContext,
+  warn,
+  withLogging,
 } from '../../src/utils/logger.js';
 
 // Store original console methods

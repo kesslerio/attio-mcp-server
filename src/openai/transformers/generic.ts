@@ -3,7 +3,7 @@
  * Provides fallback transformation when specific transformers aren't available
  */
 
-import { OpenAISearchResult, OpenAIFetchResult } from '../types.js';
+import type { OpenAIFetchResult, OpenAISearchResult } from '../types.js';
 import { extractAttributeValue, generateRecordUrl } from './index.js';
 
 export const transformGenericRecord = {
@@ -12,13 +12,19 @@ export const transformGenericRecord = {
    */
   toSearchResult(record: any, resourceType: string): OpenAISearchResult {
     const id = record.id?.record_id || record.id;
-    
+
     // Try to extract a title from common fields
     const titleCandidates = [
-      'name', 'title', 'subject', 'headline', 'label',
-      'display_name', 'full_name', 'company_name'
+      'name',
+      'title',
+      'subject',
+      'headline',
+      'label',
+      'display_name',
+      'full_name',
+      'company_name',
     ];
-    
+
     let title = '';
     for (const candidate of titleCandidates) {
       const value = extractAttributeValue(
@@ -29,13 +35,19 @@ export const transformGenericRecord = {
         break;
       }
     }
-    
+
     // Try to build description from common fields
     const descriptionCandidates = [
-      'description', 'summary', 'about', 'bio', 'content',
-      'details', 'notes', 'overview'
+      'description',
+      'summary',
+      'about',
+      'bio',
+      'content',
+      'details',
+      'notes',
+      'overview',
     ];
-    
+
     const textParts = [];
     for (const candidate of descriptionCandidates) {
       const value = extractAttributeValue(
@@ -46,22 +58,22 @@ export const transformGenericRecord = {
         break;
       }
     }
-    
+
     // Add type information
     textParts.push(`Type: ${resourceType}`);
-    
+
     // Add any email or domain if available
     const email = extractAttributeValue(record.attributes?.email_addresses);
     if (email) textParts.push(`Email: ${email}`);
-    
+
     const domain = extractAttributeValue(record.attributes?.domains);
     if (domain) textParts.push(`Domain: ${domain}`);
-    
+
     return {
       id: `${resourceType}:${id}`,
       title: title || `${resourceType} Record`,
       text: textParts.join(' • ') || 'No details available',
-      url: generateRecordUrl(id, resourceType)
+      url: generateRecordUrl(id, resourceType),
     };
   },
 
@@ -70,45 +82,51 @@ export const transformGenericRecord = {
    */
   toFetchResult(record: any, resourceType: string): OpenAIFetchResult {
     const searchResult = this.toSearchResult(record, resourceType);
-    
+
     // For generic records, include all attributes as metadata
     const metadata: Record<string, any> = {
-      _type: resourceType
+      _type: resourceType,
     };
-    
+
     // Add all attributes
     if (record.attributes && typeof record.attributes === 'object') {
       const attributes: Record<string, any> = {};
-      
+
       for (const [key, value] of Object.entries(record.attributes)) {
         const extractedValue = extractAttributeValue(value);
         if (extractedValue) {
           attributes[key] = extractedValue;
         }
       }
-      
+
       if (Object.keys(attributes).length > 0) {
         metadata.attributes = attributes;
       }
     }
-    
+
     // Add direct properties (excluding special ones)
     const excludeKeys = [
-      'id', 'attributes', 'created_at', 'updated_at',
-      'relationships', 'name', 'title', 'description'
+      'id',
+      'attributes',
+      'created_at',
+      'updated_at',
+      'relationships',
+      'name',
+      'title',
+      'description',
     ];
-    
+
     for (const [key, value] of Object.entries(record)) {
       if (!excludeKeys.includes(key) && value !== null && value !== undefined) {
         metadata[key] = value;
       }
     }
-    
+
     // Add relationships
     if (record.relationships && Object.keys(record.relationships).length > 0) {
       metadata.relationships = record.relationships;
     }
-    
+
     // Add timestamps
     if (record.created_at) {
       metadata.created_at = record.created_at;
@@ -116,10 +134,10 @@ export const transformGenericRecord = {
     if (record.updated_at) {
       metadata.updated_at = record.updated_at;
     }
-    
+
     return {
       ...searchResult,
-      metadata: Object.keys(metadata).length > 0 ? metadata : undefined
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
-  }
+  },
 };

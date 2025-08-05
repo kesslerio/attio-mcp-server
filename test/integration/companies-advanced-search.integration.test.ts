@@ -6,12 +6,12 @@
  * NOTE: This test file requires a valid ATTIO_API_KEY to be set
  * in the environment. If the key is not set, tests will be skipped.
  */
-import { describe, it, test, expect } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
+import { FilterValidationError } from '../../src/errors/api-errors';
 import {
   advancedSearchCompanies,
   createNameFilter,
 } from '../../src/objects/companies/search';
-import { FilterValidationError } from '../../src/errors/api-errors';
 import { FilterConditionType } from '../../src/types/attio';
 
 // Skip tests if no API key is provided
@@ -31,7 +31,7 @@ describe('Companies Advanced Search Integration', () => {
       expect(Array.isArray(results)).toBeTruthy();
       // Results might be empty depending on the test data, which is fine
     },
-    30000
+    30_000
   ); // 30s timeout for API call
 
   // Test invalid search with missing filters property
@@ -146,7 +146,7 @@ describe('Companies Advanced Search Integration', () => {
       const results = await advancedSearchCompanies(filters);
       expect(Array.isArray(results)).toBeTruthy();
     },
-    30000
+    30_000
   ); // 30s timeout for API call
 
   // Test empty filters array
@@ -160,6 +160,6 @@ describe('Companies Advanced Search Integration', () => {
       const results = await advancedSearchCompanies(emptyFilters);
       expect(Array.isArray(results)).toBeTruthy();
     },
-    30000
+    30_000
   ); // 30s timeout for API call
 });

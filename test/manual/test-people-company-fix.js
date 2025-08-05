@@ -3,8 +3,8 @@
  * This test demonstrates how to properly find people by company affiliation
  */
 
-import { searchPeopleByCompany } from '../../dist/objects/people/index.js';
 import { searchCompanies } from '../../dist/objects/companies/index.js';
+import { searchPeopleByCompany } from '../../dist/objects/people/index.js';
 
 // Set up test environment
 process.env.ATTIO_API_KEY = process.env.ATTIO_API_KEY || '';
@@ -71,10 +71,10 @@ async function testSearchPeopleByCompany() {
 }
 
 // Run the test if API key is available
-if (!process.env.ATTIO_API_KEY) {
+if (process.env.ATTIO_API_KEY) {
+  testSearchPeopleByCompany();
+} else {
   console.error(
     'Please set ATTIO_API_KEY environment variable to run this test'
   );
-} else {
-  testSearchPeopleByCompany();
 }

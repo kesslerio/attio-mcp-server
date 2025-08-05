@@ -1,14 +1,15 @@
 /**
  * CRUD operation tool configurations for companies
  */
-import { Company } from '../../../types/attio.js';
+
 import {
   createCompany,
+  deleteCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
 } from '../../../objects/companies/index.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { Company } from '../../../types/attio.js';
+import type { ToolConfig } from '../../tool-types.js';
 import { formatterConfigs } from './formatters.js';
 
 /**
@@ -27,7 +28,7 @@ function extractCompanyDisplayInfo(company: Company): {
   const name = company?.values?.name?.[0]?.value || 'Unnamed';
 
   // Handle the id which could be a string or an object with record_id
-  let id: string = 'unknown';
+  let id = 'unknown';
   if (company?.id) {
     if (typeof company.id === 'string') {
       id = company.id;
@@ -151,14 +152,6 @@ export const crudToolDefinitions = [
         value: {
           description:
             'New value for the attribute. Can be string, number, object, null, or array of these types',
-          oneOf: [
-            { type: 'string' },
-            { type: 'number' },
-            { type: 'boolean' },
-            { type: 'null' },
-            { type: 'object' },
-            { type: 'array' },
-          ],
         },
       },
       required: ['companyId', 'attributeName', 'value'],

@@ -1,13 +1,13 @@
-import { AttioRecord } from '../../../types/attio.js';
+import { getAttioClient } from '../../../api/attio-client.js';
+import { searchCompanies } from '../../../objects/companies/index.js';
 import {
   searchPeopleByCompany,
   searchPeopleByCompanyList,
   searchPeopleByNotes,
 } from '../../../objects/people/index.js';
-import { searchCompanies } from '../../../objects/companies/index.js';
-import { getAttioClient } from '../../../api/attio-client.js';
-import { ToolRequestArguments } from '../../../types/tool-types.js';
-import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
+import type { AttioRecord } from '../../../types/attio.js';
+import type { ToolRequestArguments } from '../../../types/tool-types.js';
+import type { SearchToolConfig, ToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
 
 // Type definitions for filter values
@@ -30,8 +30,7 @@ export const relationshipToolConfigs = {
     handler: async (args: ToolRequestArguments) => {
       const companyFilter = args.companyFilter as any;
       if (
-        !companyFilter?.filters ||
-        !Array.isArray(companyFilter.filters) ||
+        !(companyFilter?.filters && Array.isArray(companyFilter.filters)) ||
         companyFilter.filters.length === 0
       ) {
         throw new Error(
@@ -57,7 +56,8 @@ export const relationshipToolConfigs = {
           }
           // Use the searchPeopleByCompany function
           return await searchPeopleByCompany(recordId);
-        } else if (slug === 'companies.name') {
+        }
+        if (slug === 'companies.name') {
           const searchValue = String(typedFilter.value);
           const companies = await searchCompanies(searchValue);
           if (companies.length === 0) {
@@ -71,11 +71,10 @@ export const relationshipToolConfigs = {
           }
           // Use the searchPeopleByCompany function
           return await searchPeopleByCompany(companyId);
-        } else {
-          throw new Error(
-            `Unsupported filter type: '${slug}'. Supported filters are: 'companies.id' and 'companies.name'`
-          );
         }
+        throw new Error(
+          `Unsupported filter type: '${slug}'. Supported filters are: 'companies.id' and 'companies.name'`
+        );
       }
 
       throw new Error('No valid filters found');

@@ -4,7 +4,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { MappingConfig } from './config-loader.js';
+import type { MappingConfig } from './config-loader.js';
 import logger from './logger.js';
 
 // Re-export MappingConfig for external use

@@ -3,12 +3,12 @@
  */
 import {
   batchCreateCompanies,
-  batchUpdateCompanies,
   batchDeleteCompanies,
-  batchSearchCompanies,
   batchGetCompanyDetails,
+  batchSearchCompanies,
+  batchUpdateCompanies,
 } from '../../../objects/batch-companies.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { ToolConfig } from '../../tool-types.js';
 
 // Company batch tool configurations
 export const batchToolConfigs = {

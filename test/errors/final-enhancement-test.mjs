@@ -1,6 +1,8 @@
 // Final test of the enhanced error message through all layers
-import { initializeAttioClient } from './dist/api/attio-client.js';
-import { getAttioClient } from './dist/api/attio-client.js';
+import {
+  getAttioClient,
+  initializeAttioClient,
+} from './dist/api/attio-client.js';
 
 // Initialize API client
 process.env.ATTIO_API_KEY = '16d7c9ca-9b9d-4ad5-a3e9-cfdcbcf08b3f';
@@ -14,23 +16,26 @@ async function testEnhancedError() {
         filters: [
           {
             attribute: {
-              slug: 'type_persona'  // This will be the translated value
+              slug: 'type_persona', // This will be the translated value
             },
             condition: 'equals',
-            value: 'Aesthetics'  // Invalid value that should trigger enhancement
-          }
+            value: 'Aesthetics', // Invalid value that should trigger enhancement
+          },
         ],
-        matchAny: false
+        matchAny: false,
       },
       limit: 20,
-      offset: 0
+      offset: 0,
     });
   } catch (error) {
     console.log('\n===== Error caught at client level =====');
     console.log('Error type:', error.constructor.name);
     console.log('Error message:', error.message);
     if (error.response?.data) {
-      console.log('Response data:', JSON.stringify(error.response.data, null, 2));
+      console.log(
+        'Response data:',
+        JSON.stringify(error.response.data, null, 2)
+      );
     }
   }
 }

@@ -1,16 +1,16 @@
 /**
  * Core attribute mapping functions for translating human-readable attribute names to API slugs
  */
-import { loadMappingConfig, MappingConfig } from '../config-loader.js';
+import { loadMappingConfig, type MappingConfig } from '../config-loader.js';
 import { LEGACY_ATTRIBUTE_MAP } from './legacy-maps.js';
 import {
+  createAggressiveNormalizedMap,
   createCaseInsensitiveMap,
+  createNormalizedMap,
+  handleSpecialCases,
+  lookupAggressiveNormalized,
   lookupCaseInsensitive,
   lookupNormalized,
-  createNormalizedMap,
-  createAggressiveNormalizedMap,
-  lookupAggressiveNormalized,
-  handleSpecialCases,
 } from './mapping-utils.js';
 
 /**
@@ -159,7 +159,7 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
   // Guard conditions to prevent infinite recursion
   // Skip if name already contains spaces or has no underscores to convert
   if (attributeName.includes(' ') || !attributeName.includes('_')) {
-    return undefined;
+    return;
   }
 
   try {
@@ -170,7 +170,7 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
 
     // Additional safety check: if conversion results in same string, avoid lookup
     if (potentialDisplayName === attributeName) {
-      return undefined;
+      return;
     }
 
     // Use direct cache lookups to avoid recursive getAttributeSlug calls
@@ -205,13 +205,13 @@ function trySnakeCaseConversion(attributeName: string): string | undefined {
       if (result) return result;
     }
 
-    return undefined;
+    return;
   } catch (err) {
     // Graceful error handling: log warning but don't throw
     console.warn(
       `[attribute-mappers] Error in snake case conversion for "${attributeName}": ${err}`
     );
-    return undefined;
+    return;
   }
 }
 
@@ -245,9 +245,11 @@ export function getAttributeSlug(
 
     // Ensure at least the basic lookup caches exist (this can happen if called before initialization)
     if (
-      !caseInsensitiveCaches.common ||
-      !caseInsensitiveCaches.custom ||
-      !caseInsensitiveCaches.legacy
+      !(
+        caseInsensitiveCaches.common &&
+        caseInsensitiveCaches.custom &&
+        caseInsensitiveCaches.legacy
+      )
     ) {
       // Initialize lookup caches if missing
       initializeLookupCaches(config);

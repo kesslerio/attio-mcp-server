@@ -2,10 +2,10 @@
  * Tests for prompt templates
  */
 import {
+  getAllCategories,
   getAllPrompts,
   getPromptById,
   getPromptsByCategory,
-  getAllCategories,
 } from '../../src/prompts/templates/index';
 import { PromptTemplate } from '../../src/prompts/types';
 

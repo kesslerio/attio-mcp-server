@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatAllAttributes } from '../../src/api/attribute-types';
 
 // Mock dependencies

@@ -1,14 +1,14 @@
 /**
  * Common types for tool configurations
  */
-import { Request, Response } from 'express';
-import {
-  AttioRecord,
-  AttioNote,
+import type { Request, Response } from 'express';
+import type { ListEntryFilters } from '../api/operations/index.js';
+import type {
   AttioList,
   AttioListEntry,
+  AttioNote,
+  AttioRecord,
 } from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
 
 // Base tool configuration interface
 export interface ToolConfig {

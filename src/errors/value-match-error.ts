@@ -2,8 +2,9 @@
  * Error for when a field value doesn't match any valid options
  * Includes suggestions for similar values
  */
+
+import type { ValueMatchResult } from '../utils/value-matcher.js';
 import { AttioApiError } from './api-errors.js';
-import { ValueMatchResult } from '../utils/value-matcher.js';
 
 export class ValueMatchError extends AttioApiError {
   public readonly fieldName: string;

@@ -1,18 +1,19 @@
 /**
  * Tests for activity and historical filtering functionality
  */
+
 import {
-  createDateRangeFilter,
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-  createActivityFilter,
-} from '../../src/utils/record-utils';
-import {
-  DateRange,
+  type ActivityFilter,
+  type DateRange,
   InteractionType,
-  ActivityFilter,
 } from '../../src/types/attio';
+import {
+  createActivityFilter,
+  createCreatedDateFilter,
+  createDateRangeFilter,
+  createLastInteractionFilter,
+  createModifiedDateFilter,
+} from '../../src/utils/record-utils';
 
 describe('Activity and Historical filtering', () => {
   describe('createDateRangeFilter', () => {

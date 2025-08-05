@@ -1,8 +1,8 @@
-import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 import {
-  initializeAttioClient,
   getAttioClient,
+  initializeAttioClient,
 } from '../../dist/api/attio-client.js';
+import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
 import { searchPeopleByCompany } from '../../dist/objects/people/relationships.js';
 
 /**

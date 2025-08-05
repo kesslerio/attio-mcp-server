@@ -1,15 +1,16 @@
 /**
  * Result formatting functions for company tool configurations
  */
-import { Company } from '../../../types/attio.js';
+
 import {
-  getCompanyDetails,
   getCompanyBasicInfo,
-  getCompanyContactInfo,
   getCompanyBusinessInfo,
+  getCompanyContactInfo,
+  getCompanyDetails,
   getCompanySocialInfo,
 } from '../../../objects/companies/index.js';
-import { DetailsToolConfig } from '../../tool-types.js';
+import type { Company } from '../../../types/attio.js';
+import type { DetailsToolConfig } from '../../tool-types.js';
 
 // Type-safe helper to access company values
 function getCompanyValue(

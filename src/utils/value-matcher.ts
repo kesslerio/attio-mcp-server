@@ -129,7 +129,7 @@ export function formatValueMatchError(
 export function findPartialMatches(
   searchValue: string,
   validValues: string[],
-  caseSensitive: boolean = false
+  caseSensitive = false
 ): string[] {
   const normalizedSearch = caseSensitive
     ? searchValue

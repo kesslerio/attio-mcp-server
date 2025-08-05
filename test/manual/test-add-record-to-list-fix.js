@@ -5,9 +5,9 @@
  * Run with: node test/manual/test-add-record-to-list-fix.js
  */
 
+import { listsToolConfigs } from '../../dist/handlers/tool-configs/lists.js';
 // Import the handler directly
 import { handleAddRecordToListOperation } from '../../dist/handlers/tools/dispatcher/operations/lists.js';
-import { listsToolConfigs } from '../../dist/handlers/tool-configs/lists.js';
 
 // Spy on the handler to see what parameters it receives
 const originalHandler = listsToolConfigs.addRecordToList.handler;
@@ -15,12 +15,12 @@ let handlerCalled = false;
 let handlerParams = {};
 
 // Replace the handler with our spy function
-listsToolConfigs.addRecordToList.handler = function (
+listsToolConfigs.addRecordToList.handler = (
   listId,
   recordId,
   objectType,
   initialValues
-) {
+) => {
   console.log('\n[TEST SPY] addRecordToList handler called with:');
   console.log('- listId:', listId);
   console.log('- recordId:', recordId);

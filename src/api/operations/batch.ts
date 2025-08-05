@@ -3,23 +3,27 @@
  * Handles bulk operations with chunking and error handling
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
+import type {
   AttioListResponse,
+  AttioRecord,
   RecordBatchCreateParams,
   RecordBatchUpdateParams,
+  ResourceType,
 } from '../../types/attio.js';
-import {
-  BatchRequestItem,
-  BatchItemResult,
-  BatchResponse,
-  BatchConfig,
-} from './types.js';
-import { callWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from './retry.js';
-import { searchObject } from './search.js';
+import { getAttioClient } from '../attio-client.js';
 import { getObjectDetails } from './crud.js';
+import {
+  callWithRetry,
+  DEFAULT_RETRY_CONFIG,
+  type RetryConfig,
+} from './retry.js';
+import { searchObject } from './search.js';
+import type {
+  BatchConfig,
+  BatchItemResult,
+  BatchRequestItem,
+  BatchResponse,
+} from './types.js';
 
 /**
  * Helper function to construct object path

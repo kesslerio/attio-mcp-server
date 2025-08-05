@@ -3,21 +3,21 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import {
-  createRecord,
-  getRecord,
-  updateRecord,
-  deleteRecord,
-  listRecords,
+  type BatchConfig,
+  type BatchResponse,
   batchCreateRecords,
   batchUpdateRecords,
-  BatchConfig,
-  BatchResponse,
+  createRecord,
+  deleteRecord,
+  getRecord,
+  listRecords,
+  updateRecord,
 } from '../../api/operations/index.js';
-import {
-  ResourceType,
+import type {
   AttioRecord,
   RecordAttributes,
   RecordListParams,
+  ResourceType,
 } from '../../types/attio.js';
 
 /**
@@ -50,7 +50,7 @@ export async function createObjectRecord<T extends AttioRecord>(
       `[createObjectRecord] Creating record for object type: ${normalizedSlug}`
     );
     console.log(
-      `[createObjectRecord] Attributes:`,
+      '[createObjectRecord] Attributes:',
       JSON.stringify(attributes, null, 2)
     );
   }
@@ -66,7 +66,8 @@ export async function createObjectRecord<T extends AttioRecord>(
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
-    } else if (typeof error === 'string') {
+    }
+    if (typeof error === 'string') {
       throw new Error(error);
     }
 
@@ -77,7 +78,7 @@ export async function createObjectRecord<T extends AttioRecord>(
 
       if (process.env.NODE_ENV === 'development') {
         console.log(`[createObjectRecord:fallback] API path: ${path}`);
-        console.log(`[createObjectRecord:fallback] Sending payload:`, {
+        console.log('[createObjectRecord:fallback] Sending payload:', {
           data: {
             values: attributes,
           },

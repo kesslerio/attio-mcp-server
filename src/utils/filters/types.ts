@@ -11,19 +11,19 @@
  * - Enums and interfaces from external dependencies
  */
 
-import {
-  FilterConditionType,
-  DateRange,
-  NumericRange,
-  InteractionType,
-  ActivityFilter,
-  RelationshipType,
-  ResourceType,
-} from '../../types/attio.js';
-import {
+import type {
   ListEntryFilter,
   ListEntryFilters,
 } from '../../api/operations/types.js';
+import {
+  type ActivityFilter,
+  type DateRange,
+  FilterConditionType,
+  InteractionType,
+  type NumericRange,
+  RelationshipType,
+  ResourceType,
+} from '../../types/attio.js';
 
 /**
  * Attribute constants for better code readability and consistency

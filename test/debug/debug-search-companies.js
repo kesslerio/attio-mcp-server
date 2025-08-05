@@ -4,6 +4,7 @@
 
 // Load environment variables from .env file
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 // Set up environment for testing
@@ -54,28 +55,7 @@ async function testSearchCompaniesFlow() {
     // Step 3: Test search handler directly
     console.log('\n3️⃣ Testing search handler directly...');
 
-    if (!process.env.ATTIO_API_KEY) {
-      console.log('⚠️ No ATTIO_API_KEY found, creating mock test...');
-
-      // Mock the API client for testing
-      const mockResults = [];
-      console.log('🔧 Mock search result:', mockResults);
-
-      // Test formatting
-      const formattedResult = toolInfo.toolConfig.formatResult(mockResults);
-      console.log('✅ Formatted result:', formattedResult);
-
-      // This is the expected result format for the GitHub issue
-      console.log(
-        '\n🔍 Expected result for this query (domain should be found):'
-      );
-      console.log('Domain extraction: ✅ Working');
-      console.log('Search logic: ✅ Working (tries domain search first)');
-      console.log('API client: ❌ Not initialized');
-      console.log(
-        'Final result: "Found 0 companies:" (incorrect - should find domain matches)'
-      );
-    } else {
+    if (process.env.ATTIO_API_KEY) {
       console.log('🔧 Using real API...');
 
       // Initialize the client
@@ -106,6 +86,27 @@ async function testSearchCompaniesFlow() {
         'Formatted result preview:',
         formattedResult.substring(0, 200) + '...'
       );
+    } else {
+      console.log('⚠️ No ATTIO_API_KEY found, creating mock test...');
+
+      // Mock the API client for testing
+      const mockResults = [];
+      console.log('🔧 Mock search result:', mockResults);
+
+      // Test formatting
+      const formattedResult = toolInfo.toolConfig.formatResult(mockResults);
+      console.log('✅ Formatted result:', formattedResult);
+
+      // This is the expected result format for the GitHub issue
+      console.log(
+        '\n🔍 Expected result for this query (domain should be found):'
+      );
+      console.log('Domain extraction: ✅ Working');
+      console.log('Search logic: ✅ Working (tries domain search first)');
+      console.log('API client: ❌ Not initialized');
+      console.log(
+        'Final result: "Found 0 companies:" (incorrect - should find domain matches)'
+      );
     }
 
     // Step 4: Test complete MCP flow
@@ -129,7 +130,7 @@ async function testSearchCompaniesFlow() {
       params: {
         name: 'search-companies',
         arguments: {
-          query: query,
+          query,
         },
       },
     };

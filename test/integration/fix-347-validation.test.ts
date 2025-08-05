@@ -2,9 +2,10 @@
  * Integration tests for issue #347 fixes
  * Tests the fixes implemented based on production logs and user feedback
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 // Mock the Attio client
 vi.mock('../../src/api/attio-client', () => ({

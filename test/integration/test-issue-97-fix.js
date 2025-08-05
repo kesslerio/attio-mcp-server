@@ -1,8 +1,8 @@
-import {
-  updateCompanyAttribute,
-  updateCompany,
-} from '../dist/objects/companies.js';
 import { initializeAttioClient } from '../dist/api/attio-client.js';
+import {
+  updateCompany,
+  updateCompanyAttribute,
+} from '../dist/objects/companies.js';
 
 // Mock environment
 process.env.NODE_ENV = 'test';
@@ -20,12 +20,12 @@ class MockAPIClient {
     this.requests.push({ method: 'PATCH', path, payload });
 
     // Validate the payload structure
-    if (!payload || !payload.data || !payload.data.values) {
+    if (!(payload && payload.data && payload.data.values)) {
       throw new Error('Invalid payload structure - missing data.values');
     }
 
     // Check if the body_contouring field is present
-    if (!payload.data.values.hasOwnProperty('body_contouring')) {
+    if (!Object.hasOwn(payload.data.values, 'body_contouring')) {
       throw new Error('body_contouring field is missing from the payload');
     }
 

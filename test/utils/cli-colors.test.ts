@@ -1,11 +1,11 @@
 /**
  * Tests for CLI color utilities
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  type ColorName,
   colorize,
   colors,
-  type ColorName,
 } from '../../src/utils/cli-colors.js';
 
 describe('CLI Colors Utility', () => {

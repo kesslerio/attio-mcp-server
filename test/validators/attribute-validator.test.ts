@@ -2,9 +2,9 @@
  * Tests for the attribute validator
  */
 import {
-  validateAttributeValue,
-  ValidationResult,
   AttributeType,
+  ValidationResult,
+  validateAttributeValue,
 } from '../../src/validators/attribute-validator.js';
 
 describe('Attribute Validator', () => {
@@ -180,7 +180,7 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert timestamp numbers', () => {
-        const timestamp = 1672574400000; // 2023-01-01T12:00:00Z
+        const timestamp = 1_672_574_400_000; // 2023-01-01T12:00:00Z
         const result = validateAttributeValue('test', timestamp, 'date');
         expect(result.valid).toBe(true);
         expect(result.convertedValue).toBeDefined();

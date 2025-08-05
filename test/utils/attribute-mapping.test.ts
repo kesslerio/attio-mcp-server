@@ -2,11 +2,11 @@
  * Tests for the attribute mapping utilities
  */
 import {
-  getAttributeSlug,
-  getObjectSlug,
-  getListSlug,
-  translateAttributeNamesInFilters,
   COMMON_ATTRIBUTE_MAP,
+  getAttributeSlug,
+  getListSlug,
+  getObjectSlug,
+  translateAttributeNamesInFilters,
 } from '../../src/utils/attribute-mapping/index';
 import * as configLoader from '../../src/utils/config-loader';
 

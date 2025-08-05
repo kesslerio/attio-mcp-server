@@ -1,13 +1,13 @@
 import {
-  listTasks as apiList,
-  getTask as apiGet,
   createTask as apiCreate,
-  updateTask as apiUpdate,
   deleteTask as apiDelete,
+  getTask as apiGet,
   linkRecordToTask as apiLink,
+  listTasks as apiList,
   unlinkRecordFromTask as apiUnlink,
+  updateTask as apiUpdate,
 } from '../api/operations/index.js';
-import { AttioTask } from '../types/attio.js';
+import type { AttioTask } from '../types/attio.js';
 
 export async function listTasks(
   status?: string,

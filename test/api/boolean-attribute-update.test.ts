@@ -6,15 +6,15 @@
  */
 import {
   createCompany,
+  deleteCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
 } from '../../src/objects/companies/basic.js';
-import { Company } from '../../src/types/attio.js';
+import type { Company } from '../../src/types/attio.js';
 
 // Test configuration
 const SKIP_TESTS = process.env.SKIP_INTEGRATION_TESTS === 'true';
-const TEST_TIMEOUT = 30000; // 30 seconds
+const TEST_TIMEOUT = 30_000; // 30 seconds
 const TEST_COMPANY_NAME = `Test Company ${Date.now()}`;
 
 describe('Boolean Attribute API Tests', () => {

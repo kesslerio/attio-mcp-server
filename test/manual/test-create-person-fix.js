@@ -5,8 +5,8 @@
  * "Must provide at least an email address or name" despite providing both.
  */
 
-import { createPerson } from '../../dist/objects/people-write.js';
 import { peopleToolConfigs } from '../../dist/handlers/tool-configs/people/index.js';
+import { createPerson } from '../../dist/objects/people-write.js';
 
 async function testCreatePersonFix() {
   console.log('Testing create-person tool fix...\n');

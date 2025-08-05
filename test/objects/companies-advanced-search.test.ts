@@ -1,10 +1,10 @@
 /**
  * Test for companies advanced search functionality
  */
-import { describe, test, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
+import { initializeAttioClient } from '../../src/api/attio-client';
 import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { FilterConditionType } from '../../src/types/attio';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
 // Skip tests if no API key
 const skipIntegrationTests = !process.env.ATTIO_API_KEY;

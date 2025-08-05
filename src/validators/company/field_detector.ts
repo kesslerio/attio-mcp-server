@@ -1,10 +1,10 @@
 import { detectFieldType } from '../../api/attribute-types.js';
 import { ResourceType } from '../../types/attio.js';
-import { convertToBoolean } from '../../utils/attribute-mapping/attribute-mappers.js';
-import {
+import type {
   CompanyFieldValue,
   ProcessedFieldValue,
 } from '../../types/tool-types.js';
+import { convertToBoolean } from '../../utils/attribute-mapping/attribute-mappers.js';
 import { TypeCache } from './type_cache.js';
 
 export const booleanFieldPatterns = [

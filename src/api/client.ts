@@ -1,10 +1,11 @@
 import axios, {
-  AxiosInstance,
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
 } from 'axios';
 import { enhanceApiError } from '../utils/error-enhancer.js';
+
 // If logger is used, ensure it's imported, e.g.:
 // import { logger } from '../utils/logger';
 

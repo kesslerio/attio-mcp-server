@@ -28,17 +28,17 @@ const peopleExports = [
   'createPersonNote',
   'PersonOperationError',
   'InvalidPersonDataError',
-  'PersonValidator'
+  'PersonValidator',
 ];
 
 try {
   // Check if we can import
   const peopleModule = await import('./dist/objects/people/index.js');
-  
+
   console.log('Module imported successfully!');
   console.log('\nChecking exports:');
-  
-  let missingExports = [];
+
+  const missingExports = [];
   for (const exportName of peopleExports) {
     if (peopleModule[exportName]) {
       console.log(`✓ ${exportName}`);
@@ -47,21 +47,23 @@ try {
       missingExports.push(exportName);
     }
   }
-  
+
   if (missingExports.length > 0) {
     console.log('\nMissing exports:', missingExports);
   } else {
     console.log('\nAll exports are available! Refactoring successful.');
   }
-  
 } catch (error) {
   console.error('Error testing module:', error.message);
-  
+
   // Try checking the TypeScript source instead
   console.log('\nTrying to check TypeScript source...');
   try {
     const fs = await import('fs');
-    const indexContent = fs.readFileSync('./src/objects/people/index.ts', 'utf8');
+    const indexContent = fs.readFileSync(
+      './src/objects/people/index.ts',
+      'utf8'
+    );
     console.log('\nIndex file content:');
     console.log(indexContent);
   } catch (tsError) {

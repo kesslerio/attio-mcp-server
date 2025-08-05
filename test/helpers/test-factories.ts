@@ -52,7 +52,7 @@ export class CompanyFactory {
       },
     };
 
-    return this.mergeDeep(defaults, overrides);
+    return CompanyFactory.mergeDeep(defaults, overrides);
   }
 
   static createMany(
@@ -60,7 +60,7 @@ export class CompanyFactory {
     overrides: Partial<TestCompanyData> = {}
   ): TestCompanyData[] {
     return Array.from({ length: count }, (_, i) =>
-      this.create({
+      CompanyFactory.create({
         ...overrides,
         id: { record_id: `company_${Date.now()}_${i}` },
         values: {
@@ -79,7 +79,7 @@ export class CompanyFactory {
         typeof source[key] === 'object' &&
         !Array.isArray(source[key])
       ) {
-        result[key] = this.mergeDeep(target[key] || {}, source[key]);
+        result[key] = CompanyFactory.mergeDeep(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
       }
@@ -105,7 +105,7 @@ export class PersonFactory {
       },
     };
 
-    return this.mergeDeep(defaults, overrides);
+    return PersonFactory.mergeDeep(defaults, overrides);
   }
 
   static createMany(
@@ -113,7 +113,7 @@ export class PersonFactory {
     overrides: Partial<TestPersonData> = {}
   ): TestPersonData[] {
     return Array.from({ length: count }, (_, i) =>
-      this.create({
+      PersonFactory.create({
         ...overrides,
         id: { record_id: `person_${Date.now()}_${i}` },
         values: {
@@ -133,7 +133,7 @@ export class PersonFactory {
         typeof source[key] === 'object' &&
         !Array.isArray(source[key])
       ) {
-        result[key] = this.mergeDeep(target[key] || {}, source[key]);
+        result[key] = PersonFactory.mergeDeep(target[key] || {}, source[key]);
       } else {
         result[key] = source[key];
       }
@@ -165,7 +165,7 @@ export class ListFactory {
     overrides: Partial<TestListData> = {}
   ): TestListData[] {
     return Array.from({ length: count }, (_, i) =>
-      this.create({
+      ListFactory.create({
         ...overrides,
         id: { list_id: `list_${Date.now()}_${i}` },
         name: `Test List ${i + 1}`,
@@ -187,7 +187,7 @@ export class ApiResponseFactory {
     };
   }
 
-  static createError(message: string, status: number = 400): Error {
+  static createError(message: string, status = 400): Error {
     const error = new Error(message);
     (error as any).response = {
       status,
@@ -198,8 +198,8 @@ export class ApiResponseFactory {
 
   static createPaginatedResponse<T>(
     data: T[],
-    page: number = 1,
-    pageSize: number = 20,
+    page = 1,
+    pageSize = 20,
     total?: number
   ): { data: { data: T[]; pagination: any } } {
     return {
@@ -231,18 +231,21 @@ export class MockRequestFactory {
   }
 
   static createSearchRequest(query: string, filters: any = {}) {
-    return this.createToolRequest('smart-search-companies', {
+    return MockRequestFactory.createToolRequest('smart-search-companies', {
       query,
       ...filters,
     });
   }
 
   static createCreateRequest(objectType: string, attributes: any) {
-    return this.createToolRequest(`create-${objectType}`, attributes);
+    return MockRequestFactory.createToolRequest(
+      `create-${objectType}`,
+      attributes
+    );
   }
 
   static createUpdateRequest(objectType: string, id: string, attributes: any) {
-    return this.createToolRequest(`update-${objectType}`, {
+    return MockRequestFactory.createToolRequest(`update-${objectType}`, {
       [`${objectType}_id`]: id,
       ...attributes,
     });

@@ -1,25 +1,25 @@
-import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { initializeAttioClient } from '../../src/api/attio-client';
 import {
   createCompany,
-  updateCompany,
-  searchCompanies,
-  getCompanyDetails,
   deleteCompany,
+  getCompanyDetails,
+  searchCompanies,
+  updateCompany,
 } from '../../src/objects/companies/index';
 import {
   createPerson,
-  updatePerson,
-  searchPeople,
-  getPersonDetails,
   deletePerson,
+  getPersonDetails,
+  searchPeople,
+  updatePerson,
 } from '../../src/objects/people/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;
 
 // Increase timeout for real API calls
-vi.setConfig({ testTimeout: 30000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 describe('Real API Integration Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {

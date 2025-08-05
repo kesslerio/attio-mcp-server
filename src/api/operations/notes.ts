@@ -3,14 +3,14 @@
  * Handles note creation and retrieval
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioNote,
-  ResourceType,
+import type {
   AttioListResponse,
+  AttioNote,
   AttioSingleResponse,
+  ResourceType,
 } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, type RetryConfig } from './retry.js';
 
 /**
  * Generic function to get notes for a specific record
@@ -25,8 +25,8 @@ import { callWithRetry, RetryConfig } from './retry.js';
 export async function getObjectNotes(
   objectType: ResourceType,
   recordId: string,
-  limit: number = 10,
-  offset: number = 0,
+  limit = 10,
+  offset = 0,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioNote[]> {
   const api = getAttioClient();

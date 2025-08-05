@@ -4,13 +4,16 @@
  * Handles notes operations including retrieving and creating notes for records
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { ResourceType } from '../../../../types/attio.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
 import { parseResourceUri } from '../../../../utils/uri-parser.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type {
+  CreateNoteToolConfig,
+  NotesToolConfig,
+} from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle notes operations
@@ -26,7 +29,7 @@ export async function handleNotesOperation(
       : (request.params.arguments?.personId as string);
   const uri = request.params.arguments?.uri as string;
 
-  if (!directId && !uri) {
+  if (!(directId || uri)) {
     const idParamName =
       resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
     return createErrorResult(
@@ -106,7 +109,7 @@ export async function handleCreateNoteOperation(
   const content = (request.params.arguments?.content ||
     request.params.arguments?.noteText) as string;
 
-  if (!title || !content) {
+  if (!(title && content)) {
     return createErrorResult(
       new Error('Both title and content are required'),
       `/${resourceType}/notes`,
@@ -115,7 +118,7 @@ export async function handleCreateNoteOperation(
     );
   }
 
-  if (!directId && !uri) {
+  if (!(directId || uri)) {
     const idParamName =
       resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
     return createErrorResult(

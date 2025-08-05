@@ -25,26 +25,23 @@ async function runTestCase(testName, request, expectError = false) {
           result.content[0].text.substring(0, 100) + '...'
         );
         return true;
-      } else {
-        console.log('❌ Expected error but got success');
-        return false;
       }
-    } else {
-      if (result.isError) {
-        console.log('❌ Unexpected error');
-        console.error('Error:', result.content[0].text);
-        return false;
-      } else {
-        console.log('✅ Success');
-        if (result.content && result.content.length > 0) {
-          console.log(
-            'Response preview:',
-            result.content[0].text?.substring(0, 150) + '...'
-          );
-        }
-        return true;
-      }
+      console.log('❌ Expected error but got success');
+      return false;
     }
+    if (result.isError) {
+      console.log('❌ Unexpected error');
+      console.error('Error:', result.content[0].text);
+      return false;
+    }
+    console.log('✅ Success');
+    if (result.content && result.content.length > 0) {
+      console.log(
+        'Response preview:',
+        result.content[0].text?.substring(0, 150) + '...'
+      );
+    }
+    return true;
   } catch (error) {
     console.log('❌ Exception thrown');
     console.error('Error:', error.message);
@@ -166,7 +163,7 @@ async function testSmartSearchFix() {
   ];
 
   let passedTests = 0;
-  let totalTests = testCases.length;
+  const totalTests = testCases.length;
 
   for (const testCase of testCases) {
     const success = await runTestCase(

@@ -15,12 +15,12 @@ async function testFormatAllAttributes() {
     console.log('Original attributes:', JSON.stringify(attributes, null, 2));
     console.log('Formatted attributes:', JSON.stringify(formatted, null, 2));
 
-    if (!formatted.hasOwnProperty('body_contouring')) {
+    if (Object.hasOwn(formatted, 'body_contouring')) {
+      console.log('body_contouring is present in formatted attributes');
+    } else {
       console.log(
         'ISSUE FOUND: null value for body_contouring was filtered out!'
       );
-    } else {
-      console.log('body_contouring is present in formatted attributes');
     }
   } catch (error) {
     console.error('Error:', error);

@@ -1,18 +1,17 @@
 /**
  * Main entry point for tool handlers - maintains backward compatibility
  */
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
+  type CallToolRequest,
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../types/attio.js';
 import { warn } from '../../utils/logger.js';
-
+import { executeToolRequest } from './dispatcher.js';
 // Import from modular components
 import { TOOL_DEFINITIONS } from './registry.js';
-import { executeToolRequest } from './dispatcher.js';
 
 // Constants for configuration
 const DEBUG_ENV_VAR = 'MCP_DEBUG_REQUESTS';
@@ -170,14 +169,13 @@ export function registerToolHandlers(server: Server): void {
   });
 }
 
-// Re-export commonly used components for backward compatibility
-export { TOOL_DEFINITIONS, TOOL_CONFIGS } from './registry.js';
-export { findToolConfig } from './registry.js';
 export { executeToolRequest } from './dispatcher.js';
 export {
-  formatSearchResults,
-  formatRecordDetails,
-  formatListEntries,
   formatBatchResults,
+  formatListEntries,
+  formatRecordDetails,
   formatResponse,
+  formatSearchResults,
 } from './formatters.js';
+// Re-export commonly used components for backward compatibility
+export { findToolConfig, TOOL_CONFIGS, TOOL_DEFINITIONS } from './registry.js';

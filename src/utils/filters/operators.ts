@@ -4,10 +4,10 @@
  */
 
 import {
-  ListEntryFilters,
-  ListEntryFilter,
-  FilterConditionType,
   FIELD_SPECIAL_HANDLING,
+  FilterConditionType,
+  type ListEntryFilter,
+  type ListEntryFilters,
 } from './types.js';
 
 /**
@@ -23,7 +23,7 @@ export function isOperatorSupportedForField(
 ): boolean {
   const specialHandling = FIELD_SPECIAL_HANDLING[fieldSlug];
 
-  if (!specialHandling || !specialHandling.operators) {
+  if (!(specialHandling && specialHandling.operators)) {
     // No special handling defined, assume all operators are supported
     return true;
   }

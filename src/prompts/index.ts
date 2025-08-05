@@ -5,24 +5,21 @@
  * providing pre-defined templates for common Attio operations.
  */
 
-// Export types
-export * from './types.js';
-
-// Export template utilities
-export {
-  getAllPrompts,
-  getPromptsByCategory,
-  getPromptById,
-  getAllCategories,
-} from './templates/index.js';
-
 // Export handlers
 export {
-  listPrompts,
-  listPromptCategories,
-  getPromptDetails,
   executePrompt,
+  getPromptDetails,
+  listPromptCategories,
+  listPrompts,
 } from './handlers.js';
-
+// Export template utilities
 // Export all templates
-export { allPrompts } from './templates/index.js';
+export {
+  allPrompts,
+  getAllCategories,
+  getAllPrompts,
+  getPromptById,
+  getPromptsByCategory,
+} from './templates/index.js';
+// Export types
+export * from './types.js';

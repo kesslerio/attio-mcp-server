@@ -3,11 +3,13 @@
  * Tests both wrapped and unwrapped argument formats
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import {
+  type CallToolRequest,
+  CallToolRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerToolHandlers } from '../../../src/handlers/tools/index.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // Mock the dispatcher
 vi.mock('../../../src/handlers/tools/dispatcher.js', () => ({

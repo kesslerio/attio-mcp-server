@@ -7,19 +7,19 @@ const { registerToolHandlers } = require('./dist/handlers/tools.js');
 const mockServer = {
   setRequestHandler: (schema, handler) => {
     console.log(`Registered handler for schema: ${schema.name}`);
-    
+
     // Store the handler for CallToolRequestSchema
     if (schema.name === 'CallToolRequestSchema') {
       mockServer.callToolHandler = handler;
     }
-    
+
     // Store the handler for ListToolsRequestSchema
     if (schema.name === 'ListToolsRequestSchema') {
       mockServer.listToolsHandler = handler;
     }
   },
   callToolHandler: null,
-  listToolsHandler: null
+  listToolsHandler: null,
 };
 
 // Register handlers
@@ -31,7 +31,7 @@ async function testListTools() {
   try {
     const result = await mockServer.listToolsHandler();
     console.log(`Found ${result.tools.length} tools:`);
-    result.tools.forEach(tool => {
+    result.tools.forEach((tool) => {
       console.log(`- ${tool.name}`);
     });
   } catch (error) {
@@ -46,8 +46,8 @@ async function testSearchPeople() {
     const result = await mockServer.callToolHandler({
       params: {
         name: 'search-people',
-        arguments: { query: 'Test' }
-      }
+        arguments: { query: 'Test' },
+      },
     });
     console.log('Result:', JSON.stringify(result, null, 2));
   } catch (error) {

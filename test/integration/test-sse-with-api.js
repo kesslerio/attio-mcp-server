@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import dotenv from 'dotenv';
 import { spawn } from 'child_process';
+import dotenv from 'dotenv';
 import http from 'http';
 
 // Load environment variables
@@ -22,7 +22,7 @@ console.log('✅ SSE Transport enabled:', process.env.ENABLE_SSE_TRANSPORT);
 console.log('\n📡 Starting MCP server with SSE transport...');
 const server = spawn('node', ['dist/index.js'], {
   env: { ...process.env },
-  stdio: ['ignore', 'pipe', 'pipe']
+  stdio: ['ignore', 'pipe', 'pipe'],
 });
 
 let serverReady = false;
@@ -30,7 +30,10 @@ let serverReady = false;
 server.stdout.on('data', (data) => {
   const output = data.toString();
   console.log('Server:', output.trim());
-  if (output.includes('Health server listening') || output.includes('SSE transport enabled')) {
+  if (
+    output.includes('Health server listening') ||
+    output.includes('SSE transport enabled')
+  ) {
     serverReady = true;
   }
 });
@@ -44,9 +47,9 @@ setTimeout(async () => {
   if (!serverReady) {
     console.log('\n⏳ Waiting for server to be ready...');
   }
-  
+
   console.log('\n🔍 Testing SSE endpoint...');
-  
+
   // Test SSE endpoint
   const options = {
     hostname: 'localhost',
@@ -54,21 +57,21 @@ setTimeout(async () => {
     path: '/sse/',
     method: 'GET',
     headers: {
-      'Accept': 'text/event-stream'
-    }
+      Accept: 'text/event-stream',
+    },
   };
 
   const req = http.request(options, (res) => {
     console.log(`Status: ${res.statusCode}`);
     console.log(`Headers: ${JSON.stringify(res.headers, null, 2)}`);
-    
+
     if (res.statusCode === 200) {
       console.log('\n✅ SSE endpoint is responding!');
-      
+
       res.on('data', (chunk) => {
         console.log('SSE Data:', chunk.toString());
       });
-      
+
       // Close after 5 seconds
       setTimeout(() => {
         console.log('\n✅ Test completed successfully!');

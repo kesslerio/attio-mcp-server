@@ -45,7 +45,7 @@ async function testMCPFlow() {
   // Create a mock MCP server
   const mockServer = {
     handlers: {},
-    setRequestHandler: function (schema, handler) {
+    setRequestHandler(schema, handler) {
       const key = schema._tag || schema.method || 'unknown';
       console.log(`Registered handler for: ${key}`);
       this.handlers[key] = handler;

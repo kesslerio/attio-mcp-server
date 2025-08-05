@@ -2,12 +2,12 @@ import {
   AttioApiError,
   AuthenticationError,
   AuthorizationError,
+  createApiErrorFromAxiosError,
+  createApiErrorFromStatus,
   InvalidRequestError,
   RateLimitError,
   ResourceNotFoundError,
   ServerError,
-  createApiErrorFromStatus,
-  createApiErrorFromAxiosError,
 } from '../../src/errors/api-errors';
 
 describe('api-errors', () => {

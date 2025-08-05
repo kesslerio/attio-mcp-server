@@ -45,7 +45,7 @@ async function testMCPFlow() {
   // Create a mock MCP server
   const mockServer = {
     setRequestHandler: (schema, handler) => {
-      console.log(`Registered handler for:`, schema.method || schema.name);
+      console.log('Registered handler for:', schema.method || schema.name);
       // If it's the tool call handler, save it
       if (schema.method === 'tools/call') {
         mockServer.toolHandler = handler;

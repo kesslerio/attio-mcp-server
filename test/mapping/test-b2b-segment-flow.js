@@ -1,21 +1,22 @@
 /**
  * Test B2B segment mapping flow
  */
-import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
-import { advancedSearchObject } from './dist/api/attio-operations.js';
-import { ResourceType, FilterConditionType } from './dist/types/attio.js';
 
 // Mock the API client to see what data is being sent
 import { getAttioClient } from './dist/api/attio-client.js';
+import { advancedSearchObject } from './dist/api/attio-operations.js';
+import { FilterConditionType, ResourceType } from './dist/types/attio.js';
+import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
+
 const originalPost = getAttioClient;
 let mockClient = null;
 
 // Mock implementation
-const mockGetAttioClient = function () {
+const mockGetAttioClient = () => {
   if (!mockClient) {
     mockClient = {
       ...originalPost(),
-      post: function (path, data) {
+      post(path, data) {
         console.log('[MOCK API] POST Request:', {
           path,
           data: JSON.stringify(data, null, 2),

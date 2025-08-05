@@ -2,10 +2,10 @@
  * Base class for integration tests with proper setup/teardown
  * Handles API client initialization and test data cleanup
  */
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import {
-  initializeAttioClient,
   getAttioClient,
+  initializeAttioClient,
 } from '../../src/api/attio-client.js';
 
 export interface IntegrationTestConfig {
@@ -23,33 +23,36 @@ export class IntegrationTestBase {
    * Set up integration test environment
    */
   static setup(config: IntegrationTestConfig = {}) {
-    this.config = {
+    IntegrationTestBase.config = {
       skipApiKey: false,
-      timeout: 30000,
+      timeout: 30_000,
       cleanupObjects: ['companies', 'people', 'notes'],
       requiresRealApi: true,
       ...config,
     };
 
     beforeAll(async () => {
-      await this.beforeAllSetup();
-    }, this.config.timeout);
+      await IntegrationTestBase.beforeAllSetup();
+    }, IntegrationTestBase.config.timeout);
 
     afterAll(async () => {
-      await this.afterAllCleanup();
-    }, this.config.timeout);
+      await IntegrationTestBase.afterAllCleanup();
+    }, IntegrationTestBase.config.timeout);
 
     beforeEach(async () => {
-      await this.beforeEachSetup();
+      await IntegrationTestBase.beforeEachSetup();
     });
 
     afterEach(async () => {
-      await this.afterEachCleanup();
+      await IntegrationTestBase.afterEachCleanup();
     });
   }
 
   private static async beforeAllSetup() {
-    if (!this.config.skipApiKey && this.config.requiresRealApi) {
+    if (
+      !IntegrationTestBase.config.skipApiKey &&
+      IntegrationTestBase.config.requiresRealApi
+    ) {
       // Check for API key
       if (!process.env.ATTIO_API_KEY) {
         if (process.env.SKIP_INTEGRATION_TESTS === 'true') {
@@ -74,22 +77,29 @@ export class IntegrationTestBase {
   }
 
   private static async afterAllCleanup() {
-    if (this.config.requiresRealApi && this.createdObjects.length > 0) {
-      console.log(`Cleaning up ${this.createdObjects.length} test objects...`);
+    if (
+      IntegrationTestBase.config.requiresRealApi &&
+      IntegrationTestBase.createdObjects.length > 0
+    ) {
+      console.log(
+        `Cleaning up ${IntegrationTestBase.createdObjects.length} test objects...`
+      );
 
       const client = getAttioClient();
-      const cleanupPromises = this.createdObjects.map(async (obj) => {
-        try {
-          await client.delete(`/objects/${obj.type}/records/${obj.id}`);
-          console.log(`Cleaned up ${obj.type}:${obj.id}`);
-        } catch (error) {
-          // Ignore cleanup errors (object might already be deleted)
-          console.warn(`Failed to cleanup ${obj.type}:${obj.id}:`, error);
+      const cleanupPromises = IntegrationTestBase.createdObjects.map(
+        async (obj) => {
+          try {
+            await client.delete(`/objects/${obj.type}/records/${obj.id}`);
+            console.log(`Cleaned up ${obj.type}:${obj.id}`);
+          } catch (error) {
+            // Ignore cleanup errors (object might already be deleted)
+            console.warn(`Failed to cleanup ${obj.type}:${obj.id}:`, error);
+          }
         }
-      });
+      );
 
       await Promise.allSettled(cleanupPromises);
-      this.createdObjects = [];
+      IntegrationTestBase.createdObjects = [];
     }
   }
 
@@ -105,7 +115,7 @@ export class IntegrationTestBase {
    * Track an object for cleanup after tests
    */
   static trackForCleanup(type: string, id: string) {
-    this.createdObjects.push({ type, id });
+    IntegrationTestBase.createdObjects.push({ type, id });
   }
 
   /**
@@ -122,7 +132,7 @@ export class IntegrationTestBase {
   /**
    * Create a unique test identifier
    */
-  static createTestId(prefix: string = 'test'): string {
+  static createTestId(prefix = 'test'): string {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
@@ -131,8 +141,8 @@ export class IntegrationTestBase {
    */
   static async waitFor(
     condition: () => Promise<boolean> | boolean,
-    timeout: number = 5000,
-    interval: number = 100
+    timeout = 5000,
+    interval = 100
   ): Promise<void> {
     const start = Date.now();
 
@@ -151,8 +161,8 @@ export class IntegrationTestBase {
    */
   static async retry<T>(
     operation: () => Promise<T>,
-    maxAttempts: number = 3,
-    baseDelay: number = 1000
+    maxAttempts = 3,
+    baseDelay = 1000
   ): Promise<T> {
     let lastError: Error;
 
@@ -166,7 +176,7 @@ export class IntegrationTestBase {
           throw lastError;
         }
 
-        const delay = baseDelay * Math.pow(2, attempt - 1);
+        const delay = baseDelay * 2 ** (attempt - 1);
         console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }

@@ -7,7 +7,7 @@ const mockClient = {
     console.log('Body:', JSON.stringify(body, null, 2));
 
     // Simulate the error mentioned in the issue
-    if (!body || !body.data) {
+    if (!(body && body.data)) {
       throw new Error('Cannot convert undefined or null to object');
     }
 

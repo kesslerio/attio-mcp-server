@@ -1,8 +1,9 @@
 /**
  * Test the integrated value matching with error enhancement
  */
-import { enhanceApiError } from './dist/utils/error-enhancer.js';
+
 import { ValueMatchError } from './dist/errors/value-match-error.js';
+import { enhanceApiError } from './dist/utils/error-enhancer.js';
 
 // Mock API error responses
 const mockErrors = [

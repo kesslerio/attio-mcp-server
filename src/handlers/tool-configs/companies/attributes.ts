@@ -1,14 +1,15 @@
 /**
  * Attribute management tool configurations for companies
  */
-import { Company } from '../../../types/attio.js';
+
 import {
-  getCompanyFields,
-  getCompanyCustomFields,
   discoverCompanyAttributes,
   getCompanyAttributes,
+  getCompanyCustomFields,
+  getCompanyFields,
 } from '../../../objects/companies/index.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { Company } from '../../../types/attio.js';
+import type { ToolConfig } from '../../tool-types.js';
 
 // Company attribute tool configurations
 export const attributeToolConfigs = {
@@ -91,20 +92,22 @@ ${
     formatResult: (result: any) => {
       // Sanity check for empty or invalid results
       if (
-        !result ||
-        (!result?.all?.length &&
-          !result?.standard?.length &&
-          !result?.custom?.length)
+        !(
+          result &&
+          (result?.all?.length ||
+            result?.standard?.length ||
+            result?.custom?.length)
+        )
       ) {
         return 'No company attributes found. This may occur if there are no companies in the workspace.';
       }
 
-      let output = `Company Attributes Discovery\n`;
+      let output = 'Company Attributes Discovery\n';
       output += `Total attributes: ${result?.all?.length || 0}\n`;
       output += `Standard fields: ${result?.standard?.length || 0}\n`;
       output += `Custom fields: ${result?.custom?.length || 0}\n\n`;
 
-      output += `STANDARD FIELDS:\n`;
+      output += 'STANDARD FIELDS:\n';
       if (result?.standard?.length > 0) {
         result.standard.forEach((field: string) => {
           output += `  - ${field}\n`;
@@ -113,7 +116,7 @@ ${
         output += '  None found\n';
       }
 
-      output += `\nCUSTOM FIELDS:\n`;
+      output += '\nCUSTOM FIELDS:\n';
       if (result.custom?.length > 0) {
         result.custom.forEach((field: string) => {
           const fieldInfo = result.all.find((f: any) => f.name === field);
@@ -152,17 +155,17 @@ ${
             ? JSON.stringify(result.value, null, 2)
             : result.value
         }`;
-      } else if (result.attributes) {
+      }
+      if (result.attributes) {
         // Return list of attributes
         return `Company: ${result.company}\nAvailable attributes (${
           result.attributes.length
         }):\n${result.attributes
           .map((attr: string) => `  - ${attr}`)
           .join('\n')}`;
-      } else {
-        // Fallback for unexpected result structure
-        return `Unexpected result format. Received: ${JSON.stringify(result)}`;
       }
+      // Fallback for unexpected result structure
+      return `Unexpected result format. Received: ${JSON.stringify(result)}`;
     },
   } as ToolConfig,
 };

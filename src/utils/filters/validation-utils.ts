@@ -5,13 +5,13 @@
  * Provides consistent error message formatting and reusable validation functions
  */
 
+import type { ValidatedListEntryFilters } from '../../api/operations/types.js';
 import {
-  FilterValidationError,
   FilterErrorCategory,
+  FilterValidationError,
 } from '../../errors/api-errors.js';
-import { ListEntryFilter, ListEntryFilters } from './types.js';
-import { ValidatedListEntryFilters } from '../../api/operations/types.js';
 import { isValidFilterCondition } from '../../types/attio.js';
+import type { ListEntryFilter, ListEntryFilters } from './types.js';
 
 /**
  * Error message templates for consistent error formatting
@@ -140,7 +140,7 @@ export function validateFiltersObject(
  */
 export function collectInvalidFilters(
   filters: ListEntryFilter[],
-  validateConditions: boolean = true
+  validateConditions = true
 ): { index: number; reason: string; filter: any }[] {
   const invalidFilters: { index: number; reason: string; filter: any }[] = [];
 
@@ -253,7 +253,7 @@ export function formatInvalidFiltersError(
  */
 export function validateFilters(
   filters: ListEntryFilters | undefined,
-  validateConditions: boolean = true
+  validateConditions = true
 ): ValidatedListEntryFilters {
   // First validate basic structure
   const validatedFilters = validateFiltersObject(filters);

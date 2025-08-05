@@ -2,16 +2,16 @@
  * Batch operations for People
  */
 import {
-  batchSearchObjects,
+  type BatchConfig,
+  type BatchResponse,
   batchGetObjectDetails,
-  BatchConfig,
-  BatchResponse,
+  batchSearchObjects,
 } from '../../api/operations/index.js';
-import { ResourceType, Person } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { type Person, ResourceType } from '../../types/attio.js';
 import { isValidId } from '../../utils/validation.js';
-import { searchPeople } from './search.js';
 import { getPersonDetails } from './basic.js';
+import { searchPeople } from './search.js';
 
 /**
  * Performs batch search operations on people
@@ -33,7 +33,7 @@ export async function batchSearchPeople(
 
     for (const query of queries) {
       if (!query || query.trim().length === 0) {
-        throw new FilterValidationError(`Invalid query: cannot be empty`);
+        throw new FilterValidationError('Invalid query: cannot be empty');
       }
       if (query.length > 1000) {
         throw new FilterValidationError(`Invalid query '${query}': too long`);

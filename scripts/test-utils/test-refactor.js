@@ -28,17 +28,17 @@ const peopleExports = [
   'createPersonNote',
   'PersonOperationError',
   'InvalidPersonDataError',
-  'PersonValidator'
+  'PersonValidator',
 ];
 
 try {
   // Check if we can import
   const peopleModule = require('./src/objects/people/index.js');
-  
+
   console.log('Module imported successfully!');
   console.log('\nChecking exports:');
-  
-  let missingExports = [];
+
+  const missingExports = [];
   for (const exportName of peopleExports) {
     if (peopleModule[exportName]) {
       console.log(`✓ ${exportName}`);
@@ -47,13 +47,12 @@ try {
       missingExports.push(exportName);
     }
   }
-  
+
   if (missingExports.length > 0) {
     console.log('\nMissing exports:', missingExports);
   } else {
     console.log('\nAll exports are available! Refactoring successful.');
   }
-  
 } catch (error) {
   console.error('Error testing module:', error.message);
 }

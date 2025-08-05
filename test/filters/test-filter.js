@@ -1,6 +1,7 @@
 // ES module style import
-import { transformFiltersToApiFormat } from './dist/utils/filter-utils.js';
+
 import { FilterConditionType } from './dist/types/attio.js';
+import { transformFiltersToApiFormat } from './dist/utils/filter-utils.js';
 
 // Test filter for B2B Segment
 const testFilter = {

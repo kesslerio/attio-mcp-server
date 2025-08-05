@@ -10,7 +10,7 @@ module.exports = {
 
   // Offline optimizations
   setupFilesAfterEnv: [],
-  testTimeout: 10000,
+  testTimeout: 10_000,
   maxWorkers: '50%',
 
   // Skip tests that require network access

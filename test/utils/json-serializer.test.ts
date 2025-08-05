@@ -2,13 +2,13 @@
  * Tests for JSON serialization utilities
  * These tests focus on handling problematic JSON cases that cause issues in Claude Desktop
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  safeJsonStringify,
-  validateJsonString,
-  hasCircularReferences,
   createSafeCopy,
+  hasCircularReferences,
+  safeJsonStringify,
   sanitizeMcpResponse,
+  validateJsonString,
 } from '../../src/utils/json-serializer.js';
 
 describe('JSON Serializer', () => {
@@ -44,7 +44,7 @@ describe('JSON Serializer', () => {
     it('should handle functions', () => {
       const obj = {
         a: 1,
-        fn: function test() {
+        fn() {
           return 'test';
         },
         arrow: () => 'arrow',
@@ -113,7 +113,7 @@ describe('JSON Serializer', () => {
     });
 
     it('should truncate very long strings', () => {
-      const longString = 'a'.repeat(30000);
+      const longString = 'a'.repeat(30_000);
       const obj = { longString };
 
       const result = safeJsonStringify(obj, { maxStringLength: 100 });

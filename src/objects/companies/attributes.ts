@@ -1,9 +1,8 @@
 /**
  * Attribute management for companies
  */
-import { Company } from '../../types/attio.js';
-import { getCompanyDetails, extractCompanyId } from './basic.js';
-import { listCompanies } from './basic.js';
+import type { Company } from '../../types/attio.js';
+import { extractCompanyId, getCompanyDetails, listCompanies } from './basic.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -513,16 +512,15 @@ export async function getCompanyAttributes(
         value: simplifiedValue,
         company: companyName,
       };
-    } else {
-      // Return list of available attributes
-      const values = fullCompany.values || {};
-      const attributes = Object.keys(values).sort();
-
-      return {
-        attributes,
-        company: fullCompany.values?.name?.[0]?.value || companyId,
-      };
     }
+    // Return list of available attributes
+    const values = fullCompany.values || {};
+    const attributes = Object.keys(values).sort();
+
+    return {
+      attributes,
+      company: fullCompany.values?.name?.[0]?.value || companyId,
+    };
   } catch (error) {
     // Use consistent error logging pattern
     logAttributeError('getCompanyAttributes', error, {

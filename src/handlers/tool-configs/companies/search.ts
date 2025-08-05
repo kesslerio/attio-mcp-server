@@ -1,16 +1,17 @@
 /**
  * Search-related company tool configurations
  */
-import { CompanyRecord } from './types.js';
+
 import {
+  advancedSearchCompanies,
   searchCompanies,
   searchCompaniesByDomain,
-  advancedSearchCompanies,
 } from '../../../objects/companies/index.js';
-import {
-  SearchToolConfig,
+import type {
   AdvancedSearchToolConfig,
+  SearchToolConfig,
 } from '../../tool-types.js';
+import type { CompanyRecord } from './types.js';
 
 // Company search tool configurations
 export const searchToolConfigs = {

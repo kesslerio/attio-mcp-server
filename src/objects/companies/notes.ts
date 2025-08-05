@@ -3,10 +3,10 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import {
-  getObjectNotes,
   createObjectNote,
+  getObjectNotes,
 } from '../../api/operations/index.js';
-import { ResourceType, AttioNote } from '../../types/attio.js';
+import { type AttioNote, ResourceType } from '../../types/attio.js';
 
 /**
  * Gets notes for a specific company
@@ -18,8 +18,8 @@ import { ResourceType, AttioNote } from '../../types/attio.js';
  */
 export async function getCompanyNotes(
   companyIdOrUri: string,
-  limit: number = 10,
-  offset: number = 0
+  limit = 10,
+  offset = 0
 ): Promise<AttioNote[]> {
   let companyId: string;
 
@@ -31,7 +31,7 @@ export async function getCompanyNotes(
       try {
         // Try to parse the URI formally
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(
@@ -101,7 +101,7 @@ export async function getCompanyNotes(
         return response.data.data || [];
       } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[getCompanyNotes] All attempts failed:`, {
+          console.error('[getCompanyNotes] All attempts failed:', {
             companyId,
             originalUri: companyIdOrUri,
             errors: {
@@ -163,7 +163,7 @@ export async function createCompanyNote(
       try {
         // Try to parse the URI formally
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(
@@ -241,7 +241,7 @@ export async function createCompanyNote(
         return response.data;
       } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(`[createCompanyNote] All attempts failed:`, {
+          console.error('[createCompanyNote] All attempts failed:', {
             companyId,
             originalUri: companyIdOrUri,
             errors: {

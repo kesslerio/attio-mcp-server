@@ -1,11 +1,11 @@
 /**
  * Export all prompt templates
  */
-import { PromptTemplate } from '../types.js';
-import peoplePrompts from './people.js';
+import type { PromptTemplate } from '../types.js';
 import companiesPrompts from './companies.js';
 import listsPrompts from './lists.js';
 import notesPrompts from './notes.js';
+import peoplePrompts from './people.js';
 
 /**
  * All available prompt templates

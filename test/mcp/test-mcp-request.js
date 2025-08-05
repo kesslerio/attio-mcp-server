@@ -11,7 +11,7 @@ globalThis.fetch = async (url, options) => {
   console.log('\n[MOCK API] Request:', {
     url,
     method: options?.method,
-    body: body,
+    body,
   });
 
   // Check for untranslated attribute

@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAttioClient } from '../../src/api/attio-client';
+import * as attioOperations from '../../src/api/operations/index';
 import {
-  createObjectRecord,
-  getObjectRecord,
-  updateObjectRecord,
-  deleteObjectRecord,
-  listObjectRecords,
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
+  createObjectRecord,
+  deleteObjectRecord,
   formatRecordAttribute,
   formatRecordAttributes,
+  getObjectRecord,
+  listObjectRecords,
+  updateObjectRecord,
 } from '../../src/objects/records';
-import * as attioOperations from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
-import { AttioRecord, RecordAttributes } from '../../src/types/attio';
+import { type AttioRecord, RecordAttributes } from '../../src/types/attio';
 
 // Mock the attio-operations module
 vi.mock('../../src/api/operations/index');
@@ -261,9 +261,9 @@ describe('Records API', () => {
     });
 
     it('should handle currency fields', () => {
-      const result = formatRecordAttribute('annual_revenue', 5000000);
+      const result = formatRecordAttribute('annual_revenue', 5_000_000);
 
-      expect(result).toBe(5000000);
+      expect(result).toBe(5_000_000);
     });
 
     it('should handle record ID links', () => {
@@ -284,7 +284,7 @@ describe('Records API', () => {
       const attributes: Record<string, any> = {
         name: 'Test Record',
         founded_date: date,
-        annual_revenue: 5000000,
+        annual_revenue: 5_000_000,
         primary_contact: 'record_abc123',
         description: null,
       };
@@ -294,7 +294,7 @@ describe('Records API', () => {
       expect(result).toEqual({
         name: 'Test Record',
         founded_date: '2023-01-01T00:00:00.000Z',
-        annual_revenue: 5000000,
+        annual_revenue: 5_000_000,
         primary_contact: { record_id: 'record_abc123' },
         description: null,
       });

@@ -3,32 +3,19 @@
  * Maintains backward compatibility while organizing people operations into focused modules
  */
 
-// Export all types
-export * from './types.js';
-
 // Export basic CRUD operations
 export {
   createPerson,
-  updatePerson,
-  updatePersonAttribute,
   deletePerson,
   getPersonDetails,
   listPeople,
+  updatePerson,
+  updatePersonAttribute,
 } from './basic.js';
-
-// Export search functionality
-export {
-  searchPeople,
-  searchPeopleByQuery,
-  searchPeopleByEmail,
-  searchPeopleByPhone,
-  getPersonByEmail,
-  advancedSearchPeople,
-  searchPeopleByCreationDate,
-  searchPeopleByModificationDate,
-  searchPeopleByLastInteraction,
-  searchPeopleByActivity,
-} from './search.js';
+// Export batch operations
+export { batchGetPeopleDetails, batchSearchPeople } from './batch.js';
+// Export note operations
+export { createPersonNote, getPersonNotes } from './notes.js';
 
 // Export relationship queries
 export {
@@ -36,9 +23,18 @@ export {
   searchPeopleByCompanyList,
   searchPeopleByNotes,
 } from './relationships.js';
-
-// Export batch operations
-export { batchSearchPeople, batchGetPeopleDetails } from './batch.js';
-
-// Export note operations
-export { getPersonNotes, createPersonNote } from './notes.js';
+// Export search functionality
+export {
+  advancedSearchPeople,
+  getPersonByEmail,
+  searchPeople,
+  searchPeopleByActivity,
+  searchPeopleByCreationDate,
+  searchPeopleByEmail,
+  searchPeopleByLastInteraction,
+  searchPeopleByModificationDate,
+  searchPeopleByPhone,
+  searchPeopleByQuery,
+} from './search.js';
+// Export all types
+export * from './types.js';

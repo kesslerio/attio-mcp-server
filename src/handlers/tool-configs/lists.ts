@@ -1,27 +1,28 @@
 /**
  * Lists-related tool configurations
  */
-import { AttioList, AttioListEntry } from '../../types/attio.js';
-import { getRecordNameFromEntry } from '../../utils/record-utils.js';
+
 import {
-  getLists,
-  getListDetails,
-  getListEntries,
-  filterListEntries,
-  advancedFilterListEntries,
   addRecordToList,
-  removeRecordFromList,
-  updateListEntry,
-  getRecordListMemberships,
+  advancedFilterListEntries,
+  filterListEntries,
   filterListEntriesByParent,
   filterListEntriesByParentId,
-  ListMembership,
+  getListDetails,
+  getListEntries,
+  getLists,
+  getRecordListMemberships,
+  type ListMembership,
+  removeRecordFromList,
+  updateListEntry,
 } from '../../objects/lists.js';
-import {
-  GetListsToolConfig,
-  ToolConfig,
+import type { AttioList, AttioListEntry } from '../../types/attio.js';
+import { getRecordNameFromEntry } from '../../utils/record-utils.js';
+import type {
   GetListEntriesToolConfig,
+  GetListsToolConfig,
   ListActionToolConfig,
+  ToolConfig,
 } from '../tool-types.js';
 
 // Lists tool configurations
@@ -334,7 +335,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'get-list-entries',
-    description: 'Get entries for a specific CRM list (companies, people, etc. in sales pipelines)',
+    description:
+      'Get entries for a specific CRM list (companies, people, etc. in sales pipelines)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -356,7 +358,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries',
-    description: 'Filter entries in a CRM list by a specific attribute (e.g., stage, status)',
+    description:
+      'Filter entries in a CRM list by a specific attribute (e.g., stage, status)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -407,7 +410,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'advanced-filter-list-entries',
-    description: 'Filter entries in a CRM list with advanced multiple conditions (complex sales pipeline queries)',
+    description:
+      'Filter entries in a CRM list with advanced multiple conditions (complex sales pipeline queries)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -522,7 +526,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'remove-record-from-list',
-    description: 'Remove a company or person from a CRM list (sales pipeline, lead list, etc.)',
+    description:
+      'Remove a company or person from a CRM list (sales pipeline, lead list, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -571,7 +576,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent',
-    description: 'Filter CRM list entries based on parent record properties (find companies by industry, people by role, etc.)',
+    description:
+      'Filter CRM list entries based on parent record properties (find companies by industry, people by role, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -634,7 +640,8 @@ export const listsToolDefinitions = [
   },
   {
     name: 'filter-list-entries-by-parent-id',
-    description: 'Filter CRM list entries by parent record ID (find all lists containing a specific company or person)',
+    description:
+      'Filter CRM list entries by parent record ID (find all lists containing a specific company or person)',
     inputSchema: {
       type: 'object',
       properties: {

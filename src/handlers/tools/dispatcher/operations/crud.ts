@@ -4,12 +4,12 @@
  * Handles create, read, update, delete, and related operations
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../../../types/attio.js';
-import { ToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import { createErrorResult } from '../../../../utils/error-handler.js';
+import type { ToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle create operations
@@ -73,8 +73,8 @@ export async function handleUpdateOperation(
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(
-          `ID parameter is required for update operation. ` +
-          `Expected 'recordId' or '${idParamName}' parameter.`
+          'ID parameter is required for update operation. ' +
+            `Expected 'recordId' or '${idParamName}' parameter.`
         ),
         `/${resourceType}`,
         'PUT',
@@ -136,8 +136,8 @@ export async function handleUpdateAttributeOperation(
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(
-          `ID parameter is required for updateAttribute operation. ` +
-          `Expected 'recordId' or '${idParamName}' parameter.`
+          'ID parameter is required for updateAttribute operation. ' +
+            `Expected 'recordId' or '${idParamName}' parameter.`
         ),
         `/${resourceType}`,
         'PATCH',

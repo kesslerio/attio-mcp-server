@@ -2,10 +2,13 @@
  * Notes-related tool configurations for companies
  */
 import {
-  getCompanyNotes,
   createCompanyNote,
+  getCompanyNotes,
 } from '../../../objects/companies/index.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
+import type {
+  CreateNoteToolConfig,
+  NotesToolConfig,
+} from '../../tool-types.js';
 
 // Company notes tool configurations
 export const notesToolConfigs = {
@@ -35,11 +38,11 @@ export const notesToolConfigs = {
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
             console.log(
-              `[get-company-notes] Note fields available:`,
+              '[get-company-notes] Note fields available:',
               Object.keys(note)
             );
             console.log(
-              `[get-company-notes] Content found:`,
+              '[get-company-notes] Content found:',
               !!content,
               content ? `(${content.length} chars)` : '(none)'
             );

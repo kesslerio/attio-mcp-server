@@ -1,8 +1,8 @@
-import {
-  updateCompanyAttribute,
-  updateCompany,
-} from '../dist/objects/companies.js';
 import { initializeAttioClient } from '../dist/api/attio-client.js';
+import {
+  updateCompany,
+  updateCompanyAttribute,
+} from '../dist/objects/companies.js';
 
 // Mock environment
 process.env.NODE_ENV = 'test';

@@ -1,17 +1,18 @@
 /**
  * Tests for the enhanced company validator with attribute type validation
  */
-import { CompanyValidator } from '../../src/validators/company-validator.js';
+
 import {
-  getAttributeTypeInfo,
   detectFieldType,
+  getAttributeTypeInfo,
 } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
 import {
-  MissingCompanyFieldError,
-  InvalidCompanyFieldTypeError,
   InvalidCompanyDataError,
+  InvalidCompanyFieldTypeError,
+  MissingCompanyFieldError,
 } from '../../src/errors/company-errors.js';
+import { CompanyValidator } from '../../src/validators/company-validator.js';
 
 // Mock the attribute type modules
 vi.mock('../../src/api/attribute-types.js', () => ({
@@ -310,7 +311,7 @@ describe('Enhanced Company Validator', () => {
       // Mock validateAttributeTypes for the single attribute
       vi.spyOn(CompanyValidator, 'validateAttributeTypes').mockImplementation(
         async (attributeObj) => ({
-          revenue: 1000000,
+          revenue: 1_000_000,
         })
       );
 
@@ -325,7 +326,7 @@ describe('Enhanced Company Validator', () => {
       );
 
       // Should return the converted value
-      expect(result).toBe(1000000);
+      expect(result).toBe(1_000_000);
 
       // Should call validateAttributeTypes with the attribute object
       expect(CompanyValidator.validateAttributeTypes).toHaveBeenCalledWith({

@@ -6,20 +6,21 @@
  *
  * Note: These tests require valid API credentials and will make actual API calls.
  */
-import { describe, test, expect, beforeAll } from 'vitest';
+
 import axios from 'axios';
-import {
-  createPeopleByCompanyFilter,
-  createCompaniesByPeopleFilter,
-  createRecordsByListFilter,
-  createPeopleByCompanyListFilter,
-  createCompaniesByPeopleListFilter,
-} from '../../src/utils/relationship-utils';
-import { FilterConditionType, ResourceType } from '../../src/types/attio';
-import { ListEntryFilters } from '../../src/api/operations/index';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { getAttioClient } from '../../src/api/attio-client';
-import { advancedSearchPeople } from '../../src/objects/people/search';
+import type { ListEntryFilters } from '../../src/api/operations/index';
 import { advancedSearchCompanies } from '../../src/objects/companies/search';
+import { advancedSearchPeople } from '../../src/objects/people/search';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import {
+  createCompaniesByPeopleFilter,
+  createCompaniesByPeopleListFilter,
+  createPeopleByCompanyFilter,
+  createPeopleByCompanyListFilter,
+  createRecordsByListFilter,
+} from '../../src/utils/relationship-utils';
 
 // Skip tests if no API key is provided
 const runIntegrationTests =

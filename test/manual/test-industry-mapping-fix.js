@@ -15,13 +15,13 @@
  *    node test/manual/test-industry-mapping-fix.js
  */
 
+import { initializeAttioClient } from '../../build/api/attio-client.js';
 import {
   createCompany,
-  updateCompany,
-  getCompanyDetails,
   deleteCompany,
+  getCompanyDetails,
+  updateCompany,
 } from '../../build/objects/companies/index.js';
-import { initializeAttioClient } from '../../build/api/attio-client.js';
 import { getAttributeSlug } from '../../build/utils/attribute-mapping/index.js';
 
 // Initialize API client with key from environment
@@ -167,7 +167,7 @@ async function runTests() {
         `${colors.yellow}⚠ The value was set on 'industry' field which exists in this Attio account${colors.reset}`
       );
       console.log(
-        `This is still a valid outcome as it means the API accepted the field.`
+        'This is still a valid outcome as it means the API accepted the field.'
       );
     } else {
       console.log(

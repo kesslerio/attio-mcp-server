@@ -352,14 +352,13 @@ function validateDateValue(
 ): ValidationResult {
   // Already a date object - simple case
   if (value instanceof Date) {
-    if (!isNaN(value.getTime())) {
-      return { valid: true, convertedValue: value.toISOString() };
-    } else {
+    if (isNaN(value.getTime())) {
       return {
         valid: false,
         error: `Invalid date value for "${attributeName}". The date is invalid.`,
       };
     }
+    return { valid: true, convertedValue: value.toISOString() };
   }
 
   // ISO date string

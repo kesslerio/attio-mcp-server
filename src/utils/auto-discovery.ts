@@ -2,13 +2,13 @@
  * Auto-discovery module for automatic attribute mapping updates
  */
 import {
-  getObjectAttributes,
   getAvailableObjects,
+  getObjectAttributes,
 } from '../cli/commands/attributes.js';
 import {
   loadMappingConfig,
+  type MappingConfig,
   writeMappingConfig,
-  MappingConfig,
 } from './config-loader.js';
 
 // Simple logging for auto-discovery - disabled for MCP protocol compatibility

@@ -143,12 +143,11 @@ export function verifySpecificTool(
     // Check if the tool was properly merged into the main configs
     if (toolType in configs) {
       return true;
-    } else {
-      console.warn(
-        `[${resourceName}ToolConfigs] WARNING: ${toolType} exists in sub-config but not in combined config!`
-      );
-      return false;
     }
+    console.warn(
+      `[${resourceName}ToolConfigs] WARNING: ${toolType} exists in sub-config but not in combined config!`
+    );
+    return false;
   }
 
   // Just check the main configs

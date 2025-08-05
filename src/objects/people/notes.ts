@@ -2,11 +2,11 @@
  * Note operations for People
  */
 import {
-  getObjectNotes,
   createObjectNote,
+  getObjectNotes,
 } from '../../api/operations/index.js';
-import { ResourceType, AttioNote } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { type AttioNote, ResourceType } from '../../types/attio.js';
 import { isValidId } from '../../utils/validation.js';
 
 /**
@@ -19,8 +19,8 @@ import { isValidId } from '../../utils/validation.js';
  */
 export async function getPersonNotes(
   personId: string,
-  limit: number = 10,
-  offset: number = 0
+  limit = 10,
+  offset = 0
 ): Promise<AttioNote[]> {
   try {
     if (!isValidId(personId)) {

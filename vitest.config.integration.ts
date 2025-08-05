@@ -8,7 +8,7 @@ export default defineConfig({
       'test/handlers/tool-configs/universal/performance.test.ts',
     ],
     globals: true,
-    testTimeout: 60000, // Extended timeout for API calls
+    testTimeout: 60_000, // Extended timeout for API calls
     // No setupFiles - avoid global mocks for integration tests
     pool: 'forks',
     poolOptions: {

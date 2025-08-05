@@ -14,7 +14,7 @@ const patterns = {
   standalone: /(?:^|\s)([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?:\s|$)/g,
 
   // Improved pattern that can find domains without requiring trailing space
-  improved: /(?:^|\s)([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?=\s|$|[^\w\.-])/g,
+  improved: /(?:^|\s)([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?=\s|$|[^\w.-])/g,
 
   // Even more flexible pattern
   flexible: /\b([a-zA-Z0-9-]+\.[a-zA-Z]{2,})\b/g,

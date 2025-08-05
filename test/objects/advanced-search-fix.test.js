@@ -4,9 +4,9 @@
  * This test verifies that the advanced search functionality handles both
  * valid and invalid filter structures properly, with clear error messages.
  */
-import { describe, test, expect, beforeAll } from 'vitest';
-import { advancedSearchCompanies } from '../../src/objects/companies/index';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { FilterValidationError } from '../../src/errors/api-errors';
+import { advancedSearchCompanies } from '../../src/objects/companies/index';
 
 // Skip tests if no API key is provided
 const SKIP_TESTS = !process.env.ATTIO_API_KEY;

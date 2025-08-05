@@ -1,30 +1,31 @@
 /**
  * Enhanced people search functions with pagination support
  */
+
+import type { ListEntryFilters } from '../api/operations/index.js';
+import { FilterValidationError } from '../errors/api-errors.js';
 import {
-  searchPeopleByCreationDate,
-  searchPeopleByModificationDate,
-  searchPeopleByLastInteraction,
-  searchPeopleByActivity,
-  advancedSearchPeople,
-} from './people/index.js';
-import {
-  DateRange,
+  type ActivityFilter,
+  type DateRange,
   InteractionType,
-  ActivityFilter,
-  Person,
+  type Person,
 } from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
 import {
-  PaginatedResponse,
-  createPaginatedResponse,
-} from '../utils/pagination.js';
-import {
-  validateDateRange,
   validateActivityFilter,
+  validateDateRange,
   validateNumericParam,
 } from '../utils/filters/index.js';
-import { FilterValidationError } from '../errors/api-errors.js';
+import {
+  createPaginatedResponse,
+  type PaginatedResponse,
+} from '../utils/pagination.js';
+import {
+  advancedSearchPeople,
+  searchPeopleByActivity,
+  searchPeopleByCreationDate,
+  searchPeopleByLastInteraction,
+  searchPeopleByModificationDate,
+} from './people/index.js';
 
 /**
  * Advanced search for people with built-in pagination
@@ -36,8 +37,8 @@ import { FilterValidationError } from '../errors/api-errors.js';
  */
 export async function paginatedSearchPeople(
   filters: ListEntryFilters,
-  page: number = 1,
-  pageSize: number = 20
+  page = 1,
+  pageSize = 20
 ): Promise<PaginatedResponse<Person>> {
   try {
     // Validate pagination parameters
@@ -181,7 +182,7 @@ export async function paginatedSearchPeopleByLastInteraction(
     const validPageSize = validateNumericParam(pageSize, 'pageSize', 20);
 
     // Validate interactionType if provided
-    let validatedInteractionType: InteractionType | undefined = undefined;
+    let validatedInteractionType: InteractionType | undefined;
     if (interactionType !== undefined) {
       // Convert to string if not already
       const typeString = String(interactionType).toLowerCase();

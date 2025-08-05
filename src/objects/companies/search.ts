@@ -1,19 +1,19 @@
 /**
  * Search functionality for companies
- * 
+ *
  * Simplified implementation following CLAUDE.md documentation-first rule.
  * Uses standard Attio API patterns instead of custom workarounds.
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import {
-  searchObject,
   advancedSearchObject,
-  ListEntryFilters,
+  type ListEntryFilters,
+  searchObject,
 } from '../../api/operations/index.js';
 import {
-  ResourceType,
-  Company,
+  type Company,
   FilterConditionType,
+  ResourceType,
 } from '../../types/attio.js';
 import { normalizeDomain } from '../../utils/domain-utils.js';
 
@@ -27,7 +27,7 @@ export interface CompanySearchOptions {
 
 /**
  * Searches for companies by name using standard Attio API
- * 
+ *
  * @param query - Search query string to match against company names
  * @param options - Optional search configuration
  * @returns Array of matching company objects
@@ -40,30 +40,37 @@ export async function searchCompanies(
     return [];
   }
 
-  if (options.maxResults !== undefined && (typeof options.maxResults !== 'number' || options.maxResults < 0 || !Number.isInteger(options.maxResults))) {
+  if (
+    options.maxResults !== undefined &&
+    (typeof options.maxResults !== 'number' ||
+      options.maxResults < 0 ||
+      !Number.isInteger(options.maxResults))
+  ) {
     throw new Error('maxResults must be a non-negative integer');
   }
 
   const results = await searchObject<Company>(ResourceType.COMPANIES, query);
-  
+
   // Apply maxResults limit if specified
   return options.maxResults ? results.slice(0, options.maxResults) : results;
 }
 
 /**
  * Searches for companies by domain using correct 'domains' field
- * 
+ *
  * @param domain - Domain to search for
  * @returns Array of matching company objects
  */
-export async function searchCompaniesByDomain(domain: string): Promise<Company[]> {
+export async function searchCompaniesByDomain(
+  domain: string
+): Promise<Company[]> {
   if (!domain || typeof domain !== 'string' || !domain.trim()) {
     return [];
   }
 
   const normalizedDomain = normalizeDomain(domain);
   const api = getAttioClient();
-  
+
   try {
     const response = await api.post('/objects/companies/records/query', {
       filter: {
@@ -79,7 +86,7 @@ export async function searchCompaniesByDomain(domain: string): Promise<Company[]
 
 /**
  * Performs advanced search with custom filters using standard API
- * 
+ *
  * @param filters - List of filters to apply
  * @param limit - Maximum number of results to return
  * @param offset - Number of results to skip
@@ -93,15 +100,21 @@ export async function advancedSearchCompanies(
   if (!filters) {
     throw new Error('Filters parameter is required');
   }
-  
-  if (limit !== undefined && (typeof limit !== 'number' || limit < 0 || !Number.isInteger(limit))) {
+
+  if (
+    limit !== undefined &&
+    (typeof limit !== 'number' || limit < 0 || !Number.isInteger(limit))
+  ) {
     throw new Error('Limit must be a non-negative integer');
   }
-  
-  if (offset !== undefined && (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset))) {
+
+  if (
+    offset !== undefined &&
+    (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset))
+  ) {
     throw new Error('Offset must be a non-negative integer');
   }
-  
+
   return await advancedSearchObject<Company>(
     ResourceType.COMPANIES,
     filters,
@@ -120,12 +133,12 @@ export function createNameFilter(
   if (!name || typeof name !== 'string') {
     throw new Error('Name parameter must be a non-empty string');
   }
-  
+
   return {
     filters: [
       {
         attribute: { slug: 'name' },
-        condition: condition,
+        condition,
         value: name,
       },
     ],
@@ -142,13 +155,13 @@ export function createDomainFilter(
   if (!domain || typeof domain !== 'string') {
     throw new Error('Domain parameter must be a non-empty string');
   }
-  
+
   const normalizedDomain = normalizeDomain(domain);
   return {
     filters: [
       {
         attribute: { slug: 'domains' },
-        condition: condition,
+        condition,
         value: normalizedDomain,
       },
     ],
@@ -165,12 +178,12 @@ export function createIndustryFilter(
   if (!industry || typeof industry !== 'string') {
     throw new Error('Industry parameter must be a non-empty string');
   }
-  
+
   return {
     filters: [
       {
         attribute: { slug: 'industry' },
-        condition: condition,
+        condition,
         value: industry,
       },
     ],

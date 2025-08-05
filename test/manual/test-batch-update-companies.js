@@ -56,7 +56,7 @@ jest.mock('../../build/api/operations/index.js', () => ({
         throw new Error('Invalid objectSlug: undefined');
       }
 
-      if (!records || !Array.isArray(records)) {
+      if (!(records && Array.isArray(records))) {
         throw new Error('Invalid records parameter: undefined or not an array');
       }
 

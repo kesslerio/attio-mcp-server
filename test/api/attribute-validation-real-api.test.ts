@@ -2,15 +2,16 @@
  * End-to-end tests for attribute validation with real Attio API
  * These tests require a valid Attio API key and will be skipped if SKIP_INTEGRATION_TESTS=true
  */
-import { CompanyValidator } from '../../src/validators/company-validator.js';
+
 import { getAttioClient } from '../../src/api/attio-client.js';
 import {
+  clearAttributeCache,
   getAttributeTypeInfo,
   getObjectAttributeMetadata,
-  clearAttributeCache,
 } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
 import { ResourceType } from '../../src/types/attio.js';
+import { CompanyValidator } from '../../src/validators/company-validator.js';
 
 // Determine if tests should be skipped
 const SKIP_TESTS =
@@ -22,7 +23,7 @@ const TEST_COMPANY_PREFIX = 'ValidationTest_';
 
 // Helper to generate unique name
 const generateUniqueName = () =>
-  `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
+  `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100_000)}`;
 
 // Create a test company and return its ID
 async function createTestCompany(attributes: Record<string, any>) {
@@ -100,7 +101,7 @@ describe(`Attribute Validation with Real Attio API (${
     clearAttributeCache();
 
     // Set longer timeout for API tests
-    vi.setTimeout(30000); // 30 seconds
+    vi.setTimeout(30_000); // 30 seconds
   });
 
   // Clean up after tests if they ran

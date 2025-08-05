@@ -2,11 +2,11 @@
  * Integration test for the add-record-to-list tool
  * Tests the entire flow from tool invocation to API call with proper parameters
  */
-import { describe, test, expect, beforeAll, vi } from 'vitest';
+import { beforeAll, describe, expect, test, vi } from 'vitest';
 import { getAttioClient } from '../../../src/api/attio-client';
-import { addRecordToList } from '../../../src/objects/lists';
-import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
 import { listsToolConfigs } from '../../../src/handlers/tool-configs/lists';
+import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
+import { addRecordToList } from '../../../src/objects/lists';
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS =

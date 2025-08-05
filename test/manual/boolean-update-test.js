@@ -14,10 +14,10 @@
 import { getAttioClient } from '../../src/api/attio-client.js';
 import {
   createCompany,
+  deleteCompany,
+  getCompanyDetails,
   updateCompany,
   updateCompanyAttribute,
-  getCompanyDetails,
-  deleteCompany,
 } from '../../src/objects/companies/basic.js';
 import { convertToBoolean } from '../../src/utils/attribute-mapping/attribute-mappers.js';
 

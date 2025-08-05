@@ -24,7 +24,7 @@ testCases.forEach((input) => {
     console.log(`Result: "${result}"`);
 
     // Show the transformation steps
-    const normalized = input.toLowerCase().replace(/[\s\/\-_.]+/g, '_');
+    const normalized = input.toLowerCase().replace(/[\s/\-_.]+/g, '_');
     console.log(`Normalized would be: "${normalized}"`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
@@ -33,6 +33,7 @@ testCases.forEach((input) => {
 
 // Check if mappings exist in config
 console.log('\n\n=== Checking Configuration ===');
+
 import { readFileSync } from 'fs';
 
 try {

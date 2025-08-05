@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test script to search for a specific person
-import { searchPeople, getPersonDetails } from '../../dist/objects/people.js';
+import { getPersonDetails, searchPeople } from '../../dist/objects/people.js';
 
 async function searchSpecificPerson(name) {
   try {

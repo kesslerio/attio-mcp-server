@@ -3,39 +3,32 @@
  * Maintains backward compatibility while providing organized module structure
  */
 
+// Export all builders
+export * from './builders.js';
+// Export cache utilities
+export * from './cache.js';
+// Export all operators
+export * from './operators.js';
+// Export relationship utilities
+export * from './relationship.js';
+// Export all translators
+export * from './translators.js';
 // Export all types
 export * from './types.js';
-
+// Export all utilities
+export * from './utils.js';
 // Export all validators
 export * from './validators.js';
 
-// Export all builders
-export * from './builders.js';
-
-// Export all translators
-export * from './translators.js';
-
-// Export all operators
-export * from './operators.js';
-
-// Export all utilities
-export * from './utils.js';
-
-// Export cache utilities
-export * from './cache.js';
-
-// Export relationship utilities
-export * from './relationship.js';
-
+import {
+  combineWithAnd,
+  combineWithOr,
+  createContainsFilter,
+  createEqualsFilter,
+} from './builders.js';
 // Re-export namespaced Basic utilities for backward compatibility
 import { transformFiltersToApiFormat } from './translators.js';
 import { validateFilterStructure } from './validators.js';
-import {
-  createEqualsFilter,
-  createContainsFilter,
-  combineWithAnd,
-  combineWithOr,
-} from './builders.js';
 
 export const Basic = {
   validateFilterStructure,
@@ -48,12 +41,12 @@ export const Basic = {
 
 // Re-export namespaced Range utilities for backward compatibility
 import {
-  createDateRangeFilter,
   createCreatedDateFilter,
+  createDateRangeFilter,
+  createEmployeeCountFilter,
   createModifiedDateFilter,
   createNumericFilter,
   createRevenueFilter,
-  createEmployeeCountFilter,
 } from './builders.js';
 
 export const Range = {
@@ -79,11 +72,11 @@ export const Activity = {
 // Re-export namespaced Relationship utilities for backward compatibility
 import {
   applyRateLimit,
-  createPeopleByCompanyFilter,
   createCompaniesByPeopleFilter,
-  createRecordsByListFilter,
-  createPeopleByCompanyListFilter,
   createCompaniesByPeopleListFilter,
+  createPeopleByCompanyFilter,
+  createPeopleByCompanyListFilter,
+  createRecordsByListFilter,
   createRecordsByNotesFilter,
 } from './relationship.js';
 

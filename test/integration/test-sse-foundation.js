@@ -18,9 +18,9 @@ console.log('🧪 Testing SSE Transport Foundation...\n');
 console.log('1. Checking file structure...');
 const expectedFiles = [
   'src/types/sse-types.ts',
-  'src/transport/connection-manager.ts', 
+  'src/transport/connection-manager.ts',
   'src/transport/sse-server.ts',
-  'src/transport/message-wrapper.ts'
+  'src/transport/message-wrapper.ts',
 ];
 
 let allFilesExist = true;
@@ -46,15 +46,15 @@ console.log('2. Checking health server modifications...');
 const healthServerPath = path.join(__dirname, 'src/health/http-server.ts');
 if (fs.existsSync(healthServerPath)) {
   const content = fs.readFileSync(healthServerPath, 'utf-8');
-  
+
   const requiredChanges = [
     'SSEServer',
     'startExtendedHealthServer',
     '/sse',
     '/mcp/message',
-    'handleSSEConnection'
+    'handleSSEConnection',
   ];
-  
+
   let allChangesPresent = true;
   for (const change of requiredChanges) {
     if (content.includes(change)) {
@@ -64,7 +64,7 @@ if (fs.existsSync(healthServerPath)) {
       allChangesPresent = false;
     }
   }
-  
+
   if (allChangesPresent) {
     console.log('   🔧 Health server successfully extended\n');
   } else {
@@ -79,14 +79,14 @@ console.log('3. Checking main index modifications...');
 const indexPath = path.join(__dirname, 'src/index.ts');
 if (fs.existsSync(indexPath)) {
   const content = fs.readFileSync(indexPath, 'utf-8');
-  
+
   const requiredChanges = [
     'startExtendedHealthServer',
     'ENABLE_SSE_TRANSPORT',
     'enableSSE',
-    'sseOptions'
+    'sseOptions',
   ];
-  
+
   let allChangesPresent = true;
   for (const change of requiredChanges) {
     if (content.includes(change)) {
@@ -96,7 +96,7 @@ if (fs.existsSync(indexPath)) {
       allChangesPresent = false;
     }
   }
-  
+
   if (allChangesPresent) {
     console.log('   🔧 Main index successfully modified\n');
   } else {
@@ -114,18 +114,22 @@ for (const file of expectedFiles) {
   const fullPath = path.join(__dirname, file);
   if (fs.existsSync(fullPath)) {
     const content = fs.readFileSync(fullPath, 'utf-8');
-    
+
     // Basic syntax checks
     const openBraces = (content.match(/\{/g) || []).length;
     const closeBraces = (content.match(/\}/g) || []).length;
     const openParens = (content.match(/\(/g) || []).length;
     const closeParens = (content.match(/\)/g) || []).length;
-    
+
     if (openBraces !== closeBraces) {
-      console.log(`   ❌ ${file} - Mismatched braces (${openBraces}/${closeBraces})`);
+      console.log(
+        `   ❌ ${file} - Mismatched braces (${openBraces}/${closeBraces})`
+      );
       syntaxValid = false;
     } else if (openParens !== closeParens) {
-      console.log(`   ❌ ${file} - Mismatched parentheses (${openParens}/${closeParens})`);
+      console.log(
+        `   ❌ ${file} - Mismatched parentheses (${openParens}/${closeParens})`
+      );
       syntaxValid = false;
     } else {
       console.log(`   ✅ ${file} - Basic syntax OK`);
@@ -143,34 +147,42 @@ if (syntaxValid) {
 console.log('5. Testing environment variable configuration...');
 const envVars = [
   'ENABLE_SSE_TRANSPORT',
-  'SSE_ENABLE_CORS', 
+  'SSE_ENABLE_CORS',
   'SSE_HEARTBEAT_INTERVAL',
   'SSE_CONNECTION_TIMEOUT',
   'SSE_RATE_LIMIT_PER_MINUTE',
   'SSE_MAX_CONNECTIONS',
   'SSE_REQUIRE_AUTH',
-  'SSE_ALLOWED_ORIGINS'
+  'SSE_ALLOWED_ORIGINS',
 ];
 
-console.log(`   📋 Available SSE configuration variables:`);
+console.log('   📋 Available SSE configuration variables:');
 for (const envVar of envVars) {
   console.log(`      • ${envVar}`);
 }
-console.log(`   🔧 SSE transport can be enabled with: ENABLE_SSE_TRANSPORT=true\n`);
+console.log(
+  '   🔧 SSE transport can be enabled with: ENABLE_SSE_TRANSPORT=true\n'
+);
 
 // Summary
 console.log('📊 Test Summary:');
 console.log(`   ✅ File Structure: ${allFilesExist ? 'PASS' : 'FAIL'}`);
 console.log(`   ✅ TypeScript Syntax: ${syntaxValid ? 'PASS' : 'FAIL'}`);
-console.log(`   ✅ Backwards Compatibility: MAINTAINED (SSE disabled by default)`);
-console.log(`   ✅ ChatGPT Connector Ready: YES (when ENABLE_SSE_TRANSPORT=true)`);
+console.log(
+  '   ✅ Backwards Compatibility: MAINTAINED (SSE disabled by default)'
+);
+console.log(
+  '   ✅ ChatGPT Connector Ready: YES (when ENABLE_SSE_TRANSPORT=true)'
+);
 
 console.log('\n🎉 SSE Transport Foundation Implementation Complete!');
 console.log('\n📚 Next Steps:');
 console.log('   1. Run `npm run build` to compile TypeScript');
 console.log('   2. Test with ENABLE_SSE_TRANSPORT=true');
 console.log('   3. Test SSE endpoints with curl:');
-console.log('      curl -N -H "Accept: text/event-stream" http://localhost:3000/sse/');
+console.log(
+  '      curl -N -H "Accept: text/event-stream" http://localhost:3000/sse/'
+);
 console.log('   4. Verify existing MCP functionality still works');
 
 console.log('\n✨ Ready for Phase 2: OpenAI-Compliant Tools Implementation');

@@ -3,16 +3,16 @@
  * Handles basic and advanced search functionality
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
-  AttioListResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
-import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import {
+  type AttioListResponse,
+  type AttioRecord,
+  ResourceType,
+} from '../../types/attio.js';
+import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, type RetryConfig } from './retry.js';
+import type { ListEntryFilters } from './types.js';
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)

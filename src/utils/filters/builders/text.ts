@@ -4,10 +4,10 @@
 
 // Internal imports
 import {
-  FilterConditionType,
-  ListEntryFilter,
-  ListEntryFilters,
   ATTRIBUTES,
+  FilterConditionType,
+  type ListEntryFilter,
+  type ListEntryFilters,
 } from './types.js';
 
 /**

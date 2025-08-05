@@ -199,9 +199,9 @@ export async function getAttributeTypeInfo(
 
   return {
     fieldType,
-    isArray: attrMetadata.is_multiselect || false,
-    isRequired: attrMetadata.is_required || false,
-    isUnique: attrMetadata.is_unique || false,
+    isArray: attrMetadata.is_multiselect ?? false,
+    isRequired: attrMetadata.is_required ?? false,
+    isUnique: attrMetadata.is_unique ?? false,
     attioType: attrMetadata.type,
     metadata: attrMetadata,
   };
@@ -347,10 +347,9 @@ export async function formatAttributeValue(
         // Multiselect: array of strings
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
-      } else {
-        // Single select: direct string
-        return value;
       }
+      // Single select: direct string
+      return value;
 
     case 'text':
       // Text fields for people object don't need wrapping for certain slugs
@@ -367,9 +366,8 @@ export async function formatAttributeValue(
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
-      } else {
-        return { value };
       }
+      return { value };
 
     case 'personal-name':
       // Personal name fields don't need value wrapping
@@ -380,18 +378,16 @@ export async function formatAttributeValue(
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
-      } else {
-        return { value };
       }
+      return { value };
 
     case 'phone-number':
       // Phone fields are like email - array but no value wrapping
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
-      } else {
-        return value;
       }
+      return value;
 
     case 'email-address': {
       // Email is an array field but doesn't need value wrapping
@@ -404,9 +400,8 @@ export async function formatAttributeValue(
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue;
-      } else {
-        return value;
       }
+      return value;
 
     case 'number':
     case 'currency':
@@ -414,9 +409,8 @@ export async function formatAttributeValue(
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
-      } else {
-        return { value };
       }
+      return { value };
 
     case 'checkbox':
     case 'boolean':
@@ -430,18 +424,16 @@ export async function formatAttributeValue(
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
-      } else {
-        return { value };
       }
+      return { value };
 
     default:
       // Default: wrap the value for safety
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         return arrayValue.map((v) => ({ value: v }));
-      } else {
-        return { value };
       }
+      return { value };
   }
 }
 

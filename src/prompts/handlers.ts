@@ -1,24 +1,24 @@
 /**
  * Request handlers for prompt endpoints
  */
-import { Request, Response } from 'express';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import {
-  getAllPrompts,
-  getPromptById,
-  getPromptsByCategory,
-  getAllCategories,
-} from './templates/index.js';
-import { PromptTemplate, PromptExecutionRequest } from './types.js';
-import { createErrorResult } from './error-handler.js';
 
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import {
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import type { Request, Response } from 'express';
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
 import Handlebars from 'handlebars';
+import { createErrorResult } from './error-handler.js';
+import {
+  getAllCategories,
+  getAllPrompts,
+  getPromptById,
+  getPromptsByCategory,
+} from './templates/index.js';
+import type { PromptExecutionRequest, PromptTemplate } from './types.js';
 
 // Define template delegate type since it's not exported by the Handlebars module
 type HandlebarsTemplateDelegate = (
@@ -125,9 +125,8 @@ Handlebars.registerHelper(
   ): string {
     if (conditional) {
       return options.fn(this);
-    } else {
-      return options.inverse(this);
     }
+    return options.inverse(this);
   }
 );
 

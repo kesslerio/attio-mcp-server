@@ -203,7 +203,7 @@ function validateConstraints(
 function validateValue(
   value: any,
   schema: ValidationSchema,
-  path: string = ''
+  path = ''
 ): string[] {
   const errors: string[] = [];
 
@@ -244,7 +244,7 @@ function validateValue(
           // Skip undefined/null for non-required fields
           if (
             (propValue === undefined || propValue === null) &&
-            (!schema.required || !schema.required.includes(propName))
+            !(schema.required && schema.required.includes(propName))
           ) {
             continue;
           }

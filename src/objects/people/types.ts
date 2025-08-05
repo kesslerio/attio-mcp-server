@@ -54,7 +54,7 @@ export class PersonValidator {
     attributes: PersonAttributes
   ): Promise<PersonAttributes> {
     // Basic validation - ensure we have at least an email or name
-    if (!attributes.email_addresses && !attributes.name) {
+    if (!(attributes.email_addresses || attributes.name)) {
       throw new InvalidPersonDataError(
         'Must provide at least an email address or name'
       );

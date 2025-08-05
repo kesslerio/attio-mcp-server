@@ -22,7 +22,7 @@ async function testCreatePerson() {
   console.log('=== Testing create-person with valid parameters ===');
 
   // Generate unique identifier for testing
-  const uniqueId = Math.floor(Math.random() * 10000);
+  const uniqueId = Math.floor(Math.random() * 10_000);
 
   // Valid request with required attributes
   const validRequest = {
@@ -43,7 +43,7 @@ async function testCreatePerson() {
 
   console.log(`Testing with unique ID: ${uniqueId}`);
   console.log(
-    `Request arguments:`,
+    'Request arguments:',
     JSON.stringify(validRequest.params.arguments, null, 2)
   );
 
@@ -85,7 +85,7 @@ async function testCreatePersonInvalid() {
   };
 
   console.log(
-    `Request arguments:`,
+    'Request arguments:',
     JSON.stringify(invalidRequest.params.arguments, null, 2)
   );
 
@@ -145,6 +145,7 @@ if (!process.env.ATTIO_API_KEY) {
 
 // Initialize the API client
 import { initializeAttioClient } from '../../dist/api/attio-client.js';
+
 initializeAttioClient(process.env.ATTIO_API_KEY);
 
 // Run the tests

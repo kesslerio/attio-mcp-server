@@ -1,8 +1,9 @@
 /**
  * Utility functions for API fallback patterns
  */
-import type { AttioListResponse, AttioListEntry } from '../types/attio.js';
+
 import type { ListEntryFilters } from '../api/operations/index.js';
+import type { AttioListEntry, AttioListResponse } from '../types/attio.js';
 
 export interface FallbackOptions {
   listId: string;
@@ -16,9 +17,11 @@ export interface ApiClient {
   get<T>(path: string): Promise<{ data: T }>;
 }
 
-export interface FallbackLogger {
-  (message: string, context?: Record<string, unknown>, isError?: boolean): void;
-}
+export type FallbackLogger = (
+  message: string,
+  context?: Record<string, unknown>,
+  isError?: boolean
+) => void;
 
 /**
  * Executes API calls with automatic fallback strategy for list operations
@@ -116,7 +119,7 @@ export async function executeWithListFallback<T>(
       );
 
       // GET endpoint as last resort (only if no filters)
-      if (!filters || !filters.filters || filters.filters.length === 0) {
+      if (!(filters && filters.filters) || filters.filters.length === 0) {
         try {
           const params = new URLSearchParams();
           params.append('list_id', listId);

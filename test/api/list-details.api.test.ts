@@ -4,13 +4,13 @@
  * This test will use the real Attio API if SKIP_INTEGRATION_TESTS is not set
  * and ATTIO_API_KEY is provided
  */
-import { describe, test, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { initializeAttioClient } from '../../src/api/attio-client';
-import { getListDetails } from '../../src/objects/lists';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
+import { getListDetails } from '../../src/objects/lists';
 
 // Test config
-const TIMEOUT = 30000; // 30 seconds timeout for API tests
+const TIMEOUT = 30_000; // 30 seconds timeout for API tests
 const TEST_LIST_ID = process.env.TEST_LIST_ID || 'default-test-list-id';
 
 describe('get-list-details API test', () => {
@@ -22,16 +22,16 @@ describe('get-list-details API test', () => {
   const conditionalTest = shouldSkip ? test.skip : test;
 
   beforeAll(() => {
-    if (!shouldSkip) {
+    if (shouldSkip) {
+      console.log(
+        'Skipping Attio API integration tests (SKIP_INTEGRATION_TESTS=true or no ATTIO_API_KEY)'
+      );
+    } else {
       // Initialize the API client with the actual API key
       initializeAttioClient(process.env.ATTIO_API_KEY as string);
 
       // Log so we know tests are running
       console.log('Running Attio API integration tests with real API key');
-    } else {
-      console.log(
-        'Skipping Attio API integration tests (SKIP_INTEGRATION_TESTS=true or no ATTIO_API_KEY)'
-      );
     }
   });
 

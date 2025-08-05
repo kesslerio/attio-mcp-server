@@ -18,15 +18,18 @@ async function testErrorHandler() {
     stderr: serverProcess.stderr,
   });
 
-  const client = new Client({
-    name: 'test-client',
-    version: '1.0',
-  }, {
-    capabilities: {},
-  });
+  const client = new Client(
+    {
+      name: 'test-client',
+      version: '1.0',
+    },
+    {
+      capabilities: {},
+    }
+  );
 
   await client.connect(transport);
-  
+
   try {
     // Call the advancedSearch tool with invalid value
     const result = await client.callTool({
@@ -36,19 +39,19 @@ async function testErrorHandler() {
           filters: [
             {
               attribute: {
-                slug: 'b2b_segment'
+                slug: 'b2b_segment',
               },
               condition: 'equals',
-              value: 'Aesthetics'
-            }
+              value: 'Aesthetics',
+            },
           ],
-          matchAny: false
+          matchAny: false,
         },
         limit: 20,
-        offset: 0
-      }
+        offset: 0,
+      },
     });
-    
+
     console.log('Result:', JSON.stringify(result, null, 2));
   } catch (error) {
     console.error('Error:', error);

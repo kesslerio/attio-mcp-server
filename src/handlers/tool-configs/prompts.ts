@@ -2,12 +2,12 @@
  * Prompts-related tool configurations
  */
 import {
-  listPrompts,
-  listPromptCategories,
-  getPromptDetails,
   executePrompt,
+  getPromptDetails,
+  listPromptCategories,
+  listPrompts,
 } from '../../prompts/index.js';
-import { PromptsToolConfig } from '../tool-types.js';
+import type { PromptsToolConfig } from '../tool-types.js';
 
 // Prompts tool configurations
 export const promptsToolConfigs = {

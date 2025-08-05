@@ -3,17 +3,17 @@
  * Provides Server-Sent Events transport for ChatGPT connector compatibility
  */
 
-import { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { URL } from 'url';
-import { SSEConnectionManager } from './connection-manager.js';
-import {
-  SSEServerOptions,
-  SSEAuthResult,
-  MCPSSEMessage,
+import type {
   ClientMessage,
+  MCPSSEMessage,
+  SSEAuthResult,
+  SSEServerOptions,
   ServerResponse as SSEServerResponse,
   SSETransportInit,
 } from '../types/sse-types.js';
+import { SSEConnectionManager } from './connection-manager.js';
 
 /**
  * SSE Server for handling ChatGPT connector communications
@@ -26,8 +26,8 @@ export class SSEServer {
     this.options = {
       port: 3001,
       enableCors: true,
-      heartbeatInterval: 30000,
-      connectionTimeout: 300000,
+      heartbeatInterval: 30_000,
+      connectionTimeout: 300_000,
       rateLimitPerMinute: 100,
       maxConnections: 1000,
       requireAuth: false,
@@ -41,26 +41,41 @@ export class SSEServer {
   /**
    * Handle SSE connection request
    */
-  async handleSSEConnection(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  async handleSSEConnection(
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
     try {
       const url = new URL(req.url || '', `http://${req.headers.host}`);
       const clientId = this.generateClientId(req);
       const clientIp = this.getClientIp(req);
 
-      console.log(`[SSE] New connection request from ${clientId} (${clientIp})`);
+      console.log(
+        `[SSE] New connection request from ${clientId} (${clientIp})`
+      );
 
       // Authenticate if required
       if (this.options.requireAuth) {
         const authResult = this.authenticateRequest(req);
         if (!authResult.success) {
-          this.sendErrorResponse(res, 401, 'Unauthorized', authResult.error || 'Authentication failed');
+          this.sendErrorResponse(
+            res,
+            401,
+            'Unauthorized',
+            authResult.error || 'Authentication failed'
+          );
           return;
         }
       }
 
       // Check rate limits
       if (!this.connectionManager.checkRateLimit(clientId)) {
-        this.sendErrorResponse(res, 429, 'Too Many Requests', 'Rate limit exceeded');
+        this.sendErrorResponse(
+          res,
+          429,
+          'Too Many Requests',
+          'Rate limit exceeded'
+        );
         return;
       }
 
@@ -79,7 +94,12 @@ export class SSEServer {
       );
 
       if (!success) {
-        this.sendErrorResponse(res, 503, 'Service Unavailable', 'Connection limit reached');
+        this.sendErrorResponse(
+          res,
+          503,
+          'Service Unavailable',
+          'Connection limit reached'
+        );
         return;
       }
 
@@ -93,17 +113,24 @@ export class SSEServer {
         console.error(`[SSE] Client ${clientId} error:`, error);
         this.connectionManager.removeConnection(clientId);
       });
-
     } catch (error) {
       console.error('[SSE] Error handling connection:', error);
-      this.sendErrorResponse(res, 500, 'Internal Server Error', 'Connection failed');
+      this.sendErrorResponse(
+        res,
+        500,
+        'Internal Server Error',
+        'Connection failed'
+      );
     }
   }
 
   /**
    * Handle client message POST request
    */
-  async handleClientMessage(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  async handleClientMessage(
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
     try {
       const clientId = this.generateClientId(req);
 
@@ -140,7 +167,7 @@ export class SSEServer {
       const clientMessage: ClientMessage = JSON.parse(body);
 
       // Validate message
-      if (!clientMessage.type || !clientMessage.id) {
+      if (!(clientMessage.type && clientMessage.id)) {
         this.sendJSONResponse(res, 400, {
           success: false,
           id: clientMessage.id || '',
@@ -156,7 +183,6 @@ export class SSEServer {
       // Process message based on type
       const response = await this.processClientMessage(clientId, clientMessage);
       this.sendJSONResponse(res, 200, response);
-
     } catch (error) {
       console.error('[SSE] Error handling client message:', error);
       this.sendJSONResponse(res, 500, {
@@ -221,7 +247,11 @@ export class SSEServer {
   /**
    * Send status update to client
    */
-  sendStatus(clientId: string, type: 'processing' | 'completed' | 'error', message?: string): boolean {
+  sendStatus(
+    clientId: string,
+    type: 'processing' | 'completed' | 'error',
+    message?: string
+  ): boolean {
     const sseMessage: MCPSSEMessage = {
       event: 'status',
       timestamp: new Date().toISOString(),
@@ -258,7 +288,7 @@ export class SSEServer {
     const ip = this.getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
     const timestamp = Date.now();
-    
+
     // Create a hash-like ID from IP, user agent, and timestamp
     const combined = `${ip}-${userAgent}-${timestamp}`;
     return Buffer.from(combined).toString('base64').slice(0, 16);
@@ -269,8 +299,8 @@ export class SSEServer {
    */
   private getClientIp(req: IncomingMessage): string {
     return (
-      req.headers['x-forwarded-for'] as string ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-forwarded-for'] as string) ||
+      (req.headers['x-real-ip'] as string) ||
       req.socket.remoteAddress ||
       'unknown'
     );
@@ -284,7 +314,7 @@ export class SSEServer {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.slice(7);
     }
-    return undefined;
+    return;
   }
 
   /**
@@ -292,7 +322,7 @@ export class SSEServer {
    */
   private authenticateRequest(req: IncomingMessage): SSEAuthResult {
     const token = this.extractToken(req);
-    
+
     if (!token) {
       return {
         success: false,
@@ -327,7 +357,7 @@ export class SSEServer {
     const headers: Record<string, string> = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'X-Accel-Buffering': 'no', // Disable nginx buffering
     };
 
@@ -341,14 +371,20 @@ export class SSEServer {
   /**
    * Set CORS headers
    */
-  private setCORSHeaders(res: ServerResponse, existingHeaders: Record<string, string> = {}): void {
+  private setCORSHeaders(
+    res: ServerResponse,
+    existingHeaders: Record<string, string> = {}
+  ): void {
     const allowedOrigins = this.options.allowedOrigins || ['*'];
-    const origin = allowedOrigins.includes('*') ? '*' : allowedOrigins.join(', ');
+    const origin = allowedOrigins.includes('*')
+      ? '*'
+      : allowedOrigins.join(', ');
 
     const corsHeaders = {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization, Cache-Control',
       'Access-Control-Allow-Credentials': 'true',
       ...existingHeaders,
     };
@@ -361,7 +397,12 @@ export class SSEServer {
   /**
    * Send error response
    */
-  private sendErrorResponse(res: ServerResponse, statusCode: number, statusText: string, message: string): void {
+  private sendErrorResponse(
+    res: ServerResponse,
+    statusCode: number,
+    statusText: string,
+    message: string
+  ): void {
     if (this.options.enableCors) {
       this.setCORSHeaders(res);
     }
@@ -370,19 +411,25 @@ export class SSEServer {
       'Content-Type': 'application/json',
     });
 
-    res.end(JSON.stringify({
-      error: {
-        code: statusCode,
-        message,
-        timestamp: new Date().toISOString(),
-      },
-    }));
+    res.end(
+      JSON.stringify({
+        error: {
+          code: statusCode,
+          message,
+          timestamp: new Date().toISOString(),
+        },
+      })
+    );
   }
 
   /**
    * Send JSON response
    */
-  private sendJSONResponse(res: ServerResponse, statusCode: number, data: any): void {
+  private sendJSONResponse(
+    res: ServerResponse,
+    statusCode: number,
+    data: any
+  ): void {
     if (this.options.enableCors) {
       this.setCORSHeaders(res);
     }
@@ -401,7 +448,7 @@ export class SSEServer {
   private parseRequestBody(req: IncomingMessage): Promise<string> {
     return new Promise((resolve, reject) => {
       let body = '';
-      req.on('data', chunk => {
+      req.on('data', (chunk) => {
         body += chunk.toString();
       });
       req.on('end', () => {
@@ -414,11 +461,14 @@ export class SSEServer {
   /**
    * Process client message based on type
    */
-  private async processClientMessage(clientId: string, message: ClientMessage): Promise<SSEServerResponse> {
+  private async processClientMessage(
+    clientId: string,
+    message: ClientMessage
+  ): Promise<SSEServerResponse> {
     const timestamp = new Date().toISOString();
 
     switch (message.type) {
-      case 'ping':
+      case 'ping': {
         // Respond to ping with pong
         const pongMessage: MCPSSEMessage = {
           event: 'pong',
@@ -426,15 +476,16 @@ export class SSEServer {
           version: '1.4.1',
         };
         this.connectionManager.sendToClient(clientId, pongMessage);
-        
+
         return {
           success: true,
           id: message.id,
           payload: { type: 'pong' },
           timestamp,
         };
+      }
 
-      case 'mcp_request':
+      case 'mcp_request': {
         // Handle MCP request
         // TODO: Integrate with existing MCP handlers
         const mcpResponse: MCPSSEMessage = {
@@ -455,6 +506,7 @@ export class SSEServer {
           payload: { type: 'mcp_queued' },
           timestamp,
         };
+      }
 
       case 'auth':
         // Handle re-authentication
@@ -482,10 +534,12 @@ export class SSEServer {
 /**
  * Initialize SSE transport server
  */
-export function initializeSSETransport(options: SSEServerOptions = {}): SSETransportInit {
+export function initializeSSETransport(
+  options: SSEServerOptions = {}
+): SSETransportInit {
   try {
     const sseServer = new SSEServer(options);
-    
+
     return {
       success: true,
       server: sseServer,

@@ -1,9 +1,12 @@
 /**
  * Test that various attribute mappings work correctly
  */
-import { getAttributeSlug } from './dist/utils/attribute-mapping/index.js';
-import { translateAttributeNamesInFilters } from './dist/utils/attribute-mapping/index.js';
-import { ResourceType, FilterConditionType } from './dist/types/attio.js';
+
+import { FilterConditionType, ResourceType } from './dist/types/attio.js';
+import {
+  getAttributeSlug,
+  translateAttributeNamesInFilters,
+} from './dist/utils/attribute-mapping/index.js';
 
 console.log('=== Testing Various Attribute Mappings ===\n');
 

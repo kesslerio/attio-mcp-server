@@ -1,7 +1,7 @@
 /**
  * Record formatting utilities
  */
-import { RecordAttributes } from '../../types/attio.js';
+import type { RecordAttributes } from '../../types/attio.js';
 
 /**
  * Helper function to format a single record attribute based on type
@@ -30,11 +30,10 @@ export function formatRecordAttribute(key: string, value: any): any {
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    (key.includes('address') || key.includes('location'))
+    (key.includes('address') || key.includes('location')) &&
+    ('street' in value || 'city' in value || 'country' in value)
   ) {
-    if ('street' in value || 'city' in value || 'country' in value) {
-      return value;
-    }
+    return value;
   }
 
   if (typeof value === 'string' && value.match(/^record_[a-z0-9]+$/)) {

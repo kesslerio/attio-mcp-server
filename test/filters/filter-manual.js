@@ -51,7 +51,7 @@ function testFilterTransformation() {
       {
         attribute: { slug: 'value' },
         condition: 'greater_than',
-        value: 10000,
+        value: 10_000,
       },
     ],
     matchAny: false, // AND logic between filters (default)

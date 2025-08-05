@@ -2,8 +2,12 @@
  * Numeric utility functions for working with Attio numeric filters
  * Provides functions for handling numeric ranges and comparison operations.
  */
+
+import type {
+  ListEntryFilter,
+  ListEntryFilters,
+} from '../api/operations/index.js';
 import { FilterConditionType } from '../types/attio.js';
-import { ListEntryFilter, ListEntryFilters } from '../api/operations/index.js';
 
 /**
  * Interface for numeric range

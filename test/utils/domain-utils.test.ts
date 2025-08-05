@@ -1,13 +1,13 @@
 /**
  * Unit tests for domain utility functions
  */
-import { describe, it, test, expect } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import {
+  extractAllDomains,
   extractDomain,
+  hasDomainIndicators,
   isValidDomain,
   normalizeDomain,
-  hasDomainIndicators,
-  extractAllDomains,
 } from '../../src/utils/domain-utils.js';
 
 describe('Domain Utilities', () => {

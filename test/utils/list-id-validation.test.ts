@@ -1,7 +1,7 @@
 /**
  * Tests for list ID validation to prevent injection attacks
  */
-import { isValidListId, isValidId } from '../../src/utils/validation';
+import { isValidId, isValidListId } from '../../src/utils/validation';
 
 describe('List ID Validation', () => {
   describe('isValidListId', () => {

@@ -1,14 +1,15 @@
 /**
  * Tests for the configuration loader
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import fs from 'fs';
 import path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   loadMappingConfig,
-  writeMappingConfig,
+  type MappingConfig,
   updateMappingSection,
-  MappingConfig,
+  writeMappingConfig,
 } from '../../src/utils/config-loader';
 
 // Mock fs module
@@ -248,7 +249,7 @@ describe('Configuration Loader', () => {
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);
-          return undefined;
+          return;
         }
       );
 
@@ -269,7 +270,7 @@ describe('Configuration Loader', () => {
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);
-          return undefined;
+          return;
         }
       );
 
@@ -293,7 +294,7 @@ describe('Configuration Loader', () => {
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);
-          return undefined;
+          return;
         }
       );
 

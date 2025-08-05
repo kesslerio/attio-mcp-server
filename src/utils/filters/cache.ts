@@ -2,8 +2,8 @@
  * Caching layer for filters, especially relationship-based filters
  * Provides an in-memory LRU cache for expensive filter operations
  */
-import { ListEntryFilters } from '../../api/operations/index.js';
-import { ResourceType, RelationshipType } from '../../types/attio.js';
+import type { ListEntryFilters } from '../../api/operations/index.js';
+import type { RelationshipType, ResourceType } from '../../types/attio.js';
 
 /**
  * Structure to represent a cache entry
@@ -60,7 +60,7 @@ class LRUCache<K, V> {
         // Remove expired entry
         this.cache.delete(keyString);
       }
-      return undefined;
+      return;
     }
 
     // Update hit count
@@ -112,8 +112,8 @@ class LRUCache<K, V> {
    */
   private evictLRU(): void {
     let lruKey: string | null = null;
-    let lowestHits = Infinity;
-    let oldestTimestamp = Infinity;
+    let lowestHits = Number.POSITIVE_INFINITY;
+    let oldestTimestamp = Number.POSITIVE_INFINITY;
 
     // Find the entry with lowest hit count, or oldest if tied
     for (const [key, entry] of this.cache.entries()) {

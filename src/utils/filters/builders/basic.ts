@@ -3,7 +3,7 @@
  */
 
 // Internal imports
-import { FilterConditionType, ListEntryFilters } from './types.js';
+import { FilterConditionType, type ListEntryFilters } from './types.js';
 
 /**
  * Creates a simple equals filter for any attribute.

@@ -2,15 +2,16 @@
  * Unit tests for filter translator functions
  * Specifically testing the fix for issue #182
  */
+
+import { FilterValidationError } from '../../../src/errors/api-errors';
 import {
   transformFiltersToApiFormat,
   transformSingleFilterToApi,
 } from '../../../src/utils/filters/translators';
-import { FilterValidationError } from '../../../src/errors/api-errors';
 import {
   FilterConditionType,
-  ListEntryFilters,
-  ListEntryFilter,
+  type ListEntryFilter,
+  type ListEntryFilters,
 } from '../../../src/utils/filters/types';
 
 describe('Filter Translators', () => {

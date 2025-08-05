@@ -13,19 +13,19 @@
  * - Parameter type validation and conversion
  */
 
+import { FilterValidationError } from '../../errors/api-errors.js';
 // External dependencies
 import { DateRangePreset, isValidFilterCondition } from '../../types/attio.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
 import { isValidISODateString } from '../date-utils.js';
 
 // Internal module dependencies
 import {
-  DateRange,
-  ActivityFilter,
-  InteractionType,
-  NumericRange,
+  type ActivityFilter,
+  type DateRange,
   FilterConditionType,
-  ListEntryFilter,
+  InteractionType,
+  type ListEntryFilter,
+  type NumericRange,
 } from './types.js';
 
 /**
@@ -39,7 +39,7 @@ export function validateFilterStructure(filter: ListEntryFilter): boolean {
     return false;
   }
 
-  if (!filter.attribute || !filter.attribute.slug) {
+  if (!(filter.attribute && filter.attribute.slug)) {
     return false;
   }
 
@@ -83,7 +83,7 @@ export function validateDateRange(dateRange: any): DateRange {
   }
 
   // Must have at least one of preset, start, or end
-  if (!dateRange.preset && !dateRange.start && !dateRange.end) {
+  if (!(dateRange.preset || dateRange.start || dateRange.end)) {
     throw new FilterValidationError(
       'Date range must specify at least one of: preset, start, or end'
     );
@@ -123,9 +123,11 @@ export function validateDateRange(dateRange: any): DateRange {
     ) {
       // It's a relative date object, validate basic structure
       if (
-        !dateRange.start.unit ||
-        !dateRange.start.value ||
-        !dateRange.start.direction
+        !(
+          dateRange.start.unit &&
+          dateRange.start.value &&
+          dateRange.start.direction
+        )
       ) {
         throw new FilterValidationError(
           'Relative start date must have unit, value, and direction properties'
@@ -171,9 +173,7 @@ export function validateDateRange(dateRange: any): DateRange {
     ) {
       // It's a relative date object, validate basic structure
       if (
-        !dateRange.end.unit ||
-        !dateRange.end.value ||
-        !dateRange.end.direction
+        !(dateRange.end.unit && dateRange.end.value && dateRange.end.direction)
       ) {
         throw new FilterValidationError(
           'Relative end date must have unit, value, and direction properties'
@@ -428,7 +428,7 @@ export function validateNumericParam(
  */
 export function validateFilterWithConditions(
   filter: ListEntryFilter,
-  validateConditions: boolean = true
+  validateConditions = true
 ): void {
   if (!validateFilterStructure(filter)) {
     const slugInfo = filter?.attribute?.slug ? ` ${filter.attribute.slug}` : '';

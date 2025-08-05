@@ -3,7 +3,7 @@
  * Tests the fix for issue #338 - notes content not being displayed
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Mock the formatter function based on the actual implementation
 function mockNotesFormatter(notes: any[]) {

@@ -1,10 +1,11 @@
 /**
  * Test the complete API call flow to find where untranslated filter is used
  */
-import { translateAttributeNamesInFilters } from '../../dist/utils/attribute-mapping/index.js';
-import { advancedSearchObject } from '../../dist/api/attio-operations.js';
-import { ResourceType, FilterConditionType } from '../../dist/types/attio.js';
+
 import { getAttioClient } from '../../dist/api/attio-client.js';
+import { advancedSearchObject } from '../../dist/api/attio-operations.js';
+import { FilterConditionType, ResourceType } from '../../dist/types/attio.js';
+import { translateAttributeNamesInFilters } from '../../dist/utils/attribute-mapping/index.js';
 import { transformFiltersToApiFormat } from '../../dist/utils/filter-utils.js';
 
 // Create a proxy to intercept the actual HTTP calls
@@ -49,7 +50,7 @@ const require = Module.createRequire(import.meta.url);
 try {
   const axios = require('axios');
   const originalPost = axios.post;
-  axios.post = function (url, data, config) {
+  axios.post = (url, data, config) => {
     console.log('\n[AXIOS INTERCEPT] POST:', {
       url,
       data: JSON.stringify(data, null, 2),

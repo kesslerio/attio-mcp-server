@@ -4,7 +4,7 @@
  * Provides consistent formatting for success responses and result messages
  */
 
-import { ToolErrorContext } from '../../../types/tool-types.js';
+import type { ToolErrorContext } from '../../../types/tool-types.js';
 
 /**
  * Formats a company operation success response in a consistent manner

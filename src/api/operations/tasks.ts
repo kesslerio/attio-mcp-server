@@ -1,19 +1,20 @@
 /**
  * Task operations for Attio
  */
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioTask,
+
+import type {
   AttioListResponse,
   AttioSingleResponse,
+  AttioTask,
 } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, type RetryConfig } from './retry.js';
 
 export async function listTasks(
   status?: string,
   assigneeId?: string,
-  page: number = 1,
-  pageSize: number = 25,
+  page = 1,
+  pageSize = 25,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask[]> {
   const api = getAttioClient();

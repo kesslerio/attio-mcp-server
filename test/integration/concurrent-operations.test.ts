@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { initializeAttioClient } from '../../src/api/attio-client';
 import {
   createCompany,
+  deleteCompany,
+  getCompanyDetails,
+  searchCompanies,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
-  searchCompanies,
-  getCompanyDetails,
 } from '../../src/objects/companies/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;

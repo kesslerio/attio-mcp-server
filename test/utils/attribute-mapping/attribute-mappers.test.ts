@@ -4,8 +4,8 @@
 import {
   convertToBoolean,
   getAttributeSlug,
-  getObjectSlug,
   getListSlug,
+  getObjectSlug,
   invalidateConfigCache,
 } from '../../../src/utils/attribute-mapping/attribute-mappers.js';
 
@@ -69,7 +69,7 @@ describe('Attribute Mappers', () => {
       expect(convertToBoolean(null)).toBe(false);
       expect(convertToBoolean(undefined)).toBe(false);
       expect(convertToBoolean('')).toBe(false);
-      expect(convertToBoolean(NaN)).toBe(false);
+      expect(convertToBoolean(Number.NaN)).toBe(false);
     });
 
     test('handles mixed case strings', () => {

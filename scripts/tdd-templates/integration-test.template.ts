@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // TODO: Import necessary modules and dependencies
 // import { initializeAttioClient } from '../src/api/client';
@@ -34,4 +34,4 @@ describe('Integration Test - Module Name', () => {
       expect(true).toBe(true);
     });
   });
-}, 30000); // 30 second timeout for integration tests
+}, 30_000); // 30 second timeout for integration tests

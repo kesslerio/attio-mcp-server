@@ -1,10 +1,10 @@
-import { describe, it, test, expect } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
+import type { AttioListEntry } from '../../src/types/attio';
 import {
-  processListEntries,
-  getRecordNameFromEntry,
   API_PARAMS,
+  getRecordNameFromEntry,
+  processListEntries,
 } from '../../src/utils/record-utils';
-import { AttioListEntry } from '../../src/types/attio';
 
 describe('record-utils', () => {
   // Test data for list entries

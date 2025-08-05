@@ -5,15 +5,15 @@
  * that work across all object types (companies, people, deals, etc.)
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type { ToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle list-records operations
- * 
+ *
  * Executes generic record listing for any object type
  */
 export async function handleListOperation(
@@ -43,7 +43,7 @@ export async function handleListOperation(
     };
 
     // Remove undefined properties to keep the options clean
-    Object.keys(listOptions).forEach(key => {
+    Object.keys(listOptions).forEach((key) => {
       if (listOptions[key as keyof typeof listOptions] === undefined) {
         delete listOptions[key as keyof typeof listOptions];
       }
@@ -68,7 +68,7 @@ export async function handleListOperation(
 
 /**
  * Handle get-record operations
- * 
+ *
  * Executes generic record retrieval for any object type
  */
 export async function handleGetOperation(
@@ -76,7 +76,8 @@ export async function handleGetOperation(
   toolConfig: ToolConfig
 ) {
   try {
-    const { objectSlug, recordId, attributes, objectId } = request.params.arguments || {};
+    const { objectSlug, recordId, attributes, objectId } =
+      request.params.arguments || {};
 
     if (!objectSlug) {
       return createErrorResult(
@@ -96,10 +97,15 @@ export async function handleGetOperation(
       );
     }
 
-    const result = await toolConfig.handler(objectSlug, recordId, attributes, objectId);
+    const result = await toolConfig.handler(
+      objectSlug,
+      recordId,
+      attributes,
+      objectId
+    );
     const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
-      : `Record retrieved successfully`;
+      : 'Record retrieved successfully';
 
     return formatResponse(formattedResult);
   } catch (error) {

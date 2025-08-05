@@ -1,9 +1,10 @@
 /**
  * Advanced search configurations for people
  */
-import { AttioRecord } from '../../../types/attio.js';
+
 import { advancedSearchPeople } from '../../../objects/people/index.js';
-import { ToolConfig } from '../../tool-types.js';
+import type { AttioRecord } from '../../../types/attio.js';
+import type { ToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
 
 export const advancedSearchToolConfigs = {
@@ -28,7 +29,8 @@ export const advancedSearchToolConfigs = {
 export const advancedSearchToolDefinitions = [
   {
     name: 'advanced-search-people',
-    description: 'Search for people in your CRM using advanced filtering capabilities (contacts, leads, team members)',
+    description:
+      'Search for people in your CRM using advanced filtering capabilities (contacts, leads, team members)',
     inputSchema: {
       type: 'object',
       properties: {

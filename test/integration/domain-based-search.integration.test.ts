@@ -1,7 +1,7 @@
 /**
  * Integration tests for domain-based company search enhancement
  */
-import { describe, test, beforeAll } from 'vitest';
+import { beforeAll, describe, test } from 'vitest';
 import {
   searchCompanies,
   searchCompaniesByDomain,
@@ -43,7 +43,7 @@ describe('Domain-Based Company Search Integration', () => {
           console.log('✅ Found companies with stripe.com domain');
         }
       }
-    }, 30000);
+    }, 30_000);
 
     test('should fallback to name search when no domain detected', async () => {
       if (!process.env.ATTIO_API_KEY) {
@@ -62,7 +62,7 @@ describe('Domain-Based Company Search Integration', () => {
         expect(firstResult).toHaveProperty('id');
         expect(firstResult).toHaveProperty('values');
       }
-    }, 30000);
+    }, 30_000);
   });
 
   describe('searchCompaniesByDomain', () => {
@@ -86,7 +86,7 @@ describe('Domain-Based Company Search Integration', () => {
         // Verify domain normalization worked
         console.log(`Found ${results.length} companies for domain: ${domain}`);
       }
-    }, 30000);
+    }, 30_000);
 
     test('should handle domain normalization', async () => {
       if (!process.env.ATTIO_API_KEY) {
@@ -102,7 +102,7 @@ describe('Domain-Based Company Search Integration', () => {
       // Should work the same as normalized domain
       const normalizedResults = await searchCompaniesByDomain('github.com');
       expect(results.length).toBe(normalizedResults.length);
-    }, 30000);
+    }, 30_000);
   });
 
   describe('smartSearchCompanies', () => {
@@ -126,7 +126,7 @@ describe('Domain-Based Company Search Integration', () => {
           `Smart search found ${results.length} companies for mixed query`
         );
       }
-    }, 30000);
+    }, 30_000);
 
     test('should extract multiple domains from complex queries', async () => {
       if (!process.env.ATTIO_API_KEY) {
@@ -145,7 +145,7 @@ describe('Domain-Based Company Search Integration', () => {
           `Smart search found ${results.length} companies for complex query with multiple domains`
         );
       }
-    }, 30000);
+    }, 30_000);
   });
 
   describe('Domain extraction utility integration', () => {

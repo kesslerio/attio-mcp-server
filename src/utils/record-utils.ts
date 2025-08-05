@@ -3,17 +3,17 @@
  * Provides functions for processing list entries, extracting record information,
  * and interacting with the Attio API.
  */
-import { AttioListEntry } from '../types/attio.js';
+import type { AttioListEntry } from '../types/attio.js';
 import {
-  transformFiltersToApiFormat,
-  createDateRangeFilter,
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
   createActivityFilter,
+  createCreatedDateFilter,
+  createDateRangeFilter,
+  createLastInteractionFilter,
+  createModifiedDateFilter,
   createNumericFilter,
   FILTER_ATTRIBUTES,
   FilterConditionType,
+  transformFiltersToApiFormat,
 } from './filters/index.js';
 
 // Re-export filter utilities for backwards compatibility
@@ -51,7 +51,7 @@ export function processListEntries(
   return entries.map((entry) => {
     // Debug logging in development mode
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[processListEntries] Processing entry:`, {
+      console.log('[processListEntries] Processing entry:', {
         entryId: entry.id?.entry_id || 'unknown',
         hasRecordId: !!entry.record_id,
         hasRecord: !!entry.record,
@@ -219,7 +219,7 @@ export function getRecordNameFromEntry(entry: AttioListEntry): {
   const defaultResult = { name: '', type: '' };
 
   // If no record data is available, return default
-  if (!entry.record || !entry.record.values) {
+  if (!(entry.record && entry.record.values)) {
     return defaultResult;
   }
 

@@ -17,7 +17,7 @@ async function testPhoneFieldFix() {
 
     const results = await searchPeopleByEmail(testEmail);
 
-    console.log(`✅ Search completed successfully!`);
+    console.log('✅ Search completed successfully!');
     console.log(`Found ${results.length} people matching the email`);
 
     if (results.length > 0) {

@@ -1,19 +1,19 @@
 /**
  * Handlers for resource-related requests
  */
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../utils/error-handler.js';
 import {
-  listCompanies,
   getCompanyDetails,
+  listCompanies,
 } from '../objects/companies/index.js';
-import { listPeople, getPersonDetails } from '../objects/people/index.js';
-import { parseResourceUri, formatResourceUri } from '../utils/uri-parser.js';
-import { ResourceType, AttioRecord } from '../types/attio.js';
+import { getPersonDetails, listPeople } from '../objects/people/index.js';
+import { type AttioRecord, ResourceType } from '../types/attio.js';
+import { createErrorResult } from '../utils/error-handler.js';
+import { formatResourceUri, parseResourceUri } from '../utils/uri-parser.js';
 
 /**
  * Format a single record for resource response
@@ -56,7 +56,7 @@ export function registerResourceHandlers(server: Server): void {
           } catch (error) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
-              `/objects/people/records/query`,
+              '/objects/people/records/query',
               'POST',
               (error as any).response?.data || {}
             );
@@ -75,7 +75,7 @@ export function registerResourceHandlers(server: Server): void {
           } catch (error) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
-              `/objects/companies/records/query`,
+              '/objects/companies/records/query',
               'POST',
               (error as any).response?.data || {}
             );

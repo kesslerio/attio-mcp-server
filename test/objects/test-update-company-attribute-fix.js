@@ -33,11 +33,10 @@ async function runTestCase(testName, request, validator) {
     if (validator(result)) {
       console.log(`✅ Test PASSED: ${testName}`);
       return true;
-    } else {
-      console.error(`❌ Test FAILED: ${testName}`);
-      console.error('Response:', JSON.stringify(result, null, 2));
-      return false;
     }
+    console.error(`❌ Test FAILED: ${testName}`);
+    console.error('Response:', JSON.stringify(result, null, 2));
+    return false;
   } catch (error) {
     console.error(`❌ Test FAILED with exception: ${testName}`);
     console.error('Error:', error.message);
@@ -193,10 +192,9 @@ async function testUpdateCompanyAttribute() {
   if (testsFailed > 0) {
     console.error('❌ Some tests failed - see above for details');
     return false;
-  } else {
-    console.log('✅ All tests passed!');
-    return true;
   }
+  console.log('✅ All tests passed!');
+  return true;
 }
 
 // Run the test

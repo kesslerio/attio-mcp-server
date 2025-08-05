@@ -2,9 +2,9 @@
  * Tests for record ID extraction from list entries
  */
 
-import { expect, describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { AttioListEntry } from '../../src/types/attio.js';
 import { processListEntries } from '../../src/utils/record-utils.js';
-import { AttioListEntry } from '../../src/types/attio.js';
 
 describe('Record ID Extraction Tests', () => {
   it('should maintain existing record_id if already present', () => {

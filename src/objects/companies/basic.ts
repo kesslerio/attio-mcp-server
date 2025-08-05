@@ -3,21 +3,21 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
-import { ResourceType, Company, Person } from '../../types/attio.js';
-import { searchPeople } from '../people/search.js';
-import { CompanyAttributes } from './types.js';
-import { CompanyValidator } from '../../validators/company-validator.js';
 import {
   CompanyOperationError,
   InvalidCompanyDataError,
 } from '../../errors/company-errors.js';
+import { type Company, Person, ResourceType } from '../../types/attio.js';
+import { findPersonReference } from '../../utils/person-lookup.js';
+import { CompanyValidator } from '../../validators/company-validator.js';
 import {
   createObjectWithDynamicFields,
-  updateObjectWithDynamicFields,
-  updateObjectAttributeWithDynamicFields,
   deleteObjectWithValidation,
+  updateObjectAttributeWithDynamicFields,
+  updateObjectWithDynamicFields,
 } from '../base-operations.js';
-import { findPersonReference } from '../../utils/person-lookup.js';
+import { searchPeople } from '../people/search.js';
+import type { CompanyAttributes } from './types.js';
 
 /**
  * Lists companies sorted by most recent interaction
@@ -25,7 +25,7 @@ import { findPersonReference } from '../../utils/person-lookup.js';
  * @param limit - Maximum number of companies to return (default: 20)
  * @returns Array of company results
  */
-export async function listCompanies(limit: number = 20): Promise<Company[]> {
+export async function listCompanies(limit = 20): Promise<Company[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
@@ -68,7 +68,7 @@ export async function getCompanyDetails(
         // Try to parse the URI formally using parseResourceUri utility
         // This is more robust than string splitting
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(
@@ -188,7 +188,7 @@ export async function getCompanyDetails(
           // Log detailed error information in development
           if (process.env.NODE_ENV === 'development') {
             console.error(
-              `[getCompanyDetails] All retrieval attempts failed:`,
+              '[getCompanyDetails] All retrieval attempts failed:',
               errorDetails
             );
           }

@@ -1,7 +1,7 @@
 /**
  * Integration tests for path-based filtering of list entries
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   filterListEntriesByParent,
   filterListEntriesByParentId,
@@ -45,7 +45,7 @@ describe('Path-based list entry filtering', () => {
           expect(entry.list_id).toBe(TEST_LIST_ID);
         });
       },
-      30000
+      30_000
     ); // 30s timeout for API call
 
     itif(
@@ -77,7 +77,7 @@ describe('Path-based list entry filtering', () => {
           });
         }
       },
-      30000
+      30_000
     ); // 30s timeout for API call
   });
 
@@ -110,7 +110,7 @@ describe('Path-based list entry filtering', () => {
           });
         }
       },
-      30000
+      30_000
     ); // 30s timeout for API call
   });
 
@@ -132,7 +132,7 @@ describe('Path-based list entry filtering', () => {
           )
         ).rejects.toThrow();
       },
-      30000
+      30_000
     ); // 30s timeout for API call
 
     itif(
@@ -152,7 +152,7 @@ describe('Path-based list entry filtering', () => {
           )
         ).rejects.toThrow();
       },
-      30000
+      30_000
     ); // 30s timeout for API call
   });
 });

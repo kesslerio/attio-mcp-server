@@ -2,15 +2,16 @@
  * Test script to verify update-company-attribute works with null values
  * This replicates the exact scenario from the Claude Desktop chat
  */
-import {
-  updateCompanyAttribute,
-  updateCompany,
-} from '../dist/objects/companies.js';
+
+import dotenv from 'dotenv';
 import {
   getAttioClient,
   initializeAttioClient,
 } from '../dist/api/attio-client.js';
-import dotenv from 'dotenv';
+import {
+  updateCompany,
+  updateCompanyAttribute,
+} from '../dist/objects/companies.js';
 
 dotenv.config();
 

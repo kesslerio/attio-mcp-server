@@ -6,6 +6,7 @@
  */
 
 import { createRequire } from 'module';
+
 const require = createRequire(import.meta.url);
 require('dotenv').config();
 
@@ -19,7 +20,9 @@ import { initializeAttioClient } from '../../src/api/attio-client.js';
 import { registerToolHandlers } from '../../src/handlers/tools/index.js';
 
 console.error('\n=== Issue #344 Test Script ===\n');
-console.error('This script tests both wrapped and unwrapped argument formats.\n');
+console.error(
+  'This script tests both wrapped and unwrapped argument formats.\n'
+);
 
 // Initialize API client
 if (!process.env.ATTIO_API_KEY) {
@@ -99,21 +102,24 @@ const testCases = [
 // Run tests
 async function runTests() {
   console.error('Running test cases...\n');
-  
+
   for (const testCase of testCases) {
     console.error(`\n--- Test: ${testCase.name} ---`);
     console.error('Request:', JSON.stringify(testCase.request, null, 2));
-    
+
     try {
       const result = await toolHandler(testCase.request);
       console.error('✅ SUCCESS');
-      console.error('Response:', JSON.stringify(result, null, 2).substring(0, 200) + '...');
+      console.error(
+        'Response:',
+        JSON.stringify(result, null, 2).substring(0, 200) + '...'
+      );
     } catch (error) {
       console.error('❌ FAILED');
       console.error('Error:', error.message);
     }
   }
-  
+
   console.error('\n=== Test Complete ===\n');
   console.error('To test with Claude Desktop:');
   console.error('1. Start the server normally: npm start');

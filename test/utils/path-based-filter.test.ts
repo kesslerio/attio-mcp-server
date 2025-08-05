@@ -99,10 +99,10 @@ describe('createPathBasedFilter', () => {
         companiesObjectType,
         'revenue',
         'less_than',
-        1000000
+        1_000_000
       );
 
-      expect(filter.constraints).toEqual({ lt: 1000000 });
+      expect(filter.constraints).toEqual({ lt: 1_000_000 });
     });
 
     it('should correctly map is_empty condition', () => {

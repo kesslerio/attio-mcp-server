@@ -1,19 +1,19 @@
-import {
-  executeBatchOperations,
-  batchSearchObjects,
-  batchGetObjectDetails,
-  DEFAULT_BATCH_CONFIG,
-  BatchRequestItem,
-  BatchResponse,
-  BatchItemResult,
-  BatchConfig,
-} from '../../src/api/operations/index';
 import { getAttioClient } from '../../src/api/attio-client';
 import {
+  type BatchConfig,
+  type BatchItemResult,
+  type BatchRequestItem,
+  type BatchResponse,
+  batchGetObjectDetails,
+  batchSearchObjects,
+  DEFAULT_BATCH_CONFIG,
+  executeBatchOperations,
+} from '../../src/api/operations/index';
+import {
+  type AttioRecord,
+  type Company,
+  type Person,
   ResourceType,
-  Person,
-  Company,
-  AttioRecord,
 } from '../../src/types/attio';
 
 // Mock the axios client

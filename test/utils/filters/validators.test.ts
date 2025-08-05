@@ -2,16 +2,17 @@
  * Unit tests for filter validation functions
  * Specifically testing the fix for issue #182
  */
-import {
-  validateFilterStructure,
-  validateFilterCondition,
-  validateFilterWithConditions,
-} from '../../../src/utils/filters/validators';
+
 import { FilterValidationError } from '../../../src/errors/api-errors';
 import {
   FilterConditionType,
-  ListEntryFilter,
+  type ListEntryFilter,
 } from '../../../src/utils/filters/types';
+import {
+  validateFilterCondition,
+  validateFilterStructure,
+  validateFilterWithConditions,
+} from '../../../src/utils/filters/validators';
 
 describe('Filter Validators', () => {
   describe('validateFilterStructure', () => {

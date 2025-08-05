@@ -1,6 +1,6 @@
 /**
  * MCP-compliant schemas for universal tools
- * 
+ *
  * These schemas follow MCP protocol requirements:
  * - No oneOf/allOf/anyOf at top level
  * - Enum-based operation discrimination
@@ -8,12 +8,12 @@
  */
 
 import {
-  UniversalResourceType,
-  DetailedInfoType,
   BatchOperationType,
-  TimeframeType,
   ContentSearchType,
-  RelationshipType
+  DetailedInfoType,
+  RelationshipType,
+  TimeframeType,
+  UniversalResourceType,
 } from './types.js';
 
 /**
@@ -22,7 +22,8 @@ import {
 const resourceTypeProperty = {
   type: 'string' as const,
   enum: Object.values(UniversalResourceType),
-  description: 'Type of resource to operate on (companies, people, records, tasks)'
+  description:
+    'Type of resource to operate on (companies, people, records, tasks)',
 };
 
 /**
@@ -34,14 +35,14 @@ const paginationProperties = {
     minimum: 1,
     maximum: 100,
     default: 10,
-    description: 'Maximum number of results to return'
+    description: 'Maximum number of results to return',
   },
   offset: {
     type: 'number' as const,
     minimum: 0,
     default: 0,
-    description: 'Number of results to skip for pagination'
-  }
+    description: 'Number of results to skip for pagination',
+  },
 };
 
 /**
@@ -53,17 +54,17 @@ export const searchRecordsSchema = {
     resource_type: resourceTypeProperty,
     query: {
       type: 'string' as const,
-      description: 'Search query string'
+      description: 'Search query string',
     },
     filters: {
       type: 'object' as const,
       description: 'Advanced filter conditions',
-      additionalProperties: true
+      additionalProperties: true,
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -75,16 +76,16 @@ export const getRecordDetailsSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to retrieve'
+      description: 'Unique identifier of the record to retrieve',
     },
     fields: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific fields to include in the response'
-    }
+      description: 'Specific fields to include in the response',
+    },
   },
   required: ['resource_type' as const, 'record_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -97,16 +98,16 @@ export const createRecordSchema = {
     record_data: {
       type: 'object' as const,
       description: 'Data for creating the new record',
-      additionalProperties: true
+      additionalProperties: true,
     },
     return_details: {
       type: 'boolean' as const,
       default: true,
-      description: 'Whether to return full record details after creation'
-    }
+      description: 'Whether to return full record details after creation',
+    },
   },
   required: ['resource_type' as const, 'record_data' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -118,21 +119,25 @@ export const updateRecordSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to update'
+      description: 'Unique identifier of the record to update',
     },
     record_data: {
       type: 'object' as const,
       description: 'Updated data for the record',
-      additionalProperties: true
+      additionalProperties: true,
     },
     return_details: {
       type: 'boolean' as const,
       default: true,
-      description: 'Whether to return full record details after update'
-    }
+      description: 'Whether to return full record details after update',
+    },
   },
-  required: ['resource_type' as const, 'record_id' as const, 'record_data' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'record_id' as const,
+    'record_data' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -144,11 +149,11 @@ export const deleteRecordSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to delete'
-    }
+      description: 'Unique identifier of the record to delete',
+    },
   },
   required: ['resource_type' as const, 'record_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -160,21 +165,23 @@ export const getAttributesSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Record ID to get attributes for (optional for schema discovery)'
+      description:
+        'Record ID to get attributes for (optional for schema discovery)',
     },
     categories: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Categories of attributes to retrieve (basic, business, contact, social, custom)'
+      description:
+        'Categories of attributes to retrieve (basic, business, contact, social, custom)',
     },
     fields: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific attribute field names to retrieve'
-    }
+      description: 'Specific attribute field names to retrieve',
+    },
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -183,10 +190,10 @@ export const getAttributesSchema = {
 export const discoverAttributesSchema = {
   type: 'object' as const,
   properties: {
-    resource_type: resourceTypeProperty
+    resource_type: resourceTypeProperty,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -198,16 +205,21 @@ export const getDetailedInfoSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record'
+      description: 'Unique identifier of the record',
     },
     info_type: {
       type: 'string' as const,
       enum: Object.values(DetailedInfoType),
-      description: 'Type of detailed information to retrieve (contact, business, social, basic, custom)'
-    }
+      description:
+        'Type of detailed information to retrieve (contact, business, social, basic, custom)',
+    },
   },
-  required: ['resource_type' as const, 'record_id' as const, 'info_type' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'record_id' as const,
+    'info_type' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -219,27 +231,27 @@ export const advancedSearchSchema = {
     resource_type: resourceTypeProperty,
     query: {
       type: 'string' as const,
-      description: 'Search query string'
+      description: 'Search query string',
     },
     filters: {
       type: 'object' as const,
       description: 'Complex filter conditions',
-      additionalProperties: true
+      additionalProperties: true,
     },
     sort_by: {
       type: 'string' as const,
-      description: 'Field to sort results by'
+      description: 'Field to sort results by',
     },
     sort_order: {
       type: 'string' as const,
       enum: ['asc', 'desc'],
       default: 'asc',
-      description: 'Sort order (ascending or descending)'
+      description: 'Sort order (ascending or descending)',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -251,21 +263,22 @@ export const searchByRelationshipSchema = {
     relationship_type: {
       type: 'string' as const,
       enum: Object.values(RelationshipType),
-      description: 'Type of relationship to search (company_to_people, people_to_company, etc.)'
+      description:
+        'Type of relationship to search (company_to_people, people_to_company, etc.)',
     },
     source_id: {
       type: 'string' as const,
-      description: 'ID of the source record for the relationship'
+      description: 'ID of the source record for the relationship',
     },
     target_resource_type: {
       type: 'string' as const,
       enum: Object.values(UniversalResourceType),
-      description: 'Target resource type for the relationship'
+      description: 'Target resource type for the relationship',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['relationship_type' as const, 'source_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -278,16 +291,20 @@ export const searchByContentSchema = {
     content_type: {
       type: 'string' as const,
       enum: Object.values(ContentSearchType),
-      description: 'Type of content to search (notes, activity, interactions)'
+      description: 'Type of content to search (notes, activity, interactions)',
     },
     search_query: {
       type: 'string' as const,
-      description: 'Query to search within the content'
+      description: 'Query to search within the content',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
-  required: ['resource_type' as const, 'content_type' as const, 'search_query' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'content_type' as const,
+    'search_query' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -300,22 +317,23 @@ export const searchByTimeframeSchema = {
     timeframe_type: {
       type: 'string' as const,
       enum: Object.values(TimeframeType),
-      description: 'Type of timeframe to filter by (created, modified, last_interaction)'
+      description:
+        'Type of timeframe to filter by (created, modified, last_interaction)',
     },
     start_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'Start date for the timeframe filter (ISO 8601 date)'
+      description: 'Start date for the timeframe filter (ISO 8601 date)',
     },
     end_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'End date for the timeframe filter (ISO 8601 date)'
+      description: 'End date for the timeframe filter (ISO 8601 date)',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const, 'timeframe_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -328,77 +346,101 @@ export const batchOperationsSchema = {
     operation_type: {
       type: 'string' as const,
       enum: Object.values(BatchOperationType),
-      description: 'Type of batch operation to perform (create, update, delete, search, get)'
+      description:
+        'Type of batch operation to perform (create, update, delete, search, get)',
     },
     records: {
       type: 'array' as const,
       items: {
         type: 'object' as const,
-        additionalProperties: true
+        additionalProperties: true,
       },
-      description: 'Array of record data for create/update operations'
+      description: 'Array of record data for create/update operations',
     },
     record_ids: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Array of record IDs for delete/get operations'
+      description: 'Array of record IDs for delete/get operations',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const, 'operation_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
  * Schema validation utility function
  */
-export function validateUniversalToolParams(toolName: string, params: any): void {
+export function validateUniversalToolParams(
+  toolName: string,
+  params: any
+): void {
   // Runtime validation logic will be implemented here
   // This ensures operation-specific parameter requirements are met
-  
+
   switch (toolName) {
     case 'search-records':
       if (!params.resource_type) {
         throw new Error('resource_type is required for search-records');
       }
       break;
-      
+
     case 'get-record-details':
-      if (!params.resource_type || !params.record_id) {
-        throw new Error('resource_type and record_id are required for get-record-details');
+      if (!(params.resource_type && params.record_id)) {
+        throw new Error(
+          'resource_type and record_id are required for get-record-details'
+        );
       }
       break;
-      
+
     case 'create-record':
-      if (!params.resource_type || !params.record_data) {
-        throw new Error('resource_type and record_data are required for create-record');
+      if (!(params.resource_type && params.record_data)) {
+        throw new Error(
+          'resource_type and record_data are required for create-record'
+        );
       }
       break;
-      
+
     case 'update-record':
-      if (!params.resource_type || !params.record_id || !params.record_data) {
-        throw new Error('resource_type, record_id, and record_data are required for update-record');
+      if (!(params.resource_type && params.record_id && params.record_data)) {
+        throw new Error(
+          'resource_type, record_id, and record_data are required for update-record'
+        );
       }
       break;
-      
+
     case 'delete-record':
-      if (!params.resource_type || !params.record_id) {
-        throw new Error('resource_type and record_id are required for delete-record');
+      if (!(params.resource_type && params.record_id)) {
+        throw new Error(
+          'resource_type and record_id are required for delete-record'
+        );
       }
       break;
-      
+
     case 'batch-operations':
-      if (!params.resource_type || !params.operation_type) {
-        throw new Error('resource_type and operation_type are required for batch-operations');
+      if (!(params.resource_type && params.operation_type)) {
+        throw new Error(
+          'resource_type and operation_type are required for batch-operations'
+        );
       }
-      if (['create', 'update'].includes(params.operation_type) && !params.records) {
-        throw new Error('records array is required for batch create/update operations');
+      if (
+        ['create', 'update'].includes(params.operation_type) &&
+        !params.records
+      ) {
+        throw new Error(
+          'records array is required for batch create/update operations'
+        );
       }
-      if (['delete', 'get'].includes(params.operation_type) && !params.record_ids) {
-        throw new Error('record_ids array is required for batch delete/get operations');
+      if (
+        ['delete', 'get'].includes(params.operation_type) &&
+        !params.record_ids
+      ) {
+        throw new Error(
+          'record_ids array is required for batch delete/get operations'
+        );
       }
       break;
-      
+
     default:
       // Additional validation for other tools can be added here
       break;

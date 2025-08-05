@@ -13,20 +13,20 @@
  * @module companies
  */
 
-// Import configs by category
-import { searchToolConfigs, searchToolDefinitions } from './search.js';
-import { crudToolConfigs, crudToolDefinitions } from './crud.js';
 import {
   attributeToolConfigs,
   attributeToolDefinitions,
 } from './attributes.js';
+import { batchToolConfigs, batchToolDefinitions } from './batch.js';
+import { crudToolConfigs, crudToolDefinitions } from './crud.js';
+import { formatterConfigs, formatterToolDefinitions } from './formatters.js';
 import { notesToolConfigs, notesToolDefinitions } from './notes.js';
 import {
   relationshipToolConfigs,
   relationshipToolDefinitions,
 } from './relationships.js';
-import { batchToolConfigs, batchToolDefinitions } from './batch.js';
-import { formatterConfigs, formatterToolDefinitions } from './formatters.js';
+// Import configs by category
+import { searchToolConfigs, searchToolDefinitions } from './search.js';
 
 /**
  * Aggregated company tool configurations
@@ -89,27 +89,21 @@ export {
   // Search operations
   searchToolConfigs,
   searchToolDefinitions,
-
   // CRUD operations
   crudToolConfigs,
   crudToolDefinitions,
-
   // Attribute management
   attributeToolConfigs,
   attributeToolDefinitions,
-
   // Notes operations
   notesToolConfigs,
   notesToolDefinitions,
-
   // Relationship-based operations
   relationshipToolConfigs,
   relationshipToolDefinitions,
-
   // Batch operations
   batchToolConfigs,
   batchToolDefinitions,
-
   // Formatting utilities
   formatterConfigs,
   formatterToolDefinitions,

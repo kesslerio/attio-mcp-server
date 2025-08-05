@@ -45,7 +45,7 @@ async function testUpdateListEntryStage() {
     method: 'tools/call',
   };
 
-  console.log(`Testing stage update with:`);
+  console.log('Testing stage update with:');
   console.log(`- List ID: ${LIST_ID}`);
   console.log(`- Entry ID: ${ENTRY_ID}`);
   console.log(`- New Stage: "Demo Scheduling"`);
@@ -114,10 +114,10 @@ async function testFilterListEntries() {
     method: 'tools/call',
   };
 
-  console.log(`Testing filter with:`);
+  console.log('Testing filter with:');
   console.log(`- List ID: ${LIST_ID}`);
-  console.log(`- Attribute: stage`);
-  console.log(`- Condition: equals`);
+  console.log('- Attribute: stage');
+  console.log('- Condition: equals');
   console.log(`- Value: "Interested"\n`);
 
   try {
@@ -149,7 +149,7 @@ async function testGetCompanyLists() {
     method: 'tools/call',
   };
 
-  console.log(`Testing get company lists with:`);
+  console.log('Testing get company lists with:');
   console.log(`- Company ID: ${COMPANY_ID}\n`);
 
   try {
@@ -223,6 +223,7 @@ if (!process.env.ATTIO_API_KEY) {
 
 // Initialize the API client
 import { initializeAttioClient } from '../../dist/api/attio-client.js';
+
 initializeAttioClient(process.env.ATTIO_API_KEY);
 
 // Run the tests

@@ -4,12 +4,12 @@
  * Handles batch operations for multiple records
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { ResourceType } from '../../../../types/attio.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { ToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type { ToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle batchUpdate operations
@@ -22,7 +22,7 @@ export async function handleBatchUpdateOperation(
   const updates = request.params.arguments?.updates;
   const config = request.params.arguments?.config;
 
-  if (!updates || !Array.isArray(updates)) {
+  if (!(updates && Array.isArray(updates))) {
     return createErrorResult(
       new Error('updates parameter is required and must be an array'),
       `/${resourceType}/batch`,
@@ -43,7 +43,7 @@ export async function handleBatchUpdateOperation(
   // Validate each update has required fields
   for (let i = 0; i < updates.length; i++) {
     const update = updates[i];
-    if (!update.id || !update.attributes) {
+    if (!(update.id && update.attributes)) {
       return createErrorResult(
         new Error(
           `Update at index ${i} must have 'id' and 'attributes' properties`
@@ -86,7 +86,7 @@ export async function handleBatchCreateOperation(
     request.params.arguments?.items;
   const config = request.params.arguments?.config;
 
-  if (!items || !Array.isArray(items)) {
+  if (!(items && Array.isArray(items))) {
     return createErrorResult(
       new Error('items parameter is required and must be an array'),
       `/${resourceType}/batch`,
@@ -135,7 +135,7 @@ export async function handleBatchDeleteOperation(
     request.params.arguments?.ids;
   const config = request.params.arguments?.config;
 
-  if (!ids || !Array.isArray(ids)) {
+  if (!(ids && Array.isArray(ids))) {
     return createErrorResult(
       new Error('ids parameter is required and must be an array'),
       `/${resourceType}/batch`,
@@ -181,7 +181,7 @@ export async function handleBatchSearchOperation(
   const queries = request.params.arguments?.queries;
   const config = request.params.arguments?.config;
 
-  if (!queries || !Array.isArray(queries)) {
+  if (!(queries && Array.isArray(queries))) {
     return createErrorResult(
       new Error('queries parameter is required and must be an array'),
       `/${resourceType}/batch/search`,
@@ -230,7 +230,7 @@ export async function handleBatchGetDetailsOperation(
     request.params.arguments?.ids;
   const config = request.params.arguments?.config;
 
-  if (!ids || !Array.isArray(ids)) {
+  if (!(ids && Array.isArray(ids))) {
     return createErrorResult(
       new Error('ids parameter is required and must be an array'),
       `/${resourceType}/batch/details`,

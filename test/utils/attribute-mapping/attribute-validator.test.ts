@@ -2,9 +2,9 @@
  * Unit tests for attribute validator
  */
 import {
-  validateAttributeValue,
+  type AttributeType,
   ValidationResult,
-  AttributeType,
+  validateAttributeValue,
 } from '../../../src/validators/attribute-validator.js';
 
 describe('Attribute Validator', () => {
@@ -92,9 +92,9 @@ describe('Attribute Validator', () => {
     // Number validation tests
     describe('Number validation', () => {
       it('should validate native number values', () => {
-        expect(validateAttributeValue('revenue', 10000, 'number')).toEqual({
+        expect(validateAttributeValue('revenue', 10_000, 'number')).toEqual({
           valid: true,
-          convertedValue: 10000,
+          convertedValue: 10_000,
         });
 
         expect(validateAttributeValue('revenue', 0, 'number')).toEqual({
@@ -111,7 +111,7 @@ describe('Attribute Validator', () => {
       it('should convert numeric strings to numbers', () => {
         expect(validateAttributeValue('revenue', '10000', 'number')).toEqual({
           valid: true,
-          convertedValue: 10000,
+          convertedValue: 10_000,
         });
 
         expect(validateAttributeValue('revenue', '0', 'number')).toEqual({
@@ -126,7 +126,7 @@ describe('Attribute Validator', () => {
 
         expect(validateAttributeValue('revenue', ' 12345 ', 'number')).toEqual({
           valid: true,
-          convertedValue: 12345,
+          convertedValue: 12_345,
         });
       });
 
@@ -171,7 +171,7 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert number values to strings', () => {
-        expect(validateAttributeValue('name', 12345, 'string')).toEqual({
+        expect(validateAttributeValue('name', 12_345, 'string')).toEqual({
           valid: true,
           convertedValue: '12345',
         });
@@ -265,7 +265,7 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert Unix timestamps (milliseconds) to date strings', () => {
-        const timestamp = 1684162200000; // 2023-05-15T14:30:00Z
+        const timestamp = 1_684_162_200_000; // 2023-05-15T14:30:00Z
         const expectedDate = new Date(timestamp).toISOString();
 
         expect(validateAttributeValue('created_at', timestamp, 'date')).toEqual(
@@ -277,7 +277,7 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert Unix timestamps (seconds) to date strings', () => {
-        const timestamp = 1684162200; // 2023-05-15T14:30:00Z in seconds
+        const timestamp = 1_684_162_200; // 2023-05-15T14:30:00Z in seconds
         const expectedDate = new Date(timestamp * 1000).toISOString();
 
         expect(validateAttributeValue('created_at', timestamp, 'date')).toEqual(

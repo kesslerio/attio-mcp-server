@@ -4,16 +4,15 @@
 
 // External imports
 import { FilterValidationError } from '../../../errors/api-errors.js';
-
+import { validateNumericRange } from '../validators.js';
 // Internal imports
 import {
-  FilterConditionType,
-  ListEntryFilter,
-  ListEntryFilters,
-  NumericRange,
   ATTRIBUTES,
+  FilterConditionType,
+  type ListEntryFilter,
+  type ListEntryFilters,
+  type NumericRange,
 } from './types.js';
-import { validateNumericRange } from '../validators.js';
 
 /**
  * Creates a numeric filter for a specific attribute.

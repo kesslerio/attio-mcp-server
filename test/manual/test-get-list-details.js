@@ -5,10 +5,10 @@
  * with the get-list-details MCP tool.
  */
 
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { executeToolRequest } from '../../src/handlers/tools/dispatcher.js';
 // Import the necessary modules
 import { getListDetails } from '../../src/objects/lists.js';
-import { executeToolRequest } from '../../src/handlers/tools/dispatcher.js';
-import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 // Initialize the Attio client with the API key from environment variables
 const apiKey = process.env.ATTIO_API_KEY;
@@ -59,7 +59,7 @@ async function testGetListDetails() {
         params: {
           name: 'get-list-details',
           arguments: {
-            listId: listId,
+            listId,
           },
         },
       };

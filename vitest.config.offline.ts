@@ -13,7 +13,7 @@ export default defineConfig({
       'test/**/*claude-desktop-scenario*',
     ],
     globals: true,
-    testTimeout: 10000,
+    testTimeout: 10_000,
     setupFiles: ['./test/setup.ts'],
     pool: 'forks',
     poolOptions: {

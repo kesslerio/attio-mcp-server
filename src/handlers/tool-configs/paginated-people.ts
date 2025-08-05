@@ -1,15 +1,16 @@
 /**
  * Paginated people-related tool configurations
  */
-import { Person } from '../../types/attio.js';
+
 import {
   paginatedSearchPeople,
-  paginatedSearchPeopleByCreationDate,
-  paginatedSearchPeopleByModificationDate,
-  paginatedSearchPeopleByLastInteraction,
   paginatedSearchPeopleByActivity,
+  paginatedSearchPeopleByCreationDate,
+  paginatedSearchPeopleByLastInteraction,
+  paginatedSearchPeopleByModificationDate,
 } from '../../objects/paginated-people.js';
-import { PaginatedResponse } from '../../utils/pagination.js';
+import type { Person } from '../../types/attio.js';
+import type { PaginatedResponse } from '../../utils/pagination.js';
 
 /**
  * Config type for paginated search tools

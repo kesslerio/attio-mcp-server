@@ -1,12 +1,13 @@
 /**
  * Enhances API errors with helpful suggestions for value mismatches
  */
+
+import axios from 'axios';
 import { ValueMatchError } from '../errors/value-match-error.js';
 import {
   findBestValueMatch,
-  ValueMatchResult as ValueMatcherValueMatchResult,
+  type ValueMatchResult as ValueMatcherValueMatchResult,
 } from './value-matcher.js';
-import axios from 'axios';
 
 // Known valid values for select fields - this should ideally come from Attio API
 const KNOWN_FIELD_VALUES: Record<string, string[]> = {
@@ -59,7 +60,7 @@ interface ErrorContext {
  * Parse API error to extract context
  */
 function parseApiError(error: any): ErrorContext {
-  console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
+  console.error('[enhancer-parseApiError] --- ENTERING parseApiError ---');
   console.error(
     `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${
       error?.constructor?.name
@@ -107,15 +108,15 @@ function parseApiError(error: any): ErrorContext {
       );
     } else {
       console.error(
-        `[enhancer-parseApiError] Step 3: error.response.data is FALSY.`
+        '[enhancer-parseApiError] Step 3: error.response.data is FALSY.'
       );
     }
   } else {
     console.error(
-      `[enhancer-parseApiError] Step 2: error.response is FALSY or not an Axios error for this check.`
+      '[enhancer-parseApiError] Step 2: error.response is FALSY or not an Axios error for this check.'
     );
     console.error(
-      `[enhancer-parseApiError] Step 3: error.response.data is FALSY (because error.response was not available).`
+      '[enhancer-parseApiError] Step 3: error.response.data is FALSY (because error.response was not available).'
     );
   }
 
@@ -131,7 +132,7 @@ function parseApiError(error: any): ErrorContext {
     error.response.data
   ) {
     console.error(
-      `[enhancer-parseApiError] --- CONDITION MET --- Processing error.response.data...`
+      '[enhancer-parseApiError] --- CONDITION MET --- Processing error.response.data...'
     );
     const data = error.response.data;
     const message = typeof data.message === 'string' ? data.message : '';
@@ -167,7 +168,7 @@ function parseApiError(error: any): ErrorContext {
     return { fieldSlug: path, errorMessage: message };
   }
 
-  console.error(`[enhancer-parseApiError] --- CONDITION NOT MET ---`);
+  console.error('[enhancer-parseApiError] --- CONDITION NOT MET ---');
   const genericErrorMessage =
     error && typeof error.message === 'string'
       ? error.message

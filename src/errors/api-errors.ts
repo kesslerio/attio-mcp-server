@@ -46,7 +46,7 @@ export class AttioApiError extends Error {
  */
 export class AuthenticationError extends AttioApiError {
   constructor(
-    message: string = 'Authentication failed. Please check your API key.',
+    message = 'Authentication failed. Please check your API key.',
     endpoint: string,
     method: string,
     details?: any
@@ -64,7 +64,7 @@ export class AuthenticationError extends AttioApiError {
  */
 export class AuthorizationError extends AttioApiError {
   constructor(
-    message: string = 'Authorization failed. Your API key lacks the necessary permissions.',
+    message = 'Authorization failed. Your API key lacks the necessary permissions.',
     endpoint: string,
     method: string,
     details?: any
@@ -125,7 +125,7 @@ export class InvalidRequestError extends AttioApiError {
  */
 export class RateLimitError extends AttioApiError {
   constructor(
-    message: string = 'Rate limit exceeded. Please try again later.',
+    message = 'Rate limit exceeded. Please try again later.',
     endpoint: string,
     method: string,
     details?: any
@@ -144,7 +144,7 @@ export class RateLimitError extends AttioApiError {
 export class ServerError extends AttioApiError {
   constructor(
     statusCode: number,
-    message: string = 'Server error occurred',
+    message = 'Server error occurred',
     endpoint: string,
     method: string,
     details?: any
@@ -230,7 +230,7 @@ export function createApiErrorFromAxiosError(
   if (statusCode === 404 && endpoint.includes('/objects/')) {
     // Extract resource type and ID from endpoint
     // Assuming endpoint format like /objects/{type}/records/{id}
-    const matches = endpoint.match(/\/objects\/([^\/]+)\/records\/([^\/]+)/);
+    const matches = endpoint.match(/\/objects\/([^/]+)\/records\/([^/]+)/);
     if (matches && matches.length >= 3) {
       const [, resourceType, resourceId] = matches;
       // Format resource type properly: 'people' -> 'Person', 'companies' -> 'Company'

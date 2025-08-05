@@ -2,8 +2,9 @@
  * Rate-limited handler functionality for Attio MCP server
  * Provides wrapper functions to apply rate limiting to API handlers
  */
-import { checkFilterRateLimit } from '../utils/rate-limiter.js';
+
 import { FilterValidationError } from '../errors/api-errors.js';
+import { checkFilterRateLimit } from '../utils/rate-limiter.js';
 
 /**
  * Error response for rate limit exceeded

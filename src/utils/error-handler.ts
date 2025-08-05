@@ -1,9 +1,9 @@
 /**
  * Error handling utility for creating consistent error responses
  */
-import { AttioErrorResponse } from '../types/attio.js';
-import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
+import type { AttioErrorResponse } from '../types/attio.js';
 import { enhanceErrorMessage } from './error-examples.js';
+import { safeJsonStringify, sanitizeMcpResponse } from './json-serializer.js';
 
 /**
  * Enum for categorizing different types of errors

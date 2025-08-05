@@ -2,34 +2,35 @@
  * Validator for company data with dynamic field type detection
  * Enhanced with attribute type validation
  */
+
 import {
-  MissingCompanyFieldError,
-  InvalidCompanyFieldTypeError,
+  detectFieldType,
+  getAttributeTypeInfo,
+} from '../../api/attribute-types.js';
+import { InvalidRequestError } from '../../errors/api-errors.js';
+import {
   InvalidCompanyDataError,
+  InvalidCompanyFieldTypeError,
+  MissingCompanyFieldError,
 } from '../../errors/company-errors.js';
-import {
+import { ResourceType } from '../../types/attio.js';
+import type {
   CompanyCreateInput,
   CompanyUpdateInput,
 } from '../../types/company-types.js';
-import {
-  getAttributeTypeInfo,
-  detectFieldType,
-} from '../../api/attribute-types.js';
-import { ResourceType } from '../../types/attio.js';
-import {
-  validateAttributeValue,
-  ValidationResult,
-  AttributeType,
-} from '../attribute-validator.js';
-import { InvalidRequestError } from '../../errors/api-errors.js';
-import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
-import {
+import type {
   CompanyFieldValue,
   ProcessedFieldValue,
 } from '../../types/tool-types.js';
+import { extractDomain, normalizeDomain } from '../../utils/domain-utils.js';
+import {
+  type AttributeType,
+  type ValidationResult,
+  validateAttributeValue,
+} from '../attribute-validator.js';
 import { processFieldValue } from './field_detector.js';
 import { TypeCache } from './type_cache.js';
-import { CachedTypeInfo } from './types.js';
+import type { CachedTypeInfo } from './types.js';
 
 export class CompanyValidator {
   /**
@@ -272,7 +273,11 @@ export class CompanyValidator {
           if (typeof value === 'string') {
             const numValue = Number(value);
             if (isNaN(numValue)) {
-              throw new InvalidCompanyFieldTypeError(field, 'number', actualType);
+              throw new InvalidCompanyFieldTypeError(
+                field,
+                'number',
+                actualType
+              );
             }
             // String is convertible to number, allow it
           } else {
@@ -299,12 +304,14 @@ export class CompanyValidator {
   private static async performSpecialValidation(
     attributes: Record<string, ProcessedFieldValue>
   ): Promise<void> {
-    if (attributes.services !== undefined && attributes.services !== null) {
-      if (typeof attributes.services !== 'string') {
-        throw new InvalidCompanyDataError(
-          'Services must be a string value (comma-separated for multiple services)'
-        );
-      }
+    if (
+      attributes.services !== undefined &&
+      attributes.services !== null &&
+      typeof attributes.services !== 'string'
+    ) {
+      throw new InvalidCompanyDataError(
+        'Services must be a string value (comma-separated for multiple services)'
+      );
     }
 
     if (attributes.website && typeof attributes.website === 'string') {
@@ -494,7 +501,7 @@ export class CompanyValidator {
                 : 'string';
       }
 
-      const inferredType = this.inferFieldType(attributeName);
+      const inferredType = CompanyValidator.inferFieldType(attributeName);
       return inferredType === 'number'
         ? 'number'
         : inferredType === 'boolean'
@@ -539,7 +546,8 @@ export class CompanyValidator {
       await Promise.all(
         Object.keys(attributesToValidate).map(async (attributeName) => {
           try {
-            const validatorType = await this.getValidatorType(attributeName);
+            const validatorType =
+              await CompanyValidator.getValidatorType(attributeName);
             validatorTypes.set(attributeName, validatorType);
           } catch {
             console.warn(
@@ -581,7 +589,8 @@ export class CompanyValidator {
         try {
           let validatorType: AttributeType;
           try {
-            validatorType = await this.getValidatorType(attributeName);
+            validatorType =
+              await CompanyValidator.getValidatorType(attributeName);
           } catch {
             validatorType = 'string';
           }

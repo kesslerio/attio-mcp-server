@@ -35,7 +35,7 @@ const problematicTestData = {
     name: 'test',
     callback: () => console.log('test'),
     data: {
-      process: function () {
+      process() {
         return 'result';
       },
     },
@@ -58,7 +58,7 @@ const problematicTestData = {
   // Very large string that might cause buffer issues
   largeString: {
     name: 'test',
-    content: 'x'.repeat(100000), // 100KB string
+    content: 'x'.repeat(100_000), // 100KB string
     data: { description: 'Large content test' },
   },
 
@@ -66,7 +66,7 @@ const problematicTestData = {
   invalidDates: {
     name: 'test',
     created: new Date('invalid'),
-    updated: new Date(NaN),
+    updated: new Date(Number.NaN),
   },
 
   // Mixed complex data
@@ -83,7 +83,7 @@ const problematicTestData = {
       { id: 1, value: undefined },
       {
         id: 2,
-        callback: function () {
+        callback() {
           return 'test';
         },
       },
@@ -108,7 +108,7 @@ function testJsonStringify() {
       // Test if the result can be parsed back
       try {
         JSON.parse(result);
-        console.log(`✅ Parse back successful`);
+        console.log('✅ Parse back successful');
       } catch (parseError) {
         console.log(`❌ Parse back failed: ${parseError.message}`);
       }
@@ -162,7 +162,7 @@ async function testFormatters() {
 
       try {
         const result = formatResponse(testData);
-        console.log(`✅ formatResponse succeeded`);
+        console.log('✅ formatResponse succeeded');
 
         // Try to stringify the result (simulating MCP protocol serialization)
         try {
@@ -226,7 +226,7 @@ function testErrorScenarios() {
             };
           return value;
         });
-        console.log(`✅ Safe error serialization succeeded`);
+        console.log('✅ Safe error serialization succeeded');
       } catch (safeError) {
         console.log(`❌ Safe error serialization failed: ${safeError.message}`);
       }

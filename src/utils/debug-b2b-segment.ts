@@ -1,11 +1,11 @@
 /**
  * Debug script for tracing B2B segment attribute mapping issue
  */
-import { translateAttributeNamesInFilters } from './attribute-mapping/index.js';
-import { ResourceType } from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
-import { FilterConditionType } from '../types/attio.js';
+
+import type { ListEntryFilters } from '../api/operations/index.js';
 import { advancedSearchCompanies } from '../objects/companies/index.js';
+import { FilterConditionType, ResourceType } from '../types/attio.js';
+import { translateAttributeNamesInFilters } from './attribute-mapping/index.js';
 
 // Add temporary console logging to trace the flow
 const originalConsoleLog = console.log;

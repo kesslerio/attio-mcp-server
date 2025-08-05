@@ -5,9 +5,7 @@
     "rootDir": "./src",
     "moduleResolution": "NodeNext",
     "paths": {
-      "*": [
-        "./node_modules/@types/*"
-      ]
+      "*": ["./node_modules/@types/*"]
     },
     "resolveJsonModule": true,
     "allowJs": true,
@@ -22,11 +20,6 @@
     "skipLibCheck": true,
     "strictNullChecks": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "__tests__"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "__tests__"]
 }

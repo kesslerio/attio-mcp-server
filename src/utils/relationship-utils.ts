@@ -2,19 +2,23 @@
  * Relationship utility functions for working with related records in Attio
  * Provides functions for creating filters based on relationships between records.
  */
-import { ListEntryFilter, ListEntryFilters } from '../api/operations/index.js';
 import {
-  ResourceType,
+  ListEntryFilter,
+  type ListEntryFilters,
+} from '../api/operations/index.js';
+import {
   FilterConditionType,
   RelationshipType,
+  ResourceType,
 } from '../types/attio.js';
 
 // Re-export RelationshipType for convenience
 export { RelationshipType };
+
 import {
   FilterValidationError,
-  RelationshipFilterError,
   ListRelationshipError,
+  RelationshipFilterError,
 } from '../errors/api-errors.js';
 import { createEqualsFilter } from './filters/index.js';
 import { isValidListId } from './validation.js';
@@ -48,8 +52,7 @@ export function createPeopleByCompanyFilter(
   try {
     // Validate company filters
     if (
-      !companyFilter ||
-      !companyFilter.filters ||
+      !(companyFilter && companyFilter.filters) ||
       companyFilter.filters.length === 0
     ) {
       throw new RelationshipFilterError(
@@ -96,8 +99,7 @@ export function createCompaniesByPeopleFilter(
   try {
     // Validate people filters
     if (
-      !peopleFilter ||
-      !peopleFilter.filters ||
+      !(peopleFilter && peopleFilter.filters) ||
       peopleFilter.filters.length === 0
     ) {
       throw new RelationshipFilterError(
@@ -145,7 +147,7 @@ export function createRecordsByListFilter(
 ): ListEntryFilters {
   try {
     // Validate list ID format and security
-    if (!listId || !isValidListId(listId)) {
+    if (!(listId && isValidListId(listId))) {
       throw new ListRelationshipError(
         'Invalid list ID format. Expected format: list_[alphanumeric]',
         resourceType.toString(),
@@ -191,7 +193,7 @@ export function createPeopleByCompanyListFilter(
 ): ListEntryFilters {
   try {
     // Validate list ID format and security
-    if (!listId || !isValidListId(listId)) {
+    if (!(listId && isValidListId(listId))) {
       throw new Error(
         'Invalid list ID format. Expected format: list_[alphanumeric]'
       );
@@ -224,7 +226,7 @@ export function createCompaniesByPeopleListFilter(
 ): ListEntryFilters {
   try {
     // Validate list ID format and security
-    if (!listId || !isValidListId(listId)) {
+    if (!(listId && isValidListId(listId))) {
       throw new Error(
         'Invalid list ID format. Expected format: list_[alphanumeric]'
       );

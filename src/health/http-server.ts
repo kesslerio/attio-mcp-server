@@ -1,9 +1,9 @@
 import http from 'http';
 import { URL } from 'url';
-import { SSEServer } from '../transport/sse-server.js';
-import { SSEServerOptions } from '../types/sse-types.js';
-import { openAITools, openAIToolDefinitions } from '../openai/index.js';
+import { openAIToolDefinitions, openAITools } from '../openai/index.js';
 import type { OpenAIErrorResponse } from '../openai/types.js';
+import { SSEServer } from '../transport/sse-server.js';
+import type { SSEServerOptions } from '../types/sse-types.js';
 
 /**
  * Interface for health server options
@@ -54,7 +54,7 @@ export function startExtendedHealthServer(
   const config: ExtendedHealthServerOptions = {
     port: 3000,
     maxRetries: 3,
-    maxRetryTime: 10000,
+    maxRetryTime: 10_000,
     retryBackoff: 500,
     enableSSE: false,
     ...options,
@@ -83,10 +83,10 @@ export function startExtendedHealthServer(
         case '/sse/':
           if (sseServer && req.method === 'GET') {
             await sseServer.handleSSEConnection(req, res);
-          } else if (!sseServer) {
-            sendErrorResponse(res, 503, 'SSE not enabled');
-          } else {
+          } else if (sseServer) {
             sendErrorResponse(res, 405, 'Method not allowed');
+          } else {
+            sendErrorResponse(res, 503, 'SSE not enabled');
           }
           break;
 
@@ -95,10 +95,10 @@ export function startExtendedHealthServer(
             await sseServer.handleClientMessage(req, res);
           } else if (sseServer && req.method === 'OPTIONS') {
             sseServer.handleOptionsRequest(req, res);
-          } else if (!sseServer) {
-            sendErrorResponse(res, 503, 'SSE not enabled');  
-          } else {
+          } else if (sseServer) {
             sendErrorResponse(res, 405, 'Method not allowed');
+          } else {
+            sendErrorResponse(res, 503, 'SSE not enabled');
           }
           break;
 
@@ -121,8 +121,28 @@ export function startExtendedHealthServer(
         case '/mcp/stats':
           if (sseServer && req.method === 'GET') {
             handleStatsRequest(req, res, sseServer);
-          } else if (!sseServer) {
+          } else if (sseServer) {
+            sendErrorResponse(res, 405, 'Method not allowed');
+          } else {
             sendErrorResponse(res, 503, 'SSE not enabled');
+          }
+          break;
+
+        case '/openai/tools':
+          if (req.method === 'GET') {
+            handleOpenAIToolsList(req, res);
+          } else if (req.method === 'OPTIONS') {
+            handleCorsOptions(req, res);
+          } else {
+            sendErrorResponse(res, 405, 'Method not allowed');
+          }
+          break;
+
+        case '/openai/execute':
+          if (req.method === 'POST') {
+            await handleOpenAIExecute(req, res);
+          } else if (req.method === 'OPTIONS') {
+            handleCorsOptions(req, res);
           } else {
             sendErrorResponse(res, 405, 'Method not allowed');
           }
@@ -206,19 +226,19 @@ export function startExtendedHealthServer(
   // Add graceful shutdown method to server
   const shutdownServer = (callback?: (err?: Error) => void) => {
     console.error('Health check server: Initiating shutdown...');
-    
+
     // Shutdown SSE server first
     if (sseServer) {
       console.error('Health check server: Shutting down SSE server...');
       sseServer.shutdown();
     }
-    
+
     if (retryTimeout) {
       clearTimeout(retryTimeout);
       retryTimeout = null;
       console.error('Health check server: Cleared retry timeout.');
     }
-    
+
     server.close((err) => {
       if (err) {
         console.error('Health check server: Error during close:', err);
@@ -241,22 +261,24 @@ export function startExtendedHealthServer(
  * Handle health check requests
  */
 function handleHealthCheck(
-  req: http.IncomingMessage, 
-  res: http.ServerResponse, 
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
   sseServer?: SSEServer
 ): void {
   const healthResponse = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    sse: sseServer ? {
-      enabled: true,
-      connections: sseServer.getStats().totalConnections,
-    } : {
-      enabled: false,
-    },
+    sse: sseServer
+      ? {
+          enabled: true,
+          connections: sseServer.getStats().totalConnections,
+        }
+      : {
+          enabled: false,
+        },
   };
-  
+
   const jsonResponse = JSON.stringify(healthResponse);
   res.writeHead(200, {
     'Content-Type': 'application/json',
@@ -275,7 +297,7 @@ function handleStatsRequest(
 ): void {
   const stats = sseServer.getStats();
   const jsonResponse = JSON.stringify(stats);
-  
+
   res.writeHead(200, {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(jsonResponse),
@@ -298,7 +320,7 @@ function sendErrorResponse(
       timestamp: new Date().toISOString(),
     },
   };
-  
+
   const jsonResponse = JSON.stringify(errorResponse);
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
@@ -315,9 +337,9 @@ function handleOpenAIToolsList(
   res: http.ServerResponse
 ): void {
   const response = {
-    tools: openAIToolDefinitions
+    tools: openAIToolDefinitions,
   };
-  
+
   const jsonResponse = JSON.stringify(response);
   res.writeHead(200, {
     'Content-Type': 'application/json',
@@ -337,22 +359,22 @@ async function handleOpenAIExecute(
   res: http.ServerResponse
 ): Promise<void> {
   let body = '';
-  
-  req.on('data', chunk => {
+
+  req.on('data', (chunk) => {
     body += chunk.toString();
   });
-  
+
   req.on('end', async () => {
     try {
       const request = JSON.parse(body);
       const { tool, arguments: args } = request;
-      
-      if (!tool || !args) {
+
+      if (!(tool && args)) {
         throw new Error('Missing tool name or arguments');
       }
-      
+
       let result: any;
-      
+
       switch (tool) {
         case 'search':
           if (!args.query) {
@@ -360,21 +382,21 @@ async function handleOpenAIExecute(
           }
           result = await openAITools.search(args.query);
           break;
-          
+
         case 'fetch':
           if (!args.id) {
             throw new Error('Missing required parameter: id');
           }
           result = await openAITools.fetch(args.id);
           break;
-          
+
         default:
           throw new Error(`Unknown tool: ${tool}`);
       }
-      
+
       const response = { result };
       const jsonResponse = JSON.stringify(response);
-      
+
       res.writeHead(200, {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(jsonResponse),
@@ -383,15 +405,14 @@ async function handleOpenAIExecute(
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       });
       res.end(jsonResponse);
-      
     } catch (error: any) {
       const errorResponse: OpenAIErrorResponse = {
         error: {
           message: error.message || 'Tool execution failed',
-          type: 'api_error'
-        }
+          type: 'api_error',
+        },
       };
-      
+
       const jsonResponse = JSON.stringify(errorResponse);
       res.writeHead(400, {
         'Content-Type': 'application/json',

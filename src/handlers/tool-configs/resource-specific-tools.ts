@@ -32,7 +32,7 @@ export const VALIDATION_RULES: Record<
     return null;
   },
   'create-person': (attributes) => {
-    if (!attributes.name && !attributes.email) {
+    if (!(attributes.name || attributes.email)) {
       return 'Person name or email is required for create-person tool';
     }
     return null;

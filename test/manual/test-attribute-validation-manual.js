@@ -10,10 +10,10 @@
  * 2. Run: node test/manual/test-attribute-validation-manual.js
  */
 
-import { CompanyValidator } from '../../src/validators/company-validator.js';
+import * as dotenv from 'dotenv';
 import { getAttioClient } from '../../src/api/attio-client.js';
 import { ResourceType } from '../../src/types/attio.js';
-import * as dotenv from 'dotenv';
+import { CompanyValidator } from '../../src/validators/company-validator.js';
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +29,7 @@ const TEST_PREFIX = 'ValidationTest_';
 
 // Generate a unique name for test company
 const generateUniqueName = () =>
-  `${TEST_PREFIX}${Math.floor(Math.random() * 100000)}`;
+  `${TEST_PREFIX}${Math.floor(Math.random() * 100_000)}`;
 
 // Create a company record
 async function createCompany(data) {

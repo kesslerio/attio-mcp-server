@@ -2,10 +2,12 @@
  * Final test to confirm B2B segment mapping is fixed
  */
 
+import { FilterConditionType, ResourceType } from '../../dist/types/attio.js';
 // Import the necessary modules
-import { getAttributeSlug } from '../../dist/utils/attribute-mapping/index.js';
-import { translateAttributeNamesInFilters } from '../../dist/utils/attribute-mapping/index.js';
-import { ResourceType, FilterConditionType } from '../../dist/types/attio.js';
+import {
+  getAttributeSlug,
+  translateAttributeNamesInFilters,
+} from '../../dist/utils/attribute-mapping/index.js';
 
 console.log('=== B2B Segment Mapping Test ===\n');
 

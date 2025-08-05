@@ -5,8 +5,8 @@
  * Tests the new safe JSON serialization utilities and MCP response sanitization
  */
 
-import { fileURLToPath } from 'url';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,7 +84,7 @@ async function testJsonSerializer() {
       },
       functions: {
         callback: () => console.log('test'),
-        handler: function () {
+        handler() {
           return 'handled';
         },
       },

@@ -4,8 +4,8 @@
  */
 export {
   batchCreateCompanies,
-  batchUpdateCompanies,
   batchDeleteCompanies,
-  batchSearchCompanies,
   batchGetCompanyDetails,
+  batchSearchCompanies,
+  batchUpdateCompanies,
 } from '../batch-companies.js';

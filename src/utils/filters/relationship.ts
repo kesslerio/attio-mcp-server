@@ -6,29 +6,28 @@
 // External dependencies
 import {
   FilterValidationError,
-  RelationshipFilterError,
   ListRelationshipError,
+  RelationshipFilterError,
 } from '../../errors/api-errors.js';
-
-// Internal module dependencies
-import {
-  ListEntryFilters,
-  FilterConditionType,
-  RelationshipType,
-  ResourceType,
-  RelationshipFilterConfig,
-  ATTRIBUTES,
-  RelationshipRateLimitError,
-} from './types.js';
 // import { isValidListId } from "../../validation.js";
 import { createEqualsFilter } from './builders.js';
 import {
-  getCachedRelationshipFilter,
+  cacheListFilter,
   cacheRelationshipFilter,
   getCachedListFilter,
-  cacheListFilter,
+  getCachedRelationshipFilter,
   hashFilters,
 } from './cache.js';
+// Internal module dependencies
+import {
+  ATTRIBUTES,
+  FilterConditionType,
+  type ListEntryFilters,
+  type RelationshipFilterConfig,
+  RelationshipRateLimitError,
+  RelationshipType,
+  ResourceType,
+} from './types.js';
 
 /**
  * Applies rate limiting to relationship queries
@@ -42,7 +41,7 @@ import {
 export function applyRateLimit(
   req: any,
   relationshipType: string,
-  isNested: boolean = false
+  isNested = false
 ): void {
   // Check the rate limit
   // TODO: Restore when checkRelationshipQueryRateLimit is available
@@ -126,8 +125,7 @@ export function createPeopleByCompanyFilter(
 
     // Validate company filters
     if (
-      !companyFilter ||
-      !companyFilter.filters ||
+      !(companyFilter && companyFilter.filters) ||
       companyFilter.filters.length === 0
     ) {
       throw new RelationshipFilterError(
@@ -188,8 +186,7 @@ export function createCompaniesByPeopleFilter(
 
     // Validate people filters
     if (
-      !peopleFilter ||
-      !peopleFilter.filters ||
+      !(peopleFilter && peopleFilter.filters) ||
       peopleFilter.filters.length === 0
     ) {
       throw new RelationshipFilterError(
@@ -244,7 +241,7 @@ export function createRecordsByListFilter(
   resourceType: ResourceType,
   listId: string,
   req?: any,
-  useCache: boolean = true
+  useCache = true
 ): ListEntryFilters {
   try {
     // Check cache first if caching is enabled
@@ -264,7 +261,7 @@ export function createRecordsByListFilter(
 
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
-    if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
+    if (!(listId && /^list_[a-zA-Z0-9]+$/.test(listId))) {
       throw new ListRelationshipError(
         'Invalid list ID format. Expected format: list_[alphanumeric]',
         resourceType.toString(),
@@ -324,7 +321,7 @@ export function createRecordsByListFilter(
 export function createPeopleByCompanyListFilter(
   listId: string,
   req?: any,
-  useCache: boolean = true
+  useCache = true
 ): ListEntryFilters {
   try {
     // Create a cache key for this nested relationship
@@ -333,7 +330,7 @@ export function createPeopleByCompanyListFilter(
       sourceType: ResourceType.PEOPLE,
       targetType: ResourceType.COMPANIES,
       targetFilterHash: '', // Will be set later
-      listId: listId,
+      listId,
       isNested: true,
     };
 
@@ -354,7 +351,7 @@ export function createPeopleByCompanyListFilter(
 
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
-    if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
+    if (!(listId && /^list_[a-zA-Z0-9]+$/.test(listId))) {
       throw new Error(
         'Invalid list ID format. Expected format: list_[alphanumeric]'
       );
@@ -406,7 +403,7 @@ export function createPeopleByCompanyListFilter(
 export function createCompaniesByPeopleListFilter(
   listId: string,
   req?: any,
-  useCache: boolean = true
+  useCache = true
 ): ListEntryFilters {
   try {
     // Create a cache key for this nested relationship
@@ -415,7 +412,7 @@ export function createCompaniesByPeopleListFilter(
       sourceType: ResourceType.COMPANIES,
       targetType: ResourceType.PEOPLE,
       targetFilterHash: '', // Will be set later
-      listId: listId,
+      listId,
       isNested: true,
     };
 
@@ -436,7 +433,7 @@ export function createCompaniesByPeopleListFilter(
 
     // Validate list ID format and security
     // TODO: Fix import issue with validation.js
-    if (!listId || !/^list_[a-zA-Z0-9]+$/.test(listId)) {
+    if (!(listId && /^list_[a-zA-Z0-9]+$/.test(listId))) {
       throw new Error(
         'Invalid list ID format. Expected format: list_[alphanumeric]'
       );

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+import dotenv from 'dotenv';
 /**
  * CLI tool for discovering Attio attributes and generating mapping files
  */
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverAttributes } from './commands/attributes.js';
-import dotenv from 'dotenv';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -52,7 +52,7 @@ yargs(hideBin(process.argv))
         })
         .conflicts('object', 'all')
         .check((argv) => {
-          if (!argv.object && !argv.all) {
+          if (!(argv.object || argv.all)) {
             throw new Error('You must specify either --object or --all');
           }
           return true;

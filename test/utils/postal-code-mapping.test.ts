@@ -11,7 +11,7 @@
  * NOTE: Users with existing user.json files may need to delete or regenerate
  * their user.json to pick up this fix, since user.json overrides default.json.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   getAttributeSlug,
   invalidateConfigCache,

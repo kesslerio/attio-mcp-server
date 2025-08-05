@@ -4,12 +4,12 @@
  * Handles basic search operations including search, searchByEmail, searchByPhone, and smartSearch
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { ResourceType } from '../../../../types/attio.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { SearchToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type { SearchToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Check if the formatted results already contain a header to avoid duplication

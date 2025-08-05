@@ -1,27 +1,28 @@
 /**
  * Batch operations for company records
  */
+
 import {
-  ResourceType,
-  Company,
-  BatchResponse,
-  BatchConfig,
-  RecordAttributes,
-} from '../types/attio.js';
-import { CompanyFieldValue } from '../types/tool-types.js';
-import {
-  executeBatchOperations,
   batchCreateRecords,
   batchUpdateRecords,
+  executeBatchOperations,
 } from '../api/operations/index.js';
 import {
-  createCompany,
-  updateCompany,
-  deleteCompany,
-  searchCompanies,
-  getCompanyDetails,
-} from './companies/index.js';
+  type BatchConfig,
+  type BatchResponse,
+  type Company,
+  type RecordAttributes,
+  ResourceType,
+} from '../types/attio.js';
+import type { CompanyFieldValue } from '../types/tool-types.js';
 import { CompanyValidator } from '../validators/company-validator.js';
+import {
+  createCompany,
+  deleteCompany,
+  getCompanyDetails,
+  searchCompanies,
+  updateCompany,
+} from './companies/index.js';
 
 /**
  * Helper function to execute a batch operation with improved error handling
@@ -293,12 +294,11 @@ export async function batchUpdateCompanies(params: {
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
         throw new Error(
-          `Company update failed: One or more company IDs do not exist`
+          'Company update failed: One or more company IDs do not exist'
         );
-      } else {
-        // Provide more detailed error
-        throw new Error(`Company batch update failed: ${error.message}`);
       }
+      // Provide more detailed error
+      throw new Error(`Company batch update failed: ${error.message}`);
     }
 
     // For other errors, log and then rethrow
@@ -483,7 +483,7 @@ export async function batchCompanyOperations(
  */
 export function createBatchItems<T>(
   items: T[],
-  prefix: string = 'item'
+  prefix = 'item'
 ): Array<{ id: string; data: T }> {
   return items.map((item, index) => ({
     id: `${prefix}_${index}`,

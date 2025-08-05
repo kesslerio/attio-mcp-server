@@ -2,10 +2,10 @@
  * Tests for addRecordToList with the proper API payload format
  */
 
-import { expect, describe, it, beforeEach, vi } from 'vitest';
-import { addRecordToList } from '../../src/objects/lists.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as attioClient from '../../src/api/attio-client.js';
 import * as apiOperations from '../../src/api/operations/lists.js';
+import { addRecordToList } from '../../src/objects/lists.js';
 import { ResourceType } from '../../src/types/attio.js';
 
 describe('addRecordToList Tests', () => {

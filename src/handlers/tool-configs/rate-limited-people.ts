@@ -1,11 +1,12 @@
 /**
  * Rate-limited people-related tool configurations
  */
+
+import { withRateLimiting } from '../rate-limited-handler.js';
 import {
   paginatedPeopleToolConfigs,
   paginatedPeopleToolDefinitions,
 } from './paginated-people.js';
-import { withRateLimiting } from '../rate-limited-handler.js';
 
 /**
  * Rate-limited versions of paginated people tool configs

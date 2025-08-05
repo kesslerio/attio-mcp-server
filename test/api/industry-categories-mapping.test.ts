@@ -13,14 +13,14 @@
  *
  * Set SKIP_INTEGRATION_TESTS=true to skip these tests
  */
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { initializeAttioClient } from '../../src/api/attio-client';
 import {
   createCompany,
-  updateCompany,
-  getCompanyDetails,
   deleteCompany,
+  getCompanyDetails,
+  updateCompany,
 } from '../../src/objects/companies/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS =
@@ -83,7 +83,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       // Log for debugging
       console.log('Created company with industry:', {
         companyId: createdCompany.id.record_id,
-        industryValue: industryValue,
+        industryValue,
         allValues: companyDetails.values,
       });
 
@@ -105,7 +105,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         // If it's an object, stringify and check
         expect(JSON.stringify(industryValue)).toContain(testIndustry);
       }
-    }, 30000);
+    }, 30_000);
 
     it('should update a company industry field and maintain categories mapping', async () => {
       // First create a company without industry
@@ -137,8 +137,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       // Log for debugging
       console.log('Updated company industry:', {
         companyId: createdCompany.id.record_id,
-        industryValue: industryValue,
-        updateIndustry: updateIndustry,
+        industryValue,
+        updateIndustry,
       });
 
       // Verify the industry field contains our updated value
@@ -156,7 +156,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       } else if (industryValue && typeof industryValue === 'object') {
         expect(JSON.stringify(industryValue)).toContain(updateIndustry);
       }
-    }, 30000);
+    }, 30_000);
 
     it('should handle multiple industry values correctly', async () => {
       const testIndustries = [

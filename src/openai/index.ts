@@ -3,20 +3,20 @@
  * Provides ChatGPT-compatible search and fetch tools
  */
 
-export { search, searchDirect } from './search.js';
 export { fetch as fetchRecord } from './fetch.js';
+export { search, searchDirect } from './search.js';
 export * from './types.js';
 
-import { search } from './search.js';
 import { fetch } from './fetch.js';
-import { OpenAITools } from './types.js';
+import { search } from './search.js';
+import type { OpenAITools } from './types.js';
 
 /**
  * OpenAI-compliant tools for ChatGPT connector
  */
 export const openAITools: OpenAITools = {
   search,
-  fetch
+  fetch,
 };
 
 /**
@@ -25,17 +25,18 @@ export const openAITools: OpenAITools = {
 export const openAIToolDefinitions = [
   {
     name: 'search',
-    description: 'Search for records in Attio CRM across companies, people, lists, and tasks',
+    description:
+      'Search for records in Attio CRM across companies, people, lists, and tasks',
     parameters: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'The search query to find relevant records'
-        }
+          description: 'The search query to find relevant records',
+        },
       },
-      required: ['query']
-    }
+      required: ['query'],
+    },
   },
   {
     name: 'fetch',
@@ -45,10 +46,10 @@ export const openAIToolDefinitions = [
       properties: {
         id: {
           type: 'string',
-          description: 'The record ID (format: "type:id" or just "id")'
-        }
+          description: 'The record ID (format: "type:id" or just "id")',
+        },
       },
-      required: ['id']
-    }
-  }
+      required: ['id'],
+    },
+  },
 ];

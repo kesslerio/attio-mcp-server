@@ -1,9 +1,9 @@
+import * as attioClient from '../../src/api/attio-client.js';
+import { searchCompanies } from '../../src/objects/companies/search.js';
 import {
   PersonValidator,
   searchPeopleByEmails,
 } from '../../src/objects/people-write.js';
-import { searchCompanies } from '../../src/objects/companies/search.js';
-import * as attioClient from '../../src/api/attio-client.js';
 
 // Mock the API client to avoid initialization issues
 vi.mock('../../src/api/attio-client.js');

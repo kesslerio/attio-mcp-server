@@ -3,17 +3,17 @@
  * Handles create, read, update, and delete operations
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
-  AttioSingleResponse,
+import type {
   AttioListResponse,
+  AttioRecord,
+  AttioSingleResponse,
   RecordCreateParams,
-  RecordUpdateParams,
   RecordListParams,
+  RecordUpdateParams,
+  ResourceType,
 } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, type RetryConfig } from './retry.js';
 
 /**
  * Helper function to construct object path

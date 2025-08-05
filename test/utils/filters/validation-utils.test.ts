@@ -2,23 +2,24 @@
  * Unit tests for filter validation utilities
  * Tests the centralized validation functions for filter structures
  */
+
 import {
-  validateFiltersObject,
-  collectInvalidFilters,
-  formatInvalidFiltersError,
-  validateFilters,
-  getInvalidFilterReason,
-  getFilterExample,
-  ERROR_MESSAGES,
-} from '../../../src/utils/filters/validation-utils.js';
-import {
-  FilterValidationError,
   FilterErrorCategory,
+  FilterValidationError,
 } from '../../../src/errors/api-errors.js';
 import {
   FilterConditionType,
   ListEntryFilter,
 } from '../../../src/utils/filters/types.js';
+import {
+  collectInvalidFilters,
+  ERROR_MESSAGES,
+  formatInvalidFiltersError,
+  getFilterExample,
+  getInvalidFilterReason,
+  validateFilters,
+  validateFiltersObject,
+} from '../../../src/utils/filters/validation-utils.js';
 
 describe('Filter Validation Utilities', () => {
   describe('validateFiltersObject', () => {

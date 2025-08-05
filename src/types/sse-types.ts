@@ -3,7 +3,10 @@
  * Used for ChatGPT connector compatibility
  */
 
-import { IncomingMessage, ServerResponse as HttpServerResponse } from 'http';
+import type {
+  ServerResponse as HttpServerResponse,
+  IncomingMessage,
+} from 'http';
 
 /**
  * SSE connection information for a connected client
@@ -44,7 +47,14 @@ export interface SSEMessage {
  */
 export interface MCPSSEMessage {
   /** SSE event type */
-  event: 'mcp_request' | 'mcp_response' | 'mcp_notification' | 'status' | 'error' | 'ping' | 'pong';
+  event:
+    | 'mcp_request'
+    | 'mcp_response'
+    | 'mcp_notification'
+    | 'status'
+    | 'error'
+    | 'ping'
+    | 'pong';
   /** Timestamp when message was created */
   timestamp: string;
   /** Original MCP message */
@@ -149,7 +159,10 @@ export interface SSEEndpoint {
   /** HTTP method */
   method: 'GET' | 'POST' | 'OPTIONS';
   /** Handler function */
-  handler: (req: IncomingMessage, res: HttpServerResponse) => void | Promise<void>;
+  handler: (
+    req: IncomingMessage,
+    res: HttpServerResponse
+  ) => void | Promise<void>;
   /** Whether authentication is required */
   requireAuth?: boolean;
   /** Rate limit override (requests per minute) */

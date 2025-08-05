@@ -55,7 +55,12 @@ export interface OpenAITools {
 /**
  * Attio record types that can be transformed to OpenAI format
  */
-export type SupportedAttioType = 'companies' | 'people' | 'lists' | 'tasks' | 'records';
+export type SupportedAttioType =
+  | 'companies'
+  | 'people'
+  | 'lists'
+  | 'tasks'
+  | 'records';
 
 /**
  * Configuration for OpenAI tool behavior

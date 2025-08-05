@@ -3,8 +3,8 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
-  ListPromptsRequestSchema,
   GetPromptRequestSchema,
+  ListPromptsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { registerPromptHandlers } from '../../src/prompts/handlers';
 import { getAllPrompts } from '../../src/prompts/templates/index';

@@ -2,7 +2,7 @@
  * Global test setup for Vitest
  * Handles API client mocking and common test configuration
  */
-import { vi, beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 import { createMockApiClient } from './types/test-types.js';
 
 // Global mock for attio-client
@@ -21,7 +21,8 @@ vi.mock('../src/api/attio-client.js', async () => {
 
 // Global mock for people search functions to fix PersonValidator tests
 vi.mock('../src/objects/people/search.js', async (importOriginal) => {
-  const actual = await importOriginal() as typeof import('../src/objects/people/search.js');
+  const actual =
+    (await importOriginal()) as typeof import('../src/objects/people/search.js');
   return {
     ...actual,
     searchPeopleByEmail: vi.fn(async (email: string) => {
@@ -47,7 +48,9 @@ vi.mock('../src/objects/people/search.js', async (importOriginal) => {
 
 // Mock the entire people-write module to avoid API initialization issues
 vi.mock('../src/objects/people-write.js', async () => {
-  const actual = await vi.importActual('../src/objects/people-write.js') as typeof import('../src/objects/people-write.js');
+  const actual = (await vi.importActual(
+    '../src/objects/people-write.js'
+  )) as typeof import('../src/objects/people-write.js');
   return {
     ...actual,
     searchPeopleByEmails: vi.fn(async (emails: string[]) => {
@@ -64,7 +67,8 @@ vi.mock('../src/objects/people-write.js', async () => {
 
 // Global mock for companies module
 vi.mock('../src/objects/companies/index.js', async (importOriginal) => {
-  const actual = await importOriginal() as typeof import('../src/objects/companies/index.js');
+  const actual =
+    (await importOriginal()) as typeof import('../src/objects/companies/index.js');
   return {
     ...actual,
     searchCompanies: vi.fn(async () => []),
@@ -104,7 +108,8 @@ vi.mock('../src/objects/companies/search.js', () => ({
 
 // Global mock for people module
 vi.mock('../src/objects/people/index.js', async (importOriginal) => {
-  const actual = await importOriginal() as typeof import('../src/objects/people/index.js');
+  const actual =
+    (await importOriginal()) as typeof import('../src/objects/people/index.js');
   return {
     ...actual,
     searchPeople: vi.fn(async () => []),

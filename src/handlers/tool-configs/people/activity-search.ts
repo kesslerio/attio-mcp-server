@@ -1,12 +1,13 @@
 /**
  * Activity and interaction search tool configurations for people
  */
-import { AttioRecord } from '../../../types/attio.js';
+
 import {
-  searchPeopleByLastInteraction,
   searchPeopleByActivity,
+  searchPeopleByLastInteraction,
 } from '../../../objects/people/index.js';
-import { DateBasedSearchToolConfig } from '../../tool-types.js';
+import type { AttioRecord } from '../../../types/attio.js';
+import type { DateBasedSearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
 
 export const activitySearchToolConfigs = {

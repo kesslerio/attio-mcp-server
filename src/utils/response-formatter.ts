@@ -259,8 +259,8 @@ export function formatEmptyResponse(
  */
 export function formatErrorResponse(
   message: string,
-  code: number = 500,
-  type: string = 'unknown_error',
+  code = 500,
+  type = 'unknown_error',
   details?: unknown
 ): ToolResponse {
   const response = {

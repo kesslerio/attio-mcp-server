@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 
 const fs = require('fs');
 
@@ -9,19 +10,38 @@ let content = fs.readFileSync(filePath, 'utf8');
 content = content.replace(/it\.skipIf\(SKIP_INTEGRATION_TESTS\)/g, 'it');
 
 // Fix type issues
-content = content.replace(/expect\(company\.values\.name\[0\]\.value\)/g, 'expect(company.values.name?.[0]?.value)');
-content = content.replace(/expect\(details\.values\.name\[0\]\.value\)/g, 'expect(details.values.name?.[0]?.value)');
-content = content.replace(/expect\(updated\.values\.industry\[0\]\.value\)/g, 'expect(updated.values.industry?.[0]?.value)');
-content = content.replace(/expect\(updated\.values\.description\[0\]\.value\)/g, 'expect(updated.values.description?.[0]?.value)');
+content = content.replace(
+  /expect\(company\.values\.name\[0\]\.value\)/g,
+  'expect(company.values.name?.[0]?.value)'
+);
+content = content.replace(
+  /expect\(details\.values\.name\[0\]\.value\)/g,
+  'expect(details.values.name?.[0]?.value)'
+);
+content = content.replace(
+  /expect\(updated\.values\.industry\[0\]\.value\)/g,
+  'expect(updated.values.industry?.[0]?.value)'
+);
+content = content.replace(
+  /expect\(updated\.values\.description\[0\]\.value\)/g,
+  'expect(updated.values.description?.[0]?.value)'
+);
 
 // Fix person email type
-content = content.replace(/\.some\(e => e\.email_address/g, '.some((e: any) => e.email_address');
+content = content.replace(
+  /\.some\(e => e\.email_address/g,
+  '.some((e: any) => e.email_address'
+);
 
 // Fix company_id
-content = content.replace('company: createdCompanyId', 'company_id: createdCompanyId');
+content = content.replace(
+  'company: createdCompanyId',
+  'company_id: createdCompanyId'
+);
 
 // Remove the SKIP_INTEGRATION_TESTS setup from beforeAll
-content = content.replace(`beforeAll(() => {
+content = content.replace(
+  `beforeAll(() => {
     if (SKIP_INTEGRATION_TESTS) {
       console.log('Skipping integration tests - no API key found');
       return;
@@ -30,11 +50,13 @@ content = content.replace(`beforeAll(() => {
     // Initialize the API client with real credentials
     const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
-  });`, `beforeAll(() => {    
+  });`,
+  `beforeAll(() => {    
     // Initialize the API client with real credentials
     const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
-  });`);
+  });`
+);
 
 // Remove the check from afterAll
 content = content.replace('if (SKIP_INTEGRATION_TESTS) return;', '');

@@ -1,6 +1,7 @@
 // Test script to check value matching error enhancement
-import { advancedSearchPeople } from './dist/objects/people.js';
+
 import { initializeAttioClient } from './dist/api/attio-client.js';
+import { advancedSearchPeople } from './dist/objects/people.js';
 
 process.env.ATTIO_API_KEY = '16d7c9ca-9b9d-4ad5-a3e9-cfdcbcf08b3f';
 

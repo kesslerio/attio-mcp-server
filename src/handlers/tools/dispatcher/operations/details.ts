@@ -4,13 +4,13 @@
  * Handles details operations for retrieving detailed record information
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { ResourceType } from '../../../../types/attio.js';
 import { createErrorResult } from '../../../../utils/error-handler.js';
 import { parseResourceUri } from '../../../../utils/uri-parser.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { DetailsToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
+import type { DetailsToolConfig } from '../../../tool-types.js';
 import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle details operations

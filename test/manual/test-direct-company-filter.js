@@ -79,10 +79,10 @@ async function testDirectCompanyFilter() {
 }
 
 // Run the test if API key is available
-if (!process.env.ATTIO_API_KEY) {
+if (process.env.ATTIO_API_KEY) {
+  testDirectCompanyFilter();
+} else {
   console.error(
     'Please set ATTIO_API_KEY environment variable to run this test'
   );
-} else {
-  testDirectCompanyFilter();
 }

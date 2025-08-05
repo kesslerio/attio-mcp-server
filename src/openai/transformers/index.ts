@@ -3,13 +3,17 @@
  * based on resource type
  */
 
-import { OpenAISearchResult, OpenAIFetchResult, SupportedAttioType } from '../types.js';
-import { transformCompany } from './companies.js';
-import { transformPerson } from './people.js';
-import { transformList } from './lists.js';
-import { transformTask } from './tasks.js';
-import { transformGenericRecord } from './generic.js';
 import { debug } from '../../utils/logger.js';
+import type {
+  OpenAIFetchResult,
+  OpenAISearchResult,
+  SupportedAttioType,
+} from '../types.js';
+import { transformCompany } from './companies.js';
+import { transformGenericRecord } from './generic.js';
+import { transformList } from './lists.js';
+import { transformPerson } from './people.js';
+import { transformTask } from './tasks.js';
 
 /**
  * Transform an Attio record to OpenAI search result format
@@ -21,31 +25,41 @@ export function transformToSearchResult(
   record: any,
   resourceType: SupportedAttioType
 ): OpenAISearchResult | null {
-  if (!record || !record.id) {
+  if (!(record && record.id)) {
     return null;
   }
 
-  debug('Transform', `Converting ${resourceType} to search result`, { resourceType }, 'transformToSearchResult');
+  debug(
+    'Transform',
+    `Converting ${resourceType} to search result`,
+    { resourceType },
+    'transformToSearchResult'
+  );
 
   try {
     switch (resourceType) {
       case 'companies':
         return transformCompany.toSearchResult(record);
-      
+
       case 'people':
         return transformPerson.toSearchResult(record);
-      
+
       case 'lists':
         return transformList.toSearchResult(record);
-      
+
       case 'tasks':
         return transformTask.toSearchResult(record);
-      
+
       default:
         return transformGenericRecord.toSearchResult(record, resourceType);
     }
   } catch (error: any) {
-    debug('Transform', `Failed to transform ${resourceType} record`, { resourceType, error: error.message }, 'transformToSearchResult');
+    debug(
+      'Transform',
+      `Failed to transform ${resourceType} record`,
+      { resourceType, error: error.message },
+      'transformToSearchResult'
+    );
     return null;
   }
 }
@@ -60,31 +74,41 @@ export function transformToFetchResult(
   record: any,
   resourceType: SupportedAttioType
 ): OpenAIFetchResult | null {
-  if (!record || !record.id) {
+  if (!(record && record.id)) {
     return null;
   }
 
-  debug('Transform', `Converting ${resourceType} to fetch result`, { resourceType }, 'transformToFetchResult');
+  debug(
+    'Transform',
+    `Converting ${resourceType} to fetch result`,
+    { resourceType },
+    'transformToFetchResult'
+  );
 
   try {
     switch (resourceType) {
       case 'companies':
         return transformCompany.toFetchResult(record);
-      
+
       case 'people':
         return transformPerson.toFetchResult(record);
-      
+
       case 'lists':
         return transformList.toFetchResult(record);
-      
+
       case 'tasks':
         return transformTask.toFetchResult(record);
-      
+
       default:
         return transformGenericRecord.toFetchResult(record, resourceType);
     }
   } catch (error: any) {
-    debug('Transform', `Failed to transform ${resourceType} record`, { resourceType, error: error.message }, 'transformToFetchResult');
+    debug(
+      'Transform',
+      `Failed to transform ${resourceType} record`,
+      { resourceType, error: error.message },
+      'transformToFetchResult'
+    );
     return null;
   }
 }
@@ -96,23 +120,29 @@ export function transformToFetchResult(
  */
 export function extractAttributeValue(attribute: any): string {
   if (!attribute) return '';
-  
+
   // Handle different attribute structures
   if (typeof attribute === 'string') return attribute;
   if (attribute.value !== undefined) return String(attribute.value);
   if (attribute.text) return attribute.text;
   if (attribute.name) return attribute.name;
-  
+
   // For arrays, join values
   if (Array.isArray(attribute)) {
-    return attribute.map(item => extractAttributeValue(item)).filter(Boolean).join(', ');
+    return attribute
+      .map((item) => extractAttributeValue(item))
+      .filter(Boolean)
+      .join(', ');
   }
-  
+
   // For objects with nested values
   if (attribute.values && Array.isArray(attribute.values)) {
-    return attribute.values.map((v: any) => extractAttributeValue(v)).filter(Boolean).join(', ');
+    return attribute.values
+      .map((v: any) => extractAttributeValue(v))
+      .filter(Boolean)
+      .join(', ');
   }
-  
+
   return '';
 }
 
@@ -122,16 +152,19 @@ export function extractAttributeValue(attribute: any): string {
  * @param fields - List of field names to include
  * @returns Combined text description
  */
-export function buildTextDescription(attributes: any, fields: string[]): string {
+export function buildTextDescription(
+  attributes: any,
+  fields: string[]
+): string {
   const parts: string[] = [];
-  
+
   for (const field of fields) {
     const value = extractAttributeValue(attributes[field]);
     if (value) {
       parts.push(value);
     }
   }
-  
+
   return parts.join(' • ');
 }
 
@@ -141,10 +174,13 @@ export function buildTextDescription(attributes: any, fields: string[]): string 
  * @param resourceType - Type of resource
  * @returns URL string
  */
-export function generateRecordUrl(recordId: string, resourceType: string): string {
+export function generateRecordUrl(
+  recordId: string,
+  resourceType: string
+): string {
   // You can customize this based on your Attio workspace URL
   const baseUrl = process.env.ATTIO_BASE_URL || 'https://app.attio.com';
-  
+
   switch (resourceType) {
     case 'companies':
       return `${baseUrl}/objects/companies/${recordId}`;

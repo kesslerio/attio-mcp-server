@@ -3,32 +3,30 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import {
-  searchObject,
   advancedSearchObject,
-  ListEntryFilters,
+  type ListEntryFilters,
+  searchObject,
 } from '../../api/operations/index.js';
-import {
-  ResourceType,
-  Person,
-  DateRange,
-  InteractionType,
-  ActivityFilter,
-} from '../../types/attio.js';
-import {
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-  createActivityFilter,
-} from '../../utils/filters/index.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import {
-  validateDateRange,
+  type ActivityFilter,
+  type DateRange,
+  type InteractionType,
+  type Person,
+  ResourceType,
+} from '../../types/attio.js';
+import {
+  createActivityFilter,
+  createCreatedDateFilter,
+  createLastInteractionFilter,
+  createModifiedDateFilter,
   validateActivityFilter,
+  validateDateRange,
   validateNumericParam,
 } from '../../utils/filters/index.js';
 import {
-  PaginatedResponse,
   createPaginatedResponse,
+  type PaginatedResponse,
 } from '../../utils/pagination.js';
 
 /**
@@ -48,7 +46,7 @@ export async function searchPeople(query: string): Promise<Person[]> {
 
     // Use the API directly to avoid the phone field issue
     const api = getAttioClient();
-    const path = `/objects/people/records/query`;
+    const path = '/objects/people/records/query';
 
     // Search only by name and email, not phone
     const filter = {
