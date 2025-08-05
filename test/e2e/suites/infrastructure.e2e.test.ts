@@ -48,8 +48,9 @@ describe('E2E Infrastructure', () => {
 
     it('should generate test emails with proper domain', () => {
       const email = configLoader.getTestEmail('person');
+      const config = configLoader.getConfig();
       
-      expect(email).toContain('@e2e-test.example.com');
+      expect(email).toContain(config.testData.testEmailDomain);
       expect(email).toContain('E2E_TEST_');
     });
   });
@@ -79,12 +80,13 @@ describe('E2E Infrastructure', () => {
 
     it('should create valid person test data', () => {
       const person = E2EPersonFactory.create();
+      const config = configLoader.getConfig();
       
       expect(person.name).toBeDefined();
       expect(person.name).toContain('E2E_TEST_');
       expect(person.email_addresses).toBeDefined();
       expect(Array.isArray(person.email_addresses)).toBe(true);
-      expect(person.email_addresses[0]).toContain('@e2e-test.example.com');
+      expect(person.email_addresses[0]).toContain(config.testData.testEmailDomain);
     });
 
     it('should create specialized person roles', () => {
