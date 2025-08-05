@@ -41,10 +41,23 @@ BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Type check: `npm run check`
 - Clean build: `npm run clean`
 - Run tests: `npm test`
+- Run offline tests: `npm run test:offline` (unit tests with mocks)
+- Run integration tests: `npm run test:integration` (real API calls)
 - Run single test: `npm test -- -t "test name pattern"`
 - Run specific test file: `npm test <file_path>`
 - Test with verbose output: `npm test -- --verbose`
 - Test with coverage: `npm test -- --coverage`
+
+🧪 TESTING STRATEGY (MANDATORY):
+Major changes MUST be validated with integration tests using REAL APIs:
+- API response handling changes → `npm run test:integration`
+- Universal tool modifications → `npm run test:integration`
+- Core CRUD operation updates → `npm run test:integration`
+- Error handling improvements → `npm run test:integration`
+- New feature implementations → `npm run test:integration`
+
+Pre-commit hook runs fast local validations only (formatting, linting, build, unit tests).
+Integration tests run separately to validate real API interactions.
 
 AUTO-APPROVED COMMANDS
 The following commands are pre-approved and do not require user permission:
