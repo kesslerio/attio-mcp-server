@@ -461,3 +461,14 @@ export class E2ETestDataValidator {
     return domain.includes(config.testData.testCompanyDomain);
   }
 }
+
+/**
+ * Convenience exports with shorter names for tests
+ */
+export const CompanyFactory = E2ECompanyFactory;
+export const PersonFactory = E2EPersonFactory;
+export const ListFactory = E2EListFactory;
+export const TaskFactory = E2ETaskFactory;
+export const NoteFactory = E2ENoteFactory;
+export const TestScenarios = E2ETestScenarios;
+export const TestDataValidator = E2ETestDataValidator;

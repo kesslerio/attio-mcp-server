@@ -21,9 +21,17 @@ export default defineConfig({
       'test/validators/**',
       'test/objects/**',
       'test/manual/**',
-      'test/**/*.test.ts',
+      // Exclude non-E2E test files specifically
+      'test/unit/**/*.test.ts',
+      'test/integration/**/*.test.ts',
+      'test/handlers/**/*.test.ts',
+      'test/api/**/*.test.ts',
+      'test/utils/**/*.test.ts',
+      'test/validators/**/*.test.ts',
+      'test/objects/**/*.test.ts',
+      'test/manual/**/*.test.ts',
       'test/**/*.test.js',
-      // Keep only E2E tests
+      // Keep only E2E tests (*.e2e.test.ts files)
     ],
     globals: true,
     testTimeout: 120000, // 2 minutes for E2E operations
