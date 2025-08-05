@@ -42,13 +42,11 @@ import {
 import {
   searchCompaniesByNotes,
   searchCompaniesByPeople,
-  advancedSearchCompanies
 } from '../../../objects/companies/index.js';
 
 import {
   searchPeopleByCompany,
   searchPeopleByNotes,
-  advancedSearchPeople
 } from '../../../objects/people/index.js';
 
 // Import date-related functions directly from search module to avoid potential circular imports
@@ -149,7 +147,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('advanced-search', params);
       
-      const { resource_type, query, filters, sort_by, sort_order, limit, offset } = sanitizedParams;
+      const { resource_type, query, filters, limit, offset } = sanitizedParams;
       
       // Use the universal search handler with advanced filtering
       return await handleUniversalSearch({
@@ -169,11 +167,23 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
     
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
-    const plural = results.length === 1 ? resourceTypeName : `${resourceTypeName}s`;
+    // Handle proper pluralization
+    let plural = resourceTypeName;
+    if (results.length !== 1) {
+      if (resourceTypeName === 'company') {
+        plural = 'companies';
+      } else if (resourceTypeName === 'person') {
+        plural = 'people';
+      } else {
+        plural = `${resourceTypeName}s`;
+      }
+    }
     
     return `Advanced search found ${results.length} ${plural}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -206,7 +216,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('search-by-relationship', params);
       
-      const { relationship_type, source_id, target_resource_type, limit, offset } = sanitizedParams;
+      const { relationship_type, source_id } = sanitizedParams;
       
       switch (relationship_type) {
         case RelationshipType.COMPANY_TO_PEOPLE:
@@ -243,6 +253,8 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
     return `Found ${results.length} records for ${relationshipName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -269,7 +281,7 @@ export const searchByContentConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('search-by-content', params);
       
-      const { resource_type, content_type, search_query, limit, offset } = sanitizedParams;
+      const { resource_type, content_type, search_query } = sanitizedParams;
       
       switch (content_type) {
         case ContentSearchType.NOTES:
@@ -322,6 +334,8 @@ export const searchByContentConfig: UniversalToolConfig = {
     return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -342,7 +356,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('search-by-timeframe', params);
       
-      const { resource_type, timeframe_type, start_date, end_date, limit, offset } = sanitizedParams;
+      const { resource_type, timeframe_type, start_date, end_date } = sanitizedParams;
       
       if (resource_type === UniversalResourceType.PEOPLE) {
         switch (timeframe_type) {
@@ -352,13 +366,14 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           case TimeframeType.MODIFIED:
             return await searchPeopleByModificationDate({ start: start_date, end: end_date });
             
-          case TimeframeType.LAST_INTERACTION:
+          case TimeframeType.LAST_INTERACTION: {
             // Validate and create date range object
             const dateRange = validateAndCreateDateRange(start_date, end_date);
             if (!dateRange) {
               throw new Error('At least one date (start or end) is required for last interaction search');
             }
             return await searchPeopleByLastInteraction(dateRange);
+          }
             
           default:
             throw new Error(`Unsupported timeframe type for people: ${timeframe_type}`);
@@ -395,6 +410,8 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';

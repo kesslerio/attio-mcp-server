@@ -1,0 +1,83 @@
+{
+  "$schema": "./config.schema.json",
+  "testData": {
+    "testDataPrefix": "E2E_TEST_",
+    "testEmailDomain": "@e2e-test.example.com",
+    "testCompanyDomain": "e2etest.example.com",
+    "existingCompanyId": null,
+    "existingPersonId": null,
+    "existingListId": null,
+    "comment": "Optional: Provide existing record IDs for read-only tests to avoid creating new records"
+  },
+  "workspace": {
+    "currency": "USD",
+    "dealStages": [
+      "Prospecting",
+      "Qualified", 
+      "Proposal",
+      "Negotiation",
+      "Closed Won",
+      "Closed Lost"
+    ],
+    "customFields": {
+      "companies": [
+        "industry",
+        "size",
+        "annual_revenue"
+      ],
+      "people": [
+        "department",
+        "seniority",
+        "job_level"
+      ]
+    },
+    "comment": "Customize these to match your actual workspace configuration"
+  },
+  "features": {
+    "skipDealTests": false,
+    "skipTaskTests": false,
+    "skipCustomObjectTests": true,
+    "skipNoteTests": false,
+    "skipListTests": false,
+    "comment": "Set to true to skip tests for features not available in your workspace"
+  },
+  "testSettings": {
+    "cleanupAfterTests": true,
+    "maxRetries": 3,
+    "retryDelay": 1000,
+    "testTimeout": 60000,
+    "hookTimeout": 10000,
+    "sequentialExecution": true,
+    "verboseLogging": false,
+    "comment": "Global test execution settings"
+  },
+  "api": {
+    "baseUrl": "https://api.attio.com",
+    "rateLimit": {
+      "requestsPerSecond": 10,
+      "burstLimit": 20
+    },
+    "comment": "API configuration - usually no need to change"
+  },
+  "reporting": {
+    "generateReport": true,
+    "reportFormat": "json",
+    "includeTimings": true,
+    "includeCoverage": false,
+    "comment": "Test reporting configuration"
+  },
+  "_instructions": {
+    "setup": [
+      "1. Copy this file to config.local.json",
+      "2. Update workspace settings to match your Attio workspace",
+      "3. Set feature flags based on available workspace features",
+      "4. Provide existing record IDs if you want to use them for read tests",
+      "5. Run 'npm run e2e:setup' to validate configuration"
+    ],
+    "security": [
+      "- config.local.json is gitignored to protect workspace-specific data",
+      "- Never commit real workspace IDs or sensitive configuration",
+      "- Use environment variables for CI/CD environments"
+    ]
+  }
+}

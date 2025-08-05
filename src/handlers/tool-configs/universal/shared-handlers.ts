@@ -17,13 +17,15 @@ import {
   DetailedInfoType
 } from './types.js';
 
+// Import format helpers
+import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attribute-format-helpers.js';
+
 // Import deal defaults configuration
-import { applyDealDefaults, applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
+import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
 // Import existing handlers by resource type
 import {
   searchCompanies,
-  searchCompaniesByDomain,
   advancedSearchCompanies,
   getCompanyDetails,
   createCompany,
@@ -41,7 +43,8 @@ import {
   searchPeople,
   advancedSearchPeople,
   getPersonDetails,
-  createPerson
+  createPerson,
+  listPeople
 } from '../../../objects/people/index.js';
 
 import {
@@ -61,6 +64,7 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  getTask,
   listTasks
 } from '../../../objects/tasks.js';
 
@@ -82,7 +86,7 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
       // Add any additional query parameters as needed
     });
     
-    return response.data.data || [];
+    return response?.data?.data || [];
   } catch (error: any) {
     console.error('Failed to query deal records:', error);
     // If the query endpoint also fails, try the simpler approach
@@ -151,7 +155,7 @@ async function getAttributesForRecord(resourceType: UniversalResourceType, recor
   
   try {
     const response = await client.get(`/objects/${resourceType}/records/${recordId}`);
-    return response.data.data?.values || {};
+    return response?.data?.data?.values || {};
   } catch (error) {
     console.error(`Failed to get attributes for ${resourceType} record ${recordId}:`, error);
     throw new Error(`Failed to get record attributes: ${error instanceof Error ? error.message : String(error)}`);
@@ -176,7 +180,11 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
         const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
         return paginatedResult.results;
       }
-      return await searchPeople(query || '');
+      // If no query provided, use listPeople instead of searchPeople
+      if (!query || query.trim().length === 0) {
+        return await listPeople(limit || 20);
+      }
+      return await searchPeople(query);
       
     case UniversalResourceType.RECORDS:
       return listObjectRecords('records', { pageSize: limit, page: Math.floor((offset || 0) / (limit || 10)) + 1 });
@@ -185,10 +193,11 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
       // Use POST query endpoint for deals since GET /objects/deals/records doesn't exist
       return await queryDealRecords({ limit, offset });
       
-    case UniversalResourceType.TASKS:
+    case UniversalResourceType.TASKS: {
       const tasks = await listTasks();
       // Convert AttioTask[] to AttioRecord[] using proper type conversion
       return tasks.map(convertTaskToRecord);
+    }
       
     default:
       throw new Error(`Unsupported resource type for search: ${resource_type}`);
@@ -199,7 +208,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
  * Universal get record details handler
  */
 export async function handleUniversalGetDetails(params: UniversalRecordDetailsParams): Promise<AttioRecord> {
-  const { resource_type, record_id, fields } = params;
+  const { resource_type, record_id } = params;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
@@ -214,7 +223,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     case UniversalResourceType.DEALS:
       return getObjectRecord('deals', record_id);
       
-    case UniversalResourceType.TASKS:
+    case UniversalResourceType.TASKS: {
       // Tasks don't have a direct get details function, so we'll use list with filter
       const tasks = await listTasks();
       const task = tasks.find((t: any) => t.id?.record_id === record_id);
@@ -223,6 +232,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       }
       // Convert AttioTask to AttioRecord using proper type conversion
       return convertTaskToRecord(task);
+    }
       
     default:
       throw new Error(`Unsupported resource type for get details: ${resource_type}`);
@@ -233,19 +243,72 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
  * Universal create record handler
  */
 export async function handleUniversalCreate(params: UniversalCreateParams): Promise<AttioRecord> {
-  const { resource_type, record_data, return_details } = params;
+  const { resource_type, record_data } = params;
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
+  }
   
   switch (resource_type) {
-    case UniversalResourceType.COMPANIES:
-      return createCompany(record_data);
+    case UniversalResourceType.COMPANIES: {
+      try {
+        // Apply format conversions for common mistakes
+        const correctedData = convertAttributeFormats('companies', record_data);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleUniversalCreate] Corrected data for companies:', correctedData);
+        }
+        
+        const result = await createCompany(correctedData);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleUniversalCreate] createCompany result:', {
+            result,
+            hasId: !!result?.id,
+            hasValues: !!result?.values,
+            resultType: typeof result
+          });
+        }
+        
+        return result;
+      } catch (error: any) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[handleUniversalCreate] Error in companies case:', error);
+        }
+        // Enhance error messages with format help
+        if (error?.message?.includes('Cannot find attribute')) {
+          const match = error.message.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const enhancedError = getFormatErrorHelp('companies', match[1], error.message);
+            throw new Error(enhancedError);
+          }
+        }
+        throw error;
+      }
+    }
       
-    case UniversalResourceType.PEOPLE:
-      return createPerson(record_data);
+    case UniversalResourceType.PEOPLE: {
+      try {
+        // Apply format conversions for common mistakes
+        const correctedData = convertAttributeFormats('people', record_data);
+        return await createPerson(correctedData);
+      } catch (error: any) {
+        // Enhance error messages with format help
+        if (error?.message?.includes('invalid value') || error?.message?.includes('Format Error')) {
+          const match = error.message.match(/slug "([^"]+)"/);
+          if (match && match[1]) {
+            const enhancedError = getFormatErrorHelp('people', match[1], error.message);
+            throw new Error(enhancedError);
+          }
+        }
+        throw error;
+      }
+    }
       
     case UniversalResourceType.RECORDS:
       return createObjectRecord('records', record_data);
       
-    case UniversalResourceType.DEALS:
+    case UniversalResourceType.DEALS: {
       // Handle deal-specific requirements with configured defaults and validation
       let dealData = { ...record_data };
       
@@ -285,8 +348,9 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         }
         throw error;
       }
+    }
       
-    case UniversalResourceType.TASKS:
+    case UniversalResourceType.TASKS: {
       // Extract content from record_data for task creation
       const content = record_data.content || record_data.title || record_data.name || 'New task';
       const options = {
@@ -297,6 +361,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       const createdTask = await createTask(content, options);
       // Convert AttioTask to AttioRecord using proper type conversion
       return convertTaskToRecord(createdTask);
+    }
       
     default:
       throw new Error(`Unsupported resource type for create: ${resource_type}`);
@@ -307,7 +372,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
  * Universal update record handler
  */
 export async function handleUniversalUpdate(params: UniversalUpdateParams): Promise<AttioRecord> {
-  const { resource_type, record_id, record_data, return_details } = params;
+  const { resource_type, record_id, record_data } = params;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
@@ -319,15 +384,17 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     case UniversalResourceType.RECORDS:
       return updateObjectRecord('records', record_id, record_data);
       
-    case UniversalResourceType.DEALS:
+    case UniversalResourceType.DEALS: {
       // Apply deal defaults and validation for updates too
       const updatedDealData = await applyDealDefaultsWithValidation(record_data);
       return updateObjectRecord('deals', record_id, updatedDealData);
+    }
       
-    case UniversalResourceType.TASKS:
+    case UniversalResourceType.TASKS: {
       const updatedTask = await updateTask(record_id, record_data);
       // Convert AttioTask to AttioRecord using proper type conversion
-      return convertTaskToRecord(updatedTask);
+      return convertTaskToRecord(updatedTask);    
+    }
       
     default:
       throw new Error(`Unsupported resource type for update: ${resource_type}`);
@@ -370,7 +437,7 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
  * Universal get attributes handler
  */
 export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<any> {
-  const { resource_type, record_id, categories, fields } = params;
+  const { resource_type, record_id } = params;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
@@ -441,10 +508,25 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
 export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<any> {
   const { resource_type, record_id, info_type } = params;
   
+  // For now, we'll return the full record for non-company resource types
+  // TODO: Implement specialized detailed info methods for other resource types
   if (resource_type !== UniversalResourceType.COMPANIES) {
-    throw new Error(`Detailed info only supported for companies currently, got: ${resource_type}`);
+    // Return the full record as a fallback for other resource types
+    switch (resource_type) {
+      case UniversalResourceType.PEOPLE:
+        return getPersonDetails(record_id);
+      case UniversalResourceType.DEALS:
+        return getObjectRecord('deals', record_id);
+      case UniversalResourceType.TASKS:
+        return getTask(record_id);
+      case UniversalResourceType.RECORDS:
+        return getObjectRecord('records', record_id);
+      default:
+        throw new Error(`Unsupported resource type for detailed info: ${resource_type}`);
+    }
   }
   
+  // Company-specific detailed info
   switch (info_type) {
     case DetailedInfoType.BASIC:
       return getCompanyBasicInfo(record_id);

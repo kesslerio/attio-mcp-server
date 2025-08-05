@@ -34,7 +34,7 @@ describe('Universal Tools Integration Tests', () => {
     // Initialize the API client with real credentials first
     const apiKey = process.env.ATTIO_API_KEY!;
     console.log('Initializing API client for integration tests...');
-    await initializeAttioClient(apiKey);
+    initializeAttioClient(apiKey);
     
     // Debug: Check if tool configs are loaded properly
     console.log('Core operations tools:', Object.keys(coreOperationsToolConfigs || {}));
@@ -42,17 +42,13 @@ describe('Universal Tools Integration Tests', () => {
   });
 
   const timestamp = Date.now();
-  const testCompanyName = `Universal Test Company ${timestamp}`;
-  const testPersonEmail = `universal-test-${timestamp}@example.com`;
+  const randomId = Math.random().toString(36).substring(7);
+  const testCompanyName = `Universal Test Company ${timestamp}-${randomId}`;
+  const testPersonEmail = `universal-test-${timestamp}-${randomId}@example.com`;
+  const testDomain = `universal-test-${timestamp}-${randomId}.com`;
   
   let createdCompanyId: string;
   let createdPersonId: string;
-
-  beforeAll(async () => {
-    // Initialize the API client with real credentials
-    const apiKey = process.env.ATTIO_API_KEY!;
-    initializeAttioClient(apiKey);
-  });
 
   afterAll(async () => {
     // Clean up created test data
@@ -77,23 +73,42 @@ describe('Universal Tools Integration Tests', () => {
   describe('Core Operations Integration', () => {
     describe('create-record tool', () => {
       it('should create a company using universal tool', async () => {
-        const result = await coreOperationsToolConfigs['create-record'].handler({
-          resource_type: UniversalResourceType.COMPANIES,
-          record_data: {
-            name: testCompanyName,
-            website: `https://universal-test-${timestamp}.com`,
-            description: 'Universal tool integration test company'
-          },
-          return_details: true
-        });
+        try {
+          console.log('Test data:', { testCompanyName, testDomain });
+          console.log('Handler exists:', !!coreOperationsToolConfigs['create-record']);
+          console.log('Handler type:', typeof coreOperationsToolConfigs['create-record']?.handler);
+          
+          // Add more debugging
+          const toolConfig = coreOperationsToolConfigs['create-record'];
+          console.log('Tool config:', toolConfig);
+          console.log('Tool config keys:', Object.keys(toolConfig || {}));
+          
+          const result = await coreOperationsToolConfigs['create-record'].handler({
+            resource_type: UniversalResourceType.COMPANIES,
+            record_data: {
+              name: testCompanyName,
+              website: `https://${testDomain}`,
+              description: 'Universal tool integration test company'
+            },
+            return_details: true
+          });
 
-        expect(result).toBeDefined();
-        expect(result.id).toBeDefined();
-        expect(result.id.record_id).toBeDefined();
-        expect(result.values.name).toBeDefined();
-        expect(result.values.name[0].value).toBe(testCompanyName);
+          console.log('Result:', result);
+          console.log('Result type:', typeof result);
+          
+          expect(result).toBeDefined();
+          expect(result.id).toBeDefined();
+          expect(result.id.record_id).toBeDefined();
+          expect(result.values.name).toBeDefined();
+          expect(result.values.name[0].value).toBe(testCompanyName);
 
-        createdCompanyId = result.id.record_id;
+          createdCompanyId = result.id.record_id;
+        } catch (error) {
+          console.error('Test error:', error);
+          console.error('Error type:', error?.constructor?.name);
+          console.error('Error message:', error?.message);
+          throw error;
+        }
       });
 
       it('should create a person using universal tool', async () => {

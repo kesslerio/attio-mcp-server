@@ -3,8 +3,7 @@
  */
 import { getAttioClient } from '../../api/attio-client.js';
 import { getObjectDetails, listObjects } from '../../api/operations/index.js';
-import { ResourceType, Company, Person } from '../../types/attio.js';
-import { searchPeople } from '../people/search.js';
+import { ResourceType, Company } from '../../types/attio.js';
 import { CompanyAttributes } from './types.js';
 import { CompanyValidator } from '../../validators/company-validator.js';
 import {
@@ -44,7 +43,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
         },
       ],
     });
-    return response.data.data || [];
+    return response?.data?.data || [];
   }
 }
 
@@ -231,13 +230,33 @@ export async function getCompanyDetails(
 export async function createCompany(
   attributes: CompanyAttributes
 ): Promise<Company> {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[createCompany] Input attributes:', attributes);
+  }
+  
   try {
-    return await createObjectWithDynamicFields<Company>(
+    const result = await createObjectWithDynamicFields<Company>(
       ResourceType.COMPANIES,
       attributes,
       CompanyValidator.validateCreate
     );
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createCompany] Result from createObjectWithDynamicFields:', {
+        result,
+        hasId: !!result?.id,
+        hasValues: !!result?.values,
+        resultType: typeof result,
+        isEmptyObject: result && Object.keys(result).length === 0
+      });
+    }
+    
+    return result;
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[createCompany] Error caught:', error);
+    }
+    
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
@@ -436,6 +455,11 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
  * @throws Error if the URI format is invalid
  */
 export function extractCompanyId(companyIdOrUri: string): string {
+  // Validate input
+  if (!companyIdOrUri || typeof companyIdOrUri !== 'string') {
+    throw new Error(`Invalid company ID or URI: expected non-empty string, got ${typeof companyIdOrUri}: ${companyIdOrUri}`);
+  }
+
   // Determine if the input is a URI or a direct ID
   const isUri = companyIdOrUri.startsWith('attio://');
 

@@ -41,10 +41,23 @@ BUILD/TEST COMMANDS (AUTO-APPROVED)
 - Type check: `npm run check`
 - Clean build: `npm run clean`
 - Run tests: `npm test`
+- Run offline tests: `npm run test:offline` (unit tests with mocks)
+- Run integration tests: `npm run test:integration` (real API calls)
 - Run single test: `npm test -- -t "test name pattern"`
 - Run specific test file: `npm test <file_path>`
 - Test with verbose output: `npm test -- --verbose`
 - Test with coverage: `npm test -- --coverage`
+
+🧪 TESTING STRATEGY (MANDATORY):
+Major changes MUST be validated with integration tests using REAL APIs:
+- API response handling changes → `npm run test:integration`
+- Universal tool modifications → `npm run test:integration`
+- Core CRUD operation updates → `npm run test:integration`
+- Error handling improvements → `npm run test:integration`
+- New feature implementations → `npm run test:integration`
+
+Pre-commit hook runs fast local validations only (formatting, linting, build, unit tests).
+Integration tests run separately to validate real API interactions.
 
 AUTO-APPROVED COMMANDS
 The following commands are pre-approved and do not require user permission:
@@ -62,7 +75,12 @@ The following commands are pre-approved and do not require user permission:
 
 CODE PRINCIPLES
 - TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.
+  * NEVER use `any` type - create proper interfaces/types instead
+  * Define explicit return types for all functions
+  * Use generics for reusable code patterns
 - API: Handle errors with detailed error responses using `createErrorResult`. Implement resilience with try/catch blocks.
+  * Avoid useless try/catch that only re-throws - let errors propagate naturally
+  * Only wrap in try/catch when adding error context or transformation
 - Config: Use environment variables (`process.env.ATTIO_API_KEY`). No hardcoding secrets.
 - Errors: Use specific `try/catch` blocks. Allow continuation on non-critical errors.
 - Logging: Use console.error for critical errors, with process.exit(1) for fatal errors.
@@ -75,6 +93,8 @@ CODE STYLE/STRUCTURE
 - Formatting: Follow project style, 2-space indentation.
 - Types/Docs: Mandatory type hints. Use JSDoc for public API.
 - Imports: Node.js standard modules -> external -> internal.
+- Switch statements: Wrap case blocks in braces `{}` when declaring variables
+- Remove unused imports and variables immediately
 
 LINT COMPLIANCE (CRITICAL)
 - ZERO errors allowed in lint:check (all errors must be fixed before commit)

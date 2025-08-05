@@ -52,7 +52,7 @@ export async function batchCreateRecords<T extends AttioRecord>(
       })),
     });
 
-    return response.data.data || [];
+    return response?.data?.data || [];
   }, retryConfig);
 }
 
@@ -79,7 +79,7 @@ export async function batchUpdateRecords<T extends AttioRecord>(
       })),
     });
 
-    return response.data.data || [];
+    return response?.data?.data || [];
   }, retryConfig);
 }
 

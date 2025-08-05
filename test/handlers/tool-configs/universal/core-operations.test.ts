@@ -175,7 +175,7 @@ describe('Universal Core Operations Tests', () => {
 
       const formatted = searchRecordsConfig.formatResult(mockResults, UniversalResourceType.COMPANIES);
       
-      expect(formatted).toContain('Found 2 companys');
+      expect(formatted).toContain('Found 2 companies');
       expect(formatted).toContain('1. Test Company (https://test.com) (ID: comp-1)');
       expect(formatted).toContain('2. Another Company (info@another.com) (ID: comp-2)');
     });
@@ -571,7 +571,8 @@ describe('Universal Core Operations Tests', () => {
         UniversalResourceType.COMPANIES,
         UniversalResourceType.PEOPLE,
         UniversalResourceType.RECORDS,
-        UniversalResourceType.TASKS
+        UniversalResourceType.TASKS,
+        UniversalResourceType.DEALS
       ];
 
       for (const resourceType of resourceTypes) {
@@ -584,7 +585,7 @@ describe('Universal Core Operations Tests', () => {
         expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
       }
 
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(4);
+      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(5);
     });
 
     it('should handle all resource types for CRUD operations', async () => {
@@ -629,10 +630,10 @@ describe('Universal Core Operations Tests', () => {
         });
       }
 
-      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(4);
-      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(4);
-      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(4);
-      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(4);
+      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(5);
     });
   });
 });

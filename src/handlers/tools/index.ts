@@ -7,7 +7,6 @@ import {
   ListToolsRequestSchema,
   CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
-import { ResourceType } from '../../types/attio.js';
 import { warn } from '../../utils/logger.js';
 
 // Import from modular components
@@ -71,7 +70,7 @@ function normalizeToolRequest(
 
   // Handle loose arguments format
   const params = request.params as LooseCallToolRequest['params'];
-  const { name, arguments: _, ...potentialArgs } = params;
+  const { name, arguments: _arguments, ...potentialArgs } = params;
 
   // If there are additional params beyond 'name', treat them as arguments
   const hasAdditionalParams = Object.keys(potentialArgs).length > 0;
@@ -131,7 +130,7 @@ export function registerToolHandlers(server: Server): void {
     // Dynamically collect all available tool definitions
     const allTools = [];
     
-    for (const [key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
+    for (const [_key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
       if (toolDefs) {
         if (Array.isArray(toolDefs)) {
           // Legacy format: array of tool definitions

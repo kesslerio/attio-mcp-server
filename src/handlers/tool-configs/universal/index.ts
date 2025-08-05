@@ -301,40 +301,45 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
   
   // Add specific parameters based on the universal tool type
   switch (universalTool) {
-    case 'get-detailed-info':
+    case 'get-detailed-info': {
       const infoType = infoTypeMappings[deprecatedToolName];
       if (infoType) {
         baseParams.info_type = infoType;
       }
       break;
+    }
       
-    case 'search-by-content':
+    case 'search-by-content': {
       const contentType = contentTypeMappings[deprecatedToolName];
       if (contentType) {
         baseParams.content_type = contentType;
       }
       break;
+    }
       
-    case 'search-by-timeframe':
+    case 'search-by-timeframe': {
       const timeframeType = timeframeTypeMappings[deprecatedToolName];
       if (timeframeType) {
         baseParams.timeframe_type = timeframeType;
       }
       break;
+    }
       
-    case 'search-by-relationship':
+    case 'search-by-relationship': {
       const relationshipType = relationshipTypeMappings[deprecatedToolName];
       if (relationshipType) {
         baseParams.relationship_type = relationshipType;
       }
       break;
+    }
       
-    case 'batch-operations':
+    case 'batch-operations': {
       const operationType = batchOperationTypeMappings[deprecatedToolName];
       if (operationType) {
         baseParams.operation_type = operationType;
       }
       break;
+    }
   }
   
   return baseParams;

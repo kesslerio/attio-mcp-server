@@ -13,6 +13,7 @@ import { callWithRetry, RetryConfig } from './retry.js';
 import { ListEntryFilters } from './types.js';
 import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { ApiError, SearchRequestBody, ListRequestBody } from '../../types/api-operations.js';
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)
@@ -54,10 +55,11 @@ export async function searchObject<T extends AttioRecord>(
       const response = await api.post<AttioListResponse<T>>(path, {
         filter,
       });
-      return response.data.data || [];
-    } catch (error: any) {
+      return response?.data?.data || [];
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
       // Handle 404 errors with custom message
-      if (error.response && error.response.status === 404) {
+      if (apiError.response && apiError.response.status === 404) {
         throw new Error(`No ${objectType} found matching '${query}'`);
       }
       // Let upstream handlers create specific, rich error objects from the original Axios error.
@@ -93,7 +95,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
   // Create request body with parameters and filters
   const createRequestBody = async () => {
     // Start with base parameters
-    const body: any = {
+    const body: SearchRequestBody = {
       limit: safeLimit !== undefined ? safeLimit : 20, // Default to 20 if not specified
       offset: safeOffset !== undefined ? safeOffset : 0, // Default to 0 if not specified
     };
@@ -144,7 +146,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
           });
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Enhanced error handling with detailed context and examples
       if (err instanceof FilterValidationError) {
         // Log the full details for debugging
@@ -179,14 +181,9 @@ export async function advancedSearchObject<T extends AttioRecord>(
   };
 
   return callWithRetry(async () => {
-    try {
-      const requestBody = await createRequestBody();
-      const response = await api.post<AttioListResponse<T>>(path, requestBody);
-      return response.data.data || [];
-    } catch (error: any) {
-      // Let upstream handlers create specific, rich error objects.
-      throw error;
-    }
+    const requestBody = await createRequestBody();
+    const response = await api.post<AttioListResponse<T>>(path, requestBody);
+    return response?.data?.data || [];
   }, retryConfig);
 }
 
@@ -207,22 +204,18 @@ export async function listObjects<T extends AttioRecord>(
   const path = `/objects/${objectType}/records/query`;
 
   return callWithRetry(async () => {
-    try {
-      const body: any = {
-        limit: limit || 20,
-        sorts: [
-          {
-            attribute: 'last_interaction',
-            field: 'interacted_at',
-            direction: 'desc',
-          },
-        ],
-      };
+    const body: ListRequestBody = {
+      limit: limit || 20,
+      sorts: [
+        {
+          attribute: 'last_interaction',
+          field: 'interacted_at',
+          direction: 'desc',
+        },
+      ],
+    };
 
-      const response = await api.post<AttioListResponse<T>>(path, body);
-      return response.data.data || [];
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await api.post<AttioListResponse<T>>(path, body);
+    return response?.data?.data || [];
   }, retryConfig);
 }

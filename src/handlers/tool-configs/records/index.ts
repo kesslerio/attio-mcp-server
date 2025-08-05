@@ -10,7 +10,6 @@ import {
   listObjectRecords,
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
-  formatRecordAttributes,
 } from '../../../objects/records/index.js';
 import { ToolConfig } from '../../tool-types.js';
 

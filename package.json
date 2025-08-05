@@ -1,6 +1,6 @@
 {
   "name": "attio-mcp",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "A Model Context Protocol server that connects Attio to LLMs",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -67,6 +67,21 @@
     "setup:tdd": "./scripts/setup-tdd.sh",
     "create:test": "./scripts/create-test.sh",
     "verify:env": "node -e \"console.log('Node:', process.version); console.log('NPM:', process.env.npm_version || 'unknown')\"",
+    "setup:test-data": "tsx scripts/setup-test-data.ts",
+    "e2e:setup": "tsx test/e2e/setup.ts",
+    "e2e": "vitest --config vitest.config.e2e.ts --run",
+    "e2e:watch": "vitest --config vitest.config.e2e.ts",
+    "e2e:universal": "vitest --config vitest.config.e2e.ts --run test/e2e/suites/universal-tools.e2e.test.ts",
+    "e2e:lists": "vitest --config vitest.config.e2e.ts --run test/e2e/suites/list-management.e2e.test.ts",
+    "e2e:notes": "vitest --config vitest.config.e2e.ts --run test/e2e/suites/notes.e2e.test.ts",
+    "e2e:tasks": "vitest --config vitest.config.e2e.ts --run test/e2e/suites/tasks.e2e.test.ts",
+    "e2e:errors": "vitest --config vitest.config.e2e.ts --run test/e2e/suites/error-handling.e2e.test.ts",
+    "e2e:cleanup": "tsx test/e2e/cleanup.ts",
+    "e2e:cleanup:dry": "tsx test/e2e/cleanup.ts --dry-run",
+    "e2e:cleanup:force": "tsx test/e2e/cleanup.ts --force",
+    "e2e:debug": "DEBUG=* vitest --config vitest.config.e2e.ts --reporter=verbose",
+    "e2e:coverage": "vitest --config vitest.config.e2e.ts --coverage --run",
+    "e2e:validate": "tsx -e \"import('./test/e2e/utils/config-loader.js').then(m => m.loadE2EConfig()).then(() => console.log('✅ E2E configuration valid')).catch(e => { console.error('❌ E2E configuration invalid:', e); process.exit(1); })\"",
     "prepare": "husky"
   },
   "files": [
@@ -99,7 +114,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1",
     "@types/handlebars": "^4.0.40",
-    "attio-mcp": "0.1.2",
     "chalk": "^5.3.0",
     "dotenv": "^16.5.0",
     "fast-safe-stringify": "^2.1.1",

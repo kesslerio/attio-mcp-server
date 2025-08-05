@@ -66,11 +66,23 @@ export const searchRecordsConfig: UniversalToolConfig = {
     }
     
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
-    const plural = results.length === 1 ? resourceTypeName : `${resourceTypeName}s`;
+    // Handle proper pluralization
+    let plural = resourceTypeName;
+    if (results.length !== 1) {
+      if (resourceTypeName === 'company') {
+        plural = 'companies';
+      } else if (resourceTypeName === 'person') {
+        plural = 'people';
+      } else {
+        plural = `${resourceTypeName}s`;
+      }
+    }
     
     return `Found ${results.length} ${plural}:\n${results
       .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
+                    record.values?.name?.[0]?.full_name ||
+                    record.values?.full_name?.[0]?.value ||
                     record.values?.title?.[0]?.value || 
                     'Unnamed';
         const id = record.id?.record_id || 'unknown';
@@ -107,7 +119,10 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     }
     
     const resourceTypeName = resourceType ? getSingularResourceType(resourceType) : 'record';
+    // Better name extraction for people and other records
     const name = (record.values?.name && Array.isArray(record.values.name) && record.values.name[0]?.value) || 
+                (record.values?.name && Array.isArray(record.values.name) && record.values.name[0]?.full_name) ||
+                (record.values?.full_name && Array.isArray(record.values.full_name) && record.values.full_name[0]?.value) ||
                 (record.values?.title && Array.isArray(record.values.title) && record.values.title[0]?.value) || 
                 'Unnamed';
     const id = record.id?.record_id || 'unknown';
@@ -116,26 +131,59 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     
     // Add common fields based on resource type
     if (record.values) {
-      const fieldOrder = ['email', 'website', 'phone', 'description', 'industry', 'location'];
+      // Different field priorities for different resource types
+      let fieldOrder = ['email', 'website', 'phone', 'description', 'industry', 'location'];
+      
+      if (resourceType === UniversalResourceType.PEOPLE) {
+        // For people, prioritize different fields
+        fieldOrder = ['email_addresses', 'phone_numbers', 'job_title', 'description', 'location'];
+        
+        // Also show associated company if present
+        if (record.values.associated_company && Array.isArray(record.values.associated_company)) {
+          const companies = record.values.associated_company
+            .map((c: any) => c.target_record_name || c.name || c.value)
+            .filter(Boolean);
+          if (companies.length > 0) {
+            details += `Company: ${companies.join(', ')}\n`;
+          }
+        }
+      }
       
       fieldOrder.forEach(field => {
         const value = record.values?.[field] && Array.isArray(record.values[field]) && record.values[field][0]?.value;
         if (value) {
-          const displayField = field.charAt(0).toUpperCase() + field.slice(1);
+          const displayField = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
           details += `${displayField}: ${value}\n`;
         }
       });
       
-      // Add any other fields not in the common list
-      Object.keys(record.values).forEach(field => {
-        if (!fieldOrder.includes(field) && field !== 'name' && field !== 'title') {
-          const value = record.values?.[field] && Array.isArray(record.values[field]) && record.values[field][0]?.value;
-          if (value && typeof value === 'string' && value.length < 100) {
-            const displayField = field.charAt(0).toUpperCase() + field.slice(1);
-            details += `${displayField}: ${value}\n`;
+      // Handle special fields for people
+      if (resourceType === UniversalResourceType.PEOPLE) {
+        // Show email addresses
+        if (record.values.email_addresses && Array.isArray(record.values.email_addresses)) {
+          const emails = record.values.email_addresses
+            .map((e: any) => e.email_address || e.value)
+            .filter(Boolean);
+          if (emails.length > 0) {
+            details += `Email: ${emails.join(', ')}\n`;
           }
         }
-      });
+        
+        // Show phone numbers
+        if (record.values.phone_numbers && Array.isArray(record.values.phone_numbers)) {
+          const phones = record.values.phone_numbers
+            .map((p: any) => p.phone_number || p.value)
+            .filter(Boolean);
+          if (phones.length > 0) {
+            details += `Phone: ${phones.join(', ')}\n`;
+          }
+        }
+      }
+      
+      // Add created_at if available
+      if (record.values.created_at && Array.isArray(record.values.created_at) && record.values.created_at[0]?.value) {
+        details += `Created at: ${record.values.created_at[0].value}\n`;
+      }
     }
     
     return details.trim();
@@ -150,7 +198,15 @@ export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Input params:', params);
+      }
+      
       const sanitizedParams = validateUniversalToolParams('create-record', params);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Sanitized params:', sanitizedParams);
+      }
       
       // Perform cross-resource validation for create operations
       const { CrossResourceValidator } = await import('./schemas.js');
@@ -159,8 +215,23 @@ export const createRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
       
-      return await handleUniversalCreate(sanitizedParams);
+      const result = await handleUniversalCreate(sanitizedParams);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createRecordConfig:handler] Final result:', {
+          result,
+          hasId: !!result?.id,
+          hasValues: !!result?.values,
+          resultType: typeof result,
+          isEmptyObject: Object.keys(result || {}).length === 0
+        });
+      }
+      
+      return result;
     } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[createRecordConfig:handler] Error:', error);
+      }
       throw createUniversalError('create', params.resource_type, error);
     }
   },
