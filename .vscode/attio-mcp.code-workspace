@@ -1,0 +1,142 @@
+{
+  "folders": [
+    {
+      "path": "..",
+      "name": "Attio MCP Server"
+    }
+  ],
+  "settings": {
+    // Workspace-specific settings that override user settings
+    "window.title": "${dirty}${activeEditorShort}${separator}Attio MCP${separator}${rootName}",
+    
+    // File nesting for better organization
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+      "package.json": "package-lock.json, .npmrc, yarn.lock, pnpm-lock.yaml",
+      "tsconfig.json": "tsconfig.*.json",
+      "vitest.config.ts": "vitest.config.*.ts",
+      ".eslintrc.cjs": ".eslintignore",
+      ".prettierrc": ".prettierignore",
+      "README.md": "LICENSE, CHANGELOG.md, CONTRIB.md, TROUBLESHOOTING.md, CLAUDE.md, AGENTS.md",
+      ".env": ".env.*",
+      "docker-compose.yml": "Dockerfile, .dockerignore"
+    },
+    
+    // Workspace colors for better visual distinction
+    "workbench.colorCustomizations": {
+      "activityBar.activeBackground": "#2f7c47",
+      "activityBar.background": "#2f7c47",
+      "activityBar.foreground": "#e7e7e7",
+      "activityBar.inactiveForeground": "#e7e7e799",
+      "activityBarBadge.background": "#422c74",
+      "activityBarBadge.foreground": "#e7e7e7",
+      "titleBar.activeBackground": "#215732",
+      "titleBar.activeForeground": "#e7e7e7",
+      "titleBar.inactiveBackground": "#21573299",
+      "titleBar.inactiveForeground": "#e7e7e799",
+      "statusBar.background": "#215732",
+      "statusBar.foreground": "#e7e7e7",
+      "statusBarItem.hoverBackground": "#2f7c47"
+    },
+    
+    // Workspace recommendations
+    "peacock.color": "#215732",
+    
+    // Test explorer settings
+    "testing.automaticallyOpenPeekView": "never",
+    "testing.defaultGutterClickAction": "debug",
+    "testing.followRunningTest": true,
+    
+    // Terminal profiles for workspace
+    "terminal.integrated.profiles.osx": {
+      "MCP Dev": {
+        "path": "zsh",
+        "args": ["-l"],
+        "env": {
+          "NODE_ENV": "development",
+          "DEBUG": "attio:*"
+        },
+        "icon": "terminal"
+      },
+      "MCP Test": {
+        "path": "zsh",
+        "args": ["-l"],
+        "env": {
+          "NODE_ENV": "test"
+        },
+        "icon": "beaker"
+      }
+    },
+    "terminal.integrated.profiles.linux": {
+      "MCP Dev": {
+        "path": "bash",
+        "args": ["-l"],
+        "env": {
+          "NODE_ENV": "development",
+          "DEBUG": "attio:*"
+        },
+        "icon": "terminal"
+      },
+      "MCP Test": {
+        "path": "bash",
+        "args": ["-l"],
+        "env": {
+          "NODE_ENV": "test"
+        },
+        "icon": "beaker"
+      }
+    },
+    
+    // Custom labels for workspace
+    "material-icon-theme.folders.associations": {
+      "handlers": "controller",
+      "objects": "class",
+      "validators": "rules",
+      "prompts": "template",
+      "e2e": "test",
+      "integration": "test",
+      "manual": "tools",
+      "tool-configs": "config",
+      "universal": "shared",
+      "companies": "database",
+      "people": "database",
+      "lists": "database",
+      "tasks": "database",
+      "records": "database"
+    },
+    
+    // Exclude patterns specific to this workspace
+    "files.exclude": {
+      "**/logs.backup": true,
+      "**/test-results": true,
+      "**/*.log": true,
+      "**/tmp": true
+    }
+  },
+  
+  "launch": {
+    // Workspace-specific launch configurations inherit from launch.json
+    "version": "0.2.0",
+    "configurations": [],
+    "compounds": []
+  },
+  
+  "tasks": {
+    // Workspace-specific tasks inherit from tasks.json
+    "version": "2.0.0",
+    "tasks": []
+  },
+  
+  "extensions": {
+    // Workspace recommended extensions (same as extensions.json)
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "vitest.explorer",
+      "ms-vscode.vscode-typescript-next",
+      "aaron-bond.better-comments",
+      "streetsidesoftware.code-spell-checker"
+    ]
+  }
+}
