@@ -19,5 +19,12 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "SubagentStop",
     "stop_hook_active": false
+  },
+  {
+    "session_id": "4111cd2e-9717-438e-877c-d300c22459a8",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/4111cd2e-9717-438e-877c-d300c22459a8.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false
   }
 ]

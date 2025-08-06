@@ -40,5 +40,12 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "review https://github.com/kesslerio/attio-mcp-server/issues/365 incl comments and ultrathink plan implementation, fix. use @agent-project-delegator-orchestrator "
+  },
+  {
+    "session_id": "4111cd2e-9717-438e-877c-d300c22459a8",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/4111cd2e-9717-438e-877c-d300c22459a8.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Review https://github.com/kesslerio/attio-mcp-server/pull/380#issuecomment-3161036038 and improve PR @agent-project-delegator-orchestrator "
   }
 ]
