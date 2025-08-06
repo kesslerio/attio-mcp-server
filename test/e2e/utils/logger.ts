@@ -16,6 +16,7 @@
 
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import type { LogParameters, LogResponse, LogMetadata, ApiError } from '../types';
 
 export interface LogEntry {
   timestamp: string;
@@ -23,20 +24,16 @@ export interface LogEntry {
   testName?: string;
   operation: 'tool_call' | 'test_data_creation' | 'test_data_cleanup' | 'error' | 'info';
   toolName?: string;
-  parameters?: Record<string, any>;
-  response?: any;
+  parameters?: LogParameters;
+  response?: LogResponse;
   timing?: {
     start: number;
     end: number;
     duration: number;
   };
   success: boolean;
-  error?: {
-    message: string;
-    stack?: string;
-    code?: string;
-  };
-  metadata?: Record<string, any>;
+  error?: ApiError;
+  metadata?: LogMetadata;
 }
 
 export interface TestRunSummary {

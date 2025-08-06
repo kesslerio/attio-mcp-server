@@ -17,6 +17,7 @@ import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { transformToolCall, transformResponse, isLegacyTool, getMappingStats } from './tool-migration.js';
 import { logToolCall, logTestDataCreation, logError, logInfo } from './logger.js';
 import { configLoader } from './config-loader.js';
+import type { ToolParameters, ApiResponse } from '../types';
 
 export interface ToolCallOptions {
   testName?: string;
@@ -28,7 +29,7 @@ export interface ToolCallOptions {
 
 export interface ToolCallResult {
   success: boolean;
-  content?: any;
+  content?: unknown;
   error?: Error;
   timing: {
     start: number;
@@ -45,7 +46,7 @@ export interface ToolCallResult {
  */
 export async function callToolWithEnhancements(
   toolName: string,
-  parameters: Record<string, any>,
+  parameters: ToolParameters,
   options: ToolCallOptions = {}
 ): Promise<ToolCallResult> {
   const startTime = Date.now();
@@ -189,7 +190,7 @@ export async function callToolWithEnhancements(
     
     // If the error is an MCP response with error details, extract the message
     if (error && typeof error === 'object' && 'content' in error) {
-      const mcpError = error as any;
+      const mcpError = error as { content?: Array<{ text?: string }>; error?: { message?: string } };
       if (mcpError.content?.[0]?.text) {
         errorInfo = mcpError.content[0].text;
       } else if (mcpError.error?.message) {
@@ -214,9 +215,9 @@ export async function callToolWithEnhancements(
  */
 export async function callTool(
   toolName: string,
-  parameters: Record<string, any>,
+  parameters: ToolParameters,
   testName?: string
-): Promise<any> {
+): Promise<unknown> {
   const result = await callToolWithEnhancements(toolName, parameters, {
     testName,
     trackAsTestData: isCreationTool(toolName),
@@ -242,12 +243,12 @@ export async function callTool(
  */
 export function createToolCaller(suiteContext: string) {
   return {
-    call: async (toolName: string, parameters: Record<string, any>): Promise<any> => {
+    call: async (toolName: string, parameters: ToolParameters): Promise<unknown> => {
       return callTool(toolName, parameters, suiteContext);
     },
     callWithOptions: async (
       toolName: string,
-      parameters: Record<string, any>,
+      parameters: ToolParameters,
       options: ToolCallOptions
     ): Promise<ToolCallResult> => {
       return callToolWithEnhancements(toolName, parameters, {
@@ -269,21 +270,21 @@ export const UniversalToolCaller = createToolCaller('universal-tools');
 /**
  * Legacy helper functions to maintain existing test interfaces
  */
-export async function callTasksTool(toolName: string, params: Record<string, any>): Promise<any> {
+export async function callTasksTool(toolName: string, params: ToolParameters): Promise<unknown> {
   // Handle cross-resource tool calls that may have been historically called through callTasksTool
   // This provides backward compatibility for tests that call non-task tools through callTasksTool
   return UniversalToolCaller.call(toolName, params);
 }
 
-export async function callNotesTool(toolName: string, params: Record<string, any>): Promise<any> {
+export async function callNotesTool(toolName: string, params: ToolParameters): Promise<unknown> {
   return NotesToolCaller.call(toolName, params);
 }
 
-export async function callListTool(toolName: string, params: Record<string, any>): Promise<any> {
+export async function callListTool(toolName: string, params: ToolParameters): Promise<unknown> {
   return ListsToolCaller.call(toolName, params);
 }
 
-export async function callUniversalTool(toolName: string, params: Record<string, any>): Promise<any> {
+export async function callUniversalTool(toolName: string, params: ToolParameters): Promise<unknown> {
   return UniversalToolCaller.call(toolName, params);
 }
 

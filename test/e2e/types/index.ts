@@ -1,147 +1,119 @@
 /**
- * E2E Test Type Definitions
+ * Type definitions for E2E test suite
  * 
- * Comprehensive type definitions for E2E testing to replace 'any' types
- * with proper TypeScript interfaces for better type safety.
+ * Provides proper TypeScript types to replace `any` usage
+ * and improve type safety in E2E tests.
  */
 
-/**
- * Base test data interface - represents any test data object
- */
-export interface TestDataObject {
+// API Response Types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
+  metadata?: ResponseMetadata;
+}
+
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+  stack?: string;
+}
+
+export interface ResponseMetadata {
+  timestamp?: string;
+  requestId?: string;
   [key: string]: unknown;
 }
 
-/**
- * Test object creation data - can be company, person, list, etc.
- */
-export interface TestObjectData extends TestDataObject {
-  name?: string;
+// Tool Parameter Types
+export interface ToolParameters {
+  resource_type?: string;
+  record_data?: RecordData;
+  record_id?: string;
+  query?: string;
+  limit?: number;
+  offset?: number;
+  filters?: FilterParams;
+  fields?: string[];
+  [key: string]: unknown;
+}
+
+export interface RecordData {
   id?: string;
+  name?: string;
+  description?: string;
+  attributes?: Record<string, AttributeValue>;
+  [key: string]: unknown;
+}
+
+export type AttributeValue = string | number | boolean | null | AttributeValue[] | { [key: string]: AttributeValue };
+
+export interface FilterParams {
+  [key: string]: FilterValue;
+}
+
+export type FilterValue = string | number | boolean | null | FilterCondition | FilterValue[];
+
+export interface FilterCondition {
+  operator?: string;
+  value?: FilterValue;
+  values?: FilterValue[];
+}
+
+// Test Data Types
+export interface TestRecord {
+  id: string;
+  type: string;
+  attributes?: Record<string, AttributeValue>;
   created_at?: string;
   updated_at?: string;
 }
 
-/**
- * Company test data interface
- */
-export interface CompanyTestData extends TestObjectData {
+export interface TestFixture {
   name: string;
-  domain?: string;
-  website?: string;
-  industry?: string;
-  size?: string;
-  annual_revenue?: number;
+  data: RecordData;
+  expectedResponse?: Partial<TestRecord>;
 }
 
-/**
- * Person test data interface
- */
-export interface PersonTestData extends TestObjectData {
-  name: string;
-  email_addresses?: string[];
-  phone_numbers?: string[];
-  department?: string;
-  seniority?: string;
-  job_title?: string;
+// Logger Types
+export interface LogParameters {
+  [key: string]: unknown;
 }
 
-/**
- * List test data interface
- */
-export interface ListTestData extends TestObjectData {
-  name: string;
-  description?: string;
-  type?: string;
+export interface LogResponse {
+  success: boolean;
+  data?: unknown;
+  error?: ApiError;
+  [key: string]: unknown;
 }
 
-/**
- * Task test data interface
- */
-export interface TaskTestData extends TestObjectData {
-  title: string;
-  description?: string;
-  status?: string;
-  due_date?: string;
+export interface LogMetadata {
+  testSuite?: string;
+  testName?: string;
+  timestamp?: string;
+  [key: string]: unknown;
 }
 
-/**
- * Note test data interface
- */
-export interface NoteTestData extends TestObjectData {
-  title?: string;
-  content: string;
-  note_type?: string;
+// Tool Migration Types
+export type ParameterTransformFn = (params: ToolParameters) => ToolParameters;
+export type ResponseTransformFn = (response: ApiResponse) => ApiResponse;
+
+// Enhanced Tool Caller Types
+export interface ToolCallOptions {
+  timeout?: number;
+  retries?: number;
+  validateResponse?: boolean;
+  mockError?: ApiError;
 }
 
-/**
- * Union type for all test data types
- */
-export type AnyTestData = 
-  | CompanyTestData 
-  | PersonTestData 
-  | ListTestData 
-  | TaskTestData 
-  | NoteTestData 
-  | TestObjectData;
-
-/**
- * MCP Tool response data interface
- */
-export interface McpResponseData extends TestDataObject {
-  type?: string;
-  text?: string;
-  result?: unknown;
-  records?: TestDataObject[];
-}
-
-/**
- * Expected data shape for validation
- */
-export interface ExpectedDataShape {
-  [key: string]: string | ExpectedDataShape | ExpectedDataShape[];
-}
-
-/**
- * Attio API record values interface
- */
-export interface AttioRecordValues extends TestDataObject {
-  [fieldKey: string]: unknown;
-}
-
-/**
- * Search result item interface
- */
-export interface SearchResultItem extends TestDataObject {
-  id: string;
-  relevance_score?: number;
-  matched_fields?: string[];
-}
-
-/**
- * Batch operation result interface
- */
-export interface BatchOperationResult extends TestDataObject {
-  id: string;
-  status: 'success' | 'error';
-  error?: string;
-  data?: TestDataObject;
-}
-
-/**
- * Generic API response interface
- */
-export interface ApiResponse<T = TestDataObject> {
-  data: T;
-  meta?: TestDataObject;
-  errors?: TestDataObject[];
-}
-
-/**
- * Test validation result interface
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
+export interface ToolCallResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
+  timing?: {
+    start: number;
+    end: number;
+    duration: number;
+  };
 }

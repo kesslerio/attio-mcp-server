@@ -14,13 +14,14 @@
  */
 
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolParameters, ApiResponse, ParameterTransformFn, ResponseTransformFn } from '../types';
 
 export interface ToolMappingRule {
   legacyToolName: string;
   universalToolName: string;
   resourceType: string;
-  parameterTransform: (params: any) => any;
-  responseTransform?: (response: any) => any;
+  parameterTransform: ParameterTransformFn;
+  responseTransform?: ResponseTransformFn;
   description?: string;
 }
 
@@ -33,7 +34,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-task',
     universalToolName: 'create-record',
     resourceType: 'tasks',
-    parameterTransform: (params: any) => ({
+    parameterTransform: (params: ToolParameters) => ({
       resource_type: 'tasks',
       record_data: params
     }),
@@ -43,7 +44,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'list-tasks',
     universalToolName: 'search-records',
     resourceType: 'tasks',
-    parameterTransform: (params: any) => ({
+    parameterTransform: (params: ToolParameters) => ({
       resource_type: 'tasks',
       query: params.query || '',
       limit: params.limit || 50,
