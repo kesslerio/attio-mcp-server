@@ -1,6 +1,34 @@
-# E2E Test Suite for Attio MCP Server
+# E2E Testing Guide - Attio MCP Server
 
-Comprehensive end-to-end testing framework for all MCP tools with configurable workspace support.
+This directory contains comprehensive End-to-End (E2E) tests for the Attio MCP Server. These tests validate the complete integration between the MCP server and the Attio API.
+
+## 🚀 Quick Start
+
+### 1. Environment Setup
+
+**Required:**
+- Set your Attio API key: `export ATTIO_API_KEY=your_api_key_here`
+- Copy configuration: `cp test/e2e/config.template.json test/e2e/config.local.json`
+
+**Optional:** 
+- Customize `config.local.json` with your test preferences
+- Set additional environment variables for custom test data
+
+### 2. Run Tests
+
+```bash
+# Check environment and configuration
+npm run test:e2e:check
+
+# Run all E2E tests (requires API key)
+npm run test:e2e
+
+# Run limited tests (no API key required)
+npm run test:e2e:limited
+
+# Get help with available options
+npm run test:e2e:help
+```
 
 ## 🎯 Overview
 

@@ -132,10 +132,15 @@ export class ConfigLoader {
   private applyEnvironmentOverrides(config: Partial<E2EConfig>): void {
     // API Key (required unless tests are being skipped)
     if (!process.env.ATTIO_API_KEY && process.env.SKIP_E2E_TESTS !== 'true') {
-      throw new Error(
-        'ATTIO_API_KEY environment variable is required for E2E tests. ' +
-        'Set SKIP_E2E_TESTS=true to skip these tests.'
+      console.warn(
+        '⚠️  ATTIO_API_KEY environment variable is missing for E2E tests.\n' +
+        '   E2E tests may fail without proper API authentication.\n' +
+        '   Set SKIP_E2E_TESTS=true to skip these tests, or provide ATTIO_API_KEY.\n' +
+        '   Some tests will be skipped automatically to prevent API errors.'
       );
+      
+      // Don't throw error - let individual tests handle missing API key gracefully
+      // This allows the test suite to run and skip tests that require API access
     }
 
     // Test data overrides
@@ -308,6 +313,29 @@ export class ConfigLoader {
   }
 
   /**
+   * Check if API key is available for tests
+   */
+  hasApiKey(): boolean {
+    return !!process.env.ATTIO_API_KEY;
+  }
+
+  /**
+   * Get API key availability status and message
+   */
+  getApiKeyStatus(): { available: boolean; message?: string } {
+    const hasKey = this.hasApiKey();
+    
+    if (!hasKey) {
+      return {
+        available: false,
+        message: 'ATTIO_API_KEY environment variable is not set. API-dependent tests will be skipped.'
+      };
+    }
+    
+    return { available: true };
+  }
+
+  /**
    * Reset configuration (for testing)
    */
   reset(): void {
@@ -332,4 +360,23 @@ export async function loadE2EConfig(): Promise<E2EConfig> {
  */
 export function getE2EConfig(): E2EConfig {
   return configLoader.getConfig();
+}
+
+/**
+ * Helper function to check API key availability for test skipping
+ */
+export function shouldSkipApiTests(): boolean {
+  return !configLoader.hasApiKey();
+}
+
+/**
+ * Helper function to conditionally skip a test if API key is missing
+ */
+export function skipIfNoApiKey(testContext: any, testName: string): boolean {
+  if (shouldSkipApiTests()) {
+    console.log(`⏭️  Skipping ${testName} - ATTIO_API_KEY not available`);
+    testContext.skip();
+    return true;
+  }
+  return false;
 }

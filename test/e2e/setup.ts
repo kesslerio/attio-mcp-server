@@ -4,6 +4,11 @@
  * Provides setup utilities for E2E tests including environment validation,
  * API client initialization, and test data preparation.
  */
+
+// Load environment variables from .env file BEFORE any other imports
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import {
   loadE2EConfig,

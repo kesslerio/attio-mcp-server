@@ -113,10 +113,26 @@ export class E2EAssertions {
     if (expectedErrorPattern) {
       expect(response.error, 'Response should have error message').toBeDefined();
       
-      if (typeof expectedErrorPattern === 'string') {
-        expect(response.error, `Error message should contain "${expectedErrorPattern}"`).toContain(expectedErrorPattern);
+      // Extract error message from error object or use error directly if it's a string
+      let errorMessage: string;
+      if (typeof response.error === 'string') {
+        errorMessage = response.error;
+      } else if (response.error && typeof response.error === 'object') {
+        // Try to extract message from error object
+        errorMessage = (response.error as any).message || 
+                      (response.error as any).error || 
+                      JSON.stringify(response.error);
       } else {
-        expect(response.error, `Error message should match pattern ${expectedErrorPattern}`).toMatch(expectedErrorPattern);
+        errorMessage = String(response.error);
+      }
+      
+      // Handle both string and RegExp patterns correctly
+      if (typeof expectedErrorPattern === 'string') {
+        expect(errorMessage, `Error message should contain "${expectedErrorPattern}"`).toContain(expectedErrorPattern);
+      } else if (expectedErrorPattern instanceof RegExp) {
+        // Convert error message to string before regex matching
+        const messageString = String(errorMessage);
+        expect(messageString, `Error message should match pattern ${expectedErrorPattern}`).toMatch(expectedErrorPattern);
       }
     }
   }
@@ -361,6 +377,134 @@ export class E2EAssertions {
         expect(resultKeys.join(','), `Result ${index} should have consistent structure`).toBe(firstResultKeys.join(','));
       });
     }
+  }
+
+  /**
+   * Assert that note response has valid structure
+   */
+  static expectValidNoteStructure(note: any): void {
+    expect(note, 'Note should be defined').toBeDefined();
+    expect(typeof note, 'Note should be object').toBe('object');
+    
+    // Core note properties
+    expect(note.id, 'Note should have id').toBeDefined();
+    expect(note.title, 'Note should have title').toBeDefined();
+    expect(note.content, 'Note should have content').toBeDefined();
+    expect(typeof note.title, 'Note title should be string').toBe('string');
+    expect(typeof note.content, 'Note content should be string').toBe('string');
+    
+    // Note format validation
+    if (note.format) {
+      expect(['plaintext', 'html', 'markdown'].includes(note.format), 
+        `Note format "${note.format}" should be valid`).toBe(true);
+    }
+    
+    // Timestamps
+    if (note.created_at) {
+      expect(new Date(note.created_at).getTime(), 'Created date should be valid').not.toBeNaN();
+    }
+    if (note.updated_at) {
+      expect(new Date(note.updated_at).getTime(), 'Updated date should be valid').not.toBeNaN();
+    }
+  }
+
+  /**
+   * Assert that note collection response is valid
+   */
+  static expectValidNoteCollection(response: any, minCount: number = 0): void {
+    expect(response, 'Note collection response should be defined').toBeDefined();
+    
+    let notes: any[];
+    if (Array.isArray(response)) {
+      notes = response;
+    } else if (response.data && Array.isArray(response.data)) {
+      notes = response.data;
+    } else if (response.content && Array.isArray(response.content)) {
+      notes = response.content;
+    } else {
+      throw new Error('Note collection should be array or have data/content array property');
+    }
+
+    expect(notes.length, `Should have at least ${minCount} notes`).toBeGreaterThanOrEqual(minCount);
+    
+    // Validate each note in collection
+    notes.forEach((note, index) => {
+      try {
+        this.expectValidNoteStructure(note);
+      } catch (error) {
+        throw new Error(`Note ${index} validation failed: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Assert that note content matches expected format
+   */
+  static expectNoteContentFormat(note: any, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
+    this.expectValidNoteStructure(note);
+    
+    if (note.format) {
+      expect(note.format, `Note format should be ${expectedFormat}`).toBe(expectedFormat);
+    }
+    
+    // Content validation based on format
+    switch (expectedFormat) {
+      case 'html':
+        expect(note.content.includes('<') || note.content.includes('>'), 
+          'HTML note should contain HTML tags').toBe(true);
+        break;
+      case 'markdown':
+        expect(note.content.includes('#') || note.content.includes('*') || note.content.includes('-'), 
+          'Markdown note should contain markdown syntax').toBe(true);
+        break;
+      case 'plaintext':
+        // Plaintext validation - no HTML tags
+        expect(note.content.includes('<'), 'Plaintext note should not contain HTML tags').toBe(false);
+        break;
+    }
+  }
+
+  /**
+   * Assert that note is properly linked to parent record
+   */
+  static expectNoteLinkedToRecord(note: any, expectedParentType: string, expectedParentId?: string): void {
+    this.expectValidNoteStructure(note);
+    
+    // Check for parent object linkage (may vary by API implementation)
+    if (note.parent_object) {
+      expect(note.parent_object, `Note should be linked to ${expectedParentType}`).toBe(expectedParentType);
+    }
+    
+    if (expectedParentId && note.parent_record_id) {
+      expect(note.parent_record_id, `Note should be linked to record ${expectedParentId}`).toBe(expectedParentId);
+    }
+    
+    // Alternative structure checks for different API implementations
+    if (note.linked_to && Array.isArray(note.linked_to)) {
+      const linkFound = note.linked_to.some((link: any) => 
+        link.target_object === expectedParentType || 
+        (expectedParentId && link.target_record_id === expectedParentId)
+      );
+      expect(linkFound, `Note should be linked to ${expectedParentType} record`).toBe(true);
+    }
+  }
+
+  /**
+   * Assert that note has valid test data characteristics
+   */
+  static expectTestNote(note: any): void {
+    this.expectValidNoteStructure(note);
+    
+    const config = configLoader.getConfig();
+    const testPrefix = config.testSettings?.testDataPrefix || 'E2E_TEST_';
+    
+    // Check if note title indicates it's test data
+    expect(note.title.includes('E2E') || note.title.includes(testPrefix), 
+      'Test note should have E2E or test prefix in title').toBe(true);
+    
+    // Check content for test indicators
+    expect(note.content.includes('E2E') || note.content.includes('test'), 
+      'Test note content should indicate it\'s for testing').toBe(true);
   }
 }
 

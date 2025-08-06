@@ -21,8 +21,9 @@ export default defineConfig({
       'test/validators/**',
       'test/objects/**',
       'test/manual/**',
-      'test/**/*.test.ts',
-      'test/**/*.test.js',
+      // Exclude non-E2E test files but keep E2E files
+      'test/**/!(*.e2e).test.ts',
+      'test/**/!(*.e2e).test.js',
       // Keep only E2E tests (*.e2e.test.ts files)
     ],
     globals: true,
