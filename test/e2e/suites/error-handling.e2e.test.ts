@@ -32,6 +32,9 @@ import {
 import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 
+// Debug: Log environment variable status
+console.log('ENV API KEY:', process.env.ATTIO_API_KEY ? `Found (${process.env.ATTIO_API_KEY.slice(0, 10)}...)` : 'NOT FOUND');
+
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Error Handling E2E Tests', () => {
   let config: any;
   let testCompanyId: string;

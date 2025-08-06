@@ -207,11 +207,20 @@ async function runVitest(pattern = 'all', options = {}) {
 
   console.log(colorize(`\n🧪 Running E2E tests: ${testPattern}`, 'cyan'));
   console.log(colorize(`Command: npx vitest ${vitestArgs.join(' ')}`, 'blue'));
+  
+  // Debug: Verify API key is loaded
+  if (process.env.ATTIO_API_KEY) {
+    console.log(colorize(`✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`, 'green'));
+  } else {
+    console.log(colorize('⚠️  API key not found in environment!', 'yellow'));
+  }
 
   return new Promise((resolve, reject) => {
+    // Ensure environment variables are properly passed to child process
+    // Using spread operator to create a new object with all current env vars
     const vitest = spawn('npx', ['vitest', ...vitestArgs], {
       stdio: 'inherit',
-      env: process.env
+      env: { ...process.env }
     });
 
     vitest.on('close', (code) => {

@@ -69,7 +69,7 @@
     "verify:env": "node -e \"console.log('Node:', process.version); console.log('NPM:', process.env.npm_version || 'unknown')\"",
     "setup:test-data": "tsx scripts/setup-test-data.ts",
     "e2e:setup": "tsx test/e2e/setup.ts",
-    "test:e2e": "node test/e2e/run-e2e-tests.js",
+    "test:e2e": "node -r dotenv/config test/e2e/run-e2e-tests.js",
     "test:e2e:check": "node test/e2e/run-e2e-tests.js --check",
     "test:e2e:limited": "node test/e2e/run-e2e-tests.js --limited",
     "test:e2e:help": "node test/e2e/run-e2e-tests.js --help",
