@@ -47,5 +47,26 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "Review https://github.com/kesslerio/attio-mcp-server/pull/380#issuecomment-3161036038 and improve PR @agent-project-delegator-orchestrator "
+  },
+  {
+    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Review feedback at https://github.com/kesslerio/attio-mcp-server/pull/387#issuecomment-3161660588 and improve PR with @agent-docs-architect "
+  },
+  {
+    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "merge PR"
+  },
+  {
+    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "use @agent-project-delegator-orchestrator to proceed with phase 2"
   }
 ]
