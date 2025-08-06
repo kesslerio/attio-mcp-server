@@ -2,8 +2,8 @@
  * Configuration loader for Attio MCP Server
  * Handles loading and merging of configuration files
  */
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Interface for mapping configuration
