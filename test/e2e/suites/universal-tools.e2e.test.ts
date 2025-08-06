@@ -57,11 +57,8 @@ function trackForCleanup(type: string, id: string, data?: any): void {
   E2ETestBase.trackForCleanup(type as any, id, data);
 }
 
-describe('Universal Tools E2E Test Suite', () => {
+describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Universal Tools E2E Test Suite', () => {
   beforeAll(async () => {
-    if (E2ETestBase.skipIfNoApiKey()) {
-      return;
-    }
 
     await E2ETestBase.setup({
       requiresRealApi: true,
@@ -91,9 +88,7 @@ describe('Universal Tools E2E Test Suite', () => {
   }, 60000);
 
   beforeEach(() => {
-    if (E2ETestBase.skipIfNoApiKey()) {
-      return;
-    }
+    // Clear mocks before each test
   });
 
   describe('Core Operations - CRUD and Basic Tools (8 tools)', () => {

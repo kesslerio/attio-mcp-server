@@ -9,7 +9,7 @@ import { loadE2EConfig, configLoader } from '../utils/config-loader.js';
 import { E2ECompanyFactory, E2EPersonFactory, E2ETestDataValidator } from '../utils/test-data.js';
 import { E2EAssertions, expectE2E } from '../utils/assertions.js';
 
-describe('E2E Infrastructure', () => {
+describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('E2E Infrastructure', () => {
   beforeAll(async () => {
     // Load configuration without requiring API key for infrastructure tests
     process.env.SKIP_E2E_TESTS = 'true';

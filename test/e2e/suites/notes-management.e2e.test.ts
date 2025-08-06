@@ -54,7 +54,7 @@ let createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 // Note: callNotesTool is now imported from enhanced-tool-caller.js
 // It automatically handles legacy-to-universal tool migration and comprehensive logging
 
-describe('Notes Management E2E Tests', () => {
+describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Notes Management E2E Tests', () => {
   
   // Test data storage
   let testCompanies: TestDataObject[] = [];
@@ -62,7 +62,6 @@ describe('Notes Management E2E Tests', () => {
   let createdNotes: TestDataObject[] = [];
   
   beforeAll(async () => {
-    if (E2ETestBase.skipIfNoApiKey()) return;
     
     // Start comprehensive logging for this test suite
     startTestSuite('notes-management');

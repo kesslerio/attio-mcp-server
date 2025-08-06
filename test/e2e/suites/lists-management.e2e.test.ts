@@ -65,7 +65,7 @@ function trackForCleanup(type: string, id: string, data?: any): void {
   E2ETestBase.trackForCleanup(type as any, id, data);
 }
 
-describe('Lists Management E2E Tests', () => {
+describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Lists Management E2E Tests', () => {
   // Test data storage
   let testCompanies: TestDataObject[] = [];
   let testPeople: TestDataObject[] = [];
@@ -73,9 +73,6 @@ describe('Lists Management E2E Tests', () => {
   let listEntries: TestDataObject[] = [];
   
   beforeAll(async () => {
-    if (E2ETestBase.skipIfNoApiKey()) {
-      return;
-    }
 
     // Start comprehensive logging for this test suite
     startTestSuite('lists-management');
