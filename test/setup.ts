@@ -91,40 +91,41 @@ if (process.env.E2E_MODE !== 'true') {
     };
   });
 
-  // Global mock for companies search module
+    // Global mock for companies search module
   vi.mock('../src/objects/companies/search', () => ({
     searchCompaniesByName: vi.fn(async (name: string) => {
       // Mock behavior based on company name for testing
       if (name === 'Test Company' || name === 'Existing Company') {
         return [{ id: { record_id: 'existing-company-id' } }];
       }
-    return [];
-  }),
-  companyCache: {
-    clear: vi.fn(),
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-}));
-
-// Global mock for people module
-vi.mock('../src/objects/people/index', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    searchPeople: vi.fn(async () => []),
-    advancedSearchPeople: vi.fn(async (filters, options) => {
-      // Mock that bypasses filter validation
-      return { results: [] };
+      return [];
     }),
-    listPeople: vi.fn(async () => []),
-    getPersonDetails: vi.fn(async () => ({})),
-    createPerson: vi.fn(async () => ({})),
-    updatePerson: vi.fn(async () => ({})),
-    deletePerson: vi.fn(async () => true),
-    searchPeopleByCompany: vi.fn(async () => []),
-  };
-});
+    companyCache: {
+      clear: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
+    },
+  }));
+
+  // Global mock for people module
+  vi.mock('../src/objects/people/index', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      searchPeople: vi.fn(async () => []),
+      advancedSearchPeople: vi.fn(async (filters, options) => {
+        // Mock that bypasses filter validation
+        return { results: [] };
+      }),
+      listPeople: vi.fn(async () => []),
+      getPersonDetails: vi.fn(async () => ({})),
+      createPerson: vi.fn(async () => ({})),
+      updatePerson: vi.fn(async () => ({})),
+      deletePerson: vi.fn(async () => true),
+      searchPeopleByCompany: vi.fn(async () => []),
+    };
+  });
+}
 
 // Mock console methods globally to prevent issues with logging tests
 const originalConsole = {
