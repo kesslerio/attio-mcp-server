@@ -31,7 +31,7 @@ git clone https://github.com/YOUR_USERNAME/attio-mcp-server.git
 cd attio-mcp-server
 
 # Add upstream remote
-git remote add upstream https://github.com/hmk/attio-mcp-server.git
+git remote add upstream https://github.com/kesslerio/attio-mcp-server.git
 
 # Run comprehensive setup script (recommended)
 ./scripts/setup-dev-env.sh
