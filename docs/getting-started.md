@@ -33,7 +33,10 @@ cd attio-mcp-server
 # Add upstream remote
 git remote add upstream https://github.com/hmk/attio-mcp-server.git
 
-# Install dependencies
+# Run comprehensive setup script (recommended)
+./scripts/setup-dev-env.sh
+
+# Or manually install dependencies only
 npm install
 ```
 
@@ -81,6 +84,39 @@ npm run build:watch
 
 # Run with MCP inspector for debugging
 dotenv npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+## Development Environment Setup
+
+For developers contributing to the project, we provide a comprehensive setup script that handles all configuration:
+
+```bash
+# Run the comprehensive setup script
+./scripts/setup-dev-env.sh
+
+# Available options:
+# --skip-tdd        Skip TDD environment setup
+# --skip-ide        Skip IDE configuration setup
+# --skip-hooks      Skip git hooks setup
+# --force           Force re-run all setup steps
+# --help            Show help message
+```
+
+The setup script will:
+- ✅ Check and validate Node.js version (>=18.0.0)
+- ✅ Install npm dependencies
+- ✅ Set up git hooks (Husky) for pre-commit validation
+- ✅ Create .env file from template
+- ✅ Validate Attio API key configuration
+- ✅ Run initial TypeScript build
+- ✅ Configure VS Code settings for optimal development
+- ✅ Set up TDD environment with test templates
+- ✅ Run comprehensive health checks
+- ✅ Provide clear feedback and next steps
+
+For a minimal setup (e.g., in CI/CD):
+```bash
+./scripts/setup-dev-env.sh --skip-tdd --skip-ide --skip-hooks
 ```
 
 ## Connecting with Claude

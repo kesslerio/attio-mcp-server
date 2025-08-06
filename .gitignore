@@ -49,3 +49,7 @@ test/e2e/config.local.json
 
 # E2E test results and reports
 test-results/
+
+# Log files
+logs/
+logs.backup/
