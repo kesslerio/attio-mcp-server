@@ -49,7 +49,7 @@ import {
 
 // Test configuration
 const config = await loadE2EConfig();
-let createdRecords: Array<{ type: string; id: string; data?: any }> = [];
+const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 
 // Note: callNotesTool is now imported from enhanced-tool-caller.js
 // It automatically handles legacy-to-universal tool migration and comprehensive logging
@@ -57,9 +57,9 @@ let createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Notes Management E2E Tests', () => {
   
   // Test data storage
-  let testCompanies: TestDataObject[] = [];
-  let testPeople: TestDataObject[] = [];
-  let createdNotes: TestDataObject[] = [];
+  const testCompanies: TestDataObject[] = [];
+  const testPeople: TestDataObject[] = [];
+  const createdNotes: TestDataObject[] = [];
   
   beforeAll(async () => {
     

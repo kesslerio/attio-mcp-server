@@ -729,6 +729,135 @@ function getEditDistance(str1: string, str2: string): number {
 }
 
 /**
+ * Validate pagination parameters
+ */
+function validatePaginationParams(params: SanitizedObject, toolName: string): void {
+  // Validate limit
+  if ('limit' in params && params.limit !== null && params.limit !== undefined) {
+    const limit = Number(params.limit);
+    
+    if (isNaN(limit) || !Number.isInteger(limit)) {
+      throw new UniversalValidationError(
+        'Parameter "limit" must be an integer',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Provide a valid integer for limit',
+          example: 'limit: 10'
+        }
+      );
+    }
+    
+    if (limit < 1) {
+      throw new UniversalValidationError(
+        'Parameter "limit" must be at least 1',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a positive integer for limit',
+          example: 'limit: 10'
+        }
+      );
+    }
+    
+    if (limit > 100) {
+      throw new UniversalValidationError(
+        'Parameter "limit" must not exceed 100',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a value between 1 and 100',
+          example: 'limit: 50'
+        }
+      );
+    }
+    
+    // Ensure it's stored as a number
+    params.limit = limit;
+  }
+  
+  // Validate offset
+  if ('offset' in params && params.offset !== null && params.offset !== undefined) {
+    const offset = Number(params.offset);
+    
+    if (isNaN(offset) || !Number.isInteger(offset)) {
+      throw new UniversalValidationError(
+        'Parameter "offset" must be an integer',
+        ErrorType.USER_ERROR,
+        {
+          field: 'offset',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Provide a valid integer for offset',
+          example: 'offset: 0'
+        }
+      );
+    }
+    
+    if (offset < 0) {
+      throw new UniversalValidationError(
+        'Parameter "offset" must be non-negative',
+        ErrorType.USER_ERROR,
+        {
+          field: 'offset',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a non-negative integer for offset',
+          example: 'offset: 0'
+        }
+      );
+    }
+    
+    // Ensure it's stored as a number
+    params.offset = offset;
+  }
+}
+
+/**
+ * Validate ID format for record_id and similar fields
+ */
+function validateIdFields(params: SanitizedObject, toolName: string): void {
+  const idFields = ['record_id', 'source_id', 'target_id', 'company_id', 'person_id', 'list_id'];
+  
+  for (const field of idFields) {
+    if (field in params && params[field] !== null && params[field] !== undefined) {
+      const id = String(params[field]);
+      
+      // Basic ID format validation (alphanumeric with underscores and hyphens)
+      const idRegex = /^[a-zA-Z0-9_-]+$/;
+      
+      if (!idRegex.test(id)) {
+        throw new UniversalValidationError(
+          `Invalid ${field} format: "${id}"`,
+          ErrorType.USER_ERROR,
+          {
+            field,
+            httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+            suggestion: `The ${field} should contain only letters, numbers, underscores, and hyphens`,
+            example: `${field}: 'comp_abc123' or 'person_xyz789'`
+          }
+        );
+      }
+      
+      // Check for reasonable length
+      if (id.length < 3 || id.length > 100) {
+        throw new UniversalValidationError(
+          `Invalid ${field} length: ${id.length} characters`,
+          ErrorType.USER_ERROR,
+          {
+            field,
+            httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+            suggestion: `The ${field} should be between 3 and 100 characters`,
+            example: `${field}: 'comp_abc123'`
+          }
+        );
+      }
+    }
+  }
+}
+
+/**
  * Enhanced schema validation utility function with better error messages
  */
 export function validateUniversalToolParams(toolName: string, params: any): any {
@@ -749,6 +878,12 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
   }
   
   const sanitizedParams = sanitizedValue as SanitizedObject;
+  
+  // Validate pagination parameters (limit, offset)
+  validatePaginationParams(sanitizedParams, toolName);
+  
+  // Validate ID format for record_id and similar fields
+  validateIdFields(sanitizedParams, toolName);
   
   // Validate resource_type if present
   if (sanitizedParams.resource_type) {

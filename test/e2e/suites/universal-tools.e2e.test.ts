@@ -23,7 +23,7 @@ import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
 // Test configuration
 const config = await loadE2EConfig();
-let createdRecords: Array<{ type: string; id: string; data?: any }> = [];
+const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 
 /**
  * Helper function to call MCP tools with proper error handling

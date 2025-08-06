@@ -194,6 +194,12 @@ TRIGGERS: Before release, dependency updates, auth/API key code
 KEYWORDS: security, vulnerability, CVE, auth, token, password, API-key
 AUTO-INVOKE: On security-sensitive changes
 
+**performance-engineer** [P1]
+TRIGGERS: Performance degradation, hot paths, critical sections, optimization needs
+KEYWORDS: performance, slow, optimize, benchmark, profile, bottleneck
+AUTO-INVOKE: When performance requirements specified or degradation detected
+CHAINS-TO: code-review-specialist → test-coverage-specialist
+
 ### Documentation
 **docs-architect** [P1]
 TRIGGERS: ALWAYS after significant code changes, API modifications
