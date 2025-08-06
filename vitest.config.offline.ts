@@ -47,7 +47,7 @@ export default defineConfig({
       clean: true,
     },
     silent: false,
-    reporter: 'verbose',
+    reporters: ['verbose'],
     watchExclude: [
       'node_modules/**',
       'dist/**',
