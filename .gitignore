@@ -46,3 +46,6 @@ coverage/
 .cursorindexingignore.env.test
 
 .env.development
+# Alternative tools (not used)
+biome.json
+bun.lock
