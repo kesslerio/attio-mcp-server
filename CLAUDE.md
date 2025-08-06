@@ -105,6 +105,23 @@ LINT COMPLIANCE (CRITICAL)
 - Replace useless try/catch blocks that only re-throw errors
 - Run `npm run lint:fix` to auto-fix simple issues before manual review
 
+AGENT WORKFLOW (MANDATORY - Use Task tool):
+**START WITH**: **project-delegator-orchestrator** for ANY multi-step task, feature implementation, or complex changes
+**END WITH**: **docs-architect** AFTER every code change, API modification, or architectural update
+
+SPECIALIZED AGENTS (delegator will coordinate these):
+- **issue-plan-author**: Convert feature specs/bug reports → structured GitHub issues
+- **backlog-triage-specialist**: Process raw bug reports → well-structured issues with proper labels/priority
+- **code-refactoring-architect**: Files >500 lines, mixed concerns, duplicated logic across modules
+- **code-review-specialist**: Comprehensive review before committing/merging/opening PRs
+- **test-coverage-specialist**: Comprehensive test coverage for new features/bug fixes
+- **debug-specialist**: Errors, test failures, regressions, unexpected behavior in dev/CI/prod
+- **security-vulnerability-scanner**: Before releases, after dependency updates, security concerns
+- **api-design-architect**: Designing/evolving API contracts, service boundaries, data models
+- **ui-implementation-specialist**: Building UI components, responsive layouts, accessibility
+- **architecture-optimizer**: Identify redundancy, untangle dependencies, modernize legacy patterns
+- **docs-architect**: Generate/update README, runbooks, API refs AFTER significant changes (MANDATORY)
+
 SYSTEMATIC ANY TYPE REDUCTION PLAN:
 Current status: ~778 warnings (mostly `any` types)
 Priority order for fixing `any` types:
@@ -184,7 +201,7 @@ Best Practices for Clean PRs
 3. Use meaningful commit messages (Format: `Feature:`, `Fix:`, `Docs:`, `Refactor:`, etc.)
 4. Only include relevant files
 5. Test thoroughly before submitting
-6. Update documentation
+6. Run **docs-architect** agent for documentation updates
 7. For refactoring work, follow guidelines in @docs/refactoring-guidelines.md
 
 Troubleshooting:
