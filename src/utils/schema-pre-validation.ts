@@ -49,12 +49,38 @@ const CACHE_TTL = 5 * 60 * 1000;
  */
 export class SchemaPreValidator {
   /**
+   * Generate cache key with tenant/workspace context
+   */
+  private static getCacheKey(
+    resourceType: UniversalResourceType,
+    context?: { workspaceId?: string; tenantId?: string }
+  ): string {
+    // Build cache key with optional context for multi-tenant support
+    const parts = [resourceType.toLowerCase()];
+
+    // Add workspace context if available (from environment or passed context)
+    const workspaceId = context?.workspaceId || process.env.ATTIO_WORKSPACE_ID;
+    if (workspaceId) {
+      parts.push(`ws:${workspaceId}`);
+    }
+
+    // Add tenant context if available (for future multi-tenant support)
+    const tenantId = context?.tenantId || process.env.ATTIO_TENANT_ID;
+    if (tenantId) {
+      parts.push(`tenant:${tenantId}`);
+    }
+
+    return parts.join(':');
+  }
+
+  /**
    * Get attributes for a resource type
    */
   static async getAttributes(
-    resourceType: UniversalResourceType
+    resourceType: UniversalResourceType,
+    context?: { workspaceId?: string; tenantId?: string }
   ): Promise<AttributeMetadata[]> {
-    const cacheKey = resourceType.toLowerCase();
+    const cacheKey = this.getCacheKey(resourceType, context);
     const cached = attributeCache.get(cacheKey);
 
     // Check cache validity
@@ -388,7 +414,8 @@ export class SchemaPreValidator {
    */
   static async validateRecordData(
     resourceType: UniversalResourceType,
-    recordData: Record<string, any>
+    recordData: Record<string, any>,
+    context?: { workspaceId?: string; tenantId?: string }
   ): Promise<{
     valid: boolean;
     errors: string[];
@@ -399,8 +426,8 @@ export class SchemaPreValidator {
     const warnings: string[] = [];
     const suggestions = new Map<string, string>();
 
-    // Get available attributes
-    const attributes = await this.getAttributes(resourceType);
+    // Get available attributes with context for multi-tenant support
+    const attributes = await this.getAttributes(resourceType, context);
     const attributeMap = new Map(
       attributes.map((attr) => [attr.slug.toLowerCase(), attr])
     );

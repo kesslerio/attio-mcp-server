@@ -51,6 +51,12 @@ export class PerformanceTracker {
   private static thresholds: Map<string, PerformanceThresholds> = new Map();
   private static enabled: boolean =
     process.env.PERFORMANCE_TRACKING !== 'false';
+  private static readonly maxMetrics: number = parseInt(
+    process.env.PERF_MAX_METRICS || '1000',
+    10
+  );
+  private static metricsIndex: number = 0;
+  private static isBufferFull: boolean = false;
 
   /**
    * Set performance thresholds for a tool
@@ -139,12 +145,20 @@ export class PerformanceTracker {
       metadata,
     };
 
-    this.metrics.push(metrics);
-
-    // Keep only last 1000 metrics to prevent memory issues
-    if (this.metrics.length > 1000) {
-      this.metrics = this.metrics.slice(-1000);
+    // Use circular buffer for efficient memory management
+    if (this.isBufferFull) {
+      // Overwrite oldest entry
+      this.metrics[this.metricsIndex] = metrics;
+    } else {
+      // Still filling the buffer
+      this.metrics.push(metrics);
+      if (this.metrics.length >= this.maxMetrics) {
+        this.isBufferFull = true;
+      }
     }
+
+    // Update circular buffer index
+    this.metricsIndex = (this.metricsIndex + 1) % this.maxMetrics;
 
     // Log performance in development
     if (process.env.NODE_ENV === 'development') {
@@ -224,6 +238,8 @@ export class PerformanceTracker {
    */
   static clear(): void {
     this.metrics = [];
+    this.metricsIndex = 0;
+    this.isBufferFull = false;
   }
 
   /**

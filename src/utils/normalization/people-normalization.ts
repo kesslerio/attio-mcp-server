@@ -210,9 +210,31 @@ export class PeopleDataNormalizer {
    * Validate email format
    */
   private static isValidEmail(email: string): boolean {
-    // Basic email validation regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    // More comprehensive email validation regex that handles:
+    // - International domains
+    // - Plus addressing (user+tag@domain.com)
+    // - Multiple subdomains
+    // - TLDs from 2 to 63 characters
+    // Based on RFC 5322 with practical limitations
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    
+    // Additional validation for edge cases
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    
+    // Check for reasonable length limits
+    if (email.length > 254) { // RFC 5321 limit
+      return false;
+    }
+    
+    // Check local part length (before @)
+    const [localPart] = email.split('@');
+    if (localPart.length > 64) { // RFC 5321 limit
+      return false;
+    }
+    
+    return true;
   }
   
   /**
