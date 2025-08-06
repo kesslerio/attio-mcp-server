@@ -440,12 +440,16 @@ class E2ELogger {
     // Convert response to string to check size
     const responseStr = JSON.stringify(response);
     
-    // If response is too large (>10KB), truncate it
+    // If response is too large (>10KB), create a safe preview
     if (responseStr.length > 10000) {
       return {
         _truncated: true,
         _originalSize: responseStr.length,
-        _preview: JSON.parse(responseStr.substring(0, 5000)),
+        _preview: {
+          type: 'truncated',
+          length: responseStr.length,
+          sample: responseStr.substring(0, 500) // Raw string sample, no parsing
+        },
         _message: 'Response truncated for logging. Original size: ' + responseStr.length + ' characters'
       };
     }

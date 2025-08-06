@@ -173,10 +173,11 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-company-notes',
     universalToolName: 'search-by-content',
-    resourceType: 'notes',
+    resourceType: 'records', // Notes are handled as records
     parameterTransform: (params: any) => ({
       resource_type: 'companies',
       content_type: 'notes',
+      query: '', // Required parameter - empty string to get all notes
       record_id: params.company_id,
       limit: params.limit || 50
     }),
@@ -185,10 +186,11 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-person-notes',
     universalToolName: 'search-by-content',
-    resourceType: 'notes',
+    resourceType: 'records', // Notes are handled as records
     parameterTransform: (params: any) => ({
       resource_type: 'people',
       content_type: 'notes',
+      query: '', // Required parameter - empty string to get all notes
       record_id: params.person_id,
       limit: params.limit || 50
     }),
@@ -197,12 +199,12 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'create-company-note',
     universalToolName: 'create-record',
-    resourceType: 'notes',
+    resourceType: 'records', // Notes are handled as records
     parameterTransform: (params: any) => {
       // Notes are typically created as a special record type or attribute
       // This might need adjustment based on actual Attio API structure
       return {
-        resource_type: 'notes',
+        resource_type: 'records', // Notes are records
         record_data: {
           ...params,
           linked_record_type: 'companies',
@@ -215,10 +217,10 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'create-person-note',
     universalToolName: 'create-record',
-    resourceType: 'notes',
+    resourceType: 'records', // Notes are handled as records
     parameterTransform: (params: any) => {
       return {
-        resource_type: 'notes',
+        resource_type: 'records', // Notes are records
         record_data: {
           ...params,
           linked_record_type: 'people',
@@ -233,9 +235,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-lists',
     universalToolName: 'search-records',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
-      resource_type: 'lists',
+      resource_type: 'records', // Lists are records
       query: params.query || '',
       limit: params.limit || 50,
       filters: params.filters || {}
@@ -245,9 +247,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'create-list',
     universalToolName: 'create-record',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
-      resource_type: 'lists',
+      resource_type: 'records', // Lists are records
       record_data: params
     }),
     description: 'Legacy create-list → universal create-record'
@@ -255,9 +257,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-list-details',
     universalToolName: 'get-record-details',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
-      resource_type: 'lists',
+      resource_type: 'records', // Lists are records
       record_id: params.list_id || params.record_id
     }),
     description: 'Legacy get-list-details → universal get-record-details'
@@ -265,7 +267,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-list-entries',
     universalToolName: 'search-by-relationship',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
       relationship_type: 'list_entries',
       source_id: params.list_id,
@@ -277,9 +279,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'add-record-to-list',
     universalToolName: 'update-record',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
-      resource_type: 'lists',
+      resource_type: 'records', // Lists are records
       record_id: params.list_id,
       record_data: {
         add_entries: [{
@@ -293,9 +295,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'remove-record-from-list',
     universalToolName: 'update-record',
-    resourceType: 'lists',
+    resourceType: 'records', // Lists are handled as records
     parameterTransform: (params: any) => ({
-      resource_type: 'lists',
+      resource_type: 'records', // Lists are records
       record_id: params.list_id,
       record_data: {
         remove_entries: [{

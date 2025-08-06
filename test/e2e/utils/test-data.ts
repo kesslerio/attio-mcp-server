@@ -12,7 +12,7 @@ export interface E2ETestCompany {
   website?: string;
   industry?: string;
   description?: string;
-  annual_revenue?: number;
+  annual_revenue?: string; // Changed to string to match API requirements
   employee_count?: number;
   categories?: string[];
 }
@@ -22,7 +22,7 @@ export interface E2ETestPerson {
   email_addresses: string[];
   phone_numbers?: string[];
   job_title?: string;
-  department?: string;
+  // department field removed - not supported by API
   seniority?: string;
   company?: string; // Company record ID
 }
@@ -81,8 +81,8 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
       website: `https://${domain}`,
       industry: 'Technology',
       description: `E2E test company created for testing purposes - ${testId}`,
-      annual_revenue: Math.floor(Math.random() * 10000000) + 1000000,
-      employee_count: Math.floor(Math.random() * 1000) + 10,
+      annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
+      employee_count: String(Math.floor(Math.random() * 1000) + 10),
       categories: ['Software', 'B2B']
     };
 
@@ -108,8 +108,8 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     return this.create({
       industry: 'Technology',
       categories: ['Software', 'SaaS', 'B2B'],
-      annual_revenue: Math.floor(Math.random() * 50000000) + 5000000,
-      employee_count: Math.floor(Math.random() * 500) + 50,
+      annual_revenue: String(Math.floor(Math.random() * 50000000) + 5000000), // Convert to string
+      employee_count: String(Math.floor(Math.random() * 500) + 50),
       ...overrides
     });
   }
@@ -118,8 +118,8 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     return this.create({
       industry: 'Financial Services',
       categories: ['Banking', 'Finance', 'B2B'],
-      annual_revenue: Math.floor(Math.random() * 100000000) + 10000000,
-      employee_count: Math.floor(Math.random() * 1000) + 100,
+      annual_revenue: String(Math.floor(Math.random() * 100000000) + 10000000), // Convert to string
+      employee_count: String(Math.floor(Math.random() * 1000) + 100),
       ...overrides
     });
   }
@@ -138,7 +138,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
       email_addresses: [email],
       phone_numbers: [`+1-555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`],
       job_title: 'Software Engineer',
-      department: 'Engineering',
+      // department field removed - not supported by API
       seniority: 'Mid-level'
     };
 
@@ -162,7 +162,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   static createExecutive(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
     return this.create({
       job_title: 'Chief Executive Officer',
-      department: 'Executive',
+      // department field removed - not supported by API
       seniority: 'Executive',
       ...overrides
     });
@@ -171,7 +171,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   static createSalesPerson(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
     return this.create({
       job_title: 'Account Executive',
-      department: 'Sales',
+      // department field removed - not supported by API
       seniority: 'Mid-level',
       ...overrides
     });
@@ -180,7 +180,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   static createEngineer(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
     return this.create({
       job_title: 'Software Engineer',
-      department: 'Engineering',
+      // department field removed - not supported by API
       seniority: 'Mid-level',
       ...overrides
     });
