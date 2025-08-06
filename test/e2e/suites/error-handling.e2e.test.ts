@@ -14,11 +14,7 @@
  * across the entire MCP tool ecosystem.
  */
 
-// Load environment variables from .env file
-import * as dotenv from 'dotenv';
-dotenv.config();
-
-console.log('ENV API KEY:', process.env.ATTIO_API_KEY ? `Found (${process.env.ATTIO_API_KEY.substring(0, 10)}...)` : 'Not found');
+// Environment variables are loaded via setupFiles in vitest.config.e2e.ts
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { loadE2EConfig } from '../utils/config-loader.js';

@@ -105,22 +105,112 @@ LINT COMPLIANCE (CRITICAL)
 - Replace useless try/catch blocks that only re-throw errors
 - Run `npm run lint:fix` to auto-fix simple issues before manual review
 
-AGENT WORKFLOW (MANDATORY - Use Task tool):
-**START WITH**: **project-delegator-orchestrator** for ANY multi-step task, feature implementation, or complex changes
-**END WITH**: **docs-architect** AFTER every code change, API modification, or architectural update
+AUTOMATIC AGENT DELEGATION (MANDATORY - Use Task tool):
 
-SPECIALIZED AGENTS (delegator will coordinate these):
-- **issue-plan-author**: Convert feature specs/bug reports → structured GitHub issues
-- **backlog-triage-specialist**: Process raw bug reports → well-structured issues with proper labels/priority
-- **code-refactoring-architect**: Files >500 lines, mixed concerns, duplicated logic across modules
-- **code-review-specialist**: Comprehensive review before committing/merging/opening PRs
-- **test-coverage-specialist**: Comprehensive test coverage for new features/bug fixes
-- **debug-specialist**: Errors, test failures, regressions, unexpected behavior in dev/CI/prod
-- **security-vulnerability-scanner**: Before releases, after dependency updates, security concerns
-- **api-design-architect**: Designing/evolving API contracts, service boundaries, data models
-- **ui-implementation-specialist**: Building UI components, responsive layouts, accessibility
-- **architecture-optimizer**: Identify redundancy, untangle dependencies, modernize legacy patterns
-- **docs-architect**: Generate/update README, runbooks, API refs AFTER significant changes (MANDATORY)
+## Quick Decision Matrix
+| USER INTENT | PRIMARY AGENT | CHAIN TO |
+|------------|---------------|----------|
+| "implement/build/create feature" | project-delegator-orchestrator | docs-architect |
+| "fix/debug/error/crash" | debug-specialist | test-coverage-specialist |
+| "refactor/clean up" | code-refactoring-architect | code-review-specialist |
+| "review my code" | code-review-specialist | test-coverage-specialist |
+| "organize/plan tasks" | issue-plan-author | project-delegator-orchestrator |
+
+## Trigger Priority Levels
+- **P0-CRITICAL**: MUST use immediately (blocks progress)
+- **P1-REQUIRED**: Use before proceeding (quality gate)
+- **P2-RECOMMENDED**: Should use (best practice)
+
+## Context-Based Auto-Triggers
+- FILE >500 lines → P0: code-refactoring-architect
+- FUNCTION >30 lines → P1: code-refactoring-architect
+- ERROR in logs → P0: debug-specialist
+- TEST failure → P0: debug-specialist
+- Before PR/commit → P1: code-review-specialist
+- SECURITY keywords → P0: security-vulnerability-scanner
+- AFTER code changes → P1: docs-architect
+- TypeScript `any` types → P2: code-refactoring-architect
+
+## SPECIALIZED AGENTS
+
+### Planning & Orchestration
+**project-delegator-orchestrator** [P0]
+TRIGGERS: Multi-step task, feature request, "how should I", complex change
+KEYWORDS: implement, build, feature, plan, coordinate, migrate
+CHAINS-TO: All specialist agents → docs-architect
+
+**issue-plan-author** [P2]
+TRIGGERS: Feature specs, bug reports needing structure
+KEYWORDS: issue, ticket, plan, spec, requirements
+CHAINS-TO: project-delegator-orchestrator
+
+**backlog-triage-specialist** [P2]
+TRIGGERS: Raw bug reports, duplicate issues, priority unclear
+KEYWORDS: triage, prioritize, duplicate, organize
+CHAINS-TO: issue-plan-author
+
+### Implementation & Refactoring
+**code-refactoring-architect** [P0]
+TRIGGERS: File >500 lines, function >30 lines, duplicate code, `any` types
+KEYWORDS: refactor, split, modularize, clean, organize, any-type
+AUTO-INVOKE: When SRP violations or `any` types detected
+CHAINS-TO: code-review-specialist → test-coverage-specialist
+
+**api-design-architect** [P1]
+TRIGGERS: New endpoint, API changes, service boundaries, MCP tools
+KEYWORDS: API, endpoint, REST, GraphQL, contract, service, MCP, schema
+CHAINS-TO: code-review-specialist → docs-architect
+
+**ui-implementation-specialist** [P2]
+TRIGGERS: UI components, responsive design, accessibility requirements
+KEYWORDS: UI, component, responsive, accessibility, frontend
+CHAINS-TO: code-review-specialist → test-coverage-specialist
+
+**architecture-optimizer** [P2]
+TRIGGERS: Build time issues, code duplication, tight coupling
+KEYWORDS: optimize, redundancy, dependencies, modernize
+CHAINS-TO: code-refactoring-architect
+
+### Validation & Quality
+**code-review-specialist** [P1]
+TRIGGERS: Before commit/PR, critical code paths, API handlers
+KEYWORDS: review, check, validate, commit, PR
+AUTO-INVOKE: Pre-commit on critical paths
+CHAINS-TO: test-coverage-specialist → security-vulnerability-scanner
+
+**test-coverage-specialist** [P1]
+TRIGGERS: New feature, bug fix, <80% coverage, integration tests needed
+KEYWORDS: test, coverage, unit, integration, vitest, mock
+CHAINS-TO: debug-specialist (if failures)
+
+**debug-specialist** [P0]
+TRIGGERS: Error, test failure, regression, unexpected behavior
+KEYWORDS: error, fail, crash, timeout, regression, debug
+AUTO-INVOKE: On CI/test failures
+CHAINS-TO: test-coverage-specialist → docs-architect
+
+**security-vulnerability-scanner** [P0]
+TRIGGERS: Before release, dependency updates, auth/API key code
+KEYWORDS: security, vulnerability, CVE, auth, token, password, API-key
+AUTO-INVOKE: On security-sensitive changes
+
+**performance-engineer** [P1]
+TRIGGERS: Performance degradation, hot paths, critical sections, optimization needs
+KEYWORDS: performance, slow, optimize, benchmark, profile, bottleneck
+AUTO-INVOKE: When performance requirements specified or degradation detected
+CHAINS-TO: code-review-specialist → test-coverage-specialist
+
+### Documentation
+**docs-architect** [P1]
+TRIGGERS: ALWAYS after significant code changes, API modifications
+AUTO-INVOKE: End of every code change session
+CHAINS-TO: None (final step)
+
+## WORKFLOW PATTERNS
+1. **Sequential Chain**: project-delegator → implementation → review → test → docs
+2. **Debug Chain**: debug-specialist → test-coverage → code-review → docs
+3. **Refactor Chain**: code-refactoring → code-review → test-coverage → docs
+4. **TypeScript Chain**: code-refactoring (any-types) → code-review → test → docs
 
 SYSTEMATIC ANY TYPE REDUCTION PLAN:
 Current status: ~778 warnings (mostly `any` types)

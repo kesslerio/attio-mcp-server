@@ -52,7 +52,7 @@ import {
  */
 // Test configuration
 const config = await loadE2EConfig();
-let createdRecords: Array<{ type: string; id: string; data?: any }> = [];
+const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 
 // Note: callListTool is now imported from enhanced-tool-caller.js
 // It automatically handles legacy-to-universal tool migration and comprehensive logging
@@ -67,9 +67,9 @@ function trackForCleanup(type: string, id: string, data?: any): void {
 
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Lists Management E2E Tests', () => {
   // Test data storage
-  let testCompanies: TestDataObject[] = [];
-  let testPeople: TestDataObject[] = [];
-  let testLists: TestDataObject[] = [];
+  const testCompanies: TestDataObject[] = [];
+  const testPeople: TestDataObject[] = [];
+  const testLists: TestDataObject[] = [];
   let listEntries: TestDataObject[] = [];
   
   beforeAll(async () => {

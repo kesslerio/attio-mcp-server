@@ -2,10 +2,10 @@ import { defineConfig } from 'vitest/config';
 import { config } from 'dotenv';
 
 // Load environment variables from .env file for E2E tests
-config();
+const envVars = config().parsed || {};
 
-// Also load E2E-specific environment variables
-config({ path: '.env.e2e' });
+// Also load E2E-specific environment variables (if exists)
+const e2eEnvVars = config({ path: '.env.e2e' }).parsed || {};
 
 export default defineConfig({
   test: {
@@ -46,7 +46,13 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       E2E_MODE: 'true',
-      // ATTIO_API_KEY loaded from .env via dotenv
+      ...envVars,
+      ...e2eEnvVars,
+      // Ensure ATTIO_API_KEY is always passed through from any source
+      ATTIO_API_KEY:
+        process.env.ATTIO_API_KEY ||
+        envVars.ATTIO_API_KEY ||
+        e2eEnvVars.ATTIO_API_KEY,
     },
 
     // Coverage configuration for E2E tests
@@ -122,7 +128,7 @@ export default defineConfig({
 
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup
-    setupFiles: undefined, // E2E tests handle their own setup per suite
+    setupFiles: ['./test/e2e/setup/env-loader.ts'], // Load env vars BEFORE test files
 
     // Performance optimizations
     minWorkers: 1,
