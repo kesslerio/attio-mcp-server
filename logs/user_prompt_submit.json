@@ -1,0 +1,51 @@
+[
+  {
+    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "as per https://github.com/kesslerio/attio-mcp-server/issues/377#issuecomment-3157666187 take Phase 2 to PR   \u2502\n\u2502   with @agent-project-delegator-orchestrator "
+  },
+  {
+    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Still still fails CI/CD tests like lints"
+  },
+  {
+    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Well why is the last test failing? (it's only one test failing right?) ultrathink "
+  },
+  {
+    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "performance-regression test still fail... \"\"Current runner version: '2.327.1'\nRunner Image Provisioner\nOperating System\nRunner Image\nGITHUB_TOKEN Permissions\nSecret source: Actions\nPrepare workflow directory\nPrepare all required actions\nGetting action download info\nError: This request has been automatically failed because it uses a deprecated version of `actions/upload-artifact: v3`. Learn more: https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/\"\" why do u think?"
+  },
+  {
+    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "ok merge"
+  },
+  {
+    "session_id": "4111cd2e-9717-438e-877c-d300c22459a8",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/4111cd2e-9717-438e-877c-d300c22459a8.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "review https://github.com/kesslerio/attio-mcp-server/issues/365 incl comments and ultrathink plan implementation, fix. use @agent-project-delegator-orchestrator "
+  },
+  {
+    "session_id": "4111cd2e-9717-438e-877c-d300c22459a8",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/4111cd2e-9717-438e-877c-d300c22459a8.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Review https://github.com/kesslerio/attio-mcp-server/pull/380#issuecomment-3161036038 and improve PR @agent-project-delegator-orchestrator "
+  }
+]
