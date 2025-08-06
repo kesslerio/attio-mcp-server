@@ -14,11 +14,7 @@
  * across the entire MCP tool ecosystem.
  */
 
-// Load environment variables from .env file
-import * as dotenv from 'dotenv';
-dotenv.config();
-
-console.log('ENV API KEY:', process.env.ATTIO_API_KEY ? `Found (${process.env.ATTIO_API_KEY.substring(0, 10)}...)` : 'Not found');
+// Environment variables are loaded via setupFiles in vitest.config.e2e.ts
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { loadE2EConfig } from '../utils/config-loader.js';
@@ -31,9 +27,6 @@ import {
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
-
-// Debug: Log environment variable status
-console.log('ENV API KEY:', process.env.ATTIO_API_KEY ? `Found (${process.env.ATTIO_API_KEY.slice(0, 10)}...)` : 'NOT FOUND');
 
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Error Handling E2E Tests', () => {
   let config: any;

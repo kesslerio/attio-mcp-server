@@ -128,7 +128,7 @@ export default defineConfig({
 
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup
-    setupFiles: undefined, // E2E tests handle their own setup per suite
+    setupFiles: ['./test/e2e/setup/env-loader.ts'], // Load env vars BEFORE test files
 
     // Performance optimizations
     minWorkers: 1,
