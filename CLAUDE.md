@@ -1,135 +1,53 @@
-ATTIO MCP SERVER GUIDELINES
+# ATTIO MCP SERVER INSTRUCTIONS [LLM-OPTIMIZED]
 
-🚨 DOCUMENTATION-FIRST RULE (MANDATORY):
-Before building ANY custom solution around third-party libraries:
-1. [ ] Check official documentation for standard approach
-2. [ ] Research online for existing solutions/libraries that solve the problem
-3. [ ] Test the documented standard approach first
-4. [ ] Only build custom if standard approach demonstrably fails
-5. [ ] Document WHY standard approach is insufficient
+## CORE PRINCIPLES
+RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
+RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp__clear-thought-server__mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
+RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp__clear-thought-server__decisionframework → find alternative | ELSE: Wasted time on workarounds
 
-🔍 RESEARCH HIERARCHY (Follow this order):
-1. Official documentation of existing libraries
-2. Online search for existing solutions (GitHub, Stack Overflow, community forums)
-3. Evaluate proven third-party alternatives
-4. Consider hybrid approaches using existing tools
-5. Build custom solution ONLY as last resort
+## BUILD & TEST COMMANDS
+`npm run build` - TypeScript compilation | `npm run build:watch` - Watch mode
+`npm run check` - Full validation suite | `npm run clean` - Clean build artifacts
+`npm test` - Run all tests | `npm run test:offline` - Unit tests only (no API)
+`npm run test:integration` - Real API tests | `npm test -- -t "pattern"` - Single test
+`npm test <filepath>` - Specific file | `npm test -- --coverage` - With coverage
 
-🔍 COMPLEXITY AUDIT CHECKLIST:
-When encountering existing complex code:
-- [ ] Question: "Is this complexity actually necessary?"
-- [ ] Check: "Does official documentation suggest a simpler approach?"
-- [ ] Test: "Can we achieve the same result with standard APIs?"
-- [ ] Use: mcp__clear-thought-server__mentalmodel with First Principles to analyze why complex code exists
+## TESTING REQUIREMENTS  
+RULE: Integration tests required | WHEN: API changes, universal tools, CRUD ops, error handling, new features | DO: `npm run test:integration` | ELSE: PR blocked
+RULE: Pre-commit fast only | WHEN: Git commit | DO: Unit tests only | ELSE: Developer friction
+RULE: Post-commit full suite | WHEN: PR created | DO: Full test suite in CI | ELSE: Potential production issues
 
-⚠️  ENGINEERING RED FLAGS (Stop and reassess):
-- Building workarounds for third-party bugs instead of using different APIs
-- Spending >2 hours on a problem without checking official docs
-- Assuming existing complex code is necessary without testing alternatives
-- Continuing to invest in a solution just because you've already spent time on it (sunk cost fallacy)
+## AUTO-APPROVED OPERATIONS
+Testing: `npm test*` all variations | Building: `npm run build*` all variations
+Inspection: `grep`, `find`, `sed`, `head`, `tail`, `cat` | Git read-only: `git status`, `git diff`, `git log`
+MCP tools: Read, Glob, Grep, LS | Scripts: `./scripts/review-pr.sh`
 
-🎯 THIRD-PARTY INTEGRATION DECISION TREE:
-When integrating external libraries:
-1. Start with official examples and documentation
-2. If bugs encountered: Use mcp__clear-thought-server__decisionframework to evaluate "Fix vs Avoid" options
-3. Default to "avoid buggy code path" unless compelling reason to fix
-4. Never build complex wrappers without proving standard approach fails
+## CODE STANDARDS
+RULE: No `any` type | WHEN: Writing TypeScript | DO: Create proper interfaces/types | ELSE: Lint errors block commit
+RULE: Explicit error handling | WHEN: API calls | DO: Use `createErrorResult` | ELSE: Silent failures in production
+RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immediately | ELSE: Lint warnings accumulate
+STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
+IMPORTS: Order as node → external → internal | Remove unused immediately
 
-BUILD/TEST COMMANDS (AUTO-APPROVED)
-- Build: `npm run build`
-- Watch mode: `npm run build:watch`
-- Type check: `npm run check`
-- Clean build: `npm run clean`
-- Run tests: `npm test`
-- Run offline tests: `npm run test:offline` (unit tests with mocks)
-- Run integration tests: `npm run test:integration` (real API calls)
-- Run single test: `npm test -- -t "test name pattern"`
-- Run specific test file: `npm test <file_path>`
-- Test with verbose output: `npm test -- --verbose`
-- Test with coverage: `npm test -- --coverage`
+## AGENT AUTOMATION [Use Task tool]
 
-🧪 TESTING STRATEGY (MANDATORY):
-Major changes MUST be validated with integration tests using REAL APIs:
-- API response handling changes → `npm run test:integration`
-- Universal tool modifications → `npm run test:integration`
-- Core CRUD operation updates → `npm run test:integration`
-- Error handling improvements → `npm run test:integration`
-- New feature implementations → `npm run test:integration`
+RULE: Auto-delegate work | WHEN: User intent matches patterns | DO: Launch specialist agent | ELSE: Manual implementation
 
-Pre-commit hook runs fast local validations only (formatting, linting, build, unit tests).
-Integration tests run separately to validate real API interactions.
+QUICK MATCH:
+"implement/build/feature" → project-delegator-orchestrator → docs-architect
+"fix/debug/error/crash" → debug-specialist → test-coverage-specialist
+"refactor/clean up" → code-refactoring-architect → code-review-specialist
+"review my code" → code-review-specialist → test-coverage-specialist
+"organize/plan tasks" → issue-plan-author → project-delegator-orchestrator
 
-AUTO-APPROVED COMMANDS
-The following commands are pre-approved and do not require user permission:
-- All npm test variations (npm test, npm test <file>, npm test -- <flags>)
-- All npm run build variations
-- npm run check (type checking)
-- npm run clean
-- All grep commands (grep, grep -r, grep -n, etc.)
-- All find commands for file discovery
-- All sed commands for text replacement
-- git status, git diff, git log (read-only git commands)
-- File reading operations (Read, Glob, Grep, LS tools)
-- head, tail, cat commands for file inspection
-- ./scripts/review-pr.sh <PR_NUMBER> (automated PR review)
-
-CODE PRINCIPLES
-- TypeScript: Use strict typing with interfaces/types. Functions > classes for stateless operations.
-  * NEVER use `any` type - create proper interfaces/types instead
-  * Define explicit return types for all functions
-  * Use generics for reusable code patterns
-- API: Handle errors with detailed error responses using `createErrorResult`. Implement resilience with try/catch blocks.
-  * Avoid useless try/catch that only re-throws - let errors propagate naturally
-  * Only wrap in try/catch when adding error context or transformation
-- Config: Use environment variables (`process.env.ATTIO_API_KEY`). No hardcoding secrets.
-- Errors: Use specific `try/catch` blocks. Allow continuation on non-critical errors.
-- Logging: Use console.error for critical errors, with process.exit(1) for fatal errors.
-
-CODE STYLE/STRUCTURE
-- Follow standard TypeScript conventions with strict type checking.
-- SRP: Keep functions focused on single responsibility.
-- Handle errors with detailed messages for API interactions.
-- Naming: `PascalCase` (classes/interfaces), `camelCase` (functions/variables), `snake_case` (files).
-- Formatting: Follow project style, 2-space indentation.
-- Types/Docs: Mandatory type hints. Use JSDoc for public API.
-- Imports: Node.js standard modules -> external -> internal.
-- Switch statements: Wrap case blocks in braces `{}` when declaring variables
-- Remove unused imports and variables immediately
-
-LINT COMPLIANCE (CRITICAL)
-- ZERO errors allowed in lint:check (all errors must be fixed before commit)
-- Warnings should be addressed systematically (target <100 total warnings)
-- NEVER use `any` type without justification - create proper interfaces instead
-- Remove unused variables and imports immediately
-- Use `@ts-expect-error` instead of `@ts-ignore` with explanatory comments
-- Replace useless try/catch blocks that only re-throw errors
-- Run `npm run lint:fix` to auto-fix simple issues before manual review
-
-AUTOMATIC AGENT DELEGATION (MANDATORY - Use Task tool):
-
-## Quick Decision Matrix
-| USER INTENT | PRIMARY AGENT | CHAIN TO |
-|------------|---------------|----------|
-| "implement/build/create feature" | project-delegator-orchestrator | docs-architect |
-| "fix/debug/error/crash" | debug-specialist | test-coverage-specialist |
-| "refactor/clean up" | code-refactoring-architect | code-review-specialist |
-| "review my code" | code-review-specialist | test-coverage-specialist |
-| "organize/plan tasks" | issue-plan-author | project-delegator-orchestrator |
-
-## Trigger Priority Levels
-- **P0-CRITICAL**: MUST use immediately (blocks progress)
-- **P1-REQUIRED**: Use before proceeding (quality gate)
-- **P2-RECOMMENDED**: Should use (best practice)
-
-## Context-Based Auto-Triggers
-- FILE >500 lines → P0: code-refactoring-architect
-- FUNCTION >30 lines → P1: code-refactoring-architect
-- ERROR in logs → P0: debug-specialist
-- TEST failure → P0: debug-specialist
-- Before PR/commit → P1: code-review-specialist
-- SECURITY keywords → P0: security-vulnerability-scanner
-- AFTER code changes → P1: docs-architect
-- TypeScript `any` types → P2: code-refactoring-architect
+AUTO-TRIGGERS [P0=Critical, P1=Required, P2=Recommended]:
+File >500 lines → code-refactoring-architect [P0]
+Function >30 lines → code-refactoring-architect [P1]
+Error/test failure → debug-specialist [P0]
+Before commit/PR → code-review-specialist [P1]
+Security keywords (auth/token/API-key) → security-vulnerability-scanner [P0]
+After code changes → docs-architect [P1]
+`any` types found → code-refactoring-architect [P2]
 
 ## SPECIALIZED AGENTS
 
@@ -212,140 +130,62 @@ CHAINS-TO: None (final step)
 3. **Refactor Chain**: code-refactoring → code-review → test-coverage → docs
 4. **TypeScript Chain**: code-refactoring (any-types) → code-review → test → docs
 
-SYSTEMATIC ANY TYPE REDUCTION PLAN:
-Current status: ~778 warnings (mostly `any` types)
-Priority order for fixing `any` types:
-1. **API Response Types** (src/api/operations/*.ts) - Create proper response interfaces
-2. **Error Handling** (src/errors/*.ts) - Define specific error parameter types  
-3. **Handler Parameters** (src/handlers/*.ts) - Create typed parameter interfaces
-4. **Universal Tool Types** (src/handlers/tool-configs/universal/*.ts) - Enhance existing types
-5. **Test Files** (test/**/*.ts) - Use proper mock types instead of any
+## ANY TYPE REDUCTION STRATEGY
+PRIORITY: 1) API responses (src/api/operations/*) 2) Error handling (src/errors/*) 3) Handler params (src/handlers/*) 4) Universal tools 5) Tests
+RULE: Zero `any` types | WHEN: Writing new code | DO: Create proper interfaces | ELSE: Technical debt
+TARGET: Reduce 778 warnings to <100 systematically (not blocking commits)
+## TESTING CONFIGURATION
+RULE: Test location | WHEN: Creating tests | DO: Place in `/test` directory | ELSE: Test discovery fails
+RULE: Use Vitest | WHEN: Writing tests | DO: Import from 'vitest' not 'jest' | ELSE: Type errors
+MOCKING: `vi.mock()` for modules | `vi.fn()` for functions | `vi.clearAllMocks()` in beforeEach
+INTEGRATION: Export ATTIO_API_KEY for real tests | 30s timeout | Auto cleanup | Skip with SKIP_INTEGRATION_TESTS=true
 
-Strategy: Create reusable interfaces in types/ directory, then systematically replace any types
-Target: Reduce from 778 to <100 warnings over time (not blocking for commits)
-- Testing:
-  * ALWAYS place ALL tests in the `/test` directory - never in project root
-  * Use Vitest (NOT Jest) for TypeScript tests (*.test.ts)
-  * Import testing functions: `import { describe, it, expect, beforeEach, vi } from 'vitest'`
-  * Use `vi.mock()` for mocking, `vi.fn()` for mock functions, `vi.mocked()` for typed mocks
-  * Use `vi.clearAllMocks()` in beforeEach for test isolation
-  * Manual test scripts should be named with `-test.js` suffix
-  * Test files should mirror the structure of the source code they test
-- Integration Tests:
-  * Set up API key: export ATTIO_API_KEY=your_key_here
-  * Run integration tests: npm test -- integration/real-api-integration.test.ts
-  * Tests use real API calls with 30s timeout
-  * Tests clean up test data automatically
-  * Skip tests if no API key: SKIP_INTEGRATION_TESTS=true
+## MCP SCHEMA CONSTRAINTS
+RULE: No complex schemas at root | WHEN: Defining MCP tool schemas | DO: Avoid oneOf/allOf/anyOf at top level | ELSE: Connection error: "input_schema does not support oneOf, allOf, or anyOf"
+RULE: Runtime validation only | WHEN: Either/or parameters needed | DO: Validate in handler code | ELSE: Schema rejection
 
-MCP TOOL SCHEMA GUIDELINES
-- NEVER use oneOf, allOf, or anyOf at the top level of tool input schemas
-- The MCP protocol does NOT support these JSON Schema features at the root level
-- Using them will cause connection errors: "input_schema does not support oneOf, allOf, or anyOf at the top level"
-- See docs/mcp-schema-guidelines.md for detailed guidelines and examples
-- Handle either/or parameter validation in runtime code, not in schemas
+## GITHUB WORKFLOW
+RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
+RULE: Never target hmk repo | WHEN: PR creation | DO: Verify target is kesslerio | ELSE: Upstream pollution
+RULE: Config consistency | WHEN: Any config file | DO: Use kesslerio URLs only | ELSE: Fork misconfiguration
 
-GITHUB WORKFLOW
+## GIT COMMIT PIPELINE [ENFORCED]
+RULE: All commits must pass validation | WHEN: Any git commit | DO: `npm run lint:check && npm run check:format && npm run build && npm run test:offline` | ELSE: Commit blocked
+RULE: Pipeline stages mandatory | GATES: lint:check [BLOCK if errors], check:format [BLOCK if issues], build [BLOCK if fails], test:offline [BLOCK if fails]
+RULE: Bypass requires justification | WHEN: Using --no-verify | DO: Include "EMERGENCY: [issue-link] [justification]" in commit msg | ELSE: Rejection in code review
+COMMAND: `npm run lint:check && npm run check:format && npm run build && npm run test:offline && git add . && git commit -m "Type: Description #issue" && git push`
 
-⚠️ CRITICAL: PR TARGETING
-ALWAYS create PRs to kesslerio/attio-mcp-server unless EXPLICITLY told to target hmk/attio-mcp-server.
-NEVER create PRs to hmk/attio-mcp-server without explicit instructions.
-NEVER assume PR should go to upstream repository.
-ALWAYS check all config files and templates use kesslerio URLs, not hmk URLs.
+## GIT WORKFLOW COMMANDS
+BRANCH: `git checkout -b feature/issue-{number}-{description}` or `fix/issue-{number}-{description}`
+COMMIT: Format as `Type: Description #issue-number` where Type = Feature|Fix|Docs|Refactor|Test|Chore
+PR: `gh pr create -R kesslerio/attio-mcp-server -t "Type: Description" -b "Details"`
+RULE: One feature per PR | WHEN: Creating PR | DO: Keep focused and small | ELSE: Review rejection
+RULE: Docs update required | WHEN: Significant changes | DO: Run docs-architect agent | ELSE: Outdated documentation
 
-🚨 ENHANCED GIT ACP PROCESS (MANDATORY)
-Before any commit, ALWAYS run this validation pipeline:
-```bash
-# Full validation pipeline (recommended) 
-npm run lint:check && npm run check:format && npm run build && npm run test:offline && git add . && git commit -m "message" && git push
+## RELEASE PROCESS
+RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process
+MANUAL FALLBACK: `npm version` → `npm run build` → `npm test` → commit → tag → `gh release create` → `npm publish`
+CHANGELOG: Follow Keep a Changelog format | Move Unreleased → versioned | Include: Added/Changed/Deprecated/Removed/Fixed/Security
 
-# Quick validation (for minor changes)  
-npm run build && npm run test:offline && git add . && git commit -m "message" && git push
+## ISSUE WORKFLOW [MANDATORY CHECKLIST]
+RULE: Branch per issue | WHEN: Starting issue work | DO: Follow checklist | ELSE: Merge conflicts and lost work
+CHECKLIST:
+1. `git branch --show-current` - Verify location
+2. `git checkout main` - Start from main
+3. `git pull origin main` - Get latest
+4. `git checkout -b feature/issue-{num}-{desc}` - Create issue branch
+5. `git status` - Verify clean state
+6. [Do work]
+7. `git commit -m "Type: Description #issue-num"` - Reference issue
+8. `git push -u origin HEAD` - Push branch
+9. `gh pr create -R kesslerio/attio-mcp-server` - Create PR
 
-# Emergency bypass (critical fixes only, requires justification in commit message)
-git add . && git commit --no-verify -m "EMERGENCY: description of critical issue" && git push
-```
-
-⚠️ VALIDATION PIPELINE RULES:
-- `npm run lint:check` - MUST pass (ESLint/TypeScript errors/warnings)
-- `npm run check:format` - MUST pass (Prettier code formatting)
-- `npm run build` - MUST pass (TypeScript compilation)
-- `npm run test:offline` - MUST pass (offline tests, no API required)
-- Commit only proceeds if ALL validations pass
-- Use `--no-verify` ONLY for critical production fixes with justification
-
-🔍 CRITICAL DISTINCTION:
-- `npm run lint:check` = ESLint and TypeScript checks
-- `npm run check:format` = Prettier formatting validation
-- `npm run build` = TypeScript compilation  
-- `npm run test:offline` = Test execution (catches logic/assertion failures)
-- `npm run check` = ALL above + full test suite (not suitable for git workflow due to API tests)
-
-Standard Commands:
-git checkout -b feature/<name> && git add . && git commit -m "Feature: <desc>" && git push -u origin HEAD && gh pr create -R kesslerio/attio-mcp-server -t "Feature: <desc>" -b "<details>"
-git fetch upstream && git checkout main && git merge upstream/main && git push origin main
-
-Best Practices for Clean PRs
-1. Focus on a single feature or fix per PR
-2. Keep PRs small and focused
-3. Use meaningful commit messages (Format: `Feature:`, `Fix:`, `Docs:`, `Refactor:`, etc.)
-4. Only include relevant files
-5. Test thoroughly before submitting
-6. Run **docs-architect** agent for documentation updates
-7. For refactoring work, follow guidelines in @docs/refactoring-guidelines.md
-
-Troubleshooting:
-git rm --cached <path> && git commit --amend && git push -f origin <branch>
-git fetch upstream && git rebase upstream/main && git push -f origin <branch>
-
-RELEASE PROCESS (AUTO-APPROVED)
-
-Automated Release Workflow:
-1. Use scripts/release.sh for automated releases:
-   ./scripts/release.sh
-   - Validates clean branch state
-   - Prompts for version bump (major.minor.patch)
-   - Updates package.json version
-   - Builds and tests project
-   - Updates CHANGELOG.md with release notes
-   - Creates git tag and GitHub release
-   - Publishes to npm registry
-
-2. Manual Release Commands:
-   npm version patch|minor|major     # Bump version
-   npm run build && npm test         # Validate
-   git add . && git commit -m "Release: vX.X.X"
-   git tag vX.X.X && git push origin vX.X.X
-   gh release create vX.X.X --notes "Release notes"
-   npm publish                       # Publish to npm
-
-3. CHANGELOG.md Management:
-   - Follow Keep a Changelog format (https://keepachangelog.com/)
-   - Update [Unreleased] section during development
-   - Move to versioned section during release
-   - Include: Added, Changed, Deprecated, Removed, Fixed, Security sections
-
-ISSUE MANAGEMENT (ENHANCED WITH CLEAR THOUGHT)
-
-⚠️ CRITICAL WORKFLOW: Issue Work Checklist
-BEFORE starting ANY GitHub issue work, ALWAYS follow this checklist:
-1. [ ] Check current branch: `git branch --show-current`
-2. [ ] If not on main or appropriate feature branch, checkout main: `git checkout main`
-3. [ ] Pull latest changes: `git pull origin main`
-4. [ ] Create issue branch: `git checkout -b feature/issue-{number}-{description}`
-5. [ ] Verify clean state: `git status` (should show "nothing to commit, working tree clean")
-6. [ ] Begin work implementation
-7. [ ] Commit with issue reference: `git commit -m "Type: Description #issue-number"`
-8. [ ] Push branch: `git push -u origin HEAD`
-9. [ ] Create PR: `gh pr create -R kesslerio/attio-mcp-server`
-
-1. Issue Creation
-- Create issues before starting work.
-- Use descriptive titles: type: Description (clear, concise).
-- Search first: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`.
-- Create Command: `gh issue create --title "type: Description" --body "Detailed description or use --body-file /path/to/template.md" --label "P2,type:bug,area:core"` (Verify labels with `gh label list --repo kesslerio/attio-mcp-server`).
-- Problem Analysis: Use Clear Thought tools like `mcp_clear-thought_mentalmodel` (e.g., First Principles) or `mcp_mcp-sequentialthinking-tools_sequentialthinking_tools` for complex issues.
-- Refactoring: Follow template in @docs/refactoring-guidelines.md.
+## ISSUE CREATION
+RULE: Create before coding | WHEN: Starting new work | DO: Create issue first | ELSE: Lack of tracking
+SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
+CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
+RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp__clear-thought-server__mentalmodel | ELSE: Incomplete analysis
+REFACTORING: Follow @docs/refactoring-guidelines.md template
 
 Required Labels:
 - Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
