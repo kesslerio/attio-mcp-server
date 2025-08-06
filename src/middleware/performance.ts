@@ -51,6 +51,12 @@ export class PerformanceTracker {
   private static thresholds: Map<string, PerformanceThresholds> = new Map();
   private static enabled: boolean =
     process.env.PERFORMANCE_TRACKING !== 'false';
+  private static readonly maxMetrics: number = parseInt(
+    process.env.PERF_MAX_METRICS || '1000',
+    10
+  );
+  private static metricsIndex: number = 0;
+  private static isBufferFull: boolean = false;
 
   /**
    * Set performance thresholds for a tool
@@ -139,12 +145,20 @@ export class PerformanceTracker {
       metadata,
     };
 
-    this.metrics.push(metrics);
-
-    // Keep only last 1000 metrics to prevent memory issues
-    if (this.metrics.length > 1000) {
-      this.metrics = this.metrics.slice(-1000);
+    // Use circular buffer for efficient memory management
+    if (this.isBufferFull) {
+      // Overwrite oldest entry
+      this.metrics[this.metricsIndex] = metrics;
+    } else {
+      // Still filling the buffer
+      this.metrics.push(metrics);
+      if (this.metrics.length >= this.maxMetrics) {
+        this.isBufferFull = true;
+      }
     }
+
+    // Update circular buffer index
+    this.metricsIndex = (this.metricsIndex + 1) % this.maxMetrics;
 
     // Log performance in development
     if (process.env.NODE_ENV === 'development') {
@@ -224,6 +238,8 @@ export class PerformanceTracker {
    */
   static clear(): void {
     this.metrics = [];
+    this.metricsIndex = 0;
+    this.isBufferFull = false;
   }
 
   /**
@@ -239,182 +255,165 @@ export class PerformanceTracker {
   static exportMetrics(): string {
     return JSON.stringify(
       {
+        timestamp: new Date().toISOString(),
+        enabled: this.enabled,
         metrics: this.metrics,
         summary: this.getSummary(),
-        timestamp: new Date().toISOString(),
       },
       null,
       2
     );
   }
-}
 
-/**
- * Performance middleware decorator
- */
-export function withPerformanceTracking<
-  T extends (...args: any[]) => Promise<any>,
->(handler: T, toolName: string): T {
-  return (async (...args: any[]) => {
-    const startTime = PerformanceTracker.startOperation(toolName, {
-      params: args[0],
-    });
+  /**
+   * Enable or disable tracking
+   */
+  static setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
+
+  /**
+   * Check if tracking is enabled
+   */
+  static isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  /**
+   * Measure async function performance
+   */
+  static async measureAsync<T>(
+    toolName: string,
+    fn: () => Promise<T>,
+    metadata?: Record<string, any>
+  ): Promise<T> {
+    const startTime = this.startOperation(toolName, metadata);
 
     try {
-      const result = await handler(...args);
-      PerformanceTracker.endOperation(toolName, startTime, true);
+      const result = await fn();
+      this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
     } catch (error) {
-      PerformanceTracker.endOperation(
+      this.endOperation(
         toolName,
         startTime,
         false,
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
+        metadata
       );
       throw error;
     }
-  }) as T;
-}
+  }
 
-/**
- * Async performance wrapper with timeout
- */
-export function withTimeout<T extends (...args: any[]) => Promise<any>>(
-  handler: T,
-  timeoutMs: number,
-  toolName: string
-): T {
-  return (async (...args: any[]) => {
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(
-          new Error(`Operation ${toolName} timed out after ${timeoutMs}ms`)
-        );
-      }, timeoutMs);
-    });
+  /**
+   * Measure sync function performance
+   */
+  static measure<T>(
+    toolName: string,
+    fn: () => T,
+    metadata?: Record<string, any>
+  ): T {
+    const startTime = this.startOperation(toolName, metadata);
 
     try {
-      const result = await Promise.race([handler(...args), timeoutPromise]);
+      const result = fn();
+      this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
     } catch (error) {
-      if (error instanceof Error && error.message.includes('timed out')) {
-        console.error(`⏱️ Timeout: ${toolName} exceeded ${timeoutMs}ms limit`);
-      }
+      this.endOperation(
+        toolName,
+        startTime,
+        false,
+        error instanceof Error ? error.message : String(error),
+        metadata
+      );
       throw error;
     }
-  }) as T;
-}
-
-/**
- * Batch performance tracking for multiple operations
- */
-export class BatchPerformanceTracker {
-  private operations: Map<string, number> = new Map();
-  private batchStartTime: number;
-
-  constructor(private batchName: string) {
-    this.batchStartTime = performance.now();
   }
 
   /**
-   * Start tracking an operation within the batch
+   * Get slow operations above threshold
    */
-  startOperation(operationId: string): void {
-    this.operations.set(operationId, performance.now());
+  static getSlowOperations(threshold?: number): PerformanceMetrics[] {
+    const limit = threshold || 1000; // Default 1 second
+    return this.metrics.filter((m) => m.duration > limit);
   }
 
   /**
-   * End tracking an operation within the batch
+   * Get failed operations
    */
-  endOperation(operationId: string): number {
-    const startTime = this.operations.get(operationId);
-    if (!startTime) {
-      throw new Error(`Operation ${operationId} was not started`);
-    }
-
-    const duration = performance.now() - startTime;
-    this.operations.delete(operationId);
-    return duration;
+  static getFailedOperations(): PerformanceMetrics[] {
+    return this.metrics.filter((m) => !m.success);
   }
 
   /**
-   * Get batch summary
+   * Generate performance report
    */
-  getSummary(): {
-    batchName: string;
-    totalDuration: number;
-    pendingOperations: string[];
-  } {
-    const totalDuration = performance.now() - this.batchStartTime;
-    const pendingOperations = Array.from(this.operations.keys());
+  static generateReport(): string {
+    const summary = this.getSummary();
+    const slowOps = this.getSlowOperations();
+    const failedOps = this.getFailedOperations();
 
-    return {
-      batchName: this.batchName,
-      totalDuration,
-      pendingOperations,
-    };
+    return `
+Performance Report
+==================
+Total Operations: ${summary.totalOperations}
+Successful: ${summary.successfulOperations} (${((summary.successfulOperations / summary.totalOperations) * 100).toFixed(1)}%)
+Failed: ${summary.failedOperations} (${((summary.failedOperations / summary.totalOperations) * 100).toFixed(1)}%)
+
+Timing Statistics
+-----------------
+Average: ${summary.averageDuration.toFixed(2)}ms
+Min: ${summary.minDuration.toFixed(2)}ms
+Max: ${summary.maxDuration.toFixed(2)}ms
+P50: ${summary.p50Duration.toFixed(2)}ms
+P95: ${summary.p95Duration.toFixed(2)}ms
+P99: ${summary.p99Duration.toFixed(2)}ms
+
+Slow Operations: ${slowOps.length}
+Failed Operations: ${failedOps.length}
+    `.trim();
   }
 }
 
 /**
- * Rate limiting tracker for API calls
+ * Performance monitoring decorator
  */
-export class RateLimitTracker {
-  private static windowStart: number = Date.now();
-  private static callCount: number = 0;
-  private static windowSizeMs: number = 60000; // 1 minute window
-  private static maxCallsPerWindow: number = 100;
+export function trackPerformance(toolName?: string) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+    const name = toolName || `${target.constructor.name}.${propertyKey}`;
 
-  /**
-   * Check if we can make an API call
-   */
-  static canMakeCall(): boolean {
-    const now = Date.now();
+    descriptor.value = async function (...args: any[]) {
+      const startTime = PerformanceTracker.startOperation(name);
 
-    // Reset window if needed
-    if (now - this.windowStart > this.windowSizeMs) {
-      this.windowStart = now;
-      this.callCount = 0;
-    }
-
-    return this.callCount < this.maxCallsPerWindow;
-  }
-
-  /**
-   * Record an API call
-   */
-  static recordCall(): void {
-    this.callCount++;
-  }
-
-  /**
-   * Get current rate limit status
-   */
-  static getStatus(): {
-    callsRemaining: number;
-    windowResetTime: number;
-    isLimited: boolean;
-  } {
-    const now = Date.now();
-
-    // Reset window if needed
-    if (now - this.windowStart > this.windowSizeMs) {
-      this.windowStart = now;
-      this.callCount = 0;
-    }
-
-    return {
-      callsRemaining: Math.max(0, this.maxCallsPerWindow - this.callCount),
-      windowResetTime: this.windowStart + this.windowSizeMs,
-      isLimited: this.callCount >= this.maxCallsPerWindow,
+      try {
+        const result = await originalMethod.apply(this, args);
+        PerformanceTracker.endOperation(name, startTime, true);
+        return result;
+      } catch (error) {
+        PerformanceTracker.endOperation(
+          name,
+          startTime,
+          false,
+          error instanceof Error ? error.message : String(error)
+        );
+        throw error;
+      }
     };
-  }
 
-  /**
-   * Configure rate limits
-   */
-  static configure(maxCallsPerWindow: number, windowSizeMs: number): void {
-    this.maxCallsPerWindow = maxCallsPerWindow;
-    this.windowSizeMs = windowSizeMs;
-  }
+    return descriptor;
+  };
 }
+
+/**
+ * Export a singleton instance for convenience
+ */
+export const performanceTracker = PerformanceTracker;
+
+// Alias for backward compatibility
+export const PerformanceMonitor = PerformanceTracker;
