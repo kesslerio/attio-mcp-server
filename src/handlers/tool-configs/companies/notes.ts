@@ -28,9 +28,10 @@ export const notesToolConfigs = {
       return `Found ${notes.length} notes:\n${notes
         .map((note: any) => {
           // The AttioNote interface shows these are direct properties
-          const title = note.title || 'Untitled';
-          const content = note.content || '';
-          const timestamp = note.created_at || 'unknown';
+          // Check multiple possible field structures from the API (Issue #365)
+          const title = note.title || note.data?.title || note.values?.title || 'Untitled';
+          const content = note.content || note.data?.content || note.values?.content || note.text || note.body || '';
+          const timestamp = note.created_at || note.data?.created_at || note.values?.created_at || 'unknown';
 
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
