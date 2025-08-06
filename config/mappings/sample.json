@@ -1,45 +1,45 @@
 {
-  "version": "1.0",
-  "metadata": {
-    "generated": "2025-05-14T00:00:00Z",
-    "description": "Sample attribute mappings configuration - copy to user.json and customize"
-  },
-  "mappings": {
-    "attributes": {
-      "common": {
-        "// Common mappings apply to all object types": "",
-        "Name": "name",
-        "Website": "website"
-      },
-      "objects": {
-        "// Object-specific mappings take precedence over common mappings": "",
-        "companies": {
-          "B2B Segment": "type_persona",
-          "// Add your custom company attributes here": ""
-        },
-        "people": {
-          "First Name": "first_name",
-          "Last Name": "last_name",
-          "// Add your custom people attributes here": ""
-        }
-      },
-      "custom": {
-        "// Custom mappings for your specific workspace": "",
-        "My Custom Field": "custom_field_slug"
-      }
-    },
-    "objects": {
-      "// Mappings for object names": "",
-      "Companies": "companies",
-      "People": "people"
-    },
-    "lists": {
-      "// Mappings for list names": "",
-      "My Important List": "important_list_slug"
-    },
-    "relationships": {
-      "// Mappings for relationship types": "",
-      "Works At": "works_at"
-    }
-  }
+	"version": "1.0",
+	"metadata": {
+		"generated": "2025-05-14T00:00:00Z",
+		"description": "Sample attribute mappings configuration - copy to user.json and customize"
+	},
+	"mappings": {
+		"attributes": {
+			"common": {
+				"// Common mappings apply to all object types": "",
+				"Name": "name",
+				"Website": "website"
+			},
+			"objects": {
+				"// Object-specific mappings take precedence over common mappings": "",
+				"companies": {
+					"B2B Segment": "type_persona",
+					"// Add your custom company attributes here": ""
+				},
+				"people": {
+					"First Name": "first_name",
+					"Last Name": "last_name",
+					"// Add your custom people attributes here": ""
+				}
+			},
+			"custom": {
+				"// Custom mappings for your specific workspace": "",
+				"My Custom Field": "custom_field_slug"
+			}
+		},
+		"objects": {
+			"// Mappings for object names": "",
+			"Companies": "companies",
+			"People": "people"
+		},
+		"lists": {
+			"// Mappings for list names": "",
+			"My Important List": "important_list_slug"
+		},
+		"relationships": {
+			"// Mappings for relationship types": "",
+			"Works At": "works_at"
+		}
+	}
 }
