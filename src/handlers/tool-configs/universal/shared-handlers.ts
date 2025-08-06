@@ -29,6 +29,11 @@ import { ResourceMapper } from '../../../utils/resource-mapping.js';
 // Import people normalization utilities
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
 
+// Import performance tracking and ID validation
+import { enhancedPerformanceTracker } from '../../../middleware/performance-enhanced.js';
+import { validateRecordId, generateIdCacheKey } from '../../../utils/validation/id-validation.js';
+import { performance } from 'perf_hooks';
+
 // Import existing handlers by resource type
 import {
   searchCompanies,
@@ -169,79 +174,235 @@ async function getAttributesForRecord(resourceType: UniversalResourceType, recor
 }
 
 /**
- * Universal search handler - routes to appropriate resource-specific search
+ * Universal search handler with performance tracking
  */
 export async function handleUniversalSearch(params: UniversalSearchParams): Promise<AttioRecord[]> {
   const { resource_type, query, filters, limit, offset } = params;
   
-  switch (resource_type) {
-    case UniversalResourceType.COMPANIES:
-      if (filters && Object.keys(filters).length > 0) {
-        return advancedSearchCompanies(filters, limit, offset);
-      }
-      return searchCompanies(query || '');
-      
-    case UniversalResourceType.PEOPLE:
-      if (filters && Object.keys(filters).length > 0) {
-        const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
-        return paginatedResult.results;
-      }
-      // If no query provided, use listPeople instead of searchPeople
-      if (!query || query.trim().length === 0) {
-        return await listPeople(limit || 20);
-      }
-      return await searchPeople(query);
-      
-    case UniversalResourceType.RECORDS:
-      return listObjectRecords('records', { pageSize: limit, page: Math.floor((offset || 0) / (limit || 10)) + 1 });
-      
-    case UniversalResourceType.DEALS:
-      // Use POST query endpoint for deals since GET /objects/deals/records doesn't exist
-      return await queryDealRecords({ limit, offset });
-      
-    case UniversalResourceType.TASKS: {
-      const tasks = await listTasks();
-      // Convert AttioTask[] to AttioRecord[] using proper type conversion
-      return tasks.map(convertTaskToRecord);
+  // Start performance tracking
+  const perfId = enhancedPerformanceTracker.startOperation(
+    'search-records',
+    'search',
+    { 
+      resourceType: resource_type, 
+      hasQuery: !!query,
+      hasFilters: !!(filters && Object.keys(filters).length > 0),
+      limit,
+      offset 
     }
+  );
+  
+  try {
+    // Track validation timing
+    const validationStart = performance.now();
+    
+    // Validate limit parameter to prevent abuse
+    if (limit && (limit < 0 || !Number.isInteger(limit))) {
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid limit parameter', 400);
+      throw new Error('limit must be a positive integer');
+    }
+    
+    if (limit && limit > 100) {
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Limit exceeds maximum', 400);
+      throw new Error('limit must not exceed 100');
+    }
+    
+    if (offset && (offset < 0 || !Number.isInteger(offset))) {
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid offset parameter', 400);
+      throw new Error('offset must be a non-negative integer');
+    }
+    
+    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
+    
+    // Track API call timing
+    const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
+    let results: AttioRecord[];
+    
+    try {
+      switch (resource_type) {
+        case UniversalResourceType.COMPANIES:
+          if (filters && Object.keys(filters).length > 0) {
+            results = await advancedSearchCompanies(filters, limit, offset);
+          } else {
+            results = await searchCompanies(query || '');
+          }
+          break;
+          
+        case UniversalResourceType.PEOPLE:
+          if (filters && Object.keys(filters).length > 0) {
+            const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
+            results = paginatedResult.results;
+          } else if (!query || query.trim().length === 0) {
+            // If no query provided, use listPeople instead of searchPeople
+            results = await listPeople(limit || 20);
+          } else {
+            results = await searchPeople(query);
+          }
+          break;
+          
+        case UniversalResourceType.RECORDS:
+          results = await listObjectRecords('records', { 
+            pageSize: limit, 
+            page: Math.floor((offset || 0) / (limit || 10)) + 1 
+          });
+          break;
+          
+        case UniversalResourceType.DEALS:
+          // Use POST query endpoint for deals since GET /objects/deals/records doesn't exist
+          results = await queryDealRecords({ limit, offset });
+          break;
+          
+        case UniversalResourceType.TASKS: {
+          const tasks = await listTasks();
+          // Convert AttioTask[] to AttioRecord[] using proper type conversion
+          results = tasks.map(convertTaskToRecord);
+          break;
+        }
+          
+        default:
+          throw new Error(`Unsupported resource type for search: ${resource_type}`);
+      }
       
-    default:
-      throw new Error(`Unsupported resource type for search: ${resource_type}`);
+      enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
+      enhancedPerformanceTracker.endOperation(
+        perfId, 
+        true, 
+        undefined, 
+        200, 
+        { recordCount: results.length }
+      );
+      
+      return results;
+      
+    } catch (apiError: any) {
+      enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
+      
+      const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      enhancedPerformanceTracker.endOperation(
+        perfId,
+        false,
+        apiError.message || 'Search failed',
+        statusCode
+      );
+      throw apiError;
+    }
+    
+  } catch (error) {
+    // Error already handled and tracked
+    throw error;
   }
 }
 
 /**
- * Universal get record details handler
+ * Universal get record details handler with performance optimization
  */
 export async function handleUniversalGetDetails(params: UniversalRecordDetailsParams): Promise<AttioRecord> {
   const { resource_type, record_id } = params;
   
-  switch (resource_type) {
-    case UniversalResourceType.COMPANIES:
-      return getCompanyDetails(record_id);
+  // Start performance tracking
+  const perfId = enhancedPerformanceTracker.startOperation(
+    'get-record-details',
+    'get',
+    { resourceType: resource_type, recordId: record_id }
+  );
+  
+  try {
+    // Early ID validation to prevent unnecessary API calls
+    const validationStart = performance.now();
+    const idValidation = validateRecordId(record_id, resource_type);
+    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
+    
+    if (!idValidation.isValid) {
+      // Check cache for known 404s
+      const cacheKey = generateIdCacheKey(resource_type, record_id);
+      const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
       
-    case UniversalResourceType.PEOPLE:
-      return getPersonDetails(record_id);
-      
-    case UniversalResourceType.RECORDS:
-      return getObjectRecord('records', record_id);
-      
-    case UniversalResourceType.DEALS:
-      return getObjectRecord('deals', record_id);
-      
-    case UniversalResourceType.TASKS: {
-      // Tasks don't have a direct get details function, so we'll use list with filter
-      const tasks = await listTasks();
-      const task = tasks.find((t: any) => t.id?.record_id === record_id);
-      if (!task) {
-        throw new Error(`Task not found with ID: ${record_id}`);
+      if (cached404) {
+        enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
+        throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
       }
-      // Convert AttioTask to AttioRecord using proper type conversion
-      return convertTaskToRecord(task);
-    }
       
-    default:
-      throw new Error(`Unsupported resource type for get details: ${resource_type}`);
+      // Cache this invalid ID for future requests
+      enhancedPerformanceTracker.cache404Response(cacheKey, { error: idValidation.message }, 60000);
+      enhancedPerformanceTracker.endOperation(perfId, false, idValidation.message, 400);
+      throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
+    }
+    
+    // Check 404 cache for valid IDs too
+    const cacheKey = generateIdCacheKey(resource_type, record_id);
+    const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
+    
+    if (cached404) {
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
+      throw new Error(`Record not found (cached): ${record_id}`);
+    }
+    
+    // Track API call timing
+    const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
+    let result: AttioRecord;
+    
+    try {
+      switch (resource_type) {
+        case UniversalResourceType.COMPANIES:
+          result = await getCompanyDetails(record_id);
+          break;
+          
+        case UniversalResourceType.PEOPLE:
+          result = await getPersonDetails(record_id);
+          break;
+          
+        case UniversalResourceType.RECORDS:
+          result = await getObjectRecord('records', record_id);
+          break;
+          
+        case UniversalResourceType.DEALS:
+          result = await getObjectRecord('deals', record_id);
+          break;
+          
+        case UniversalResourceType.TASKS: {
+          // Tasks don't have a direct get details function, so we'll use list with filter
+          const tasks = await listTasks();
+          const task = tasks.find((t: any) => t.id?.record_id === record_id);
+          if (!task) {
+            // Cache 404 for tasks
+            enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
+            throw new Error(`Task not found with ID: ${record_id}`);
+          }
+          // Convert AttioTask to AttioRecord using proper type conversion
+          result = convertTaskToRecord(task);
+          break;
+        }
+          
+        default:
+          throw new Error(`Unsupported resource type for get details: ${resource_type}`);
+      }
+      
+      enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
+      enhancedPerformanceTracker.endOperation(perfId, true, undefined, 200);
+      return result;
+      
+    } catch (apiError: any) {
+      enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
+      
+      // Check if this is a 404 error
+      const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      if (statusCode === 404 || apiError.message?.includes('not found')) {
+        // Cache 404 responses for 60 seconds
+        enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Not found' }, 60000);
+      }
+      
+      enhancedPerformanceTracker.endOperation(
+        perfId,
+        false,
+        apiError.message || 'Unknown error',
+        statusCode
+      );
+      throw apiError;
+    }
+    
+  } catch (error) {
+    // Error already handled and tracked
+    throw error;
   }
 }
 
