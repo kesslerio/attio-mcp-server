@@ -23,6 +23,12 @@ import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attr
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
+// Import resource mapping utilities
+import { ResourceMapper } from '../../../utils/resource-mapping.js';
+
+// Import people normalization utilities
+import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
+
 // Import existing handlers by resource type
 import {
   searchCompanies,
@@ -289,8 +295,11 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
     case UniversalResourceType.PEOPLE: {
       try {
+        // Normalize people data first (handle name string/object, email singular/array)
+        const normalizedData = PeopleDataNormalizer.normalizePeopleData(record_data);
+        
         // Apply format conversions for common mistakes
-        const correctedData = convertAttributeFormats('people', record_data);
+        const correctedData = convertAttributeFormats('people', normalizedData);
         return await createPerson(correctedData);
       } catch (error: any) {
         // Enhance error messages with format help
