@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed notes content field structure mismatch (#365) - Notes now correctly display content regardless of API response structure variations
+  - Added multi-field checking for content, title, and timestamp fields  
+  - Added debug logging for development troubleshooting
+  - Handles variations: `note.content`, `note.data?.content`, `note.values?.content`, `note.text`, `note.body`
+  - Affects both company and person notes formatters
+
 ## [0.2.0] - 2025-08-04
 
 This is a major release featuring the Universal Tool Consolidation, which dramatically simplifies the MCP interface by replacing 50+ resource-specific tools with a unified set of universal tools that work across all resource types.
