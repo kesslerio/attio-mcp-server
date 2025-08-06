@@ -90,7 +90,7 @@ jobs:
       
       - name: Upload performance report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: performance-report-${{ matrix.node-version }}
           path: performance-report.md
@@ -199,7 +199,7 @@ jobs:
           echo '```' >> comparison.md
       
       - name: Upload comparison report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: performance-comparison
           path: comparison.md
