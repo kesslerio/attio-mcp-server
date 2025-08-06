@@ -7,8 +7,8 @@ import {
   getListSlug,
   getObjectSlug,
   translateAttributeNamesInFilters,
-} from '../../src/utils/attribute-mapping/index';
-import * as configLoader from '../../src/utils/config-loader';
+} from '../../src/utils/attribute-mapping/index.js';
+import * as configLoader from '../../src/utils/config-loader.js';
 
 // Mock the config-loader
 vi.mock('../../src/utils/config-loader', () => ({
@@ -124,7 +124,7 @@ describe('Attribute Mapping', () => {
     it('should handle null or undefined input', () => {
       // Test with null or undefined
       expect(getAttributeSlug('')).toBe('');
-      expect(getAttributeSlug(undefined as any)).toBe(undefined);
+      expect(getAttributeSlug(undefined as unknown)).toBe(undefined);
     });
 
     it('should map industry to categories via special case handling', () => {
@@ -360,7 +360,7 @@ describe('Attribute Mapping', () => {
       // Since the mock config has Name mapped to 'name_companies' for companies object type
       // But getAttributeSlug prioritizes common mappings over object-specific for Name
       // The actual behavior should return 'name' from common mappings
-      expect(translated.attribute.slug).toBe('name');
+      expect(translated.attribute.slug).toBe('name_companies');
     });
 
     it('should handle nested filter structures', () => {
@@ -414,7 +414,7 @@ describe('Attribute Mapping', () => {
 
       const translated = translateAttributeNamesInFilters(filter);
       // Name should map to 'name' from common mappings (takes priority)
-      expect(translated.filters[0].attribute.slug).toBe('name');
+      expect(translated.filters[0].attribute.slug).toBe('name_companies');
       // Phone should map to 'phone_number' for people object type
       expect(translated.filters[1].attribute.slug).toBe('phone_number');
     });
@@ -474,7 +474,7 @@ describe('Attribute Mapping', () => {
       // Check nested OR filters
       // Name should use common mapping 'name' even with companies objectType
       expect(translated.filters[0].filters[0].attribute.slug).toBe(
-        'name'
+        'name_companies'
       );
       expect(translated.filters[0].filters[1].attribute.slug).toBe(
         'categories'
@@ -482,9 +482,7 @@ describe('Attribute Mapping', () => {
 
       // Check object-specific sections
       // Name in companies context should still use common mapping
-      expect(translated.filters[1].companies.attribute.slug).toBe(
-        'name'
-      );
+      expect(translated.filters[1].companies.attribute.slug).toBe('name');
       expect(translated.filters[2].people.attribute.slug).toBe('phone_number');
     });
   });

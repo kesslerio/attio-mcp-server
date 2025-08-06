@@ -3,18 +3,17 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAttioClient } from '../../src/api/attio-client';
+import { getAttioClient } from '../../src/api/attio-client.js';
 import {
   clearAttributeCache,
   detectFieldType,
   getAttributeTypeInfo,
   getFieldValidationRules,
   getObjectAttributeMetadata,
-} from '../../src/api/attribute-types';
-import { ResourceType } from '../../src/types/attio';
+} from '../../src/api/attribute-types.js';
 
 // Mock the Attio client
-vi.mock('../../src/api/attio-client');
+vi.mock('../../src/api/attio-client.js');
 
 describe('Attribute Type Detection', () => {
   const mockApi = {

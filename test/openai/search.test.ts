@@ -31,10 +31,12 @@ describe('OpenAI Search Tool', () => {
 
     // Mock successful responses with correct structure
     mockExecuteToolRequest.mockResolvedValue({
-      content: [{
-        type: 'text',
-        text: 'Found 1 companies:\n1. Test Company (ID: test-123)',
-      }],
+      content: [
+        {
+          type: 'text',
+          text: 'Found 1 companies:\n1. Test Company (ID: test-123)',
+        },
+      ],
     });
 
     mockTransformToSearchResult.mockReturnValue({
@@ -71,10 +73,12 @@ describe('OpenAI Search Tool', () => {
     // Mock one success and one failure
     mockExecuteToolRequest
       .mockResolvedValueOnce({
-        content: [{
-          type: 'text',
-          text: 'Found 1 companies:\n1. Test Company (ID: test-123)',
-        }],
+        content: [
+          {
+            type: 'text',
+            text: 'Found 1 companies:\n1. Test Company (ID: test-123)',
+          },
+        ],
       })
       .mockRejectedValueOnce(new Error('API Error'))
       .mockRejectedValueOnce(new Error('API Error'))
@@ -103,10 +107,12 @@ describe('OpenAI Search Tool', () => {
     );
 
     mockExecuteToolRequest.mockResolvedValue({
-      content: [{
-        type: 'text',
-        text: 'Found 3 records:\n1. Record 1 (ID: 1)\n2. Record 2 (ID: 2)\n3. Record 3 (ID: 3)',
-      }],
+      content: [
+        {
+          type: 'text',
+          text: 'Found 3 records:\n1. Record 1 (ID: 1)\n2. Record 2 (ID: 2)\n3. Record 3 (ID: 3)',
+        },
+      ],
     });
 
     // Mock different results with varying relevance

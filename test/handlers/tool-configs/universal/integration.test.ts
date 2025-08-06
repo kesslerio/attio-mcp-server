@@ -32,7 +32,10 @@ describe("Universal Tools Integration Tests", () => {
 
 	beforeAll(async () => {
 		// Initialize the API client with real credentials first
-		const apiKey = process.env.ATTIO_API_KEY!;
+		const apiKey = process.env.ATTIO_API_KEY;
+		if (!apiKey) {
+			throw new Error("ATTIO_API_KEY is not set");
+		}
 		console.log("Initializing API client for integration tests...");
 		initializeAttioClient(apiKey);
 
@@ -214,6 +217,7 @@ describe("Universal Tools Integration Tests", () => {
 				expect(result.length).toBeGreaterThan(0);
 
 				const foundCompany = result.find(
+					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 					(c: any) => c.values.name?.[0]?.value === testCompanyName,
 				);
 				expect(foundCompany).toBeDefined();

@@ -7,11 +7,11 @@
  * if ATTIO_API_KEY is not provided.
  */
 
-import { initializeAttioClient } from '../../src/api/attio-client';
-import { advancedSearchObject } from '../../src/api/operations/search';
-import { FilterValidationError } from '../../src/errors/api-errors';
-import { advancedSearchCompanies } from '../../src/objects/companies/index';
-import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { advancedSearchObject } from '../../src/api/operations/search.js';
+import { FilterValidationError } from '../../src/errors/api-errors.js';
+import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
+import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
 
 // Skip tests if no API key or if explicitly disabled
 const SKIP_TESTS =

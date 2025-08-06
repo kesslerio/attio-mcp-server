@@ -6,14 +6,14 @@ import {
   type ActivityFilter,
   type DateRange,
   InteractionType,
-} from '../../src/types/attio';
+} from '../../src/types/attio.js';
 import {
   createActivityFilter,
   createCreatedDateFilter,
   createDateRangeFilter,
   createLastInteractionFilter,
   createModifiedDateFilter,
-} from '../../src/utils/record-utils';
+} from '../../src/utils/record-utils.js';
 
 describe('Activity and Historical filtering', () => {
   describe('createDateRangeFilter', () => {

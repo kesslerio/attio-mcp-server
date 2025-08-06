@@ -4,9 +4,9 @@
 import {
   getAttributeSlug,
   invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/attribute-mappers';
-import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
-import * as configLoader from '../../src/utils/config-loader';
+} from '../../src/utils/attribute-mapping/attribute-mappers.js';
+import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils.js';
+import * as configLoader from '../../src/utils/config-loader.js';
 
 // Mock the config loader to test with controlled configurations
 vi.mock('../../src/utils/config-loader', () => ({

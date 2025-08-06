@@ -144,7 +144,7 @@ describe('OpenAI Fetch Tool', () => {
 
     // Mock the tool request to reject
     mockExecuteToolRequest.mockRejectedValue(new Error('Not found'));
-    
+
     // Mock the fallback direct fetch to also fail
     mockTransformToFetchResult.mockReturnValue({
       id: 'person-456',
