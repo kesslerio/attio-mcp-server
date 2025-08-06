@@ -3,11 +3,25 @@
  */
 
 /**
+ * Name object format for Attio personal-name attribute type
+ * When using object syntax, all three properties must be provided
+ */
+export interface PersonNameObject {
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
+
+/**
  * Interface for attributes when creating or updating a person
  */
 export interface PersonAttributes {
-  /** Person's full name */
-  name?: string;
+  /** 
+   * Person's name - can be either:
+   * - A string (e.g., "John Smith" or "Smith, John" for last, first format)
+   * - An object with first_name, last_name, and full_name properties
+   */
+  name?: string | PersonNameObject;
 
   /** Email addresses (array of strings) */
   email_addresses?: string[];
