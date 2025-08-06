@@ -63,7 +63,10 @@ export async function getObjectAttributeMetadata(
 ): Promise<Map<string, AttioAttributeMetadata>> {
   // Check cache first
   if (attributeCache.has(objectSlug)) {
-    return attributeCache.get(objectSlug)!;
+    const cached = attributeCache.get(objectSlug);
+    if (cached) {
+      return cached;
+    }
   }
 
   try {
@@ -73,11 +76,11 @@ export async function getObjectAttributeMetadata(
 
     // Build metadata map
     const metadataMap = new Map<string, AttioAttributeMetadata>();
-    attributes.forEach((attr) => {
+    for (const attr of attributes) {
       if (attr.api_slug) {
         metadataMap.set(attr.api_slug, attr);
       }
-    });
+    }
 
     // Cache the result
     attributeCache.set(objectSlug, metadataMap);

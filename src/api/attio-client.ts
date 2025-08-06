@@ -66,7 +66,10 @@ export function getAttioClient(): AxiosInstance {
         '[Attio API] API client not initialized, auto-initializing from environment variable'
       );
       initializeAttioClient(apiKey);
-      return apiInstance!;
+      if (!apiInstance) {
+        throw new Error('Failed to initialize Attio API client');
+      }
+      return apiInstance;
     }
     throw new Error(
       'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
