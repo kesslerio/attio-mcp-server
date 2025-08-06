@@ -4,17 +4,18 @@
  */
 import { ListEntryFilters } from '../api/operations/index.js';
 import {
-  ResourceType,
   FilterConditionType,
   RelationshipType,
+  ResourceType,
 } from '../types/attio.js';
 
 // Re-export RelationshipType for convenience
 export { RelationshipType };
+
 import {
   FilterValidationError,
-  RelationshipFilterError,
   ListRelationshipError,
+  RelationshipFilterError,
 } from '../errors/api-errors.js';
 import { createEqualsFilter } from './filters/index.js';
 import { isValidListId } from './validation.js';

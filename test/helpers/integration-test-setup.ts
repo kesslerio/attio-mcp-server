@@ -5,7 +5,7 @@
  * that require real API access with proper error handling and cleanup.
  */
 
-import { beforeAll, afterAll, vi } from 'vitest';
+import { afterAll, beforeAll, vi } from 'vitest';
 import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 /**

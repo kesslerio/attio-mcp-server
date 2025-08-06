@@ -16,7 +16,7 @@ export interface PersonNameObject {
  * Interface for attributes when creating or updating a person
  */
 export interface PersonAttributes {
-  /** 
+  /**
    * Person's name - can be either:
    * - A string (e.g., "John Smith" or "Smith, John" for last, first format)
    * - An object with first_name, last_name, and full_name properties

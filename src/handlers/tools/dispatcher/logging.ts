@@ -2,19 +2,17 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import {
-  ToolErrorContext,
-} from '../../../types/tool-types.js';
-import {
-  error,
-  warn,
-  createScopedLogger,
-  OperationType,
-  setLogContext,
-  generateCorrelationId,
-  PerformanceTimer,
-} from '../../../utils/logger.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { ToolErrorContext } from '../../../types/tool-types.js';
+import {
+  createScopedLogger,
+  error,
+  generateCorrelationId,
+  OperationType,
+  PerformanceTimer,
+  setLogContext,
+  warn,
+} from '../../../utils/logger.js';
 
 /**
  * Initialize tool execution context with correlation ID

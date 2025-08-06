@@ -482,7 +482,9 @@ describe('Attribute Mapping', () => {
 
       // Check object-specific sections
       // Name in companies context uses object-specific mapping
-      expect(translated.filters[1].companies.attribute.slug).toBe('name_companies');
+      expect(translated.filters[1].companies.attribute.slug).toBe(
+        'name_companies'
+      );
       expect(translated.filters[2].people.attribute.slug).toBe('phone_number');
     });
   });

@@ -128,7 +128,7 @@ export function registerToolHandlers(server: Server): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     // Dynamically collect all available tool definitions
     const allTools = [];
-    
+
     for (const [_key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
       if (toolDefs) {
         if (Array.isArray(toolDefs)) {
@@ -140,7 +140,7 @@ export function registerToolHandlers(server: Server): void {
         }
       }
     }
-    
+
     return {
       tools: allTools,
     };

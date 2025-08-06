@@ -1,16 +1,17 @@
 /**
  * Records-related tool configurations
  */
-import { AttioRecord } from '../../../types/attio.js';
+
 import {
-  createObjectRecord,
-  getObjectRecord,
-  updateObjectRecord,
-  deleteObjectRecord,
-  listObjectRecords,
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
+  createObjectRecord,
+  deleteObjectRecord,
+  getObjectRecord,
+  listObjectRecords,
+  updateObjectRecord,
 } from '../../../objects/records/index.js';
+import { AttioRecord } from '../../../types/attio.js';
 import { ToolConfig } from '../../tool-types.js';
 
 // Define new tool type interfaces specific to records
@@ -267,7 +268,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'list-records',
-    description: 'List CRM records with filtering options (companies, people, etc.)',
+    description:
+      'List CRM records with filtering options (companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -313,7 +315,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-create-records',
-    description: 'Create multiple CRM records in a single batch operation (bulk import companies, people, etc.)',
+    description:
+      'Create multiple CRM records in a single batch operation (bulk import companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -338,7 +341,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-update-records',
-    description: 'Update multiple CRM records in a single batch operation (bulk update companies, people, etc.)',
+    description:
+      'Update multiple CRM records in a single batch operation (bulk update companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {

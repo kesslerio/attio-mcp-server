@@ -1,6 +1,6 @@
 /**
  * MCP-compliant schemas for universal tools
- * 
+ *
  * These schemas follow MCP protocol requirements:
  * - No oneOf/allOf/anyOf at top level
  * - Enum-based operation discrimination
@@ -8,12 +8,12 @@
  */
 
 import {
-  UniversalResourceType,
-  DetailedInfoType,
   BatchOperationType,
-  TimeframeType,
   ContentSearchType,
-  RelationshipType
+  DetailedInfoType,
+  RelationshipType,
+  TimeframeType,
+  UniversalResourceType,
 } from './types.js';
 
 /**
@@ -21,8 +21,8 @@ import {
  */
 export enum ErrorType {
   USER_ERROR = 'USER_ERROR',
-  SYSTEM_ERROR = 'SYSTEM_ERROR', 
-  API_ERROR = 'API_ERROR'
+  SYSTEM_ERROR = 'SYSTEM_ERROR',
+  API_ERROR = 'API_ERROR',
 }
 
 /**
@@ -37,7 +37,7 @@ export enum HttpStatusCode {
   UNPROCESSABLE_ENTITY = 422,
   INTERNAL_SERVER_ERROR = 500,
   BAD_GATEWAY = 502,
-  SERVICE_UNAVAILABLE = 503
+  SERVICE_UNAVAILABLE = 503,
 }
 
 /**
@@ -68,9 +68,10 @@ export class UniversalValidationError extends Error {
     this.example = options.example;
     this.field = options.field;
     this.cause = options.cause;
-    
+
     // Map error types to appropriate HTTP status codes
-    this.httpStatusCode = options.httpStatusCode ?? this.getDefaultHttpStatus(errorType);
+    this.httpStatusCode =
+      options.httpStatusCode ?? this.getDefaultHttpStatus(errorType);
   }
 
   /**
@@ -101,8 +102,8 @@ export class UniversalValidationError extends Error {
         suggestion: this.suggestion,
         example: this.example,
         httpStatusCode: this.httpStatusCode,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 }
@@ -110,7 +111,13 @@ export class UniversalValidationError extends Error {
 /**
  * Supported sanitized value types
  */
-export type SanitizedValue = string | number | boolean | null | SanitizedObject | SanitizedValue[];
+export type SanitizedValue =
+  | string
+  | number
+  | boolean
+  | null
+  | SanitizedObject
+  | SanitizedValue[];
 
 /**
  * Interface for sanitized objects with proper typing
@@ -135,7 +142,7 @@ export class InputSanitizer {
     if (typeof input !== 'string') {
       return String(input);
     }
-    
+
     return input
       .trim()
       .replace(/<[^>]*>/g, '') // Remove HTML tags completely
@@ -159,7 +166,7 @@ export class InputSanitizer {
   }
 
   /**
-   * Sanitize object recursively 
+   * Sanitize object recursively
    */
   /**
    * Sanitize object recursively with proper type safety
@@ -169,24 +176,28 @@ export class InputSanitizer {
   static sanitizeObject(obj: unknown): SanitizedValue {
     if (obj === null) return null;
     if (obj === undefined) return null;
-    
+
     if (typeof obj === 'string') {
       return this.sanitizeString(obj);
     }
-    
+
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeObject(item));
+      return obj.map((item) => this.sanitizeObject(item));
     }
-    
+
     if (typeof obj === 'number' || typeof obj === 'boolean') {
       return obj;
     }
-    
+
     if (typeof obj === 'object') {
       const sanitized: SanitizedObject = {};
       for (const [key, value] of Object.entries(obj)) {
         // Sanitize email fields specifically
-        if (key.toLowerCase().includes('email') && value !== null && value !== undefined) {
+        if (
+          key.toLowerCase().includes('email') &&
+          value !== null &&
+          value !== undefined
+        ) {
           sanitized[key] = this.normalizeEmail(value);
         } else {
           sanitized[key] = this.sanitizeObject(value);
@@ -194,7 +205,7 @@ export class InputSanitizer {
       }
       return sanitized;
     }
-    
+
     // For any other types, convert to string and sanitize
     return this.sanitizeString(obj);
   }
@@ -206,7 +217,8 @@ export class InputSanitizer {
 const resourceTypeProperty = {
   type: 'string' as const,
   enum: Object.values(UniversalResourceType),
-  description: 'Type of resource to operate on (companies, people, records, tasks)'
+  description:
+    'Type of resource to operate on (companies, people, records, tasks)',
 };
 
 /**
@@ -218,14 +230,14 @@ const paginationProperties = {
     minimum: 1,
     maximum: 100,
     default: 10,
-    description: 'Maximum number of results to return'
+    description: 'Maximum number of results to return',
   },
   offset: {
     type: 'number' as const,
     minimum: 0,
     default: 0,
-    description: 'Number of results to skip for pagination'
-  }
+    description: 'Number of results to skip for pagination',
+  },
 };
 
 /**
@@ -237,17 +249,17 @@ export const searchRecordsSchema = {
     resource_type: resourceTypeProperty,
     query: {
       type: 'string' as const,
-      description: 'Search query string'
+      description: 'Search query string',
     },
     filters: {
       type: 'object' as const,
       description: 'Advanced filter conditions',
-      additionalProperties: true
+      additionalProperties: true,
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -259,16 +271,16 @@ export const getRecordDetailsSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to retrieve'
+      description: 'Unique identifier of the record to retrieve',
     },
     fields: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific fields to include in the response'
-    }
+      description: 'Specific fields to include in the response',
+    },
   },
   required: ['resource_type' as const, 'record_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -281,16 +293,16 @@ export const createRecordSchema = {
     record_data: {
       type: 'object' as const,
       description: 'Data for creating the new record',
-      additionalProperties: true
+      additionalProperties: true,
     },
     return_details: {
       type: 'boolean' as const,
       default: true,
-      description: 'Whether to return full record details after creation'
-    }
+      description: 'Whether to return full record details after creation',
+    },
   },
   required: ['resource_type' as const, 'record_data' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -302,21 +314,25 @@ export const updateRecordSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to update'
+      description: 'Unique identifier of the record to update',
     },
     record_data: {
       type: 'object' as const,
       description: 'Updated data for the record',
-      additionalProperties: true
+      additionalProperties: true,
     },
     return_details: {
       type: 'boolean' as const,
       default: true,
-      description: 'Whether to return full record details after update'
-    }
+      description: 'Whether to return full record details after update',
+    },
   },
-  required: ['resource_type' as const, 'record_id' as const, 'record_data' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'record_id' as const,
+    'record_data' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -328,11 +344,11 @@ export const deleteRecordSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record to delete'
-    }
+      description: 'Unique identifier of the record to delete',
+    },
   },
   required: ['resource_type' as const, 'record_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -344,21 +360,23 @@ export const getAttributesSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Record ID to get attributes for (optional for schema discovery)'
+      description:
+        'Record ID to get attributes for (optional for schema discovery)',
     },
     categories: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Categories of attributes to retrieve (basic, business, contact, social, custom)'
+      description:
+        'Categories of attributes to retrieve (basic, business, contact, social, custom)',
     },
     fields: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific attribute field names to retrieve'
-    }
+      description: 'Specific attribute field names to retrieve',
+    },
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -367,10 +385,10 @@ export const getAttributesSchema = {
 export const discoverAttributesSchema = {
   type: 'object' as const,
   properties: {
-    resource_type: resourceTypeProperty
+    resource_type: resourceTypeProperty,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -382,16 +400,21 @@ export const getDetailedInfoSchema = {
     resource_type: resourceTypeProperty,
     record_id: {
       type: 'string' as const,
-      description: 'Unique identifier of the record'
+      description: 'Unique identifier of the record',
     },
     info_type: {
       type: 'string' as const,
       enum: Object.values(DetailedInfoType),
-      description: 'Type of detailed information to retrieve (contact, business, social, basic, custom)'
-    }
+      description:
+        'Type of detailed information to retrieve (contact, business, social, basic, custom)',
+    },
   },
-  required: ['resource_type' as const, 'record_id' as const, 'info_type' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'record_id' as const,
+    'info_type' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -403,27 +426,27 @@ export const advancedSearchSchema = {
     resource_type: resourceTypeProperty,
     query: {
       type: 'string' as const,
-      description: 'Search query string'
+      description: 'Search query string',
     },
     filters: {
       type: 'object' as const,
       description: 'Complex filter conditions',
-      additionalProperties: true
+      additionalProperties: true,
     },
     sort_by: {
       type: 'string' as const,
-      description: 'Field to sort results by'
+      description: 'Field to sort results by',
     },
     sort_order: {
       type: 'string' as const,
       enum: ['asc', 'desc'],
       default: 'asc',
-      description: 'Sort order (ascending or descending)'
+      description: 'Sort order (ascending or descending)',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -435,21 +458,22 @@ export const searchByRelationshipSchema = {
     relationship_type: {
       type: 'string' as const,
       enum: Object.values(RelationshipType),
-      description: 'Type of relationship to search (company_to_people, people_to_company, etc.)'
+      description:
+        'Type of relationship to search (company_to_people, people_to_company, etc.)',
     },
     source_id: {
       type: 'string' as const,
-      description: 'ID of the source record for the relationship'
+      description: 'ID of the source record for the relationship',
     },
     target_resource_type: {
       type: 'string' as const,
       enum: Object.values(UniversalResourceType),
-      description: 'Target resource type for the relationship'
+      description: 'Target resource type for the relationship',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['relationship_type' as const, 'source_id' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -462,16 +486,20 @@ export const searchByContentSchema = {
     content_type: {
       type: 'string' as const,
       enum: Object.values(ContentSearchType),
-      description: 'Type of content to search (notes, activity, interactions)'
+      description: 'Type of content to search (notes, activity, interactions)',
     },
     search_query: {
       type: 'string' as const,
-      description: 'Query to search within the content'
+      description: 'Query to search within the content',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
-  required: ['resource_type' as const, 'content_type' as const, 'search_query' as const],
-  additionalProperties: false
+  required: [
+    'resource_type' as const,
+    'content_type' as const,
+    'search_query' as const,
+  ],
+  additionalProperties: false,
 };
 
 /**
@@ -484,22 +512,23 @@ export const searchByTimeframeSchema = {
     timeframe_type: {
       type: 'string' as const,
       enum: Object.values(TimeframeType),
-      description: 'Type of timeframe to filter by (created, modified, last_interaction)'
+      description:
+        'Type of timeframe to filter by (created, modified, last_interaction)',
     },
     start_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'Start date for the timeframe filter (ISO 8601 date)'
+      description: 'Start date for the timeframe filter (ISO 8601 date)',
     },
     end_date: {
       type: 'string' as const,
       format: 'date',
-      description: 'End date for the timeframe filter (ISO 8601 date)'
+      description: 'End date for the timeframe filter (ISO 8601 date)',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const, 'timeframe_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -512,25 +541,26 @@ export const batchOperationsSchema = {
     operation_type: {
       type: 'string' as const,
       enum: Object.values(BatchOperationType),
-      description: 'Type of batch operation to perform (create, update, delete, search, get)'
+      description:
+        'Type of batch operation to perform (create, update, delete, search, get)',
     },
     records: {
       type: 'array' as const,
       items: {
         type: 'object' as const,
-        additionalProperties: true
+        additionalProperties: true,
       },
-      description: 'Array of record data for create/update operations'
+      description: 'Array of record data for create/update operations',
     },
     record_ids: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Array of record IDs for delete/get operations'
+      description: 'Array of record IDs for delete/get operations',
     },
-    ...paginationProperties
+    ...paginationProperties,
   },
   required: ['resource_type' as const, 'operation_type' as const],
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -551,14 +581,18 @@ export class CrossResourceValidator {
     };
   }> {
     // Basic format validation
-    if (!companyId || typeof companyId !== 'string' || companyId.trim().length === 0) {
+    if (
+      !companyId ||
+      typeof companyId !== 'string' ||
+      companyId.trim().length === 0
+    ) {
       return {
         exists: false,
         error: {
           type: 'invalid_format',
           message: 'Company ID must be a non-empty string',
-          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
-        }
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+        },
       };
     }
 
@@ -575,18 +609,18 @@ export class CrossResourceValidator {
           error: {
             type: 'not_found',
             message: `Company with ID '${companyId}' does not exist`,
-            httpStatusCode: HttpStatusCode.NOT_FOUND
-          }
+            httpStatusCode: HttpStatusCode.NOT_FOUND,
+          },
         };
       }
-      
+
       return {
         exists: false,
         error: {
           type: 'api_error',
           message: `Failed to validate company existence: ${error?.message || 'Unknown API error'}`,
-          httpStatusCode: HttpStatusCode.BAD_GATEWAY
-        }
+          httpStatusCode: HttpStatusCode.BAD_GATEWAY,
+        },
       };
     }
   }
@@ -594,51 +628,63 @@ export class CrossResourceValidator {
   /**
    * Validate record relationships based on resource type and data
    */
-  static async validateRecordRelationships(resourceType: UniversalResourceType, recordData: any): Promise<void> {
+  static async validateRecordRelationships(
+    resourceType: UniversalResourceType,
+    recordData: any
+  ): Promise<void> {
     if (!recordData || typeof recordData !== 'object') return;
 
     switch (resourceType) {
-      case UniversalResourceType.PEOPLE: {
-        // Check if company_id is provided and validate it exists
-        const companyId = recordData.company_id || recordData.company?.id || recordData.company;
-        if (companyId) {
-          const companyIdString = String(companyId);
-          const validationResult = await this.validateCompanyExists(companyIdString);
-          if (!validationResult.exists) {
-            const error = validationResult.error!;
-            throw new UniversalValidationError(
-              error.message,
-              error.type === 'api_error' ? ErrorType.API_ERROR : ErrorType.USER_ERROR,
-              {
-                field: 'company_id',
-                suggestion: error.type === 'not_found' 
-                  ? 'Verify the company ID exists, or create the company first'
-                  : 'Check your API connection and try again',
-                example: error.type === 'not_found' 
-                  ? `Try searching for companies first: search-records with resource_type: 'companies'`
-                  : undefined,
-                httpStatusCode: error.httpStatusCode
-              }
-            );
+      case UniversalResourceType.PEOPLE:
+        {
+          // Check if company_id is provided and validate it exists
+          const companyId =
+            recordData.company_id ||
+            recordData.company?.id ||
+            recordData.company;
+          if (companyId) {
+            const companyIdString = String(companyId);
+            const validationResult =
+              await this.validateCompanyExists(companyIdString);
+            if (!validationResult.exists) {
+              const error = validationResult.error!;
+              throw new UniversalValidationError(
+                error.message,
+                error.type === 'api_error'
+                  ? ErrorType.API_ERROR
+                  : ErrorType.USER_ERROR,
+                {
+                  field: 'company_id',
+                  suggestion:
+                    error.type === 'not_found'
+                      ? 'Verify the company ID exists, or create the company first'
+                      : 'Check your API connection and try again',
+                  example:
+                    error.type === 'not_found'
+                      ? `Try searching for companies first: search-records with resource_type: 'companies'`
+                      : undefined,
+                  httpStatusCode: error.httpStatusCode,
+                }
+              );
+            }
           }
         }
-      }
         break;
-        
+
       case UniversalResourceType.RECORDS:
         // Validate any object references in custom records
         if (recordData.parent_id || recordData.related_records) {
           // Add validation for custom record relationships if needed
         }
         break;
-        
+
       case UniversalResourceType.TASKS:
         // Validate task assignments and record associations
         if (recordData.recordId) {
           // Could validate the referenced record exists
         }
         break;
-        
+
       default:
         // No cross-resource validation needed for other types
         break;
@@ -652,27 +698,27 @@ export class CrossResourceValidator {
 function suggestResourceType(invalid: string): string | undefined {
   const validTypes = Object.values(UniversalResourceType);
   const lower = invalid.toLowerCase();
-  
+
   // Check for common mistakes
   const suggestions: Record<string, string> = {
-    'company': 'companies',
-    'person': 'people',
-    'record': 'records',
-    'task': 'tasks',
-    'user': 'people',
-    'contact': 'people',
-    'organization': 'companies',
-    'org': 'companies'
+    company: 'companies',
+    person: 'people',
+    record: 'records',
+    task: 'tasks',
+    user: 'people',
+    contact: 'people',
+    organization: 'companies',
+    org: 'companies',
   };
-  
+
   if (suggestions[lower]) {
     return suggestions[lower];
   }
-  
+
   // Find closest match by character similarity
   let bestMatch = '';
   let bestScore = 0;
-  
+
   for (const validType of validTypes) {
     const score = getStringSimilarity(lower, validType);
     if (score > bestScore && score > 0.5) {
@@ -680,7 +726,7 @@ function suggestResourceType(invalid: string): string | undefined {
       bestMatch = validType;
     }
   }
-  
+
   return bestMatch || undefined;
 }
 
@@ -690,9 +736,9 @@ function suggestResourceType(invalid: string): string | undefined {
 function getStringSimilarity(str1: string, str2: string): number {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
-  
+
   if (longer.length === 0) return 1.0;
-  
+
   const editDistance = getEditDistance(longer, shorter);
   return (longer.length - editDistance) / longer.length;
 }
@@ -702,15 +748,15 @@ function getStringSimilarity(str1: string, str2: string): number {
  */
 function getEditDistance(str1: string, str2: string): number {
   const matrix = [];
-  
+
   for (let i = 0; i <= str2.length; i++) {
     matrix[i] = [i];
   }
-  
+
   for (let j = 0; j <= str1.length; j++) {
     matrix[0][j] = j;
   }
-  
+
   for (let i = 1; i <= str2.length; i++) {
     for (let j = 1; j <= str1.length; j++) {
       if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -724,39 +770,50 @@ function getEditDistance(str1: string, str2: string): number {
       }
     }
   }
-  
+
   return matrix[str2.length][str1.length];
 }
 
 /**
  * Enhanced schema validation utility function with better error messages
  */
-export function validateUniversalToolParams(toolName: string, params: any): any {
+export function validateUniversalToolParams(
+  toolName: string,
+  params: any
+): any {
   // Sanitize input parameters first
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
-  
+
   // Ensure we have a valid object to work with
-  if (!sanitizedValue || typeof sanitizedValue !== 'object' || Array.isArray(sanitizedValue)) {
+  if (
+    !sanitizedValue ||
+    typeof sanitizedValue !== 'object' ||
+    Array.isArray(sanitizedValue)
+  ) {
     throw new UniversalValidationError(
       'Invalid parameters: expected an object',
       ErrorType.USER_ERROR,
       {
         suggestion: 'Provide parameters as an object',
         example: '{ resource_type: "companies", ... }',
-        httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
+        httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
       }
     );
   }
-  
+
   const sanitizedParams = sanitizedValue as SanitizedObject;
-  
+
   // Validate resource_type if present
   if (sanitizedParams.resource_type) {
     const resourceType = String(sanitizedParams.resource_type);
-    if (!Object.values(UniversalResourceType).includes(resourceType as UniversalResourceType)) {
+    if (
+      !Object.values(UniversalResourceType).includes(
+        resourceType as UniversalResourceType
+      )
+    ) {
       const suggestion = suggestResourceType(resourceType);
       const validTypes = Object.values(UniversalResourceType).join(', ');
-      
+
       throw new UniversalValidationError(
         `Invalid resource_type: '${resourceType}'`,
         ErrorType.USER_ERROR,
@@ -764,12 +821,12 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           field: 'resource_type',
           suggestion: suggestion ? `Did you mean '${suggestion}'?` : undefined,
           example: `Expected one of: ${validTypes}`,
-          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
         }
       );
     }
   }
-  
+
   switch (toolName) {
     case 'search-records':
       if (!sanitizedParams.resource_type) {
@@ -779,12 +836,12 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           {
             field: 'resource_type',
             suggestion: 'Specify which type of records to search',
-            example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`
+            example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`,
           }
         );
       }
       break;
-      
+
     case 'get-record-details':
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
@@ -792,7 +849,7 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           ErrorType.USER_ERROR,
           {
             field: 'resource_type',
-            example: `resource_type: 'companies'`
+            example: `resource_type: 'companies'`,
           }
         );
       }
@@ -802,13 +859,14 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           ErrorType.USER_ERROR,
           {
             field: 'record_id',
-            suggestion: 'Provide the unique identifier of the record to retrieve',
-            example: `record_id: 'comp_abc123'`
+            suggestion:
+              'Provide the unique identifier of the record to retrieve',
+            example: `record_id: 'comp_abc123'`,
           }
         );
       }
       break;
-      
+
     case 'create-record':
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
@@ -816,7 +874,7 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           ErrorType.USER_ERROR,
           {
             field: 'resource_type',
-            example: `resource_type: 'companies'`
+            example: `resource_type: 'companies'`,
           }
         );
       }
@@ -827,12 +885,12 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           {
             field: 'record_data',
             suggestion: 'Provide the data for creating the new record',
-            example: `record_data: { name: 'Company Name', domain: 'example.com' }`
+            example: `record_data: { name: 'Company Name', domain: 'example.com' }`,
           }
         );
       }
       break;
-      
+
     case 'update-record':
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
@@ -855,12 +913,12 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           {
             field: 'record_data',
             suggestion: 'Provide the data to update the record with',
-            example: `record_data: { name: 'Updated Name' }`
+            example: `record_data: { name: 'Updated Name' }`,
           }
         );
       }
       break;
-      
+
     case 'delete-record':
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
@@ -876,60 +934,67 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
           {
             field: 'record_id',
             suggestion: 'Provide the ID of the record to delete',
-            example: `record_id: 'comp_abc123'`
+            example: `record_id: 'comp_abc123'`,
           }
         );
       }
       break;
-      
-    case 'batch-operations': {
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          { field: 'resource_type', example: `resource_type: 'companies'` }
-        );
+
+    case 'batch-operations':
+      {
+        if (!sanitizedParams.resource_type) {
+          throw new UniversalValidationError(
+            'Missing required parameter: resource_type',
+            ErrorType.USER_ERROR,
+            { field: 'resource_type', example: `resource_type: 'companies'` }
+          );
+        }
+        if (!sanitizedParams.operation_type) {
+          throw new UniversalValidationError(
+            'Missing required parameter: operation_type',
+            ErrorType.USER_ERROR,
+            {
+              field: 'operation_type',
+              example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`,
+            }
+          );
+        }
+        const operationType = String(sanitizedParams.operation_type);
+        if (
+          ['create', 'update'].includes(operationType) &&
+          !sanitizedParams.records
+        ) {
+          throw new UniversalValidationError(
+            `Missing required parameter for ${operationType} operations: records`,
+            ErrorType.USER_ERROR,
+            {
+              field: 'records',
+              suggestion: `Provide an array of record data for ${operationType} operations`,
+              example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`,
+            }
+          );
+        }
+        if (
+          ['delete', 'get'].includes(operationType) &&
+          !sanitizedParams.record_ids
+        ) {
+          throw new UniversalValidationError(
+            `Missing required parameter for ${operationType} operations: record_ids`,
+            ErrorType.USER_ERROR,
+            {
+              field: 'record_ids',
+              suggestion: `Provide an array of record IDs for ${operationType} operations`,
+              example: `record_ids: ['comp_abc123', 'comp_def456']`,
+            }
+          );
+        }
       }
-      if (!sanitizedParams.operation_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: operation_type',
-          ErrorType.USER_ERROR,
-          {
-            field: 'operation_type',
-            example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`
-          }
-        );
-      }
-      const operationType = String(sanitizedParams.operation_type);
-      if (['create', 'update'].includes(operationType) && !sanitizedParams.records) {
-        throw new UniversalValidationError(
-          `Missing required parameter for ${operationType} operations: records`,
-          ErrorType.USER_ERROR,
-          {
-            field: 'records',
-            suggestion: `Provide an array of record data for ${operationType} operations`,
-            example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`
-          }
-        );
-      }
-      if (['delete', 'get'].includes(operationType) && !sanitizedParams.record_ids) {
-        throw new UniversalValidationError(
-          `Missing required parameter for ${operationType} operations: record_ids`,
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_ids',
-            suggestion: `Provide an array of record IDs for ${operationType} operations`,
-            example: `record_ids: ['comp_abc123', 'comp_def456']`
-          }
-        );
-      }
-    }
       break;
-      
+
     default:
       // Additional validation for other tools can be added here
       break;
   }
-  
+
   return sanitizedParams;
 }

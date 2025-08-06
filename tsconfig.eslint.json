@@ -10,11 +10,7 @@
     "*.mjs",
     "jest.config.js" // Including a common root-level JS config file as an example
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build"
-  ]
+  "exclude": ["node_modules", "dist", "build"]
   // Note: We are intentionally not specifying compilerOptions.rootDir here.
   // It will be inherited from the base tsconfig.json. If ESLint still has issues
   // with rootDir from the base config, we might need to set it to "." here,

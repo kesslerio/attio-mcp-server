@@ -3,22 +3,27 @@
  * Handles list management and list entry operations
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
+import {
+  ListErrorResponse,
+  LogDetails,
+  SearchRequestBody,
+  ValidationErrorDetails,
+} from '../../types/api-operations.js';
 import {
   AttioList,
   AttioListEntry,
   AttioListResponse,
   AttioSingleResponse,
 } from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { ListEntryFilters } from './types.js';
+import { executeWithListFallback } from '../../utils/api-fallback.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
 } from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { executeWithListFallback } from '../../utils/api-fallback.js';
-import { SearchRequestBody, LogDetails, ValidationErrorDetails, ListErrorResponse } from '../../types/api-operations.js';
+import { getAttioClient } from '../attio-client.js';
+import { callWithRetry, RetryConfig } from './retry.js';
+import { ListEntryFilters } from './types.js';
 
 /**
  * Gets all lists in the workspace
@@ -144,7 +149,11 @@ export async function getListEntries(
   };
 
   // Enhanced logging function
-  const logOperation = (stage: string, details?: LogDetails, isError = false) => {
+  const logOperation = (
+    stage: string,
+    details?: LogDetails,
+    isError = false
+  ) => {
     if (process.env.NODE_ENV === 'development') {
       const prefix = isError
         ? 'ERROR'
@@ -270,9 +279,12 @@ export async function addRecordToList(
 
       // Add more context to the error message
       if (listError.response?.status === 400) {
-        const validationErrors = listError.response?.data?.validation_errors || [];
+        const validationErrors =
+          listError.response?.data?.validation_errors || [];
         const errorDetails = validationErrors
-          .map((e: ValidationErrorDetails) => `${e.path.join('.')}: ${e.message}`)
+          .map(
+            (e: ValidationErrorDetails) => `${e.path.join('.')}: ${e.message}`
+          )
           .join('; ');
 
         throw new Error(

@@ -2,15 +2,16 @@
 
 // Load environment variables from .env file
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-import fs from 'fs'; // Added for PID file
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { startHealthServer } from './health/http-server.js';
+import fs from 'fs'; // Added for PID file
 import { initializeAttioClient } from './api/attio-client.js';
 import { registerResourceHandlers } from './handlers/resources.js';
 import { registerToolHandlers } from './handlers/tools/index.js';
+import { startHealthServer } from './health/http-server.js';
 import { registerPromptHandlers } from './prompts/handlers.js';
 
 // Use /tmp directory for PID file, which is generally writable

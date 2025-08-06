@@ -1,12 +1,12 @@
 /**
  * Result formatting module - handles transformation and formatting of tool results
  */
-import { AttioRecord, AttioListEntry } from '../../types/attio.js';
-import { processListEntries } from '../../utils/record-utils.js';
+import { AttioListEntry, AttioRecord } from '../../types/attio.js';
 import {
   safeJsonStringify,
   sanitizeMcpResponse,
 } from '../../utils/json-serializer.js';
+import { processListEntries } from '../../utils/record-utils.js';
 
 /**
  * Safely extract value from record attributes

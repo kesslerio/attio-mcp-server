@@ -2,19 +2,20 @@
  * Integration test for the add-record-to-list tool
  * Tests the entire flow from tool invocation to API call with proper parameters
  */
-import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { getAttioClient } from '../../../src/api/attio-client';
-import { addRecordToList } from '../../../src/objects/lists';
-import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
 import { listsToolConfigs } from '../../../src/handlers/tool-configs/lists';
+import { handleAddRecordToListOperation } from '../../../src/handlers/tools/dispatcher/operations/lists';
+import { addRecordToList } from '../../../src/objects/lists';
 
 // Mock axios for API client in case we're skipping real API tests
 vi.mock('axios', async () => {
   const actual = await vi.importActual('axios');
-  
+
   // Check if we should mock based on environment
-  const shouldMock = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
-  
+  const shouldMock =
+    !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+
   if (shouldMock) {
     return {
       default: {

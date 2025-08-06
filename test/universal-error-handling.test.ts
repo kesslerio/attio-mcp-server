@@ -2,14 +2,14 @@
  * Tests for enhanced universal error handling
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  validateUniversalToolParams,
-  UniversalValidationError,
+  CrossResourceValidator,
   ErrorType,
   HttpStatusCode,
   InputSanitizer,
-  CrossResourceValidator
+  UniversalValidationError,
+  validateUniversalToolParams,
 } from '../src/handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../src/handlers/tool-configs/universal/types.js';
 
@@ -32,10 +32,10 @@ describe('Enhanced Universal Error Handling', () => {
         name: '<script>evil</script>Company',
         email: '  ADMIN@COMPANY.COM  ',
         nested: {
-          description: 'onclick=alert(1)Safe description'
-        }
+          description: 'onclick=alert(1)Safe description',
+        },
       };
-      
+
       const sanitized = InputSanitizer.sanitizeObject(obj);
       expect(sanitized.name).toBe('evilCompany');
       expect(sanitized.email).toBe('admin@company.com');
@@ -51,7 +51,7 @@ describe('Enhanced Universal Error Handling', () => {
         {
           field: 'test_field',
           suggestion: 'Try this instead',
-          example: 'field: "correct_value"'
+          example: 'field: "correct_value"',
         }
       );
 
@@ -66,7 +66,7 @@ describe('Enhanced Universal Error Handling', () => {
   describe('Enhanced Validation Messages', () => {
     it('should provide helpful suggestions for invalid resource types', () => {
       const params = { resource_type: 'company' }; // Missing 's'
-      
+
       try {
         validateUniversalToolParams('search-records', params);
         expect.fail('Should have thrown validation error');
@@ -74,13 +74,15 @@ describe('Enhanced Universal Error Handling', () => {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
-        expect(validationError.example).toContain('companies, people, records, tasks');
+        expect(validationError.example).toContain(
+          'companies, people, records, tasks'
+        );
       }
     });
 
     it('should provide detailed missing parameter errors', () => {
       const params = { resource_type: UniversalResourceType.COMPANIES };
-      
+
       try {
         validateUniversalToolParams('create-record', params);
         expect.fail('Should have thrown validation error');
@@ -88,7 +90,9 @@ describe('Enhanced Universal Error Handling', () => {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('record_data');
-        expect(validationError.suggestion).toContain('Provide the data for creating');
+        expect(validationError.suggestion).toContain(
+          'Provide the data for creating'
+        );
         expect(validationError.example).toContain('record_data:');
       }
     });
@@ -96,10 +100,10 @@ describe('Enhanced Universal Error Handling', () => {
     it('should handle batch operations validation with specific messages', () => {
       const params = {
         resource_type: UniversalResourceType.COMPANIES,
-        operation_type: 'create'
+        operation_type: 'create',
         // Missing records array
       };
-      
+
       try {
         validateUniversalToolParams('batch-operations', params);
         expect.fail('Should have thrown validation error');
@@ -117,9 +121,9 @@ describe('Enhanced Universal Error Handling', () => {
     it('should return sanitized parameters from validation', () => {
       const params = {
         resource_type: UniversalResourceType.COMPANIES,
-        query: '  <script>alert(1)</script>Search Term  '
+        query: '  <script>alert(1)</script>Search Term  ',
       };
-      
+
       const sanitized = validateUniversalToolParams('search-records', params);
       expect(sanitized.query).toBe('alert(1)Search Term');
       expect(sanitized.resource_type).toBe(UniversalResourceType.COMPANIES);
@@ -132,13 +136,17 @@ describe('Enhanced Universal Error Handling', () => {
         { input: 'person', expected: 'people' },
         { input: 'contact', expected: 'people' },
         { input: 'organization', expected: 'companies' },
-        { input: 'task', expected: 'tasks' }
+        { input: 'task', expected: 'tasks' },
       ];
 
       for (const testCase of testCases) {
         try {
-          validateUniversalToolParams('search-records', { resource_type: testCase.input });
-          expect.fail(`Should have thrown validation error for ${testCase.input}`);
+          validateUniversalToolParams('search-records', {
+            resource_type: testCase.input,
+          });
+          expect.fail(
+            `Should have thrown validation error for ${testCase.input}`
+          );
         } catch (error) {
           expect(error).toBeInstanceOf(UniversalValidationError);
           const validationError = error as UniversalValidationError;
@@ -154,14 +162,18 @@ describe('Cross-Resource Validation', () => {
     it('should validate company existence (mock test)', async () => {
       // This is a unit test - we'd need integration tests with real API for full validation
       // For now, just test that the validation function exists and can be called
-      expect(typeof CrossResourceValidator.validateCompanyExists).toBe('function');
-      expect(typeof CrossResourceValidator.validateRecordRelationships).toBe('function');
+      expect(typeof CrossResourceValidator.validateCompanyExists).toBe(
+        'function'
+      );
+      expect(typeof CrossResourceValidator.validateRecordRelationships).toBe(
+        'function'
+      );
     });
 
     it('should handle people record validation structure', async () => {
       const recordData = {
         name: 'John Doe',
-        company_id: 'comp_123'
+        company_id: 'comp_123',
       };
 
       // Mock the company validation to return failure result for this test
@@ -170,9 +182,9 @@ describe('Cross-Resource Validation', () => {
         exists: false,
         error: {
           type: 'not_found' as const,
-          message: 'Company with ID \'comp_123\' does not exist',
-          httpStatusCode: HttpStatusCode.NOT_FOUND
-        }
+          message: "Company with ID 'comp_123' does not exist",
+          httpStatusCode: HttpStatusCode.NOT_FOUND,
+        },
       });
 
       try {
@@ -180,12 +192,16 @@ describe('Cross-Resource Validation', () => {
           UniversalResourceType.PEOPLE,
           recordData
         );
-        expect.fail('Should have thrown validation error for non-existent company');
+        expect.fail(
+          'Should have thrown validation error for non-existent company'
+        );
       } catch (error) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('company_id');
-        expect(validationError.suggestion).toContain('Verify the company ID exists');
+        expect(validationError.suggestion).toContain(
+          'Verify the company ID exists'
+        );
       } finally {
         // Restore original function
         CrossResourceValidator.validateCompanyExists = originalValidate;

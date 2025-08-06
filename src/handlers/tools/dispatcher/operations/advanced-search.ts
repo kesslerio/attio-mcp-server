@@ -5,12 +5,12 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { AdvancedSearchToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
-import { hasResponseData } from '../../error-types.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
+import { ResourceType } from '../../../../types/attio.js';
+import { createErrorResult } from '../../../../utils/error-handler.js';
+import { AdvancedSearchToolConfig } from '../../../tool-types.js';
+import { hasResponseData } from '../../error-types.js';
+import { formatResponse } from '../../formatters.js';
 
 /**
  * Handle advanced search operations

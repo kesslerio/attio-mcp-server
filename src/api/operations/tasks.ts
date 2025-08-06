@@ -1,14 +1,15 @@
 /**
  * Task operations for Attio
  */
-import { getAttioClient } from '../attio-client.js';
+
+import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 import {
-  AttioTask,
   AttioListResponse,
   AttioSingleResponse,
+  AttioTask,
 } from '../../types/attio.js';
+import { getAttioClient } from '../attio-client.js';
 import { callWithRetry, RetryConfig } from './retry.js';
-import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 
 export async function listTasks(
   status?: string,

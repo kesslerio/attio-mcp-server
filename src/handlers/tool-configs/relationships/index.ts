@@ -1,14 +1,17 @@
 /**
  * Relationship helper tool configurations
- * 
+ *
  * These tools provide intuitive ways to manage relationships between
  * people and companies in Attio, abstracting away the complexity of
  * which direction the relationship needs to be updated.
  */
-import { ToolConfig } from '../../tool-types.js';
-import { getCompanyDetails } from '../../../objects/companies/index.js';
+
+import {
+  getCompanyDetails,
+  updateCompany,
+} from '../../../objects/companies/index.js';
 import { getPersonDetails } from '../../../objects/people/index.js';
-import { updateCompany } from '../../../objects/companies/index.js';
+import { ToolConfig } from '../../tool-types.js';
 
 export interface LinkPersonToCompanyToolConfig extends ToolConfig {
   handler: (personId: string, companyId: string) => Promise<any>;
@@ -29,19 +32,25 @@ export interface GetCompanyTeamToolConfig extends ToolConfig {
 /**
  * Helper function to link a person to a company by updating the company's team field
  */
-async function linkPersonToCompany(personId: string, companyId: string): Promise<any> {
+async function linkPersonToCompany(
+  personId: string,
+  companyId: string
+): Promise<any> {
   try {
     // Get current company details to preserve existing team members
     const company = await getCompanyDetails(companyId);
-    
+
     // Extract current team members
     const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member: any) => 
-          member.target_record_id || member.record_id || member
-        ).filter(Boolean)
+    const currentTeamIds = Array.isArray(currentTeam)
+      ? currentTeam
+          .map(
+            (member: any) =>
+              member.target_record_id || member.record_id || member
+          )
+          .filter(Boolean)
       : [];
-    
+
     // Check if person is already in the team
     if (currentTeamIds.includes(personId)) {
       return {
@@ -51,15 +60,15 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
         personId,
       };
     }
-    
+
     // Add new person to team
     const updatedTeamIds = [...currentTeamIds, personId];
-    
+
     // Update company with new team
     const _updatedCompany = await updateCompany(companyId, {
-      team: updatedTeamIds.map(id => ({ target_record_id: id }))
+      team: updatedTeamIds.map((id) => ({ target_record_id: id })),
     });
-    
+
     return {
       success: true,
       message: 'Successfully linked person to company',
@@ -68,26 +77,34 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
       teamSize: updatedTeamIds.length,
     };
   } catch (error) {
-    throw new Error(`Failed to link person to company: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to link person to company: ${(error as Error).message}`
+    );
   }
 }
 
 /**
  * Helper function to unlink a person from a company
  */
-async function unlinkPersonFromCompany(personId: string, companyId: string): Promise<any> {
+async function unlinkPersonFromCompany(
+  personId: string,
+  companyId: string
+): Promise<any> {
   try {
     // Get current company details
     const company = await getCompanyDetails(companyId);
-    
+
     // Extract current team members
     const currentTeam = company.values?.team || [];
-    const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member: any) => 
-          member.target_record_id || member.record_id || member
-        ).filter(Boolean)
+    const currentTeamIds = Array.isArray(currentTeam)
+      ? currentTeam
+          .map(
+            (member: any) =>
+              member.target_record_id || member.record_id || member
+          )
+          .filter(Boolean)
       : [];
-    
+
     // Check if person is in the team
     if (!currentTeamIds.includes(personId)) {
       return {
@@ -97,15 +114,15 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
         personId,
       };
     }
-    
+
     // Remove person from team
-    const updatedTeamIds = currentTeamIds.filter(id => id !== personId);
-    
+    const updatedTeamIds = currentTeamIds.filter((id) => id !== personId);
+
     // Update company with new team
     const _updatedCompany = await updateCompany(companyId, {
-      team: updatedTeamIds.map(id => ({ target_record_id: id }))
+      team: updatedTeamIds.map((id) => ({ target_record_id: id })),
     });
-    
+
     return {
       success: true,
       message: 'Successfully unlinked person from company',
@@ -114,7 +131,9 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
       teamSize: updatedTeamIds.length,
     };
   } catch (error) {
-    throw new Error(`Failed to unlink person from company: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to unlink person from company: ${(error as Error).message}`
+    );
   }
 }
 
@@ -125,7 +144,7 @@ async function getPersonCompanies(personId: string): Promise<any[]> {
   try {
     const person = await getPersonDetails(personId);
     const companies = person.values?.companies || [];
-    
+
     return Array.isArray(companies)
       ? companies.map((company: any) => ({
           id: company.target_record_id || company.record_id || company,
@@ -133,7 +152,9 @@ async function getPersonCompanies(personId: string): Promise<any[]> {
         }))
       : [];
   } catch (error) {
-    throw new Error(`Failed to get person's companies: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to get person's companies: ${(error as Error).message}`
+    );
   }
 }
 
@@ -144,7 +165,7 @@ async function getCompanyTeam(companyId: string): Promise<any[]> {
   try {
     const company = await getCompanyDetails(companyId);
     const team = company.values?.team || [];
-    
+
     return Array.isArray(team)
       ? team.map((member: any) => ({
           id: member.target_record_id || member.record_id || member,
@@ -168,7 +189,7 @@ export const relationshipToolConfigs = {
       return `Failed to link person to company: ${result.error}`;
     },
   } as LinkPersonToCompanyToolConfig,
-  
+
   unlinkPersonFromCompany: {
     name: 'unlink-person-from-company',
     handler: unlinkPersonFromCompany,
@@ -179,7 +200,7 @@ export const relationshipToolConfigs = {
       return `Failed to unlink person from company: ${result.error}`;
     },
   } as UnlinkPersonFromCompanyToolConfig,
-  
+
   getPersonCompanies: {
     name: 'get-person-companies',
     handler: getPersonCompanies,
@@ -188,11 +209,11 @@ export const relationshipToolConfigs = {
         return 'This person is not associated with any companies.';
       }
       return `Person is associated with ${companies.length} companies:\n${companies
-        .map(c => `- ${c.name} (ID: ${c.id})`)
+        .map((c) => `- ${c.name} (ID: ${c.id})`)
         .join('\n')}`;
     },
   } as GetPersonCompaniesToolConfig,
-  
+
   getCompanyTeam: {
     name: 'get-company-team',
     handler: getCompanyTeam,
@@ -201,7 +222,7 @@ export const relationshipToolConfigs = {
         return 'This company has no team members.';
       }
       return `Company has ${team.length} team members:\n${team
-        .map(m => `- ${m.name} (ID: ${m.id})`)
+        .map((m) => `- ${m.name} (ID: ${m.id})`)
         .join('\n')}`;
     },
   } as GetCompanyTeamToolConfig,
@@ -211,7 +232,8 @@ export const relationshipToolConfigs = {
 export const relationshipToolDefinitions = [
   {
     name: 'link-person-to-company',
-    description: 'Link a person to a company as a team member. This updates the company\'s team field to include the person.',
+    description:
+      "Link a person to a company as a team member. This updates the company's team field to include the person.",
     inputSchema: {
       type: 'object',
       properties: {
@@ -229,7 +251,8 @@ export const relationshipToolDefinitions = [
   },
   {
     name: 'unlink-person-from-company',
-    description: 'Remove a person from a company\'s team. This updates the company\'s team field to exclude the person.',
+    description:
+      "Remove a person from a company's team. This updates the company's team field to exclude the person.",
     inputSchema: {
       type: 'object',
       properties: {

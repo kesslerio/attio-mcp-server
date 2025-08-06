@@ -6,29 +6,28 @@
 // External dependencies
 import {
   FilterValidationError,
-  RelationshipFilterError,
   ListRelationshipError,
+  RelationshipFilterError,
 } from '../../errors/api-errors.js';
-
-// Internal module dependencies
-import {
-  ListEntryFilters,
-  FilterConditionType,
-  RelationshipType,
-  ResourceType,
-  RelationshipFilterConfig,
-  ATTRIBUTES,
-  RelationshipRateLimitError,
-} from './types.js';
 // import { isValidListId } from "../../validation.js";
 import { createEqualsFilter } from './builders.js';
 import {
-  getCachedRelationshipFilter,
+  cacheListFilter,
   cacheRelationshipFilter,
   getCachedListFilter,
-  cacheListFilter,
+  getCachedRelationshipFilter,
   hashFilters,
 } from './cache.js';
+// Internal module dependencies
+import {
+  ATTRIBUTES,
+  FilterConditionType,
+  ListEntryFilters,
+  RelationshipFilterConfig,
+  RelationshipRateLimitError,
+  RelationshipType,
+  ResourceType,
+} from './types.js';
 
 /**
  * Applies rate limiting to relationship queries

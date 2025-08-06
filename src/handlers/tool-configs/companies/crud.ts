@@ -1,13 +1,14 @@
 /**
  * CRUD operation tool configurations for companies
  */
-import { Company } from '../../../types/attio.js';
+
 import {
   createCompany,
+  deleteCompany,
   updateCompany,
   updateCompanyAttribute,
-  deleteCompany,
 } from '../../../objects/companies/index.js';
+import { Company } from '../../../types/attio.js';
 import { ToolConfig } from '../../tool-types.js';
 
 /**

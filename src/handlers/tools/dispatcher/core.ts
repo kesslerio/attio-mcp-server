@@ -3,83 +3,76 @@
  */
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { ResourceType } from '../../../types/attio.js';
-
+import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
+import { OperationType, PerformanceTimer } from '../../../utils/logger.js';
+// Import tool type definitions
+import {
+  AdvancedSearchToolConfig,
+  CreateNoteToolConfig,
+  DetailsToolConfig,
+  GetListsToolConfig,
+  NotesToolConfig,
+  SearchToolConfig,
+  ToolConfig,
+} from '../../tool-types.js';
+// Import tool configurations
+import { findToolConfig } from '../registry.js';
 // Import utilities
 import {
   initializeToolContext,
+  logToolConfigError,
+  logToolError,
   logToolRequest,
   logToolSuccess,
-  logToolError,
-  logToolConfigError,
 } from './logging.js';
-
-// Import tool configurations
-import { findToolConfig } from '../registry.js';
-import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
-import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
-
-// Import operation handlers
-import {
-  handleBasicSearch,
-  handleSearchByEmail,
-  handleSearchByPhone,
-  handleSearchByDomain,
-  handleSmartSearch,
-} from './operations/search.js';
 import { handleAdvancedSearch } from './operations/advanced-search.js';
-import { handleDetailsOperation } from './operations/details.js';
+// Import Batch operation handlers
 import {
-  handleNotesOperation,
-  handleCreateNoteOperation,
-} from './operations/notes.js';
-import { handleGetListsOperation } from './operations/lists.js';
-
+  handleBatchCreateOperation,
+  handleBatchDeleteOperation,
+  handleBatchGetDetailsOperation,
+  handleBatchSearchOperation,
+  handleBatchUpdateOperation,
+} from './operations/batch.js';
 // Import CRUD operation handlers
 import {
   handleCreateOperation,
-  handleUpdateOperation,
-  handleUpdateAttributeOperation,
   handleDeleteOperation,
+  handleUpdateAttributeOperation,
+  handleUpdateOperation,
 } from './operations/crud.js';
-
+import { handleDetailsOperation } from './operations/details.js';
 // Import List operation handlers (additional operations from emergency fix)
 import {
   handleAddRecordToListOperation,
-  handleRemoveRecordFromListOperation,
-  handleUpdateListEntryOperation,
+  handleAdvancedFilterListEntriesOperation,
+  handleFilterListEntriesByParentIdOperation,
+  handleFilterListEntriesByParentOperation,
+  handleFilterListEntriesOperation,
   handleGetListDetailsOperation,
   handleGetListEntriesOperation,
-  handleFilterListEntriesOperation,
-  handleAdvancedFilterListEntriesOperation,
-  handleFilterListEntriesByParentOperation,
-  handleFilterListEntriesByParentIdOperation,
+  handleGetListsOperation,
+  handleRemoveRecordFromListOperation,
+  handleUpdateListEntryOperation,
 } from './operations/lists.js';
-
-// Import Batch operation handlers
 import {
-  handleBatchUpdateOperation,
-  handleBatchCreateOperation,
-  handleBatchDeleteOperation,
-  handleBatchSearchOperation,
-  handleBatchGetDetailsOperation,
-} from './operations/batch.js';
+  handleCreateNoteOperation,
+  handleNotesOperation,
+} from './operations/notes.js';
 
 // Import Record operation handlers
 import {
-  handleListOperation,
   handleGetOperation,
+  handleListOperation,
 } from './operations/records.js';
-
-// Import tool type definitions
+// Import operation handlers
 import {
-  ToolConfig,
-  SearchToolConfig,
-  AdvancedSearchToolConfig,
-  DetailsToolConfig,
-  NotesToolConfig,
-  CreateNoteToolConfig,
-  GetListsToolConfig,
-} from '../../tool-types.js';
+  handleBasicSearch,
+  handleSearchByDomain,
+  handleSearchByEmail,
+  handleSearchByPhone,
+  handleSmartSearch,
+} from './operations/search.js';
 
 /**
  * Execute a tool request and return formatted results
@@ -299,30 +292,28 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Handle generic record operations
     } else if (toolType === 'list') {
-      result = await handleListOperation(
-        request,
-        toolConfig as ToolConfig
-      );
+      result = await handleListOperation(request, toolConfig as ToolConfig);
     } else if (toolType === 'get') {
-      result = await handleGetOperation(
-        request,
-        toolConfig as ToolConfig
-      );
-    
-    // Handle Universal tools (Issue #352 - Universal tool consolidation)
-    } else if (resourceType === 'UNIVERSAL' as any) {
+      result = await handleGetOperation(request, toolConfig as ToolConfig);
+
+      // Handle Universal tools (Issue #352 - Universal tool consolidation)
+    } else if (resourceType === ('UNIVERSAL' as any)) {
       // For universal tools, use the tool's own handler directly
       const args = request.params.arguments;
-      
+
       // Universal tools have their own parameter validation and handling
       const rawResult = await toolConfig.handler(args);
-      
+
       // Universal tools may have different formatResult signatures - handle flexibly
       let formattedResult: string;
       if (toolConfig.formatResult) {
         try {
           // Try with all possible parameters (result, resourceType, infoType)
-          formattedResult = (toolConfig.formatResult as any)(rawResult, args?.resource_type, args?.info_type);
+          formattedResult = (toolConfig.formatResult as any)(
+            rawResult,
+            args?.resource_type,
+            args?.info_type
+          );
         } catch {
           // Fallback to just result if signature mismatch
           formattedResult = (toolConfig.formatResult as any)(rawResult);
@@ -330,17 +321,20 @@ export async function executeToolRequest(request: CallToolRequest) {
       } else {
         formattedResult = JSON.stringify(rawResult, null, 2);
       }
-      
+
       result = { content: [{ type: 'text', text: formattedResult }] };
-      
-    // Handle General tools (relationship helpers, etc.)
-    } else if (resourceType === 'GENERAL' as any) {
+
+      // Handle General tools (relationship helpers, etc.)
+    } else if (resourceType === ('GENERAL' as any)) {
       // For general tools, use the tool's own handler directly
       const args = request.params.arguments;
       let handlerArgs: any[] = [];
-      
+
       // Map arguments based on tool type
-      if (toolType === 'linkPersonToCompany' || toolType === 'unlinkPersonFromCompany') {
+      if (
+        toolType === 'linkPersonToCompany' ||
+        toolType === 'unlinkPersonFromCompany'
+      ) {
         handlerArgs = [args?.personId, args?.companyId];
       } else if (toolType === 'getPersonCompanies') {
         handlerArgs = [args?.personId];
@@ -350,11 +344,12 @@ export async function executeToolRequest(request: CallToolRequest) {
         // For other general tools, pass arguments as is
         handlerArgs = [args];
       }
-      
+
       const rawResult = await toolConfig.handler(...handlerArgs);
-      const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
+      const formattedResult =
+        toolConfig.formatResult?.(rawResult) ||
+        JSON.stringify(rawResult, null, 2);
       result = { content: [{ type: 'text', text: formattedResult }] };
-      
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(

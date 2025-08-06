@@ -14,27 +14,27 @@
 
 // External dependencies
 import {
-  FilterValidationError,
   FilterErrorCategory,
+  FilterValidationError,
 } from '../../errors/api-errors.js';
 
 // Internal module dependencies
 import {
-  ListEntryFilters,
-  ListEntryFilter,
   AttioApiFilter,
-  FilterConditionType,
   FIELD_SPECIAL_HANDLING,
+  FilterConditionType,
+  ListEntryFilter,
+  ListEntryFilters,
 } from './types.js';
-import { validateFilterStructure } from './validators.js';
-import {
-  validateFilters,
-  collectInvalidFilters,
-  formatInvalidFiltersError,
-  ERROR_MESSAGES,
-  getFilterExample,
-} from './validation-utils.js';
 import { isListSpecificAttribute } from './utils.js';
+import {
+  collectInvalidFilters,
+  ERROR_MESSAGES,
+  formatInvalidFiltersError,
+  getFilterExample,
+  validateFilters,
+} from './validation-utils.js';
+import { validateFilterStructure } from './validators.js';
 
 /**
  * Transforms list entry filters to the format expected by the Attio API
@@ -411,12 +411,12 @@ function createAndFilterStructure(
       // Direct value assignment for shorthand format
       if (filter.value !== undefined && filter.value !== null) {
         if (!apiFilter[slug]) {
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: any };
         } else {
           console.warn(
             `Multiple filters for ${slug} using shorthand format will overwrite previous values`
           );
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: any };
         }
       }
     } else {

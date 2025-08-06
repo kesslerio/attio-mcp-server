@@ -1,23 +1,23 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
   createCompany,
-  updateCompany,
-  searchCompanies,
-  getCompanyDetails,
   deleteCompany,
+  getCompanyDetails,
+  searchCompanies,
+  updateCompany,
 } from '../../src/objects/companies/index.js';
 import {
   createPerson,
-  updatePerson,
-  searchPeople,
-  getPersonDetails,
   deletePerson,
+  getPersonDetails,
+  searchPeople,
+  updatePerson,
 } from '../../src/objects/people/index.js';
 import {
+  expectIntegrationError,
+  generateTestData,
   setupIntegrationTests,
   trackTestRecord,
-  generateTestData,
-  expectIntegrationError,
   waitForApiIndexing,
 } from '../helpers/integration-test-setup.js';
 

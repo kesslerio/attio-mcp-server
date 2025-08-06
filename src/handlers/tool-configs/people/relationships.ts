@@ -1,12 +1,12 @@
-import { AttioRecord } from '../../../types/attio.js';
+import { searchCompanies } from '../../../objects/companies/index.js';
 import {
   searchPeopleByCompany,
   searchPeopleByCompanyList,
   searchPeopleByNotes,
 } from '../../../objects/people/index.js';
-import { searchCompanies } from '../../../objects/companies/index.js';
+import { AttioRecord } from '../../../types/attio.js';
 import { ToolRequestArguments } from '../../../types/tool-types.js';
-import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
+import { SearchToolConfig, ToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
 
 // Type definitions for filter values

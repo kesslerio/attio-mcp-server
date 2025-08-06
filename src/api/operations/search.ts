@@ -3,17 +3,21 @@
  * Handles basic and advanced search functionality
  */
 
-import { getAttioClient } from '../attio-client.js';
+import { FilterValidationError } from '../../errors/api-errors.js';
 import {
+  ApiError,
+  ListRequestBody,
+  SearchRequestBody,
+} from '../../types/api-operations.js';
+import {
+  AttioListResponse,
   AttioRecord,
   ResourceType,
-  AttioListResponse,
 } from '../../types/attio.js';
+import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
+import { getAttioClient } from '../attio-client.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import { ListEntryFilters } from './types.js';
-import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
-import { FilterValidationError } from '../../errors/api-errors.js';
-import { ApiError, SearchRequestBody, ListRequestBody } from '../../types/api-operations.js';
 
 /**
  * Generic function to search any object type by name, email, or phone (when applicable)
@@ -112,8 +116,9 @@ export async function advancedSearchObject<T extends AttioRecord>(
       }
 
       // Import validation utilities dynamically to avoid circular dependencies
-      const { validateFilters } =
-        await import('../../utils/filters/validation-utils.js');
+      const { validateFilters } = await import(
+        '../../utils/filters/validation-utils.js'
+      );
 
       // Use centralized validation with consistent error messages
       try {
