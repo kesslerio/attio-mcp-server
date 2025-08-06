@@ -947,6 +947,28 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
     return resourceValidation.suggestion;
   }
   
+  // Date-related error suggestions
+  if (errorMessage.includes('unable to parse date') || errorMessage.includes('invalid date')) {
+    return 'Try using relative dates like "last 7 days", "this month", "yesterday" or ISO format (YYYY-MM-DD)';
+  }
+  
+  if (errorMessage.includes('date range') || errorMessage.includes('daterange')) {
+    return 'Date ranges support formats like: "last 30 days", "this week", "last month", or ISO dates (2024-01-01)';
+  }
+  
+  // API limitation suggestions
+  if (errorMessage.includes('filter') && errorMessage.includes('not supported')) {
+    return 'This filter combination is not supported by the Attio API. Try using a simpler filter or fetching all records and filtering locally.';
+  }
+  
+  if (errorMessage.includes('batch') && errorMessage.includes('limit')) {
+    return 'Batch operations are limited to 100 items at a time. Please split your request into smaller batches.';
+  }
+  
+  if (errorMessage.includes('rate limit')) {
+    return 'API rate limit reached. Please wait a moment before retrying or reduce the frequency of requests.';
+  }
+  
   // Deal-specific suggestions
   if (resourceType === 'deals') {
     if (errorMessage.includes('cannot find attribute with slug/id "company_id"')) {

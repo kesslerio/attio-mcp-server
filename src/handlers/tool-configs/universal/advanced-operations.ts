@@ -158,6 +158,13 @@ export const advancedSearchConfig: UniversalToolConfig = {
         offset
       });
     } catch (error) {
+      // Add context-specific error information for advanced search
+      if (error instanceof Error && error.message.includes('date')) {
+        const enhancedError = new Error(
+          `${error.message}. Supported date formats: "last 7 days", "this month", "yesterday", or ISO format (YYYY-MM-DD)`
+        );
+        throw createUniversalError('advanced search', params.resource_type, enhancedError);
+      }
       throw createUniversalError('advanced search', params.resource_type, error);
     }
   },

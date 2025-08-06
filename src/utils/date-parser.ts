@@ -255,8 +255,10 @@ export function normalizeDate(dateInput: string): string | null {
  * @returns Human-readable description
  */
 export function describeDateRange(range: DateRange): string {
-  const start = new Date(range.start);
-  const end = new Date(range.end);
+  // Parse dates as local dates to avoid timezone issues
+  // Adding 'T00:00:00' ensures the date is interpreted in local time
+  const start = new Date(range.start + 'T00:00:00');
+  const end = new Date(range.end + 'T00:00:00');
 
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {

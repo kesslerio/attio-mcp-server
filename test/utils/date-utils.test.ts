@@ -275,7 +275,7 @@ describe('Date Utils', () => {
           input: {
             start: 'invalid-date',
           },
-          errorContains: 'Invalid ISO date string format',
+          errorContains: 'Unable to parse date',
         },
       ];
 

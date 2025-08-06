@@ -8,6 +8,11 @@ import {
   DateRange,
   DateRangePreset,
 } from '../types/attio.js';
+import {
+  isRelativeDate,
+  parseRelativeDate,
+  normalizeDate,
+} from './date-parser.js';
 
 /**
  * Converts a relative date (e.g., "last 7 days") to an absolute ISO date string
@@ -247,6 +252,12 @@ export function resolveDateRange(dateRange: DateRange): {
         );
       }
 
+      // First try to parse as a relative date expression (e.g., "last 7 days", "this month")
+      if (isRelativeDate(dateRange.preset)) {
+        return parseRelativeDate(dateRange.preset);
+      }
+
+      // Otherwise use the standard preset resolution
       const presetRange = createDateRangeFromPreset(dateRange.preset);
       return presetRange;
     } catch (error) {
@@ -261,13 +272,24 @@ export function resolveDateRange(dateRange: DateRange): {
   if (dateRange.start) {
     try {
       if (typeof dateRange.start === 'string') {
-        // Validate ISO date string format
-        if (!isValidISODateString(dateRange.start)) {
-          throw new Error(`Invalid ISO date string format: ${dateRange.start}`);
+        // First try to parse as a relative date expression (e.g., "last 7 days")
+        if (isRelativeDate(dateRange.start)) {
+          const relativeRange = parseRelativeDate(dateRange.start);
+          result.start = relativeRange.start;
         }
-
-        // Direct ISO string
-        result.start = dateRange.start;
+        // Then check if it's a valid ISO date string
+        else if (isValidISODateString(dateRange.start)) {
+          result.start = dateRange.start;
+        }
+        // Otherwise try to normalize it as a natural language date
+        else {
+          const normalized = normalizeDate(dateRange.start);
+          if (normalized) {
+            result.start = normalized;
+          } else {
+            throw new Error(`Unable to parse date: ${dateRange.start}`);
+          }
+        }
       } else {
         // Relative date object
         result.start = resolveRelativeDate(dateRange.start);
@@ -283,13 +305,24 @@ export function resolveDateRange(dateRange: DateRange): {
   if (dateRange.end) {
     try {
       if (typeof dateRange.end === 'string') {
-        // Validate ISO date string format
-        if (!isValidISODateString(dateRange.end)) {
-          throw new Error(`Invalid ISO date string format: ${dateRange.end}`);
+        // First try to parse as a relative date expression (e.g., "last 7 days")
+        if (isRelativeDate(dateRange.end)) {
+          const relativeRange = parseRelativeDate(dateRange.end);
+          result.end = relativeRange.end;
         }
-
-        // Direct ISO string
-        result.end = dateRange.end;
+        // Then check if it's a valid ISO date string
+        else if (isValidISODateString(dateRange.end)) {
+          result.end = dateRange.end;
+        }
+        // Otherwise try to normalize it as a natural language date
+        else {
+          const normalized = normalizeDate(dateRange.end);
+          if (normalized) {
+            result.end = normalized;
+          } else {
+            throw new Error(`Unable to parse date: ${dateRange.end}`);
+          }
+        }
       } else {
         // Relative date object
         result.end = resolveRelativeDate(dateRange.end);

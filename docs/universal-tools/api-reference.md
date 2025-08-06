@@ -368,7 +368,7 @@ await client.callTool('search-by-content', {
 
 ### 12. search-by-timeframe
 
-**Description**: Time-based searches with date ranges.
+**Description**: Time-based searches with date ranges. Supports natural language date expressions (v0.2.1+).
 
 **Consolidates**: `search-people-by-creation-date`, `search-people-by-modification-date`, `search-people-by-last-interaction`
 
@@ -377,16 +377,22 @@ await client.callTool('search-by-content', {
 {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
   timeframe_type: 'created' | 'modified' | 'last_interaction', // Required
-  start_date?: string,               // ISO 8601 date string
-  end_date?: string,                 // ISO 8601 date string
+  start_date?: string,               // ISO 8601 or relative date (e.g., "last 7 days")
+  end_date?: string,                 // ISO 8601 or relative date (e.g., "yesterday")
+  preset?: string,                   // Date preset or relative expression (e.g., "this_month", "last 30 days")
   limit?: number,                    // Max results (1-100, default: 10)
   offset?: number                    // Pagination offset (default: 0)
 }
 ```
 
+**Supported Date Formats** (v0.2.1+):
+- ISO 8601: `'2024-01-01T00:00:00Z'`
+- Relative expressions: `'today'`, `'yesterday'`, `'this week'`, `'last week'`, `'this month'`, `'last month'`, `'this year'`, `'last year'`
+- Dynamic ranges: `'last N days'`, `'last N weeks'`, `'last N months'`
+
 **Examples**:
 ```typescript
-// Search people created in January 2024
+// Search people created in January 2024 (ISO format)
 await client.callTool('search-by-timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
@@ -394,11 +400,26 @@ await client.callTool('search-by-timeframe', {
   end_date: '2024-01-31T23:59:59Z'
 });
 
-// Search companies by last interaction
+// Search people created in the last 30 days (natural language)
+await client.callTool('search-by-timeframe', {
+  resource_type: 'people',
+  timeframe_type: 'created',
+  preset: 'last 30 days'
+});
+
+// Search companies modified this month
+await client.callTool('search-by-timeframe', {
+  resource_type: 'companies',
+  timeframe_type: 'modified',
+  preset: 'this month'
+});
+
+// Search companies by last interaction using relative dates
 await client.callTool('search-by-timeframe', {
   resource_type: 'companies',
   timeframe_type: 'last_interaction',
-  start_date: '2024-06-01T00:00:00Z'
+  start_date: 'last 7 days',
+  end_date: 'today'
 });
 ```
 
