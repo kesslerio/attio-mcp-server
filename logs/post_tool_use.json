@@ -19662,5 +19662,39 @@
       "interrupted": false,
       "isImage": false
     }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git stash",
+      "description": "Stash the changes temporarily"
+    },
+    "tool_response": {
+      "stdout": "Saved working directory and index state WIP on fix/issue-396-email-validation: 63b83049 Fix: Email validation for person records #396",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git checkout fix/issue-397-error-messages",
+      "description": "Switch to the correct branch for issue #397"
+    },
+    "tool_response": {
+      "stdout": "M\tlogs/post_tool_use.json\nM\tlogs/pre_tool_use.json\nSwitched to branch 'fix/issue-397-error-messages'",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
   }
 ]

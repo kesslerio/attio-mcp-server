@@ -8528,5 +8528,38 @@
       "command": "git add -A && git commit -m \"Fix: Apply Prettier formatting to resolve CI failures #391\n\n- Fixed formatting issues in 11 files that were causing CI failures\n- Applied consistent code style using Prettier\n- All tests continue to pass (733/733)\n- No functional changes, only formatting corrections\"",
       "description": "Commit formatting fixes"
     }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git checkout fix/issue-397-error-messages",
+      "description": "Switch to the correct branch for issue #397"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git stash pop",
+      "description": "Apply the stashed changes"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add -A && git stash drop",
+      "description": "Add changes and drop the stash"
+    }
   }
 ]
