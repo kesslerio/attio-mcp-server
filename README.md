@@ -4,6 +4,7 @@
 [![npm version](https://badge.fury.io/js/attio-mcp.svg)](https://badge.fury.io/js/attio-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![GitHub Release](https://img.shields.io/github/v/release/kesslerio/attio-mcp-server)](https://github.com/kesslerio/attio-mcp-server/releases)
+[![smithery badge](https://smithery.ai/badge/@kesslerio/attio-mcp-server)](https://smithery.ai/server/@kesslerio/attio-mcp-server)
 
 A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.com/), the AI-native CRM. This server enables AI assistants like Claude to interact directly with your Attio data through natural language, providing seamless integration between conversational AI and your CRM workflows.
 
@@ -53,6 +54,14 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Real-time Updates**: Live data synchronization with Attio
 
 ## 🚀 Installation
+
+### Installing via Smithery
+
+To install Attio CRM Integration Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@kesslerio/attio-mcp-server):
+
+```bash
+npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
+```
 
 ### Option 1: NPM (Recommended)
 ```bash
