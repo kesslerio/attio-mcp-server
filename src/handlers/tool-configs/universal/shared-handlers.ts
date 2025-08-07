@@ -319,13 +319,13 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       
       if (cached404) {
         enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-        throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
+        throw new Error('The requested record could not be found.');
       }
       
       // Cache this invalid ID for future requests
       enhancedPerformanceTracker.cache404Response(cacheKey, { error: idValidation.message }, 60000);
       enhancedPerformanceTracker.endOperation(perfId, false, idValidation.message, 400);
-      throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
+      throw new Error('Invalid record identifier format. Please check the ID and try again.');
     }
     
     // Check 404 cache for valid IDs too
@@ -334,7 +334,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     
     if (cached404) {
       enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-      throw new Error(`Record not found (cached): ${record_id}`);
+      throw new Error('The requested record could not be found.');
     }
     
     // Track API call timing
@@ -366,7 +366,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           if (!task) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
-            throw new Error(`Task not found with ID: ${record_id}`);
+            throw new Error('The requested task could not be found.');
           }
           // Convert AttioTask to AttioRecord using proper type conversion
           result = convertTaskToRecord(task);
@@ -484,15 +484,17 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
       // Validate input and log suggestions (but don't block execution)
       const validation = validateDealInput(dealData);
-      if (validation.suggestions.length > 0) {
-        console.error('Deal input suggestions:', validation.suggestions.join('; '));
-      }
-      if (validation.warnings.length > 0) {
-        console.error('Deal input warnings:', validation.warnings.join('; '));
-      }
-      if (!validation.isValid) {
-        console.error('Deal input errors:', validation.errors.join('; '));
-        // Continue anyway - the conversions might fix the issues
+      if (process.env.NODE_ENV === 'development') {
+        if (validation.suggestions.length > 0) {
+          console.error('Deal input suggestions:', validation.suggestions.join('; '));
+        }
+        if (validation.warnings.length > 0) {
+          console.error('Deal input warnings:', validation.warnings.join('; '));
+        }
+        if (!validation.isValid) {
+          console.error('Deal input errors:', validation.errors.join('; '));
+          // Continue anyway - the conversions might fix the issues
+        }
       }
       
       // Apply configured defaults with proactive stage validation
@@ -506,8 +508,10 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         // IMPORTANT: Skip validation in error path to prevent API calls during failures
         if (error?.message?.includes('Cannot find Status') && dealData.stage) {
           const defaults = getDealDefaults();
-          const invalidStage = dealData.stage[0]?.status;
-          console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
+          if (process.env.NODE_ENV === 'development') {
+            const invalidStage = dealData.stage[0]?.status;
+            console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
+          }
           
           // Use default stage if available, otherwise remove stage (will fail since it's required)
           if (defaults.stage) {
