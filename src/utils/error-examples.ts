@@ -5,6 +5,13 @@
  */
 
 import { ErrorType } from './error-handler.js';
+import { 
+  generateFieldSuggestionMessage, 
+  generateEnumSuggestionMessage,
+  generateReadOnlyFieldMessage,
+  generateResourceTypeSuggestionMessage,
+  VALID_RESOURCE_TYPES
+} from './field-suggestions.js';
 
 interface ErrorExample {
   description: string;
@@ -130,7 +137,7 @@ export function getErrorExamples(
 }
 
 /**
- * Enhance an error message with helpful examples
+ * Enhance an error message with helpful examples and field suggestions
  */
 export function enhanceErrorMessage(
   originalMessage: string,
@@ -141,23 +148,69 @@ export function enhanceErrorMessage(
     expectedType?: string;
     actualValue?: any;
     path?: string;
+    fieldName?: string;
+    validFields?: string[];
+    validValues?: string[];
+    resourceType?: string;
+    isReadOnly?: boolean;
+    operation?: 'create' | 'update';
   }
 ): string {
-  const examples = getErrorExamples(errorType, context);
-
-  if (examples.length === 0) {
-    return originalMessage;
-  }
-
   let enhancedMessage = originalMessage;
 
-  examples.forEach((example) => {
-    enhancedMessage += `\n\n${example.description}:`;
-    enhancedMessage += `\n${JSON.stringify(example.example, null, 2)}`;
-    if (example.tip) {
-      enhancedMessage += `\n\nTIP: ${example.tip}`;
+  // Apply field name suggestions if we have validation errors
+  if (errorType === ErrorType.VALIDATION_ERROR || errorType === ErrorType.PARAMETER_ERROR) {
+    // Check for invalid field name scenarios
+    if (context.fieldName && context.validFields && context.validFields.length > 0) {
+      if (!context.validFields.includes(context.fieldName)) {
+        enhancedMessage = generateFieldSuggestionMessage(
+          context.fieldName,
+          context.validFields,
+          context.resourceType
+        );
+      } else if (context.isReadOnly) {
+        enhancedMessage = generateReadOnlyFieldMessage(
+          context.fieldName,
+          context.operation
+        );
+      }
     }
-  });
+    
+    // Check for invalid enum values
+    if (context.fieldName && context.validValues && context.validValues.length > 0) {
+      if (context.actualValue !== undefined) {
+        const valueStr = String(context.actualValue);
+        if (!context.validValues.includes(valueStr)) {
+          enhancedMessage = generateEnumSuggestionMessage(
+            context.actualValue,
+            context.validValues,
+            context.fieldName
+          );
+        }
+      }
+    }
+    
+    // Check for invalid resource types
+    if (context.resourceType && !VALID_RESOURCE_TYPES.includes(context.resourceType)) {
+      enhancedMessage = generateResourceTypeSuggestionMessage(
+        context.resourceType,
+        VALID_RESOURCE_TYPES
+      );
+    }
+  }
+
+  // Add examples to the enhanced message
+  const examples = getErrorExamples(errorType, context);
+  
+  if (examples.length > 0) {
+    examples.forEach((example) => {
+      enhancedMessage += `\n\n${example.description}:`;
+      enhancedMessage += `\n${JSON.stringify(example.example, null, 2)}`;
+      if (example.tip) {
+        enhancedMessage += `\n\nTIP: ${example.tip}`;
+      }
+    });
+  }
 
   return enhancedMessage;
 }
