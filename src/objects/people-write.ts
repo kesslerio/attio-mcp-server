@@ -14,6 +14,7 @@ import { getAttributeSlugById } from '../api/attribute-types.js';
 import { searchPeopleByEmail } from './people/search.js';
 import { searchCompanies } from './companies/search.js';
 import { getAttioClient } from '../api/attio-client.js';
+import { isValidEmail } from '../utils/validation/email-validation.js';
 
 // Error classes for people operations
 export class PersonOperationError extends Error {
@@ -141,8 +142,15 @@ export class PersonValidator {
       attributes.email_addresses = [attributes.email_addresses];
     }
 
-    // Check for duplicate emails using batch validation for better performance
+    // Validate email format BEFORE checking for duplicates
     if (attributes.email_addresses) {
+      for (const email of attributes.email_addresses) {
+        if (!isValidEmail(email)) {
+          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+        }
+      }
+
+      // Check for duplicate emails using batch validation for better performance
       const emailResults = await searchPeopleByEmails(
         attributes.email_addresses
       );
@@ -212,10 +220,9 @@ export class PersonValidator {
       const emails = Array.isArray(attributeValue)
         ? attributeValue
         : [attributeValue];
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       for (const email of emails) {
-        if (!emailRegex.test(email)) {
+        if (!isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
         }
       }

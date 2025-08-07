@@ -1,6 +1,7 @@
 /**
  * Shared types for people module
  */
+import { isValidEmail } from '../../utils/validation/email-validation.js';
 
 /**
  * Interface for attributes when creating or updating a person
@@ -68,6 +69,15 @@ export class PersonValidator {
       attributes.email_addresses = [attributes.email_addresses];
     }
 
+    // Validate email format
+    if (attributes.email_addresses) {
+      for (const email of attributes.email_addresses) {
+        if (!isValidEmail(email)) {
+          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+        }
+      }
+    }
+
     return attributes;
   }
 
@@ -109,10 +119,9 @@ export class PersonValidator {
       const emails = Array.isArray(attributeValue)
         ? attributeValue
         : [attributeValue];
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       for (const email of emails) {
-        if (!emailRegex.test(email)) {
+        if (!isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
         }
       }

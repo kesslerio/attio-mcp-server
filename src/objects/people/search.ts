@@ -30,6 +30,7 @@ import {
   PaginatedResponse,
   createPaginatedResponse,
 } from '../../utils/pagination.js';
+import { isValidEmail } from '../../utils/validation/email-validation.js';
 
 /**
  * Searches for people by name, email, or phone number
@@ -115,8 +116,7 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
     if (!email || email.trim().length === 0) {
       throw new FilterValidationError('Email cannot be empty');
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       throw new FilterValidationError(`Invalid email format: ${email}`);
     }
 
