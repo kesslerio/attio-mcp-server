@@ -191,10 +191,6 @@ ${description}`;
       const phone =
         getCompanyValue(company as Company, 'company_phone_5')?.[0]
           ?.phone_number || 'Not available';
-      const _location = getCompanyValue(
-        company as Company,
-        'primary_location'
-      )?.[0];
       const streetAddress =
         getCompanyValue(company as Company, 'street_address')?.[0]?.value || '';
       const streetAddress2 =
