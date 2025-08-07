@@ -677,7 +677,7 @@ describe('Universal Advanced Operations Tests', () => {
     });
 
     it('should validate batch size limits', async () => {
-      const largeRecordArray = Array(51).fill({ name: 'Test Company' });
+      const largeRecordArray = Array(101).fill({ name: 'Test Company' });
 
       const params: BatchOperationsParams = {
         resource_type: UniversalResourceType.COMPANIES,
@@ -686,7 +686,7 @@ describe('Universal Advanced Operations Tests', () => {
       };
 
       await expect(batchOperationsConfig.handler(params)).rejects.toThrow(
-        /Batch create size \(51\) exceeds maximum allowed \(50\)/
+        /Batch size \(101\) exceeds maximum allowed \(100\)/
       );
     });
 

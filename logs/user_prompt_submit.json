@@ -54,5 +54,19 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "continue with the @agent-debug-specialist "
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "is this tested?"
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "can u put @agent-test-coverage-specialist on afddressing failing tests \"\"  - 16 tests failing - but these are primarily in the new test files with mock/implementation issues, not\n  actual code failures\"\""
   }
 ]

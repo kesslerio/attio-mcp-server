@@ -83,7 +83,7 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
 function classifyError(message: string): string {
   const lowerMessage = message.toLowerCase();
   
-  if (lowerMessage.includes('authentication') || lowerMessage.includes('api key')) {
+  if (lowerMessage.includes('authentication') || lowerMessage.includes('api key') || lowerMessage.includes('api_key')) {
     return 'authentication';
   }
   if (lowerMessage.includes('authorization') || lowerMessage.includes('permission')) {
