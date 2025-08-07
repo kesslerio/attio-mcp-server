@@ -28,10 +28,36 @@ export interface DealDefaults {
   currency?: string;
 }
 
+/**
+ * Clear all caches (useful for testing or when configuration changes)
+ */
+export function clearDealCaches(): void {
+  stageCache = null;
+  stageCacheTimestamp = 0;
+  errorCache = null;
+}
+
+/**
+ * Pre-warm the stage cache (useful at startup to avoid first-request latency)
+ */
+export async function prewarmStageCache(): Promise<void> {
+  try {
+    await getAvailableDealStages();
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to pre-warm stage cache:', error);
+    }
+  }
+}
+
 // Cache for available deal stages to avoid repeated API calls
 let stageCache: string[] | null = null;
 let stageCacheTimestamp: number = 0;
 const STAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Error cache to prevent repeated failed API calls during outages
+let errorCache: { timestamp: number; error: any } | null = null;
+const ERROR_CACHE_TTL = 30 * 1000; // 30 seconds - shorter TTL for errors
 
 /**
  * Get deal defaults from environment configuration
@@ -115,8 +141,8 @@ export function applyDealDefaults(
 
   // === VALUE/CURRENCY HANDLING ===
 
-  // Debug logging for value field
-  if (dealData.value !== undefined) {
+  // Debug logging for value field (development only)
+  if (process.env.NODE_ENV === 'development' && dealData.value !== undefined) {
     console.error(
       'Deal value before conversion:',
       JSON.stringify(dealData.value)
@@ -161,8 +187,8 @@ export function applyDealDefaults(
     delete dealData.deal_value;
   }
 
-  // Debug logging for value field after conversion
-  if (dealData.value !== undefined) {
+  // Debug logging for value field after conversion (development only)
+  if (process.env.NODE_ENV === 'development' && dealData.value !== undefined) {
     console.error(
       'Deal value after conversion:',
       JSON.stringify(dealData.value)
@@ -261,6 +287,9 @@ export function validateDealInput(recordData: Record<string, any>): {
 
 /**
  * Get available deal stages from Attio API with caching
+ * 
+ * NOTE: This function makes an API call and should NOT be used in error handling paths
+ * to prevent cascading failures during high error rates.
  */
 async function getAvailableDealStages(): Promise<string[]> {
   const now = Date.now();
@@ -268,6 +297,14 @@ async function getAvailableDealStages(): Promise<string[]> {
   // Return cached stages if still valid
   if (stageCache && now - stageCacheTimestamp < STAGE_CACHE_TTL) {
     return stageCache;
+  }
+
+  // Check error cache to prevent repeated failed requests
+  if (errorCache && now - errorCache.timestamp < ERROR_CACHE_TTL) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Returning empty stages due to recent API error (cached)');
+    }
+    return [];
   }
 
   try {
@@ -285,7 +322,9 @@ async function getAvailableDealStages(): Promise<string[]> {
     );
 
     if (!stageAttribute) {
-      console.error('No stage attribute found for deals');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('No stage attribute found for deals');
+      }
       return [];
     }
 
@@ -296,34 +335,61 @@ async function getAvailableDealStages(): Promise<string[]> {
     const stages: string[] = [];
 
     // TODO: Investigate the correct way to fetch status options from Attio API
-    console.error(
-      'Status options endpoint not implemented - using fallback stage validation'
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        'Status options endpoint not implemented - using fallback stage validation'
+      );
+    }
 
-    // Update cache
+    // Update cache and clear error cache on success
     stageCache = stages;
     stageCacheTimestamp = now;
+    errorCache = null;
 
     return stages;
   } catch (error) {
-    console.error('Failed to fetch available deal stages:', error);
-    return [];
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to fetch available deal stages:', error);
+    }
+    
+    // Cache the error to prevent cascading failures
+    errorCache = { timestamp: now, error };
+    
+    // Return previously cached stages if available, otherwise empty array
+    return stageCache || [];
   }
 }
 
 /**
  * Validate and correct deal stage
  * Returns the validated stage or the default if invalid
+ * 
+ * @param stage - The stage to validate
+ * @param skipApiCall - If true, skip API call and use cached data only
  */
 export async function validateDealStage(
-  stage: string | undefined
+  stage: string | undefined,
+  skipApiCall: boolean = false
 ): Promise<string | undefined> {
   if (!stage) {
     return undefined;
   }
 
   try {
-    const availableStages = await getAvailableDealStages();
+    // If skipApiCall is true, only use cached data
+    let availableStages: string[] = [];
+    
+    if (skipApiCall) {
+      // Use cached stages if available, otherwise skip validation
+      if (stageCache) {
+        availableStages = stageCache;
+      } else {
+        // No cache available and can't make API call, return original
+        return stage;
+      }
+    } else {
+      availableStages = await getAvailableDealStages();
+    }
 
     // Check if provided stage exists (case-insensitive)
     const validStage = availableStages.find(
@@ -349,9 +415,13 @@ export async function validateDealStage(
 
 /**
  * Enhanced apply deal defaults with stage validation
+ * 
+ * @param recordData - The deal data to process
+ * @param skipValidation - Skip API validation (used in error paths to prevent cascading failures)
  */
 export async function applyDealDefaultsWithValidation(
-  recordData: Record<string, any>
+  recordData: Record<string, any>,
+  skipValidation: boolean = false
 ): Promise<Record<string, any>> {
   const dealData = applyDealDefaults(recordData);
 
@@ -361,7 +431,11 @@ export async function applyDealDefaultsWithValidation(
     Array.isArray(dealData.stage) &&
     dealData.stage[0]?.status
   ) {
-    const validatedStage = await validateDealStage(dealData.stage[0].status);
+    // Pass skipValidation flag to validateDealStage to control API calls
+    const validatedStage = await validateDealStage(
+      dealData.stage[0].status,
+      skipValidation // Skip API calls when in error paths
+    );
     if (validatedStage) {
       dealData.stage = [{ status: validatedStage }];
     }

@@ -82,6 +82,16 @@ import {
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
+import {
+  mapFieldName,
+  mapRecordFields,
+  validateResourceType,
+  getFieldSuggestions,
+  validateFields,
+  enhanceUniquenessError,
+  getValidResourceTypes,
+  getValidFields
+} from './field-mapper.js';
 
 /**
  * Query deal records using the proper Attio API endpoint
@@ -319,13 +329,13 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       
       if (cached404) {
         enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-        throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
+        throw new Error('The requested record could not be found.');
       }
       
       // Cache this invalid ID for future requests
       enhancedPerformanceTracker.cache404Response(cacheKey, { error: idValidation.message }, 60000);
       enhancedPerformanceTracker.endOperation(perfId, false, idValidation.message, 400);
-      throw new Error(idValidation.message || `Invalid record ID format: ${record_id}`);
+      throw new Error('Invalid record identifier format. Please check the ID and try again.');
     }
     
     // Check 404 cache for valid IDs too
@@ -334,7 +344,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     
     if (cached404) {
       enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-      throw new Error(`Record not found (cached): ${record_id}`);
+      throw new Error('The requested record could not be found.');
     }
     
     // Track API call timing
@@ -366,7 +376,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           if (!task) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
-            throw new Error(`Task not found with ID: ${record_id}`);
+            throw new Error('The requested task could not be found.');
           }
           // Convert AttioTask to AttioRecord using proper type conversion
           result = convertTaskToRecord(task);
@@ -407,7 +417,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
 }
 
 /**
- * Universal create record handler
+ * Universal create record handler with enhanced field validation
  */
 export async function handleUniversalCreate(params: UniversalCreateParams): Promise<AttioRecord> {
   const { resource_type, record_data } = params;
@@ -416,11 +426,36 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
   }
   
+  // Pre-validate fields and provide helpful suggestions
+  const fieldValidation = validateFields(resource_type, record_data);
+  if (fieldValidation.warnings.length > 0) {
+    console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
+  }
+  if (fieldValidation.suggestions.length > 0) {
+    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+  }
+  if (!fieldValidation.valid) {
+    throw new UniversalValidationError(
+      `Invalid fields for ${resource_type}: ${fieldValidation.errors.join('; ')}`,
+      ErrorType.USER_ERROR,
+      {
+        suggestion: fieldValidation.suggestions.join('. '),
+        field: 'record_data'
+      }
+    );
+  }
+  
+  // Map field names to correct ones
+  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data);
+  if (warnings.length > 0) {
+    console.log('Field mapping applied:', warnings.join('\n'));
+  }
+  
   switch (resource_type) {
     case UniversalResourceType.COMPANIES: {
       try {
         // Apply format conversions for common mistakes
-        const correctedData = convertAttributeFormats('companies', record_data);
+        const correctedData = convertAttributeFormats('companies', mappedData);
         
         if (process.env.NODE_ENV === 'development') {
           console.log('[handleUniversalCreate] Corrected data for companies:', correctedData);
@@ -446,9 +481,23 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         if (error?.message?.includes('Cannot find attribute')) {
           const match = error.message.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
             const enhancedError = getFormatErrorHelp('companies', match[1], error.message);
-            throw new Error(enhancedError);
+            throw new UniversalValidationError(
+              enhancedError,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
           }
+        }
+        // Check for uniqueness constraint violations
+        if (error?.message?.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+          throw new UniversalValidationError(
+            enhancedMessage,
+            ErrorType.USER_ERROR,
+            { suggestion: 'Try searching for existing records first or use different unique values' }
+          );
         }
         throw error;
       }
@@ -457,7 +506,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     case UniversalResourceType.PEOPLE: {
       try {
         // Normalize people data first (handle name string/object, email singular/array)
-        const normalizedData = PeopleDataNormalizer.normalizePeopleData(record_data);
+        const normalizedData = PeopleDataNormalizer.normalizePeopleData(mappedData);
         
         // Apply format conversions for common mistakes
         const correctedData = convertAttributeFormats('people', normalizedData);
@@ -467,49 +516,86 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         if (error?.message?.includes('invalid value') || error?.message?.includes('Format Error')) {
           const match = error.message.match(/slug "([^"]+)"/);
           if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
             const enhancedError = getFormatErrorHelp('people', match[1], error.message);
-            throw new Error(enhancedError);
+            throw new UniversalValidationError(
+              enhancedError,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
           }
+        }
+        // Check for uniqueness constraint violations
+        if (error?.message?.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+          throw new UniversalValidationError(
+            enhancedMessage,
+            ErrorType.USER_ERROR,
+            { suggestion: 'Try searching for existing records first or use different unique values' }
+          );
         }
         throw error;
       }
     }
       
     case UniversalResourceType.RECORDS:
-      return createObjectRecord('records', record_data);
+      try {
+        return await createObjectRecord('records', mappedData);
+      } catch (error: any) {
+        // Check for uniqueness constraint violations
+        if (error?.message?.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+          throw new UniversalValidationError(
+            enhancedMessage,
+            ErrorType.USER_ERROR,
+            { suggestion: 'Try searching for existing records first or use different unique values' }
+          );
+        }
+        throw error;
+      }
       
     case UniversalResourceType.DEALS: {
       // Handle deal-specific requirements with configured defaults and validation
-      let dealData = { ...record_data };
+      let dealData = { ...mappedData };
       
       // Validate input and log suggestions (but don't block execution)
       const validation = validateDealInput(dealData);
-      if (validation.suggestions.length > 0) {
-        console.error('Deal input suggestions:', validation.suggestions.join('; '));
-      }
-      if (validation.warnings.length > 0) {
-        console.error('Deal input warnings:', validation.warnings.join('; '));
-      }
-      if (!validation.isValid) {
-        console.error('Deal input errors:', validation.errors.join('; '));
-        // Continue anyway - the conversions might fix the issues
+      if (process.env.NODE_ENV === 'development') {
+        if (validation.suggestions.length > 0) {
+          console.error('Deal input suggestions:', validation.suggestions.join('; '));
+        }
+        if (validation.warnings.length > 0) {
+          console.error('Deal input warnings:', validation.warnings.join('; '));
+        }
+        if (!validation.isValid) {
+          console.error('Deal input errors:', validation.errors.join('; '));
+          // Continue anyway - the conversions might fix the issues
+        }
       }
       
       // Apply configured defaults with proactive stage validation
-      dealData = await applyDealDefaultsWithValidation(dealData);
+      // Note: This may make an API call for stage validation
+      dealData = await applyDealDefaultsWithValidation(dealData, false);
       
       try {
         return await createObjectRecord('deals', dealData);
       } catch (error: any) {
         // If stage still fails after validation, try with default stage
+        // IMPORTANT: Skip validation in error path to prevent API calls during failures
         if (error?.message?.includes('Cannot find Status') && dealData.stage) {
           const defaults = getDealDefaults();
-          const invalidStage = dealData.stage[0]?.status;
-          console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
+          if (process.env.NODE_ENV === 'development') {
+            const invalidStage = dealData.stage[0]?.status;
+            console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
+          }
           
           // Use default stage if available, otherwise remove stage (will fail since it's required)
           if (defaults.stage) {
-            dealData.stage = [{ status: defaults.stage }];
+            // Apply defaults WITHOUT validation to avoid API calls in error path
+            dealData = await applyDealDefaultsWithValidation(
+              { ...record_data, stage: defaults.stage },
+              true // Skip validation in error path
+            );
           } else {
             delete dealData.stage;
           }
@@ -521,12 +607,12 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     }
       
     case UniversalResourceType.TASKS: {
-      // Extract content from record_data for task creation
-      const content = record_data.content || record_data.title || record_data.name || 'New task';
+      // Extract content from mapped data for task creation
+      const content = mappedData.content || mappedData.title || mappedData.name || 'New task';
       const options = {
-        assigneeId: record_data.assigneeId,
-        dueDate: record_data.dueDate,
-        recordId: record_data.recordId
+        assigneeId: mappedData.assignee_id || mappedData.assigneeId,
+        dueDate: mappedData.due_date || mappedData.dueDate,
+        recordId: mappedData.record_id || mappedData.recordId
       };
       const createdTask = await createTask(content, options);
       // Convert AttioTask to AttioRecord using proper type conversion
@@ -534,40 +620,111 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     }
       
     default:
-      throw new Error(`Unsupported resource type for create: ${resource_type}`);
+      // Check if resource type can be corrected
+      const resourceValidation = validateResourceType(resource_type);
+      if (resourceValidation.corrected) {
+        // Retry with corrected resource type
+        console.log(`Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`);
+        return handleUniversalCreate({ ...params, resource_type: resourceValidation.corrected });
+      }
+      throw new UniversalValidationError(
+        `Unsupported resource type: ${resource_type}`,
+        ErrorType.USER_ERROR,
+        { 
+          suggestion: resourceValidation.suggestion || `Valid resource types are: ${getValidResourceTypes()}`
+        }
+      );
   }
 }
 
 /**
- * Universal update record handler
+ * Universal update record handler with enhanced field validation
  */
 export async function handleUniversalUpdate(params: UniversalUpdateParams): Promise<AttioRecord> {
   const { resource_type, record_id, record_data } = params;
   
+  // Pre-validate fields and provide helpful suggestions (less strict for updates)
+  const fieldValidation = validateFields(resource_type, record_data);
+  if (fieldValidation.warnings.length > 0) {
+    console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
+  }
+  if (fieldValidation.suggestions.length > 0) {
+    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+  }
+  
+  // Map field names to correct ones
+  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data);
+  if (warnings.length > 0) {
+    console.log('Field mapping applied:', warnings.join('\n'));
+  }
+  
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
-      return updateCompany(record_id, record_data);
+      try {
+        return await updateCompany(record_id, mappedData);
+      } catch (error: any) {
+        if (error?.message?.includes('Cannot find attribute')) {
+          const match = error.message.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
+            throw new UniversalValidationError(
+              error.message,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
+          }
+        }
+        throw error;
+      }
       
     case UniversalResourceType.PEOPLE:
-      return updatePerson(record_id, record_data);
+      try {
+        return await updatePerson(record_id, mappedData);
+      } catch (error: any) {
+        if (error?.message?.includes('Cannot find attribute')) {
+          const match = error.message.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
+            throw new UniversalValidationError(
+              error.message,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
+          }
+        }
+        throw error;
+      }
       
     case UniversalResourceType.RECORDS:
-      return updateObjectRecord('records', record_id, record_data);
+      return updateObjectRecord('records', record_id, mappedData);
       
     case UniversalResourceType.DEALS: {
-      // Apply deal defaults and validation for updates too
-      const updatedDealData = await applyDealDefaultsWithValidation(record_data);
+      // Note: Updates are less likely to fail, but we still validate stages proactively
+      const updatedDealData = await applyDealDefaultsWithValidation(mappedData, false);
       return updateObjectRecord('deals', record_id, updatedDealData);
     }
       
     case UniversalResourceType.TASKS: {
-      const updatedTask = await updateTask(record_id, record_data);
+      const updatedTask = await updateTask(record_id, mappedData);
       // Convert AttioTask to AttioRecord using proper type conversion
       return convertTaskToRecord(updatedTask);    
     }
       
     default:
-      throw new Error(`Unsupported resource type for update: ${resource_type}`);
+      // Check if resource type can be corrected
+      const resourceValidation = validateResourceType(resource_type);
+      if (resourceValidation.corrected) {
+        // Retry with corrected resource type
+        console.log(`Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`);
+        return handleUniversalUpdate({ ...params, resource_type: resourceValidation.corrected });
+      }
+      throw new UniversalValidationError(
+        `Unsupported resource type: ${resource_type}`,
+        ErrorType.USER_ERROR,
+        { 
+          suggestion: resourceValidation.suggestion || `Valid resource types are: ${getValidResourceTypes()}`
+        }
+      );
   }
 }
 
@@ -794,6 +951,34 @@ export function createUniversalError(operation: string, resourceType: string, or
 function getOperationSuggestion(operation: string, resourceType: string, error: any): string | undefined {
   const errorMessage = error?.message?.toLowerCase() || '';
   
+  // First check if this is an invalid resource type
+  const resourceValidation = validateResourceType(resourceType);
+  if (!resourceValidation.valid && resourceValidation.suggestion) {
+    return resourceValidation.suggestion;
+  }
+  
+  // Date-related error suggestions
+  if (errorMessage.includes('unable to parse date') || errorMessage.includes('invalid date')) {
+    return 'Try using relative dates like "last 7 days", "this month", "yesterday" or ISO format (YYYY-MM-DD)';
+  }
+  
+  if (errorMessage.includes('date range') || errorMessage.includes('daterange')) {
+    return 'Date ranges support formats like: "last 30 days", "this week", "last month", or ISO dates (2024-01-01)';
+  }
+  
+  // API limitation suggestions
+  if (errorMessage.includes('filter') && errorMessage.includes('not supported')) {
+    return 'This filter combination is not supported by the Attio API. Try using a simpler filter or fetching all records and filtering locally.';
+  }
+  
+  if (errorMessage.includes('batch') && errorMessage.includes('limit')) {
+    return 'Batch operations are limited to 100 items at a time. Please split your request into smaller batches.';
+  }
+  
+  if (errorMessage.includes('rate limit')) {
+    return 'API rate limit reached. Please wait a moment before retrying or reduce the frequency of requests.';
+  }
+  
   // Deal-specific suggestions
   if (resourceType === 'deals') {
     if (errorMessage.includes('cannot find attribute with slug/id "company_id"')) {
@@ -866,6 +1051,18 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
     }
   }
   
+  // Handle "Cannot find attribute" errors with field suggestions
+  if (errorMessage.includes('cannot find attribute')) {
+    const match = error?.message?.match(/cannot find attribute with slug\/id["\s]*([^"]*)/i);
+    if (match && match[1]) {
+      const fieldName = match[1].replace(/["]/g, '').trim();
+      // Try to get field suggestions for the resource type
+      if (Object.values(UniversalResourceType).includes(resourceType as UniversalResourceType)) {
+        return getFieldSuggestions(resourceType as UniversalResourceType, fieldName);
+      }
+    }
+  }
+  
   // General suggestions
   if (errorMessage.includes('not found')) {
     return `Verify that the ${resourceType} record exists and you have access to it`;
@@ -883,14 +1080,19 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
     return `A ${resourceType} record with these details may already exist. Try searching first`;
   }
   
+  if (errorMessage.includes('uniqueness constraint')) {
+    return 'A record with these unique values already exists. Try searching for the existing record or use different values.';
+  }
+  
+  // Check for remaining "cannot find attribute" errors not caught above
   if (errorMessage.includes('cannot find attribute')) {
-    const match = errorMessage.match(/cannot find attribute with slug\/id["\s]*([^"]*)/);
-    if (match && match[1]) {
+    const attrMatch = errorMessage.match(/cannot find attribute with slug\/id["\s]*([^"]*)/);
+    if (attrMatch && attrMatch[1]) {
       // Provide resource-specific field suggestions
       if (resourceType === 'deals') {
-        return `Unknown field "${match[1]}". Available deal fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes for full list`;
+        return `Unknown field "${attrMatch[1]}". Available deal fields: name, stage, value, owner, associated_company, associated_people. Use discover-attributes for full list`;
       }
-      return `Unknown field "${match[1]}". Use discover-attributes tool to see available fields for ${resourceType}`;
+      return `Unknown field "${attrMatch[1]}". Use discover-attributes tool to see available fields for ${resourceType}`;
     }
   }
   

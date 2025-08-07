@@ -65,7 +65,7 @@ describe('api-errors', () => {
         'GET'
       );
 
-      expect(error.message).toBe("Person with ID '123' not found");
+      expect(error.message).toBe("Person 123 not found");
       expect(error.statusCode).toBe(404);
       expect(error.name).toBe('ResourceNotFoundError');
       expect(error instanceof AttioApiError).toBe(true);
@@ -172,7 +172,7 @@ describe('api-errors', () => {
       );
 
       expect(error).toBeInstanceOf(ResourceNotFoundError);
-      expect(error.message).toBe("Person with ID '123' not found");
+      expect(error.message).toBe("Person 123 not found");
     });
 
     it('should handle missing response data', () => {

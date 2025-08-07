@@ -313,14 +313,41 @@ await client.callTool('batch-operations', {
 
 ### 4. Date and Time Handling
 
+#### Natural Language Date Support (v0.2.1+)
+The universal tools now support natural language date expressions for more intuitive filtering:
+
+```typescript
+// ✅ NEW: Natural language relative dates
+await client.callTool('search-records', {
+  resource_type: 'people',
+  filters: {
+    and: [
+      { attribute: 'created_at', condition: 'after', value: 'last 7 days' },
+      { attribute: 'updated_at', condition: 'before', value: 'yesterday' }
+    ]
+  }
+});
+
+// ✅ Supported relative date formats:
+// - "today", "yesterday"
+// - "this week", "last week"
+// - "this month", "last month"
+// - "this year", "last year"
+// - "last N days" (e.g., "last 30 days")
+// - "last N weeks" (e.g., "last 2 weeks")
+// - "last N months" (e.g., "last 3 months")
+```
+
 #### Use Correct Date Operators
 ```typescript
-// ✅ Good: Correct operators
+// ✅ Good: Multiple date format options
 {
   filters: {
     and: [
+      // ISO format (still supported)
       { attribute: 'created_at', condition: 'after', value: '2024-01-01T00:00:00Z' },
-      { attribute: 'updated_at', condition: 'before', value: '2024-12-31T23:59:59Z' }
+      // Natural language (new)
+      { attribute: 'updated_at', condition: 'before', value: 'last week' }
     ]
   }
 }
@@ -337,18 +364,25 @@ await client.callTool('batch-operations', {
 
 #### Use Valid Date Presets
 ```typescript
-// ✅ Good: Valid presets
+// ✅ Good: Valid presets and natural language
 await client.callTool('search-by-timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
-  preset: 'this_month'
+  preset: 'this_month'  // Standard preset
 });
 
-// ❌ Poor: Invalid preset
+// ✅ Also good: Natural language expressions
 await client.callTool('search-by-timeframe', {
   resource_type: 'people',
   timeframe_type: 'created',
-  preset: 'last_30_days'  // Will fail
+  preset: 'last 30 days'  // Now supported!
+});
+
+// ❌ Poor: Invalid format
+await client.callTool('search-by-timeframe', {
+  resource_type: 'people',
+  timeframe_type: 'created',
+  preset: 'thirty days ago'  // Not recognized
 });
 ```
 
