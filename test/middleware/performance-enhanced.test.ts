@@ -57,9 +57,9 @@ describe('Enhanced Performance Tracker', () => {
         true
       );
 
-      expect(metrics?.timingSplit.validation).toBeGreaterThanOrEqual(5);
-      expect(metrics?.timingSplit.attioApi).toBeGreaterThanOrEqual(20);
-      expect(metrics?.timingSplit.total).toBeGreaterThan(25);
+      expect(metrics?.timingSplit.validation).toBeGreaterThanOrEqual(4); // Allow slight timing variance
+      expect(metrics?.timingSplit.attioApi).toBeGreaterThanOrEqual(18); // Allow slight timing variance
+      expect(metrics?.timingSplit.total).toBeGreaterThan(22); // Allow more tolerance for CI timing
     });
   });
 

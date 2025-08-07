@@ -5,12 +5,12 @@
  */
 
 import { ErrorType } from './error-handler.js';
-import { 
-  generateFieldSuggestionMessage, 
+import {
+  generateFieldSuggestionMessage,
   generateEnumSuggestionMessage,
   generateReadOnlyFieldMessage,
   generateResourceTypeSuggestionMessage,
-  VALID_RESOURCE_TYPES
+  VALID_RESOURCE_TYPES,
 } from './field-suggestions.js';
 
 interface ErrorExample {
@@ -159,9 +159,16 @@ export function enhanceErrorMessage(
   let enhancedMessage = originalMessage;
 
   // Apply field name suggestions if we have validation errors
-  if (errorType === ErrorType.VALIDATION_ERROR || errorType === ErrorType.PARAMETER_ERROR) {
+  if (
+    errorType === ErrorType.VALIDATION_ERROR ||
+    errorType === ErrorType.PARAMETER_ERROR
+  ) {
     // Check for invalid field name scenarios
-    if (context.fieldName && context.validFields && context.validFields.length > 0) {
+    if (
+      context.fieldName &&
+      context.validFields &&
+      context.validFields.length > 0
+    ) {
       if (!context.validFields.includes(context.fieldName)) {
         enhancedMessage = generateFieldSuggestionMessage(
           context.fieldName,
@@ -175,9 +182,13 @@ export function enhanceErrorMessage(
         );
       }
     }
-    
+
     // Check for invalid enum values
-    if (context.fieldName && context.validValues && context.validValues.length > 0) {
+    if (
+      context.fieldName &&
+      context.validValues &&
+      context.validValues.length > 0
+    ) {
       if (context.actualValue !== undefined) {
         const valueStr = String(context.actualValue);
         if (!context.validValues.includes(valueStr)) {
@@ -189,9 +200,12 @@ export function enhanceErrorMessage(
         }
       }
     }
-    
+
     // Check for invalid resource types
-    if (context.resourceType && !VALID_RESOURCE_TYPES.includes(context.resourceType)) {
+    if (
+      context.resourceType &&
+      !VALID_RESOURCE_TYPES.includes(context.resourceType)
+    ) {
       enhancedMessage = generateResourceTypeSuggestionMessage(
         context.resourceType,
         VALID_RESOURCE_TYPES
@@ -201,7 +215,7 @@ export function enhanceErrorMessage(
 
   // Add examples to the enhanced message
   const examples = getErrorExamples(errorType, context);
-  
+
   if (examples.length > 0) {
     examples.forEach((example) => {
       enhancedMessage += `\n\n${example.description}:`;

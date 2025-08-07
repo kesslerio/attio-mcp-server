@@ -12,7 +12,7 @@ import {
   generateResourceTypeSuggestionMessage,
   getMappedFieldName,
   validateFieldWithSuggestions,
-  VALID_RESOURCE_TYPES
+  VALID_RESOURCE_TYPES,
 } from '../../src/utils/field-suggestions.js';
 
 describe('Field Suggestions Utilities', () => {
@@ -33,7 +33,13 @@ describe('Field Suggestions Utilities', () => {
   });
 
   describe('findSimilarOptions', () => {
-    const validFields = ['first_name', 'last_name', 'email', 'phone_numbers', 'job_title'];
+    const validFields = [
+      'first_name',
+      'last_name',
+      'email',
+      'phone_numbers',
+      'job_title',
+    ];
 
     it('should find similar field names', () => {
       const suggestions = findSimilarOptions('firstname', validFields);
@@ -72,7 +78,11 @@ describe('Field Suggestions Utilities', () => {
     });
 
     it('should include context when provided', () => {
-      const message = generateFieldSuggestionMessage('firstname', validFields, 'people');
+      const message = generateFieldSuggestionMessage(
+        'firstname',
+        validFields,
+        'people'
+      );
       expect(message).toContain('for people');
     });
 
@@ -93,7 +103,11 @@ describe('Field Suggestions Utilities', () => {
     const validValues = ['active', 'inactive', 'pending'];
 
     it('should generate message with all valid options for small sets', () => {
-      const message = generateEnumSuggestionMessage('activ', validValues, 'status');
+      const message = generateEnumSuggestionMessage(
+        'activ',
+        validValues,
+        'status'
+      );
       expect(message).toContain('Invalid value "activ" for field "status"');
       expect(message).toContain('Did you mean: "active"');
       expect(message).toContain('Valid options are:');
@@ -124,13 +138,19 @@ describe('Field Suggestions Utilities', () => {
 
   describe('generateResourceTypeSuggestionMessage', () => {
     it('should suggest similar resource types', () => {
-      const message = generateResourceTypeSuggestionMessage('person', VALID_RESOURCE_TYPES);
+      const message = generateResourceTypeSuggestionMessage(
+        'person',
+        VALID_RESOURCE_TYPES
+      );
       expect(message).toContain('Invalid resource type: "person"');
       expect(message).toContain('Did you mean: "people"');
     });
 
     it('should list all valid resource types', () => {
-      const message = generateResourceTypeSuggestionMessage('xyz', VALID_RESOURCE_TYPES);
+      const message = generateResourceTypeSuggestionMessage(
+        'xyz',
+        VALID_RESOURCE_TYPES
+      );
       expect(message).toContain('Valid resource types are:');
       expect(message).toContain('"people"');
       expect(message).toContain('"companies"');
@@ -158,7 +178,13 @@ describe('Field Suggestions Utilities', () => {
   });
 
   describe('validateFieldWithSuggestions', () => {
-    const validFields = ['first_name', 'last_name', 'email', 'created_at', 'updated_at'];
+    const validFields = [
+      'first_name',
+      'last_name',
+      'email',
+      'created_at',
+      'updated_at',
+    ];
     const readOnlyFields = ['created_at', 'updated_at'];
 
     it('should validate valid fields', () => {
