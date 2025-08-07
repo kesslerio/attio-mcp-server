@@ -59,23 +59,15 @@ import {
 
 import { AttioRecord, ActivityFilter, InteractionType } from '../../../types/attio.js';
 import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
+import {
+  validateBatchOperation,
+  validateSearchQuery,
+} from '../../../utils/batch-validation.js';
+import { RATE_LIMITS } from '../../../config/security-limits.js';
 
-// Performance and safety constants
-const MAX_BATCH_SIZE = 50; // Maximum number of records per batch operation
-const BATCH_DELAY_MS = 100; // Delay between API calls to respect rate limits
-const MAX_CONCURRENT_REQUESTS = 5; // Maximum number of concurrent API requests
-
-/**
- * Validates batch operation size for performance and safety
- */
-function validateBatchSize(items: any[], operationType: string): void {
-  if (items && items.length > MAX_BATCH_SIZE) {
-    throw new Error(
-      `Batch ${operationType} size (${items.length}) exceeds maximum allowed (${MAX_BATCH_SIZE}). ` +
-      `Please split into smaller batches for performance and safety.`
-    );
-  }
-}
+// Performance and safety constants from security configuration
+const BATCH_DELAY_MS = RATE_LIMITS.BATCH_DELAY_MS;
+const MAX_CONCURRENT_REQUESTS = RATE_LIMITS.MAX_CONCURRENT_REQUESTS;
 
 /**
  * Adds a small delay between API calls to respect rate limits
@@ -458,8 +450,16 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error('Records array is required for batch create operation');
           }
           
-          // Validate batch size for performance and safety
-          validateBatchSize(records, 'create');
+          // Validate batch operation with comprehensive checks
+          const createValidation = validateBatchOperation({
+            items: records,
+            operationType: 'create',
+            resourceType: resource_type,
+            checkPayload: true,
+          });
+          if (!createValidation.isValid) {
+            throw new Error(createValidation.error);
+          }
           
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
@@ -478,8 +478,16 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error('Records array is required for batch update operation');
           }
           
-          // Validate batch size for performance and safety
-          validateBatchSize(records, 'update');
+          // Validate batch operation with comprehensive checks
+          const updateValidation = validateBatchOperation({
+            items: records,
+            operationType: 'update',
+            resourceType: resource_type,
+            checkPayload: true,
+          });
+          if (!updateValidation.isValid) {
+            throw new Error(updateValidation.error);
+          }
           
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
@@ -503,8 +511,16 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error('Record IDs array is required for batch delete operation');
           }
           
-          // Validate batch size for performance and safety
-          validateBatchSize(record_ids, 'delete');
+          // Validate batch operation with stricter limits for delete
+          const deleteValidation = validateBatchOperation({
+            items: record_ids,
+            operationType: 'delete',
+            resourceType: resource_type,
+            checkPayload: false, // IDs don't need payload check
+          });
+          if (!deleteValidation.isValid) {
+            throw new Error(deleteValidation.error);
+          }
           
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
@@ -522,8 +538,16 @@ export const batchOperationsConfig: UniversalToolConfig = {
             throw new Error('Record IDs array is required for batch get operation');
           }
           
-          // Validate batch size for performance and safety
-          validateBatchSize(record_ids, 'get');
+          // Validate batch operation
+          const getValidation = validateBatchOperation({
+            items: record_ids,
+            operationType: 'get',
+            resourceType: resource_type,
+            checkPayload: false, // IDs don't need payload check
+          });
+          if (!getValidation.isValid) {
+            throw new Error(getValidation.error);
+          }
           
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
@@ -537,6 +561,12 @@ export const batchOperationsConfig: UniversalToolConfig = {
           );
           
         case BatchOperationType.SEARCH:
+          // Validate search query parameters
+          const searchValidation = validateSearchQuery(undefined, { resource_type, limit, offset });
+          if (!searchValidation.isValid) {
+            throw new Error(searchValidation.error);
+          }
+          
           // Batch search is essentially the same as regular search with pagination
           return await handleUniversalSearch({
             resource_type,

@@ -49,6 +49,7 @@
     "prompt": "Review https://github.com/kesslerio/attio-mcp-server/pull/380#issuecomment-3161036038 and improve PR @agent-project-delegator-orchestrator "
   },
   {
+<<<<<<< HEAD
     "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
     "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
@@ -68,5 +69,27 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "use @agent-project-delegator-orchestrator to proceed with phase 2"
+||||||| b77f523
+=======
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "continue with the @agent-debug-specialist "
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "is this tested?"
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "can u put @agent-test-coverage-specialist on afddressing failing tests \"\"  - 16 tests failing - but these are primarily in the new test files with mock/implementation issues, not\n  actual code failures\"\""
+>>>>>>> origin/fix/pr-389-critical-issues
   }
 ]

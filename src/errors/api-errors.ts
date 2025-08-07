@@ -3,6 +3,8 @@
  * Includes specialized error types for API interactions and validation
  */
 
+import { sanitizeErrorMessage } from '../utils/error-sanitizer.js';
+
 /**
  * Base class for all Attio API errors
  */
@@ -33,9 +35,16 @@ export class AttioApiError extends Error {
    * Get a formatted representation of the error for logging
    */
   toFormattedString(): string {
+    // In production, sanitize the output
+    if (process.env.NODE_ENV === 'production') {
+      return `${this.name} (${this.statusCode}): ${sanitizeErrorMessage(this.message)}`;
+    }
+    
+    // In development, include more details but still sanitize sensitive data
+    const sanitizedEndpoint = this.endpoint.replace(/\/[a-f0-9\-]{20,}/gi, '/[ID_REDACTED]');
     return (
       `${this.name} (${this.statusCode}): ${this.message}\n` +
-      `Endpoint: ${this.method} ${this.endpoint}\n` +
+      `Endpoint: ${this.method} ${sanitizedEndpoint}\n` +
       `Details: ${JSON.stringify(this.details || {}, null, 2)}`
     );
   }
@@ -46,12 +55,14 @@ export class AttioApiError extends Error {
  */
 export class AuthenticationError extends AttioApiError {
   constructor(
-    message: string = 'Authentication failed. Please check your API key.',
+    message: string = 'Authentication failed. Please check your credentials.',
     endpoint: string,
     method: string,
     details?: any
   ) {
-    super(message, 401, endpoint, method, details);
+    // Sanitize the message to avoid exposing API key format
+    const sanitizedMessage = message.replace(/api[_-]?key[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi, '[CREDENTIAL_REDACTED]');
+    super(sanitizedMessage, 401, endpoint, method, details);
     this.name = 'AuthenticationError';
 
     // This line is needed to properly capture the stack trace
@@ -64,12 +75,14 @@ export class AuthenticationError extends AttioApiError {
  */
 export class AuthorizationError extends AttioApiError {
   constructor(
-    message: string = 'Authorization failed. Your API key lacks the necessary permissions.',
+    message: string = 'Authorization failed. You lack the necessary permissions.',
     endpoint: string,
     method: string,
     details?: any
   ) {
-    super(message, 403, endpoint, method, details);
+    // Sanitize the message to avoid exposing permission details
+    const sanitizedMessage = message.replace(/permission[s]?[\s:]+["']?[a-z_\.]+["']?/gi, '[PERMISSION_REDACTED]');
+    super(sanitizedMessage, 403, endpoint, method, details);
     this.name = 'AuthorizationError';
 
     // This line is needed to properly capture the stack trace
@@ -88,8 +101,10 @@ export class ResourceNotFoundError extends AttioApiError {
     method: string,
     details?: any
   ) {
+    // Sanitize resource ID to avoid exposing internal identifiers
+    const sanitizedId = resourceId.length > 10 ? '[ID_REDACTED]' : resourceId;
     super(
-      `${resourceType} with ID '${resourceId}' not found`,
+      `${resourceType} ${sanitizedId} not found`,
       404,
       endpoint,
       method,
