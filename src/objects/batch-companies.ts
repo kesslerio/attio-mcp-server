@@ -22,6 +22,7 @@ import {
   getCompanyDetails,
 } from './companies/index.js';
 import { CompanyValidator } from '../validators/company-validator.js';
+import { validateBatchOperation } from '../utils/batch-validation.js';
 
 /**
  * Helper function to execute a batch operation with improved error handling
@@ -52,6 +53,18 @@ async function executeBatchCompanyOperation<T, R>(
     throw new Error(
       `Invalid ${operationType} parameters: records must be a non-empty array`
     );
+  }
+  
+  // Validate batch operation for DoS protection
+  const validation = validateBatchOperation({
+    items: records,
+    operationType,
+    resourceType: ResourceType.COMPANIES,
+    checkPayload: operationType === 'create' || operationType === 'update',
+  });
+  
+  if (!validation.isValid) {
+    throw new Error(validation.error);
   }
 
   try {
