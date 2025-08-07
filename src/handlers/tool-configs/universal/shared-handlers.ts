@@ -496,12 +496,14 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       }
       
       // Apply configured defaults with proactive stage validation
-      dealData = await applyDealDefaultsWithValidation(dealData);
+      // Note: This may make an API call for stage validation
+      dealData = await applyDealDefaultsWithValidation(dealData, false);
       
       try {
         return await createObjectRecord('deals', dealData);
       } catch (error: any) {
         // If stage still fails after validation, try with default stage
+        // IMPORTANT: Skip validation in error path to prevent API calls during failures
         if (error?.message?.includes('Cannot find Status') && dealData.stage) {
           const defaults = getDealDefaults();
           const invalidStage = dealData.stage[0]?.status;
@@ -509,7 +511,11 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
           
           // Use default stage if available, otherwise remove stage (will fail since it's required)
           if (defaults.stage) {
-            dealData.stage = [{ status: defaults.stage }];
+            // Apply defaults WITHOUT validation to avoid API calls in error path
+            dealData = await applyDealDefaultsWithValidation(
+              { ...record_data, stage: defaults.stage },
+              true // Skip validation in error path
+            );
           } else {
             delete dealData.stage;
           }
@@ -556,7 +562,8 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       
     case UniversalResourceType.DEALS: {
       // Apply deal defaults and validation for updates too
-      const updatedDealData = await applyDealDefaultsWithValidation(record_data);
+      // Note: Updates are less likely to fail, but we still validate stages proactively
+      const updatedDealData = await applyDealDefaultsWithValidation(record_data, false);
       return updateObjectRecord('deals', record_id, updatedDealData);
     }
       
