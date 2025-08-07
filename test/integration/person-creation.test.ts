@@ -16,52 +16,61 @@ vi.mock('../../src/api/attio-client.js', () => ({
 // Mock the attribute metadata fetching
 vi.mock('../../src/api/attribute-types.js', async () => {
   const actual = await vi.importActual('../../src/api/attribute-types.js');
-  
+
   // Create a mock metadata map for people attributes
   const mockMetadataMap = new Map([
-    ['name', {
-      id: {
-        workspace_id: 'test-workspace',
-        object_id: 'people-object',
-        attribute_id: 'name-attribute',
+    [
+      'name',
+      {
+        id: {
+          workspace_id: 'test-workspace',
+          object_id: 'people-object',
+          attribute_id: 'name-attribute',
+        },
+        api_slug: 'name',
+        title: 'Name',
+        type: 'personal-name',
+        is_system_attribute: true,
+        is_writable: true,
+        is_required: true,
+        is_unique: false,
       },
-      api_slug: 'name',
-      title: 'Name',
-      type: 'personal-name',
-      is_system_attribute: true,
-      is_writable: true,
-      is_required: true,
-      is_unique: false,
-    }],
-    ['email_addresses', {
-      id: {
-        workspace_id: 'test-workspace',
-        object_id: 'people-object',
-        attribute_id: 'email-attribute',
+    ],
+    [
+      'email_addresses',
+      {
+        id: {
+          workspace_id: 'test-workspace',
+          object_id: 'people-object',
+          attribute_id: 'email-attribute',
+        },
+        api_slug: 'email_addresses',
+        title: 'Email Addresses',
+        type: 'email-address',
+        is_system_attribute: true,
+        is_writable: true,
+        is_required: false,
+        is_unique: false,
+        is_multiselect: true,
       },
-      api_slug: 'email_addresses',
-      title: 'Email Addresses',
-      type: 'email-address',
-      is_system_attribute: true,
-      is_writable: true,
-      is_required: false,
-      is_unique: false,
-      is_multiselect: true,
-    }],
-    ['job_title', {
-      id: {
-        workspace_id: 'test-workspace',
-        object_id: 'people-object',
-        attribute_id: 'job-title-attribute',
+    ],
+    [
+      'job_title',
+      {
+        id: {
+          workspace_id: 'test-workspace',
+          object_id: 'people-object',
+          attribute_id: 'job-title-attribute',
+        },
+        api_slug: 'job_title',
+        title: 'Job Title',
+        type: 'text',
+        is_system_attribute: false,
+        is_writable: true,
+        is_required: false,
+        is_unique: false,
       },
-      api_slug: 'job_title',
-      title: 'Job Title',
-      type: 'text',
-      is_system_attribute: false,
-      is_writable: true,
-      is_required: false,
-      is_unique: false,
-    }],
+    ],
   ]);
 
   return {
@@ -75,7 +84,7 @@ describe('Person Creation Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Create a mock axios instance
     mockAxiosInstance = {
       post: vi.fn(),
@@ -83,7 +92,7 @@ describe('Person Creation Integration', () => {
       patch: vi.fn(),
       delete: vi.fn(),
     };
-    
+
     // Mock the Attio client to return our mock axios instance
     vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as any);
   });
@@ -103,29 +112,33 @@ describe('Person Creation Integration', () => {
             record_id: 'new-person-id',
           },
           values: {
-            name: [{
-              first_name: 'John',
-              last_name: 'Doe',
-              full_name: 'John Doe',
-              attribute_type: 'personal-name',
-            }],
-            email_addresses: [{
-              email_address: 'john.doe@example.com',
-              attribute_type: 'email-address',
-            }],
+            name: [
+              {
+                first_name: 'John',
+                last_name: 'Doe',
+                full_name: 'John Doe',
+                attribute_type: 'personal-name',
+              },
+            ],
+            email_addresses: [
+              {
+                email_address: 'john.doe@example.com',
+                attribute_type: 'email-address',
+              },
+            ],
           },
         },
       },
     };
-    
+
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
-    
+
     // Create a person with string name
     const result = await createPerson({
       name: 'John Doe',
       email_addresses: ['john.doe@example.com'],
     });
-    
+
     // Verify the API was called with correct structure
     expect(mockAxiosInstance.post).toHaveBeenCalledWith(
       '/objects/people/records',
@@ -142,7 +155,7 @@ describe('Person Creation Integration', () => {
         },
       }
     );
-    
+
     // Verify the result
     expect(result).toEqual(mockResponse.data.data);
   });
@@ -158,23 +171,27 @@ describe('Person Creation Integration', () => {
             record_id: 'new-person-id',
           },
           values: {
-            name: [{
-              first_name: 'Jane',
-              last_name: 'Smith',
-              full_name: 'Jane Smith',
-              attribute_type: 'personal-name',
-            }],
-            job_title: [{
-              value: 'CEO',
-              attribute_type: 'text',
-            }],
+            name: [
+              {
+                first_name: 'Jane',
+                last_name: 'Smith',
+                full_name: 'Jane Smith',
+                attribute_type: 'personal-name',
+              },
+            ],
+            job_title: [
+              {
+                value: 'CEO',
+                attribute_type: 'text',
+              },
+            ],
           },
         },
       },
     };
-    
+
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
-    
+
     // Create a person with structured name
     const result = await createPerson({
       name: {
@@ -183,7 +200,7 @@ describe('Person Creation Integration', () => {
       },
       job_title: 'CEO',
     });
-    
+
     // Verify the API was called with correct structure
     expect(mockAxiosInstance.post).toHaveBeenCalledWith(
       '/objects/people/records',
@@ -195,12 +212,12 @@ describe('Person Creation Integration', () => {
               last_name: 'Smith',
               full_name: 'Jane Smith',
             },
-            job_title: 'CEO',  // job_title is in the special list, no wrapping
+            job_title: 'CEO', // job_title is in the special list, no wrapping
           },
         },
       }
     );
-    
+
     // Verify the result
     expect(result).toEqual(mockResponse.data.data);
   });
@@ -216,23 +233,25 @@ describe('Person Creation Integration', () => {
             record_id: 'new-person-id',
           },
           values: {
-            name: [{
-              first_name: 'Madonna',
-              full_name: 'Madonna',
-              attribute_type: 'personal-name',
-            }],
+            name: [
+              {
+                first_name: 'Madonna',
+                full_name: 'Madonna',
+                attribute_type: 'personal-name',
+              },
+            ],
           },
         },
       },
     };
-    
+
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
-    
+
     // Create a person with single name
     const result = await createPerson({
       name: 'Madonna',
     });
-    
+
     // Verify the API was called with correct structure
     expect(mockAxiosInstance.post).toHaveBeenCalledWith(
       '/objects/people/records',
@@ -247,7 +266,7 @@ describe('Person Creation Integration', () => {
         },
       }
     );
-    
+
     // Verify the result
     expect(result).toEqual(mockResponse.data.data);
   });
@@ -263,24 +282,26 @@ describe('Person Creation Integration', () => {
             record_id: 'new-person-id',
           },
           values: {
-            name: [{
-              first_name: 'Jean',
-              last_name: 'Damme',
-              full_name: 'Jean Claude Van Damme',
-              attribute_type: 'personal-name',
-            }],
+            name: [
+              {
+                first_name: 'Jean',
+                last_name: 'Damme',
+                full_name: 'Jean Claude Van Damme',
+                attribute_type: 'personal-name',
+              },
+            ],
           },
         },
       },
     };
-    
+
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
-    
+
     // Create a person with complex name
     const result = await createPerson({
       name: 'Jean Claude Van Damme',
     });
-    
+
     // Verify the API was called with correct structure
     expect(mockAxiosInstance.post).toHaveBeenCalledWith(
       '/objects/people/records',
@@ -296,7 +317,7 @@ describe('Person Creation Integration', () => {
         },
       }
     );
-    
+
     // Verify the result
     expect(result).toEqual(mockResponse.data.data);
   });
@@ -306,7 +327,7 @@ describe('Person Creation Integration', () => {
     await expect(createPerson({})).rejects.toThrow(
       'Must provide at least an email address or name'
     );
-    
+
     // Verify no API call was made
     expect(mockAxiosInstance.post).not.toHaveBeenCalled();
   });
@@ -321,14 +342,16 @@ describe('Person Creation Integration', () => {
         },
       },
     };
-    
+
     mockAxiosInstance.post.mockRejectedValueOnce(mockError);
-    
+
     // Attempt to create a person
-    await expect(createPerson({
-      name: 'Test User',
-    })).rejects.toThrow();
-    
+    await expect(
+      createPerson({
+        name: 'Test User',
+      })
+    ).rejects.toThrow();
+
     // Verify the API was called
     expect(mockAxiosInstance.post).toHaveBeenCalled();
   });

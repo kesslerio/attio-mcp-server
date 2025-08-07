@@ -8,7 +8,9 @@ import { describe, it, expect } from 'vitest';
  * Parse a personal name string or object into Attio's expected format
  * This is the core logic that should be used in formatAttributeValue
  */
-export function parsePersonalName(value: unknown): Record<string, unknown> | null {
+export function parsePersonalName(
+  value: unknown
+): Record<string, unknown> | null {
   if (value === null || value === undefined) {
     return null;
   }
@@ -19,7 +21,7 @@ export function parsePersonalName(value: unknown): Record<string, unknown> | nul
     if (!trimmed) {
       return null;
     }
-    
+
     const parts = trimmed.split(/\s+/);
     if (parts.length === 1) {
       // Only one name part - treat as first name
@@ -48,34 +50,35 @@ export function parsePersonalName(value: unknown): Record<string, unknown> | nul
     // Already structured - ensure it has required fields
     const structured = value as Record<string, unknown>;
     const result: Record<string, unknown> = {};
-    
+
     if (structured.first_name) result.first_name = structured.first_name;
     if (structured.last_name) result.last_name = structured.last_name;
     if (structured.middle_name) result.middle_name = structured.middle_name;
     if (structured.title) result.title = structured.title;
-    
+
     // Generate full_name if not provided
     if (!structured.full_name) {
       const nameParts = [];
       if (structured.title) nameParts.push(String(structured.title));
       if (structured.first_name) nameParts.push(String(structured.first_name));
-      if (structured.middle_name) nameParts.push(String(structured.middle_name));
+      if (structured.middle_name)
+        nameParts.push(String(structured.middle_name));
       if (structured.last_name) nameParts.push(String(structured.last_name));
       result.full_name = nameParts.join(' ');
     } else {
       result.full_name = structured.full_name;
     }
-    
+
     return result;
   }
-  
+
   return null;
 }
 
 describe('Personal Name Parser', () => {
   it('should parse simple string name "John Doe" into structured format', () => {
     const result = parsePersonalName('John Doe');
-    
+
     expect(result).toEqual({
       first_name: 'John',
       last_name: 'Doe',
@@ -85,7 +88,7 @@ describe('Personal Name Parser', () => {
 
   it('should handle single name "Madonna"', () => {
     const result = parsePersonalName('Madonna');
-    
+
     expect(result).toEqual({
       first_name: 'Madonna',
       full_name: 'Madonna',
@@ -94,7 +97,7 @@ describe('Personal Name Parser', () => {
 
   it('should handle three-part names "John Middle Doe"', () => {
     const result = parsePersonalName('John Middle Doe');
-    
+
     expect(result).toEqual({
       first_name: 'John',
       last_name: 'Doe',
@@ -107,9 +110,9 @@ describe('Personal Name Parser', () => {
       first_name: 'Jane',
       last_name: 'Smith',
     };
-    
+
     const result = parsePersonalName(input);
-    
+
     expect(result).toEqual({
       first_name: 'Jane',
       last_name: 'Smith',
@@ -123,9 +126,9 @@ describe('Personal Name Parser', () => {
       first_name: 'Jane',
       last_name: 'Smith',
     };
-    
+
     const result = parsePersonalName(input);
-    
+
     expect(result).toEqual({
       title: 'Dr.',
       first_name: 'Jane',
@@ -160,9 +163,9 @@ describe('Personal Name Parser', () => {
       last_name: 'Doe',
       full_name: 'Johnny Doe (JD)',
     };
-    
+
     const result = parsePersonalName(input);
-    
+
     expect(result).toEqual({
       first_name: 'John',
       last_name: 'Doe',
@@ -172,7 +175,7 @@ describe('Personal Name Parser', () => {
 
   it('should handle complex names with multiple middle names', () => {
     const result = parsePersonalName('Jean Claude Van Damme');
-    
+
     expect(result).toEqual({
       first_name: 'Jean',
       last_name: 'Damme',
@@ -182,11 +185,11 @@ describe('Personal Name Parser', () => {
 
   it('should handle extra whitespace in names', () => {
     const result = parsePersonalName('  John   Doe  ');
-    
+
     expect(result).toEqual({
       first_name: 'John',
       last_name: 'Doe',
-      full_name: 'John   Doe',  // Preserves original after trim
+      full_name: 'John   Doe', // Preserves original after trim
     });
   });
 });
