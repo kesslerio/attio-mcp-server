@@ -8,7 +8,31 @@
  * Supports both string format ("John Doe") and structured format
  *
  * @param value - The raw name value (string or object)
- * @returns Structured name object or null
+ *   - String: Will be parsed into first_name, last_name, and full_name
+ *   - Object: Expected to contain first_name, last_name, middle_name, title fields
+ *   - null/undefined: Returns null
+ *
+ * @returns Structured name object with the following fields, or null:
+ *   - first_name: The person's first name
+ *   - last_name: The person's last name (optional)
+ *   - middle_name: The person's middle name (optional, preserved from object input)
+ *   - title: Professional title (optional, preserved from object input)
+ *   - full_name: Complete name string (auto-generated if not provided)
+ *
+ * @example
+ * // String input
+ * parsePersonalName('John Doe')
+ * // Returns: { first_name: 'John', last_name: 'Doe', full_name: 'John Doe' }
+ *
+ * @example
+ * // Object input
+ * parsePersonalName({ first_name: 'Jane', last_name: 'Smith', title: 'Dr.' })
+ * // Returns: { first_name: 'Jane', last_name: 'Smith', title: 'Dr.', full_name: 'Dr. Jane Smith' }
+ *
+ * @example
+ * // Single name
+ * parsePersonalName('Madonna')
+ * // Returns: { first_name: 'Madonna', full_name: 'Madonna' }
  */
 export function parsePersonalName(
   value: unknown
