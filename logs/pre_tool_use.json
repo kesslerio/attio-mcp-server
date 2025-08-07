@@ -384,5 +384,388 @@
       "command": "git add -A && git commit -m \"Fix: Tasks resource type retrieval using getTask directly #394\n\n- Fixed task retrieval to use getTask(taskId) directly instead of listing all tasks\n- Corrected convertTaskToRecord function to properly map task properties to values object\n- Added test coverage for task universal tool fixes\n- Resolves BUG-ATTIO-20250107-003: Task retrieval failure\n\nThe issue was that tasks were being retrieved by listing ALL tasks and filtering,\nwhich was inefficient and incorrect. Now uses the proper getTask API endpoint.\nAlso fixed the convertTaskToRecord function which was incorrectly trying to\naccess task.values (which doesn't exist) instead of mapping task properties.\"",
       "description": "Commit the tasks fix"
     }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git push -u origin fix/issue-394-tasks-resource",
+      "description": "Push the branch to remote"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "gh pr create --repo kesslerio/attio-mcp-server --base main --head fix/issue-394-tasks-resource --title \"Fix: Tasks resource type retrieval and conversion #394\" --body \"## \ud83d\udc1b Critical Fix for Tasks Resource Type\n\nFixes #394 - Tasks resource type completely broken\n\n### Problem\nThe tasks resource type was completely non-functional in universal tools:\n- **BUG-ATTIO-20250107-003**: Tasks found via search couldn't be retrieved (404 errors)\n- **Performance Issue**: System was loading ALL tasks and filtering in-memory instead of using direct API\n- **Data Mapping Error**: Task-to-record conversion was accessing non-existent properties\n\n### Root Cause\n1. **Inefficient Retrieval**: Code was using \\`listTasks()\\` and filtering through all tasks instead of \\`getTask(taskId)\\`\n2. **Incorrect Mapping**: \\`convertTaskToRecord\\` was trying to access \\`task.values\\` which doesn't exist in AttioTask\n\n### Solution\n\u2705 **Direct API Usage**: Now uses \\`getTask(taskId)\\` for efficient single-task retrieval\n\u2705 **Proper Field Mapping**: Correctly maps task properties (content, status, assignee, etc.) to values object\n\u2705 **Test Coverage**: Added integration tests to validate the fix\n\n### Changes Made\n1. **src/handlers/tool-configs/universal/shared-handlers.ts**:\n   - Line 547-557: Replaced inefficient list-and-filter with direct \\`getTask\\` call\n   - Line 133-151: Fixed \\`convertTaskToRecord\\` to properly map task fields to values object\n\n2. **test/integration/tasks-universal-fix.test.ts**:\n   - Added comprehensive test coverage for task retrieval and conversion\n\n### Testing\n- \u2705 Build passes: \\`npm run build\\`\n- \u2705 Offline tests pass: \\`npm run test:offline\\`\n- \u2705 New integration tests validate the fix\n\n### Impact\n- **Performance**: Eliminates loading entire task list for single retrieval (O(n) \u2192 O(1))\n- **Functionality**: Tasks can now be properly retrieved via universal tools\n- **Data Integrity**: Task data is correctly mapped to AttioRecord format\n\n### Verification\nTo verify the fix:\n\\`\\`\\`typescript\n// This now works correctly:\nconst taskDetails = await callUniversalTool('get-record-details', {\n  resource_type: 'tasks',\n  record_id: 'valid-task-id'\n});\n// Returns properly formatted task data instead of 404\n\\`\\`\\`\n\n**Priority**: P0 - Critical functionality fix\n**Type**: Bug fix\n**Areas**: area:api:tasks, area:core\"",
+      "description": "Create PR for tasks fix"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TodoWrite",
+    "tool_input": {
+      "todos": [
+        {
+          "content": "Issue #394 (P0 CRITICAL): Fix Tasks resource type - completely broken",
+          "status": "completed",
+          "id": "1"
+        },
+        {
+          "content": "Issue #397 (P2): Implement error message improvements",
+          "status": "in_progress",
+          "id": "2"
+        }
+      ]
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Task",
+    "tool_input": {
+      "description": "Fix failing CI tests in PR 404",
+      "prompt": "PR #404 (Tasks resource type fix - Issue #394) has failing CI tests that need to be fixed.\n\n**Current Situation:**\n- PR #404 is for the P0 critical Tasks resource type fix\n- The CI pipeline is failing tests\n- Branch: fix/issue-394-tasks-resource\n\n**Requirements:**\n1. First, check the PR's CI failure logs to understand what's breaking\n2. Delegate to the appropriate specialist to fix the test failures\n3. This could be:\n   - Test updates needed due to the new implementation\n   - Actual bugs in the implementation\n   - TypeScript/lint issues\n4. Ensure the fix is pushed to update the PR\n\n**Priority:**\nThis is P0 critical - the entire Tasks resource type is broken without this fix.\n\nPlease coordinate:\n1. Analyzing the CI failure\n2. Delegating to test-coverage-specialist or debug-specialist as appropriate\n3. Fixing the issues\n4. Updating the PR\n\nStart by checking what's failing in the CI.",
+      "subagent_type": "project-delegator-orchestrator"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_pull_request",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "pullNumber": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_pull_request_status",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "pullNumber": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_pull_request_comments",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "pullNumber": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git fetch origin fix/issue-394-tasks-resource && git checkout fix/issue-394-tasks-resource",
+      "description": "Switch to PR branch to analyze failures"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run lint:check",
+      "description": "Run lint check to identify errors"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run test:offline 2>&1 | head -100",
+      "description": "Run unit tests to see specific failures"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run test:offline 2>&1 | grep -A 5 \"FAIL\\|Error\\|failed\"",
+      "timeout": 30000,
+      "description": "Check for test failures"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run test:offline 2>&1 | tail -20",
+      "description": "Check end of test output for summary"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run check 2>&1",
+      "timeout": 60000,
+      "description": "Run full validation pipeline like CI"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run format:fix",
+      "description": "Fix formatting issues with Prettier"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run | grep format",
+      "description": "Find format commands"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run format",
+      "description": "Apply Prettier formatting"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add test/integration/tasks-universal-fix.test.ts && git commit -m \"Fix: Apply Prettier formatting to tasks test file #394\" && git push",
+      "description": "Commit and push formatting fix"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run check 2>&1",
+      "timeout": 60000,
+      "description": "Verify all checks pass after formatting fix"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__add_issue_comment",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "issue_number": 404,
+      "body": "## \u2705 CI Fixed - Formatting Issue Resolved\n\nThe CI failures have been resolved. The issue was a simple formatting problem in the test file `test/integration/tasks-universal-fix.test.ts`.\n\n### What was the problem?\n- **Lint & Type Check**: \u274c Failed due to formatting\n- **Unit Tests**: Actually passing (740 tests passed)\n- The CI reported failures but it was just Prettier formatting that needed to be applied\n\n### Fix Applied\n- Applied Prettier formatting to the test file\n- Committed and pushed the fix in commit `aaeb53d1`\n\n### Verification\n```bash\nnpm run check  # \u2705 All 4 checks pass\nnpm run test:offline  # \u2705 740 tests pass\nnpm run lint:check  # \u2705 No errors (just warnings)\nnpm run format  # \u2705 Files formatted\n```\n\nThe PR is now ready for review and merge. All CI checks should pass on the next run.\n\n**Priority**: P0 - This fix unblocks the critical Tasks resource type functionality."
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Task",
+    "tool_input": {
+      "description": "Review and address PR feedback",
+      "prompt": "Review and address the feedback on PR #404 at https://github.com/kesslerio/attio-mcp-server/pull/404#issuecomment-3165121123\n\n**Current Situation:**\n- PR #404 fixes the P0 critical Tasks resource type issue\n- There's feedback in the comment that needs to be reviewed and addressed\n- Branch: fix/issue-394-tasks-resource\n\n**Requirements:**\n1. First, fetch and review the feedback comment\n2. Understand what specific changes or improvements are being requested\n3. Delegate to the appropriate specialist to implement the feedback\n4. Ensure changes are tested and pushed to update the PR\n\n**Priority:**\nThis is P0 critical - we need to address the feedback quickly to get this merged and unblock Tasks functionality.\n\nPlease coordinate:\n1. Fetching and analyzing the feedback\n2. Determining what changes are needed\n3. Delegating implementation to the right specialist\n4. Verifying the changes work correctly\n5. Updating the PR\n\nStart by getting the feedback comment to understand what needs to be addressed.",
+      "subagent_type": "project-delegator-orchestrator"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_pull_request",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "pullNumber": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_pull_request_comments",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "pullNumber": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__github__get_issue_comments",
+    "tool_input": {
+      "owner": "kesslerio",
+      "repo": "attio-mcp-server",
+      "issue_number": 404
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__clear-thought-server__sequentialthinking",
+    "tool_input": {
+      "thought": "Looking at PR #404 feedback from Claude bot's review comment #3165121123:\n\nThe review verdict is \"APPROVE after CI fixes\" with these specific items:\n\nIMMEDIATE REQUIREMENTS (blocking merge):\n1. Fix 996 TypeScript warnings (mostly unused variables/imports across codebase)\n2. Address unit test failures in Node 22.x environment (though latest comment says CI is passing)\n\nMINOR CODE IMPROVEMENTS:\n1. Add JSDoc comments to convertTaskToRecord function\n2. Add explicit return type annotation\n\nFUTURE IMPROVEMENTS (not blocking):\n1. Extract conversion logic to dedicated converter utility\n2. Add edge case tests with various task field combinations\n3. Add performance monitoring metrics\n\nCurrent status: User already fixed formatting issues, CI is now passing.",
+      "thoughtNumber": 1,
+      "totalThoughts": 3,
+      "nextThoughtNeeded": true
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__clear-thought-server__sequentialthinking",
+    "tool_input": {
+      "thought": "Analyzing priority and feasibility:\n\nSince CI is now passing (confirmed by GitHub Actions bot and user's last comment), the TypeScript warnings are NOT actually blocking the merge - they're just warnings, not errors.\n\nFor a P0 critical fix, we should:\n1. Focus on the minor code improvements that can be done quickly\n2. Not attempt to fix all 996 warnings across the codebase (that's a separate refactoring task)\n3. Just add the JSDoc comments and type annotation to the specific function in this PR\n\nThe action plan should be:\n1. Add JSDoc comments to convertTaskToRecord function\n2. Add explicit return type annotation to convertTaskToRecord\n3. Verify changes don't break anything\n4. Update the PR\n\nThis is a targeted fix that addresses the review feedback without scope creep.",
+      "thoughtNumber": 2,
+      "totalThoughts": 3,
+      "nextThoughtNeeded": true
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__clear-thought-server__sequentialthinking",
+    "tool_input": {
+      "thought": "Agent selection and delegation strategy:\n\nSince this is a simple documentation and type annotation improvement on existing code:\n- Best agent: code-refactoring-architect (specializes in improving code structure and typing)\n- Task: Add JSDoc comments and explicit return type to convertTaskToRecord function\n\nThe agent should:\n1. Checkout the fix/issue-394-tasks-resource branch\n2. Locate the convertTaskToRecord function in shared-handlers.ts\n3. Add comprehensive JSDoc comments explaining the function's purpose\n4. Add explicit return type annotation: AttioRecord\n5. Run tests to ensure no breakage\n6. Commit and push the improvements\n\nThis addresses the actionable feedback while keeping the PR focused on its critical bug fix purpose.",
+      "thoughtNumber": 3,
+      "totalThoughts": 3,
+      "nextThoughtNeeded": false
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git checkout fix/issue-394-tasks-resource && git pull origin fix/issue-394-tasks-resource",
+      "description": "Ensure we're on the correct branch with latest changes"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts",
+      "offset": 130,
+      "limit": 30
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts",
+      "old_string": "/**\n * Converts an AttioTask to an AttioRecord for universal tool compatibility\n * This provides proper type conversion without unsafe casting\n */\nfunction convertTaskToRecord(task: AttioTask): AttioRecord {",
+      "new_string": "/**\n * Converts an AttioTask to an AttioRecord for universal tool compatibility.\n * \n * This function provides proper type conversion from the task-specific format\n * to the generic record format used by universal tools, ensuring data integrity\n * without unsafe type casting.\n * \n * @param task - The AttioTask object to convert\n * @returns An AttioRecord representation of the task with properly mapped fields\n * \n * @example\n * const task = await getTask('task-123');\n * const record = convertTaskToRecord(task);\n * // record.values now contains: content, status, assignee, due_date, linked_records\n */\nfunction convertTaskToRecord(task: AttioTask): AttioRecord {"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run build",
+      "description": "Build the project to verify TypeScript compilation"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "npm run test:offline",
+      "description": "Run offline tests to ensure no breakage"
+    }
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add -A && git commit -m \"Docs: Enhanced JSDoc comments for convertTaskToRecord function\n\n- Added comprehensive JSDoc documentation explaining function purpose\n- Included @param and @returns annotations for clarity\n- Added @example usage demonstration\n- Addresses PR #404 review feedback for better code documentation\"",
+      "description": "Commit the documentation improvements"
+    }
   }
 ]

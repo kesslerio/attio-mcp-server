@@ -89,5 +89,19 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "@agent-project-delegator-orchestrator I need you to analyze and come up potentially with an issue based on https://github.com/kesslerio/attio-mcp-server/issues/392 in relationship to our E2E tests. Theorettically our E2E tests should have caught these MCP tool errors, right? If so, why do you think that failed? Depending on the answer raise a detialed gh issue."
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "@agent-project-delegator-orchestrator PR 404 has failing CI tests pls address"
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "Once you're done @agent-project-delegator-orchestrator review: https://github.com/kesslerio/attio-mcp-server/pull/404#issuecomment-3165121123 and address feedback"
   }
 ]

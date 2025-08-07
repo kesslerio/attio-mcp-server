@@ -127,8 +127,19 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
 }
 
 /**
- * Converts an AttioTask to an AttioRecord for universal tool compatibility
- * This provides proper type conversion without unsafe casting
+ * Converts an AttioTask to an AttioRecord for universal tool compatibility.
+ * 
+ * This function provides proper type conversion from the task-specific format
+ * to the generic record format used by universal tools, ensuring data integrity
+ * without unsafe type casting.
+ * 
+ * @param task - The AttioTask object to convert
+ * @returns An AttioRecord representation of the task with properly mapped fields
+ * 
+ * @example
+ * const task = await getTask('task-123');
+ * const record = convertTaskToRecord(task);
+ * // record.values now contains: content, status, assignee, due_date, linked_records
  */
 function convertTaskToRecord(task: AttioTask): AttioRecord {
   return {
