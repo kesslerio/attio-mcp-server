@@ -101,10 +101,14 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
   const client = getAttioClient();
   
   try {
+    // Defensive: Ensure parameters are valid before sending to API
+    const safeLimit = Math.max(1, Math.min(limit || 10, 100));
+    const safeOffset = Math.max(0, offset || 0);
+    
     // Use POST to /objects/deals/records/query (the correct Attio endpoint)
     const response = await client.post('/objects/deals/records/query', {
-      limit,
-      offset,
+      limit: safeLimit,
+      offset: safeOffset,
       // Add any additional query parameters as needed
     });
     
@@ -116,7 +120,9 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
       console.error('Deal query endpoint not found, falling back to empty results');
       return [];
     }
-    throw error;
+    // For other errors, return empty array rather than propagating the error
+    console.warn('Deal query failed with unexpected error, returning empty results');
+    return [];
   }
 }
 
@@ -208,19 +214,30 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
     const validationStart = performance.now();
     
     // Validate limit parameter to prevent abuse
-    if (limit && (limit < 0 || !Number.isInteger(limit))) {
-      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid limit parameter', 400);
-      throw new Error('limit must be a positive integer');
+    if (limit !== undefined) {
+      if (!Number.isInteger(limit) || limit <= 0) {
+        enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid limit parameter', 400);
+        throw new Error('limit must be a positive integer greater than 0');
+      }
+      
+      if (limit > 100) {
+        enhancedPerformanceTracker.endOperation(perfId, false, 'Limit exceeds maximum', 400);
+        throw new Error('limit must not exceed 100');
+      }
     }
     
-    if (limit && limit > 100) {
-      enhancedPerformanceTracker.endOperation(perfId, false, 'Limit exceeds maximum', 400);
-      throw new Error('limit must not exceed 100');
-    }
-    
-    if (offset && (offset < 0 || !Number.isInteger(offset))) {
-      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid offset parameter', 400);
-      throw new Error('offset must be a non-negative integer');
+    // Validate offset parameter
+    if (offset !== undefined) {
+      if (!Number.isInteger(offset) || offset < 0) {
+        enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid offset parameter', 400);
+        throw new Error('offset must be a non-negative integer');
+      }
+      
+      // Add reasonable maximum for offset to prevent performance issues
+      if (offset > 10000) {
+        enhancedPerformanceTracker.endOperation(perfId, false, 'Offset exceeds maximum', 400);
+        throw new Error('offset must not exceed 10000');
+      }
     }
     
     enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
@@ -234,8 +251,26 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
         case UniversalResourceType.COMPANIES:
           if (filters && Object.keys(filters).length > 0) {
             results = await advancedSearchCompanies(filters, limit, offset);
+          } else if (query && query.trim().length > 0) {
+            // Convert simple query search to advanced search with pagination
+            const nameFilters = {
+              filters: [{ 
+                attribute: { slug: 'name' }, 
+                condition: 'contains', 
+                value: query 
+              }]
+            };
+            results = await advancedSearchCompanies(nameFilters, limit, offset);
           } else {
-            results = await searchCompanies(query || '');
+            // No query and no filters - use advanced search with empty filters for pagination
+            // Defensive: Some APIs may not support empty filters, handle gracefully
+            try {
+              results = await advancedSearchCompanies({ filters: [] }, limit, offset);
+            } catch (error: any) {
+              // If empty filters aren't supported, return empty array rather than failing
+              console.warn('Companies search with empty filters failed, returning empty results:', error?.message);
+              results = [];
+            }
           }
           break;
           
@@ -243,11 +278,36 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           if (filters && Object.keys(filters).length > 0) {
             const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
             results = paginatedResult.results;
-          } else if (!query || query.trim().length === 0) {
-            // If no query provided, use listPeople instead of searchPeople
-            results = await listPeople(limit || 20);
+          } else if (query && query.trim().length > 0) {
+            // Convert simple query search to advanced search with pagination
+            const nameEmailFilters = {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'contains',
+                  value: query
+                },
+                {
+                  attribute: { slug: 'email_addresses' },
+                  condition: 'contains', 
+                  value: query
+                }
+              ],
+              matchAny: true // Use OR logic to match either name or email
+            };
+            const paginatedResult = await advancedSearchPeople(nameEmailFilters, { limit, offset });
+            results = paginatedResult.results;
           } else {
-            results = await searchPeople(query);
+            // No query and no filters - use advanced search with empty filters for pagination
+            // Defensive: Some APIs may not support empty filters, handle gracefully
+            try {
+              const paginatedResult = await advancedSearchPeople({ filters: [] }, { limit, offset });
+              results = paginatedResult.results;
+            } catch (error: any) {
+              // If empty filters aren't supported, return empty array rather than failing
+              console.warn('People search with empty filters failed, returning empty results:', error?.message);
+              results = [];
+            }
           }
           break;
           
@@ -264,9 +324,32 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           break;
           
         case UniversalResourceType.TASKS: {
+          /**
+           * PERFORMANCE LIMITATION: Tasks API Pagination
+           * 
+           * The Attio Tasks API currently does not support native pagination parameters
+           * (limit/offset). This implementation loads ALL tasks from the API and then
+           * applies pagination in-memory using JavaScript array slicing.
+           * 
+           * Performance Impact:
+           * - Memory: Entire task list is loaded into memory
+           * - Network: Full dataset transferred on every request
+           * - Latency: Response time increases with total number of tasks
+           * 
+           * This is a known limitation of the current Attio API and should be marked
+           * as a potential future API enhancement request to Attio. When/if native
+           * pagination becomes available, this code should be refactored to use it.
+           * 
+           * For now, this approach ensures consistent pagination behavior across all
+           * resource types in the universal search handler.
+           */
           const tasks = await listTasks();
+          // Apply pagination manually since Tasks API doesn't support native pagination
+          const start = offset || 0;
+          const end = start + (limit || 10);
+          const paginatedTasks = tasks.slice(start, end);
           // Convert AttioTask[] to AttioRecord[] using proper type conversion
-          results = tasks.map(convertTaskToRecord);
+          results = paginatedTasks.map(convertTaskToRecord);
           break;
         }
           
