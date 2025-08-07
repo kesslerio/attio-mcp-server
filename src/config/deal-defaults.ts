@@ -287,7 +287,7 @@ export function validateDealInput(recordData: Record<string, any>): {
 
 /**
  * Get available deal stages from Attio API with caching
- * 
+ *
  * NOTE: This function makes an API call and should NOT be used in error handling paths
  * to prevent cascading failures during high error rates.
  */
@@ -351,10 +351,10 @@ async function getAvailableDealStages(): Promise<string[]> {
     if (process.env.NODE_ENV === 'development') {
       console.error('Failed to fetch available deal stages:', error);
     }
-    
+
     // Cache the error to prevent cascading failures
     errorCache = { timestamp: now, error };
-    
+
     // Return previously cached stages if available, otherwise empty array
     return stageCache || [];
   }
@@ -363,7 +363,7 @@ async function getAvailableDealStages(): Promise<string[]> {
 /**
  * Validate and correct deal stage
  * Returns the validated stage or the default if invalid
- * 
+ *
  * @param stage - The stage to validate
  * @param skipApiCall - If true, skip API call and use cached data only
  */
@@ -378,7 +378,7 @@ export async function validateDealStage(
   try {
     // If skipApiCall is true, only use cached data
     let availableStages: string[] = [];
-    
+
     if (skipApiCall) {
       // Use cached stages if available, otherwise skip validation
       if (stageCache) {
@@ -415,7 +415,7 @@ export async function validateDealStage(
 
 /**
  * Enhanced apply deal defaults with stage validation
- * 
+ *
  * @param recordData - The deal data to process
  * @param skipValidation - Skip API validation (used in error paths to prevent cascading failures)
  */

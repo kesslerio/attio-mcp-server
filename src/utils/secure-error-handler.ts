@@ -1,11 +1,15 @@
 /**
  * Secure error handler for API operations
- * 
+ *
  * This module provides centralized error handling with automatic sanitization
  * for all API operations to prevent information disclosure.
  */
 
-import { sanitizeErrorMessage, createSanitizedError, SanitizedError } from './error-sanitizer.js';
+import {
+  sanitizeErrorMessage,
+  createSanitizedError,
+  SanitizedError,
+} from './error-sanitizer.js';
 import { error as logError, OperationType } from './logger.js';
 
 /**
@@ -30,7 +34,7 @@ export class SecureApiError extends Error {
   public readonly context: ErrorContext;
   public readonly originalError?: Error;
   public readonly safeMetadata?: Record<string, any>;
-  
+
   constructor(
     message: string,
     statusCode: number,
@@ -42,27 +46,27 @@ export class SecureApiError extends Error {
     const sanitized = sanitizeErrorMessage(message, {
       includeContext: true,
       module: context.module,
-      operation: context.operation
+      operation: context.operation,
     });
-    
+
     super(sanitized);
     this.name = 'SecureApiError';
     this.statusCode = statusCode;
     this.errorType = errorType;
     this.context = context;
     this.originalError = originalError;
-    
+
     // Extract safe metadata that can be exposed
     this.safeMetadata = {
       operation: context.operation,
       resourceType: context.resourceType,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     // Maintain proper prototype chain
     Object.setPrototypeOf(this, SecureApiError.prototype);
   }
-  
+
   /**
    * Get a safe JSON representation for API responses
    */
@@ -72,23 +76,22 @@ export class SecureApiError extends Error {
         message: this.message,
         type: this.errorType,
         statusCode: this.statusCode,
-        metadata: this.safeMetadata
-      }
+        metadata: this.safeMetadata,
+      },
     };
   }
 }
 
 /**
  * Wrap an async function with secure error handling
- * 
+ *
  * @param fn - The async function to wrap
  * @param context - Error context for logging and sanitization
  * @returns Wrapped function with automatic error sanitization
  */
-export function withSecureErrorHandling<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  context: ErrorContext
-): T {
+export function withSecureErrorHandling<
+  T extends (...args: any[]) => Promise<any>,
+>(fn: T, context: ErrorContext): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
@@ -102,10 +105,10 @@ export function withSecureErrorHandling<T extends (...args: any[]) => Promise<an
         context.operation,
         OperationType.API_CALL
       );
-      
+
       // Determine status code
       const statusCode = error?.statusCode || error?.response?.status || 500;
-      
+
       // Determine error type
       let errorType = 'internal_error';
       if (statusCode === 400) errorType = 'validation_error';
@@ -114,7 +117,7 @@ export function withSecureErrorHandling<T extends (...args: any[]) => Promise<an
       else if (statusCode === 404) errorType = 'not_found';
       else if (statusCode === 429) errorType = 'rate_limit';
       else if (statusCode >= 500) errorType = 'server_error';
-      
+
       // Create secure error with sanitized message
       throw new SecureApiError(
         error.message || 'An unexpected error occurred',
@@ -142,7 +145,7 @@ export interface SecureErrorResponse {
 
 /**
  * Create a standardized secure error response
- * 
+ *
  * @param error - The error to convert
  * @param context - Additional context
  * @returns Secure error response
@@ -158,25 +161,25 @@ export function createSecureErrorResponse(
       error: {
         message: error.message,
         type: error.errorType,
-        statusCode: error.statusCode
-      }
+        statusCode: error.statusCode,
+      },
     };
   }
-  
+
   // Otherwise, sanitize the error
   const sanitized = createSanitizedError(error, error?.statusCode, {
     module: context?.module || 'unknown',
     operation: context?.operation || 'unknown',
-    includeContext: true
+    includeContext: true,
   });
-  
+
   return {
     success: false,
     error: {
       message: sanitized.message,
       type: sanitized.type,
-      statusCode: sanitized.statusCode
-    }
+      statusCode: sanitized.statusCode,
+    },
   };
 }
 
@@ -186,51 +189,52 @@ export function createSecureErrorResponse(
 export class BatchErrorHandler {
   private errors: Array<{ index: number; error: SecureApiError }> = [];
   private context: ErrorContext;
-  
+
   constructor(context: ErrorContext) {
     this.context = context;
   }
-  
+
   /**
    * Add an error for a specific batch item
    */
   addError(index: number, error: any): void {
-    const secureError = error instanceof SecureApiError
-      ? error
-      : new SecureApiError(
-          error.message || 'Batch operation failed',
-          error?.statusCode || 500,
-          'batch_error',
-          { ...this.context, batchIndex: index },
-          error instanceof Error ? error : undefined
-        );
-    
+    const secureError =
+      error instanceof SecureApiError
+        ? error
+        : new SecureApiError(
+            error.message || 'Batch operation failed',
+            error?.statusCode || 500,
+            'batch_error',
+            { ...this.context, batchIndex: index },
+            error instanceof Error ? error : undefined
+          );
+
     this.errors.push({ index, error: secureError });
   }
-  
+
   /**
    * Check if there are any errors
    */
   hasErrors(): boolean {
     return this.errors.length > 0;
   }
-  
+
   /**
    * Get a summary of batch errors
    */
   getSummary(): { totalErrors: number; errorsByType: Record<string, number> } {
     const errorsByType: Record<string, number> = {};
-    
+
     for (const { error } of this.errors) {
       errorsByType[error.errorType] = (errorsByType[error.errorType] || 0) + 1;
     }
-    
+
     return {
       totalErrors: this.errors.length,
-      errorsByType
+      errorsByType,
     };
   }
-  
+
   /**
    * Get safe error details for response
    */
@@ -238,7 +242,7 @@ export class BatchErrorHandler {
     return this.errors.map(({ index, error }) => ({
       index,
       error: error.message,
-      type: error.errorType
+      type: error.errorType,
     }));
   }
 }
@@ -263,28 +267,30 @@ export async function retryWithSecureErrors<T>(
     shouldRetry = (error) => {
       const statusCode = error?.statusCode || error?.response?.status || 500;
       return statusCode >= 500 || statusCode === 429;
-    }
+    },
   } = options;
-  
+
   let lastError: any;
   let delay = initialDelay;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
-      
+
       // Check if we should retry
       if (attempt < maxRetries && shouldRetry(error)) {
         // Log retry attempt (internally only)
         if (process.env.NODE_ENV === 'development') {
-          console.error(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+          console.error(
+            `Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`
+          );
         }
-        
+
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
         // Exponential backoff
         delay = Math.min(delay * 2, maxDelay);
       } else {
@@ -299,7 +305,7 @@ export async function retryWithSecureErrors<T>(
       }
     }
   }
-  
+
   // This should never be reached, but just in case
   throw new SecureApiError(
     'Maximum retries exceeded',
@@ -317,7 +323,7 @@ export class SecureCircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
   private state: 'closed' | 'open' | 'half-open' = 'closed';
-  
+
   constructor(
     private readonly context: ErrorContext,
     private readonly options: {
@@ -330,7 +336,7 @@ export class SecureCircuitBreaker {
     this.options.resetTimeout = options.resetTimeout || 60000;
     this.options.halfOpenRequests = options.halfOpenRequests || 1;
   }
-  
+
   /**
    * Execute a function with circuit breaker protection
    */
@@ -338,7 +344,7 @@ export class SecureCircuitBreaker {
     // Check if circuit is open
     if (this.state === 'open') {
       const timeSinceLastFailure = Date.now() - this.lastFailureTime;
-      
+
       if (timeSinceLastFailure < this.options.resetTimeout!) {
         throw new SecureApiError(
           'Service temporarily unavailable. Please try again later.',
@@ -347,29 +353,29 @@ export class SecureCircuitBreaker {
           this.context
         );
       }
-      
+
       // Try half-open state
       this.state = 'half-open';
     }
-    
+
     try {
       const result = await fn();
-      
+
       // Success - reset failures
       if (this.state === 'half-open') {
         this.state = 'closed';
       }
       this.failures = 0;
-      
+
       return result;
     } catch (error: any) {
       this.failures++;
       this.lastFailureTime = Date.now();
-      
+
       // Check if we should open the circuit
       if (this.failures >= this.options.failureThreshold!) {
         this.state = 'open';
-        
+
         throw new SecureApiError(
           'Service experiencing issues. Circuit breaker activated.',
           503,
@@ -378,7 +384,7 @@ export class SecureCircuitBreaker {
           error instanceof Error ? error : undefined
         );
       }
-      
+
       // Re-throw the error (sanitized)
       throw new SecureApiError(
         error.message || 'Operation failed',
@@ -389,7 +395,7 @@ export class SecureCircuitBreaker {
       );
     }
   }
-  
+
   /**
    * Get circuit breaker status
    */
@@ -397,10 +403,12 @@ export class SecureCircuitBreaker {
     return {
       state: this.state,
       failures: this.failures,
-      lastFailure: this.lastFailureTime ? new Date(this.lastFailureTime) : undefined
+      lastFailure: this.lastFailureTime
+        ? new Date(this.lastFailureTime)
+        : undefined,
     };
   }
-  
+
   /**
    * Manually reset the circuit breaker
    */
@@ -417,5 +425,5 @@ export default {
   createSecureErrorResponse,
   BatchErrorHandler,
   retryWithSecureErrors,
-  SecureCircuitBreaker
+  SecureCircuitBreaker,
 };

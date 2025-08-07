@@ -1,66 +1,5 @@
 [
   {
-    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "6706089d-9d7e-4f48-bd2d-8f2a2546eb78",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/6706089d-9d7e-4f48-bd2d-8f2a2546eb78.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "4111cd2e-9717-438e-877c-d300c22459a8",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/4111cd2e-9717-438e-877c-d300c22459a8.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-<<<<<<< HEAD
-    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
-    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
-    "hook_event_name": "Stop",
-    "stop_hook_active": false
-  },
-  {
-    "session_id": "9fa9888f-c14c-4614-b154-2bcf0b029f18",
-    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/9fa9888f-c14c-4614-b154-2bcf0b029f18.jsonl",
-||||||| b77f523
-=======
     "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
     "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
@@ -70,7 +9,41 @@
   {
     "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
     "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
->>>>>>> origin/fix/pr-389-critical-issues
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "8664c04e-75fa-497d-ac11-57d69997e3ec",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/8664c04e-75fa-497d-ac11-57d69997e3ec.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "278a2245-9881-4e57-8176-beb93e3d7fd3",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/278a2245-9881-4e57-8176-beb93e3d7fd3.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  {
+    "session_id": "8664c04e-75fa-497d-ac11-57d69997e3ec",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/8664c04e-75fa-497d-ac11-57d69997e3ec.jsonl",
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "Stop",
     "stop_hook_active": false
