@@ -305,10 +305,100 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
 }
 
 /**
+ * Filter attributes by category
+ */
+function filterAttributesByCategory(attributes: any, requestedCategories?: string[]): any {
+  if (!requestedCategories || requestedCategories.length === 0) {
+    return attributes; // Return all attributes if no categories specified
+  }
+  
+  // Handle array of attributes
+  if (Array.isArray(attributes)) {
+    return attributes.filter(attr => {
+      // Check various possible category field names
+      const category = attr.category || attr.type || attr.attribute_type || attr.group;
+      return category && requestedCategories.includes(category);
+    });
+  }
+  
+  // Handle attributes response with data array
+  if (attributes && typeof attributes === 'object' && attributes.data && Array.isArray(attributes.data)) {
+    const filteredData = attributes.data.filter(attr => {
+      const category = attr.category || attr.type || attr.attribute_type || attr.group;
+      return category && requestedCategories.includes(category);
+    });
+    
+    return {
+      ...attributes,
+      data: filteredData,
+      count: filteredData.length
+    };
+  }
+  
+  // Handle attributes response with attributes array
+  if (attributes && typeof attributes === 'object' && attributes.attributes && Array.isArray(attributes.attributes)) {
+    const filteredAttributes = attributes.attributes.filter(attr => {
+      const category = attr.category || attr.type || attr.attribute_type || attr.group;
+      return category && requestedCategories.includes(category);
+    });
+    
+    return {
+      ...attributes,
+      attributes: filteredAttributes,
+      count: filteredAttributes.length
+    };
+  }
+  
+  return attributes;
+}
+
+/**
+ * Filter response fields to only include requested fields
+ */
+function filterResponseFields(data: any, requestedFields?: string[]): any {
+  if (!requestedFields || requestedFields.length === 0) {
+    return data; // Return full data if no fields specified
+  }
+  
+  // Handle AttioRecord structure with id, values, created_at, updated_at
+  if (data && typeof data === 'object' && data.id && data.values) {
+    // Always preserve core AttioRecord structure
+    const filtered: any = {
+      id: data.id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      values: {}
+    };
+    
+    // Filter values object to only requested fields
+    for (const field of requestedFields) {
+      if (field in data.values) {
+        filtered.values[field] = data.values[field];
+      }
+    }
+    
+    return filtered;
+  }
+  
+  // Handle simple object structure
+  if (data && typeof data === 'object') {
+    const filtered: any = {};
+    for (const field of requestedFields) {
+      if (field in data) {
+        filtered[field] = data[field];
+      }
+    }
+    return filtered;
+  }
+  
+  return data;
+}
+
+/**
  * Universal get record details handler with performance optimization
  */
 export async function handleUniversalGetDetails(params: UniversalRecordDetailsParams): Promise<AttioRecord> {
-  const { resource_type, record_id } = params;
+  const { resource_type, record_id, fields } = params;
   
   // Start performance tracking
   const perfId = enhancedPerformanceTracker.startOperation(
@@ -390,7 +480,10 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       enhancedPerformanceTracker.endOperation(perfId, true, undefined, 200);
-      return result;
+      
+      // Apply field filtering if fields parameter was provided
+      const filteredResult = filterResponseFields(result, fields);
+      return filteredResult;
       
     } catch (apiError: any) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
@@ -785,44 +878,59 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
  * Universal get attributes handler
  */
 export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<any> {
-  const { resource_type, record_id } = params;
+  const { resource_type, record_id, categories } = params;
+  
+  let result: any;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
       if (record_id) {
-        return getCompanyAttributes(record_id);
+        result = await getCompanyAttributes(record_id);
+      } else {
+        // Return schema-level attributes if no record_id provided
+        result = await discoverCompanyAttributes();
       }
-      // Return schema-level attributes if no record_id provided
-      return discoverCompanyAttributes();
+      break;
       
     case UniversalResourceType.PEOPLE:
       if (record_id) {
-        return getAttributesForRecord(resource_type, record_id);
+        result = await getAttributesForRecord(resource_type, record_id);
+      } else {
+        // Return schema-level attributes if no record_id provided
+        result = await discoverAttributesForResourceType(resource_type);
       }
-      // Return schema-level attributes if no record_id provided
-      return discoverAttributesForResourceType(resource_type);
+      break;
       
     case UniversalResourceType.RECORDS:
       if (record_id) {
-        return getAttributesForRecord(resource_type, record_id);
+        result = await getAttributesForRecord(resource_type, record_id);
+      } else {
+        result = await discoverAttributesForResourceType(resource_type);
       }
-      return discoverAttributesForResourceType(resource_type);
+      break;
       
     case UniversalResourceType.DEALS:
       if (record_id) {
-        return getAttributesForRecord(resource_type, record_id);
+        result = await getAttributesForRecord(resource_type, record_id);
+      } else {
+        result = await discoverAttributesForResourceType(resource_type);
       }
-      return discoverAttributesForResourceType(resource_type);
+      break;
       
     case UniversalResourceType.TASKS:
       if (record_id) {
-        return getAttributesForRecord(resource_type, record_id);
+        result = await getAttributesForRecord(resource_type, record_id);
+      } else {
+        result = await discoverAttributesForResourceType(resource_type);
       }
-      return discoverAttributesForResourceType(resource_type);
+      break;
       
     default:
       throw new Error(`Unsupported resource type for get attributes: ${resource_type}`);
   }
+  
+  // Apply category filtering if categories parameter was provided
+  return filterAttributesByCategory(result, categories);
 }
 
 /**
