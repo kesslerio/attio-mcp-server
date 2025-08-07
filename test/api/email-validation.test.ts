@@ -10,7 +10,7 @@ describe('Email Validation', () => {
         const actual = await importOriginal();
         return {
           ...actual,
-          searchPeopleByEmails: vi.fn().mockResolvedValue([])
+          searchPeopleByEmails: vi.fn().mockResolvedValue([]),
         };
       });
     });
@@ -34,14 +34,14 @@ describe('Email Validation', () => {
         ' ',
         'user@ex ample.com',
         'user@exam ple.com',
-        'user@example,com'
+        'user@example,com',
       ];
 
       for (const email of invalidEmails) {
         await expect(
           PersonValidator.validateCreate({
             name: 'Test User',
-            email_addresses: [email]
+            email_addresses: [email],
           })
         ).rejects.toThrow(InvalidPersonDataError);
       }
@@ -60,19 +60,21 @@ describe('Email Validation', () => {
         'user@123.456.789.012',
         'user@example-domain.com',
         'user@EXAMPLE.COM',
-        'User@Example.Com'
+        'User@Example.Com',
       ];
 
       // Mock searchPeopleByEmails to return no duplicates
-      const { searchPeopleByEmails } = await import('../../src/objects/people-write.js');
+      const { searchPeopleByEmails } = await import(
+        '../../src/objects/people-write.js'
+      );
       vi.mocked(searchPeopleByEmails).mockResolvedValue(
-        validEmails.map(email => ({ email, exists: false }))
+        validEmails.map((email) => ({ email, exists: false }))
       );
 
       for (const email of validEmails) {
         const result = await PersonValidator.validateCreate({
           name: 'Test User',
-          email_addresses: [email]
+          email_addresses: [email],
         });
         expect(result.email_addresses).toContain(email);
       }
@@ -81,43 +83,47 @@ describe('Email Validation', () => {
     it('should validate email format before checking for duplicates', async () => {
       // This test ensures validation order: format check should come before duplicate check
       const invalidEmail = 'notanemail';
-      
+
       await expect(
         PersonValidator.validateCreate({
           name: 'Test User',
-          email_addresses: [invalidEmail]
+          email_addresses: [invalidEmail],
         })
       ).rejects.toThrow('Invalid email format');
     });
 
     it('should handle email addresses as array properly', async () => {
-      const { searchPeopleByEmails } = await import('../../src/objects/people-write.js');
+      const { searchPeopleByEmails } = await import(
+        '../../src/objects/people-write.js'
+      );
       vi.mocked(searchPeopleByEmails).mockResolvedValue([
         { email: 'valid1@example.com', exists: false },
-        { email: 'valid2@example.com', exists: false }
+        { email: 'valid2@example.com', exists: false },
       ]);
 
       const result = await PersonValidator.validateCreate({
         name: 'Test User',
-        email_addresses: ['valid1@example.com', 'valid2@example.com']
+        email_addresses: ['valid1@example.com', 'valid2@example.com'],
       });
-      
+
       expect(result.email_addresses).toHaveLength(2);
       expect(result.email_addresses).toContain('valid1@example.com');
       expect(result.email_addresses).toContain('valid2@example.com');
     });
 
     it('should convert single email string to array', async () => {
-      const { searchPeopleByEmails } = await import('../../src/objects/people-write.js');
+      const { searchPeopleByEmails } = await import(
+        '../../src/objects/people-write.js'
+      );
       vi.mocked(searchPeopleByEmails).mockResolvedValue([
-        { email: 'valid@example.com', exists: false }
+        { email: 'valid@example.com', exists: false },
       ]);
 
       const result = await PersonValidator.validateCreate({
         name: 'Test User',
-        email_addresses: 'valid@example.com' as any // Testing string input
+        email_addresses: 'valid@example.com' as any, // Testing string input
       });
-      
+
       expect(Array.isArray(result.email_addresses)).toBe(true);
       expect(result.email_addresses).toHaveLength(1);
       expect(result.email_addresses![0]).toBe('valid@example.com');
@@ -132,7 +138,7 @@ describe('Email Validation', () => {
         'user@',
         'user@.com',
         'user@example',
-        'user @example.com'
+        'user @example.com',
       ];
 
       for (const email of invalidEmails) {
@@ -150,7 +156,7 @@ describe('Email Validation', () => {
       const validEmails = [
         'user@example.com',
         'user.name@example.com',
-        'user+tag@example.com'
+        'user+tag@example.com',
       ];
 
       for (const email of validEmails) {

@@ -22,7 +22,10 @@ import {
 } from './people/errors.js';
 
 // Re-export error classes for backward compatibility
-export { PersonOperationError, InvalidPersonDataError } from './people/errors.js';
+export {
+  PersonOperationError,
+  InvalidPersonDataError,
+} from './people/errors.js';
 
 /**
  * Batch email validation for performance optimization
@@ -157,7 +160,9 @@ export class PersonValidator {
       const results = await searchCompanies(companyName);
       if (results.length === 1) {
         // TypeScript needs help understanding the type mutation here
-        (attributes as PersonAttributes & { company: { record_id: string } }).company = { record_id: results[0].id?.record_id || '' };
+        (
+          attributes as PersonAttributes & { company: { record_id: string } }
+        ).company = { record_id: results[0].id?.record_id || '' };
       } else if (results.length === 0) {
         throw new InvalidPersonDataError(
           `Company '${companyName}' not found. Provide a valid company ID.`
@@ -215,7 +220,9 @@ export class PersonValidator {
         if (typeof email === 'string' && !isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
         } else if (typeof email !== 'string') {
-          throw new InvalidPersonDataError(`Email must be a string, got: ${typeof email}`);
+          throw new InvalidPersonDataError(
+            `Email must be a string, got: ${typeof email}`
+          );
         }
       }
     }
