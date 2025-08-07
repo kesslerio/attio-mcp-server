@@ -2,6 +2,7 @@
  * Shared types for people module
  */
 import { isValidEmail } from '../../utils/validation/email-validation.js';
+import { InvalidPersonDataError } from './errors.js';
 
 /**
  * Interface for attributes when creating or updating a person
@@ -19,35 +20,15 @@ export interface PersonAttributes {
   /** Job title */
   job_title?: string;
 
-  /** Associated company ID */
-  company?: { record_id: string };
+  /** Associated company ID or company name to look up */
+  company?: string | { record_id: string };
 
   /** Custom attributes */
-  [key: string]: any;
+  [key: string]: string | string[] | number | boolean | { record_id: string } | undefined;
 }
 
-// Error classes for people operations
-export class PersonOperationError extends Error {
-  constructor(
-    public operation: string,
-    public personId?: string,
-    message?: string
-  ) {
-    super(
-      `Person ${operation} failed${
-        personId ? ` for ${personId}` : ''
-      }: ${message}`
-    );
-    this.name = 'PersonOperationError';
-  }
-}
-
-export class InvalidPersonDataError extends Error {
-  constructor(message: string) {
-    super(`Invalid person data: ${message}`);
-    this.name = 'InvalidPersonDataError';
-  }
-}
+// Re-export error classes for backward compatibility
+export { PersonOperationError, InvalidPersonDataError } from './errors.js';
 
 // Validator for person data
 export class PersonValidator {
@@ -102,7 +83,7 @@ export class PersonValidator {
   static async validateAttributeUpdate(
     personId: string,
     attributeName: string,
-    attributeValue: any
+    attributeValue: string | string[] | { record_id: string } | undefined
   ): Promise<void> {
     if (!personId || typeof personId !== 'string') {
       throw new InvalidPersonDataError('Person ID must be a non-empty string');
@@ -121,8 +102,10 @@ export class PersonValidator {
         : [attributeValue];
 
       for (const email of emails) {
-        if (!isValidEmail(email)) {
+        if (typeof email === 'string' && !isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+        } else if (typeof email !== 'string') {
+          throw new InvalidPersonDataError(`Email must be a string, got: ${typeof email}`);
         }
       }
     }

@@ -15,29 +15,14 @@ import { searchPeopleByEmail } from './people/search.js';
 import { searchCompanies } from './companies/search.js';
 import { getAttioClient } from '../api/attio-client.js';
 import { isValidEmail } from '../utils/validation/email-validation.js';
+import { PersonAttributes } from './people/types.js';
+import {
+  PersonOperationError,
+  InvalidPersonDataError,
+} from './people/errors.js';
 
-// Error classes for people operations
-export class PersonOperationError extends Error {
-  constructor(
-    public operation: string,
-    public personId?: string,
-    message?: string
-  ) {
-    super(
-      `Person ${operation} failed${
-        personId ? ` for ${personId}` : ''
-      }: ${message}`
-    );
-    this.name = 'PersonOperationError';
-  }
-}
-
-export class InvalidPersonDataError extends Error {
-  constructor(message: string) {
-    super(`Invalid person data: ${message}`);
-    this.name = 'InvalidPersonDataError';
-  }
-}
+// Re-export error classes for backward compatibility
+export { PersonOperationError, InvalidPersonDataError } from './people/errors.js';
 
 /**
  * Batch email validation for performance optimization
@@ -168,16 +153,18 @@ export class PersonValidator {
 
     // Resolve company name to record reference
     if (attributes.company && typeof attributes.company === 'string') {
-      const results = await searchCompanies(attributes.company);
+      const companyName = attributes.company;
+      const results = await searchCompanies(companyName);
       if (results.length === 1) {
-        attributes.company = { record_id: results[0].id?.record_id } as any;
+        // TypeScript needs help understanding the type mutation here
+        (attributes as PersonAttributes & { company: { record_id: string } }).company = { record_id: results[0].id?.record_id || '' };
       } else if (results.length === 0) {
         throw new InvalidPersonDataError(
-          `Company '${attributes.company}' not found. Provide a valid company ID.`
+          `Company '${companyName}' not found. Provide a valid company ID.`
         );
       } else {
         throw new InvalidPersonDataError(
-          `Multiple companies match '${attributes.company}'. Please specify the company ID.`
+          `Multiple companies match '${companyName}'. Please specify the company ID.`
         );
       }
     }
@@ -185,7 +172,10 @@ export class PersonValidator {
     return attributes;
   }
 
-  static async validateUpdate(personId: string, attributes: any): Promise<any> {
+  static async validateUpdate(
+    personId: string,
+    attributes: PersonAttributes
+  ): Promise<PersonAttributes> {
     if (!personId || typeof personId !== 'string') {
       throw new InvalidPersonDataError('Person ID must be a non-empty string');
     }
@@ -203,7 +193,7 @@ export class PersonValidator {
   static async validateAttributeUpdate(
     personId: string,
     attributeName: string,
-    attributeValue: any
+    attributeValue: string | string[] | { record_id: string } | undefined
   ): Promise<void> {
     if (!personId || typeof personId !== 'string') {
       throw new InvalidPersonDataError('Person ID must be a non-empty string');
@@ -222,8 +212,10 @@ export class PersonValidator {
         : [attributeValue];
 
       for (const email of emails) {
-        if (!isValidEmail(email)) {
+        if (typeof email === 'string' && !isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+        } else if (typeof email !== 'string') {
+          throw new InvalidPersonDataError(`Email must be a string, got: ${typeof email}`);
         }
       }
     }
@@ -288,7 +280,7 @@ export async function createPerson(
  */
 export async function updatePerson(
   personId: string,
-  attributes: any
+  attributes: PersonAttributes
 ): Promise<Person> {
   try {
     return await updateObjectWithDynamicFields<Person>(
@@ -322,7 +314,7 @@ export async function updatePerson(
 export async function updatePersonAttribute(
   personId: string,
   attributeName: string,
-  attributeValue: any
+  attributeValue: string | string[] | { record_id: string } | undefined
 ): Promise<Person> {
   try {
     // Validate attribute update
