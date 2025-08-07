@@ -2,6 +2,7 @@
  * Attribute type detection and management for Attio attributes
  */
 import { getAttioClient } from './attio-client.js';
+import { parsePersonalName } from '../utils/personal-name-parser.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -155,6 +156,10 @@ export async function detectFieldType(
       return attrMetadata.is_multiselect ? 'array' : 'object';
 
     case 'interaction':
+      return 'object';
+
+    case 'personal-name':
+      // Personal name is always an object with first_name, last_name, etc.
       return 'object';
 
     default:
@@ -360,10 +365,10 @@ export async function formatAttributeValue(
 
     case 'text':
       // Text fields for people object don't need wrapping for certain slugs
+      // Note: 'name' is actually a personal-name field, not text, so removed from here
       if (
         objectSlug === 'people' &&
-        (attributeSlug === 'name' ||
-          attributeSlug === 'job_title' ||
+        (attributeSlug === 'job_title' ||
           attributeSlug === 'first_name' ||
           attributeSlug === 'last_name')
       ) {
@@ -378,8 +383,9 @@ export async function formatAttributeValue(
       }
 
     case 'personal-name':
-      // Personal name fields don't need value wrapping
-      return value;
+      // Personal name fields need special handling
+      // Use the dedicated parser utility
+      return parsePersonalName(value);
 
     case 'url':
       // URL fields need wrapped values
