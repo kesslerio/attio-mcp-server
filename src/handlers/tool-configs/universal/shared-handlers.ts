@@ -23,8 +23,6 @@ import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attr
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
-// Import resource mapping utilities
-import { ResourceMapper } from '../../../utils/resource-mapping.js';
 
 // Import people normalization utilities
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
@@ -36,7 +34,6 @@ import { performance } from 'perf_hooks';
 
 // Import existing handlers by resource type
 import {
-  searchCompanies,
   advancedSearchCompanies,
   getCompanyDetails,
   createCompany,
@@ -51,11 +48,9 @@ import {
 } from '../../../objects/companies/index.js';
 
 import {
-  searchPeople,
   advancedSearchPeople,
   getPersonDetails,
-  createPerson,
-  listPeople
+  createPerson
 } from '../../../objects/people/index.js';
 
 import {
@@ -83,14 +78,12 @@ import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
 import {
-  mapFieldName,
   mapRecordFields,
   validateResourceType,
   getFieldSuggestions,
   validateFields,
   enhanceUniquenessError,
   getValidResourceTypes,
-  getValidFields,
   FIELD_MAPPINGS
 } from './field-mapper.js';
 
