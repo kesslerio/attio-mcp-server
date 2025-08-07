@@ -61,5 +61,26 @@
     "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "CI pipeline failed pls address with sub agent"
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "https://github.com/kesslerio/attio-mcp-server/pull/399 has failing CI checks @agent-test-coverage-specialist pls fix"
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "@agent-project-delegator-orchestrator address feedback in https://github.com/kesslerio/attio-mcp-server/pull/401#issuecomment-3164624488"
+  },
+  {
+    "session_id": "c7428042-d9a9-4e9e-a71c-4433a8d202c0",
+    "transcript_path": "/Users/kesslerio/.claude/projects/-Users-kesslerio-GDrive-Projects-attio-mcp-server/c7428042-d9a9-4e9e-a71c-4433a8d202c0.jsonl",
+    "cwd": "/Users/kesslerio/GDrive/Projects/attio-mcp-server",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "ok go on @agent-project-delegator-orchestrator merge both PRs then continue with remaining work"
   }
 ]
