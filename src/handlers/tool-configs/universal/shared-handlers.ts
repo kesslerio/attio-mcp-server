@@ -127,19 +127,34 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
 }
 
 /**
- * Converts an AttioTask to an AttioRecord for universal tool compatibility
- * This provides proper type conversion without unsafe casting
+ * Converts an AttioTask to an AttioRecord for universal tool compatibility.
+ * 
+ * This function provides proper type conversion from the task-specific format
+ * to the generic record format used by universal tools, ensuring data integrity
+ * without unsafe type casting.
+ * 
+ * @param task - The AttioTask object to convert
+ * @returns An AttioRecord representation of the task with properly mapped fields
+ * 
+ * @example
+ * const task = await getTask('task-123');
+ * const record = convertTaskToRecord(task);
+ * // record.values now contains: content, status, assignee, due_date, linked_records
  */
 function convertTaskToRecord(task: AttioTask): AttioRecord {
   return {
     id: {
       record_id: task.id.task_id,
-      object_id: task.id.object_id || 'tasks',
-      workspace_id: task.id.workspace_id
+      object_id: 'tasks',
+      workspace_id: task.id.workspace_id || ''
     },
     values: {
-      // Ensure the values object satisfies the AttioRecord.values interface
-      ...(task.values || {}),
+      // Map task properties to values object
+      content: task.content,
+      status: task.status,
+      assignee: task.assignee,
+      due_date: task.due_date,
+      linked_records: task.linked_records
     } as AttioRecord['values'],
     created_at: task.created_at,
     updated_at: task.updated_at
@@ -544,16 +559,16 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           break;
           
         case UniversalResourceType.TASKS: {
-          // Tasks don't have a direct get details function, so we'll use list with filter
-          const tasks = await listTasks();
-          const task = tasks.find((t: any) => t.id?.record_id === record_id);
-          if (!task) {
+          // Use the getTask function directly with the task ID
+          try {
+            const task = await getTask(record_id);
+            // Convert AttioTask to AttioRecord using proper type conversion
+            result = convertTaskToRecord(task);
+          } catch (error: any) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
             throw new Error('The requested task could not be found.');
           }
-          // Convert AttioTask to AttioRecord using proper type conversion
-          result = convertTaskToRecord(task);
           break;
         }
           
