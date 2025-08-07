@@ -314,7 +314,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
   
   // Handle array of attributes
   if (Array.isArray(attributes)) {
-    return attributes.filter(attr => {
+    return attributes.filter((attr: any) => {
       // Check various possible category field names
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
@@ -323,7 +323,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
   
   // Handle attributes response with data array
   if (attributes && typeof attributes === 'object' && attributes.data && Array.isArray(attributes.data)) {
-    const filteredData = attributes.data.filter(attr => {
+    const filteredData = attributes.data.filter((attr: any) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
@@ -337,7 +337,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
   
   // Handle attributes response with attributes array
   if (attributes && typeof attributes === 'object' && attributes.attributes && Array.isArray(attributes.attributes)) {
-    const filteredAttributes = attributes.attributes.filter(attr => {
+    const filteredAttributes = attributes.attributes.filter((attr: any) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
