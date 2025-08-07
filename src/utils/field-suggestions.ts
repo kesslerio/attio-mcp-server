@@ -125,7 +125,7 @@ export function generateFieldSuggestionMessage(
  * @returns Enhanced error message with valid options
  */
 export function generateEnumSuggestionMessage(
-  value: any,
+  value: string | number | boolean,
   validValues: string[],
   fieldName: string
 ): string {
