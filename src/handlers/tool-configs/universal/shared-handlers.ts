@@ -234,8 +234,19 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
         case UniversalResourceType.COMPANIES:
           if (filters && Object.keys(filters).length > 0) {
             results = await advancedSearchCompanies(filters, limit, offset);
+          } else if (query && query.trim().length > 0) {
+            // Convert simple query search to advanced search with pagination
+            const nameFilters = {
+              filters: [{ 
+                attribute: { slug: 'name' }, 
+                condition: 'contains', 
+                value: query 
+              }]
+            };
+            results = await advancedSearchCompanies(nameFilters, limit, offset);
           } else {
-            results = await searchCompanies(query || '');
+            // No query and no filters - use advanced search with empty filters for pagination
+            results = await advancedSearchCompanies({ filters: [] }, limit, offset);
           }
           break;
           
@@ -243,11 +254,29 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           if (filters && Object.keys(filters).length > 0) {
             const paginatedResult = await advancedSearchPeople(filters, { limit, offset });
             results = paginatedResult.results;
-          } else if (!query || query.trim().length === 0) {
-            // If no query provided, use listPeople instead of searchPeople
-            results = await listPeople(limit || 20);
+          } else if (query && query.trim().length > 0) {
+            // Convert simple query search to advanced search with pagination
+            const nameEmailFilters = {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'contains',
+                  value: query
+                },
+                {
+                  attribute: { slug: 'email_addresses' },
+                  condition: 'contains', 
+                  value: query
+                }
+              ],
+              matchAny: true // Use OR logic to match either name or email
+            };
+            const paginatedResult = await advancedSearchPeople(nameEmailFilters, { limit, offset });
+            results = paginatedResult.results;
           } else {
-            results = await searchPeople(query);
+            // No query and no filters - use advanced search with empty filters for pagination
+            const paginatedResult = await advancedSearchPeople({ filters: [] }, { limit, offset });
+            results = paginatedResult.results;
           }
           break;
           
@@ -265,8 +294,12 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           
         case UniversalResourceType.TASKS: {
           const tasks = await listTasks();
+          // Apply pagination manually since Tasks API doesn't support native pagination
+          const start = offset || 0;
+          const end = start + (limit || 10);
+          const paginatedTasks = tasks.slice(start, end);
           // Convert AttioTask[] to AttioRecord[] using proper type conversion
-          results = tasks.map(convertTaskToRecord);
+          results = paginatedTasks.map(convertTaskToRecord);
           break;
         }
           
