@@ -23,9 +23,6 @@ import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attr
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
-// Import resource mapping utilities
-import { ResourceMapper } from '../../../utils/resource-mapping.js';
-
 // Import people normalization utilities
 import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
 
@@ -34,9 +31,8 @@ import { enhancedPerformanceTracker } from '../../../middleware/performance-enha
 import { validateRecordId, generateIdCacheKey } from '../../../utils/validation/id-validation.js';
 import { performance } from 'perf_hooks';
 
-// Import existing handlers by resource type
+// Import existing handlers by resource type (unused imports removed)
 import {
-  searchCompanies,
   advancedSearchCompanies,
   getCompanyDetails,
   createCompany,
@@ -51,11 +47,9 @@ import {
 } from '../../../objects/companies/index.js';
 
 import {
-  searchPeople,
   advancedSearchPeople,
   getPersonDetails,
-  createPerson,
-  listPeople
+  createPerson
 } from '../../../objects/people/index.js';
 
 import {
@@ -83,14 +77,12 @@ import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
 import {
-  mapFieldName,
   mapRecordFields,
   validateResourceType,
   getFieldSuggestions,
   validateFields,
   enhanceUniquenessError,
   getValidResourceTypes,
-  getValidFields,
   FIELD_MAPPINGS
 } from './field-mapper.js';
 
@@ -382,7 +374,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
     }
     
   } catch (error) {
-    // Error already handled and tracked
+    enhancedPerformanceTracker.endOperation(perfId, false, 'Search operation failed', 500);
     throw error;
   }
 }
@@ -495,7 +487,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     }
     
   } catch (error) {
-    // Error already handled and tracked
+    enhancedPerformanceTracker.endOperation(perfId, false, 'Get details operation failed', 500);
     throw error;
   }
 }

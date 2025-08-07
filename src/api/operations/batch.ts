@@ -24,7 +24,6 @@ import { getObjectDetails } from './crud.js';
 import {
   validateBatchSize,
   validatePayloadSize,
-  splitBatchIntoChunks,
 } from '../../utils/batch-validation.js';
 import { getBatchSizeLimit } from '../../config/security-limits.js';
 

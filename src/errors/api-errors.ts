@@ -42,7 +42,7 @@ export class AttioApiError extends Error {
 
     // In development, include more details but still sanitize sensitive data
     const sanitizedEndpoint = this.endpoint.replace(
-      /\/[a-f0-9\-]{20,}/gi,
+      /\/[a-f0-9-]{20,}/gi,
       '/[ID_REDACTED]'
     );
     return (
@@ -88,7 +88,7 @@ export class AuthorizationError extends AttioApiError {
   ) {
     // Sanitize the message to avoid exposing permission details
     const sanitizedMessage = message.replace(
-      /permission[s]?[\s:]+["']?[a-z_\.]+["']?/gi,
+      /permission[s]?[\s:]+["']?[a-z_.]+["']?/gi,
       '[PERMISSION_REDACTED]'
     );
     super(sanitizedMessage, 403, endpoint, method, details);
@@ -254,7 +254,7 @@ export function createApiErrorFromAxiosError(
   if (statusCode === 404 && endpoint.includes('/objects/')) {
     // Extract resource type and ID from endpoint
     // Assuming endpoint format like /objects/{type}/records/{id}
-    const matches = endpoint.match(/\/objects\/([^\/]+)\/records\/([^\/]+)/);
+    const matches = endpoint.match(/\/objects\/([^/]+)\/records\/([^/]+)/);
     if (matches && matches.length >= 3) {
       const [, resourceType, resourceId] = matches;
       // Format resource type properly: 'people' -> 'Person', 'companies' -> 'Company'
