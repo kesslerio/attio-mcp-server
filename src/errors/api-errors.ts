@@ -39,9 +39,12 @@ export class AttioApiError extends Error {
     if (process.env.NODE_ENV === 'production') {
       return `${this.name} (${this.statusCode}): ${sanitizeErrorMessage(this.message)}`;
     }
-    
+
     // In development, include more details but still sanitize sensitive data
-    const sanitizedEndpoint = this.endpoint.replace(/\/[a-f0-9\-]{20,}/gi, '/[ID_REDACTED]');
+    const sanitizedEndpoint = this.endpoint.replace(
+      /\/[a-f0-9\-]{20,}/gi,
+      '/[ID_REDACTED]'
+    );
     return (
       `${this.name} (${this.statusCode}): ${this.message}\n` +
       `Endpoint: ${this.method} ${sanitizedEndpoint}\n` +
@@ -61,7 +64,10 @@ export class AuthenticationError extends AttioApiError {
     details?: any
   ) {
     // Sanitize the message to avoid exposing API key format
-    const sanitizedMessage = message.replace(/api[_-]?key[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi, '[CREDENTIAL_REDACTED]');
+    const sanitizedMessage = message.replace(
+      /api[_-]?key[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi,
+      '[CREDENTIAL_REDACTED]'
+    );
     super(sanitizedMessage, 401, endpoint, method, details);
     this.name = 'AuthenticationError';
 
@@ -81,7 +87,10 @@ export class AuthorizationError extends AttioApiError {
     details?: any
   ) {
     // Sanitize the message to avoid exposing permission details
-    const sanitizedMessage = message.replace(/permission[s]?[\s:]+["']?[a-z_\.]+["']?/gi, '[PERMISSION_REDACTED]');
+    const sanitizedMessage = message.replace(
+      /permission[s]?[\s:]+["']?[a-z_\.]+["']?/gi,
+      '[PERMISSION_REDACTED]'
+    );
     super(sanitizedMessage, 403, endpoint, method, details);
     this.name = 'AuthorizationError';
 

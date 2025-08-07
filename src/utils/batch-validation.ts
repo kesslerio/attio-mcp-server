@@ -1,6 +1,6 @@
 /**
  * Batch operation validation utilities for DoS protection
- * 
+ *
  * Provides comprehensive validation for batch operations including
  * size limits, payload validation, and rate limiting checks.
  */
@@ -34,34 +34,34 @@ export interface BatchValidationResult {
  */
 function getObjectSize(obj: any): number {
   let size = 0;
-  
+
   if (obj === null || obj === undefined) {
     return 0;
   }
-  
+
   if (typeof obj === 'string') {
     return obj.length * 2; // Unicode characters can be up to 2 bytes
   }
-  
+
   if (typeof obj === 'number') {
     return 8; // Numbers are typically 8 bytes
   }
-  
+
   if (typeof obj === 'boolean') {
     return 4; // Booleans are typically 4 bytes
   }
-  
+
   if (obj instanceof Date) {
     return 8; // Dates are stored as numbers
   }
-  
+
   if (Array.isArray(obj)) {
     for (const item of obj) {
       size += getObjectSize(item);
     }
     return size;
   }
-  
+
   if (typeof obj === 'object') {
     for (const [key, value] of Object.entries(obj)) {
       size += key.length * 2; // Key size
@@ -69,13 +69,13 @@ function getObjectSize(obj: any): number {
     }
     return size;
   }
-  
+
   return 0;
 }
 
 /**
  * Validates the size of a batch operation
- * 
+ *
  * @param items - Array of items in the batch
  * @param operationType - Type of operation (create, update, delete, etc.)
  * @param resourceType - Type of resource (companies, people, etc.)
@@ -94,7 +94,7 @@ export function validateBatchSize(
       errorType: ErrorType.VALIDATION_ERROR,
     };
   }
-  
+
   // Check for empty array
   if (items.length === 0) {
     return {
@@ -103,17 +103,17 @@ export function validateBatchSize(
       errorType: ErrorType.VALIDATION_ERROR,
     };
   }
-  
+
   // Get the appropriate size limit
   let maxSize = getBatchSizeLimit(resourceType);
-  
+
   // Apply more restrictive limits for certain operations
   if (operationType.toLowerCase() === 'delete') {
     maxSize = Math.min(maxSize, BATCH_SIZE_LIMITS.DELETE);
   } else if (operationType.toLowerCase() === 'search') {
     maxSize = Math.min(maxSize, BATCH_SIZE_LIMITS.SEARCH);
   }
-  
+
   // Check if batch size exceeds limit
   if (items.length > maxSize) {
     return {
@@ -130,13 +130,13 @@ export function validateBatchSize(
       },
     };
   }
-  
+
   return { isValid: true };
 }
 
 /**
  * Validates the payload size of a batch operation
- * 
+ *
  * @param payload - The payload to validate
  * @param checkSingleRecords - Whether to check individual record sizes
  * @returns Validation result
@@ -147,7 +147,7 @@ export function validatePayloadSize(
 ): BatchValidationResult {
   // Calculate total payload size
   const totalSize = getObjectSize(payload);
-  
+
   // Check total payload size
   if (totalSize > PAYLOAD_SIZE_LIMITS.BATCH_TOTAL) {
     return {
@@ -163,7 +163,7 @@ export function validatePayloadSize(
       },
     };
   }
-  
+
   // Check individual record sizes if requested
   if (checkSingleRecords && Array.isArray(payload)) {
     for (let i = 0; i < payload.length; i++) {
@@ -171,7 +171,8 @@ export function validatePayloadSize(
       if (recordSize > PAYLOAD_SIZE_LIMITS.SINGLE_RECORD) {
         return {
           isValid: false,
-          error: `Record at index ${i}: ` +
+          error:
+            `Record at index ${i}: ` +
             LIMIT_ERROR_MESSAGES.SINGLE_RECORD_SIZE_EXCEEDED(
               recordSize,
               PAYLOAD_SIZE_LIMITS.SINGLE_RECORD
@@ -185,13 +186,13 @@ export function validatePayloadSize(
       }
     }
   }
-  
+
   return { isValid: true };
 }
 
 /**
  * Validates search query parameters
- * 
+ *
  * @param query - Search query string
  * @param filters - Optional filter object
  * @returns Validation result
@@ -211,7 +212,7 @@ export function validateSearchQuery(
       errorType: ErrorType.VALIDATION_ERROR,
     };
   }
-  
+
   // Validate filter object size
   if (filters) {
     const filterSize = getObjectSize(filters);
@@ -226,14 +227,14 @@ export function validateSearchQuery(
       };
     }
   }
-  
+
   return { isValid: true };
 }
 
 /**
  * Comprehensive validation for batch operations
  * Combines size, payload, and other validations
- * 
+ *
  * @param params - Parameters object containing batch operation details
  * @returns Validation result
  */
@@ -244,13 +245,13 @@ export function validateBatchOperation(params: {
   checkPayload?: boolean;
 }): BatchValidationResult {
   const { items, operationType, resourceType, checkPayload = true } = params;
-  
+
   // Validate batch size
   const sizeValidation = validateBatchSize(items, operationType, resourceType);
   if (!sizeValidation.isValid) {
     return sizeValidation;
   }
-  
+
   // Validate payload size if requested
   if (checkPayload && items) {
     const payloadValidation = validatePayloadSize(items);
@@ -258,13 +259,13 @@ export function validateBatchOperation(params: {
       return payloadValidation;
     }
   }
-  
+
   return { isValid: true };
 }
 
 /**
  * Splits a large batch into smaller chunks that respect size limits
- * 
+ *
  * @param items - Array of items to split
  * @param resourceType - Type of resource for determining limits
  * @returns Array of batches
@@ -276,29 +277,31 @@ export function splitBatchIntoChunks<T>(
   if (!items || items.length === 0) {
     return [];
   }
-  
+
   const maxSize = getBatchSizeLimit(resourceType);
   const chunks: T[][] = [];
-  
+
   for (let i = 0; i < items.length; i += maxSize) {
     chunks.push(items.slice(i, i + maxSize));
   }
-  
+
   return chunks;
 }
 
 /**
  * Creates a safe error message for batch validation failures
  * This ensures no sensitive information is exposed in error messages
- * 
+ *
  * @param validation - Validation result
  * @returns Safe error message
  */
-export function createSafeBatchError(validation: BatchValidationResult): string {
+export function createSafeBatchError(
+  validation: BatchValidationResult
+): string {
   if (validation.isValid) {
     return '';
   }
-  
+
   // Return the error message without exposing internal limits
   // The error messages already handle this safely
   return validation.error || 'Batch validation failed';

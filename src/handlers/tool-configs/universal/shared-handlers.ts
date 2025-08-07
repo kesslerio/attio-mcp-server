@@ -90,7 +90,8 @@ import {
   validateFields,
   enhanceUniquenessError,
   getValidResourceTypes,
-  getValidFields
+  getValidFields,
+  FIELD_MAPPINGS
 } from './field-mapper.js';
 
 /**
@@ -435,8 +436,28 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
   }
   if (!fieldValidation.valid) {
+    // Build a clear, helpful error message
+    let errorMessage = `Field validation failed for ${resource_type}:\n`;
+    
+    // Add each error on its own line for clarity
+    if (fieldValidation.errors.length > 0) {
+      errorMessage += fieldValidation.errors.map(err => `  ❌ ${err}`).join('\n');
+    }
+    
+    // Add suggestions if available
+    if (fieldValidation.suggestions.length > 0) {
+      errorMessage += '\n\n💡 Suggestions:\n';
+      errorMessage += fieldValidation.suggestions.map(sug => `  • ${sug}`).join('\n');
+    }
+    
+    // List available fields for this resource type
+    const mapping = FIELD_MAPPINGS[resource_type];
+    if (mapping && mapping.validFields.length > 0) {
+      errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(', ')}`;
+    }
+    
     throw new UniversalValidationError(
-      `Invalid fields for ${resource_type}: ${fieldValidation.errors.join('; ')}`,
+      errorMessage,
       ErrorType.USER_ERROR,
       {
         suggestion: fieldValidation.suggestions.join('. '),

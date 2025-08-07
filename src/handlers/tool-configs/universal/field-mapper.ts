@@ -54,7 +54,7 @@ const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
 /**
  * Field mappings for each resource type
  */
-const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
+export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
   [UniversalResourceType.COMPANIES]: {
     fieldMappings: {
       // Common incorrect field names -> correct ones

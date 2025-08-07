@@ -198,7 +198,7 @@ describe('Batch Validation', () => {
     it('should split large arrays into chunks', () => {
       const items = new Array(250).fill('item').map((_, i) => `item-${i}`);
       const chunks = splitBatchIntoChunks(items, 'companies');
-      
+
       expect(chunks.length).toBe(3); // 100, 100, 50
       expect(chunks[0].length).toBe(100);
       expect(chunks[1].length).toBe(100);
@@ -208,7 +208,7 @@ describe('Batch Validation', () => {
     it('should handle arrays smaller than chunk size', () => {
       const items = new Array(50).fill('item');
       const chunks = splitBatchIntoChunks(items, 'companies');
-      
+
       expect(chunks.length).toBe(1);
       expect(chunks[0].length).toBe(50);
     });
@@ -221,7 +221,7 @@ describe('Batch Validation', () => {
     it('should use resource-specific limits', () => {
       const items = new Array(60).fill('item');
       const chunks = splitBatchIntoChunks(items, 'delete');
-      
+
       // Delete operations have a limit of 50
       expect(chunks.length).toBe(2);
       expect(chunks[0].length).toBe(50);
@@ -269,7 +269,7 @@ describe('Batch Validation', () => {
           data: 'x'.repeat(100000), // 100KB at each level
         };
       };
-      
+
       const payload = createNestedObject(110); // Deep nesting with large data
       const result = validatePayloadSize(payload);
       expect(result.isValid).toBe(false);
@@ -279,7 +279,7 @@ describe('Batch Validation', () => {
       // Attempt to create a regex DoS pattern
       const maliciousQuery = '(a+)+b'.repeat(100);
       const result = validateSearchQuery(maliciousQuery);
-      
+
       // Should fail due to length, not pattern matching
       if (maliciousQuery.length > 1024) {
         expect(result.isValid).toBe(false);
@@ -294,13 +294,13 @@ describe('Batch Validation', () => {
         website: 'https://example.com',
         description: 'A legitimate company description',
       });
-      
+
       const result = validateBatchOperation({
         items: records,
         operationType: 'update',
         resourceType: 'companies',
       });
-      
+
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('exceeds maximum allowed');
     });

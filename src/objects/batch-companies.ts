@@ -54,7 +54,7 @@ async function executeBatchCompanyOperation<T, R>(
       `Invalid ${operationType} parameters: records must be a non-empty array`
     );
   }
-  
+
   // Validate batch operation for DoS protection
   const validation = validateBatchOperation({
     items: records,
@@ -62,7 +62,7 @@ async function executeBatchCompanyOperation<T, R>(
     resourceType: ResourceType.COMPANIES,
     checkPayload: operationType === 'create' || operationType === 'update',
   });
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error);
   }
