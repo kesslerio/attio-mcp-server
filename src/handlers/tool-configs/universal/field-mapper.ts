@@ -211,38 +211,43 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       'task': 'content',
       'text': 'content',
       'body': 'content',
-      // Status variations (Note: tasks don't have traditional status)
-      'status': 'is_completed',
-      'state': 'is_completed',
-      'completed': 'is_completed',
-      'done': 'is_completed',
-      'complete': 'is_completed',
-      // Due date variations
+      // Status variations - tasks use 'status' field, not is_completed
+      'state': 'status',
+      'completed': 'status',
+      'done': 'status',
+      'complete': 'status',
+      'task_status': 'status',
+      // Due date variations (matches the API expectation)
       'due': 'due_date',
       'deadline': 'due_date',
       'due_by': 'due_date',
       'due_on': 'due_date',
-      // Assignee variations
+      'duedate': 'due_date', // camelCase variant (lowercase for lookup)
+      // Assignee variations (matches what the code expects)
       'assignee': 'assignee_id',
       'assigned_to': 'assignee_id',
       'owner': 'assignee_id',
       'user': 'assignee_id',
-      // Record association
+      'assigneeid': 'assignee_id', // camelCase variant (lowercase for lookup)
+      // Record association (matches what the code expects)
       'record': 'record_id',
       'linked_record': 'record_id',
       'parent': 'record_id',
       'related_to': 'record_id',
+      'recordid': 'record_id', // camelCase variant (lowercase for lookup)
+      'linked_records': 'record_id',
     },
     validFields: [
-      'content', 'is_completed', 'due_date', 
-      'assignee_id', 'record_id', 'created_at', 'updated_at'
+      'content', 'status', 'due_date', 'priority',
+      'assignee_id', 'record_id', 'assignee', 'linked_records'
     ],
     commonMistakes: {
       'title': 'Use "content" for task text/description',
-      'name': 'Use "content" for task text/description',
+      'name': 'Use "content" for task text/description', 
       'description': 'Use "content" for task text/description',
-      'status': 'Tasks use "is_completed" (boolean) instead of status',
-      'assignee': 'Use "assignee_id" with the user\'s ID',
+      'assignee': 'Use "assignee_id" with the user\'s workspace member ID',
+      'due': 'Use "due_date" with ISO date format (YYYY-MM-DD)',
+      'record': 'Use "record_id" to link the task to a specific record',
     },
     requiredFields: ['content'],
     uniqueFields: []

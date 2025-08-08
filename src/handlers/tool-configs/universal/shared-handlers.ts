@@ -30,6 +30,19 @@ import {
   EnhancedErrorResponse
 } from '../../../utils/enhanced-validation.js';
 
+// Import enhanced error handling for Issues #415, #416, #417
+import { 
+  ErrorTemplates,
+  ErrorEnhancer,
+  EnhancedApiError
+} from '../../../errors/enhanced-api-errors.js';
+
+import { 
+  isValidUUID,
+  createRecordNotFoundError,
+  createInvalidUUIDError
+} from '../../../utils/validation/uuid-validation.js';
+
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
@@ -39,7 +52,7 @@ import { PeopleDataNormalizer } from '../../../utils/normalization/people-normal
 
 // Import performance tracking and ID validation
 import { enhancedPerformanceTracker } from '../../../middleware/performance-enhanced.js';
-import { validateRecordId, generateIdCacheKey } from '../../../utils/validation/id-validation.js';
+import { generateIdCacheKey } from '../../../utils/validation/id-validation.js';
 import { performance } from 'perf_hooks';
 
 // Import existing handlers by resource type
@@ -173,8 +186,15 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
 
 /**
  * Generic attribute discovery for any resource type
+ * 
+ * Special handling for tasks which use /tasks API instead of /objects/tasks
  */
 async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<any> {
+  // Handle tasks as special case - they don't use /objects/{type}/attributes
+  if (resourceType === UniversalResourceType.TASKS) {
+    return discoverTaskAttributes();
+  }
+  
   const client = getAttioClient();
   
   try {
@@ -198,6 +218,97 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
     console.error(`Failed to discover attributes for ${resourceType}:`, error);
     throw new Error(`Attribute discovery failed for ${resourceType}: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/**
+ * Task-specific attribute discovery
+ * 
+ * Since tasks use /tasks API instead of /objects/tasks, we manually return
+ * the known task attributes based on the task API structure and field mappings.
+ */
+async function discoverTaskAttributes(): Promise<any> {
+  // Define task attributes based on the actual task API structure
+  // From /src/api/operations/tasks.ts and field mappings
+  const attributes = [
+    {
+      id: 'content',
+      api_slug: 'content',
+      title: 'Content',
+      type: 'text',
+      description: 'The main text/description of the task',
+      required: true
+    },
+    {
+      id: 'status',
+      api_slug: 'status', 
+      title: 'Status',
+      type: 'text',
+      description: 'Task completion status (e.g., pending, completed)',
+      required: false
+    },
+    {
+      id: 'assignee_id',
+      api_slug: 'assignee_id',
+      title: 'Assignee ID',
+      type: 'text',
+      description: 'ID of the workspace member assigned to this task',
+      required: false
+    },
+    {
+      id: 'assignee',
+      api_slug: 'assignee',
+      title: 'Assignee',
+      type: 'workspace-member',
+      description: 'User assigned to this task (object form)',
+      required: false
+    },
+    {
+      id: 'due_date',
+      api_slug: 'due_date',
+      title: 'Due Date',
+      type: 'date',
+      description: 'When the task is due (ISO date format: YYYY-MM-DD)',
+      required: false
+    },
+    {
+      id: 'record_id',
+      api_slug: 'record_id',
+      title: 'Record ID',
+      type: 'text',
+      description: 'ID of a record to link to this task',
+      required: false
+    },
+    {
+      id: 'linked_records',
+      api_slug: 'linked_records',
+      title: 'Linked Records',
+      type: 'record-reference',
+      description: 'Records linked to this task (array form)',
+      required: false
+    }
+  ];
+
+  // Create mapping from title to api_slug for compatibility
+  const mappings: Record<string, string> = {};
+  attributes.forEach((attr: any) => {
+    if (attr.title && attr.api_slug) {
+      mappings[attr.title] = attr.api_slug;
+    }
+    
+    // Add common field name mappings for easier discovery
+    mappings['title'] = 'content';
+    mappings['name'] = 'content';
+    mappings['description'] = 'content';
+    mappings['assignee'] = 'assignee_id';
+    mappings['due'] = 'due_date';
+    mappings['record'] = 'record_id';
+  });
+
+  return {
+    attributes: attributes,
+    mappings: mappings,
+    count: attributes.length
+  };
 }
 
 /**
@@ -561,26 +672,18 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
   );
   
   try {
-    // Early ID validation to prevent unnecessary API calls
+    // Enhanced UUID validation for Issue #416
     const validationStart = performance.now();
-    const idValidation = validateRecordId(record_id, resource_type);
-    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
     
-    if (!idValidation.isValid) {
-      // Check cache for known 404s
-      const cacheKey = generateIdCacheKey(resource_type, record_id);
-      const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
-      
-      if (cached404) {
-        enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-        throw new Error('The requested record could not be found.');
-      }
-      
-      // Cache this invalid ID for future requests
-      enhancedPerformanceTracker.cache404Response(cacheKey, { error: idValidation.message }, 60000);
-      enhancedPerformanceTracker.endOperation(perfId, false, idValidation.message, 400);
-      throw new Error('Invalid record identifier format. Please check the ID and try again.');
+    // Use enhanced UUID validation with clear error distinction
+    // Skip UUID validation for tasks as they may use different ID formats
+    if (resource_type !== UniversalResourceType.TASKS && !isValidUUID(record_id)) {
+      enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid UUID format', 400);
+      throw createInvalidUUIDError(record_id, resource_type, 'GET');
     }
+    
+    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
     
     // Check 404 cache for valid IDs too
     const cacheKey = generateIdCacheKey(resource_type, record_id);
@@ -588,7 +691,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     
     if (cached404) {
       enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-      throw new Error('The requested record could not be found.');
+      throw createRecordNotFoundError(record_id, resource_type);
     }
     
     // Track API call timing
@@ -622,7 +725,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           } catch (error: any) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
-            throw new Error('The requested task could not be found.');
+            throw createRecordNotFoundError(record_id, 'tasks');
           }
           break;
         }
@@ -641,20 +744,33 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     } catch (apiError: any) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
-      // Check if this is a 404 error
+      // Enhanced error handling for Issues #415, #416, #417
       const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      
       if (statusCode === 404 || apiError.message?.includes('not found')) {
         // Cache 404 responses for 60 seconds
         enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Not found' }, 60000);
+        
+        // Issue #416: Clear "not found" message for valid UUIDs
+        const enhancedError = createRecordNotFoundError(record_id, resource_type);
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          false,
+          enhancedError.getContextualMessage(),
+          404
+        );
+        throw enhancedError;
       }
       
+      // Auto-enhance other errors with context
+      const enhancedError = ErrorEnhancer.autoEnhance(apiError, resource_type, 'get-record-details', record_id);
       enhancedPerformanceTracker.endOperation(
         perfId,
         false,
-        apiError.message || 'Unknown error',
+        enhancedError.message,
         statusCode
       );
-      throw apiError;
+      throw enhancedError;
     }
     
   } catch (error) {
@@ -910,16 +1026,32 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     }
       
     case UniversalResourceType.TASKS: {
-      // Extract content from mapped data for task creation
-      const content = mappedData.content || mappedData.title || mappedData.name || 'New task';
-      const options = {
-        assigneeId: mappedData.assignee_id || mappedData.assigneeId,
-        dueDate: mappedData.due_date || mappedData.dueDate,
-        recordId: mappedData.record_id || mappedData.recordId
-      };
-      const createdTask = await createTask(content, options);
-      // Convert AttioTask to AttioRecord using proper type conversion
-      return convertTaskToRecord(createdTask);
+      try {
+        // Issue #417: Enhanced task creation with field mapping guidance
+        const content = mappedData.content || mappedData.title || mappedData.name || 'New task';
+        
+        // Validate required content field
+        if (!content || content.trim() === '') {
+          throw ErrorTemplates.TASK_FIELD_MAPPING(
+            'title',  // Show 'title' as the field they tried to use
+            'content' // Suggest 'content' as the correct field
+          );
+        }
+        
+        const options = {
+          assigneeId: mappedData.assignee_id || mappedData.assigneeId,
+          dueDate: mappedData.due_date || mappedData.dueDate,
+          recordId: mappedData.record_id || mappedData.recordId
+        };
+        
+        const createdTask = await createTask(content, options);
+        // Convert AttioTask to AttioRecord using proper type conversion
+        return convertTaskToRecord(createdTask);
+      } catch (error: any) {
+        // Issue #417: Enhanced task error handling with field mapping guidance
+        const enhancedError = ErrorEnhancer.autoEnhance(error, 'tasks', 'create-record');
+        throw enhancedError;
+      }
     }
       
     default:
@@ -1313,8 +1445,8 @@ function validateEmailAddresses(recordData: any, resourceType: string): void {
  * Enhanced error handling utility for universal operations
  */
 export function createUniversalError(operation: string, resourceType: string, originalError: any): Error {
-  // If it's already a UniversalValidationError, pass it through
-  if (originalError instanceof UniversalValidationError) {
+  // If it's already a UniversalValidationError or EnhancedApiError, pass it through
+  if (originalError instanceof UniversalValidationError || originalError instanceof EnhancedApiError) {
     return originalError;
   }
   

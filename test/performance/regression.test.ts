@@ -137,8 +137,8 @@ describe('Performance Regression Tests', () => {
       } catch (error: any) {
         const duration = performance.now() - startTime;
 
-        // Verify it's a validation error
-        expect(error.message).toContain('Invalid record ID');
+        // Verify it's a validation error (enhanced error message format)
+        expect(error.message).toContain('Invalid record identifier format');
 
         // Check performance budget
         expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.notFound);
