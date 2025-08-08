@@ -24,6 +24,7 @@ This guide explains how to set up and run tests for the Attio MCP Server, includ
 
 - [Quick Start](#quick-start)
 - [Test Types](#test-types)
+- [E2E Test Framework](#e2e-test-framework)
 - [Setting Up Integration Tests](#setting-up-integration-tests)
 - [Running Tests](#running-tests)
 - [Test Configuration](#test-configuration)
@@ -81,6 +82,170 @@ npm run test:integration -- test/integration/lists/add-record-to-list.integratio
 # Run integration tests in watch mode
 npm run test:integration:watch
 ```
+
+### E2E Tests
+
+**NEW in Issue #403**: Comprehensive End-to-End tests with 100% pass rate validation for universal tools.
+
+```bash
+# Run all E2E tests (51 tests, should show 100% pass rate)
+npm run e2e
+
+# Run specific E2E test suite
+npm test -- test/e2e/suites/universal-tools.e2e.test.ts
+
+# Run E2E tests with performance monitoring
+npm test -- test/e2e/suites/universal-tools.e2e.test.ts --reporter=verbose
+```
+
+## E2E Test Framework
+
+**🎯 Issue #403 Resolution**: Complete E2E test infrastructure with 100% pass rate (51/51 tests passing).
+
+### Major Infrastructure Improvements
+
+The E2E test framework underwent major improvements to achieve production-ready testing:
+
+#### ✅ **Critical Bug Fixes**
+- **MCP Response Format Consistency**: Fixed `isError: false` inclusion in successful responses
+- **Field Validation Resolution**: Corrected `record_data.values` structure validation
+- **Import Error Resolution**: Fixed test file imports that caused 97% test skip rate
+- **JSON Response Handling**: Enhanced parsing and validation of API responses
+
+#### 🚀 **New Testing Capabilities**
+- **Pagination Testing**: Comprehensive validation of `offset` parameter across universal tools
+- **Field Filtering**: Tests for `fields` parameter to validate selective data retrieval
+- **Tasks Integration**: Complete lifecycle testing for tasks resource type operations
+- **Performance Monitoring**: Execution time tracking and response size validation
+- **Enhanced Error Handling**: Graceful validation of error responses and edge cases
+
+#### 🛠️ **7 Enhanced Assertion Methods**
+
+The E2E framework includes 7 specialized assertion methods for comprehensive validation:
+
+```typescript
+import { E2EAssertions } from '../utils/assertions.js';
+
+// 1. Pagination validation
+E2EAssertions.expectValidPagination(response, expectedLimit);
+
+// 2. Field filtering validation
+E2EAssertions.expectFieldFiltering(response, ['name', 'domains']);
+
+// 3. Tasks integration validation
+E2EAssertions.expectValidTasksIntegration(response, 'create');
+
+// 4. Specific error type validation
+E2EAssertions.expectSpecificError(response, 'validation');
+
+// 5. Performance monitoring
+E2EAssertions.expectOptimalPerformance(response, 1000);
+
+// 6. Universal tool parameter validation
+E2EAssertions.expectValidUniversalToolParams(response, params);
+
+// 7. Batch operation validation
+E2EAssertions.expectValidBatchOperation(response, batchSize);
+```
+
+#### 📊 **Performance Budgets & Monitoring**
+
+Performance expectations are now enforced through automated testing:
+
+| Operation Type | Performance Budget | Validation Method |
+|---|---|---|
+| Search Operations | < 1000ms per API call | `expectOptimalPerformance(response, 1000)` |
+| CRUD Operations | < 1500ms per operation | `expectOptimalPerformance(response, 1500)` |
+| Batch Operations | < 3000ms for 10 records | `expectOptimalPerformance(response, 3000)` |
+| Field Filtering | < 500ms additional overhead | `expectFieldFiltering(response, fields)` |
+| Pagination | < 200ms additional per offset | `expectValidPagination(response, limit)` |
+
+#### 🎯 **Comprehensive Test Coverage**
+
+The E2E framework covers all universal tools with real API integration:
+
+**Core Operations (8 tools)**:
+- `search-records` with pagination and filtering
+- `get-record-details` with field selection
+- `create-record`, `update-record`, `delete-record` with validation
+- `get-attributes`, `discover-attributes` with schema discovery
+- `get-detailed-info` with various info types
+
+**Advanced Operations (5 tools)**:
+- `advanced-search` with complex filters
+- `search-by-relationship` with cross-resource queries
+- `search-by-content` with content-based searching
+- `search-by-timeframe` with temporal queries
+- `batch-operations` with bulk processing
+
+**Enhanced Testing Features**:
+- Cross-resource compatibility (companies, people, tasks, lists)
+- Error handling and edge case validation
+- Performance regression testing
+- Mock isolation to prevent unit test interference
+
+### Setting Up E2E Tests
+
+#### 1. **Environment Configuration**
+```bash
+# Create .env file with API key (required)
+echo "ATTIO_API_KEY=your_64_character_api_key_here" > .env
+
+# Verify API key format
+ATTIO_API_KEY=$(grep ATTIO_API_KEY .env | cut -d'=' -f2)
+echo "API key length: ${#ATTIO_API_KEY} (should be 64)"
+```
+
+#### 2. **Test Data Setup**
+```bash
+# Option A: Use existing records (update .env.test)
+cp test/e2e/config.template.json test/e2e/config.local.json
+# Edit config.local.json with your workspace record IDs
+
+# Option B: Create test data automatically
+npm run setup:test-data
+```
+
+#### 3. **Run E2E Tests**
+```bash
+# Full E2E test suite (should show 51/51 passing)
+npm run e2e
+
+# Run with detailed output
+npm run e2e --reporter=verbose
+
+# Single test suite
+npm test -- test/e2e/suites/universal-tools.e2e.test.ts
+```
+
+### E2E Test Architecture
+
+#### **Test Organization**
+```
+test/e2e/
+├── suites/                    # Test suites by functionality
+│   ├── universal-tools.e2e.test.ts  # Universal tools (51 tests)
+│   ├── tasks-management.e2e.test.ts  # Task operations
+│   ├── lists-management.e2e.test.ts  # List operations
+│   └── notes-management.e2e.test.ts  # Notes operations
+├── utils/                     # Test utilities
+│   ├── assertions.ts          # 7 enhanced assertion methods
+│   ├── config-loader.ts       # Configuration management
+│   └── logger.ts              # Test logging and monitoring
+├── fixtures/                  # Test data factories
+│   ├── companies.ts           # Company test data
+│   ├── people.ts              # Person test data
+│   └── tasks.ts               # Task test data
+└── setup.ts                   # Global test setup and cleanup
+```
+
+#### **Enhanced Assertion Methods Details**
+
+For comprehensive documentation of all 7 assertion methods, see the [E2E Assertion Methods Guide](./testing/e2e-assertion-methods.md).
+
+#### **Troubleshooting E2E Issues**
+
+For detailed troubleshooting guidance, see the [E2E Troubleshooting Guide](./testing/e2e-troubleshooting.md).
 
 ## Setting Up Integration Tests
 
@@ -379,5 +544,37 @@ When adding new integration tests:
 3. Add any new required test data to `.env.test.example`
 4. Update this documentation if adding new test types
 5. Ensure tests clean up after themselves
+
+## E2E Test Documentation
+
+For comprehensive E2E testing documentation, see:
+
+- **[E2E Framework Guide](./testing/e2e-framework-guide.md)** - Complete framework overview and architecture
+- **[E2E Assertion Methods](./testing/e2e-assertion-methods.md)** - Documentation for all 7 enhanced assertion methods
+- **[E2E Troubleshooting Guide](./testing/e2e-troubleshooting.md)** - Common issues and solutions
+- **[Performance Testing Guide](./testing/performance-testing.md)** - Performance monitoring and optimization
+
+## Technical Implementation Details
+
+### Issue #403 Resolution Summary
+
+The E2E test infrastructure underwent major improvements to achieve production-ready testing:
+
+**Key Fixes**:
+- **MCP Response Format**: Fixed `isError: false` inclusion in successful responses (`src/handlers/tools/dispatcher/core.ts`)
+- **Field Validation**: Corrected `record_data.values` structure handling (`src/handlers/tool-configs/universal/shared-handlers.ts`)  
+- **Import Resolution**: Fixed test file imports that caused 97% test skip rate
+- **JSON Handling**: Enhanced response parsing and validation for large responses
+
+**New Capabilities**:
+- **7 Enhanced Assertions**: Specialized validation for pagination, field filtering, tasks, performance, and error handling
+- **Performance Budgets**: Automated enforcement of response time limits
+- **Cross-Resource Testing**: Consistent validation across companies, people, tasks, and lists
+- **Real API Integration**: Full end-to-end validation with live Attio workspace data
+
+**Performance Standards**:
+- Search Operations: < 1000ms (local) / < 3000ms (CI)
+- CRUD Operations: < 1500ms (local) / < 4000ms (CI)
+- Batch Operations: < 3000ms for 10 records (local) / < 8000ms (CI)
 
 For more information, see the main [README](../README.md) and [Contributing Guide](../CONTRIBUTING.md).

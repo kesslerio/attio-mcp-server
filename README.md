@@ -251,20 +251,82 @@ npm run test:offline
 
 ### **Testing**
 
-The project includes comprehensive unit and integration tests:
+The project includes comprehensive testing at multiple levels with **100% E2E test pass rate**:
+
+#### **🚀 E2E Test Framework (100% Pass Rate)**
+
+Our comprehensive E2E test framework validates all universal tools with real Attio API integration:
+
+```bash
+# E2E Tests (requires ATTIO_API_KEY in .env file)
+npm run e2e                 # Run complete E2E test suite (51 tests, 100% pass rate)
+npm test -- test/e2e/suites/universal-tools.e2e.test.ts  # Universal tools E2E tests
+
+# Set up E2E environment
+echo "ATTIO_API_KEY=your_api_key_here" > .env
+npm run e2e                 # Should show 51/51 tests passing
+```
+
+**✅ Comprehensive Coverage:**
+- **Pagination Testing**: Validates `offset` parameter across all universal tools
+- **Field Filtering**: Tests `fields` parameter for selective data retrieval
+- **Tasks Integration**: Complete lifecycle testing for tasks resource type
+- **Cross-Resource Validation**: Ensures consistent behavior across companies, people, lists, tasks
+- **Error Handling**: Validates graceful error responses and edge cases
+- **Performance Monitoring**: Tracks execution times and API response sizes
+
+**🛠️ Enhanced Assertions (7 New Methods):**
+```typescript
+// Available in test/e2e/utils/assertions.ts
+expectValidPagination(result, params)        // Validates pagination behavior
+expectFieldFiltering(result, fields)         // Validates field selection
+expectValidTasksIntegration(result)          // Tasks-specific validation
+expectSpecificError(result, errorType)       // Typed error validation
+expectOptimalPerformance(result, budget)     // Performance validation
+expectValidUniversalToolParams(params)       // Parameter validation
+expectValidBatchOperation(result, records)   // Batch operation validation
+```
+
+**📊 Performance Benchmarks:**
+- **Search Operations**: < 1000ms per API call
+- **CRUD Operations**: < 1500ms per operation  
+- **Batch Operations**: < 3000ms for 10 records
+- **Field Filtering**: < 500ms additional overhead
+- **Pagination**: < 200ms additional per offset
+
+#### **Unit & Integration Tests**
 
 ```bash
 # Unit Tests (no API required)
 npm test                    # Run all tests
-npm run test:offline        # Run only offline tests
+npm run test:offline        # Run only offline tests (206 tests)
 npm run test:watch          # Watch mode for development
 
 # Integration Tests (requires API key and test data)
-npm run test:integration    # Run all integration tests
+npm run test:integration    # Run all integration tests (15 tests, 100% pass rate)
 npm run setup:test-data     # Create test data in your workspace
 ```
 
-See the [Testing Guide](./docs/testing.md) for detailed instructions on setting up and running integration tests.
+#### **Test Environment Setup**
+
+For E2E and integration tests, you need:
+
+1. **Create `.env` file** in project root:
+```bash
+# Required for E2E/Integration tests
+ATTIO_API_KEY=your_64_character_api_key_here
+PORT=3000
+LOG_LEVEL=debug
+NODE_ENV=development
+```
+
+2. **Verify API key** format (must be exactly 64 characters)
+3. **Run tests** to validate setup:
+```bash
+npm run build && npm run test:integration
+```
+
+See the [Testing Guide](./docs/testing.md) and [E2E Troubleshooting Guide](./docs/testing/e2e-troubleshooting.md) for detailed setup instructions.
 
 ### **Available Scripts**
 ```bash

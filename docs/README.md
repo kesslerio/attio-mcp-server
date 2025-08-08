@@ -39,6 +39,14 @@ This documentation is organized into the following sections:
 - [Docker Security](./docker/security-guide.md) - Security considerations for Docker deployment
 - [Docker Changes Log](./docker/CHANGES.md) - Recent changes to Docker configuration
 
+### Testing & Quality Assurance
+- [Testing Guide](./testing.md) - Comprehensive testing documentation
+- [Issue #403 E2E Infrastructure Summary](./ISSUE-403-E2E-INFRASTRUCTURE-SUMMARY.md) - Complete resolution overview
+- [E2E Test Framework](./testing/e2e-framework-guide.md) - End-to-end testing architecture and implementation
+- [E2E Assertion Methods](./testing/e2e-assertion-methods.md) - Documentation for 7 enhanced assertion methods
+- [E2E Troubleshooting](./testing/e2e-troubleshooting.md) - Common testing issues and solutions
+- [Performance Testing](./testing/performance-testing.md) - Performance monitoring and optimization guide
+
 ### Development
 - [Architecture Overview](./architecture.md)
 - [Contributing](../CONTRIB.md)
