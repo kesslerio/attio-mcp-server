@@ -404,17 +404,29 @@ export class ErrorEnhancer {
    * Extracts a contextual message from any error type safely
    * Handles: EnhancedApiError, AttioApiError, UniversalValidationError, and generic errors
    */
-  static getErrorMessage(error: Error | EnhancedApiError | AttioApiError | { message?: string } | unknown): string {
+  static getErrorMessage(
+    error:
+      | Error
+      | EnhancedApiError
+      | AttioApiError
+      | { message?: string }
+      | unknown
+  ): string {
     // If it's an EnhancedApiError, use getContextualMessage
     if (error instanceof EnhancedApiError) {
       return error.getContextualMessage();
     }
-    
+
     // If it's an AttioApiError, UniversalValidationError, or has a message property, use that
-    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string'
+    ) {
       return error.message;
     }
-    
+
     // Fallback to string representation
     return String(error);
   }
@@ -424,14 +436,19 @@ export class ErrorEnhancer {
    * Ensures all errors are properly enhanced for consistent handling
    */
   static ensureEnhanced(
-    error: Error | EnhancedApiError | AttioApiError | { 
-      message?: string; 
-      statusCode?: number; 
-      status?: number; 
-      endpoint?: string; 
-      path?: string; 
-      method?: string 
-    } | unknown,
+    error:
+      | Error
+      | EnhancedApiError
+      | AttioApiError
+      | {
+          message?: string;
+          statusCode?: number;
+          status?: number;
+          endpoint?: string;
+          path?: string;
+          method?: string;
+        }
+      | unknown,
     defaultContext?: Partial<ErrorContext>
   ): EnhancedApiError {
     if (error instanceof EnhancedApiError) {
@@ -450,26 +467,27 @@ export class ErrorEnhancer {
     }
 
     // Handle generic errors with status codes
-    const errorObj = error as { 
-      message?: string; 
-      statusCode?: number; 
-      status?: number; 
-      endpoint?: string; 
-      path?: string; 
-      method?: string 
+    const errorObj = error as {
+      message?: string;
+      statusCode?: number;
+      status?: number;
+      endpoint?: string;
+      path?: string;
+      method?: string;
     };
     const statusCode = errorObj?.statusCode || errorObj?.status || 500;
     const endpoint = errorObj?.endpoint || errorObj?.path || '/unknown';
     const method = errorObj?.method || 'UNKNOWN';
-    
+
     return new EnhancedApiError(
       errorObj?.message || 'An error occurred',
       statusCode,
       endpoint,
       method,
       {
-        originalError: (error && typeof error === 'object') ? error as Error : undefined,
-        ...defaultContext
+        originalError:
+          error && typeof error === 'object' ? (error as Error) : undefined,
+        ...defaultContext,
       }
     );
   }
