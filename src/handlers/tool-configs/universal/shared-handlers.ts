@@ -30,6 +30,22 @@ import {
   EnhancedErrorResponse
 } from '../../../utils/enhanced-validation.js';
 
+// Import enhanced error handling for Issues #415, #416, #417
+import { 
+  EnhancedApiError,
+  ErrorTemplates,
+  ErrorEnhancer,
+  createEnhancedApiError
+} from '../../../errors/enhanced-api-errors.js';
+
+import { 
+  validateRecordId as validateUUID,
+  isValidUUID,
+  classifyRecordError,
+  createRecordNotFoundError,
+  createInvalidUUIDError
+} from '../../../utils/validation/uuid-validation.js';
+
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
@@ -659,26 +675,17 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
   );
   
   try {
-    // Early ID validation to prevent unnecessary API calls
+    // Enhanced UUID validation for Issue #416
     const validationStart = performance.now();
-    const idValidation = validateRecordId(record_id, resource_type);
-    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
     
-    if (!idValidation.isValid) {
-      // Check cache for known 404s
-      const cacheKey = generateIdCacheKey(resource_type, record_id);
-      const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
-      
-      if (cached404) {
-        enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-        throw new Error('The requested record could not be found.');
-      }
-      
-      // Cache this invalid ID for future requests
-      enhancedPerformanceTracker.cache404Response(cacheKey, { error: idValidation.message }, 60000);
-      enhancedPerformanceTracker.endOperation(perfId, false, idValidation.message, 400);
-      throw new Error('Invalid record identifier format. Please check the ID and try again.');
+    // Use enhanced UUID validation with clear error distinction
+    if (!isValidUUID(record_id)) {
+      enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
+      enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid UUID format', 400);
+      throw createInvalidUUIDError(record_id, resource_type, 'GET');
     }
+    
+    enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
     
     // Check 404 cache for valid IDs too
     const cacheKey = generateIdCacheKey(resource_type, record_id);
@@ -739,20 +746,33 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     } catch (apiError: any) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
-      // Check if this is a 404 error
+      // Enhanced error handling for Issues #415, #416, #417
       const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      
       if (statusCode === 404 || apiError.message?.includes('not found')) {
         // Cache 404 responses for 60 seconds
         enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Not found' }, 60000);
+        
+        // Issue #416: Clear "not found" message for valid UUIDs
+        const enhancedError = createRecordNotFoundError(record_id, resource_type);
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          false,
+          enhancedError.getContextualMessage(),
+          404
+        );
+        throw enhancedError;
       }
       
+      // Auto-enhance other errors with context
+      const enhancedError = ErrorEnhancer.autoEnhance(apiError, resource_type, 'get-record-details', record_id);
       enhancedPerformanceTracker.endOperation(
         perfId,
         false,
-        apiError.message || 'Unknown error',
+        enhancedError.message,
         statusCode
       );
-      throw apiError;
+      throw enhancedError;
     }
     
   } catch (error) {
@@ -1008,16 +1028,33 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     }
       
     case UniversalResourceType.TASKS: {
-      // Extract content from mapped data for task creation
-      const content = mappedData.content || mappedData.title || mappedData.name || 'New task';
-      const options = {
-        assigneeId: mappedData.assignee_id || mappedData.assigneeId,
-        dueDate: mappedData.due_date || mappedData.dueDate,
-        recordId: mappedData.record_id || mappedData.recordId
-      };
-      const createdTask = await createTask(content, options);
-      // Convert AttioTask to AttioRecord using proper type conversion
-      return convertTaskToRecord(createdTask);
+      try {
+        // Issue #417: Enhanced task creation with field mapping guidance
+        const content = mappedData.content || mappedData.title || mappedData.name || 'New task';
+        
+        // Validate required content field
+        if (!content || content.trim() === '') {
+          throw ErrorTemplates.TASK_FIELD_MAPPING(
+            'content',
+            'content',
+            'Task content is required. Use "content", "title", "name", or "description" fields.'
+          );
+        }
+        
+        const options = {
+          assigneeId: mappedData.assignee_id || mappedData.assigneeId,
+          dueDate: mappedData.due_date || mappedData.dueDate,
+          recordId: mappedData.record_id || mappedData.recordId
+        };
+        
+        const createdTask = await createTask(content, options);
+        // Convert AttioTask to AttioRecord using proper type conversion
+        return convertTaskToRecord(createdTask);
+      } catch (error: any) {
+        // Issue #417: Enhanced task error handling with field mapping guidance
+        const enhancedError = ErrorEnhancer.autoEnhance(error, 'tasks', 'create-record');
+        throw enhancedError;
+      }
     }
       
     default:
