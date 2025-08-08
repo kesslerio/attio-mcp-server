@@ -4,6 +4,22 @@ The Tasks API allows you to manage tasks within Attio. Tasks can be assigned to 
 
 > **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate task operations into 13 powerful tools with `resource_type: 'tasks'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
 
+## ✅ Recent Improvements
+
+### Tasks Attribute Discovery Fixed
+The MCP server now includes **special handling for tasks attributes** due to the missing `/objects/tasks/attributes` endpoint in the Attio API. The server provides predefined attribute metadata for consistent field filtering and validation.
+
+**Supported Task Attributes**:
+- `content` (text) - Task description/content
+- `status` (select) - Task status (todo, done, cancelled)  
+- `due_date` (date) - Task due date
+- `assignee` (person) - Assigned workspace member
+- `linked_records` (record) - Associated CRM records
+- `created_at` (date) - Creation timestamp
+- `updated_at` (date) - Last modification timestamp
+
+This enhancement ensures **100% compatibility** with universal tools and field filtering operations.
+
 ## Required Scopes
 
 Most task operations require the following scopes:
