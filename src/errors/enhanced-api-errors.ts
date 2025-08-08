@@ -404,14 +404,14 @@ export class ErrorEnhancer {
    * Extracts a contextual message from any error type safely
    * Handles: EnhancedApiError, AttioApiError, UniversalValidationError, and generic errors
    */
-  static getErrorMessage(error: any): string {
+  static getErrorMessage(error: Error | EnhancedApiError | AttioApiError | { message?: string } | unknown): string {
     // If it's an EnhancedApiError, use getContextualMessage
     if (error instanceof EnhancedApiError) {
       return error.getContextualMessage();
     }
     
     // If it's an AttioApiError, UniversalValidationError, or has a message property, use that
-    if (error?.message) {
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
       return error.message;
     }
     
@@ -424,7 +424,14 @@ export class ErrorEnhancer {
    * Ensures all errors are properly enhanced for consistent handling
    */
   static ensureEnhanced(
-    error: any,
+    error: Error | EnhancedApiError | AttioApiError | { 
+      message?: string; 
+      statusCode?: number; 
+      status?: number; 
+      endpoint?: string; 
+      path?: string; 
+      method?: string 
+    } | unknown,
     defaultContext?: Partial<ErrorContext>
   ): EnhancedApiError {
     if (error instanceof EnhancedApiError) {
@@ -443,17 +450,25 @@ export class ErrorEnhancer {
     }
 
     // Handle generic errors with status codes
-    const statusCode = error?.statusCode || error?.status || 500;
-    const endpoint = error?.endpoint || error?.path || '/unknown';
-    const method = error?.method || 'UNKNOWN';
+    const errorObj = error as { 
+      message?: string; 
+      statusCode?: number; 
+      status?: number; 
+      endpoint?: string; 
+      path?: string; 
+      method?: string 
+    };
+    const statusCode = errorObj?.statusCode || errorObj?.status || 500;
+    const endpoint = errorObj?.endpoint || errorObj?.path || '/unknown';
+    const method = errorObj?.method || 'UNKNOWN';
     
     return new EnhancedApiError(
-      error?.message || 'An error occurred',
+      errorObj?.message || 'An error occurred',
       statusCode,
       endpoint,
       method,
       {
-        originalError: error,
+        originalError: (error && typeof error === 'object') ? error as Error : undefined,
         ...defaultContext
       }
     );
