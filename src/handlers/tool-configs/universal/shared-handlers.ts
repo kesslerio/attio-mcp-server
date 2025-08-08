@@ -26,11 +26,7 @@ import { isValidEmail } from '../../../utils/validation/email-validation.js';
 // Import enhanced validation utilities for Issue #413
 import { 
   validateRecordFields, 
-  validateSelectField,
-  validateReadOnlyFields,
-  validateFieldExistence,
-  createEnhancedErrorResponse,
-  type EnhancedValidationResult 
+  createEnhancedErrorResponse
 } from '../../../utils/enhanced-validation.js';
 
 // Import deal defaults configuration

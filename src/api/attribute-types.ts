@@ -474,7 +474,7 @@ export async function formatAttributeValue(
         return result;
       }
 
-    case 'personal-name':
+    case 'personal-name': {
       // Personal name fields need special handling
       // Use the dedicated parser utility
       const parsedName = parsePersonalName(value);
@@ -487,6 +487,7 @@ export async function formatAttributeValue(
         });
       }
       return parsedName;
+    }
 
     case 'url':
       // URL fields need wrapped values
