@@ -33,7 +33,7 @@ npm install
 
 ### Configuration
 
-1. **Get your Attio API key**: [Attio API Explorer](https://developers.attio.com/reference/get_v2-objects)
+1. **Get your Attio API key**: [Attio Developer Documentation](https://docs.attio.com/docs/overview)
 
 2. **Configure environment**:
    ```bash
