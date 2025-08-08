@@ -132,8 +132,14 @@ CHAINS-TO: None (final step)
 
 ## ANY TYPE REDUCTION STRATEGY
 PRIORITY: 1) API responses (src/api/operations/*) 2) Error handling (src/errors/*) 3) Handler params (src/handlers/*) 4) Universal tools 5) Tests
-RULE: Zero `any` types | WHEN: Writing new code | DO: Create proper interfaces | ELSE: Technical debt
-TARGET: Reduce 778 warnings to <100 systematically (not blocking commits)
+RULE: Zero `any` types | WHEN: Writing new code | DO: Create proper interfaces with Record<string, unknown> or specific types | ELSE: Technical debt
+TARGET: Reduce 778 warnings to <100 systematically (warnings, not blocking commits)
+RECOMMENDED: Use `Record<string, unknown>` instead of `Record<string, any>` for better type safety
+COMMON PATTERNS:
+- API responses: `Record<string, unknown>` or specific interface
+- Record data: `Record<string, unknown>` instead of `any`
+- Configuration objects: Define specific interfaces
+- Legacy integration: Gradually migrate `any` → `unknown` → specific types
 ## TESTING CONFIGURATION
 RULE: Test location | WHEN: Creating tests | DO: Place in `/test` directory | ELSE: Test discovery fails
 RULE: Use Vitest | WHEN: Writing tests | DO: Import from 'vitest' not 'jest' | ELSE: Type errors
@@ -149,11 +155,19 @@ RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio
 RULE: Never target hmk repo | WHEN: PR creation | DO: Verify target is kesslerio | ELSE: Upstream pollution
 RULE: Config consistency | WHEN: Any config file | DO: Use kesslerio URLs only | ELSE: Fork misconfiguration
 
-## GIT COMMIT PIPELINE [ENFORCED]
-RULE: All commits must pass validation | WHEN: Any git commit | DO: `npm run lint:check && npm run check:format && npm run build && npm run test:offline` | ELSE: Commit blocked
+## GIT COMMIT PIPELINE [ENFORCED] ⚠️ CRITICAL
+**PRE-COMMIT HOOK IS MANDATORY**: The git pre-commit hook at `build/hooks/pre-commit` MUST enforce this pipeline
+RULE: All commits must pass validation | WHEN: Any git commit | DO: Pre-commit hook runs `npm run lint:check && npm run check:format && npm run build && npm run test:offline` | ELSE: Commit blocked at hook level
 RULE: Pipeline stages mandatory | GATES: lint:check [BLOCK if errors], check:format [BLOCK if issues], build [BLOCK if fails], test:offline [BLOCK if fails]
+RULE: Hook enforcement | WHEN: Any commit attempt | DO: Pre-commit hook validates ALL stages before allowing commit | ELSE: Lint issues reach CI (violates standards)
 RULE: Bypass requires justification | WHEN: Using --no-verify | DO: Include "EMERGENCY: [issue-link] [justification]" in commit msg | ELSE: Rejection in code review
-COMMAND: `npm run lint:check && npm run check:format && npm run build && npm run test:offline && git add . && git commit -m "Type: Description #issue" && git push`
+
+**CRITICAL**: If lint issues reach CI, it means the pre-commit hook is not working correctly. Check:
+1. `ls -la .git/hooks/pre-commit` - Hook exists and is executable
+2. `npm run setup-hooks` - Reinstall hooks if missing
+3. Commit was made with `--no-verify` (emergency bypass)
+
+COMMAND: `git add . && git commit -m "Type: Description #issue" && git push` (hook handles validation automatically)
 
 ## GIT WORKFLOW COMMANDS
 BRANCH: `git checkout -b feature/issue-{number}-{description}` or `fix/issue-{number}-{description}`
