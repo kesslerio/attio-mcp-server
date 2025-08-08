@@ -772,7 +772,8 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
         enhancedPerformanceTracker.endOperation(
           perfId,
           false,
-          enhancedError.getContextualMessage(),
+          // Issue #425: Use safe error message extraction
+          ErrorEnhancer.getErrorMessage(enhancedError),
           404
         );
         throw enhancedError;
@@ -783,7 +784,8 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       enhancedPerformanceTracker.endOperation(
         perfId,
         false,
-        enhancedError.message,
+        // Issue #425: Use safe error message extraction
+        ErrorEnhancer.getErrorMessage(enhancedError),
         statusCode
       );
       throw enhancedError;

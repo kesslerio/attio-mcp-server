@@ -400,6 +400,66 @@ export class ErrorEnhancer {
   }
 
   /**
+   * Issue #425: Safe error message extraction utility
+   * Extracts a contextual message from any error type safely
+   * Handles: EnhancedApiError, AttioApiError, UniversalValidationError, and generic errors
+   */
+  static getErrorMessage(error: any): string {
+    // If it's an EnhancedApiError, use getContextualMessage
+    if (error instanceof EnhancedApiError) {
+      return error.getContextualMessage();
+    }
+    
+    // If it's an AttioApiError, UniversalValidationError, or has a message property, use that
+    if (error?.message) {
+      return error.message;
+    }
+    
+    // Fallback to string representation
+    return String(error);
+  }
+
+  /**
+   * Issue #425: Convert any error to EnhancedApiError
+   * Ensures all errors are properly enhanced for consistent handling
+   */
+  static ensureEnhanced(
+    error: any,
+    defaultContext?: Partial<ErrorContext>
+  ): EnhancedApiError {
+    if (error instanceof EnhancedApiError) {
+      return error;
+    }
+
+    // Handle AttioApiError from axios interceptor
+    if (error instanceof AttioApiError) {
+      return new EnhancedApiError(
+        error.message,
+        error.statusCode,
+        error.endpoint,
+        error.method,
+        defaultContext
+      );
+    }
+
+    // Handle generic errors with status codes
+    const statusCode = error?.statusCode || error?.status || 500;
+    const endpoint = error?.endpoint || error?.path || '/unknown';
+    const method = error?.method || 'UNKNOWN';
+    
+    return new EnhancedApiError(
+      error?.message || 'An error occurred',
+      statusCode,
+      endpoint,
+      method,
+      {
+        originalError: error,
+        ...defaultContext
+      }
+    );
+  }
+
+  /**
    * Auto-detect error type and apply appropriate enhancement
    */
   static autoEnhance(
