@@ -329,8 +329,7 @@ export const ErrorTemplates = {
    */
   TASK_FIELD_MAPPING: (
     originalField: string,
-    correctField: string,
-    value?: string
+    correctField: string
   ) =>
     createEnhancedApiError(
       `Unknown field '${originalField}' for resource type 'tasks'`,
