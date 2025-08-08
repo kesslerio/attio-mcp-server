@@ -4,11 +4,11 @@
  */
 
 import { ValidationResult } from './validation.js';
-import { 
-  getObjectAttributeMetadata, 
+import {
+  getObjectAttributeMetadata,
   getAttributeTypeInfo,
   getFieldValidationRules,
-  AttioAttributeMetadata 
+  AttioAttributeMetadata,
 } from '../api/attribute-types.js';
 
 /**
@@ -65,7 +65,7 @@ export function validateReadOnlyFields(
     isValid: errors.length === 0,
     errors,
     warnings,
-    readOnlyFields: violatedFields
+    readOnlyFields: violatedFields,
   };
 }
 
@@ -92,7 +92,7 @@ export function validateFieldExistence(
     isValid: errors.length === 0,
     errors,
     warnings,
-    missingFields: missing
+    missingFields: missing,
   };
 }
 
@@ -116,17 +116,21 @@ export function validateSelectField(
   if (Array.isArray(value)) {
     for (const item of value) {
       if (typeof item === 'string' && !options.includes(item)) {
-        errors.push(`Invalid option '${item}' for ${fieldLabel}. Valid options: ${options.join(', ')}`);
+        errors.push(
+          `Invalid option '${item}' for ${fieldLabel}. Valid options: ${options.join(', ')}`
+        );
       }
     }
   } else if (typeof value === 'string' && !options.includes(value)) {
-    errors.push(`Invalid option '${value}' for ${fieldLabel}. Valid options: ${options.join(', ')}`);
+    errors.push(
+      `Invalid option '${value}' for ${fieldLabel}. Valid options: ${options.join(', ')}`
+    );
   }
 
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -152,7 +156,9 @@ async function validateFieldType(
   switch (rules.type) {
     case 'string':
       if (typeof value !== 'string') {
-        errors.push(`Field '${fieldName}' must be a string, got ${typeof value}`);
+        errors.push(
+          `Field '${fieldName}' must be a string, got ${typeof value}`
+        );
       }
       break;
     case 'number':
@@ -186,7 +192,9 @@ async function validateFieldType(
           errors.push(`Field '${fieldName}' must be a valid email address`);
           break;
         case '^https?://':
-          errors.push(`Field '${fieldName}' must be a valid URL starting with http:// or https://`);
+          errors.push(
+            `Field '${fieldName}' must be a valid URL starting with http:// or https://`
+          );
           break;
         case '^\\+?[0-9-()\\s]+$':
           errors.push(`Field '${fieldName}' must be a valid phone number`);
@@ -199,7 +207,11 @@ async function validateFieldType(
 
   // Enum validation for select fields
   if (rules.enum && rules.enum.length > 0) {
-    const selectValidation = validateSelectField(value, rules.enum.map(String), fieldName);
+    const selectValidation = validateSelectField(
+      value,
+      rules.enum.map(String),
+      fieldName
+    );
     errors.push(...selectValidation.errors);
     warnings.push(...selectValidation.warnings);
   }
@@ -207,7 +219,7 @@ async function validateFieldType(
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -228,17 +240,21 @@ export async function validateRecordFields(
   try {
     // Get attribute metadata for the resource type
     const attributeMetadata = await getObjectAttributeMetadata(resourceType);
-    
+
     if (attributeMetadata.size === 0) {
-      warnings.push(`No attribute metadata found for resource type '${resourceType}'. Validation may be incomplete.`);
+      warnings.push(
+        `No attribute metadata found for resource type '${resourceType}'. Validation may be incomplete.`
+      );
     }
 
     // Validate each field in the data
     for (const [fieldName, value] of Object.entries(data)) {
       const metadata = attributeMetadata.get(fieldName);
-      
+
       if (!metadata) {
-        warnings.push(`Field '${fieldName}' is not recognized for resource type '${resourceType}'`);
+        warnings.push(
+          `Field '${fieldName}' is not recognized for resource type '${resourceType}'`
+        );
         continue;
       }
 
@@ -252,40 +268,51 @@ export async function validateRecordFields(
 
       // Get validation rules for this field
       try {
-        const validationRules = await getFieldValidationRules(resourceType, fieldName);
-        
+        const validationRules = await getFieldValidationRules(
+          resourceType,
+          fieldName
+        );
+
         // Validate field type and format
-        const typeValidation = await validateFieldType(fieldName, value, validationRules);
+        const typeValidation = await validateFieldType(
+          fieldName,
+          value,
+          validationRules
+        );
         errors.push(...typeValidation.errors);
         warnings.push(...typeValidation.warnings);
-        
+
         if (!typeValidation.isValid) {
           invalidFields.push(fieldName);
         }
-
       } catch (ruleError) {
-        warnings.push(`Could not get validation rules for field '${fieldName}': ${ruleError instanceof Error ? ruleError.message : 'Unknown error'}`);
+        warnings.push(
+          `Could not get validation rules for field '${fieldName}': ${ruleError instanceof Error ? ruleError.message : 'Unknown error'}`
+        );
       }
     }
 
     // For create operations, check required fields
     if (!isUpdate) {
       const requiredFields: string[] = [];
-      
+
       for (const [fieldName, metadata] of attributeMetadata) {
         if (metadata.is_required && metadata.is_writable !== false) {
           requiredFields.push(fieldName);
         }
       }
-      
-      const requiredFieldValidation = validateFieldExistence(data, requiredFields);
+
+      const requiredFieldValidation = validateFieldExistence(
+        data,
+        requiredFields
+      );
       errors.push(...requiredFieldValidation.errors);
       warnings.push(...requiredFieldValidation.warnings);
       missingFields.push(...(requiredFieldValidation.missingFields || []));
     }
-
   } catch (metadataError) {
-    const errorMessage = metadataError instanceof Error ? metadataError.message : 'Unknown error';
+    const errorMessage =
+      metadataError instanceof Error ? metadataError.message : 'Unknown error';
     errors.push(`Failed to validate fields: ${errorMessage}`);
   }
 
@@ -295,7 +322,7 @@ export async function validateRecordFields(
     warnings,
     readOnlyFields,
     missingFields,
-    invalidFields
+    invalidFields,
   };
 }
 
@@ -307,27 +334,37 @@ export function createEnhancedErrorResponse(
   operation: string
 ): EnhancedErrorResponse {
   const suggestions: string[] = [];
-  
+
   // Generate helpful suggestions based on validation errors
   if (validation.missingFields && validation.missingFields.length > 0) {
-    suggestions.push(`Add required fields: ${validation.missingFields.join(', ')}`);
+    suggestions.push(
+      `Add required fields: ${validation.missingFields.join(', ')}`
+    );
   }
-  
+
   if (validation.readOnlyFields && validation.readOnlyFields.length > 0) {
-    suggestions.push(`Remove read-only fields: ${validation.readOnlyFields.join(', ')}`);
+    suggestions.push(
+      `Remove read-only fields: ${validation.readOnlyFields.join(', ')}`
+    );
   }
-  
+
   if (validation.invalidFields && validation.invalidFields.length > 0) {
-    suggestions.push(`Fix invalid field values for: ${validation.invalidFields.join(', ')}`);
+    suggestions.push(
+      `Fix invalid field values for: ${validation.invalidFields.join(', ')}`
+    );
   }
 
   // Add operation-specific suggestions
   if (operation === 'create-record' && validation.missingFields?.length) {
-    suggestions.push('Ensure all required fields have values before creating a record');
+    suggestions.push(
+      'Ensure all required fields have values before creating a record'
+    );
   }
-  
+
   if (operation === 'update-record' && validation.readOnlyFields?.length) {
-    suggestions.push('Use separate calls to update read-only fields if they support it, or remove them from the update');
+    suggestions.push(
+      'Use separate calls to update read-only fields if they support it, or remove them from the update'
+    );
   }
 
   return {
@@ -336,6 +373,6 @@ export function createEnhancedErrorResponse(
     operation,
     suggestions: suggestions.length > 0 ? suggestions : undefined,
     invalidFields: validation.invalidFields,
-    missingFields: validation.missingFields
+    missingFields: validation.missingFields,
   };
 }

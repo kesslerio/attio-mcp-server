@@ -79,7 +79,7 @@ export async function getObjectAttributeMetadata(
     const api = getAttioClient();
     const response = await api.get(`/objects/${objectSlug}/attributes`);
     // Handle both response.data.data and response.data structures
-    const attributes: AttioAttributeMetadata[] = 
+    const attributes: AttioAttributeMetadata[] =
       response?.data?.data || response?.data || [];
 
     // Build metadata map
@@ -96,16 +96,16 @@ export async function getObjectAttributeMetadata(
     return metadataMap;
   } catch (error) {
     console.error(`Failed to fetch attributes for ${objectSlug}:`, error);
-    
+
     // More detailed error logging
     if (error instanceof Error) {
       console.error(`Error details:`, {
         message: error.message,
         stack: error.stack,
-        name: error.name
+        name: error.name,
       });
     }
-    
+
     // Return empty map on error
     return new Map();
   }
@@ -117,27 +117,38 @@ export async function getObjectAttributeMetadata(
  */
 function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
   const taskFields = new Map<string, AttioAttributeMetadata>();
-  
+
   // Standard task fields based on Attio Tasks API
-  const createTaskField = (slug: string, type: string, title: string, required = false): AttioAttributeMetadata => ({
+  const createTaskField = (
+    slug: string,
+    type: string,
+    title: string,
+    required = false
+  ): AttioAttributeMetadata => ({
     id: {
       workspace_id: 'tasks',
-      object_id: 'tasks', 
-      attribute_id: slug
+      object_id: 'tasks',
+      attribute_id: slug,
     },
     api_slug: slug,
     type,
     title,
     is_required: required,
-    is_multiselect: false
+    is_multiselect: false,
   });
 
   taskFields.set('title', createTaskField('title', 'text', 'Title', true));
-  taskFields.set('description', createTaskField('description', 'text', 'Description'));
+  taskFields.set(
+    'description',
+    createTaskField('description', 'text', 'Description')
+  );
   taskFields.set('status', createTaskField('status', 'select', 'Status'));
   taskFields.set('priority', createTaskField('priority', 'select', 'Priority'));
   taskFields.set('due_date', createTaskField('due_date', 'date', 'Due Date'));
-  taskFields.set('assignee_id', createTaskField('assignee_id', 'workspace-member', 'Assignee'));
+  taskFields.set(
+    'assignee_id',
+    createTaskField('assignee_id', 'workspace-member', 'Assignee')
+  );
 
   return taskFields;
 }
@@ -241,19 +252,26 @@ export async function getAttributeTypeInfo(
   const attrMetadata = metadata.get(attributeSlug);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}:`, {
-      metadataSize: metadata.size,
-      metadataKeys: Array.from(metadata.keys()),
-      attrMetadata: attrMetadata ? {
-        type: attrMetadata.type,
-        isMultiselect: attrMetadata.is_multiselect
-      } : null
-    });
+    console.log(
+      `[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}:`,
+      {
+        metadataSize: metadata.size,
+        metadataKeys: Array.from(metadata.keys()),
+        attrMetadata: attrMetadata
+          ? {
+              type: attrMetadata.type,
+              isMultiselect: attrMetadata.is_multiselect,
+            }
+          : null,
+      }
+    );
   }
 
   if (!attrMetadata) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`);
+      console.log(
+        `[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`
+      );
     }
     return {
       fieldType: 'string',
@@ -443,7 +461,7 @@ export async function formatAttributeValue(
             input: value,
             output: value,
             objectSlug,
-            attributeSlug
+            attributeSlug,
           });
         }
         return value;
@@ -457,7 +475,7 @@ export async function formatAttributeValue(
             input: value,
             output: result,
             objectSlug,
-            attributeSlug
+            attributeSlug,
           });
         }
         return result;
@@ -468,7 +486,7 @@ export async function formatAttributeValue(
             input: value,
             output: result,
             objectSlug,
-            attributeSlug
+            attributeSlug,
           });
         }
         return result;
@@ -483,7 +501,7 @@ export async function formatAttributeValue(
           input: value,
           output: parsedName,
           objectSlug,
-          attributeSlug
+          attributeSlug,
         });
       }
       return parsedName;
@@ -515,7 +533,7 @@ export async function formatAttributeValue(
           input: value,
           output: emails,
           objectSlug,
-          attributeSlug
+          attributeSlug,
         });
       }
       return emails;

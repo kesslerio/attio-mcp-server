@@ -2,24 +2,27 @@
  * Unit tests for enhanced validation utilities
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { 
+import {
   validateReadOnlyFields,
   validateFieldExistence,
   validateSelectField,
   validateRecordFields,
   createEnhancedErrorResponse,
   EnhancedValidationResult,
-  EnhancedErrorResponse
+  EnhancedErrorResponse,
 } from '../../src/utils/enhanced-validation.js';
 
 // Mock the attribute-types module
 vi.mock('../../src/api/attribute-types.js', () => ({
   getObjectAttributeMetadata: vi.fn(),
   getFieldValidationRules: vi.fn(),
-  AttioAttributeMetadata: {}
+  AttioAttributeMetadata: {},
 }));
 
-import { getObjectAttributeMetadata, getFieldValidationRules } from '../../src/api/attribute-types.js';
+import {
+  getObjectAttributeMetadata,
+  getFieldValidationRules,
+} from '../../src/api/attribute-types.js';
 
 describe('Enhanced Validation Utils', () => {
   beforeEach(() => {
@@ -50,15 +53,23 @@ describe('Enhanced Validation Utils', () => {
     });
 
     it('should fail validation when read-only fields are provided in data', () => {
-      const data = { name: 'Test Company', id: 'some-id', created_at: '2023-01-01' };
+      const data = {
+        name: 'Test Company',
+        id: 'some-id',
+        created_at: '2023-01-01',
+      };
       const readOnlyFields = ['id', 'created_at'];
 
       const result = validateReadOnlyFields(data, readOnlyFields);
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(2);
-      expect(result.errors[0]).toBe("Field 'id' is read-only and cannot be modified");
-      expect(result.errors[1]).toBe("Field 'created_at' is read-only and cannot be modified");
+      expect(result.errors[0]).toBe(
+        "Field 'id' is read-only and cannot be modified"
+      );
+      expect(result.errors[1]).toBe(
+        "Field 'created_at' is read-only and cannot be modified"
+      );
       expect(result.readOnlyFields).toEqual(['id', 'created_at']);
     });
 
@@ -93,8 +104,12 @@ describe('Enhanced Validation Utils', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(2);
-      expect(result.errors[0]).toBe("Required field 'email' is missing or empty");
-      expect(result.errors[1]).toBe("Required field 'phone' is missing or empty");
+      expect(result.errors[0]).toBe(
+        "Required field 'email' is missing or empty"
+      );
+      expect(result.errors[1]).toBe(
+        "Required field 'phone' is missing or empty"
+      );
       expect(result.missingFields).toEqual(['email', 'phone']);
     });
 
@@ -121,26 +136,42 @@ describe('Enhanced Validation Utils', () => {
     });
 
     it('should pass validation for valid multiselect values', () => {
-      const result = validateSelectField(['option1', 'option3'], validOptions, 'testField');
+      const result = validateSelectField(
+        ['option1', 'option3'],
+        validOptions,
+        'testField'
+      );
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it('should fail validation for invalid single select value', () => {
-      const result = validateSelectField('invalid_option', validOptions, 'testField');
+      const result = validateSelectField(
+        'invalid_option',
+        validOptions,
+        'testField'
+      );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toBe("Invalid option 'invalid_option' for testField. Valid options: option1, option2, option3");
+      expect(result.errors[0]).toBe(
+        "Invalid option 'invalid_option' for testField. Valid options: option1, option2, option3"
+      );
     });
 
     it('should fail validation for invalid multiselect values', () => {
-      const result = validateSelectField(['option1', 'invalid_option'], validOptions, 'testField');
+      const result = validateSelectField(
+        ['option1', 'invalid_option'],
+        validOptions,
+        'testField'
+      );
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toBe("Invalid option 'invalid_option' for testField. Valid options: option1, option2, option3");
+      expect(result.errors[0]).toBe(
+        "Invalid option 'invalid_option' for testField. Valid options: option1, option2, option3"
+      );
     });
 
     it('should pass validation for null or undefined values', () => {
@@ -160,33 +191,33 @@ describe('Enhanced Validation Utils', () => {
       type: 'string',
       required: false,
       unique: false,
-      allowMultiple: false
+      allowMultiple: false,
     };
 
     beforeEach(() => {
       mockMetadata.clear();
-      
+
       // Mock attribute metadata
       mockMetadata.set('name', {
         api_slug: 'name',
         type: 'text',
         is_required: true,
         is_writable: true,
-        is_unique: false
+        is_unique: false,
       });
       mockMetadata.set('email', {
         api_slug: 'email',
         type: 'email',
         is_required: true,
         is_writable: true,
-        is_unique: true
+        is_unique: true,
       });
       mockMetadata.set('created_at', {
         api_slug: 'created_at',
         type: 'timestamp',
         is_required: false,
         is_writable: false,
-        is_unique: false
+        is_unique: false,
       });
 
       vi.mocked(getObjectAttributeMetadata).mockResolvedValue(mockMetadata);
@@ -195,7 +226,7 @@ describe('Enhanced Validation Utils', () => {
 
     it('should pass validation for valid record data', async () => {
       const data = { name: 'Test Company', email: 'test@example.com' };
-      
+
       const result = await validateRecordFields('companies', data, false);
 
       expect(result.isValid).toBe(true);
@@ -204,17 +235,19 @@ describe('Enhanced Validation Utils', () => {
 
     it('should fail validation for read-only fields', async () => {
       const data = { name: 'Test Company', created_at: '2023-01-01' };
-      
+
       const result = await validateRecordFields('companies', data, false);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain("Field 'created_at' is read-only and cannot be modified");
+      expect(result.errors).toContain(
+        "Field 'created_at' is read-only and cannot be modified"
+      );
       expect(result.readOnlyFields).toContain('created_at');
     });
 
     it('should fail validation for missing required fields in create operations', async () => {
       const data = { name: 'Test Company' }; // Missing required email field
-      
+
       const result = await validateRecordFields('companies', data, false);
 
       expect(result.isValid).toBe(false);
@@ -223,7 +256,7 @@ describe('Enhanced Validation Utils', () => {
 
     it('should not check required fields for update operations', async () => {
       const data = { name: 'Updated Company' }; // Missing email, but it's an update
-      
+
       const result = await validateRecordFields('companies', data, true);
 
       expect(result.isValid).toBe(true);
@@ -232,15 +265,19 @@ describe('Enhanced Validation Utils', () => {
 
     it('should warn about unrecognized fields', async () => {
       const data = { name: 'Test Company', unknown_field: 'value' };
-      
+
       const result = await validateRecordFields('companies', data, false);
 
-      expect(result.warnings).toContain("Field 'unknown_field' is not recognized for resource type 'companies'");
+      expect(result.warnings).toContain(
+        "Field 'unknown_field' is not recognized for resource type 'companies'"
+      );
     });
 
     it('should handle metadata fetch errors gracefully', async () => {
-      vi.mocked(getObjectAttributeMetadata).mockRejectedValue(new Error('API error'));
-      
+      vi.mocked(getObjectAttributeMetadata).mockRejectedValue(
+        new Error('API error')
+      );
+
       const data = { name: 'Test Company' };
       const result = await validateRecordFields('companies', data, false);
 
@@ -250,11 +287,13 @@ describe('Enhanced Validation Utils', () => {
 
     it('should warn when no metadata is available', async () => {
       vi.mocked(getObjectAttributeMetadata).mockResolvedValue(new Map());
-      
+
       const data = { name: 'Test Company' };
       const result = await validateRecordFields('companies', data, false);
 
-      expect(result.warnings).toContain("No attribute metadata found for resource type 'companies'. Validation may be incomplete.");
+      expect(result.warnings).toContain(
+        "No attribute metadata found for resource type 'companies'. Validation may be incomplete."
+      );
     });
   });
 
@@ -263,10 +302,13 @@ describe('Enhanced Validation Utils', () => {
       const validation: EnhancedValidationResult = {
         isValid: false,
         errors: ['Error 1', 'Error 2'],
-        warnings: ['Warning 1']
+        warnings: ['Warning 1'],
       };
 
-      const response: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'test-operation');
+      const response: EnhancedErrorResponse = createEnhancedErrorResponse(
+        validation,
+        'test-operation'
+      );
 
       expect(response.error).toBe('Error 1; Error 2');
       expect(response.warnings).toEqual(['Warning 1']);
@@ -278,13 +320,17 @@ describe('Enhanced Validation Utils', () => {
         isValid: false,
         errors: ['Missing fields'],
         warnings: [],
-        missingFields: ['name', 'email']
+        missingFields: ['name', 'email'],
       };
 
       const response = createEnhancedErrorResponse(validation, 'create-record');
 
-      expect(response.suggestions).toContain('Add required fields: name, email');
-      expect(response.suggestions).toContain('Ensure all required fields have values before creating a record');
+      expect(response.suggestions).toContain(
+        'Add required fields: name, email'
+      );
+      expect(response.suggestions).toContain(
+        'Ensure all required fields have values before creating a record'
+      );
     });
 
     it('should include suggestions for read-only fields', () => {
@@ -292,13 +338,17 @@ describe('Enhanced Validation Utils', () => {
         isValid: false,
         errors: ['Read-only field error'],
         warnings: [],
-        readOnlyFields: ['id', 'created_at']
+        readOnlyFields: ['id', 'created_at'],
       };
 
       const response = createEnhancedErrorResponse(validation, 'update-record');
 
-      expect(response.suggestions).toContain('Remove read-only fields: id, created_at');
-      expect(response.suggestions).toContain('Use separate calls to update read-only fields if they support it, or remove them from the update');
+      expect(response.suggestions).toContain(
+        'Remove read-only fields: id, created_at'
+      );
+      expect(response.suggestions).toContain(
+        'Use separate calls to update read-only fields if they support it, or remove them from the update'
+      );
     });
 
     it('should include suggestions for invalid fields', () => {
@@ -306,22 +356,27 @@ describe('Enhanced Validation Utils', () => {
         isValid: false,
         errors: ['Invalid field values'],
         warnings: [],
-        invalidFields: ['email', 'phone']
+        invalidFields: ['email', 'phone'],
       };
 
       const response = createEnhancedErrorResponse(validation, 'create-record');
 
-      expect(response.suggestions).toContain('Fix invalid field values for: email, phone');
+      expect(response.suggestions).toContain(
+        'Fix invalid field values for: email, phone'
+      );
     });
 
     it('should not include suggestions when there are no issues to suggest fixes for', () => {
       const validation: EnhancedValidationResult = {
         isValid: false,
         errors: ['Generic error'],
-        warnings: []
+        warnings: [],
       };
 
-      const response = createEnhancedErrorResponse(validation, 'test-operation');
+      const response = createEnhancedErrorResponse(
+        validation,
+        'test-operation'
+      );
 
       expect(response.suggestions).toBeUndefined();
     });
