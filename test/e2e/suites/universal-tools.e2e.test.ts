@@ -533,6 +533,224 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     });
   });
 
+  describe('Pagination and Field Filtering Tests', () => {
+    describe('Pagination (offset parameter)', () => {
+      it('should handle pagination with offset for search-records', async () => {
+        // First page
+        const firstPageResponse = await callUniversalTool('search-records', {
+          resource_type: 'companies',
+          query: 'test',
+          limit: 3,
+          offset: 0
+        });
+
+        E2EAssertions.expectValidPagination(firstPageResponse, 3);
+        E2EAssertions.expectValidUniversalToolParams(firstPageResponse, {
+          resource_type: 'companies',
+          limit: 3,
+          offset: 0
+        });
+
+        // Second page
+        const secondPageResponse = await callUniversalTool('search-records', {
+          resource_type: 'companies',
+          query: 'test',
+          limit: 3,
+          offset: 3
+        });
+
+        E2EAssertions.expectValidPagination(secondPageResponse, 3);
+        E2EAssertions.expectValidUniversalToolParams(secondPageResponse, {
+          resource_type: 'companies',
+          limit: 3,
+          offset: 3
+        });
+      });
+
+      it('should handle pagination with offset for advanced-search', async () => {
+        const firstPageResponse = await callUniversalTool('advanced-search', {
+          resource_type: 'people',
+          query: 'test',
+          limit: 2,
+          offset: 0,
+          filters: {}
+        });
+
+        E2EAssertions.expectMcpSuccess(firstPageResponse);
+
+        const secondPageResponse = await callUniversalTool('advanced-search', {
+          resource_type: 'people',
+          query: 'test',
+          limit: 2,
+          offset: 2,
+          filters: {}
+        });
+
+        E2EAssertions.expectMcpSuccess(secondPageResponse);
+        expect(secondPageResponse.content).toBeDefined();
+      });
+
+      it('should handle pagination with large offset values', async () => {
+        const response = await callUniversalTool('search-records', {
+          resource_type: 'companies',
+          query: 'test',
+          limit: 5,
+          offset: 1000
+        });
+
+        // Should handle gracefully even with large offset
+        E2EAssertions.expectMcpSuccess(response);
+        expect(response.content).toBeDefined();
+      });
+    });
+
+    describe('Field Filtering (fields parameter)', () => {
+      it('should filter fields in get-record-details', async () => {
+        const requestedFields = ['name', 'created_at'];
+        const response = await callUniversalTool('get-record-details', {
+          resource_type: 'companies',
+          record_id: config.testData.existingCompanyId,
+          fields: requestedFields
+        });
+
+        E2EAssertions.expectFieldFiltering(response, requestedFields);
+        E2EAssertions.expectValidUniversalToolParams(response, {
+          resource_type: 'companies',
+          fields: requestedFields
+        });
+      });
+
+      it('should filter fields in get-attributes', async () => {
+        const response = await callUniversalTool('get-attributes', {
+          resource_type: 'companies',
+          record_id: config.testData.existingCompanyId,
+          fields: ['name', 'domains']
+        });
+
+        E2EAssertions.expectMcpSuccess(response);
+        expect(response.content).toBeDefined();
+        // Should only return specified attribute fields
+      });
+
+      it('should handle invalid field names gracefully', async () => {
+        const response = await callUniversalTool('get-record-details', {
+          resource_type: 'companies',
+          record_id: config.testData.existingCompanyId,
+          fields: ['invalid_field_name', 'name']
+        });
+
+        // Should handle gracefully - either ignore invalid fields or return error
+        expect(response.content).toBeDefined();
+      });
+
+      it('should handle empty fields array', async () => {
+        const response = await callUniversalTool('get-record-details', {
+          resource_type: 'companies',
+          record_id: config.testData.existingCompanyId,
+          fields: []
+        });
+
+        // Should handle gracefully - either return all fields or return error
+        expect(response.content).toBeDefined();
+      });
+    });
+  });
+
+  describe('Tasks Universal Tools Integration', () => {
+    it('should handle tasks resource type in search-records', async () => {
+      if (config.features.skipTaskTests) {
+        console.log('⏭️ Skipping task test due to configuration');
+        return;
+      }
+
+      const response = await callUniversalTool('search-records', {
+        resource_type: 'tasks',
+        query: 'test',
+        limit: 5
+      });
+
+      E2EAssertions.expectValidTasksIntegration(response, 'search');
+      E2EAssertions.expectValidUniversalToolParams(response, {
+        resource_type: 'tasks',
+        limit: 5
+      });
+    });
+
+    it('should handle tasks resource type in get-attributes', async () => {
+      if (config.features.skipTaskTests) {
+        console.log('⏭️ Skipping task test due to configuration');
+        return;
+      }
+
+      const response = await callUniversalTool('get-attributes', {
+        resource_type: 'tasks'
+      });
+
+      E2EAssertions.expectMcpSuccess(response);
+      expect(response.content).toBeDefined();
+    });
+
+    it('should handle tasks resource type in discover-attributes', async () => {
+      if (config.features.skipTaskTests) {
+        console.log('⏭️ Skipping task test due to configuration');
+        return;
+      }
+
+      const response = await callUniversalTool('discover-attributes', {
+        resource_type: 'tasks'
+      });
+
+      E2EAssertions.expectMcpSuccess(response);
+      expect(response.content).toBeDefined();
+    });
+
+    it('should create and manage task records', async () => {
+      if (config.features.skipTaskTests) {
+        console.log('⏭️ Skipping task test due to configuration');
+        return;
+      }
+
+      const taskData = TaskFactory.create();
+      
+      const createResponse = await callUniversalTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          values: {
+            content: taskData.content,
+            assignee_id: config.testData.existingPersonId
+          }
+        }
+      });
+
+      E2EAssertions.expectMcpSuccess(createResponse);
+      expect(createResponse.content).toBeDefined();
+
+      // Extract created task ID for cleanup
+      const responseText = createResponse.content[0].text;
+      const idMatch = responseText.match(/ID[:\s]+([a-f0-9-]{36})/i);
+      if (idMatch) {
+        trackForCleanup('task', idMatch[1], taskData);
+      }
+    });
+
+    it('should handle pagination for tasks', async () => {
+      if (config.features.skipTaskTests) {
+        console.log('⏭️ Skipping task test due to configuration');
+        return;
+      }
+
+      const response = await callUniversalTool('search-records', {
+        resource_type: 'tasks',
+        query: 'test',
+        limit: 3,
+        offset: 0
+      });
+
+      E2EAssertions.expectMcpSuccess(response);
+      expect(response.content).toBeDefined();
+    });
+  });
+
   describe('Performance and Reliability Tests', () => {
     it('should handle concurrent tool calls efficiently', async () => {
       const promises = [
