@@ -139,7 +139,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
     } else if (toolType === 'smartSearch') {
       result = await handleSmartSearch(
         request,
@@ -331,7 +334,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         formattedResult = JSON.stringify(rawResult, null, 2);
       }
       
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
       
     // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === 'GENERAL' as any) {
@@ -353,7 +359,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       const rawResult = await toolConfig.handler(...handlerArgs);
       const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
       
     } else {
       // Placeholder for other operations - will be extracted to modules later

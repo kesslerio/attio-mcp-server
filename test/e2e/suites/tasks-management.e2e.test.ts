@@ -26,12 +26,11 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Import enhanced tool caller with logging and migration
 import { 
-  callTasksTool, 
-  startTestSuite, 
-  endTestSuite,
+  callTasksTool,
   validateTestEnvironment,
   getToolMigrationStats
 } from '../utils/enhanced-tool-caller.js';
+import { startTestSuite, endTestSuite } from '../utils/logger.js';
 
 /**
  * Tasks Management E2E Test Suite
@@ -83,7 +82,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   }, 30000);
 
   afterAll(async () => {
-    await E2ETestBase.cleanup();
+    // Cleanup is handled automatically by E2ETestBase.setup()
     
     // End comprehensive logging for this test suite
     endTestSuite();

@@ -293,15 +293,113 @@ export function mapFieldName(
 }
 
 /**
- * Maps multiple field names in a record data object
+ * Detects field name collisions where multiple input fields map to the same output field
+ */
+export function detectFieldCollisions(
+  resourceType: UniversalResourceType,
+  recordData: Record<string, any>
+): { hasCollisions: boolean; errors: string[]; collisions: Record<string, string[]> } {
+  const mapping = FIELD_MAPPINGS[resourceType];
+  if (!mapping) {
+    return { hasCollisions: false, errors: [], collisions: {} };
+  }
+
+  // Map each target field to all input fields that map to it
+  const targetToInputs: Record<string, string[]> = {};
+  const errors: string[] = [];
+
+  for (const [inputField, value] of Object.entries(recordData)) {
+    // Skip null-mapped fields
+    if (mapping.fieldMappings[inputField.toLowerCase()] === null) {
+      continue;
+    }
+
+    const targetField = mapFieldName(resourceType, inputField);
+    
+    if (!targetToInputs[targetField]) {
+      targetToInputs[targetField] = [];
+    }
+    targetToInputs[targetField].push(inputField);
+  }
+
+  // Find collisions (multiple inputs mapping to same target)
+  const collisions: Record<string, string[]> = {};
+  let hasCollisions = false;
+
+  for (const [targetField, inputFields] of Object.entries(targetToInputs)) {
+    if (inputFields.length > 1) {
+      // Special case: first_name + last_name → name is allowed
+      if (resourceType === UniversalResourceType.PEOPLE && 
+          targetField === 'name' && 
+          inputFields.every(f => ['first_name', 'last_name'].includes(f))) {
+        continue; // This collision is handled specially
+      }
+
+      collisions[targetField] = inputFields;
+      hasCollisions = true;
+
+      const inputFieldsList = inputFields.map(f => `"${f}"`).join(', ');
+      const suggestion = getFieldCollisionSuggestion(resourceType, targetField, inputFields);
+      
+      errors.push(
+        `Field collision detected: ${inputFieldsList} all map to "${targetField}". ` +
+        `Please use only one field. ${suggestion}`
+      );
+    }
+  }
+
+  return { hasCollisions, errors, collisions };
+}
+
+/**
+ * Gets suggestions for resolving field collisions
+ */
+function getFieldCollisionSuggestion(
+  resourceType: UniversalResourceType,
+  targetField: string,
+  conflictingFields: string[]
+): string {
+  const mapping = FIELD_MAPPINGS[resourceType];
+  if (!mapping) return '';
+
+  // Check if any of the conflicting fields is the actual target field
+  const preferredField = conflictingFields.find(f => f === targetField);
+  if (preferredField) {
+    return `Recommended: Use "${preferredField}" instead of the mapped alternatives.`;
+  }
+
+  // Find the most "canonical" field name (shortest, most direct)
+  const sortedFields = conflictingFields.sort((a, b) => {
+    // Prefer fields without underscores/prefixes
+    const aScore = (a.includes('_') ? 1 : 0) + (a.includes(resourceType) ? 1 : 0);
+    const bScore = (b.includes('_') ? 1 : 0) + (b.includes(resourceType) ? 1 : 0);
+    if (aScore !== bScore) return aScore - bScore;
+    return a.length - b.length;
+  });
+
+  return `Recommended: Use "${sortedFields[0]}" for clarity.`;
+}
+
+/**
+ * Maps multiple field names in a record data object with collision detection
  */
 export function mapRecordFields(
   resourceType: UniversalResourceType,
   recordData: Record<string, any>
-): { mapped: Record<string, any>; warnings: string[] } {
+): { mapped: Record<string, any>; warnings: string[]; errors?: string[] } {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
+  }
+
+  // First pass: detect field collisions
+  const collisionResult = detectFieldCollisions(resourceType, recordData);
+  if (collisionResult.hasCollisions) {
+    return {
+      mapped: {},
+      warnings: [],
+      errors: collisionResult.errors
+    };
   }
 
   const mapped: Record<string, any> = {};
@@ -310,14 +408,17 @@ export function mapRecordFields(
   for (const [key, value] of Object.entries(recordData)) {
     const mappedKey = mapFieldName(resourceType, key);
     
+    // Skip null-mapped fields
+    if (mapping.fieldMappings[key.toLowerCase()] === null) {
+      warnings.push(`Field "${key}" is not available for ${resourceType}. ${mapping.commonMistakes[key.toLowerCase()] || ''}`);
+      continue;
+    }
+    
     // Check if this field was mapped
     if (mappedKey !== key) {
       const mistake = mapping.commonMistakes[key.toLowerCase()];
       if (mistake) {
         warnings.push(`Field "${key}" mapped to "${mappedKey}": ${mistake}`);
-      } else if (mapping.fieldMappings[key.toLowerCase()] === null) {
-        warnings.push(`Field "${key}" is not available for ${resourceType}. ${mapping.commonMistakes[key.toLowerCase()] || ''}`);
-        continue; // Skip null-mapped fields
       } else {
         warnings.push(`Field "${key}" was automatically mapped to "${mappedKey}"`);
       }
@@ -334,6 +435,7 @@ export function mapRecordFields(
         warnings.push(`Combined first_name and last_name into "name" field`);
       }
     } else {
+      // Safe to assign since collision detection passed
       mapped[mappedKey] = value;
     }
   }
