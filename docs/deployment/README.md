@@ -1,6 +1,16 @@
-# Docker Deployment for Attio MCP Server
+# Deployment Guide
 
-This guide provides detailed instructions for deploying the Attio MCP Server using Docker.
+This directory contains comprehensive deployment documentation for the Attio MCP Server.
+
+## Available Guides
+
+- **[Docker Guide](docker-guide.md)** - Containerized deployment options
+- **[Security Guide](security.md)** - Security configuration and best practices  
+- **[Changes](CHANGES.md)** - Deployment-related changes and updates
+
+## Quick Start
+
+For most users, the Docker deployment provides the easiest setup.
 
 ## Prerequisites
 
