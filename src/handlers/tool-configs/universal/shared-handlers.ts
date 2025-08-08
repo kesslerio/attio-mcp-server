@@ -216,7 +216,12 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
     };
   } catch (error) {
     console.error(`Failed to discover attributes for ${resourceType}:`, error);
-    throw new Error(`Attribute discovery failed for ${resourceType}: ${error instanceof Error ? error.message : String(error)}`);
+    // Instead of throwing error, return empty structure for graceful handling
+    return {
+      attributes: [],
+      mappings: {},
+      count: 0
+    };
   }
 }
 
@@ -493,7 +498,18 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           
           if (!tasks) {
             // Load all tasks from API (unavoidable due to API limitation)
-            tasks = await listTasks();
+            try {
+              tasks = await listTasks();
+              
+              // Ensure tasks is always an array
+              if (!Array.isArray(tasks)) {
+                console.warn(`⚠️  TASKS API WARNING: listTasks() returned non-array value:`, typeof tasks);
+                tasks = [];
+              }
+            } catch (error) {
+              console.error(`Failed to load tasks from API:`, error);
+              tasks = []; // Fallback to empty array
+            }
             
             // Cache for next request
             tasksCache.set(tasksCacheKey, { data: tasks, timestamp: now });

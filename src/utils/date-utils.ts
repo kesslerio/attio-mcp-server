@@ -357,8 +357,13 @@ export function resolveDateRange(dateRange: DateRange): {
  * @returns True if the string is a valid ISO date, false otherwise
  */
 export function isValidISODateString(dateString: string): boolean {
-  // Check basic format
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(dateString)) {
+  // Accept both full ISO format and date-only format
+  // Full ISO: 2025-08-01T00:00:00.000Z
+  // Date only: 2025-08-01
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(dateString) &&
+    !/^\d{4}-\d{2}-\d{2}$/.test(dateString)
+  ) {
     return false;
   }
 

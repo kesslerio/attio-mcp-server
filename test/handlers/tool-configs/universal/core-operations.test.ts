@@ -240,7 +240,7 @@ describe('Universal Core Operations Tests', () => {
           name: [{ value: 'Test Company' }],
           website: [{ value: 'https://test.com' }],
           industry: [{ value: 'Technology' }],
-          description: [{ value: 'A test company' }]
+          location: [{ value: 'San Francisco, CA' }]
         }
       };
 
@@ -253,7 +253,7 @@ describe('Universal Core Operations Tests', () => {
       expect(formatted).toContain('ID: comp-1');
       expect(formatted).toContain('Website: https://test.com');
       expect(formatted).toContain('Industry: Technology');
-      expect(formatted).toContain('Description: A test company');
+      expect(formatted).toContain('Location: San Francisco, CA');
     });
   });
 
