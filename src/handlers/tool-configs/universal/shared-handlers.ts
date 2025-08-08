@@ -32,16 +32,12 @@ import {
 
 // Import enhanced error handling for Issues #415, #416, #417
 import { 
-  EnhancedApiError,
   ErrorTemplates,
-  ErrorEnhancer,
-  createEnhancedApiError
+  ErrorEnhancer
 } from '../../../errors/enhanced-api-errors.js';
 
 import { 
-  validateRecordId as validateUUID,
   isValidUUID,
-  classifyRecordError,
   createRecordNotFoundError,
   createInvalidUUIDError
 } from '../../../utils/validation/uuid-validation.js';
@@ -55,7 +51,7 @@ import { PeopleDataNormalizer } from '../../../utils/normalization/people-normal
 
 // Import performance tracking and ID validation
 import { enhancedPerformanceTracker } from '../../../middleware/performance-enhanced.js';
-import { validateRecordId, generateIdCacheKey } from '../../../utils/validation/id-validation.js';
+import { generateIdCacheKey } from '../../../utils/validation/id-validation.js';
 import { performance } from 'perf_hooks';
 
 // Import existing handlers by resource type
@@ -679,7 +675,8 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     const validationStart = performance.now();
     
     // Use enhanced UUID validation with clear error distinction
-    if (!isValidUUID(record_id)) {
+    // Skip UUID validation for tasks as they may use different ID formats
+    if (resource_type !== UniversalResourceType.TASKS && !isValidUUID(record_id)) {
       enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
       enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid UUID format', 400);
       throw createInvalidUUIDError(record_id, resource_type, 'GET');
@@ -693,7 +690,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     
     if (cached404) {
       enhancedPerformanceTracker.endOperation(perfId, false, 'Cached 404 response', 404, { cached: true });
-      throw new Error('The requested record could not be found.');
+      throw createRecordNotFoundError(record_id, resource_type);
     }
     
     // Track API call timing
@@ -727,7 +724,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           } catch (error: any) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
-            throw new Error('The requested task could not be found.');
+            throw createRecordNotFoundError(record_id, 'tasks');
           }
           break;
         }
