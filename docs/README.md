@@ -12,7 +12,7 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 ### 📖 Main Documentation Sections
 
 #### 🔧 API & Usage
-- **[Universal Tools API](api/universal-tools.md)** - Complete API reference for all 13 tools
+- **[Universal Tools API](universal-tools/api-reference.md)** - Complete API reference for all 13 tools
 - **[Filtering & Search Guide](api/filtering-and-search.md)** - Advanced filtering and search capabilities
 - **[Error Handling](api/error-handling.md)** - Error handling and recovery
 

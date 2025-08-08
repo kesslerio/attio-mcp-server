@@ -69,7 +69,7 @@ Show me all overdue tasks assigned to the sales team
 
 - **[Getting Started](docs/getting-started.md)** - Detailed setup and installation
 - **[User Guide](docs/user-guide.md)** - Common workflows and examples  
-- **[API Reference](docs/api/universal-tools.md)** - Complete tool documentation
+- **[API Reference](docs/universal-tools/api-reference.md)** - Complete tool documentation
 - **[Deployment](docs/deployment/README.md)** - Docker and production deployment
 - **[Development](docs/development/README.md)** - Contributing and extending
 
