@@ -68,9 +68,19 @@ export async function getObjectAttributeMetadata(
   }
 
   try {
+    // Tasks use a different API structure and don't have attributes endpoint
+    if (objectSlug === 'tasks') {
+      // Tasks have predefined fields, not dynamic attributes
+      const taskMetadata = createTaskAttributeMetadata();
+      attributeCache.set(objectSlug, taskMetadata);
+      return taskMetadata;
+    }
+
     const api = getAttioClient();
     const response = await api.get(`/objects/${objectSlug}/attributes`);
-    const attributes: AttioAttributeMetadata[] = response.data.data || [];
+    // Handle both response.data.data and response.data structures
+    const attributes: AttioAttributeMetadata[] =
+      response?.data?.data || response?.data || [];
 
     // Build metadata map
     const metadataMap = new Map<string, AttioAttributeMetadata>();
@@ -86,9 +96,61 @@ export async function getObjectAttributeMetadata(
     return metadataMap;
   } catch (error) {
     console.error(`Failed to fetch attributes for ${objectSlug}:`, error);
+
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error(`Error details:`, {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    }
+
     // Return empty map on error
     return new Map();
   }
+}
+
+/**
+ * Creates predefined metadata for task attributes
+ * Tasks don't use the dynamic attributes API like other objects
+ */
+function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
+  const taskFields = new Map<string, AttioAttributeMetadata>();
+
+  // Standard task fields based on Attio Tasks API
+  const createTaskField = (
+    slug: string,
+    type: string,
+    title: string,
+    required = false
+  ): AttioAttributeMetadata => ({
+    id: {
+      workspace_id: 'tasks',
+      object_id: 'tasks',
+      attribute_id: slug,
+    },
+    api_slug: slug,
+    type,
+    title,
+    is_required: required,
+    is_multiselect: false,
+  });
+
+  taskFields.set('title', createTaskField('title', 'text', 'Title', true));
+  taskFields.set(
+    'description',
+    createTaskField('description', 'text', 'Description')
+  );
+  taskFields.set('status', createTaskField('status', 'select', 'Status'));
+  taskFields.set('priority', createTaskField('priority', 'select', 'Priority'));
+  taskFields.set('due_date', createTaskField('due_date', 'date', 'Due Date'));
+  taskFields.set(
+    'assignee_id',
+    createTaskField('assignee_id', 'workspace-member', 'Assignee')
+  );
+
+  return taskFields;
 }
 
 /**
@@ -189,7 +251,28 @@ export async function getAttributeTypeInfo(
   const metadata = await getObjectAttributeMetadata(objectSlug);
   const attrMetadata = metadata.get(attributeSlug);
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      `[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}:`,
+      {
+        metadataSize: metadata.size,
+        metadataKeys: Array.from(metadata.keys()),
+        attrMetadata: attrMetadata
+          ? {
+              type: attrMetadata.type,
+              isMultiselect: attrMetadata.is_multiselect,
+            }
+          : null,
+      }
+    );
+  }
+
   if (!attrMetadata) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`
+      );
+    }
     return {
       fieldType: 'string',
       isArray: false,
@@ -369,23 +452,60 @@ export async function formatAttributeValue(
       if (
         objectSlug === 'people' &&
         (attributeSlug === 'job_title' ||
+          attributeSlug === 'title' ||
           attributeSlug === 'first_name' ||
           attributeSlug === 'last_name')
       ) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[formatAttributeValue] Text field (people) direct:`, {
+            input: value,
+            output: value,
+            objectSlug,
+            attributeSlug,
+          });
+        }
         return value;
       }
       // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
-        return arrayValue.map((v) => ({ value: v }));
+        const result = arrayValue.map((v) => ({ value: v }));
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[formatAttributeValue] Text field array wrapped:`, {
+            input: value,
+            output: result,
+            objectSlug,
+            attributeSlug,
+          });
+        }
+        return result;
       } else {
-        return { value };
+        const result = { value };
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[formatAttributeValue] Text field wrapped:`, {
+            input: value,
+            output: result,
+            objectSlug,
+            attributeSlug,
+          });
+        }
+        return result;
       }
 
-    case 'personal-name':
+    case 'personal-name': {
       // Personal name fields need special handling
       // Use the dedicated parser utility
-      return parsePersonalName(value);
+      const parsedName = parsePersonalName(value);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[formatAttributeValue] Personal name parsing:`, {
+          input: value,
+          output: parsedName,
+          objectSlug,
+          attributeSlug,
+        });
+      }
+      return parsedName;
+    }
 
     case 'url':
       // URL fields need wrapped values
@@ -408,6 +528,14 @@ export async function formatAttributeValue(
     case 'email-address': {
       // Email is an array field but doesn't need value wrapping
       const emails = Array.isArray(value) ? value : [value];
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[formatAttributeValue] Email formatting:`, {
+          input: value,
+          output: emails,
+          objectSlug,
+          attributeSlug,
+        });
+      }
       return emails;
     }
 

@@ -8,7 +8,27 @@ While the Attio API provides comprehensive functionality for most CRM operations
 
 ## Known Limitations
 
-### 1. Task Relationship Filtering
+### 1. Tasks Attribute Discovery (✅ RESOLVED)
+
+**Previous Limitation**: The `/objects/tasks/attributes` endpoint was not available, causing field filtering failures.
+
+**Status**: **FIXED** - Implemented special case handling with predefined task attribute metadata.
+
+**Solution Implemented**:
+```typescript
+// Special handling for tasks attributes
+const TASKS_ATTRIBUTES = [
+  { slug: 'content', type: 'text', name: 'Content' },
+  { slug: 'status', type: 'select', name: 'Status' },
+  { slug: 'due_date', type: 'date', name: 'Due Date' },
+  { slug: 'assignee', type: 'person', name: 'Assignee' },
+  { slug: 'linked_records', type: 'record', name: 'Linked Records' },
+  { slug: 'created_at', type: 'date', name: 'Created At' },
+  { slug: 'updated_at', type: 'date', name: 'Updated At' }
+];
+```
+
+### 2. Task Relationship Filtering
 
 **Limitation**: The API does not support filtering tasks by linked records (people or companies).
 

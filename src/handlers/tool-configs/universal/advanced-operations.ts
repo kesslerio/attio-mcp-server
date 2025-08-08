@@ -445,7 +445,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const { resource_type, operation_type, records, record_ids, limit, offset } = sanitizedParams;
       
       switch (operation_type) {
-        case BatchOperationType.CREATE:
+        case BatchOperationType.CREATE: {
           if (!records || records.length === 0) {
             throw new Error('Records array is required for batch create operation');
           }
@@ -472,8 +472,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.UPDATE:
+        case BatchOperationType.UPDATE: {
           if (!records || records.length === 0) {
             throw new Error('Records array is required for batch update operation');
           }
@@ -505,8 +507,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.DELETE:
+        case BatchOperationType.DELETE: {
           if (!record_ids || record_ids.length === 0) {
             throw new Error('Record IDs array is required for batch delete operation');
           }
@@ -532,8 +536,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.GET:
+        case BatchOperationType.GET: {
           if (!record_ids || record_ids.length === 0) {
             throw new Error('Record IDs array is required for batch get operation');
           }
@@ -559,8 +565,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.SEARCH:
+        case BatchOperationType.SEARCH: {
           // Validate search query parameters
           const searchValidation = validateSearchQuery(undefined, { resource_type, limit, offset });
           if (!searchValidation.isValid) {
@@ -573,6 +581,8 @@ export const batchOperationsConfig: UniversalToolConfig = {
             limit,
             offset
           });
+          break;
+        }
           
         default:
           throw new Error(`Unsupported batch operation type: ${operation_type}`);

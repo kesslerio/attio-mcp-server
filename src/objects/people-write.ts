@@ -54,8 +54,10 @@ export async function searchPeopleByEmails(
 
     // Create a map of found emails to person data
     const foundEmails = new Map<string, string>();
-    if (response.data?.data) {
-      for (const person of response.data.data) {
+    // Handle both response.data.data and response.data structures
+    const peopleData = response.data?.data || response.data || [];
+    if (Array.isArray(peopleData)) {
+      for (const person of peopleData) {
         const personEmails = person.values?.email_addresses || [];
         for (const emailObj of personEmails) {
           if (emailObj.value && emails.includes(emailObj.value)) {
