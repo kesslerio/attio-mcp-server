@@ -264,7 +264,15 @@ export function error(
                 stack: errorObj.stack,
                 code: (errorObj as any).code,
               }
-            : { message: String(errorObj), name: 'Unknown' },
+            : typeof errorObj === 'object' && errorObj !== null
+              ? {
+                  message: errorObj.message || JSON.stringify(errorObj),
+                  name: errorObj.name || 'Unknown',
+                  stack: errorObj.stack,
+                  code: errorObj.code,
+                  ...errorObj,
+                }
+              : { message: String(errorObj), name: 'Unknown' },
       }),
     };
     outputLog(entry, console.error);

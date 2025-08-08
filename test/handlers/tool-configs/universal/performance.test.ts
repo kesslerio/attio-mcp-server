@@ -84,7 +84,7 @@ describe('Universal Tools Performance Tests', () => {
         {
           name: `Perf Test Company 1-${timestamp}`,
           website: `https://perf1-${timestamp}.com`,
-          description: 'Performance test - single record'
+          industry: 'Technology'
         }
       ];
 
@@ -119,7 +119,7 @@ describe('Universal Tools Performance Tests', () => {
       const records = Array(10).fill(0).map((_, i) => ({
         name: `Perf Test Company 10-${timestamp}-${i}`,
         website: `https://perf10-${timestamp}-${i}.com`,
-        description: `Performance test - batch of 10, record ${i + 1}`
+        industry: 'Technology'
       }));
 
       const startTime = Date.now();
@@ -163,7 +163,7 @@ describe('Universal Tools Performance Tests', () => {
       const records = Array(25).fill(0).map((_, i) => ({
         name: `Perf Test Company 25-${timestamp}-${i}`,
         website: `https://perf25-${timestamp}-${i}.com`,
-        description: `Performance test - batch of 25, record ${i + 1}`
+        industry: 'Technology'
       }));
 
       const startTime = Date.now();
@@ -207,7 +207,7 @@ describe('Universal Tools Performance Tests', () => {
       const records = Array(50).fill(0).map((_, i) => ({
         name: `Perf Test Company 50-${timestamp}-${i}`,
         website: `https://perf50-${timestamp}-${i}.com`,
-        description: `Performance test - batch of 50, record ${i + 1}`
+        industry: 'Technology'
       }));
 
       const startTime = Date.now();
@@ -252,7 +252,7 @@ describe('Universal Tools Performance Tests', () => {
       const records = Array(5).fill(0).map((_, i) => ({
         name: `Perf Compare Test ${timestamp}-${i}`,
         website: `https://perfcompare-${timestamp}-${i}.com`,
-        description: 'Performance comparison test'
+        industry: 'Technology'
       }));
 
       // Test batch (parallel) performance
@@ -324,7 +324,7 @@ describe('Universal Tools Performance Tests', () => {
       // Create some records specifically for delete testing
       const createRecords = Array(10).fill(0).map((_, i) => ({
         name: `Delete Test Company ${timestamp}-${i}`,
-        description: 'Record created for delete performance testing'
+        industry: 'Technology'
       }));
 
       const createResult = await advancedOperationsToolConfigs['batch-operations'].handler({
@@ -444,7 +444,7 @@ describe('Universal Tools Performance Tests', () => {
       // Test that concurrent operations include appropriate delays
       const records = Array(8).fill(0).map((_, i) => ({
         name: `Rate Limit Test ${timestamp}-${i}`,
-        description: 'Testing rate limit handling'
+        industry: 'Technology'
       }));
 
       const startTime = Date.now();
@@ -484,7 +484,7 @@ describe('Universal Tools Performance Tests', () => {
       // Test that we don't exceed the MAX_CONCURRENT_REQUESTS limit
       const records = Array(15).fill(0).map((_, i) => ({
         name: `Concurrency Test ${timestamp}-${i}`,
-        description: 'Testing concurrency limits'
+        industry: 'Technology'
       }));
 
       const startTime = Date.now();
@@ -532,7 +532,7 @@ describe('Universal Tools Performance Tests', () => {
       const records = Array(30).fill(0).map((_, i) => ({
         name: `Memory Test Company ${timestamp}-${i}`,
         website: `https://memtest-${timestamp}-${i}.com`,
-        description: `Memory usage test record ${i + 1} with some additional content to increase memory footprint`
+        industry: 'Technology'
       }));
 
       const result = await advancedOperationsToolConfigs['batch-operations'].handler({
@@ -563,7 +563,7 @@ describe('Universal Tools Performance Tests', () => {
       // Test that resources are cleaned up after operations
       const records = Array(5).fill(0).map((_, i) => ({
         name: `Cleanup Test ${timestamp}-${i}`,
-        description: 'Testing resource cleanup'
+        industry: 'Technology'
       }));
 
       // Create and immediately delete to test cleanup
