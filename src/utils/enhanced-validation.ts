@@ -252,9 +252,17 @@ export async function validateRecordFields(
       const metadata = attributeMetadata.get(fieldName);
 
       if (!metadata) {
-        warnings.push(
-          `Field '${fieldName}' is not recognized for resource type '${resourceType}'`
-        );
+        // For tasks, provide specific guidance about invalid fields (Issue #417)
+        if (resourceType === 'tasks') {
+          errors.push(
+            `Field '${fieldName}' is not recognized for tasks. Valid task fields are: content, status, due_date, assignee_id, record_id`
+          );
+          invalidFields.push(fieldName);
+        } else {
+          warnings.push(
+            `Field '${fieldName}' is not recognized for resource type '${resourceType}'`
+          );
+        }
         continue;
       }
 

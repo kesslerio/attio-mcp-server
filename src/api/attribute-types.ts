@@ -137,18 +137,27 @@ function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
     is_multiselect: false,
   });
 
-  taskFields.set('title', createTaskField('title', 'text', 'Title', true));
+  // Issue #417: Correct task fields based on actual API structure
+  // Tasks use 'content' as the main required field, not 'title'
+  taskFields.set('content', createTaskField('content', 'text', 'Content', true));
   taskFields.set(
     'description',
     createTaskField('description', 'text', 'Description')
   );
-  taskFields.set('status', createTaskField('status', 'select', 'Status'));
+  taskFields.set('status', createTaskField('status', 'text', 'Status')); // Status is text not select
   taskFields.set('priority', createTaskField('priority', 'select', 'Priority'));
   taskFields.set('due_date', createTaskField('due_date', 'date', 'Due Date'));
   taskFields.set(
     'assignee_id',
     createTaskField('assignee_id', 'workspace-member', 'Assignee')
   );
+  taskFields.set(
+    'record_id',
+    createTaskField('record_id', 'text', 'Record ID')
+  );
+  // Add field mappings for common variations that map to content
+  taskFields.set('title', createTaskField('title', 'text', 'Title')); // Maps to content in handler
+  taskFields.set('name', createTaskField('name', 'text', 'Name')); // Maps to content in handler
 
   return taskFields;
 }

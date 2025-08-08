@@ -58,6 +58,24 @@ export class EnhancedApiError extends AttioApiError {
   }
 
   /**
+   * Check if this is a user error (400-level)
+   */
+  isUserError(): boolean {
+    return this.statusCode >= 400 && this.statusCode < 500;
+  }
+
+  /**
+   * Get error category for classification
+   */
+  getErrorCategory(): 'user' | 'system' | 'network' | 'auth' | 'unknown' {
+    if ([401, 403].includes(this.statusCode)) return 'auth';
+    if ([400, 404, 422].includes(this.statusCode)) return 'user';
+    if ([500, 502, 503, 504].includes(this.statusCode)) return 'system';
+    if ([429, 408].includes(this.statusCode)) return 'network';
+    return 'unknown';
+  }
+
+  /**
    * Generate a contextual error message with actionable guidance
    *
    * This method analyzes the error context and constructs helpful messages
@@ -75,6 +93,7 @@ export class EnhancedApiError extends AttioApiError {
     // Apply various enhancements to the message
     msg += this.getTaskErrorMessage();
     msg += this.getFieldValidationMessage();
+    msg += this.getFieldSuggestions();
     msg += this.getGeneralGuidanceMessage();
 
     return msg;
@@ -92,6 +111,16 @@ export class EnhancedApiError extends AttioApiError {
       return msg;
     }
     return null;
+  }
+
+  /**
+   * Generate field suggestions for typos
+   */
+  private getFieldSuggestions(): string {
+    if (this.context?.suggestedFields && this.context.suggestedFields.length > 0) {
+      return `\n\nDid you mean: ${this.context.suggestedFields.join(', ')}?`;
+    }
+    return '';
   }
 
   /**
@@ -138,7 +167,8 @@ export class EnhancedApiError extends AttioApiError {
     let msg = '';
 
     // General documentation hints (avoid duplicating for 404 errors)
-    if (this.context?.documentationHint && !this.context.recordId) {
+    // Only skip if it's a 404 error (already handled in getNotFoundErrorMessage)
+    if (this.context?.documentationHint && this.context.httpStatus !== 404) {
       msg += ` ${this.context.documentationHint}`;
     }
 
@@ -184,14 +214,6 @@ export class EnhancedApiError extends AttioApiError {
   }
 
   /**
-   * Check if this error indicates a user mistake vs system issue
-   */
-  isUserError(): boolean {
-    const userErrorStatuses = [400, 404, 422];
-    return userErrorStatuses.includes(this.statusCode);
-  }
-
-  /**
    * Check if this error is likely retryable
    */
   isRetryable(): boolean {
@@ -202,17 +224,6 @@ export class EnhancedApiError extends AttioApiError {
     // 429 (rate limit), 5xx errors are generally retryable
     const retryableStatuses = [429, 500, 502, 503, 504];
     return retryableStatuses.includes(this.statusCode);
-  }
-
-  /**
-   * Get user-friendly error category
-   */
-  getErrorCategory(): 'user' | 'system' | 'network' | 'auth' {
-    if ([401, 403].includes(this.statusCode)) return 'auth';
-    if ([400, 404, 422].includes(this.statusCode)) return 'user';
-    if ([500, 502, 503, 504].includes(this.statusCode)) return 'system';
-    if ([429, 408].includes(this.statusCode)) return 'network';
-    return 'system';
   }
 }
 

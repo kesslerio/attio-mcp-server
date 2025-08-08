@@ -33,7 +33,8 @@ import {
 // Import enhanced error handling for Issues #415, #416, #417
 import { 
   ErrorTemplates,
-  ErrorEnhancer
+  ErrorEnhancer,
+  EnhancedApiError
 } from '../../../errors/enhanced-api-errors.js';
 
 import { 
@@ -1032,9 +1033,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         // Validate required content field
         if (!content || content.trim() === '') {
           throw ErrorTemplates.TASK_FIELD_MAPPING(
-            'content',
-            'content',
-            'Task content is required. Use "content", "title", "name", or "description" fields.'
+            'title',  // Show 'title' as the field they tried to use
+            'content' // Suggest 'content' as the correct field
           );
         }
         
@@ -1445,8 +1445,8 @@ function validateEmailAddresses(recordData: any, resourceType: string): void {
  * Enhanced error handling utility for universal operations
  */
 export function createUniversalError(operation: string, resourceType: string, originalError: any): Error {
-  // If it's already a UniversalValidationError, pass it through
-  if (originalError instanceof UniversalValidationError) {
+  // If it's already a UniversalValidationError or EnhancedApiError, pass it through
+  if (originalError instanceof UniversalValidationError || originalError instanceof EnhancedApiError) {
     return originalError;
   }
   

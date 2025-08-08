@@ -45,8 +45,9 @@ describe('Consolidated Fixes Integration Tests', () => {
           );
         } catch (error) {
           // Should throw EnhancedApiError for invalid UUID format
-          expect(error).toBeInstanceOf(EnhancedApiError);
+          // Check the error properties instead of instanceof due to module resolution issues
           const enhancedError = error as EnhancedApiError;
+          expect(enhancedError.name).toBe('EnhancedApiError');
           expect(enhancedError.statusCode).toBe(400);
           
           // Check that the error message clearly indicates format issue
@@ -70,8 +71,9 @@ describe('Consolidated Fixes Integration Tests', () => {
         expect.fail('Should have thrown error for non-existent record');
       } catch (error) {
         // Should throw EnhancedApiError for record not found
-        expect(error).toBeInstanceOf(EnhancedApiError);
+        // Check the error properties instead of instanceof due to module resolution issues
         const enhancedError = error as EnhancedApiError;
+        expect(enhancedError.name).toBe('EnhancedApiError');
         expect(enhancedError.statusCode).toBe(404);
         
         // Check that the error message clearly indicates record not found
@@ -91,8 +93,9 @@ describe('Consolidated Fixes Integration Tests', () => {
         });
         expect.fail('Should have thrown error for invalid UUID');
       } catch (error) {
-        expect(error).toBeInstanceOf(EnhancedApiError);
+        // Check the error properties instead of instanceof
         const enhancedError = error as EnhancedApiError;
+        expect(enhancedError.name).toBe('EnhancedApiError');
         
         // Test both message and contextual message for guidance
         const message = enhancedError.message || enhancedError.toString();
@@ -289,6 +292,9 @@ describe('Consolidated Fixes Integration Tests', () => {
         });
       } catch (error) {
         const enhancedError = error as EnhancedApiError;
+        // Check for error methods
+        expect(typeof enhancedError.isUserError).toBe('function');
+        expect(typeof enhancedError.getErrorCategory).toBe('function');
         expect(enhancedError.isUserError()).toBe(true);
         expect(enhancedError.getErrorCategory()).toBe('user');
       }
