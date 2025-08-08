@@ -9,7 +9,7 @@ import { configLoader } from './config-loader.js';
 export interface E2ETestCompany {
   name: string;
   domain?: string;
-  website?: string;
+  // website field removed - causes collision with domain (both map to 'domains' field)
   industry?: string;
   description?: string;
   annual_revenue?: string; // Changed to string to match API requirements
@@ -78,7 +78,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
       domain,
-      website: `https://${domain}`,
+      // Removed website field to avoid collision - both domain and website map to 'domains' field
       industry: 'Technology',
       description: `E2E test company created for testing purposes - ${testId}`,
       annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
@@ -98,7 +98,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
         ...overrides,
         name: `Test Company ${testId}`,
         domain: `${testId}.${domain}`,
-        website: `https://${testId}.${domain}`,
+        // Removed website field to avoid collision - both domain and website map to 'domains' field
         description: `E2E test company ${i + 1} created for testing purposes - ${testId}`
       });
     });

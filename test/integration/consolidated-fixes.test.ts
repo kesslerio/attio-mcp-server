@@ -23,7 +23,10 @@ import {
 
 // Helper function to get error message, checking for enhanced methods
 function getErrorMessage(error: any): string {
-  if (error.getContextualMessage && typeof error.getContextualMessage === 'function') {
+  if (
+    error.getContextualMessage &&
+    typeof error.getContextualMessage === 'function'
+  ) {
     return error.getContextualMessage();
   }
   return error.message || error.toString();
@@ -49,7 +52,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           const enhancedError = error as EnhancedApiError;
           expect(enhancedError.name).toBe('EnhancedApiError');
           expect(enhancedError.statusCode).toBe(400);
-          
+
           // Check that the error message clearly indicates format issue
           const message = enhancedError.message || enhancedError.toString();
           expect(message).toContain('Invalid');
@@ -75,7 +78,7 @@ describe('Consolidated Fixes Integration Tests', () => {
         const enhancedError = error as EnhancedApiError;
         expect(enhancedError.name).toBe('EnhancedApiError');
         expect(enhancedError.statusCode).toBe(404);
-        
+
         // Check that the error message clearly indicates record not found
         const message = enhancedError.message || enhancedError.toString();
         expect(message).toContain('not found');
@@ -96,11 +99,11 @@ describe('Consolidated Fixes Integration Tests', () => {
         // Check the error properties instead of instanceof
         const enhancedError = error as EnhancedApiError;
         expect(enhancedError.name).toBe('EnhancedApiError');
-        
+
         // Test both message and contextual message for guidance
         const message = enhancedError.message || enhancedError.toString();
         const contextualMessage = getErrorMessage(enhancedError);
-        
+
         expect(contextualMessage).toContain('UUID');
         expect(contextualMessage).toMatch(/[a-f0-9-]{36}/i); // Contains example UUID pattern
       }
@@ -192,14 +195,14 @@ describe('Consolidated Fixes Integration Tests', () => {
         // This may throw UniversalValidationError or EnhancedApiError depending on validation layer
         const message = error.message || error.toString();
         expect(message).toContain('invalid_field');
-        
+
         // Should provide guidance about valid task fields or general field validation
-        const hasTaskGuidance = 
+        const hasTaskGuidance =
           message.includes('content') ||
           message.includes('status') ||
           message.includes('due_date') ||
           message.includes('task');
-          
+
         expect(hasTaskGuidance).toBe(true);
       }
     });

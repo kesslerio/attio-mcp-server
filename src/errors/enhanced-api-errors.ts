@@ -117,7 +117,10 @@ export class EnhancedApiError extends AttioApiError {
    * Generate field suggestions for typos
    */
   private getFieldSuggestions(): string {
-    if (this.context?.suggestedFields && this.context.suggestedFields.length > 0) {
+    if (
+      this.context?.suggestedFields &&
+      this.context.suggestedFields.length > 0
+    ) {
       return `\n\nDid you mean: ${this.context.suggestedFields.join(', ')}?`;
     }
     return '';
@@ -338,10 +341,7 @@ export const ErrorTemplates = {
   /**
    * Issue #417: Task field mapping template
    */
-  TASK_FIELD_MAPPING: (
-    originalField: string,
-    correctField: string
-  ) =>
+  TASK_FIELD_MAPPING: (originalField: string, correctField: string) =>
     createEnhancedApiError(
       `Unknown field '${originalField}' for resource type 'tasks'`,
       400,
@@ -411,11 +411,7 @@ export class ErrorEnhancer {
     const message = error.message.toLowerCase();
 
     // Issue #416: Detect "not found" vs "invalid format" scenarios
-    if (
-      message.includes('not found') &&
-      recordId &&
-      isValidUUID(recordId)
-    ) {
+    if (message.includes('not found') && recordId && isValidUUID(recordId)) {
       return ErrorTemplates.RECORD_NOT_FOUND(
         recordId,
         resourceType || 'unknown'
@@ -462,7 +458,6 @@ export class ErrorEnhancer {
     // Generic enhancement
     return this.enhance(error, { resourceType, operation, recordId });
   }
-
 
   /**
    * Get correct task field mapping

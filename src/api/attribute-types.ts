@@ -139,7 +139,10 @@ function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
 
   // Issue #417: Correct task fields based on actual API structure
   // Tasks use 'content' as the main required field, not 'title'
-  taskFields.set('content', createTaskField('content', 'text', 'Content', true));
+  taskFields.set(
+    'content',
+    createTaskField('content', 'text', 'Content', true)
+  );
   taskFields.set(
     'description',
     createTaskField('description', 'text', 'Description')

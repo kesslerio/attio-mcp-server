@@ -238,7 +238,7 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       'linked_records': 'record_id',
     },
     validFields: [
-      'content', 'status', 'due_date', 
+      'content', 'status', 'due_date', 'priority',
       'assignee_id', 'record_id', 'assignee', 'linked_records'
     ],
     commonMistakes: {
