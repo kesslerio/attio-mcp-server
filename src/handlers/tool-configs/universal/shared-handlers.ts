@@ -173,8 +173,15 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
 
 /**
  * Generic attribute discovery for any resource type
+ * 
+ * Special handling for tasks which use /tasks API instead of /objects/tasks
  */
 async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<any> {
+  // Handle tasks as special case - they don't use /objects/{type}/attributes
+  if (resourceType === UniversalResourceType.TASKS) {
+    return discoverTaskAttributes();
+  }
+  
   const client = getAttioClient();
   
   try {
@@ -198,6 +205,97 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
     console.error(`Failed to discover attributes for ${resourceType}:`, error);
     throw new Error(`Attribute discovery failed for ${resourceType}: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/**
+ * Task-specific attribute discovery
+ * 
+ * Since tasks use /tasks API instead of /objects/tasks, we manually return
+ * the known task attributes based on the task API structure and field mappings.
+ */
+async function discoverTaskAttributes(): Promise<any> {
+  // Define task attributes based on the actual task API structure
+  // From /src/api/operations/tasks.ts and field mappings
+  const attributes = [
+    {
+      id: 'content',
+      api_slug: 'content',
+      title: 'Content',
+      type: 'text',
+      description: 'The main text/description of the task',
+      required: true
+    },
+    {
+      id: 'status',
+      api_slug: 'status', 
+      title: 'Status',
+      type: 'text',
+      description: 'Task completion status (e.g., pending, completed)',
+      required: false
+    },
+    {
+      id: 'assignee_id',
+      api_slug: 'assignee_id',
+      title: 'Assignee ID',
+      type: 'text',
+      description: 'ID of the workspace member assigned to this task',
+      required: false
+    },
+    {
+      id: 'assignee',
+      api_slug: 'assignee',
+      title: 'Assignee',
+      type: 'workspace-member',
+      description: 'User assigned to this task (object form)',
+      required: false
+    },
+    {
+      id: 'due_date',
+      api_slug: 'due_date',
+      title: 'Due Date',
+      type: 'date',
+      description: 'When the task is due (ISO date format: YYYY-MM-DD)',
+      required: false
+    },
+    {
+      id: 'record_id',
+      api_slug: 'record_id',
+      title: 'Record ID',
+      type: 'text',
+      description: 'ID of a record to link to this task',
+      required: false
+    },
+    {
+      id: 'linked_records',
+      api_slug: 'linked_records',
+      title: 'Linked Records',
+      type: 'record-reference',
+      description: 'Records linked to this task (array form)',
+      required: false
+    }
+  ];
+
+  // Create mapping from title to api_slug for compatibility
+  const mappings: Record<string, string> = {};
+  attributes.forEach((attr: any) => {
+    if (attr.title && attr.api_slug) {
+      mappings[attr.title] = attr.api_slug;
+    }
+    
+    // Add common field name mappings for easier discovery
+    mappings['title'] = 'content';
+    mappings['name'] = 'content';
+    mappings['description'] = 'content';
+    mappings['assignee'] = 'assignee_id';
+    mappings['due'] = 'due_date';
+    mappings['record'] = 'record_id';
+  });
+
+  return {
+    attributes: attributes,
+    mappings: mappings,
+    count: attributes.length
+  };
 }
 
 /**
