@@ -55,7 +55,7 @@ If you encounter any issues with the documentation or the server itself, please 
 
 ## Contributing to Documentation
 
-We welcome contributions to improve the documentation. Please see the [Documentation Guide](./documentation-guide.md) for information on how to contribute.
+We welcome contributions to improve the documentation. Please see the [Documentation Guide](documentation-guide.md) for information on how to contribute.
 
 ---
 
