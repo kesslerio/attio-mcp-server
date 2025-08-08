@@ -26,7 +26,8 @@ import { isValidEmail } from '../../../utils/validation/email-validation.js';
 // Import enhanced validation utilities for Issue #413
 import { 
   validateRecordFields, 
-  createEnhancedErrorResponse
+  createEnhancedErrorResponse,
+  EnhancedErrorResponse
 } from '../../../utils/enhanced-validation.js';
 
 // Import deal defaults configuration
@@ -623,11 +624,21 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   // Enhanced validation for Issue #413 - provide actionable error messages
   const validation = await validateRecordFields(resource_type, record_data.values || record_data, false);
   if (!validation.isValid) {
-    const errorResponse = createEnhancedErrorResponse(validation, 'create-record');
+    const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'create-record');
+    
+    // Create detailed error message with suggestions
+    let errorMessage = errorResponse.error;
+    if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
+      errorMessage += '\n\nSuggestions:\n' + errorResponse.suggestions.map(s => `• ${s}`).join('\n');
+    }
+    
     throw new UniversalValidationError(
-      validation.error || 'Validation failed',
+      errorMessage,
       ErrorType.USER_ERROR,
-      errorResponse
+      {
+        suggestion: errorResponse.suggestions?.join(' ') || 'Please fix the validation errors and try again.',
+        field: errorResponse.invalidFields?.join(', ') || errorResponse.missingFields?.join(', ')
+      }
     );
   }
   
@@ -874,11 +885,21 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   // Enhanced validation for Issue #413 - provide actionable error messages
   const validation = await validateRecordFields(resource_type, record_data.values || record_data, true);
   if (!validation.isValid) {
-    const errorResponse = createEnhancedErrorResponse(validation, 'update-record');
+    const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'update-record');
+    
+    // Create detailed error message with suggestions
+    let errorMessage = errorResponse.error;
+    if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
+      errorMessage += '\n\nSuggestions:\n' + errorResponse.suggestions.map(s => `• ${s}`).join('\n');
+    }
+    
     throw new UniversalValidationError(
-      validation.error || 'Validation failed',
+      errorMessage,
       ErrorType.USER_ERROR,
-      errorResponse
+      {
+        suggestion: errorResponse.suggestions?.join(' ') || 'Please fix the validation errors and try again.',
+        field: errorResponse.invalidFields?.join(', ') || validation.readOnlyFields?.join(', ')
+      }
     );
   }
   
