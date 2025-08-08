@@ -87,6 +87,25 @@ import {
   FIELD_MAPPINGS
 } from './field-mapper.js';
 
+// Import enhanced validation utilities
+import {
+  validateRecordFields,
+  validateSelectField,
+  validateMultiSelectField,
+  validateReadOnlyFields,
+  validateFieldExistence
+} from '../../../utils/validation-utils.js';
+
+// Import enhanced error response utilities
+import {
+  createErrorResponse,
+  formatEnhancedErrorResponse,
+  createSelectOptionError,
+  createMultiSelectOptionError,
+  createReadOnlyFieldError,
+  createUnknownFieldError
+} from '../../../utils/error-response-utils.js';
+
 /**
  * Query deal records using the proper Attio API endpoint
  */
@@ -611,6 +630,12 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
   }
   
+  // Enhanced validation using new validation utilities
+  const validationResult = await validateRecordFields(resource_type, record_data, false);
+  if (!validationResult.isValid) {
+    throw new Error(validationResult.error);
+  }
+  
   // Pre-validate fields and provide helpful suggestions
   const fieldValidation = validateFields(resource_type, record_data);
   if (fieldValidation.warnings.length > 0) {
@@ -847,6 +872,12 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
  */
 export async function handleUniversalUpdate(params: UniversalUpdateParams): Promise<AttioRecord> {
   const { resource_type, record_id, record_data } = params;
+  
+  // Enhanced validation using new validation utilities
+  const validationResult = await validateRecordFields(resource_type, record_data, true);
+  if (!validationResult.isValid) {
+    throw new Error(validationResult.error);
+  }
   
   // Pre-validate fields and provide helpful suggestions (less strict for updates)
   const fieldValidation = validateFields(resource_type, record_data);
