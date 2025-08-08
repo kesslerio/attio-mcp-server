@@ -643,7 +643,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   }
   
   // Pre-validate fields and provide helpful suggestions
-  const fieldValidation = validateFields(resource_type, record_data);
+  const fieldValidation = validateFields(resource_type, record_data.values || record_data);
   if (fieldValidation.warnings.length > 0) {
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
@@ -682,7 +682,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   }
   
   // Map field names to correct ones
-  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data);
+  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data.values || record_data);
   if (warnings.length > 0) {
     console.log('Field mapping applied:', warnings.join('\n'));
   }
@@ -904,7 +904,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   }
   
   // Pre-validate fields and provide helpful suggestions (less strict for updates)
-  const fieldValidation = validateFields(resource_type, record_data);
+  const fieldValidation = validateFields(resource_type, record_data.values || record_data);
   if (fieldValidation.warnings.length > 0) {
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
@@ -913,7 +913,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   }
   
   // Map field names to correct ones
-  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data);
+  const { mapped: mappedData, warnings } = mapRecordFields(resource_type, record_data.values || record_data);
   if (warnings.length > 0) {
     console.log('Field mapping applied:', warnings.join('\n'));
   }
