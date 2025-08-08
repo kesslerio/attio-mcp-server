@@ -20,6 +20,19 @@ import {
 // Import format helpers
 import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attribute-format-helpers.js';
 
+// Import email validation utilities for consistent validation
+import { isValidEmail } from '../../../utils/validation/email-validation.js';
+
+// Import enhanced validation utilities for Issue #413
+import { 
+  validateRecordFields, 
+  validateSelectField,
+  validateReadOnlyFields,
+  validateFieldExistence,
+  createEnhancedErrorResponse,
+  type EnhancedValidationResult 
+} from '../../../utils/enhanced-validation.js';
+
 // Import deal defaults configuration
 import { applyDealDefaultsWithValidation, getDealDefaults, validateDealInput } from '../../../config/deal-defaults.js';
 
@@ -611,6 +624,17 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
   }
   
+  // Enhanced validation for Issue #413 - provide actionable error messages
+  const validation = await validateRecordFields(resource_type, record_data.values || record_data, false);
+  if (!validation.isValid) {
+    const errorResponse = createEnhancedErrorResponse(validation, 'create-record');
+    throw new UniversalValidationError(
+      validation.error || 'Validation failed',
+      ErrorType.USER_ERROR,
+      errorResponse
+    );
+  }
+  
   // Pre-validate fields and provide helpful suggestions
   const fieldValidation = validateFields(resource_type, record_data);
   if (fieldValidation.warnings.length > 0) {
@@ -710,6 +734,9 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
     case UniversalResourceType.PEOPLE: {
       try {
+        // Validate email addresses first for consistent validation with updates
+        validateEmailAddresses(mappedData, resource_type);
+        
         // Normalize people data first (handle name string/object, email singular/array)
         const normalizedData = PeopleDataNormalizer.normalizePeopleData(mappedData);
         
@@ -848,6 +875,17 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
 export async function handleUniversalUpdate(params: UniversalUpdateParams): Promise<AttioRecord> {
   const { resource_type, record_id, record_data } = params;
   
+  // Enhanced validation for Issue #413 - provide actionable error messages
+  const validation = await validateRecordFields(resource_type, record_data.values || record_data, true);
+  if (!validation.isValid) {
+    const errorResponse = createEnhancedErrorResponse(validation, 'update-record');
+    throw new UniversalValidationError(
+      validation.error || 'Validation failed',
+      ErrorType.USER_ERROR,
+      errorResponse
+    );
+  }
+  
   // Pre-validate fields and provide helpful suggestions (less strict for updates)
   const fieldValidation = validateFields(resource_type, record_data);
   if (fieldValidation.warnings.length > 0) {
@@ -884,6 +922,9 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       
     case UniversalResourceType.PEOPLE:
       try {
+        // Validate email addresses for consistency with create operations
+        validateEmailAddresses(mappedData, resource_type);
+        
         return await updatePerson(record_id, mappedData);
       } catch (error: any) {
         if (error?.message?.includes('Cannot find attribute')) {
@@ -1128,6 +1169,51 @@ export function getSingularResourceType(resourceType: UniversalResourceType): st
  */
 export function isValidResourceType(resourceType: string): resourceType is UniversalResourceType {
   return Object.values(UniversalResourceType).includes(resourceType as UniversalResourceType);
+}
+
+/**
+ * Validate email addresses in record data for consistent validation across create/update
+ */
+function validateEmailAddresses(recordData: any, resourceType: string): void {
+  if (!recordData || typeof recordData !== 'object') return;
+  
+  // Handle various email field formats
+  const emailFields = ['email_addresses', 'email', 'emails', 'emailAddress'];
+  
+  for (const field of emailFields) {
+    if (field in recordData && recordData[field]) {
+      const emails = Array.isArray(recordData[field]) 
+        ? recordData[field] 
+        : [recordData[field]];
+      
+      for (const emailItem of emails) {
+        let emailAddress: string;
+        
+        // Handle different email formats
+        if (typeof emailItem === 'string') {
+          emailAddress = emailItem;
+        } else if (typeof emailItem === 'object' && emailItem.email_address) {
+          emailAddress = emailItem.email_address;
+        } else if (typeof emailItem === 'object' && emailItem.email) {
+          emailAddress = emailItem.email;
+        } else {
+          continue; // Skip invalid email formats
+        }
+        
+        // Validate email format using the same function as PersonValidator
+        if (!isValidEmail(emailAddress)) {
+          throw new UniversalValidationError(
+            `Invalid email format: "${emailAddress}". Please provide a valid email address (e.g., user@example.com)`,
+            ErrorType.USER_ERROR,
+            {
+              field: field,
+              suggestion: 'Ensure email addresses are in the format: user@domain.com'
+            }
+          );
+        }
+      }
+    }
+  }
 }
 
 /**
