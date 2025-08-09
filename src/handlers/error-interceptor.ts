@@ -13,7 +13,7 @@
 export function placeholderInterceptorLogic(error: any): any {
   console.warn(
     '[placeholderInterceptorLogic] This is a placeholder in src/handlers/error-interceptor.ts. Original error passed through:',
-    error?.message
+    error instanceof Error ? error.message : String(error)
   );
   return error;
 }
