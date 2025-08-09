@@ -7,15 +7,12 @@
 
 import {
   sanitizeErrorMessage,
-  createSanitizedError,
-  SanitizedError,
+  createSanitizedError
 } from './error-sanitizer.js';
 import { error as logError, OperationType } from './logger.js';
 import {
   getErrorMessage,
-  ensureError,
-  getErrorStatus,
-  isAxiosError,
+  ensureError
 } from './error-utilities.js';
 
 /**

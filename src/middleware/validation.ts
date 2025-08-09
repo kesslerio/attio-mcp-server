@@ -63,8 +63,6 @@ export class JsonSchemaValidator {
    * Validate parameters against a JSON schema
    */
   static validate(params: unknown, schema: SchemaDefinition): ValidationResult {
-    const errors: ValidationError[] = [];
-
     // First sanitize the input
     const sanitized = InputSanitizer.sanitizeObject(params);
 
@@ -335,8 +333,8 @@ export class ParameterValidationMiddleware {
     const sanitizedParams = result.sanitizedParams!;
 
     // Additional specific validations for universal tools
-    this.validatePaginationParams(sanitizedParams, toolName);
-    this.validateIdFormat(sanitizedParams, toolName);
+    this.validatePaginationParams(sanitizedParams);
+    this.validateIdFormat(sanitizedParams);
 
     return sanitizedParams;
   }
@@ -345,8 +343,7 @@ export class ParameterValidationMiddleware {
    * Validate pagination parameters (limit, offset)
    */
   private static validatePaginationParams(
-    params: SanitizedObject,
-    toolName: string
+    params: SanitizedObject
   ): void {
     // Validate limit
     if (
@@ -436,8 +433,7 @@ export class ParameterValidationMiddleware {
    * Validate ID format for record_id and similar fields
    */
   private static validateIdFormat(
-    params: SanitizedObject,
-    toolName: string
+    params: SanitizedObject
   ): void {
     const idFields = [
       'record_id',

@@ -6,9 +6,7 @@
 import { ValidationResult } from './validation.js';
 import {
   getObjectAttributeMetadata,
-  getAttributeTypeInfo,
-  getFieldValidationRules,
-  AttioAttributeMetadata,
+  getFieldValidationRules
 } from '../api/attribute-types.js';
 
 /**
@@ -20,15 +18,6 @@ export interface EnhancedValidationResult extends ValidationResult {
   missingFields?: string[];
   invalidFields?: string[];
   error?: string;
-}
-
-/**
- * Validation context for record data
- */
-interface ValidationContext {
-  resourceType: string;
-  isUpdate: boolean;
-  attributeMetadata: Map<string, AttioAttributeMetadata>;
 }
 
 /**

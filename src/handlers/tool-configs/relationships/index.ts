@@ -56,7 +56,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
     const updatedTeamIds = [...currentTeamIds, personId];
     
     // Update company with new team
-    const _updatedCompany = await updateCompany(companyId, {
+    await updateCompany(companyId, {
       team: updatedTeamIds.map(id => ({ target_record_id: id }))
     });
     
@@ -102,7 +102,7 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
     const updatedTeamIds = currentTeamIds.filter(id => id !== personId);
     
     // Update company with new team
-    const _updatedCompany = await updateCompany(companyId, {
+    await updateCompany(companyId, {
       team: updatedTeamIds.map(id => ({ target_record_id: id }))
     });
     

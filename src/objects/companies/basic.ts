@@ -67,7 +67,7 @@ export async function getCompanyDetails(
         // Try to parse the URI formally using parseResourceUri utility
         // This is more robust than string splitting
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(

@@ -99,10 +99,6 @@ export function formatListResponse<T>(
       ? `${items.length} of ${pagination.total} total`
       : `${items.length}`;
 
-  const _paginationText = pagination?.hasMore
-    ? `\n\nShowing ${countText} items. More items available.`
-    : `\n\nShowing ${countText} items.`;
-
   return {
     content: [
       {

@@ -6,8 +6,7 @@
 import axios, { AxiosError } from 'axios';
 import {
   createErrorResult,
-  AttioApiError,
-  ErrorType,
+  AttioApiError
 } from './error-handler.js';
 
 /**

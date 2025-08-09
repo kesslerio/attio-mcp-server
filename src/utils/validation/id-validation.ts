@@ -40,8 +40,7 @@ export interface IdValidationResult {
  * @returns Validation result with details
  */
 export function validateRecordId(
-  id: string | undefined | null,
-  resourceType?: string
+  id: string | undefined | null
 ): IdValidationResult {
   // Check for missing ID
   if (!id) {

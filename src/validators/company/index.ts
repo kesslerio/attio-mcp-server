@@ -94,6 +94,7 @@ export class CompanyValidator {
 
     const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
     const processedAttributes =
@@ -126,6 +127,7 @@ export class CompanyValidator {
 
     const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
     const processedAttributes =
