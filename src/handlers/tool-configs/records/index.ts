@@ -17,7 +17,7 @@ import { ToolConfig } from '../../tool-types.js';
 export interface RecordCreateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    attributes: any,
+    attributes: unknown,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -35,7 +35,7 @@ export interface RecordUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
     recordId: string,
-    attributes: any,
+    attributes: unknown,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -51,7 +51,7 @@ export interface RecordDeleteToolConfig extends ToolConfig {
 export interface RecordListToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    options?: any,
+    options?: unknown,
     objectId?: string
   ) => Promise<AttioRecord[]>;
 }
@@ -112,7 +112,7 @@ export const recordToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} records:\n${results
         .map(
-          (record: any) =>
+          (record: unknown) =>
             `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${
               record.id?.record_id || 'unknown'
             })`
@@ -124,12 +124,12 @@ export const recordToolConfigs = {
   batchCreate: {
     name: 'batch-create-records',
     handler: batchCreateObjectRecords,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       return (
         `Batch create operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r: any, i: number) =>
+          .map((r: unknown, i: number) =>
             r.success
               ? `✅ Record ${i + 1}: Created successfully (ID: ${
                   r.data?.id?.record_id || 'unknown'
@@ -146,12 +146,12 @@ export const recordToolConfigs = {
   batchUpdate: {
     name: 'batch-update-records',
     handler: batchUpdateObjectRecords,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       return (
         `Batch update operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r: any) =>
+          .map((r) =>
             r.success
               ? `✅ Record ${r.id}: Updated successfully`
               : `❌ Record ${r.id}: Failed - ${

@@ -477,7 +477,7 @@ export async function getCompanyAttributes(
   attributeName?: string
 ): Promise<{
   attributes?: string[];
-  value?: any;
+  value?: unknown;
   company: string;
 }> {
   const companyId = extractCompanyId(companyIdOrUri);

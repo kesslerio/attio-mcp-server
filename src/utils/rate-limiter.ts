@@ -17,7 +17,7 @@ export interface RateLimiterConfig {
   trackByIp?: boolean;
 
   /** Optional key function to determine the rate limiting key */
-  keyFn?: (req: any) => string;
+  keyFn?: (req: unknown) => string;
 }
 
 /**
@@ -48,7 +48,7 @@ export class RateLimiter {
    * @param req - Request object (with IP address or other identifying info)
    * @returns Object with allowed status and rate limit info
    */
-  check(req: any): {
+  check(req: unknown): {
     allowed: boolean;
     remaining: number;
     resetTime: number;
@@ -105,7 +105,7 @@ export class RateLimiter {
    * @param req - Request object
    * @returns Key for rate limiting
    */
-  private getKey(req: any): string {
+  private getKey(req: unknown): string {
     // Use custom key function if provided
     if (this.config.keyFn) {
       return this.config.keyFn(req);
@@ -163,7 +163,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
   // Schedule cleanup every windowMs to prevent memory leaks
   setInterval(() => limiter.cleanup(), config.windowMs);
 
-  return (req: any, res: any, next: () => void) => {
+  return (req: unknown, res: unknown, next: () => void) => {
     const result = limiter.check(req);
 
     // Add rate limit headers
@@ -195,7 +195,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
  * @returns Object with allowed status and rate limit info
  */
 export function checkFilterRateLimit(
-  req: any,
+  req: unknown,
   endpoint: string
 ): {
   allowed: boolean;

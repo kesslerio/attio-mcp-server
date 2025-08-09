@@ -20,7 +20,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    [key: string]: any; // Allow other mapping types
+    [key: string]: unknown; // Allow other mapping types
   };
 }
 
@@ -39,7 +39,7 @@ const CONFIG_PATHS = {
  * @param source - The source object to merge in
  * @returns The merged object
  */
-function deepMerge(target: any, source: any): any {
+function deepMerge(target: unknown, source: unknown): any {
   const result = { ...target };
 
   for (const key in source) {

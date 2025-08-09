@@ -7,10 +7,10 @@
  */
 export interface ApiError extends Error {
   response?: {
-    data: any;
+    data: unknown;
     status: number;
   };
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface ApiError extends Error {
  */
 export interface ValueMatchApiError extends Error {
   originalError?: ApiError;
-  details?: any;
+  details?: unknown;
 }
 
 /**

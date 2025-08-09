@@ -15,7 +15,7 @@ import { ListEntryFilters } from '../../src/api/operations/index';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Helper function to safely extract first filter with runtime validation
-function getFirstFilterSafely(result: any) {
+function getFirstFilterSafely(result: unknown) {
   expect(result).toBeDefined();
   expect(result.filters).toBeDefined();
   expect(result.filters).toHaveLength(1);

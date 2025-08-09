@@ -76,7 +76,7 @@ describe('Lists Batch Operations', () => {
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(
-            operations.map(async (op: any) => {
+            operations.map(async (op: unknown) => {
               let data: AttioList | undefined;
               if (op.params === 'list123') {
                 data = mockList1;
@@ -170,7 +170,7 @@ describe('Lists Batch Operations', () => {
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(
-            operations.map(async (op: any) => {
+            operations.map(async (op: unknown) => {
               let data: AttioListEntry[] = [];
               if (op.params.listId === 'list123') {
                 data = [mockListEntry1, mockListEntry2];

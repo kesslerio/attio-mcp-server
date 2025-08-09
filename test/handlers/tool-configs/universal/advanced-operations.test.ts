@@ -28,7 +28,7 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
   handleUniversalDelete: vi.fn(),
   formatResourceType: vi.fn((type: string) => type),
   getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
-  createUniversalError: vi.fn((operation: string, resourceType: string, error: any) => 
+  createUniversalError: vi.fn((operation: string, resourceType: string, error: unknown) => 
     new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
   )
 }));
@@ -57,7 +57,7 @@ vi.mock('../../../../src/objects/people/index.js', async (importOriginal) => {
 
 // Mock validation and date utils
 vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
-  validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+  validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
     // Just return the params as-is (simulating successful validation)
     // This matches the expected behavior in tests
     return params || {};
@@ -118,7 +118,7 @@ describe('Universal Advanced Operations Tests', () => {
         default: return type;
       }
     });
-    vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: any) => 
+    vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: unknown) => 
       new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
     );
     // Removed the problematic validateUniversalToolParams override that was causing undefined destructuring
@@ -779,7 +779,7 @@ describe('Universal Advanced Operations Tests', () => {
       }
       
       // Restore the original mock behavior to not affect other tests
-      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: any) => {
+      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: unknown) => {
         return params || {};
       });
     });

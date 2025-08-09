@@ -306,7 +306,7 @@ export function validateFilters(
  * @param filter - The filter to analyze
  * @returns A string describing what's wrong with the filter
  */
-export function getInvalidFilterReason(filter: any): string {
+export function getInvalidFilterReason(filter: unknown): string {
   if (!filter || typeof filter !== 'object') {
     return `filter is ${filter === null ? 'null' : typeof filter}`;
   }

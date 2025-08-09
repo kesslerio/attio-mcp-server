@@ -176,15 +176,15 @@ export function classifyRecordError(
   // If UUID format is valid but we got an error, check the error type
   if (errorMessage.includes('not found') || 
       errorMessage.includes('does not exist') ||
-      (error as any).status === 404 ||
-      (error as any).statusCode === 404) {
+      (error as unknown).status === 404 ||
+      (error as unknown).statusCode === 404) {
     return createRecordNotFoundError(recordId, resourceType);
   }
   
   // For other errors with valid UUIDs, preserve the original error but enhance it
   return new EnhancedApiError(
     error.message,
-    (error as any).statusCode || (error as any).status || 500,
+    (error as unknown).statusCode || (error as unknown).status || 500,
     `/objects/${resourceType}/${recordId}`,
     'GET',
     {

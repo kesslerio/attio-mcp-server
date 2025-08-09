@@ -23,7 +23,7 @@ function getAttributeValue(
   record:
     | {
         values?: Record<string, unknown> | undefined;
-        [key: string]: any;
+        [key: string]: unknown;
       }
     | undefined,
   fieldName: string
@@ -135,10 +135,10 @@ export function formatListEntries(entries: AttioListEntry[]): string {
  * @param operation - The type of batch operation
  * @returns Formatted string output
  */
-export function formatBatchResults(result: any, operation: string): string {
+export function formatBatchResults(result: unknown, operation: string): string {
   const summary = result.summary;
   const details = result.results
-    .map((r: any) =>
+    .map((r: unknown) =>
       r.success
         ? `✅ Record ${r.id}: ${operation} successfully`
         : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`

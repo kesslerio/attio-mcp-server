@@ -40,7 +40,7 @@ import {
  * @throws RelationshipRateLimitError if rate limit exceeded
  */
 export function applyRateLimit(
-  req: any,
+  req: unknown,
   relationshipType: string,
   _isNested: boolean = false
 ): void {
@@ -243,7 +243,7 @@ export function createCompaniesByPeopleFilter(
 export function createRecordsByListFilter(
   resourceType: ResourceType,
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
@@ -323,7 +323,7 @@ export function createRecordsByListFilter(
  */
 export function createPeopleByCompanyListFilter(
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {
@@ -405,7 +405,7 @@ export function createPeopleByCompanyListFilter(
  */
 export function createCompaniesByPeopleListFilter(
   listId: string,
-  req?: any,
+  req?: unknown,
   useCache: boolean = true
 ): ListEntryFilters {
   try {

@@ -42,7 +42,7 @@ export interface LogMetadata {
   duration?: number;
   requestId?: string;
   userId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface LogMetadata {
 export interface LogEntry {
   message: string;
   metadata: LogMetadata;
-  data?: any;
+  data?: unknown;
   error?: {
     message: string;
     name: string;
@@ -166,7 +166,7 @@ function outputLog(
 export function debug(
   module: string,
   message: string,
-  data?: any,
+  data?: unknown,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -192,7 +192,7 @@ export function debug(
 export function info(
   module: string,
   message: string,
-  data?: any,
+  data?: unknown,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -218,7 +218,7 @@ export function info(
 export function warn(
   module: string,
   message: string,
-  data?: any,
+  data?: unknown,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -245,8 +245,8 @@ export function warn(
 export function error(
   module: string,
   message: string,
-  errorObj?: any,
-  data?: any,
+  errorObj?: unknown,
+  data?: unknown,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -262,7 +262,7 @@ export function error(
                 message: errorObj.message,
                 name: errorObj.name,
                 stack: errorObj.stack,
-                code: (errorObj as any).code,
+                code: (errorObj as unknown).code,
               }
             : typeof errorObj === 'object' && errorObj !== null
               ? {
@@ -302,7 +302,7 @@ export class PerformanceTimer {
   /**
    * End timing and log the duration
    */
-  end(message?: string, data?: any): number {
+  end(message?: string, data?: unknown): number {
     const duration = Date.now() - this.startTime;
     debug(
       this.module,
@@ -352,7 +352,7 @@ export function operationStart(
 export function operationSuccess(
   module: string,
   operation: string,
-  resultSummary?: any,
+  resultSummary?: unknown,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -382,8 +382,8 @@ export function operationSuccess(
 export function operationFailure(
   module: string,
   operation: string,
-  errorObj: any,
-  context?: any,
+  errorObj: unknown,
+  context?: unknown,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -433,15 +433,15 @@ export function createScopedLogger(
   operationType?: OperationType
 ) {
   return {
-    debug: (message: string, data?: any) =>
+    debug: (message: string, data?: unknown) =>
       debug(module, message, data, operation, operationType),
-    info: (message: string, data?: any) =>
+    info: (message: string, data?: unknown) =>
       info(module, message, data, operation, operationType),
-    warn: (message: string, data?: any) =>
+    warn: (message: string, data?: unknown) =>
       warn(module, message, data, operation, operationType),
-    error: (message: string, errorObj?: any, data?: any) =>
+    error: (message: string, errorObj?: unknown, data?: unknown) =>
       error(module, message, errorObj, data, operation, operationType),
-    operationStart: (op?: string, opType?: OperationType, params?: any) =>
+    operationStart: (op?: string, opType?: OperationType, params?: unknown) =>
       operationStart(
         module,
         op || operation || 'unknown',
@@ -450,7 +450,7 @@ export function createScopedLogger(
       ),
     operationSuccess: (
       op?: string,
-      resultSummary?: any,
+      resultSummary?: unknown,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -463,8 +463,8 @@ export function createScopedLogger(
       ),
     operationFailure: (
       op?: string,
-      errorObj?: any,
-      context?: any,
+      errorObj?: unknown,
+      context?: unknown,
       opType?: OperationType,
       duration?: number
     ) =>

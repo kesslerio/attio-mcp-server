@@ -51,7 +51,7 @@ export const ATTRIBUTES = {
  */
 export type AttioApiFilter = {
   [attributeSlug: string]: {
-    [condition: string]: any;
+    [condition: string]: unknown;
   };
 };
 

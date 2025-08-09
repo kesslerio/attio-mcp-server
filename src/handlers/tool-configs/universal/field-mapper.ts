@@ -614,7 +614,7 @@ export async function enhanceUniquenessError(
     const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes = response.data.data || [];
     
-    const attribute = attributes.find((attr: any) => 
+    const attribute = attributes.find((attr) => 
       attr.id === attributeId || attr.api_slug === attributeId
     );
     

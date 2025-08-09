@@ -531,7 +531,7 @@ export class E2EAssertions {
   /**
    * Assert that note response has valid structure
    */
-  static expectValidNoteStructure(note: any): void {
+  static expectValidNoteStructure(note: unknown): void {
     expect(note, 'Note should be defined').toBeDefined();
     expect(typeof note, 'Note should be object').toBe('object');
     
@@ -560,7 +560,7 @@ export class E2EAssertions {
   /**
    * Assert that note collection response is valid
    */
-  static expectValidNoteCollection(response: any, minCount: number = 0): void {
+  static expectValidNoteCollection(response: unknown, minCount: number = 0): void {
     expect(response, 'Note collection response should be defined').toBeDefined();
     
     let notes: unknown[];
@@ -589,7 +589,7 @@ export class E2EAssertions {
   /**
    * Assert that note content matches expected format
    */
-  static expectNoteContentFormat(note: any, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
+  static expectNoteContentFormat(note: unknown, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
     this.expectValidNoteStructure(note);
     
     if (note.format) {
@@ -616,7 +616,7 @@ export class E2EAssertions {
   /**
    * Assert that note is properly linked to parent record
    */
-  static expectNoteLinkedToRecord(note: any, expectedParentType: string, expectedParentId?: string): void {
+  static expectNoteLinkedToRecord(note: unknown, expectedParentType: string, expectedParentId?: string): void {
     this.expectValidNoteStructure(note);
     
     // Check for parent object linkage (may vary by API implementation)
@@ -630,7 +630,7 @@ export class E2EAssertions {
     
     // Alternative structure checks for different API implementations
     if (note.linked_to && Array.isArray(note.linked_to)) {
-      const linkFound = note.linked_to.some((link: any) => 
+      const linkFound = note.linked_to.some((link: unknown) => 
         link.target_object === expectedParentType || 
         (expectedParentId && link.target_record_id === expectedParentId)
       );
@@ -641,7 +641,7 @@ export class E2EAssertions {
   /**
    * Assert that note has valid test data characteristics
    */
-  static expectTestNote(note: any): void {
+  static expectTestNote(note: unknown): void {
     this.expectValidNoteStructure(note);
     
     const config = configLoader.getConfig();

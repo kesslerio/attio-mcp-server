@@ -254,7 +254,7 @@ function createOrFilterStructure(
     const { slug } = filter.attribute;
 
     // Create a condition object for this individual filter
-    const condition: any = {};
+    const condition: unknown = {};
 
     // Check if we're in list entry context and this is a list-specific attribute
     if (isListEntryContext && isListSpecificAttribute(slug)) {
@@ -411,12 +411,12 @@ function createAndFilterStructure(
       // Direct value assignment for shorthand format
       if (filter.value !== undefined && filter.value !== null) {
         if (!apiFilter[slug]) {
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: unknown; };
         } else {
           console.warn(
             `Multiple filters for ${slug} using shorthand format will overwrite previous values`
           );
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: unknown; };
         }
       }
     } else {
@@ -489,7 +489,7 @@ export function transformAttributeName(attributeSlug: string): string {
  * @returns The processed value
  */
 export function processFilterValue(
-  value: any,
+  value: unknown,
   condition: FilterConditionType
 ): any {
   // Empty conditions should not have a value

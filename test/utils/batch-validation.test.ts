@@ -262,7 +262,7 @@ describe('Batch Validation', () => {
 
     it('should prevent payload bombs', () => {
       // Simulate a payload bomb with deeply nested large objects
-      const createNestedObject = (depth: number): any => {
+      const createNestedObject = (depth: number): unknown => {
         if (depth === 0) return { data: 'x'.repeat(100000) }; // 100KB at leaf
         return {
           nested: createNestedObject(depth - 1),

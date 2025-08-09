@@ -8,8 +8,8 @@ declare module 'fast-safe-stringify' {
    * A function that safely stringifies objects with circular references.
    */
   function stringify(
-    obj: any,
-    replacer?: (key: string, value: any) => any,
+    obj: unknown,
+    replacer?: (key: string, value: unknown) => any,
     space?: string | number
   ): string;
 
@@ -18,8 +18,8 @@ declare module 'fast-safe-stringify' {
      * A deterministic (stable) version of the stringify function.
      */
     export function stable(
-      obj: any,
-      replacer?: (key: string, value: any) => any,
+      obj: unknown,
+      replacer?: (key: string, value: unknown) => any,
       space?: string | number
     ): string;
 
@@ -27,8 +27,8 @@ declare module 'fast-safe-stringify' {
      * Alias for stable.
      */
     export function stableStringify(
-      obj: any,
-      replacer?: (key: string, value: any) => any,
+      obj: unknown,
+      replacer?: (key: string, value: unknown) => any,
       space?: string | number
     ): string;
   }

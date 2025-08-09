@@ -44,7 +44,7 @@ import { validateBatchOperation } from '../utils/batch-validation.js';
 async function executeBatchCompanyOperation<T, R>(
   operationType: 'create' | 'update' | 'delete' | 'search' | 'get',
   records: T[],
-  batchFunction: (params: any) => Promise<R[]>,
+  batchFunction: (params: unknown) => Promise<R[]>,
   singleFunction: (params: T) => Promise<R>,
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<R>> {
@@ -73,7 +73,7 @@ async function executeBatchCompanyOperation<T, R>(
       objectSlug: ResourceType.COMPANIES, // Always explicitly set the resource type
       records:
         operationType === 'create'
-          ? records.map((r: any) => ({ attributes: r }))
+          ? records.map((r: unknown) => ({ attributes: r }))
           : records,
     });
 
@@ -394,7 +394,7 @@ export async function batchGetCompanyDetails(
 export async function batchCompanyOperations(
   operations: Array<{
     type: 'create' | 'update' | 'delete';
-    data: any;
+    data: unknown;
   }>,
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<Company | boolean>> {
@@ -402,7 +402,7 @@ export async function batchCompanyOperations(
     id: string;
     success: boolean;
     data?: Company | boolean;
-    error?: any;
+    error?: unknown;
   }> = [];
 
   let succeeded = 0;

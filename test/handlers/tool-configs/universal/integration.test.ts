@@ -182,7 +182,7 @@ describe('Universal Tools Integration Tests', () => {
         expect(result.length).toBeGreaterThan(0);
 
         const foundCompany = result.find(
-          (c: any) => c.values.name?.[0]?.value === testCompanyName
+          (c: unknown) => c.values.name?.[0]?.value === testCompanyName
         );
         expect(foundCompany).toBeDefined();
       });
@@ -201,9 +201,9 @@ describe('Universal Tools Integration Tests', () => {
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBeGreaterThan(0);
 
-        const foundPerson = result.find((p: any) =>
+        const foundPerson = result.find((p: unknown) =>
           p.values.email_addresses?.some(
-            (e: any) => e.email_address === testPersonEmail
+            (e: unknown) => e.email_address === testPersonEmail
           )
         );
         expect(foundPerson).toBeDefined();
@@ -441,7 +441,7 @@ describe('Universal Tools Integration Tests', () => {
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
         // Should include our created person
-        const foundPerson = result.find((p: any) => p.id?.record_id === createdPersonId);
+        const foundPerson = result.find((p: unknown) => p.id?.record_id === createdPersonId);
         expect(foundPerson).toBeDefined();
       });
 
@@ -480,13 +480,13 @@ describe('Universal Tools Integration Tests', () => {
         expect(result).toHaveLength(2);
 
         // Check that both operations succeeded
-        const successCount = result.filter((r: any) => r.success).length;
+        const successCount = result.filter((r: unknown) => r.success).length;
         expect(successCount).toBe(2);
 
         // Clean up batch created companies
         const createdIds = result
-          .filter((r: any) => r.success)
-          .map((r: any) => r.result?.id?.record_id)
+          .filter((r: unknown) => r.success)
+          .map((r: unknown) => r.result?.id?.record_id)
           .filter(Boolean);
 
         if (createdIds.length > 0) {
@@ -562,16 +562,16 @@ describe('Universal Tools Integration Tests', () => {
         expect(result).toHaveLength(2);
 
         // Should have at least one success and one failure
-        const successCount = result.filter((r: any) => r.success).length;
-        const failureCount = result.filter((r: any) => !r.success).length;
+        const successCount = result.filter((r: unknown) => r.success).length;
+        const failureCount = result.filter((r: unknown) => !r.success).length;
 
         expect(successCount).toBeGreaterThan(0);
         expect(failureCount).toBeGreaterThan(0);
 
         // Clean up any successful creations
         const successfulIds = result
-          .filter((r: any) => r.success && r.result?.id?.record_id)
-          .map((r: any) => r.result.id.record_id);
+          .filter((r: unknown) => r.success && r.result?.id?.record_id)
+          .map((r: unknown) => r.result.id.record_id);
 
         if (successfulIds.length > 0) {
           await advancedOperationsToolConfigs['batch-operations'].handler({
@@ -723,8 +723,8 @@ describe('Universal Tools Integration Tests', () => {
 
       // Clean up created records
       const createdIds = result
-        .filter((r: any) => r.success)
-        .map((r: any) => r.result?.id?.record_id)
+        .filter((r: unknown) => r.success)
+        .map((r: unknown) => r.result?.id?.record_id)
         .filter(Boolean);
 
       if (createdIds.length > 0) {

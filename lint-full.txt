@@ -1,0 +1,984 @@
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/cli/commands/attributes.ts
+  37:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/config/deal-defaults.ts
+   59:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  321:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/errors/api-errors.ts
+   25:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   64:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  137:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  155:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  244:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/error-interceptor.ts
+  13:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/rate-limited-handler.ts
+  35:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  99:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/attributes.ts
+   91:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  119:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  133:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/batch.ts
+   18:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   22:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   39:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   64:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   81:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/formatters.ts
+   18:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   18:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  239:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/notes.ts
+  15:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  29:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  75:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/relationships.ts
+  22:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/companies/search.ts
+  22:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  37:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/people/advanced-search.ts
+  13:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/people/notes.ts
+  30:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/prompts.ts
+  17:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  26:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/records/index.ts
+   20:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   38:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/relationships/index.ts
+   22:42  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   26:43  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   40:34  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   59:11  warning  '_updatedCompany' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   86:34  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  105:11  warning  '_updatedCompany' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  124:62  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  130:33  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  143:59  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  149:27  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  164:28  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  175:28  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/resource-specific-tools.ts
+  26:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/advanced-operations.ts
+   87:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  253:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  334:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  410:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  594:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  611:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  625:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  639:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts
+   82:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  144:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  328:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  370:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  379:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  406:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  418:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/field-mapper.ts
+  316:27  warning  'value' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  617:46  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/index.ts
+  288:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  288:86  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts
+  597:93  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  734:60  warning  'toolName' is defined but never used      @typescript-eslint/no-unused-vars
+  820:52  warning  'toolName' is defined but never used      @typescript-eslint/no-unused-vars
+  863:71  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  863:77  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts
+   206:31  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   298:29  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   353:3   warning  Unnecessary try/catch wrapper                 no-useless-catch
+   590:49  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   590:87  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   597:37  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   606:56  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   620:68  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   638:37  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   638:71  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   646:21  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   665:21  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   690:3   warning  Unnecessary try/catch wrapper                 no-useless-catch
+  1077:7   warning  Unexpected lexical declaration in case block  no-case-declarations
+  1204:7   warning  Unexpected lexical declaration in case block  no-case-declarations
+  1258:15  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  1420:45  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  1420:50  warning  'resourceType' is defined but never used      @typescript-eslint/no-unused-vars
+  1465:94  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  1500:81  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/types.ts
+  202:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  203:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  210:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  212:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  213:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-types.ts
+  16:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/config-verifier.ts
+   19:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:7   warning  '_toolName' is defined but never used     @typescript-eslint/no-unused-vars
+  130:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts
+   94:9   warning  '_correlationId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  448:15  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  473:15  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  499:15  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  525:15  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  526:3   warning  '_resourceType' is defined but never used            @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/logging.ts
+  117:11  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  183:13  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  185:9   warning  '_logger' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  202:13  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  223:9   warning  '_logger' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/operations/notes.ts
+   47:9  warning  '_notesResourceType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  136:9  warning  '_noteResourceType' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/validation.ts
+  48:9  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/error-types.ts
+  10:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/formatters.ts
+   26:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  163:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/index.ts
+   73:28  warning  '_arguments' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  133:17  warning  '_key' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/middleware/performance-enhanced.ts
+   85:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:16  warning  'operationId' is defined but never used   @typescript-eslint/no-unused-vars
+  360:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  371:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  399:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  567:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/middleware/performance.ts
+   86:5   warning  'metadata' is defined but never used      @typescript-eslint/no-unused-vars
+  384:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/middleware/validation.ts
+   55:13  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   66:11  warning  'errors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  345:5   warning  'toolName' is defined but never used         @typescript-eslint/no-unused-vars
+  436:5   warning  'toolName' is defined but never used         @typescript-eslint/no-unused-vars
+  493:4   warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  504:66  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/base-operations.ts
+   53:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/batch-companies.ts
+   47:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   76:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  397:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  405:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/companies/attributes.ts
+  480:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/companies/basic.ts
+   70:47  warning  Unnecessary escape character: \/          no-useless-escape
+  354:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/companies/notes.ts
+   34:47  warning  Unnecessary escape character: \/  no-useless-escape
+  166:47  warning  Unnecessary escape character: \/  no-useless-escape
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/companies/relationships.ts
+  31:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/companies/types.ts
+  33:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/lists.ts
+  376:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  741:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  853:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/paginated-people.ts
+   80:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  126:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  172:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  239:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/people/basic.ts
+  111:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/people/search.ts
+  146:11  warning  '_cleanedPhone' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/objects/records/formatters.ts
+  13:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/prompts/error-handler.ts
+  12:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/prompts/types.ts
+  13:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/types/overrides/cacheable-request.d.ts
+  147:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/types/overrides/fast-safe-stringify.d.ts
+  11:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/attribute-format-helpers.ts
+   17:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   18:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  119:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/attribute-mapping/attribute-mappers.ts
+  22:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/attribute-mapping/filter-translator.ts
+   14:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   16:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   77:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/auto-discovery.ts
+  16:10  warning  '_msg' is defined but never used          @typescript-eslint/no-unused-vars
+  19:10  warning  '_msg' is defined but never used          @typescript-eslint/no-unused-vars
+  22:11  warning  '_msg' is defined but never used          @typescript-eslint/no-unused-vars
+  22:25  warning  '_error' is defined but never used        @typescript-eslint/no-unused-vars
+  22:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/batch-validation.ts
+   35:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  202:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/config-loader.ts
+   23:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/enhanced-validation.ts
+   9:3   warning  'getAttributeTypeInfo' is defined but never used  @typescript-eslint/no-unused-vars
+  28:11  warning  'ValidationContext' is defined but never used     @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/error-enhancer.ts
+   61:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  254:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/error-examples.ts
+   18:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   31:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/error-handler.ts
+   39:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   61:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  360:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/error-sanitizer.ts
+   30:16  warning  Unnecessary escape character: \/          no-useless-escape
+   30:60  warning  Unnecessary escape character: \/          no-useless-escape
+   34:80  warning  Unnecessary escape character: \-          no-useless-escape
+  209:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  440:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/builders/basic.ts
+  13:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/builders/complex.ts
+  36:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/operators.ts
+  214:35  warning  '_attribute' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/relationship.ts
+   43:8  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   45:3  warning  '_isNested' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  119:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  181:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  246:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  326:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  408:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  491:9  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/translators.ts
+  257:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  414:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  419:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  492:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  494:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/types.ts
+  54:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/utils.ts
+  107:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/validation-utils.ts
+  144:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  210:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  309:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/filters/validators.ts
+   60:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  217:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  285:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  403:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/json-serializer.ts
+   26:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   26:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  223:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  255:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  255:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/logger.ts
+   45:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  221:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  249:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  265:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  305:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  331:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  355:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  385:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  386:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  436:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  438:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  440:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  442:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  442:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  444:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  453:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  466:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  490:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/normalization/people-normalization.ts
+   43:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  219:45  warning  Unnecessary escape character: \/          no-useless-escape
+  243:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  331:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  391:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/pagination.ts
+  186:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/person-lookup.ts
+  61:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/rate-limiter.ts
+   20:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/record-utils.ts
+  291:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/resource-mapping.ts
+  287:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/response-formatter.ts
+  102:9  warning  '_paginationText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/schema-pre-validation.ts
+  147:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  152:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  568:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/secure-error-handler.ts
+   11:3   warning  'SanitizedError' is defined but never used  @typescript-eslint/no-unused-vars
+   25:18  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  110:36  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  110:66  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  154:10  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  200:34  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  260:27  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  273:18  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  391:19  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/uri-parser.ts
+  11:42  warning  Unnecessary escape character: \/  no-useless-escape
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/validation.ts
+   49:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  204:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  270:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  290:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:4   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/validation/id-validation.ts
+   44:3   warning  'resourceType' is defined but never used  @typescript-eslint/no-unused-vars
+  231:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/utils/validation/uuid-validation.ts
+   56:55  warning  'context' is defined but never used       @typescript-eslint/no-unused-vars
+  179:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  187:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  187:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/validators/attribute-validator.ts
+   32:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   71:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  213:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  284:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  351:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  419:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  466:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  509:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  577:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/validators/company/index.ts
+   97:13  warning  '_autoExtractedDomains' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  129:13  warning  '_autoExtractedDomains' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/api/attribute-types.test.ts
+  12:10  warning  'ResourceType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/api/attribute-validation-real-api.test.ts
+   8:3   warning  'getAttributeTypeInfo' is defined but never used  @typescript-eslint/no-unused-vars
+  12:10  warning  'InvalidRequestError' is defined but never used   @typescript-eslint/no-unused-vars
+  70:17  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/api/batch-operations.test.ts
+  3:3  warning  'batchSearchObjects' is defined but never used     @typescript-eslint/no-unused-vars
+  4:3  warning  'batchGetObjectDetails' is defined but never used  @typescript-eslint/no-unused-vars
+  5:3  warning  'DEFAULT_BATCH_CONFIG' is defined but never used   @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/api/people-search-phone-field-fix.test.ts
+  62:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/config/deal-defaults.test.ts
+    8:3   warning  'applyDealDefaults' is defined but never used    @typescript-eslint/no-unused-vars
+  135:13  warning  'callCount2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  162:13  warning  'attempt1' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/cleanup.ts
+  226:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  234:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  279:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  279:38  warning  'type' is defined but never used          @typescript-eslint/no-unused-vars
+  303:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  321:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  340:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  359:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/setup/preflight.ts
+  146:15  warning  'formatName' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/error-handling.e2e.test.ts
+   32:7   warning  'config' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+   32:15  warning  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   35:7   warning  'testListId' is defined but never used                      @typescript-eslint/no-unused-vars
+  361:15  warning  'noteResponse' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  611:15  warning  'invalidUpdateResponse' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/infrastructure.e2e.test.ts
+  206:17  warning  'validator' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/lists-management.e2e.test.ts
+  28:3   warning  'ListFactory' is defined but never used      @typescript-eslint/no-unused-vars
+  29:3   warning  'TestScenarios' is defined but never used    @typescript-eslint/no-unused-vars
+  31:31  warning  'McpToolResponse' is defined but never used  @typescript-eslint/no-unused-vars
+  53:7   warning  'config' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  54:64  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  62:10  warning  'trackForCleanup' is defined but never used  @typescript-eslint/no-unused-vars
+  62:59  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/notes-management.e2e.test.ts
+  26:31  warning  'McpToolResponse' is defined but never used          @typescript-eslint/no-unused-vars
+  50:7   warning  'config' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  51:7   warning  'createdRecords' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  51:64  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts
+  23:3   warning  'TestScenarios' is defined but never used            @typescript-eslint/no-unused-vars
+  25:31  warning  'McpToolResponse' is defined but never used          @typescript-eslint/no-unused-vars
+  49:7   warning  'config' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  50:7   warning  'createdRecords' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  50:64  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/universal-tools.e2e.test.ts
+  26:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:87  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/assertions.ts
+  534:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  563:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  592:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  619:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  633:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  644:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/config-loader.ts
+  375:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts
+   18:44  warning  'logError' is defined but never used      @typescript-eslint/no-unused-vars
+   20:31  warning  'ApiResponse' is defined but never used   @typescript-eslint/no-unused-vars
+  323:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  333:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/logger.ts
+  139:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  369:54  warning  Unnecessary escape character: \/          no-useless-escape
+  377:35  warning  Unnecessary escape character: \/          no-useless-escape
+  410:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  410:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  417:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  437:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  437:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  483:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  494:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/test-data.ts
+  412:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  431:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  434:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/tool-migration.ts
+   16:15  warning  'CallToolRequest' is defined but never used   @typescript-eslint/no-unused-vars
+   17:31  warning  'ApiResponse' is defined but never used       @typescript-eslint/no-unused-vars
+   59:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   69:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   83:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   95:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  105:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  117:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  127:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  143:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  153:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  165:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  177:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  190:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  203:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  221:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  239:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  251:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  261:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  271:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  283:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  299:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  314:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  315:36  warning  'list_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  328:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  344:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  363:34  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  391:17  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  392:32  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  414:13  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  415:4   warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/companies/notes.test.ts
+  15:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/universal/advanced-operations.test.ts
+   31:80   warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+   60:66   warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  105:13   warning  'validateUniversalToolParams' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  121:105  warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  564:13   warning  'mockResults' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+  591:13   warning  'mockResults' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+  763:13   warning  'originalMock' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+  782:93   warning  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/universal/core-operations.test.ts
+  26:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  40:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/universal/error-handling.test.ts
+   18:3   warning  'EnhancedApiError' is defined but never used  @typescript-eslint/no-unused-vars
+  382:36  warning  'index' is defined but never used             @typescript-eslint/no-unused-vars
+  455:45  warning  'description' is defined but never used       @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/universal/integration.test.ts
+  185:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  204:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  444:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  483:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  488:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  489:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  565:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  566:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  573:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  574:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  726:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  727:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tool-configs/universal/performance.test.ts
+  140:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  146:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  155:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  200:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  234:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  243:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  244:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  279:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  280:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  314:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  338:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  358:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  476:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  477:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  505:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  511:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  519:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  520:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  555:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  556:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  577:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  578:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  588:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/handlers/tools/argument-compatibility.test.ts
+  21:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/helpers/integration-base.ts
+  186:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  213:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  243:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/helpers/integration-test-setup.ts
+  271:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/helpers/test-factories.ts
+    4:10  warning  'vi' is defined but never used            @typescript-eslint/no-unused-vars
+   13:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   24:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   26:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   33:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  181:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  204:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  233:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  240:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  244:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/batch-update-companies.integration.test.ts
+   21:10  warning  'ResourceType' is defined but never used  @typescript-eslint/no-unused-vars
+   70:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   71:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/companies-advanced-search.integration.test.ts
+  9:20  warning  'it' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/consolidated-fixes.test.ts
+   10:34  warning  'beforeEach' is defined but never used                    @typescript-eslint/no-unused-vars
+   14:3   warning  'handleUniversalGetAttributes' is defined but never used  @typescript-eslint/no-unused-vars
+   25:33  warning  Unexpected any. Specify a different type                  @typescript-eslint/no-explicit-any
+  104:15  warning  'message' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  137:55  warning  Unexpected any. Specify a different type                  @typescript-eslint/no-explicit-any
+  383:10  warning  'expectValidUUID' is defined but never used               @typescript-eslint/no-unused-vars
+  387:10  warning  'expectInvalidUUID' is defined but never used             @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/lists/add-record-to-list.integration.test.ts
+    5:34  warning  'beforeAll' is defined but never used        @typescript-eslint/no-unused-vars
+    7:10  warning  'addRecordToList' is defined but never used  @typescript-eslint/no-unused-vars
+  145:26  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  149:55  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  199:26  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  203:55  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  261:26  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  265:55  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/person-creation.test.ts
+  10:8   warning  'axios' is defined but never used         @typescript-eslint/no-unused-vars
+  84:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/real-api-integration.test.ts
+    1:34  warning  'vi' is defined but never used            @typescript-eslint/no-unused-vars
+  182:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/integration/relationship-filters.test.ts
+   9:20  warning  'test' is defined but never used            @typescript-eslint/no-unused-vars
+  10:8   warning  'axios' is defined but never used           @typescript-eslint/no-unused-vars
+  20:10  warning  'getAttioClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/middleware/performance-enhanced.test.ts
+  149:26  warning  'duration' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/objects/batch-lists.test.ts
+   76:28  warning  'apiCall' is defined but never used       @typescript-eslint/no-unused-vars
+   79:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:28  warning  'apiCall' is defined but never used       @typescript-eslint/no-unused-vars
+  173:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/objects/records.test.ts
+   8:3   warning  'batchCreateObjectRecords' is defined but never used  @typescript-eslint/no-unused-vars
+   9:3   warning  'batchUpdateObjectRecords' is defined but never used  @typescript-eslint/no-unused-vars
+  15:23  warning  'RecordAttributes' is defined but never used          @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/performance/regression.test.ts
+   40:3   warning  'advancedOperationsToolConfigs' is defined but never used  @typescript-eslint/no-unused-vars
+  247:13  warning  'results' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/phase1-fixes-verification.test.ts
+   8:32  warning  'beforeAll' is defined but never used                      @typescript-eslint/no-unused-vars
+   8:43  warning  'vi' is defined but never used                             @typescript-eslint/no-unused-vars
+  15:3   warning  'ParameterValidationMiddleware' is defined but never used  @typescript-eslint/no-unused-vars
+  19:3   warning  'runPreflightChecks' is defined but never used             @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/phase1-integration.test.ts
+  35:13  warning  'attributes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/prompts/templates.test.ts
+  10:10  warning  'PromptTemplate' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/setup.ts
+   40:44  warning  'activityFilter' is defined but never used  @typescript-eslint/no-unused-vars
+   44:42  warning  'filters' is defined but never used         @typescript-eslint/no-unused-vars
+   44:51  warning  'options' is defined but never used         @typescript-eslint/no-unused-vars
+  116:42  warning  'filters' is defined but never used         @typescript-eslint/no-unused-vars
+  116:51  warning  'options' is defined but never used         @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/unit/field-collision-detection.test.ts
+  10:34  warning  'vi' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/unit/handlers/universal/tasks-attribute-discovery.test.ts
+  31:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  75:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  78:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  81:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/unit/handlers/universal/tasks-crud-simulation.test.ts
+  169:64  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  170:63  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  171:64  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  172:65  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  206:11  warning  'result2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/universal-error-handling.test.ts
+  5:32  warning  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/attribute-mappers.test.ts
+  9:13  warning  'configLoader' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/attribute-mapping.test.ts
+  9:3  warning  'COMMON_ATTRIBUTE_MAP' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/attribute-mapping/attribute-mappers.test.ts
+  6:3  warning  'getAttributeSlug' is defined but never used       @typescript-eslint/no-unused-vars
+  7:3  warning  'getObjectSlug' is defined but never used          @typescript-eslint/no-unused-vars
+  8:3  warning  'getListSlug' is defined but never used            @typescript-eslint/no-unused-vars
+  9:3  warning  'invalidateConfigCache' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/attribute-mapping/attribute-validator.test.ts
+  6:3  warning  'ValidationResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/batch-validation.test.ts
+    5:32  warning  'beforeEach' is defined but never used    @typescript-eslint/no-unused-vars
+  265:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/config-loader.test.ts
+    6:8   warning  'path' is defined but never used          @typescript-eslint/no-unused-vars
+  247:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  268:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/config-migration.test.ts
+  314:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  430:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  532:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/date-utils.test.ts
+   14:3   warning  'RelativeDate' is defined but never used  @typescript-eslint/no-unused-vars
+   67:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  151:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  265:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/domain-utils.test.ts
+  4:20  warning  'it' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/filters/validation-utils.test.ts
+  20:3  warning  'ListEntryFilter' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/json-serializer.test.ts
+    5:32  warning  'beforeEach' is defined but never used    @typescript-eslint/no-unused-vars
+   23:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   34:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  155:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  183:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/record-utils.test.ts
+  1:24  warning  'test' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/relationship-utils.test.ts
+  18:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/response-formatter.test.ts
+  41:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/utils/structured-logging.test.ts
+   4:20  warning  'it' is defined but never used        @typescript-eslint/no-unused-vars
+  17:3   warning  'LogLevel' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/validators/attribute-validator.test.ts
+  6:3  warning  'ValidationResult' is defined but never used  @typescript-eslint/no-unused-vars
+  7:3  warning  'AttributeType' is defined but never used     @typescript-eslint/no-unused-vars
+
+/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/validators/company-validator-enhanced.test.ts
+    7:3   warning  'detectFieldType' is defined but never used               @typescript-eslint/no-unused-vars
+   12:3   warning  'InvalidCompanyFieldTypeError' is defined but never used  @typescript-eslint/no-unused-vars
+  312:16  warning  'attributeObj' is defined but never used                  @typescript-eslint/no-unused-vars
+
+✖ 673 problems (0 errors, 673 warnings)
+

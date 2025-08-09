@@ -166,10 +166,10 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     expect(discoveryResult.attributes.length).toBeGreaterThan(0);
 
     // Verify essential task attributes are present
-    const contentAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'content');
-    const statusAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'status');
-    const dueDateAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'due_date');
-    const assigneeAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'assignee_id');
+    const contentAttr = discoveryResult.attributes.find((attr: unknown) => attr.api_slug === 'content');
+    const statusAttr = discoveryResult.attributes.find((attr: unknown) => attr.api_slug === 'status');
+    const dueDateAttr = discoveryResult.attributes.find((attr: unknown) => attr.api_slug === 'due_date');
+    const assigneeAttr = discoveryResult.attributes.find((attr: unknown) => attr.api_slug === 'assignee_id');
 
     expect(contentAttr).toBeDefined();
     expect(contentAttr.required).toBe(true);

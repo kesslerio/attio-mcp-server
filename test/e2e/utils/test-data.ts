@@ -409,7 +409,7 @@ export class E2ETestDataValidator {
   /**
    * Validate that test data has proper prefixing
    */
-  static validateTestDataPrefix(data: any, expectedPrefix?: string): boolean {
+  static validateTestDataPrefix(data: unknown, expectedPrefix?: string): boolean {
     const config = configLoader.getConfig();
     const prefix = expectedPrefix || config.testData.testDataPrefix;
 
@@ -428,10 +428,10 @@ export class E2ETestDataValidator {
   /**
    * Extract all string values from an object recursively
    */
-  private static extractStringValues(obj: any): string[] {
+  private static extractStringValues(obj: unknown): string[] {
     const strings: string[] = [];
 
-    function extract(value: any) {
+    function extract(value: unknown) {
       if (typeof value === 'string') {
         strings.push(value);
       } else if (Array.isArray(value)) {

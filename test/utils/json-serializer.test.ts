@@ -20,7 +20,7 @@ describe('JSON Serializer', () => {
     });
 
     it('should handle circular references', () => {
-      const obj: any = { a: 1, b: 'string' };
+      const obj: unknown = { a: 1, b: 'string' };
       obj.circular = obj; // Create circular reference
 
       const result = safeJsonStringify(obj);
@@ -31,7 +31,7 @@ describe('JSON Serializer', () => {
     });
 
     it('should handle nested circular references', () => {
-      const obj: any = { a: 1, b: { c: 2 } };
+      const obj: unknown = { a: 1, b: { c: 2 } };
       obj.b.parent = obj; // Create nested circular reference
 
       const result = safeJsonStringify(obj);
@@ -94,7 +94,7 @@ describe('JSON Serializer', () => {
     });
 
     it('should handle deep objects without exceeding max depth', () => {
-      const deepObj: any = { value: 1 };
+      const deepObj: unknown = { value: 1 };
       let current = deepObj;
 
       // Create an object that's 30 levels deep
@@ -145,14 +145,14 @@ describe('JSON Serializer', () => {
 
   describe('hasCircularReferences', () => {
     it('should detect direct circular references', () => {
-      const obj: any = { a: 1 };
+      const obj: unknown = { a: 1 };
       obj.self = obj;
 
       expect(hasCircularReferences(obj)).toBe(true);
     });
 
     it('should detect nested circular references', () => {
-      const obj: any = { a: 1, b: { c: 2 } };
+      const obj: unknown = { a: 1, b: { c: 2 } };
       obj.b.parent = obj;
 
       expect(hasCircularReferences(obj)).toBe(true);
@@ -167,7 +167,7 @@ describe('JSON Serializer', () => {
 
   describe('createSafeCopy', () => {
     it('should create a safe copy of an object with circular references', () => {
-      const obj: any = { a: 1, b: 'string' };
+      const obj: unknown = { a: 1, b: 'string' };
       obj.circular = obj;
 
       const result = createSafeCopy(obj);
@@ -180,7 +180,7 @@ describe('JSON Serializer', () => {
 
   describe('sanitizeMcpResponse', () => {
     it('should sanitize MCP responses with circular references', () => {
-      const response: any = {
+      const response: unknown = {
         content: [{ type: 'text', text: 'Test response' }],
       };
       response.circularRef = response;

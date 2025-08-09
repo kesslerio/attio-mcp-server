@@ -372,7 +372,7 @@ export function shouldSkipApiTests(): boolean {
 /**
  * Helper function to conditionally skip a test if API key is missing
  */
-export function skipIfNoApiKey(testContext: any, testName: string): boolean {
+export function skipIfNoApiKey(testContext: unknown, testName: string): boolean {
   if (shouldSkipApiTests()) {
     console.log(`⏭️  Skipping ${testName} - ATTIO_API_KEY not available`);
     testContext.skip();

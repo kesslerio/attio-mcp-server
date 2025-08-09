@@ -18,7 +18,7 @@ vi.mock('../../../src/handlers/tools/dispatcher.js', () => ({
 
 describe('MCP Tool Argument Compatibility (Issue #344)', () => {
   let server: Server;
-  let requestHandler: any;
+  let requestHandler: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

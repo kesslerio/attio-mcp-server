@@ -28,17 +28,17 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
     expect(result.attributes.length).toBeGreaterThan(0);
     
     // Check for key task attributes
-    const contentAttr = result.attributes.find((attr: any) => attr.api_slug === 'content');
+    const contentAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'content');
     expect(contentAttr).toBeDefined();
     expect(contentAttr.required).toBe(true);
     
-    const statusAttr = result.attributes.find((attr: any) => attr.api_slug === 'status');
+    const statusAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'status');
     expect(statusAttr).toBeDefined();
     
-    const dueDateAttr = result.attributes.find((attr: any) => attr.api_slug === 'due_date');
+    const dueDateAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'due_date');
     expect(dueDateAttr).toBeDefined();
     
-    const assigneeAttr = result.attributes.find((attr: any) => attr.api_slug === 'assignee_id');
+    const assigneeAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'assignee_id');
     expect(assigneeAttr).toBeDefined();
   });
 
@@ -72,13 +72,13 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
   it('should provide helpful field descriptions for task attributes', async () => {
     const result = await handleUniversalDiscoverAttributes(UniversalResourceType.TASKS);
     
-    const contentAttr = result.attributes.find((attr: any) => attr.api_slug === 'content');
+    const contentAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'content');
     expect(contentAttr.description).toContain('text');
     
-    const dueDateAttr = result.attributes.find((attr: any) => attr.api_slug === 'due_date');
+    const dueDateAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'due_date');
     expect(dueDateAttr.description).toContain('ISO date');
     
-    const assigneeAttr = result.attributes.find((attr: any) => attr.api_slug === 'assignee_id');
+    const assigneeAttr = result.attributes.find((attr: unknown) => attr.api_slug === 'assignee_id');
     expect(assigneeAttr.description).toContain('workspace member');
   });
 });
