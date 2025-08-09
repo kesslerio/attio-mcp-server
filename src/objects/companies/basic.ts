@@ -106,12 +106,12 @@ export async function getCompanyDetails(
     // Use the unified operation if available, with fallback to direct implementation
     try {
       return await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const firstError = error;
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[getCompanyDetails] First attempt failed: ${
-            firstError.message || 'Unknown error'
+            firstError instanceof Error ? firstError.message : 'Unknown error'
           }`,
           {
             method: 'getObjectDetails',
@@ -134,12 +134,12 @@ export async function getCompanyDetails(
 
         const response = await api.get(path);
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const secondError = error;
         if (process.env.NODE_ENV === 'development') {
           console.log(
             `[getCompanyDetails] Second attempt failed: ${
-              secondError.message || 'Unknown error'
+              secondError instanceof Error ? secondError.message : 'Unknown error'
             }`,
             {
               method: 'direct API path',
@@ -167,7 +167,7 @@ export async function getCompanyDetails(
 
           const response = await api.get(alternatePath);
           return response.data;
-        } catch (error: any) {
+        } catch (error: unknown) {
           const thirdError = error;
           // If all attempts fail, throw a meaningful error with preserved original errors
           const errorDetails = {
@@ -178,9 +178,9 @@ export async function getCompanyDetails(
               `/companies/${companyId}`,
             ],
             errors: {
-              first: firstError.message || 'Unknown error',
-              second: secondError.message || 'Unknown error',
-              third: thirdError.message || 'Unknown error',
+              first: firstError instanceof Error ? firstError.message : 'Unknown error',
+              second: secondError instanceof Error ? secondError.message : 'Unknown error',
+              third: thirdError instanceof Error ? thirdError.message : 'Unknown error',
             },
           };
 
@@ -194,7 +194,7 @@ export async function getCompanyDetails(
 
           throw new Error(
             `Could not retrieve company details for ${companyIdOrUri}: ${
-              thirdError.message || 'Unknown error'
+              thirdError instanceof Error ? thirdError.message : 'Unknown error'
             }`
           );
         }
@@ -351,7 +351,7 @@ export async function updateCompany(
 export async function updateCompanyAttribute(
   companyId: string,
   attributeName: string,
-  attributeValue: any
+  attributeValue: unknown
 ): Promise<Company> {
   try {
     let valueToProcess = attributeValue;
@@ -388,7 +388,7 @@ export async function updateCompanyAttribute(
     const processedValue = await CompanyValidator.validateAttributeUpdate(
       companyId,
       attributeName,
-      valueToProcess
+      valueToProcess as any // TODO: Replace with proper type once CompanyFieldValue is updated
     );
 
     return await updateObjectAttributeWithDynamicFields<Company>(

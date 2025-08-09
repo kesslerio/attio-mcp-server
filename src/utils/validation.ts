@@ -17,9 +17,9 @@ export interface ValidationResult {
 export interface ValidationSchema {
   type: string;
   required?: string[];
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   items?: ValidationSchema;
-  enum?: any[];
+  enum?: unknown[];
   minLength?: number;
   maxLength?: number;
   minimum?: number;
@@ -46,7 +46,7 @@ function formatError(path: string, message: string): string {
  * @param path - Path to the property
  * @returns Error message if invalid, empty string if valid
  */
-function validateType(value: any, expectedType: string, path: string): string {
+function validateType(value: unknown, expectedType: string, path: string): string {
   // Handle null/undefined
   if (value === null || value === undefined) {
     return '';
@@ -92,7 +92,7 @@ function validateType(value: any, expectedType: string, path: string): string {
  * @returns Array of error messages
  */
 function validateConstraints(
-  value: any,
+  value: unknown,
   schema: ValidationSchema,
   path: string
 ): string[] {
@@ -106,7 +106,7 @@ function validateConstraints(
   // Enum validation
   if (schema.enum && !schema.enum.includes(value)) {
     errors.push(
-      formatError(path, `Value must be one of: ${schema.enum.join(', ')}`)
+      formatError(path, `Value must be one of: ${schema.enum.map(String).join(', ')}`)
     );
   }
 
@@ -163,7 +163,7 @@ function validateConstraints(
 
   // Array constraints
   if (Array.isArray(value) && schema.items) {
-    value.forEach((item, index) => {
+    (value as unknown[]).forEach((item, index) => {
       const itemPath = path ? `${path}[${index}]` : `[${index}]`;
 
       // Validate type
@@ -201,7 +201,7 @@ function validateConstraints(
  * @returns Array of error messages
  */
 function validateValue(
-  value: any,
+  value: unknown,
   schema: ValidationSchema,
   path: string = ''
 ): string[] {
@@ -219,11 +219,12 @@ function validateValue(
   errors.push(...constraintErrors);
 
   // Object validation
-  if (schema.type === 'object' && schema.properties && value) {
+  if (schema.type === 'object' && schema.properties && value && typeof value === 'object' && !Array.isArray(value)) {
     // Required properties validation
     if (schema.required) {
+      const objValue = value as Record<string, unknown>;
       for (const requiredProp of schema.required) {
-        if (!(requiredProp in value)) {
+        if (!(requiredProp in objValue)) {
           errors.push(
             formatError(
               path ? `${path}.${requiredProp}` : requiredProp,
@@ -237,9 +238,10 @@ function validateValue(
     // Property validation
     if (schema.properties) {
       for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        if (propName in value) {
+        const objValue = value as Record<string, unknown>;
+        if (propName in objValue) {
           const propPath = path ? `${path}.${propName}` : propName;
-          const propValue = value[propName];
+          const propValue = objValue[propName];
 
           // Skip undefined/null for non-required fields
           if (
@@ -249,7 +251,7 @@ function validateValue(
             continue;
           }
 
-          const propErrors = validateValue(propValue, propSchema, propPath);
+          const propErrors = validateValue(propValue, propSchema as ValidationSchema, propPath);
           errors.push(...propErrors);
         }
       }
@@ -267,7 +269,7 @@ function validateValue(
  * @returns Validation result
  */
 export function validateInput(
-  input: any,
+  input: unknown,
   schema: ValidationSchema
 ): ValidationResult {
   const errors = validateValue(input, schema);
@@ -287,10 +289,10 @@ export function validateInput(
  * @returns Error response if invalid, null if valid
  */
 export function validateRequest(
-  input: any,
+  input: unknown,
   schema: ValidationSchema,
-  errorFormatter: (error: Error, type: ErrorType, details: any) => any
-): any | null {
+  errorFormatter: (error: Error, type: ErrorType, details: Record<string, unknown>) => unknown
+): unknown | null {
   const result = validateInput(input, schema);
 
   if (!result.isValid) {
