@@ -4,15 +4,19 @@
  */
 
 import axios, { AxiosError } from 'axios';
-import { createErrorResult, AttioApiError, ErrorType } from './error-handler.js';
+import {
+  createErrorResult,
+  AttioApiError,
+  ErrorType,
+} from './error-handler.js';
 
 /**
  * Safely gets the error message from an unknown error type
- * 
+ *
  * @param error - The error of unknown type
  * @param fallbackMessage - Optional fallback message if error cannot be converted to string
  * @returns A string error message
- * 
+ *
  * @example
  * try {
  *   // some operation
@@ -21,7 +25,10 @@ import { createErrorResult, AttioApiError, ErrorType } from './error-handler.js'
  *   console.error('Operation failed:', message);
  * }
  */
-export function getErrorMessage(error: unknown, fallbackMessage = 'An unknown error occurred'): string {
+export function getErrorMessage(
+  error: unknown,
+  fallbackMessage = 'An unknown error occurred'
+): string {
   if (error instanceof Error) {
     return error.message;
   }
@@ -36,11 +43,11 @@ export function getErrorMessage(error: unknown, fallbackMessage = 'An unknown er
 
 /**
  * Wraps an error with additional context
- * 
+ *
  * @param error - The original error
  * @param context - Additional context to add to the error message
  * @returns A new Error with the enhanced message
- * 
+ *
  * @example
  * try {
  *   // some operation
@@ -55,12 +62,12 @@ export function wrapError(error: unknown, context: string): Error {
 
 /**
  * Handles an error by wrapping it with context and optionally logging it
- * 
+ *
  * @param error - The error to handle
  * @param context - Context message for the error
  * @param options - Optional configuration
  * @returns The wrapped error
- * 
+ *
  * @example
  * try {
  *   // some operation
@@ -78,22 +85,23 @@ export function handleError(
   }
 ): Error {
   const wrappedError = wrapError(error, context);
-  
+
   if (options?.log) {
     const logLevel = options.logLevel || 'error';
-    const logMessage = options.includeStack && error instanceof Error && error.stack
-      ? `${wrappedError.message}\nStack: ${error.stack}`
-      : wrappedError.message;
-    
+    const logMessage =
+      options.includeStack && error instanceof Error && error.stack
+        ? `${wrappedError.message}\nStack: ${error.stack}`
+        : wrappedError.message;
+
     console[logLevel](logMessage);
   }
-  
+
   return wrappedError;
 }
 
 /**
  * Type guard to check if an error is an Axios error
- * 
+ *
  * @param error - The error to check
  * @returns True if the error is an AxiosError
  */
@@ -103,11 +111,11 @@ export function isAxiosError(error: unknown): error is AxiosError {
 
 /**
  * Handles Axios errors with consistent formatting
- * 
+ *
  * @param error - The error to handle
  * @param operation - Description of the operation that failed
  * @returns A formatted error with Axios response details
- * 
+ *
  * @example
  * try {
  *   const response = await axios.get(url);
@@ -119,33 +127,36 @@ export function handleAxiosError(error: unknown, operation: string): Error {
   if (!isAxiosError(error)) {
     return handleError(error, `Failed to ${operation}`);
   }
-  
+
   if (error.response) {
     const { status, statusText, data } = error.response;
-    const errorDetails = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
-    
+    const errorDetails =
+      typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+
     return new Error(
       `Failed to ${operation}: ${status} ${statusText}\n${errorDetails}`
     );
   }
-  
+
   if (error.request) {
-    return new Error(`Failed to ${operation}: No response received from server`);
+    return new Error(
+      `Failed to ${operation}: No response received from server`
+    );
   }
-  
+
   return new Error(`Failed to ${operation}: ${error.message}`);
 }
 
 /**
  * Creates a standardized error result for API operations
  * This is a wrapper around createErrorResult with common defaults
- * 
+ *
  * @param error - The error that occurred
  * @param operation - The operation that was being performed
  * @param resource - The resource type being operated on
  * @param additionalDetails - Additional details to include in the error
  * @returns Formatted error result for MCP response
- * 
+ *
  * @example
  * try {
  *   // API operation
@@ -159,31 +170,27 @@ export function createStandardErrorResult(
   resource: string,
   additionalDetails?: Record<string, unknown>
 ) {
-  const errorObj = error instanceof Error ? error : new Error(getErrorMessage(error));
+  const errorObj =
+    error instanceof Error ? error : new Error(getErrorMessage(error));
   const url = String(additionalDetails?.url || `/${resource}/${operation}`);
   const method = String(additionalDetails?.method || 'POST');
-  
-  return createErrorResult(
-    errorObj,
-    url,
-    method,
-    {
-      ...additionalDetails,
-      operation,
-      resource,
-    }
-  );
+
+  return createErrorResult(errorObj, url, method, {
+    ...additionalDetails,
+    operation,
+    resource,
+  });
 }
 
 /**
  * Logs an error with context and returns it
  * Useful for debugging while maintaining error flow
- * 
+ *
  * @param error - The error to log
  * @param context - Context for the error
  * @param details - Additional details to log
  * @returns The original error (for chaining)
- * 
+ *
  * @example
  * try {
  *   // some operation
@@ -197,7 +204,7 @@ export function logAndReturn(
   details?: Record<string, unknown>
 ): unknown {
   const message = getErrorMessage(error);
-  
+
   if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
     console.error(`[${context}] Error:`, message);
     if (details) {
@@ -207,18 +214,18 @@ export function logAndReturn(
       console.error(`[${context}] Stack:`, error.stack);
     }
   }
-  
+
   return error;
 }
 
 /**
  * Ensures an error is an Error instance
  * Useful when you need to guarantee an Error object
- * 
+ *
  * @param error - The error to normalize
  * @param fallbackMessage - Message to use if error cannot be converted
  * @returns An Error instance
- * 
+ *
  * @example
  * try {
  *   // some operation
@@ -227,7 +234,10 @@ export function logAndReturn(
  *   // Now errorObj is guaranteed to be an Error instance
  * }
  */
-export function ensureError(error: unknown, fallbackMessage = 'An unknown error occurred'): Error {
+export function ensureError(
+  error: unknown,
+  fallbackMessage = 'An unknown error occurred'
+): Error {
   if (error instanceof Error) {
     return error;
   }
@@ -236,11 +246,11 @@ export function ensureError(error: unknown, fallbackMessage = 'An unknown error 
 
 /**
  * Safely executes an async operation with error handling
- * 
+ *
  * @param operation - The async operation to execute
  * @param errorHandler - Function to handle errors
  * @returns The result of the operation or the error handler
- * 
+ *
  * @example
  * const result = await safeAsync(
  *   () => fetchCompanyData(id),
@@ -263,7 +273,7 @@ export async function safeAsync<T, E = T>(
 
 /**
  * Type guard to check if an error is an AttioApiError
- * 
+ *
  * @param error - The error to check
  * @returns True if the error is an AttioApiError
  */
@@ -273,10 +283,10 @@ export function isAttioApiError(error: unknown): error is AttioApiError {
 
 /**
  * Extracts status code from various error types
- * 
+ *
  * @param error - The error to extract status from
  * @returns The HTTP status code or undefined
- * 
+ *
  * @example
  * try {
  *   // API call
@@ -291,25 +301,25 @@ export function getErrorStatus(error: unknown): number | undefined {
   if (isAttioApiError(error)) {
     return error.status;
   }
-  
+
   if (isAxiosError(error) && error.response) {
     return error.response.status;
   }
-  
+
   if (error && typeof error === 'object' && 'status' in error) {
     const status = (error as Record<string, unknown>).status;
     return typeof status === 'number' ? status : undefined;
   }
-  
+
   return undefined;
 }
 
 /**
  * Determines if an error is retryable based on its type and status
- * 
+ *
  * @param error - The error to check
  * @returns True if the error is potentially retryable
- * 
+ *
  * @example
  * try {
  *   // API call
@@ -321,7 +331,7 @@ export function getErrorStatus(error: unknown): number | undefined {
  */
 export function isRetryableError(error: unknown): boolean {
   const status = getErrorStatus(error);
-  
+
   // Retryable HTTP status codes
   if (status) {
     return (
@@ -331,12 +341,12 @@ export function isRetryableError(error: unknown): boolean {
       (status >= 500 && status < 600) // Server errors
     );
   }
-  
+
   // Check for network errors
   if (isAxiosError(error)) {
     return !error.response && !!error.request; // Network error, no response
   }
-  
+
   // Check for specific error messages
   const message = getErrorMessage(error).toLowerCase();
   return (

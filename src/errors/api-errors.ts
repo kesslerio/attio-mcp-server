@@ -245,10 +245,15 @@ export function createApiErrorFromAxiosError(
   endpoint: string,
   method: string
 ): AttioApiError {
-  const axiosError = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
+  const axiosError = error as {
+    response?: { status?: number; data?: { message?: string } };
+    message?: string;
+  };
   const statusCode = axiosError.response?.status || 500;
   const message =
-    axiosError.response?.data?.message || axiosError.message || 'Unknown API error';
+    axiosError.response?.data?.message ||
+    axiosError.message ||
+    'Unknown API error';
   const details = axiosError.response?.data || {};
 
   // Special case for ResourceNotFoundError with object types
