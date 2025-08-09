@@ -41,7 +41,7 @@ jobs:
         run: npm run lint:check
         
       - name: Run type checker
-        run: npm run check
+        run: npm run typecheck
         
       - name: Check format
         run: npm run check:format
@@ -71,9 +71,6 @@ jobs:
         
       - name: Build project
         run: npm run build
-        
-      - name: Run offline tests
-        run: npm run test:offline
         
       - name: Run unit tests with coverage
         run: npm run test:coverage:offline
