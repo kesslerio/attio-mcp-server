@@ -255,25 +255,28 @@ export function error(
       message,
       metadata: createLogMetadata('ERROR', module, operation, operationType),
       ...(data ? { data } : {}),
-      ...(errorObj ? {
-        error:
-          errorObj instanceof Error
-            ? {
-                message: errorObj.message,
-                name: errorObj.name,
-                stack: errorObj.stack,
-                code: (errorObj as Error & { code?: string | number }).code,
-              }
-            : typeof errorObj === 'object' && errorObj !== null
-              ? {
-                  message: (errorObj as any).message || JSON.stringify(errorObj),
-                  name: (errorObj as any).name || 'Unknown',
-                  stack: (errorObj as any).stack,
-                  code: (errorObj as any).code,
-                  ...(errorObj as object),
-                }
-              : { message: String(errorObj), name: 'Unknown' },
-      } : {}),
+      ...(errorObj
+        ? {
+            error:
+              errorObj instanceof Error
+                ? {
+                    message: errorObj.message,
+                    name: errorObj.name,
+                    stack: errorObj.stack,
+                    code: (errorObj as Error & { code?: string | number }).code,
+                  }
+                : typeof errorObj === 'object' && errorObj !== null
+                  ? {
+                      message:
+                        (errorObj as any).message || JSON.stringify(errorObj),
+                      name: (errorObj as any).name || 'Unknown',
+                      stack: (errorObj as any).stack,
+                      code: (errorObj as any).code,
+                      ...(errorObj as object),
+                    }
+                  : { message: String(errorObj), name: 'Unknown' },
+          }
+        : {}),
     };
     outputLog(entry, console.error);
   }

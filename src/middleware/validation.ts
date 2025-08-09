@@ -42,7 +42,7 @@ export interface ValidationError {
  */
 export interface SchemaDefinition {
   type: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   required?: string[];
   additionalProperties?: boolean;
   enum?: string[];
@@ -52,7 +52,7 @@ export interface SchemaDefinition {
   maxLength?: number;
   pattern?: string;
   format?: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -139,7 +139,11 @@ export class JsonSchemaValidator {
           if (schema.properties[key]) {
             const fieldPath = path ? `${path}.${key}` : key;
             errors.push(
-              ...this.validateValue(value, schema.properties[key], fieldPath)
+              ...this.validateValue(
+                value,
+                schema.properties[key] as SchemaDefinition,
+                fieldPath
+              )
             );
           } else if (schema.additionalProperties === false) {
             errors.push({

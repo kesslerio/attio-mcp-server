@@ -82,7 +82,7 @@ export interface PerformanceAlert {
  */
 interface CacheEntry {
   timestamp: number;
-  result: any;
+  result: unknown;
   ttl: number;
 }
 
@@ -357,7 +357,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Cache a 404 response
    */
-  cache404Response(key: string, result: any, ttl: number = 60000): void {
+  cache404Response(key: string, result: unknown, ttl: number = 60000): void {
     this.cache404.set(key, {
       timestamp: Date.now(),
       result,
@@ -368,7 +368,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Get cached 404 response
    */
-  getCached404(key: string): any | null {
+  getCached404(key: string): unknown | null {
     const entry = this.cache404.get(key);
     if (!entry) return null;
 
@@ -396,7 +396,10 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Get performance statistics
    */
-  getStatistics(toolName?: string, timeWindow?: number): any {
+  getStatistics(
+    toolName?: string,
+    timeWindow?: number
+  ): Record<string, unknown> {
     const now = Date.now();
     const windowStart = timeWindow ? now - timeWindow : 0;
 
@@ -413,7 +416,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     }
 
     if (relevantMetrics.length === 0) {
-      return null;
+      return {};
     }
 
     const durations = relevantMetrics
@@ -515,26 +518,26 @@ export class EnhancedPerformanceTracker extends EventEmitter {
 Performance Report
 ==================
 Total Operations: ${stats.count}
-Success Rate: ${stats.successRate.toFixed(1)}%
-Cache Hit Rate: ${stats.cacheHitRate.toFixed(1)}%
+Success Rate: ${(stats.successRate as any).toFixed(1)}%
+Cache Hit Rate: ${(stats.cacheHitRate as any).toFixed(1)}%
 
 Timing Statistics (ms)
 ----------------------
-Average: ${stats.timing.average.toFixed(0)}
-Min: ${stats.timing.min.toFixed(0)}
-Max: ${stats.timing.max.toFixed(0)}
-P50: ${stats.timing.p50.toFixed(0)}
-P95: ${stats.timing.p95.toFixed(0)}
-P99: ${stats.timing.p99.toFixed(0)}
+Average: ${(stats.timing as any).average.toFixed(0)}
+Min: ${(stats.timing as any).min.toFixed(0)}
+Max: ${(stats.timing as any).max.toFixed(0)}
+P50: ${(stats.timing as any).p50.toFixed(0)}
+P95: ${(stats.timing as any).p95.toFixed(0)}
+P99: ${(stats.timing as any).p99.toFixed(0)}
 
 API vs MCP Overhead (ms)
 ------------------------
-API Average: ${stats.apiTiming.average.toFixed(0)}
-API P95: ${stats.apiTiming.p95.toFixed(0)}
-API P99: ${stats.apiTiming.p99.toFixed(0)}
-MCP Average: ${stats.overhead.average.toFixed(0)}
-MCP P95: ${stats.overhead.p95.toFixed(0)}
-MCP P99: ${stats.overhead.p99.toFixed(0)}
+API Average: ${(stats.apiTiming as any).average.toFixed(0)}
+API P95: ${(stats.apiTiming as any).p95.toFixed(0)}
+API P99: ${(stats.apiTiming as any).p99.toFixed(0)}
+MCP Average: ${(stats.overhead as any).average.toFixed(0)}
+MCP P95: ${(stats.overhead as any).p95.toFixed(0)}
+MCP P99: ${(stats.overhead as any).p99.toFixed(0)}
 
 Budget Violations: ${stats.budgetViolations}
 
@@ -564,7 +567,7 @@ ${recentAlerts
   /**
    * Export metrics for analysis
    */
-  exportMetrics(): any {
+  exportMetrics(): Record<string, unknown> {
     return {
       timestamp: new Date().toISOString(),
       metrics: this.metrics,

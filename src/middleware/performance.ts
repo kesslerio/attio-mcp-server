@@ -381,14 +381,15 @@ Failed Operations: ${failedOps.length}
  */
 export function trackPerformance(toolName?: string) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
-    const name = toolName || `${target.constructor.name}.${propertyKey}`;
+    const name =
+      toolName || `${(target as any).constructor.name}.${propertyKey}`;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const startTime = PerformanceTracker.startOperation(name);
 
       try {
