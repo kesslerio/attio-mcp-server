@@ -377,7 +377,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Ensure the response is safely serializable
     const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
-  } catch (error) {
+  } catch (error: unknown) {
     // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error

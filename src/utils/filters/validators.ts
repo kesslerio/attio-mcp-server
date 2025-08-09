@@ -66,7 +66,7 @@ export function validateDateRange(dateRange: any): DateRange {
   if (typeof dateRange === 'string') {
     try {
       dateRange = JSON.parse(dateRange);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid date range format: ${
           error instanceof Error ? error.message : String(error)
@@ -223,7 +223,7 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
   if (typeof activityFilter === 'string') {
     try {
       activityFilter = JSON.parse(activityFilter);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid activity filter format: ${
           error instanceof Error ? error.message : String(error)
@@ -249,7 +249,7 @@ export function validateActivityFilter(activityFilter: any): ActivityFilter {
   // Validate dateRange
   try {
     activityFilter.dateRange = validateDateRange(activityFilter.dateRange);
-  } catch (error) {
+  } catch (error: unknown) {
     throw new FilterValidationError(
       `Invalid dateRange in activity filter: ${
         error instanceof Error ? error.message : String(error)
@@ -291,7 +291,7 @@ export function validateNumericRange(range: any): NumericRange {
   if (typeof range === 'string') {
     try {
       range = JSON.parse(range);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new FilterValidationError(
         `Invalid numeric range format: ${
           error instanceof Error ? error.message : String(error)

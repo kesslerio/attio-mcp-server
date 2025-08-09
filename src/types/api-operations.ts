@@ -53,12 +53,12 @@ export interface ListRequestBody {
  */
 export interface TaskCreateData {
   content: string;
-  format: 'plaintext';  // Required field for Attio API
+  format: 'plaintext'; // Required field for Attio API
   assignee?: {
     id: string;
     type: string;
   };
-  deadline_at?: string;  // Correct field name (was due_date)
+  deadline_at?: string; // Correct field name (was due_date)
   linked_records?: Array<{
     id: string;
   }>;
@@ -69,12 +69,12 @@ export interface TaskCreateData {
  */
 export interface TaskUpdateData {
   // Note: content is immutable and cannot be updated after creation
-  is_completed?: boolean;  // Correct field name and type (was status: string)
+  is_completed?: boolean; // Correct field name and type (was status: string)
   assignee?: {
     id: string;
     type: string;
   };
-  deadline_at?: string;  // Correct field name (was due_date)
+  deadline_at?: string; // Correct field name (was due_date)
   linked_records?: Array<{
     id: string;
   }>;

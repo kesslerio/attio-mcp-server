@@ -41,7 +41,7 @@ describe('Filter Validation Utilities', () => {
       try {
         validateFiltersObject(undefined);
         fail('Should have thrown an error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(FilterValidationError);
         expect((error as FilterValidationError).message).toContain(
           ERROR_MESSAGES.MISSING_FILTERS
@@ -242,7 +242,7 @@ describe('Filter Validation Utilities', () => {
       try {
         validateFilters(filters);
         fail('Should have thrown an error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(FilterValidationError);
         expect((error as FilterValidationError).message).toContain(
           ERROR_MESSAGES.ALL_FILTERS_INVALID
@@ -269,7 +269,7 @@ describe('Filter Validation Utilities', () => {
       try {
         validateFilters(conditionFilters);
         fail('Should have thrown an error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(FilterValidationError);
         expect((error as FilterValidationError).message).toContain(
           ERROR_MESSAGES.ALL_FILTERS_INVALID

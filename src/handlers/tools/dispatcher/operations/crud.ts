@@ -37,7 +37,7 @@ export async function handleCreateOperation(
       : `${resourceType.slice(0, -1)} created successfully`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}`,
@@ -101,7 +101,7 @@ export async function handleUpdateOperation(
       : `${resourceType.slice(0, -1)} updated successfully`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}`,
@@ -175,7 +175,7 @@ export async function handleUpdateAttributeOperation(
       : `${resourceType.slice(0, -1)} attribute updated successfully`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}`,
@@ -216,7 +216,7 @@ export async function handleDeleteOperation(
       : `${resourceType.slice(0, -1)} deleted successfully`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     const id =
       resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)

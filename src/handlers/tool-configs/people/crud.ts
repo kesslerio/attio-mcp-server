@@ -17,7 +17,7 @@ export const crudToolConfigs = {
     handler: async (attributes: PersonCreateAttributes): Promise<Person> => {
       try {
         return await createPerson(attributes);
-      } catch (error) {
+      } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         const contextualError = new Error(

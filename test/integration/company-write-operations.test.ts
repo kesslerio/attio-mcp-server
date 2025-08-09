@@ -30,7 +30,7 @@ describe('Company Write Operations - Integration Tests', () => {
     for (const companyId of testCompanies) {
       try {
         await deleteCompany(companyId);
-      } catch (error) {
+      } catch (error: unknown) {
         // Ignore errors during cleanup
       }
     }

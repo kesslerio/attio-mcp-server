@@ -96,7 +96,7 @@ async function processInParallelWithErrorIsolation<T>(
       try {
         const result = await processor(item, i + chunkIndex);
         return { success: true, result };
-      } catch (error) {
+      } catch (error: unknown) {
         return { 
           success: false, 
           error: error instanceof Error ? error.message : String(error), 
@@ -149,7 +149,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
         limit,
         offset
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // Add context-specific error information for advanced search
       if (error instanceof Error && error.message.includes('date')) {
         const enhancedError = new Error(
@@ -238,7 +238,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
         default:
           throw new Error(`Unsupported relationship type: ${relationship_type}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('relationship search', params.relationship_type, error);
     }
   },
@@ -318,7 +318,7 @@ export const searchByContentConfig: UniversalToolConfig = {
       }
       
       throw new Error(`Content search not supported for resource type ${resource_type} and content type ${content_type}`);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('content search', `${params.resource_type}:${params.content_type}`, error);
     }
   },
@@ -394,7 +394,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             throw new Error(`Timeframe search not supported for resource type: ${resource_type}`);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('timeframe search', `${params.resource_type}:${params.timeframe_type}`, error);
     }
   },
@@ -587,7 +587,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
         default:
           throw new Error(`Unsupported batch operation type: ${operation_type}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('batch operations', `${params.resource_type}:${params.operation_type}`, error);
     }
   },

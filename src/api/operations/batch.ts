@@ -205,7 +205,7 @@ export async function executeBatchOperations<T, R>(
           // Mark as successful
           result.success = true;
           batchResponse.summary.succeeded++;
-        } catch (error) {
+        } catch (error: unknown) {
           // Handle operation failure
           result.success = false;
           result.error = error;

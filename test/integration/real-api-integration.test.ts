@@ -251,7 +251,7 @@ describe('Real API Integration Tests', () => {
       try {
         await getCompanyDetails('non-existent-company-id-12345');
         throw new Error('Expected error was not thrown');
-      } catch (error) {
+      } catch (error: unknown) {
         // Test our enhanced error handling
         const isValidError = expectIntegrationError(error, [
           'not found',
@@ -272,7 +272,7 @@ describe('Real API Integration Tests', () => {
           website: 'https://invalid.com',
         } as any);
         throw new Error('Expected validation error was not thrown');
-      } catch (error) {
+      } catch (error: unknown) {
         const isValidError = expectIntegrationError(error, [
           'required',
           'name',
@@ -289,7 +289,7 @@ describe('Real API Integration Tests', () => {
       try {
         await getPersonDetails('non-existent-person-id-67890');
         throw new Error('Expected error was not thrown');
-      } catch (error) {
+      } catch (error: unknown) {
         const isValidError = expectIntegrationError(error, [
           'not found',
           'invalid',
@@ -309,7 +309,7 @@ describe('Real API Integration Tests', () => {
           phone_numbers: ['+1234567890'],
         } as any);
         throw new Error('Expected validation error was not thrown');
-      } catch (error) {
+      } catch (error: unknown) {
         const isValidError = expectIntegrationError(error, [
           'required',
           'email',

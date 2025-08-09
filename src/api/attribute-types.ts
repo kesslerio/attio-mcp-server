@@ -94,7 +94,7 @@ export async function getObjectAttributeMetadata(
     attributeCache.set(objectSlug, metadataMap);
 
     return metadataMap;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Failed to fetch attributes for ${objectSlug}:`, error);
 
     // More detailed error logging

@@ -67,7 +67,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
       personId,
       teamSize: updatedTeamIds.length,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to link person to company: ${(error as Error).message}`);
   }
 }
@@ -113,7 +113,7 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
       personId,
       teamSize: updatedTeamIds.length,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to unlink person from company: ${(error as Error).message}`);
   }
 }
@@ -132,7 +132,7 @@ async function getPersonCompanies(personId: string): Promise<any[]> {
           name: company.name || 'Unknown Company',
         }))
       : [];
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to get person's companies: ${(error as Error).message}`);
   }
 }
@@ -151,7 +151,7 @@ async function getCompanyTeam(companyId: string): Promise<any[]> {
           name: member.name || 'Unknown Person',
         }))
       : [];
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to get company team: ${(error as Error).message}`);
   }
 }

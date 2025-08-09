@@ -68,7 +68,7 @@ export class E2ECleanup {
       this.apiClient = getAttioClient();
 
       this.log('✅ Cleanup utility initialized');
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error(`Failed to initialize cleanup utility: ${error}`);
     }
   }
@@ -183,7 +183,7 @@ export class E2ECleanup {
       this.log(
         `✅ Cleanup completed: ${result.successful} successful, ${result.failed} failed`
       );
-    } catch (error) {
+    } catch (error: unknown) {
       result.errors.push(`Failed to cleanup ${type}: ${error}`);
       this.log(`❌ Error cleaning ${type}: ${error}`);
     }
@@ -213,7 +213,7 @@ export class E2ECleanup {
           });
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       this.log(`⚠️  Error fetching ${type}: ${error}`);
     }
 
@@ -264,7 +264,7 @@ export class E2ECleanup {
         this.log(
           `Fetched ${data.length} ${type} (total: ${allObjects.length})`
         );
-      } catch (error) {
+      } catch (error: unknown) {
         this.log(`Error fetching ${type}: ${error}`);
         break;
       }
@@ -477,7 +477,7 @@ export async function runE2ECleanup(
   try {
     await cleanup.initialize();
     await cleanup.runCleanup();
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Cleanup failed:', error);
     process.exit(1);
   }
@@ -494,7 +494,7 @@ export async function findOrphanedE2EObjects(
   try {
     await cleanup.initialize();
     return await cleanup.findOrphanedObjects();
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Failed to find orphaned objects:', error);
     throw error;
   }

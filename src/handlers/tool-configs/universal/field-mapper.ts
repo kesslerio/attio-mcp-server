@@ -627,7 +627,7 @@ export async function enhanceUniquenessError(
       return `Uniqueness constraint violation: A ${resourceType} record with ${fieldName} "${fieldValue}" already exists. ` +
              `Please use a different value or update the existing record instead.`;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Fall back to original message if we can't enhance it
     console.error('Failed to enhance uniqueness error:', error);
   }

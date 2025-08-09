@@ -71,7 +71,7 @@ export async function searchCompaniesByPeople(
       validatedOffset
     );
     return Array.isArray(results) ? results : [];
-  } catch (error) {
+  } catch (error: unknown) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
       throw error;
@@ -115,7 +115,7 @@ export async function searchCompaniesByPeopleList(
       validatedOffset
     );
     return Array.isArray(results) ? results : [];
-  } catch (error) {
+  } catch (error: unknown) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
       throw error;
@@ -166,7 +166,7 @@ export async function searchCompaniesByNotes(
       validatedOffset
     );
     return Array.isArray(results) ? results : [];
-  } catch (error) {
+  } catch (error: unknown) {
     // Convert all errors to FilterValidationErrors for consistent handling
     if (error instanceof FilterValidationError) {
       throw error;

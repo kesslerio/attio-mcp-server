@@ -45,7 +45,7 @@ export function createDateRangeFilter(
     }
 
     return { filters, matchAny: false };
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create date range filter: ${message}`

@@ -183,7 +183,7 @@ export function formatResponse(
               includeStackTraces: false,
             })
           : String(content);
-    } catch (error) {
+    } catch (error: unknown) {
       if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
         console.error(
           '[formatResponse] Error converting content to string:',

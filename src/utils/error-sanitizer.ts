@@ -400,7 +400,7 @@ export function withErrorSanitization<
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       const sanitized = createSanitizedError(error, undefined, options);
       const sanitizedError = new Error(sanitized.message);
       sanitizedError.name = 'SanitizedError';

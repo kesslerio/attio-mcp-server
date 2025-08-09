@@ -72,7 +72,7 @@ describe('Universal Tools Performance Tests', () => {
         await Promise.all(cleanupPromises);
         
         console.log('Performance test cleanup completed successfully');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Performance test cleanup failed:', error);
       }
     }

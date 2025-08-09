@@ -4,6 +4,7 @@
 import { Company } from '../../types/attio.js';
 import { getCompanyDetails, extractCompanyId } from './basic.js';
 import { listCompanies } from './basic.js';
+import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -23,9 +24,7 @@ function logAttributeError(
       error instanceof Error ? error.constructor.name : typeof error
     }`
   );
-  console.error(
-    `- Message: ${error instanceof Error ? error.message : String(error)}`
-  );
+  console.error(`- Message: ${getErrorMessage(error)}`);
 
   if (error instanceof Error && error.stack) {
     console.error(`- Stack trace: ${error.stack}`);
@@ -94,11 +93,8 @@ export async function getCompanyFields(
     }
 
     return result;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Could not retrieve company fields: ${error.message}`);
-    }
-    throw error;
+  } catch (error: unknown) {
+    throw wrapError(error, 'Could not retrieve company fields');
   }
 }
 
@@ -449,7 +445,7 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Use consistent error logging pattern
     logAttributeError('discoverCompanyAttributes', error, {
       operation: 'attribute discovery',
@@ -523,7 +519,7 @@ export async function getCompanyAttributes(
         company: fullCompany.values?.name?.[0]?.value || companyId,
       };
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Use consistent error logging pattern
     logAttributeError('getCompanyAttributes', error, {
       companyId,

@@ -102,7 +102,7 @@ export class ConfigLoader {
         const configContent = readFileSync(localConfigPath, 'utf8');
         config = JSON.parse(configContent);
         console.log('Loaded E2E configuration from config.local.json');
-      } catch (error) {
+      } catch (error: unknown) {
         throw new Error(`Failed to parse config.local.json: ${error}`);
       }
     } else {

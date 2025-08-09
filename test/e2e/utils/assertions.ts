@@ -244,7 +244,7 @@ export class E2EAssertions {
         }
         
         return parsedData;
-      } catch (error) {
+      } catch (error: unknown) {
         // If not JSON, return text directly
         return dataContent.text;
       }
@@ -580,7 +580,7 @@ export class E2EAssertions {
     notes.forEach((note, index) => {
       try {
         this.expectValidNoteStructure(note);
-      } catch (error) {
+      } catch (error: unknown) {
         throw new Error(`Note ${index} validation failed: ${error.message}`);
       }
     });

@@ -107,7 +107,7 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(
       `[createObjectWithDynamicFields:${objectType}] Error creating record:`,
       error instanceof Error ? error.message : String(error)

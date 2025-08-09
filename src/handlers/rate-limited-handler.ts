@@ -70,7 +70,7 @@ export function withRateLimiting<T extends any[]>(
     try {
       // Call original handler
       return await handler(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       // Format error for API response
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -149,7 +149,7 @@ export function withSearchRateLimiting<T extends any[]>(
     try {
       // Call original handler
       return await handler(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       // Format error for API response
       const errorMessage =
         error instanceof FilterValidationError

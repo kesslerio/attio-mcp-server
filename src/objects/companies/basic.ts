@@ -28,7 +28,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
-  } catch (error) {
+  } catch (error: unknown) {
     // Fallback implementation
     const api = getAttioClient();
     const path = '/objects/companies/records/query';
@@ -200,7 +200,7 @@ export async function getCompanyDetails(
         }
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Catch any errors in the URI parsing logic
     if (error instanceof Error && error.message.includes('match')) {
       throw new Error(
@@ -252,7 +252,7 @@ export async function createCompany(
     }
     
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[createCompany] Error caught:', error);
     }
@@ -295,7 +295,7 @@ export async function updateCompany(
       attributes,
       CompanyValidator.validateUpdate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
@@ -398,7 +398,7 @@ export async function updateCompanyAttribute(
       processedValue,
       updateCompany
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       error instanceof InvalidCompanyDataError ||
       error instanceof CompanyOperationError
@@ -435,7 +435,7 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
       companyId,
       CompanyValidator.validateDelete
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }

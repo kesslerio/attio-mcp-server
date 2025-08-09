@@ -293,7 +293,7 @@ export class PerformanceTracker {
       const result = await fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       this.endOperation(
         toolName,
         startTime,
@@ -319,7 +319,7 @@ export class PerformanceTracker {
       const result = fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       this.endOperation(
         toolName,
         startTime,
@@ -395,7 +395,7 @@ export function trackPerformance(toolName?: string) {
         const result = await originalMethod.apply(this, args);
         PerformanceTracker.endOperation(name, startTime, true);
         return result;
-      } catch (error) {
+      } catch (error: unknown) {
         PerformanceTracker.endOperation(
           name,
           startTime,

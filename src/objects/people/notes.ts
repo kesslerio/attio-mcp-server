@@ -28,7 +28,7 @@ export async function getPersonNotes(
     }
 
     return await getObjectNotes(ResourceType.PEOPLE, personId, limit, offset);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -71,7 +71,7 @@ export async function createPersonNote(
       title,
       content
     );
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(

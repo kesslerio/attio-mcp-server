@@ -62,7 +62,7 @@ export async function handleBatchUpdateOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/batch`,
@@ -111,7 +111,7 @@ export async function handleBatchCreateOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/batch`,
@@ -160,7 +160,7 @@ export async function handleBatchDeleteOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/batch`,
@@ -206,7 +206,7 @@ export async function handleBatchSearchOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/batch/search`,
@@ -255,7 +255,7 @@ export async function handleBatchGetDetailsOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/${resourceType}/batch/details`,

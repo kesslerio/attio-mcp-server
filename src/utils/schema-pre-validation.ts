@@ -100,7 +100,7 @@ export class SchemaPreValidator {
             if (attributes.length === 0) {
               attributes = this.getDefaultCompanyAttributes();
             }
-          } catch (error) {
+          } catch (error: unknown) {
             // Fallback to defaults on error
             attributes = this.getDefaultCompanyAttributes();
           }
@@ -134,7 +134,7 @@ export class SchemaPreValidator {
       });
 
       return attributes;
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn(`Failed to fetch attributes for ${resourceType}:`, error);
       // Return default attributes on error
       return this.getDefaultAttributes();

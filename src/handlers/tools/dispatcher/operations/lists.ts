@@ -22,7 +22,7 @@ export async function handleGetListsOperation(
     const formattedResult = toolConfig.formatResult!(lists);
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       '/lists',
@@ -85,7 +85,7 @@ export async function handleAddRecordToListOperation(
       : `Successfully added record ${recordId} to list ${listId}`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/records`,
@@ -130,7 +130,7 @@ export async function handleRemoveRecordFromListOperation(
       : `Successfully removed entry ${entryId} from list ${listId}`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries/${entryId}`,
@@ -185,7 +185,7 @@ export async function handleUpdateListEntryOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries/${entryId}`,
@@ -281,7 +281,7 @@ export async function handleFilterListEntriesByParentOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,
@@ -335,7 +335,7 @@ export async function handleFilterListEntriesByParentIdOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,
@@ -370,7 +370,7 @@ export async function handleGetListDetailsOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}`,
@@ -408,7 +408,7 @@ export async function handleGetListEntriesOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,
@@ -482,7 +482,7 @@ export async function handleFilterListEntriesOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,
@@ -529,7 +529,7 @@ export async function handleAdvancedFilterListEntriesOperation(
       : result;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/lists/${listId}/entries`,

@@ -133,7 +133,7 @@ export function transformFiltersToApiFormat(
       }
       return {};
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Check if this is a FilterValidationError
     if (error instanceof FilterValidationError) {
       // For condition validation errors when validateConditions is true, re-throw

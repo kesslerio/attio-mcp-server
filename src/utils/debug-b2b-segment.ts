@@ -17,10 +17,10 @@ console.log = (...args: unknown[]) => {
   if (
     typeof firstArg === 'string' &&
     (firstArg.includes('b2b_segment') ||
-    firstArg.includes('type_persona') ||
-    firstArg.includes('[translateAttributeNamesInFilters]') ||
-    firstArg.includes('[transformFiltersToApiFormat]') ||
-    firstArg.includes('[advancedSearchObject]'))
+      firstArg.includes('type_persona') ||
+      firstArg.includes('[translateAttributeNamesInFilters]') ||
+      firstArg.includes('[transformFiltersToApiFormat]') ||
+      firstArg.includes('[advancedSearchObject]'))
   ) {
     originalConsoleLog(`[DEBUG] ${new Date().toISOString()}:`, ...args);
   }
@@ -29,9 +29,9 @@ console.log = (...args: unknown[]) => {
 console.error = (...args: unknown[]) => {
   const firstArg = args[0];
   if (
-    typeof firstArg === 'string' &&
-    (firstArg.includes('b2b_segment') ||
-    firstArg.includes('type_persona')) ||
+    (typeof firstArg === 'string' &&
+      (firstArg.includes('b2b_segment') ||
+        firstArg.includes('type_persona'))) ||
     JSON.stringify(args).includes('b2b_segment') ||
     JSON.stringify(args).includes('type_persona')
   ) {
@@ -69,11 +69,11 @@ async function debugB2BSegmentMapping() {
     try {
       const results = await advancedSearchCompanies(translatedFilters);
       console.log('[TEST] Search succeeded! Results:', results.length);
-    } catch(error: unknown) {
+    } catch (error: unknown) {
       console.error('[TEST] Search failed:', (error as any).message);
       console.error('[TEST] Full error:', error);
     }
-  } catch(error: unknown) {
+  } catch (error: unknown) {
     console.error('[TEST] Debug script error:', error);
   } finally {
     // Restore original console

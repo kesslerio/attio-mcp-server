@@ -19,7 +19,7 @@ const log = {
   warn: (_msg: string) => {
     /* Silent for MCP protocol compatibility */
   },
-  error: (_msg: string, _error?: any) => {
+  error: (_msg: string, _error?: unknown) => {
     /* Silent for MCP protocol compatibility */
   },
 };
@@ -60,7 +60,7 @@ export async function runDiscovery(
     let config: MappingConfig;
     try {
       config = loadMappingConfig();
-    } catch (error) {
+    } catch (error: unknown) {
       log.warn('Failed to load existing configuration, creating new one...');
       config = {
         version: '1.0',
@@ -104,7 +104,7 @@ export async function runDiscovery(
 
           log.info(`Discovered ${attributeCount} attributes for ${objectSlug}`);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         log.error(`Error discovering attributes for ${objectSlug}:`, error);
       }
     }
@@ -120,7 +120,7 @@ export async function runDiscovery(
     // Write the updated config
     await writeMappingConfig(config, outputPath || DEFAULT_CONFIG.outputPath);
     log.info('Automatic attribute discovery completed successfully');
-  } catch (error) {
+  } catch (error: unknown) {
     log.error('Failed to complete automatic discovery:', error);
     throw error;
   }
@@ -144,7 +144,7 @@ export async function startAutoDiscovery(
   if (settings.runOnStartup) {
     try {
       await runDiscovery(apiKey, settings.outputPath);
-    } catch (error) {
+    } catch (error: unknown) {
       log.error('Failed to run discovery on startup:', error);
       // Don't fail the server startup, just log the error
     }
@@ -158,7 +158,7 @@ export async function startAutoDiscovery(
       log.info('Running scheduled attribute discovery...');
       try {
         await runDiscovery(apiKey, settings.outputPath);
-      } catch (error) {
+      } catch (error: unknown) {
         log.error('Failed to run scheduled discovery:', error);
       }
     }, intervalMs);
