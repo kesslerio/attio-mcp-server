@@ -19,7 +19,7 @@ export const relationshipToolConfigs = {
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies with matching people:\n${results
         .map(
-          (company) =>
+          (company: any) =>
             `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
@@ -36,7 +36,7 @@ export const relationshipToolConfigs = {
         results.length
       } companies with employees in the list:\n${results
         .map(
-          (company) =>
+          (company: any) =>
             `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
@@ -51,7 +51,7 @@ export const relationshipToolConfigs = {
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies with matching notes:\n${results
         .map(
-          (company) =>
+          (company: any) =>
             `- ${company.values?.name?.[0]?.value || 'Unnamed'} (ID: ${
               company.id?.record_id || 'unknown'
             })`
@@ -66,7 +66,7 @@ export const relationshipToolConfigs = {
     formatResult: (results: AttioList[]) => {
       return `Company belongs to ${results.length} lists:\n${results
         .map(
-          (list) =>
+          (list: any) =>
             `- ${list.name || list.title} (ID: ${
               list.id?.list_id || list.id || 'unknown'
             })`

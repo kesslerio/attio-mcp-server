@@ -1,5 +1,0 @@
-
-> attio-mcp@0.2.0 lint:check
-> wireit
-
-✅ Ran 0 scripts and skipped 1 in 0.1s.

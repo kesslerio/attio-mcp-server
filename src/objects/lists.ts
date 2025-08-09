@@ -373,7 +373,7 @@ export async function addRecordToList(
       if (error.response?.status === 400) {
         const validationErrors = error.response?.data?.validation_errors || [];
         const errorDetails = validationErrors
-          .map((e: unknown) => `${e.path.join('.')}: ${e.message}`)
+          .map((e: any) => `${e.path.join('.')}: ${e.message}`)
           .join('; ');
 
         throw new Error(
@@ -704,7 +704,7 @@ export async function getRecordListMemberships(
     // Log error for debugging
     if (process.env.NODE_ENV === 'development') {
       console.error(
-        `[getRecordListMemberships] Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `[getRecordListMemberships] Error: ${error.message || 'Unknown error'}`
       );
     }
     throw error;
@@ -738,7 +738,7 @@ export async function filterListEntries(
   listId: string,
   attributeSlug: string,
   condition: string,
-  value: unknown,
+  value: any,
   limit: number = 20,
   offset: number = 0
 ): Promise<AttioListEntry[]> {
@@ -850,7 +850,7 @@ export async function filterListEntriesByParent(
   parentObjectType: string,
   parentAttributeSlug: string,
   condition: string,
-  value: unknown,
+  value: any,
   limit: number = 20,
   offset: number = 0
 ): Promise<AttioListEntry[]> {
@@ -928,27 +928,25 @@ export async function filterListEntriesByParent(
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[filterListEntriesByParent] Error filtering list entries: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          error.message || 'Unknown error'
         }`
       );
 
-      if (error instanceof Error && 'response' in error) {
-        const axiosError = error as unknown;
-        console.error('Status:', axiosError.response?.status);
+      if (error.response) {
+        console.error('Status:', error.response.status);
         console.error(
           'Response data:',
-          JSON.stringify(axiosError.response?.data || {})
+          JSON.stringify(error.response.data || {})
         );
       }
     }
 
     // Add context to error message
-    const axiosError = error as unknown;
-    if (axiosError.response?.status === 400) {
+    if (error.response?.status === 400) {
       throw new Error(
-        `Invalid filter parameters: ${error instanceof Error ? error.message : 'Bad request'}`
+        `Invalid filter parameters: ${error.message || 'Bad request'}`
       );
-    } else if (axiosError.response?.status === 404) {
+    } else if (error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
     }
 

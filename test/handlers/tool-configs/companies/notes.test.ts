@@ -12,7 +12,7 @@ function mockNotesFormatter(notes: any[]) {
   }
 
   return `Found ${notes.length} notes:\n${notes
-    .map((note: unknown) => {
+    .map((note: any) => {
       // Handle different possible field structures from the API
       const title =
         note.title || note.data?.title || note.values?.title || 'Untitled';

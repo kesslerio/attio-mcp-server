@@ -64,7 +64,7 @@ describe('Date Utils', () => {
     });
 
     it('should validate relative date inputs', () => {
-      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
+      const invalidCases: Array<{ input: any; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'RelativeDate object is required',
@@ -148,7 +148,7 @@ describe('Date Utils', () => {
     });
 
     it('should validate preset inputs', () => {
-      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
+      const invalidCases: Array<{ input: any; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'must be a non-empty string',
@@ -262,7 +262,7 @@ describe('Date Utils', () => {
     });
 
     it('should validate date ranges', () => {
-      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
+      const invalidCases: Array<{ input: any; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'DateRange object is required',

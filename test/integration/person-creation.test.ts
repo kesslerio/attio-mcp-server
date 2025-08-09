@@ -81,7 +81,7 @@ vi.mock('../../src/api/attribute-types.js', async () => {
 });
 
 describe('Person Creation Integration', () => {
-  let mockAxiosInstance: unknown;
+  let mockAxiosInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();

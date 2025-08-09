@@ -45,7 +45,7 @@ export function validateAttributes(
  */
 export function validateResourceId(
   resourceType: ResourceType,
-  args: unknown,
+  args: any,
   apiPath: string
 ): string | { error: ReturnType<typeof createErrorResult> } {
   const idParamName =

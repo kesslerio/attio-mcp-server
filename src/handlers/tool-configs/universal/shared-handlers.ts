@@ -203,7 +203,7 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
     
     // Create mapping from title to api_slug for compatibility
     const mappings: Record<string, string> = {};
-    attributes.forEach((attr) => {
+    attributes.forEach((attr: any) => {
       if (attr.title && attr.api_slug) {
         mappings[attr.title] = attr.api_slug;
       }
@@ -295,7 +295,7 @@ async function discoverTaskAttributes(): Promise<any> {
 
   // Create mapping from title to api_slug for compatibility
   const mappings: Record<string, string> = {};
-  attributes.forEach((attr) => {
+  attributes.forEach((attr: any) => {
     if (attr.title && attr.api_slug) {
       mappings[attr.title] = attr.api_slug;
     }
@@ -587,14 +587,14 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
 /**
  * Filter attributes by category
  */
-function filterAttributesByCategory(attributes: unknown, requestedCategories?: string[]): any {
+function filterAttributesByCategory(attributes: any, requestedCategories?: string[]): any {
   if (!requestedCategories || requestedCategories.length === 0) {
     return attributes; // Return all attributes if no categories specified
   }
   
   // Handle array of attributes
   if (Array.isArray(attributes)) {
-    return attributes.filter((attr) => {
+    return attributes.filter((attr: any) => {
       // Check various possible category field names
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
@@ -603,7 +603,7 @@ function filterAttributesByCategory(attributes: unknown, requestedCategories?: s
   
   // Handle attributes response with data array
   if (attributes && typeof attributes === 'object' && attributes.data && Array.isArray(attributes.data)) {
-    const filteredData = attributes.data.filter((attr) => {
+    const filteredData = attributes.data.filter((attr: any) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
@@ -617,7 +617,7 @@ function filterAttributesByCategory(attributes: unknown, requestedCategories?: s
   
   // Handle attributes response with attributes array
   if (attributes && typeof attributes === 'object' && attributes.attributes && Array.isArray(attributes.attributes)) {
-    const filteredAttributes = attributes.attributes.filter((attr) => {
+    const filteredAttributes = attributes.attributes.filter((attr: any) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
@@ -635,7 +635,7 @@ function filterAttributesByCategory(attributes: unknown, requestedCategories?: s
 /**
  * Filter response fields to only include requested fields
  */
-function filterResponseFields(data: unknown, requestedFields?: string[]): any {
+function filterResponseFields(data: any, requestedFields?: string[]): any {
   if (!requestedFields || requestedFields.length === 0) {
     return data; // Return full data if no fields specified
   }
@@ -643,7 +643,7 @@ function filterResponseFields(data: unknown, requestedFields?: string[]): any {
   // Handle AttioRecord structure with id, values, created_at, updated_at
   if (data && typeof data === 'object' && data.id && data.values) {
     // Always preserve core AttioRecord structure
-    const filtered: unknown = {
+    const filtered: any = {
       id: data.id,
       created_at: data.created_at,
       updated_at: data.updated_at,
@@ -662,7 +662,7 @@ function filterResponseFields(data: unknown, requestedFields?: string[]): any {
   
   // Handle simple object structure
   if (data && typeof data === 'object') {
-    const filtered: unknown = {};
+    const filtered: any = {};
     for (const field of requestedFields) {
       if (field in data) {
         filtered[field] = data[field];
@@ -1255,7 +1255,7 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
 export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<any> {
   const { resource_type, record_id, categories } = params;
   
-  let result: unknown;
+  let result: any;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
@@ -1417,7 +1417,7 @@ export function isValidResourceType(resourceType: string): resourceType is Unive
 /**
  * Validate email addresses in record data for consistent validation across create/update
  */
-function validateEmailAddresses(recordData: unknown, resourceType: string): void {
+function validateEmailAddresses(recordData: any, resourceType: string): void {
   if (!recordData || typeof recordData !== 'object') return;
   
   // Handle various email field formats
@@ -1462,7 +1462,7 @@ function validateEmailAddresses(recordData: unknown, resourceType: string): void
 /**
  * Enhanced error handling utility for universal operations
  */
-export function createUniversalError(operation: string, resourceType: string, originalError: unknown): Error {
+export function createUniversalError(operation: string, resourceType: string, originalError: any): Error {
   // If it's already a UniversalValidationError or EnhancedApiError, pass it through
   if (originalError instanceof UniversalValidationError || originalError instanceof EnhancedApiError) {
     return originalError;
@@ -1497,7 +1497,7 @@ export function createUniversalError(operation: string, resourceType: string, or
 /**
  * Get helpful suggestions based on the operation and error
  */
-function getOperationSuggestion(operation: string, resourceType: string, error: unknown): string | undefined {
+function getOperationSuggestion(operation: string, resourceType: string, error: any): string | undefined {
   const errorMessage = error?.message?.toLowerCase() || '';
   
   // First check if this is an invalid resource type

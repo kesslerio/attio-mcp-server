@@ -40,7 +40,7 @@ export interface NormalizedPeopleData {
     email_address: string;
     email_type?: string;
   }>;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 /**
@@ -50,7 +50,7 @@ export class PeopleDataNormalizer {
   /**
    * Normalize name input to standard format
    */
-  static normalizeName(input: unknown): { first_name?: string; last_name?: string; full_name?: string } | undefined {
+  static normalizeName(input: any): { first_name?: string; last_name?: string; full_name?: string } | undefined {
     if (!input) return undefined;
     
     // Handle string input
@@ -137,7 +137,7 @@ export class PeopleDataNormalizer {
   /**
    * Normalize email input to standard format
    */
-  static normalizeEmails(input: unknown): Array<{ email_address: string; email_type?: string }> | undefined {
+  static normalizeEmails(input: any): Array<{ email_address: string; email_type?: string }> | undefined {
     if (!input) return undefined;
     
     const emails: Array<{ email_address: string; email_type?: string }> = [];
@@ -240,7 +240,7 @@ export class PeopleDataNormalizer {
   /**
    * Normalize phone number input
    */
-  static normalizePhones(input: unknown): Array<{ phone_number: string; phone_type?: string }> | undefined {
+  static normalizePhones(input: any): Array<{ phone_number: string; phone_type?: string }> | undefined {
     if (!input) return undefined;
     
     const phones: Array<{ phone_number: string; phone_type?: string }> = [];
@@ -328,7 +328,7 @@ export class PeopleDataNormalizer {
   /**
    * Normalize complete people record data
    */
-  static normalizePeopleData(data: unknown): NormalizedPeopleData {
+  static normalizePeopleData(data: any): NormalizedPeopleData {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return {};
     }
@@ -388,7 +388,7 @@ export class PeopleDataNormalizer {
   /**
    * Check if data needs people normalization
    */
-  static needsNormalization(data: unknown): boolean {
+  static needsNormalization(data: any): boolean {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return false;
     }

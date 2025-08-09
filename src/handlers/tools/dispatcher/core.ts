@@ -445,7 +445,7 @@ export async function executeToolRequest(request: CallToolRequest) {
 // Placeholder functions that need to be implemented (missing from main branch)
 async function handleInfoOperation(
   request: CallToolRequest,
-  toolConfig: unknown,
+  toolConfig: any,
   resourceType: ResourceType
 ) {
   // This should be moved to an appropriate operations module
@@ -470,7 +470,7 @@ async function handleInfoOperation(
 
 async function handleFieldsOperation(
   request: CallToolRequest,
-  toolConfig: unknown,
+  toolConfig: any,
   resourceType: ResourceType
 ) {
   // This should be moved to an appropriate operations module
@@ -496,7 +496,7 @@ async function handleFieldsOperation(
 
 async function handleGetAttributesOperation(
   request: CallToolRequest,
-  toolConfig: unknown,
+  toolConfig: any,
   resourceType: ResourceType
 ) {
   // This should be moved to an appropriate operations module
@@ -522,7 +522,7 @@ async function handleGetAttributesOperation(
 
 async function handleDiscoverAttributesOperation(
   request: CallToolRequest,
-  toolConfig: unknown,
+  toolConfig: any,
   _resourceType: ResourceType
 ) {
   // This should be moved to an appropriate operations module

@@ -11,7 +11,7 @@ import { getAttributeSlug } from './attribute-mappers.js';
  * @returns A new filters object with attribute names translated to slugs where applicable
  */
 export function translateAttributeNamesInFilters(
-  filters: unknown,
+  filters: any,
   objectType?: string
 ): any {
   // Handle null, undefined, or non-object filters
@@ -49,14 +49,14 @@ export function translateAttributeNamesInFilters(
 /**
  * Checks if an object is a direct filter with attribute.slug
  */
-function isDirectFilterObject(filter: unknown): boolean {
+function isDirectFilterObject(filter: any): boolean {
   return filter.attribute && filter.attribute.slug;
 }
 
 /**
  * Translates a direct filter object
  */
-function translateDirectFilter(filter: unknown, objectType?: string): any {
+function translateDirectFilter(filter: any, objectType?: string): any {
   // Determine the object type to use for translation
   // Priority: filter's own objectType > parent objectType
   const typeToUse = filter.objectType || objectType;
@@ -74,14 +74,14 @@ function translateDirectFilter(filter: unknown, objectType?: string): any {
 /**
  * Checks if an object has nested filters
  */
-function hasNestedFilters(filter: unknown): boolean {
+function hasNestedFilters(filter: any): boolean {
   return filter.filters && Array.isArray(filter.filters);
 }
 
 /**
  * Translates nested filters
  */
-function translateNestedFilters(filters: any[], objectType?: string): any[] {
+function translateNestedFilters(filters: unknown[], objectType?: string): unknown[] {
   return filters.map((filter: any) => {
     if (isDirectFilterObject(filter)) {
       // Determine the object type to use for this specific filter
@@ -97,7 +97,7 @@ function translateNestedFilters(filters: any[], objectType?: string): any[] {
 /**
  * Translates remaining properties in the filter object
  */
-function translateRemainingProperties(filter: unknown, objectType?: string): any {
+function translateRemainingProperties(filter: any, objectType?: string): any {
   for (const key of Object.keys(filter)) {
     if (typeof filter[key] === 'object' && filter[key] !== null) {
       // Special handling for object-specific sections
@@ -115,7 +115,7 @@ function translateRemainingProperties(filter: unknown, objectType?: string): any
  */
 function determineObjectTypeContext(
   key: string,
-  filter: unknown,
+  filter: any,
   parentObjectType?: string
 ): string | undefined {
   // If this key is an object type (companies, people), use it as the type context

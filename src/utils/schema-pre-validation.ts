@@ -144,12 +144,12 @@ export class SchemaPreValidator {
   /**
    * Normalize attributes from API response
    */
-  private static normalizeAttributes(apiResponse: unknown): AttributeMetadata[] {
+  private static normalizeAttributes(apiResponse: any): AttributeMetadata[] {
     if (!apiResponse || !Array.isArray(apiResponse)) {
       return [];
     }
 
-    return apiResponse.map((attr: unknown) => ({
+    return apiResponse.map((attr: any) => ({
       id: attr.id || attr.slug,
       slug: attr.slug || attr.id,
       name: attr.name || attr.title || attr.slug,
@@ -565,7 +565,7 @@ export class SchemaPreValidator {
    */
   private static validateFieldType(
     field: string,
-    value: unknown,
+    value: any,
     attr: AttributeMetadata
   ): string | null {
     if (value === null || value === undefined) {

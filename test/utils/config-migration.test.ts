@@ -311,7 +311,7 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: unknown;
+      let writtenConfig: any;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);
@@ -427,7 +427,7 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: unknown;
+      let writtenConfig: any;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);
@@ -529,7 +529,7 @@ describe('Config Migration Utility', () => {
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.copyFileSync.mockImplementation(() => {});
 
-      let writtenConfig: unknown;
+      let writtenConfig: any;
       mockFs.writeFileSync.mockImplementation((path, data) => {
         if (path === TEST_CONFIG_PATH) {
           writtenConfig = JSON.parse(data as string);

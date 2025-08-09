@@ -56,7 +56,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-task-details',
     universalToolName: 'get-record-details',
     resourceType: 'tasks',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'tasks',
       record_id: params.task_id || params.record_id
     }),
@@ -66,11 +66,11 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'update-task',
     universalToolName: 'update-record',
     resourceType: 'tasks',
-    parameterTransform: (params: unknown) => {
-      const { task_id, taskId, record_id, ...recordData } = params;
+    parameterTransform: (params: any) => {
+      const { task_id, record_id, ...recordData } = params;
       return {
         resource_type: 'tasks',
-        record_id: task_id || taskId || record_id,
+        record_id: task_id || record_id,
         record_data: recordData
       };
     },
@@ -80,9 +80,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'delete-task',
     universalToolName: 'delete-record',
     resourceType: 'tasks',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'tasks',
-      record_id: params.task_id || params.taskId || params.record_id
+      record_id: params.task_id || params.record_id
     }),
     description: 'Legacy delete-task → universal delete-record'
   },
@@ -92,7 +92,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-company',
     universalToolName: 'create-record',
     resourceType: 'companies',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'companies',
       record_data: params
     }),
@@ -102,7 +102,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'search-companies',
     universalToolName: 'search-records',
     resourceType: 'companies',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'companies',
       query: params.query || '',
       limit: params.limit || 50,
@@ -114,7 +114,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-company-details',
     universalToolName: 'get-record-details',
     resourceType: 'companies',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'companies',
       record_id: params.company_id || params.record_id
     }),
@@ -124,7 +124,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'update-company',
     universalToolName: 'update-record',
     resourceType: 'companies',
-    parameterTransform: (params: unknown) => {
+    parameterTransform: (params: any) => {
       const { company_id, record_id, ...recordData } = params;
       return {
         resource_type: 'companies',
@@ -140,7 +140,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-person',
     universalToolName: 'create-record',
     resourceType: 'people',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'people',
       record_data: params
     }),
@@ -150,7 +150,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'search-people',
     universalToolName: 'search-records',
     resourceType: 'people',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'people',
       query: params.query || '',
       limit: params.limit || 50,
@@ -162,7 +162,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-person-details',
     universalToolName: 'get-record-details',
     resourceType: 'people',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'people',
       record_id: params.person_id || params.record_id
     }),
@@ -174,7 +174,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-company-notes',
     universalToolName: 'search-by-content',
     resourceType: 'records', // Notes are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'companies',
       content_type: 'notes',
       query: '', // Required parameter - empty string to get all notes
@@ -187,7 +187,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-person-notes',
     universalToolName: 'search-by-content',
     resourceType: 'records', // Notes are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'people',
       content_type: 'notes',
       query: '', // Required parameter - empty string to get all notes
@@ -200,7 +200,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-company-note',
     universalToolName: 'create-record',
     resourceType: 'records', // Notes are handled as records
-    parameterTransform: (params: unknown) => {
+    parameterTransform: (params: any) => {
       // Notes are typically created as a special record type or attribute
       // This might need adjustment based on actual Attio API structure
       return {
@@ -218,7 +218,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-person-note',
     universalToolName: 'create-record',
     resourceType: 'records', // Notes are handled as records
-    parameterTransform: (params: unknown) => {
+    parameterTransform: (params: any) => {
       return {
         resource_type: 'records', // Notes are records
         record_data: {
@@ -236,7 +236,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-lists',
     universalToolName: 'search-records',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
       query: params.query || '',
       limit: params.limit || 50,
@@ -248,7 +248,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'create-list',
     universalToolName: 'create-record',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
       record_data: params
     }),
@@ -258,7 +258,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-list-details',
     universalToolName: 'get-record-details',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
       record_id: params.list_id || params.record_id
     }),
@@ -268,7 +268,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'get-list-entries',
     universalToolName: 'search-by-relationship',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       relationship_type: 'list_entries',
       source_id: params.list_id,
       target_resource_type: 'records',
@@ -280,7 +280,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'add-record-to-list',
     universalToolName: 'update-record',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
       record_id: params.list_id,
       record_data: {
@@ -296,7 +296,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'remove-record-from-list',
     universalToolName: 'update-record',
     resourceType: 'records', // Lists are handled as records
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records', // Lists are records
       record_id: params.list_id,
       record_data: {
@@ -311,7 +311,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'update-list-entry',
     universalToolName: 'update-record',
     resourceType: 'records',
-    parameterTransform: (params: unknown) => {
+    parameterTransform: (params: any) => {
       const { entry_id, record_id, list_id, ...updateData } = params;
       return {
         resource_type: 'records',
@@ -325,7 +325,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'filter-list-entries',
     universalToolName: 'advanced-search',
     resourceType: 'records',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
         list_membership: params.list_id,
@@ -341,7 +341,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'advanced-filter-list-entries',
     universalToolName: 'advanced-search',
     resourceType: 'records',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
         list_membership: params.list_id,
@@ -360,7 +360,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     legacyToolName: 'link-record-to-task',
     universalToolName: 'update-record',
     resourceType: 'tasks',
-    parameterTransform: (params: unknown) => ({
+    parameterTransform: (params: any) => ({
       resource_type: 'tasks',
       record_id: params.task_id,
       record_data: {
@@ -389,7 +389,7 @@ export function findMappingRule(legacyToolName: string): ToolMappingRule | undef
 export function transformToolCall(
   legacyToolName: string, 
   legacyParams: any
-): { toolName: string; params: unknown; resourceType: string } | null {
+): { toolName: string; params: any; resourceType: string } | null {
   const rule = findMappingRule(legacyToolName);
   
   if (!rule) {

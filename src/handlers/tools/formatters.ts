@@ -22,7 +22,7 @@ import {
 function getAttributeValue(
   record:
     | {
-        values?: Record<string, any> | undefined;
+        values?: Record<string, unknown> | undefined;
         [key: string]: any;
       }
     | undefined,
@@ -92,10 +92,10 @@ export function formatRecordDetails(record: AttioRecord): string {
     return 'No record found.';
   }
 
-  const attributes = record.attributes || ({} as Record<string, any>);
+  const attributes = record.attributes || ({} as Record<string, unknown>);
   const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
-      const value = (attr as any).value || 'N/A';
+      const value = (attr as unknown).value || 'N/A';
       return `${key}: ${value}`;
     })
     .join('\n');

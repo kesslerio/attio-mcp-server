@@ -10,9 +10,9 @@ export interface TestCompanyData {
     industry?: [{ value: string }];
     categories?: [{ value: string }];
     website?: [{ value: string }];
-    [key: string]: unknown;
+    [key: string]: any;
   };
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface TestPersonData {
@@ -21,16 +21,16 @@ export interface TestPersonData {
     name?: [{ value: string }];
     email_addresses?: [{ value: string }];
     company?: [{ record_id: string }];
-    [key: string]: unknown;
+    [key: string]: any;
   };
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface TestListData {
   id?: { list_id: string };
   name?: string;
   parent_object?: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 /**
@@ -71,7 +71,7 @@ export class CompanyFactory {
     );
   }
 
-  private static mergeDeep(target: unknown, source: unknown): any {
+  private static mergeDeep(target: any, source: any): any {
     const result = { ...target };
     for (const key in source) {
       if (
@@ -125,7 +125,7 @@ export class PersonFactory {
     );
   }
 
-  private static mergeDeep(target: unknown, source: unknown): any {
+  private static mergeDeep(target: any, source: any): any {
     const result = { ...target };
     for (const key in source) {
       if (
@@ -178,7 +178,7 @@ export class ListFactory {
  * Factory for creating mock API responses
  */
 export class ApiResponseFactory {
-  static createSuccess<T>(data: T, metadata: unknown = {}): { data: { data: T } } {
+  static createSuccess<T>(data: T, metadata: any = {}): { data: { data: T } } {
     return {
       data: {
         data,
@@ -230,18 +230,18 @@ export class MockRequestFactory {
     };
   }
 
-  static createSearchRequest(query: string, filters: unknown = {}) {
+  static createSearchRequest(query: string, filters: any = {}) {
     return this.createToolRequest('smart-search-companies', {
       query,
       ...filters,
     });
   }
 
-  static createCreateRequest(objectType: string, attributes: unknown) {
+  static createCreateRequest(objectType: string, attributes: any) {
     return this.createToolRequest(`create-${objectType}`, attributes);
   }
 
-  static createUpdateRequest(objectType: string, id: string, attributes: unknown) {
+  static createUpdateRequest(objectType: string, id: string, attributes: any) {
     return this.createToolRequest(`update-${objectType}`, {
       [`${objectType}_id`]: id,
       ...attributes,

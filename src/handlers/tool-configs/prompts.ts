@@ -14,16 +14,16 @@ export const promptsToolConfigs = {
   listPrompts: {
     name: 'list-prompts',
     handler: listPrompts,
-    formatResult: (results: Record<string, unknown>) => {
+    formatResult: (results: any) => {
       return `Available prompts:\n${results.data
-        .map((prompt) => `- ${prompt.title} (ID: ${prompt.id})`)
+        .map((prompt: any) => `- ${prompt.title} (ID: ${prompt.id})`)
         .join('\n')}`;
     },
   } as PromptsToolConfig,
   listPromptCategories: {
     name: 'list-prompt-categories',
     handler: listPromptCategories,
-    formatResult: (results: Record<string, unknown>) => {
+    formatResult: (results: any) => {
       return `Available prompt categories:\n${results.data
         .map((category: string) => `- ${category}`)
         .join('\n')}`;

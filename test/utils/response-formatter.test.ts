@@ -53,7 +53,7 @@ describe('response-formatter', () => {
     });
 
     it('should handle empty list', () => {
-      const items: any[] = [];
+      const items: unknown[] = [];
       const formatter = (item: any) => `${item.name}`;
       const result = formatListResponse('Empty List', items, formatter);
 

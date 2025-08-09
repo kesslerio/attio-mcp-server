@@ -67,8 +67,8 @@ describe('Batch Company Operations - Integration', () => {
 
       // Store created companies for later use
       createdCompanies = createResult.results
-        .filter((r: unknown) => r.success)
-        .map((r: unknown) => ({
+        .filter((r: any) => r.success)
+        .map((r: any) => ({
           id: r.data.id?.record_id,
           name: r.data.values?.name?.[0]?.value,
         }));
@@ -118,7 +118,7 @@ describe('Batch Company Operations - Integration', () => {
       expect(updateResult.summary.failed).toBe(0);
 
       // Verify each company was updated successfully
-      updateResult.results.forEach((result: unknown) => {
+      updateResult.results.forEach((result: any) => {
         expect(result.success).toBe(true);
         expect(result.data.values?.industry?.[0]?.value).toBe(
           'Updated Batch Industry'

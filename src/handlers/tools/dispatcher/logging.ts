@@ -114,7 +114,7 @@ export function logToolRequest(
 export function logToolSuccess(
   toolName: string,
   toolType: string,
-  result: unknown,
+  result: any,
   timer: PerformanceTimer
 ): void {
   const logger = createToolLogger(toolName, toolType);

@@ -318,7 +318,7 @@ async function getAvailableDealStages(): Promise<string[]> {
 
     // Find the stage attribute
     const stageAttribute = attributes.find(
-      (attr: unknown) => attr.api_slug === 'stage'
+      (attr: any) => attr.api_slug === 'stage'
     );
 
     if (!stageAttribute) {

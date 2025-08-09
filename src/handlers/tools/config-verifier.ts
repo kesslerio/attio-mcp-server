@@ -16,7 +16,7 @@
  */
 export function verifyToolConfigsWithRequiredTools(
   resourceName: string,
-  combinedConfigs: unknown,
+  combinedConfigs: any,
   requiredToolTypes: string[]
 ): boolean {
   const debugMode =
@@ -127,9 +127,9 @@ export function verifyToolConfigsWithRequiredTools(
  */
 export function verifySpecificTool(
   resourceName: string,
-  configs: unknown,
+  configs: any,
   toolType: string,
-  subConfigs: unknown = null
+  subConfigs: any = null
 ): boolean {
   const debugMode =
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';

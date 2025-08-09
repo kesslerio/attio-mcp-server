@@ -183,7 +183,7 @@ export function getPaginationParams(
  * @returns Standardized paginated response
  */
 export function processCursorPagination<T extends AttioRecord>(
-  apiResponse: unknown,
+  apiResponse: any,
   records: T[],
   page: number = 1,
   pageSize: number = 20,

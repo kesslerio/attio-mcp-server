@@ -15,7 +15,7 @@ import {
 
 interface ErrorExample {
   description: string;
-  example: unknown;
+  example: any;
   tip?: string;
 }
 
@@ -28,7 +28,7 @@ export function getErrorExamples(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: unknown;
+    actualValue?: any;
     path?: string;
   }
 ): ErrorExample[] {
@@ -146,7 +146,7 @@ export function enhanceErrorMessage(
     toolName?: string;
     paramName?: string;
     expectedType?: string;
-    actualValue?: unknown;
+    actualValue?: any;
     path?: string;
     fieldName?: string;
     validFields?: string[];

@@ -67,7 +67,7 @@ async function cleanupTestCompanies() {
 
     const companies = response.data.data || [];
     const testCompanies = companies.filter(
-      (company: unknown) =>
+      (company: any) =>
         company.values.name &&
         Array.isArray(company.values.name) &&
         company.values.name[0] &&

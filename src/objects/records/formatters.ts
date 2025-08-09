@@ -10,7 +10,7 @@ import { RecordAttributes } from '../../types/attio.js';
  * @param value - Attribute value to format
  * @returns Properly formatted attribute value for the API
  */
-export function formatRecordAttribute(key: string, value: unknown): any {
+export function formatRecordAttribute(key: string, value: any): any {
   if (value === null || value === undefined) {
     return value;
   }

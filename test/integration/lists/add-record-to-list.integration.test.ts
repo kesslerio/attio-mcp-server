@@ -142,11 +142,11 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
@@ -196,11 +196,11 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
@@ -258,11 +258,11 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };

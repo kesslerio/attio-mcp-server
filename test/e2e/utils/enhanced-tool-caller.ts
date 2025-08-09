@@ -330,7 +330,7 @@ export function getToolMigrationStats(): any {
 export async function validateTestEnvironment(): Promise<{
   valid: boolean;
   warnings: string[];
-  stats: unknown;
+  stats: any;
   apiKeyStatus: { available: boolean; message?: string };
 }> {
   const warnings: string[] = [];

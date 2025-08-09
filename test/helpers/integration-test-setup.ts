@@ -268,7 +268,7 @@ export function generateTestData(timestamp: number) {
  * Enhanced error handling for integration tests
  */
 export function expectIntegrationError(
-  error: unknown,
+  error: any,
   expectedPatterns: string[] = []
 ) {
   // Check if it's our enhanced UniversalValidationError

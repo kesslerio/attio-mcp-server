@@ -19,7 +19,7 @@ export const searchToolConfigs = {
     handler: searchCompanies,
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies:\n${results
-        .map((company) => {
+        .map((company: any) => {
           const name = company.values?.name?.[0]?.value || 'Unnamed';
           const website = company.values?.website?.[0]?.value || '';
           const id = company.id?.record_id || 'unknown';
@@ -34,7 +34,7 @@ export const searchToolConfigs = {
     handler: searchCompaniesByDomain,
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies by domain:\n${results
-        .map((company) => {
+        .map((company: any) => {
           const name = company.values?.name?.[0]?.value || 'Unnamed';
           const website = company.values?.website?.[0]?.value || '';
           const id = company.id?.record_id || 'unknown';
@@ -51,7 +51,7 @@ export const searchToolConfigs = {
       return `Found ${
         results.length
       } companies matching advanced search:\n${results
-        .map((company) => {
+        .map((company: any) => {
           const name = company.values?.name?.[0]?.value || 'Unnamed';
           const website = company.values?.website?.[0]?.value || '';
           const id = company.id?.record_id || 'unknown';

@@ -19,7 +19,7 @@ const log = {
   warn: (_msg: string) => {
     /* Silent for MCP protocol compatibility */
   },
-  error: (_msg: string, _error?: unknown) => {
+  error: (_msg: string, _error?: any) => {
     /* Silent for MCP protocol compatibility */
   },
 };
