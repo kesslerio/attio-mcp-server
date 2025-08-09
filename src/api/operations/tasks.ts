@@ -73,23 +73,19 @@ export async function createTask(
   const api = getAttioClient();
   const path = '/tasks';
   
-  // Build task data with all required fields
-  const taskData: Record<string, unknown> = { 
+  // Build task data according to TaskCreateData interface
+  const taskData: TaskCreateData = { 
     content,
-    format: 'plaintext',  // Required field for Attio API
-    is_completed: false,  // Default to not completed for new tasks
-    linked_records: [],   // Default to empty array
-    assignees: [],        // Default to empty array
-    deadline_at: null     // Must be explicitly null if not provided
+    format: 'plaintext'  // Required field for Attio API
   };
   
   // Add optional fields only if provided
   if (options.assigneeId) {
-    taskData.assignees = [{ id: options.assigneeId, type: 'workspace-member' }];
+    taskData.assignee = { id: options.assigneeId, type: 'workspace-member' };
   }
   
   if (options.dueDate) {
-    taskData.deadline_at = options.dueDate;  // Override null with actual date
+    taskData.deadline_at = options.dueDate;
   }
   
   // Add linked records if provided
@@ -97,9 +93,16 @@ export async function createTask(
     taskData.linked_records = [{ id: options.recordId }];
   }
   
-  // Wrap in 'data' field as required by Attio API
+  // Build the full request payload with all required fields for the API
+  // The API requires these fields to be present even if empty
   const requestPayload = {
-    data: taskData
+    data: {
+      ...taskData,
+      is_completed: false,  // Always false for new tasks
+      assignees: taskData.assignee ? [taskData.assignee] : [],  // Convert to array format
+      linked_records: taskData.linked_records || [],
+      deadline_at: taskData.deadline_at || null  // Explicitly null if not provided
+    }
   };
   
   return callWithRetry(async () => {
@@ -112,11 +115,17 @@ export async function createTask(
     
     let res;
     try {
-      console.log('[createTask] About to call api.post');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createTask] About to call api.post');
+      }
       res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
-      console.log('[createTask] api.post returned:', res);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[createTask] api.post returned:', res);
+      }
     } catch (err) {
-      console.error('[createTask] api.post threw error:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[createTask] api.post threw error:', err);
+      }
       throw err;
     }
     
