@@ -50,7 +50,8 @@ export function mapOperatorForField(
   }
 
   // Check if there's a mapping for this operator
-  return specialHandling[operator] || operator;
+  const mapped = specialHandling[operator];
+  return typeof mapped === 'string' ? mapped : operator;
 }
 
 /**

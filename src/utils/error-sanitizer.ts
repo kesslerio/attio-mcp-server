@@ -402,11 +402,15 @@ export function withErrorSanitization<
       return await fn(...args);
     } catch (error) {
       const sanitized = createSanitizedError(error, undefined, options);
-      const sanitizedError = new Error(sanitized.message);
+      const sanitizedError = new Error(sanitized.message) as Error & {
+        statusCode?: number;
+        type?: string;
+        safeMetadata?: Record<string, unknown>;
+      };
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as unknown).statusCode = sanitized.statusCode;
-      (sanitizedError as unknown).type = sanitized.type;
-      (sanitizedError as unknown).safeMetadata = sanitized.safeMetadata;
+      sanitizedError.statusCode = sanitized.statusCode;
+      sanitizedError.type = sanitized.type;
+      sanitizedError.safeMetadata = sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;

@@ -13,21 +13,25 @@ const originalConsoleError = console.error;
 
 // Enable logging temporarily
 console.log = (...args: unknown[]) => {
+  const firstArg = args[0];
   if (
-    args[0]?.includes?.('b2b_segment') ||
-    args[0]?.includes?.('type_persona') ||
-    args[0]?.includes?.('[translateAttributeNamesInFilters]') ||
-    args[0]?.includes?.('[transformFiltersToApiFormat]') ||
-    args[0]?.includes?.('[advancedSearchObject]')
+    typeof firstArg === 'string' &&
+    (firstArg.includes('b2b_segment') ||
+    firstArg.includes('type_persona') ||
+    firstArg.includes('[translateAttributeNamesInFilters]') ||
+    firstArg.includes('[transformFiltersToApiFormat]') ||
+    firstArg.includes('[advancedSearchObject]'))
   ) {
     originalConsoleLog(`[DEBUG] ${new Date().toISOString()}:`, ...args);
   }
 };
 
 console.error = (...args: unknown[]) => {
+  const firstArg = args[0];
   if (
-    args[0]?.includes?.('b2b_segment') ||
-    args[0]?.includes?.('type_persona') ||
+    typeof firstArg === 'string' &&
+    (firstArg.includes('b2b_segment') ||
+    firstArg.includes('type_persona')) ||
     JSON.stringify(args).includes('b2b_segment') ||
     JSON.stringify(args).includes('type_persona')
   ) {
