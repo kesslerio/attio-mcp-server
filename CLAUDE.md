@@ -163,6 +163,7 @@ RULE: Runtime validation only | WHEN: Either/or parameters needed | DO: Validate
 ## GITHUB WORKFLOW
 RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
 RULE: Never target hmk repo | WHEN: PR creation | DO: Verify target is kesslerio | ELSE: Upstream pollution
+RULE: Never mention @hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc @hmk" or any @hmk mention | ELSE: Unwanted notifications
 RULE: Config consistency | WHEN: Any config file | DO: Use kesslerio URLs only | ELSE: Fork misconfiguration
 
 ## GIT COMMIT PIPELINE [ENFORCED] ⚠️ CRITICAL
@@ -222,6 +223,7 @@ CHECKLIST:
 
 ## ISSUE CREATION
 RULE: Create before coding | WHEN: Starting new work | DO: Create issue first | ELSE: Lack of tracking
+RULE: No @hmk mentions | WHEN: Issue/PR body or comments | DO: NEVER write "cc @hmk" or mention @hmk | ELSE: Unwanted notifications - CRITICAL VIOLATION
 SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp__clear-thought-server__mentalmodel | ELSE: Incomplete analysis
