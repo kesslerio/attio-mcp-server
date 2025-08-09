@@ -181,7 +181,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Mark API call start
    */
-  markApiStart(): number {
+  markApiStart(_operationId: string): number {
     return performance.now();
   }
 

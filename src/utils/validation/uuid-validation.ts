@@ -53,7 +53,7 @@ export interface UUIDValidationResult {
   suggestion?: string;
 }
 
-export function validateUUIDWithDetails(uuid: string): UUIDValidationResult {
+export function validateUUIDWithDetails(uuid: string, _options?: { resourceType?: string; operation?: string }): UUIDValidationResult {
   if (!uuid || typeof uuid !== 'string') {
     return {
       isValid: false,

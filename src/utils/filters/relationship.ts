@@ -41,7 +41,8 @@ import {
  */
 export function applyRateLimit(
   req: any,
-  relationshipType: string
+  relationshipType: string,
+  _isPrecheck?: boolean
 ): void {
   // Check the rate limit
   // TODO: Restore when checkRelationshipQueryRateLimit is available
