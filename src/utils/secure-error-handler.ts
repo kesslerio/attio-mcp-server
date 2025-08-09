@@ -95,7 +95,7 @@ export function withSecureErrorHandling<
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch(error: unknown) {
+    } catch (error: unknown) {
       // Log the full error internally
       logError(
         context.module,
@@ -107,7 +107,8 @@ export function withSecureErrorHandling<
       );
 
       // Determine status code
-      const statusCode = (error as any)?.statusCode || (error as any)?.response?.status || 500;
+      const statusCode =
+        (error as any)?.statusCode || (error as any)?.response?.status || 500;
 
       // Determine error type
       let errorType = 'internal_error';
@@ -276,7 +277,7 @@ export async function retryWithSecureErrors<T>(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
-    } catch(error: unknown) {
+    } catch (error: unknown) {
       lastError = error;
 
       // Check if we should retry
@@ -368,7 +369,7 @@ export class SecureCircuitBreaker {
       this.failures = 0;
 
       return result;
-    } catch(error: unknown) {
+    } catch (error: unknown) {
       this.failures++;
       this.lastFailureTime = Date.now();
 
