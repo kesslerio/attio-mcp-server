@@ -40,7 +40,7 @@ export function extractDomain(input: string): string | null {
     if (isValidDomain(hostname)) {
       return normalizeDomain(hostname);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Not a valid URL, continue with other checks
   }
 

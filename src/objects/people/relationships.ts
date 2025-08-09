@@ -49,7 +49,7 @@ export async function searchPeopleByCompany(
     );
 
     return response.data.data || [];
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -108,7 +108,7 @@ export async function searchPeopleByCompanyList(
     );
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -140,7 +140,7 @@ export async function searchPeopleByNotes(
     );
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(

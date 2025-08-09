@@ -333,7 +333,7 @@ class E2ELogger {
     
     try {
       appendFileSync(logFile, logLine);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to write log entry:', error);
     }
 

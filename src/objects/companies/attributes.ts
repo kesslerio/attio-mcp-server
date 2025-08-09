@@ -94,7 +94,7 @@ export async function getCompanyFields(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error) {
       throw new Error(`Could not retrieve company fields: ${error.message}`);
     }
@@ -449,7 +449,7 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Use consistent error logging pattern
     logAttributeError('discoverCompanyAttributes', error, {
       operation: 'attribute discovery',
@@ -523,7 +523,7 @@ export async function getCompanyAttributes(
         company: fullCompany.values?.name?.[0]?.value || companyId,
       };
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Use consistent error logging pattern
     logAttributeError('getCompanyAttributes', error, {
       companyId,

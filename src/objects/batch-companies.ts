@@ -90,7 +90,7 @@ async function executeBatchCompanyOperation<T, R>(
         failed: records.length - results.length,
       },
     };
-  } catch (error) {
+  } catch (error: unknown) {
     // Log the error for debugging
     console.error(
       `[batchCompany${
@@ -188,7 +188,7 @@ export async function batchCreateCompanies(params: {
           return await CompanyValidator.validateCreate(
             company as Record<string, CompanyFieldValue>
           );
-        } catch (error) {
+        } catch (error: unknown) {
           // Log validation error but allow operation to continue for individual handling
           console.warn(
             `Validation failed for company at index ${index}:`,
@@ -207,7 +207,7 @@ export async function batchCreateCompanies(params: {
       createCompany,
       batchConfig
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('validation')) {
       // Re-throw validation errors with more context
       throw new Error(`Company validation failed: ${error.message}`);
@@ -301,7 +301,7 @@ export async function batchUpdateCompanies(params: {
       (params) => updateCompany(params.id, params.attributes),
       batchConfig
     );
-  } catch (error) {
+  } catch (error: unknown) {
     // Enhanced error handling with more context
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
@@ -451,7 +451,7 @@ export async function batchCompanyOperations(
             success: true,
             data: result,
           };
-        } catch (error) {
+        } catch (error: unknown) {
           failed++;
 
           if (!config.continueOnError) {

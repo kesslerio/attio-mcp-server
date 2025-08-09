@@ -66,7 +66,7 @@ export class IntegrationTestBase {
       try {
         await initializeAttioClient();
         console.log('API client initialized for integration tests');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to initialize API client:', error);
         throw error;
       }
@@ -82,7 +82,7 @@ export class IntegrationTestBase {
         try {
           await client.delete(`/objects/${obj.type}/records/${obj.id}`);
           console.log(`Cleaned up ${obj.type}:${obj.id}`);
-        } catch (error) {
+        } catch (error: unknown) {
           // Ignore cleanup errors (object might already be deleted)
           console.warn(`Failed to cleanup ${obj.type}:${obj.id}:`, error);
         }
@@ -159,7 +159,7 @@ export class IntegrationTestBase {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         return await operation();
-      } catch (error) {
+      } catch (error: unknown) {
         lastError = error as Error;
 
         if (attempt === maxAttempts) {
@@ -201,7 +201,7 @@ export class IntegrationTestMocks {
       IntegrationTestBase.trackForCleanup('companies', companyId);
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create test company:', error);
       throw error;
     }
@@ -228,7 +228,7 @@ export class IntegrationTestMocks {
       IntegrationTestBase.trackForCleanup('people', personId);
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create test person:', error);
       throw error;
     }
@@ -260,7 +260,7 @@ export class IntegrationTestMocks {
       IntegrationTestBase.trackForCleanup('notes', noteId);
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create test note:', error);
       throw error;
     }

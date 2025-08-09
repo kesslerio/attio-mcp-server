@@ -501,7 +501,7 @@ export async function withLogging<T>(
       duration
     );
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = timer.end();
     operationFailure(
       module,

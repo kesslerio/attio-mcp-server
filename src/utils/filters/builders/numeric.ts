@@ -57,7 +57,7 @@ export function createNumericFilter(
     }
 
     return { filters, matchAny: false };
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create numeric filter: ${message}`

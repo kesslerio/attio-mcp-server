@@ -260,7 +260,7 @@ export function resolveDateRange(dateRange: DateRange): {
       // Otherwise use the standard preset resolution
       const presetRange = createDateRangeFromPreset(dateRange.preset);
       return presetRange;
-    } catch (error) {
+    } catch (error: unknown) {
       // Throw a more descriptive error
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -294,7 +294,7 @@ export function resolveDateRange(dateRange: DateRange): {
         // Relative date object
         result.start = resolveRelativeDate(dateRange.start);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to resolve start date: ${errorMessage}`);
@@ -327,7 +327,7 @@ export function resolveDateRange(dateRange: DateRange): {
         // Relative date object
         result.end = resolveRelativeDate(dateRange.end);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to resolve end date: ${errorMessage}`);

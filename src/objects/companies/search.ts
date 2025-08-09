@@ -71,7 +71,7 @@ export async function searchCompaniesByDomain(domain: string): Promise<Company[]
       },
     });
     return response?.data?.data || [];
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Domain search failed for "${normalizedDomain}":`, error);
     return [];
   }

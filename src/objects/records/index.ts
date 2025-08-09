@@ -81,7 +81,7 @@ export async function createObjectRecord<T extends AttioRecord>(
     }
     
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[createObjectRecord] Primary createRecord failed, trying fallback:', error);
     }
@@ -150,7 +150,7 @@ export async function getObjectRecord<T extends AttioRecord>(
   try {
     // Use the core API function
     return await getRecord<T>(objectSlug, recordId, attributes, objectId);
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -200,7 +200,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
       recordId,
       attributes,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -240,7 +240,7 @@ export async function deleteObjectRecord(
   try {
     // Use the core API function
     return await deleteRecord(objectSlug, recordId, objectId);
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -281,7 +281,7 @@ export async function listObjectRecords<T extends AttioRecord>(
       objectId,
       ...options,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -373,7 +373,7 @@ export async function batchCreateObjectRecords<T extends AttioRecord>(
         failed: records.length - createdRecords.length,
       },
     };
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -461,7 +461,7 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
         failed: records.length - updatedRecords.length,
       },
     };
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;

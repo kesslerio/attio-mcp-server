@@ -214,7 +214,7 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
       mappings: mappings,
       count: attributes.length
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Failed to discover attributes for ${resourceType}:`, error);
     // Instead of throwing error, return empty structure for graceful handling
     return {
@@ -325,7 +325,7 @@ async function getAttributesForRecord(resourceType: UniversalResourceType, recor
   try {
     const response = await client.get(`/objects/${resourceType}/records/${recordId}`);
     return response?.data?.data?.values || {};
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Failed to get attributes for ${resourceType} record ${recordId}:`, error);
     throw new Error(`Failed to get record attributes: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -506,7 +506,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
                 console.warn(`⚠️  TASKS API WARNING: listTasks() returned non-array value:`, typeof tasks);
                 tasks = [];
               }
-            } catch (error) {
+            } catch (error: unknown) {
               console.error(`Failed to load tasks from API:`, error);
               tasks = []; // Fallback to empty array
             }
@@ -578,7 +578,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
       throw apiError;
     }
     
-  } catch (error) {
+  } catch (error: unknown) {
     // Error already handled and tracked
     throw error;
   }
@@ -791,7 +791,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       throw enhancedError;
     }
     
-  } catch (error) {
+  } catch (error: unknown) {
     // Error already handled and tracked
     throw error;
   }

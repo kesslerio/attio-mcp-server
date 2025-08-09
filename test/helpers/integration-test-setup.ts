@@ -99,7 +99,7 @@ class TestDataTracker {
             break;
           // Add other record types as needed
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn(`Failed to cleanup ${record.type} ${record.id}:`, error);
       }
     }
@@ -211,7 +211,7 @@ export function setupIntegrationTests(
       if (verbose) {
         console.log('✅ API client initialized successfully');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error(
         `Failed to initialize API client: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -228,7 +228,7 @@ export function setupIntegrationTests(
       if (verbose) {
         console.log('✅ Test cleanup completed');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Test cleanup failed:', error);
     }
   });

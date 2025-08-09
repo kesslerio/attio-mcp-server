@@ -43,7 +43,7 @@ async function callUniversalTool(
     
     const response = await executeToolRequest(request);
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Tool ${toolName} failed with params:`, params);
     throw error;
   }
@@ -145,7 +145,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
                           record.type === 'task' ? 'tasks' : 'records',
             record_id: record.id
           });
-        } catch (error) {
+        } catch (error: unknown) {
           console.warn(`Failed to cleanup ${record.type}:${record.id}:`, error);
         }
       }
@@ -363,7 +363,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
           E2EAssertions.expectMcpSuccess(deleteResponse);
           expect(deleteResponse.content[0].text).toContain('successfully deleted');
-        } catch (error) {
+        } catch (error: unknown) {
           // If record creation fails due to ID extraction issues, skip this test
           console.log('⏭️ Skipping delete test - record creation failed:', error);
           return;

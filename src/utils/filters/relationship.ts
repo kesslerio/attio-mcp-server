@@ -148,7 +148,7 @@ export function createPeopleByCompanyFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
@@ -210,7 +210,7 @@ export function createCompaniesByPeopleFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
@@ -289,7 +289,7 @@ export function createRecordsByListFilter(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
@@ -380,7 +380,7 @@ export function createPeopleByCompanyListFilter(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
@@ -462,7 +462,7 @@ export function createCompaniesByPeopleListFilter(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;
@@ -519,7 +519,7 @@ export function createRecordsByNotesFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Re-throw if it's already a rate limit error
     if (error instanceof RelationshipRateLimitError) {
       throw error;

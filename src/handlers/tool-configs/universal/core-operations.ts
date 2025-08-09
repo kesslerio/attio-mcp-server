@@ -56,7 +56,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('search-records', params);
       return await handleUniversalSearch(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('search', params.resource_type, error);
     }
   },
@@ -109,7 +109,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('get-record-details', params);
       return await handleUniversalGetDetails(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('get details', params.resource_type, error);
     }
   },
@@ -228,7 +228,7 @@ export const createRecordConfig: UniversalToolConfig = {
       }
       
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error('[createRecordConfig:handler] Error:', error);
       }
@@ -268,7 +268,7 @@ export const updateRecordConfig: UniversalToolConfig = {
       );
       
       return await handleUniversalUpdate(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('update', params.resource_type, error);
     }
   },
@@ -297,7 +297,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('delete-record', params);
       return await handleUniversalDelete(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('delete', params.resource_type, error);
     }
   },
@@ -321,7 +321,7 @@ export const getAttributesConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('get-attributes', params);
       return await handleUniversalGetAttributes(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('get attributes', params.resource_type, error);
     }
   },
@@ -363,7 +363,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('discover-attributes', params);
       return await handleUniversalDiscoverAttributes(sanitizedParams.resource_type);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('discover attributes', params.resource_type, error);
     }
   },
@@ -399,7 +399,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
     try {
       const sanitizedParams = validateUniversalToolParams('get-detailed-info', params);
       return await handleUniversalGetDetailedInfo(sanitizedParams);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('get detailed info', params.resource_type, error);
     }
   },

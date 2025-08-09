@@ -75,7 +75,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         console.log(`✅ Created test person: ${testPersonId}`);
       }
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('⚠️  Test data setup had issues:', error);
     }
     

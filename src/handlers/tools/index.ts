@@ -156,7 +156,7 @@ export function registerToolHandlers(server: Server): void {
         request as CallToolRequest | LooseCallToolRequest
       );
       return await executeToolRequest(normalizedRequest);
-    } catch (error) {
+    } catch (error: unknown) {
       // Handle normalization errors
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown normalization error';

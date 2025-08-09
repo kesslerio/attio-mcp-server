@@ -117,7 +117,7 @@ export function safeJsonStringify(
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // Enhanced error context
     const duration = performance.now() - startTime;
     console.error(
@@ -163,7 +163,7 @@ export function validateJsonString(jsonString: string): {
       data,
       size,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       isValid: false,
       error: error instanceof Error ? error.message : String(error),
@@ -229,7 +229,7 @@ export function createSafeCopy(
 
     // Parse it back to create the safe copy
     return JSON.parse(jsonString);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(
       '[createSafeCopy] Failed to create safe copy:',
       error instanceof Error ? error.message : String(error)
@@ -277,7 +277,7 @@ export function sanitizeMcpResponse(response: any): any {
       maxStringLength: 40000, // 40KB for response content - reasonable limit
       includeStackTraces: process.env.NODE_ENV === 'development',
     });
-  } catch (error) {
+  } catch (error: unknown) {
     // Provide a valid fallback response if sanitization fails
     return {
       content: [

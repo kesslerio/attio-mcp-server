@@ -56,7 +56,7 @@ export async function paginatedSearchPeople(
     // advancedSearchPeople now returns a PaginatedResponse
     // So we can use its data directly
     return results;
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -102,7 +102,7 @@ export async function paginatedSearchPeopleByCreationDate(
       validPage,
       validPageSize
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -147,7 +147,7 @@ export async function paginatedSearchPeopleByModificationDate(
       validPage,
       validPageSize
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -215,7 +215,7 @@ export async function paginatedSearchPeopleByLastInteraction(
       validPage,
       validPageSize
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -260,7 +260,7 @@ export async function paginatedSearchPeopleByActivity(
       validPage,
       validPageSize
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }

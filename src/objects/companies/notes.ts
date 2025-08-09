@@ -123,7 +123,7 @@ export async function getCompanyNotes(
         );
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Catch any errors in the URI parsing logic
     if (error instanceof Error && error.message.includes('match')) {
       throw new Error(
@@ -258,7 +258,7 @@ export async function createCompanyNote(
         );
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Catch any errors in the URI parsing logic
     if (error instanceof Error && error.message.includes('match')) {
       throw new Error(

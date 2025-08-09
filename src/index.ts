@@ -23,7 +23,7 @@ function readPidFile(): number | null {
       const pid = parseInt(fs.readFileSync(PID_FILE_PATH, 'utf-8'), 10);
       return isNaN(pid) ? null : pid;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('[PID] Error reading PID file:', error); // Changed to console.warn
   }
   return null;
@@ -33,7 +33,7 @@ function readPidFile(): number | null {
 function writePidFile(pid: number): void {
   try {
     fs.writeFileSync(PID_FILE_PATH, pid.toString(), 'utf-8');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[PID] Error writing PID file:', error); // Changed to console.error
   }
 }
@@ -44,7 +44,7 @@ function deletePidFile(): void {
     if (fs.existsSync(PID_FILE_PATH)) {
       fs.unlinkSync(PID_FILE_PATH);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('[PID] Error deleting PID file:', error); // Changed to console.warn
   }
 }
@@ -54,7 +54,7 @@ function isProcessRunning(pid: number): boolean {
   try {
     process.kill(pid, 0); // Sending signal 0 tests if process exists
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     return false; // Typically ESRCH (no such process) or EPERM (permission denied, but still exists)
   }
 }
@@ -194,7 +194,7 @@ async function main() {
       process.on('SIGINT', cleanup);
       process.on('SIGTERM', cleanup);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[Main] Error starting server:', error); // Changed to console.error
     deletePidFile(); // Ensure PID file is deleted on error
     process.exit(1);

@@ -101,7 +101,7 @@ export function detectMigrationNeeds(): MigrationDetection {
         );
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // If we can't parse the file, we can't migrate it
     logger.warn(
       'config-migration',
@@ -157,7 +157,7 @@ export function createBackup(): {
     fs.copyFileSync(CONFIG_PATHS.user, backupPath);
 
     return { success: true, backupPath };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
@@ -260,7 +260,7 @@ export function applyMigration(): MigrationResult {
       backupPath: backup.backupPath,
       changesApplied,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       success: false,
       message: `Migration failed: ${

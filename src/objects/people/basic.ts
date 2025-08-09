@@ -39,7 +39,7 @@ export async function createPerson(
       attributes,
       PersonValidator.validateCreate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }
@@ -76,7 +76,7 @@ export async function updatePerson(
       attributes,
       PersonValidator.validateUpdate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }
@@ -125,7 +125,7 @@ export async function updatePersonAttribute(
       attributeValue,
       updatePerson
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       error instanceof InvalidPersonDataError ||
       error instanceof PersonOperationError
@@ -160,7 +160,7 @@ export async function deletePerson(personId: string): Promise<boolean> {
       personId,
       PersonValidator.validateDelete
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }
@@ -189,7 +189,7 @@ export async function getPersonDetails(personId: string): Promise<Person> {
     }
 
     return (await getObjectDetails(ResourceType.PEOPLE, personId)) as Person;
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(
       `Failed to get person details: ${
         error instanceof Error ? error.message : String(error)
@@ -216,7 +216,7 @@ export async function listPeople(limit: number = 20): Promise<Person[]> {
   try {
     const response = await listObjects<Person>(ResourceType.PEOPLE, limit);
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(
       `Failed to list people: ${
         error instanceof Error ? error.message : String(error)

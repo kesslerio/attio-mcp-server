@@ -65,7 +65,7 @@ export async function searchPeople(query: string): Promise<Person[]> {
     });
 
     return response.data.data || [];
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -94,7 +94,7 @@ export async function searchPeopleByQuery(query: string): Promise<Person[]> {
     const response = await searchObject<Person>(ResourceType.PEOPLE, query);
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -123,7 +123,7 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
     const response = await searchObject<Person>(ResourceType.PEOPLE, email);
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -148,7 +148,7 @@ export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
     const response = await searchObject<Person>(ResourceType.PEOPLE, phone);
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to search people by phone: ${errorMessage}`);
   }
@@ -187,7 +187,7 @@ export async function advancedSearchPeople(
         if (validatedLimit < 0 || validatedLimit > 500) {
           throw new FilterValidationError('limit must be between 0 and 500');
         }
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof FilterValidationError) {
           throw error;
         }
@@ -201,7 +201,7 @@ export async function advancedSearchPeople(
         if (validatedOffset < 0) {
           throw new FilterValidationError('offset cannot be negative');
         }
-      } catch (error) {
+      } catch (error: unknown) {
         if (error instanceof FilterValidationError) {
           throw error;
         }
@@ -226,7 +226,7 @@ export async function advancedSearchPeople(
     const page = Math.floor(offset / limit) + 1;
 
     return createPaginatedResponse(response, response.length, page, limit);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -250,7 +250,7 @@ export async function searchPeopleByCreationDate(
 ): Promise<Person[]> {
   try {
     validateDateRange(dateRange);
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -274,7 +274,7 @@ export async function searchPeopleByModificationDate(
 ): Promise<Person[]> {
   try {
     validateDateRange(dateRange);
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof FilterValidationError) {
       throw error;
     }
@@ -301,7 +301,7 @@ export async function searchPeopleByLastInteraction(
   try {
     try {
       validateDateRange(dateRange);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof FilterValidationError) {
         throw error;
       }
@@ -312,7 +312,7 @@ export async function searchPeopleByLastInteraction(
     const response = await advancedSearchPeople(filters);
 
     return response.results;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
@@ -337,7 +337,7 @@ export async function searchPeopleByActivity(
   try {
     try {
       validateActivityFilter(activityFilter);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof FilterValidationError) {
         throw error;
       }
@@ -348,7 +348,7 @@ export async function searchPeopleByActivity(
     const response = await advancedSearchPeople(filters);
 
     return response.results;
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(

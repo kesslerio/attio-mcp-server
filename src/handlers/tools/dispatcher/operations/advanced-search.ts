@@ -91,7 +91,7 @@ export async function handleAdvancedSearch(
     const formattedResults = toolConfig.formatResult(results);
 
     return formatResponse(formattedResults);
-  } catch (error) {
+  } catch (error: unknown) {
     // If it's a specific validation error, preserve the detailed message
     if (
       error instanceof Error &&

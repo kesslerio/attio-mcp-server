@@ -41,7 +41,7 @@ export async function handleDetailsOperation(
         );
       }
       id = uriId;
-    } catch (error) {
+    } catch (error: unknown) {
       return createErrorResult(
         error instanceof Error ? error : new Error('Invalid URI format'),
         uri,
@@ -67,7 +67,7 @@ export async function handleDetailsOperation(
     const formattedResult = toolConfig.formatResult!(record);
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       uri,

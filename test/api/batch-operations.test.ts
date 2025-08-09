@@ -154,7 +154,7 @@ describe('Batch Operations', () => {
               data,
             });
             succeeded++;
-          } catch (error) {
+          } catch (error: unknown) {
             results.push({
               id: operation.id,
               success: false,
@@ -245,7 +245,7 @@ describe('Batch Operations', () => {
               data,
             });
             succeeded++;
-          } catch (error) {
+          } catch (error: unknown) {
             results.push({
               id: operation.id,
               success: false,
@@ -370,7 +370,7 @@ describe('Batch Operations', () => {
               data: result,
             });
             succeeded++;
-          } catch (error) {
+          } catch (error: unknown) {
             results.push({
               id: `search_${objectType}_${i}`,
               success: false,

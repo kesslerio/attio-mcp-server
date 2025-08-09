@@ -522,7 +522,7 @@ export function withValidation<T extends (...args: any[]) => any>(
 
       // Call the original handler
       return await handler(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       // If it's already a validation error, re-throw
       if (error instanceof UniversalValidationError) {
         throw error;

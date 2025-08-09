@@ -107,7 +107,7 @@ export async function callWithRetry<T>(
   while (attempt <= retryConfig.maxRetries) {
     try {
       return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
       lastError = error;
 
       // Check if we should retry

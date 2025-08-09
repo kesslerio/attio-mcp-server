@@ -70,7 +70,7 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('search-records', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
@@ -84,7 +84,7 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('create-record', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('record_data');
@@ -103,7 +103,7 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('batch-operations', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('records');
@@ -139,7 +139,7 @@ describe('Enhanced Universal Error Handling', () => {
         try {
           validateUniversalToolParams('search-records', { resource_type: testCase.input });
           expect.fail(`Should have thrown validation error for ${testCase.input}`);
-        } catch (error) {
+        } catch (error: unknown) {
           expect(error).toBeInstanceOf(UniversalValidationError);
           const validationError = error as UniversalValidationError;
           expect(validationError.suggestion).toContain(testCase.expected);
@@ -181,7 +181,7 @@ describe('Cross-Resource Validation', () => {
           recordData
         );
         expect.fail('Should have thrown validation error for non-existent company');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('company_id');

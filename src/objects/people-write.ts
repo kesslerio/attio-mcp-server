@@ -78,7 +78,7 @@ export async function searchPeopleByEmails(
     }
 
     return results;
-  } catch (error) {
+  } catch (error: unknown) {
     // Fallback to individual searches if batch query fails
     console.warn(
       '[batchEmailValidation] Batch query failed, falling back to individual searches:',
@@ -254,7 +254,7 @@ export async function createPerson(
       attributes,
       PersonValidator.validateCreate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }
@@ -298,7 +298,7 @@ export async function updatePerson(
       attributes,
       PersonValidator.validateUpdate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }
@@ -340,7 +340,7 @@ export async function updatePersonAttribute(
       attributeValue,
       updatePerson
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       error instanceof InvalidPersonDataError ||
       error instanceof PersonOperationError
@@ -370,7 +370,7 @@ export async function deletePerson(personId: string): Promise<boolean> {
       personId,
       PersonValidator.validateDelete
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;
     }

@@ -315,7 +315,7 @@ export enum FilterErrorCategory {
  *       FilterErrorCategory.CONDITION
  *     );
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof FilterValidationError) {
  *     // Handle filter validation error based on category
  *     if (error.category === FilterErrorCategory.CONDITION) {
@@ -357,7 +357,7 @@ export class FilterValidationError extends Error {
  *       'companies'
  *     );
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof RelationshipFilterError) {
  *     // Handle relationship filter error
  *     console.log(`Relationship error between ${error.sourceType} and ${error.targetType}`);
@@ -398,7 +398,7 @@ export class RelationshipFilterError extends FilterValidationError {
  *   if (!isValidListId(listId)) {
  *     throw new ListRelationshipError(`Invalid list ID: ${listId}`, 'people', listId);
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof ListRelationshipError) {
  *     // Handle list relationship error
  *   }

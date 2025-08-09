@@ -65,7 +65,7 @@ describe('Universal Tools Integration Tests', () => {
           record_id: createdPersonId
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Cleanup failed:', error);
     }
   });
@@ -102,7 +102,7 @@ describe('Universal Tools Integration Tests', () => {
           expect(result.values.name[0].value).toBe(testCompanyName);
 
           createdCompanyId = result.id.record_id;
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Test error:', error);
           console.error('Error type:', error?.constructor?.name);
           console.error('Error message:', error?.message);
@@ -377,7 +377,7 @@ describe('Universal Tools Integration Tests', () => {
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
-        } catch (error) {
+        } catch (error: unknown) {
           // This might fail if no relationships exist, which is expected
           console.log('No relationships found (expected for new test data)');
         }
@@ -407,7 +407,7 @@ describe('Universal Tools Integration Tests', () => {
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
-        } catch (error) {
+        } catch (error: unknown) {
           // Expected if no notes exist
           console.log('No content found in notes (expected for new test data)');
         }

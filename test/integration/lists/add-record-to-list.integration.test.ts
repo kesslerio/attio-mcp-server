@@ -95,7 +95,7 @@ describe('Add Record To List Integration', () => {
       const api = getAttioClient();
       await api.delete(`/lists/${TEST_LIST_ID}/entries/${createdEntryId}`);
       console.log(`Cleaned up test entry ${createdEntryId}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error during cleanup:', error);
     }
   });

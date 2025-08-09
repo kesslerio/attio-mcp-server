@@ -46,7 +46,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           expect.fail(
             `Should have thrown error for invalid UUID: ${invalidUUID}`
           );
-        } catch (error) {
+        } catch (error: unknown) {
           // Should throw EnhancedApiError for invalid UUID format
           // Check the error properties instead of instanceof due to module resolution issues
           const enhancedError = error as EnhancedApiError;
@@ -72,7 +72,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           record_id: validButNonExistentUUID,
         });
         expect.fail('Should have thrown error for non-existent record');
-      } catch (error) {
+      } catch (error: unknown) {
         // Should throw EnhancedApiError for record not found
         // Check the error properties instead of instanceof due to module resolution issues
         const enhancedError = error as EnhancedApiError;
@@ -95,7 +95,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           record_id: 'not-a-uuid',
         });
         expect.fail('Should have thrown error for invalid UUID');
-      } catch (error) {
+      } catch (error: unknown) {
         // Check the error properties instead of instanceof
         const enhancedError = error as EnhancedApiError;
         expect(enhancedError.name).toBe('EnhancedApiError');
@@ -113,7 +113,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           resource_type: UniversalResourceType.PEOPLE,
           record_id: '12345678-1234-5678-9012-123456789012', // Valid format, non-existent
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const enhancedError = error as EnhancedApiError;
         expect(getErrorMessage(enhancedError)).toContain(
           'Use search-records to find valid people IDs'
@@ -191,7 +191,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           },
         });
         expect.fail('Should have thrown error for invalid task field');
-      } catch (error) {
+      } catch (error: unknown) {
         // This may throw UniversalValidationError or EnhancedApiError depending on validation layer
         const message = error.message || error.toString();
         expect(message).toContain('invalid_field');
@@ -220,7 +220,7 @@ describe('Consolidated Fixes Integration Tests', () => {
             },
           },
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const enhancedError = error as EnhancedApiError;
         const message = getErrorMessage(enhancedError);
 
@@ -242,7 +242,7 @@ describe('Consolidated Fixes Integration Tests', () => {
             },
           },
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const enhancedError = error as EnhancedApiError;
         const message = getErrorMessage(enhancedError);
 
@@ -276,7 +276,7 @@ describe('Consolidated Fixes Integration Tests', () => {
             resource_type: testCase.resourceType,
             record_id: testCase.recordId,
           });
-        } catch (error) {
+        } catch (error: unknown) {
           const enhancedError = error as EnhancedApiError;
           expect(getErrorMessage(enhancedError)).toContain(
             testCase.expectedHint
@@ -293,7 +293,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_id: 'invalid-format',
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const enhancedError = error as EnhancedApiError;
         // Check for error methods
         expect(typeof enhancedError.isUserError).toBe('function');
@@ -311,7 +311,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_id: 'not-a-uuid',
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const endTime = performance.now();
         const duration = endTime - startTime;
 
@@ -340,7 +340,7 @@ describe('Consolidated Fixes Integration Tests', () => {
             },
           },
         });
-      } catch (error) {
+      } catch (error: unknown) {
         const enhancedError = error as EnhancedApiError;
         const message = getErrorMessage(enhancedError);
 
@@ -361,7 +361,7 @@ describe('Consolidated Fixes Integration Tests', () => {
           resource_type: UniversalResourceType.PEOPLE,
           record_id: 'definitely-not-a-uuid',
         });
-      } catch (error) {
+      } catch (error: unknown) {
         // Should still be throwable and have basic properties
         expect(error).toBeInstanceOf(Error);
         expect(error.message).toBeDefined();

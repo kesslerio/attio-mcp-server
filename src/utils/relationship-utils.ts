@@ -70,7 +70,7 @@ export function createPeopleByCompanyFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Check if it's already a specialized error
     if (error instanceof RelationshipFilterError) {
       throw error;
@@ -118,7 +118,7 @@ export function createCompaniesByPeopleFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Check if it's already a specialized error
     if (error instanceof RelationshipFilterError) {
       throw error;
@@ -163,7 +163,7 @@ export function createRecordsByListFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     // Check if it's already a specialized error
     if (
       error instanceof ListRelationshipError ||
@@ -205,7 +205,7 @@ export function createPeopleByCompanyListFilter(
 
     // Then, create a filter for people who work at those companies
     return createPeopleByCompanyFilter(companiesInListFilter);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create people-by-company-list filter: ${errorMessage}`
@@ -238,7 +238,7 @@ export function createCompaniesByPeopleListFilter(
 
     // Then, create a filter for companies that have those people
     return createCompaniesByPeopleFilter(peopleInListFilter);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create companies-by-people-list filter: ${errorMessage}`
@@ -281,7 +281,7 @@ export function createRecordsByNotesFilter(
 
     // Convert to an Attio API compatible filter
     return createRelationshipFilter(relationshipConfig);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create records-by-notes filter: ${errorMessage}`

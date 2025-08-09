@@ -105,7 +105,7 @@ export function createNumericRangeFilter(
       // When both min and max are specified, we want records that match both (AND logic)
       matchAny: false,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to create numeric filter: ${errorMessage}`);
   }
