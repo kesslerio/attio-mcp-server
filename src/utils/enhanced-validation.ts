@@ -6,7 +6,7 @@
 import { ValidationResult } from './validation.js';
 import {
   getObjectAttributeMetadata,
-  getFieldValidationRules
+  getFieldValidationRules,
 } from '../api/attribute-types.js';
 
 /**

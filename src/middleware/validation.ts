@@ -342,9 +342,7 @@ export class ParameterValidationMiddleware {
   /**
    * Validate pagination parameters (limit, offset)
    */
-  private static validatePaginationParams(
-    params: SanitizedObject
-  ): void {
+  private static validatePaginationParams(params: SanitizedObject): void {
     // Validate limit
     if (
       'limit' in params &&
@@ -432,9 +430,7 @@ export class ParameterValidationMiddleware {
   /**
    * Validate ID format for record_id and similar fields
    */
-  private static validateIdFormat(
-    params: SanitizedObject
-  ): void {
+  private static validateIdFormat(params: SanitizedObject): void {
     const idFields = [
       'record_id',
       'source_id',
