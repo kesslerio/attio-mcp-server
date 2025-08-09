@@ -183,7 +183,7 @@ export class IntegrationTestMocks {
   /**
    * Create a mock company for testing
    */
-  static async createTestCompany(attributes: any = {}): Promise<any> {
+  static async createTestCompany(attributes: any = {}): Promise<unknown> {
     const testId = IntegrationTestBase.createTestId('company');
     const company = {
       name: `Test Company ${testId}`,
@@ -210,7 +210,7 @@ export class IntegrationTestMocks {
   /**
    * Create a mock person for testing
    */
-  static async createTestPerson(attributes: any = {}): Promise<any> {
+  static async createTestPerson(attributes: any = {}): Promise<unknown> {
     const testId = IntegrationTestBase.createTestId('person');
     const person = {
       name: `Test Person ${testId}`,
@@ -241,7 +241,7 @@ export class IntegrationTestMocks {
     parentObject: string,
     parentRecordId: string,
     attributes: any = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     const testId = IntegrationTestBase.createTestId('note');
     const note = {
       title: `Test Note ${testId}`,

@@ -34,7 +34,7 @@ export interface ErrorDetails {
     method?: string;
     path?: string;
     detail?: string;
-    responseData?: Record<string, any>;
+    responseData?: Record<string, unknown>;
     originalError?: string;
     [key: string]: any;
   };

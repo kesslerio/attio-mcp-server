@@ -53,7 +53,7 @@ export function formatRecordAttribute(key: string, value: any): any {
  * @returns Formatted attributes object ready for API submission
  */
 export function formatRecordAttributes(
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ): RecordAttributes {
   const formattedAttributes: RecordAttributes = {};
 

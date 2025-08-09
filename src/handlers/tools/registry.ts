@@ -143,9 +143,9 @@ export function findToolConfig(toolName: string):
           const config =
             resourceConfig[toolTypeKey as keyof typeof resourceConfig];
           console.error(`[findToolConfig] Found ${toolTypeKey} config:`, {
-            name: (config as any).name,
-            hasHandler: typeof (config as any).handler === 'function',
-            hasFormatter: typeof (config as any).formatResult === 'function',
+            name: (config as unknown).name,
+            hasHandler: typeof (config as unknown).handler === 'function',
+            hasFormatter: typeof (config as unknown).formatResult === 'function',
           });
         } else {
           console.warn(
@@ -184,7 +184,7 @@ export function findToolConfig(toolName: string):
         }
 
         return {
-          resourceType: 'UNIVERSAL' as any, // Using 'UNIVERSAL' as a special marker
+          resourceType: 'UNIVERSAL' as unknown, // Using 'UNIVERSAL' as a special marker
           toolConfig: config as ToolConfig,
           toolType,
         };
@@ -204,7 +204,7 @@ export function findToolConfig(toolName: string):
         }
 
         return {
-          resourceType: 'GENERAL' as any, // Using 'GENERAL' as a special marker
+          resourceType: 'GENERAL' as unknown, // Using 'GENERAL' as a special marker
           toolConfig: config as ToolConfig,
           toolType,
         };

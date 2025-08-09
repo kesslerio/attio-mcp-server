@@ -224,7 +224,7 @@ export class E2ECleanup {
    * Fetch all objects of a specific type
    */
   private async fetchAllObjectsOfType(type: string): Promise<any[]> {
-    const allObjects: any[] = [];
+    const allObjects: unknown[] = [];
     let cursor: string | undefined;
     let hasMore = true;
 

@@ -33,9 +33,9 @@ interface ApiResponse {
  * @returns Rate-limited handler function
  */
 export function withRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+  handler: (...args: T) => Promise<unknown>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<unknown> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];
@@ -97,9 +97,9 @@ export function withRateLimiting<T extends any[]>(
  * @returns Rate-limited handler function with headers
  */
 export function withSearchRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+  handler: (...args: T) => Promise<unknown>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<unknown> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];

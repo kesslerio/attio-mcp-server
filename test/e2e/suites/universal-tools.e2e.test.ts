@@ -30,8 +30,8 @@ const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
  */
 async function callUniversalTool(
   toolName: string, 
-  params: Record<string, any>
-): Promise<any> {
+  params: Record<string, unknown>
+): Promise<unknown> {
   try {
     const request: CallToolRequest = {
       method: 'tools/call',
@@ -54,7 +54,7 @@ async function callUniversalTool(
  */
 function trackForCleanup(type: string, id: string, data?: any): void {
   createdRecords.push({ type, id, data });
-  E2ETestBase.trackForCleanup(type as any, id, data);
+  E2ETestBase.trackForCleanup(type as unknown, id, data);
 }
 
 /**

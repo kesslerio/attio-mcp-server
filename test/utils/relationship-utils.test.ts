@@ -54,7 +54,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.WORKS_AT);
       expect(relationshipValue.target.object).toBe('companies');
       expect(relationshipValue.target.filter).toEqual(companyFilter);
@@ -95,7 +95,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.EMPLOYS);
       expect(relationshipValue.target.object).toBe('people');
       expect(relationshipValue.target.filter).toEqual(peopleFilter);
@@ -127,7 +127,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.BELONGS_TO_LIST);
       expect(relationshipValue.target.object).toBe('lists');
 
@@ -167,7 +167,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration (people who work at companies)
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.WORKS_AT);
       expect(relationshipValue.target.object).toBe('companies');
 
@@ -177,7 +177,7 @@ describe('Relationship Utilities', () => {
       expect(targetFilter.filters[0].attribute.slug).toBe('$relationship');
 
       // Check the nested relationship (company belongs to list)
-      const nestedRelationship = targetFilter.filters[0].value as any;
+      const nestedRelationship = targetFilter.filters[0].value as unknown;
       expect(nestedRelationship.type).toBe(RelationshipType.BELONGS_TO_LIST);
       expect(nestedRelationship.target.object).toBe('lists');
 
@@ -212,7 +212,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration (companies that employ people)
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.EMPLOYS);
       expect(relationshipValue.target.object).toBe('people');
 
@@ -222,7 +222,7 @@ describe('Relationship Utilities', () => {
       expect(targetFilter.filters[0].attribute.slug).toBe('$relationship');
 
       // Check the nested relationship (person belongs to list)
-      const nestedRelationship = targetFilter.filters[0].value as any;
+      const nestedRelationship = targetFilter.filters[0].value as unknown;
       expect(nestedRelationship.type).toBe(RelationshipType.BELONGS_TO_LIST);
       expect(nestedRelationship.target.object).toBe('lists');
 
@@ -258,7 +258,7 @@ describe('Relationship Utilities', () => {
       expect(relationshipFilter.condition).toBe(FilterConditionType.EQUALS);
 
       // Check the relationship configuration
-      const relationshipValue = relationshipFilter.value as any;
+      const relationshipValue = relationshipFilter.value as unknown;
       expect(relationshipValue.type).toBe(RelationshipType.HAS_NOTE);
 
       // Check the note content filter

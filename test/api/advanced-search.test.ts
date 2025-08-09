@@ -117,7 +117,7 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
             value: 'test',
           },
         ],
-      } as any;
+      } as unknown;
 
       await expect(advancedSearchCompanies(filters)).rejects.toThrow(
         /invalid/i
@@ -191,7 +191,7 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     it('should handle non-array filters with clear error', async () => {
       const filters = {
         filters: { not: 'an array' },
-      } as any;
+      } as unknown;
 
       await expect(
         advancedSearchObject(ResourceType.COMPANIES, filters)

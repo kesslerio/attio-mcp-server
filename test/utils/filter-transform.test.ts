@@ -178,7 +178,7 @@ describe('transformFiltersToApiFormat', () => {
       filters: [
         {
           attribute: { slug: 'stage' },
-          condition: undefined as any, // Missing condition
+          condition: undefined as unknown, // Missing condition
           value: 'discovery',
         },
       ],

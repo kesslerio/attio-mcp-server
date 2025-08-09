@@ -112,7 +112,7 @@ import {
 
 // Simple cache for tasks pagination performance optimization
 interface CacheEntry {
-  data: any[];
+  data: unknown[];
   timestamp: number;
 }
 const tasksCache = new Map<string, CacheEntry>();
@@ -136,7 +136,7 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
     });
     
     return response?.data?.data || [];
-  } catch (error: any) {
+  } catch(error: unknown) {
     console.error('Failed to query deal records:', error);
     // If the query endpoint also fails, try the simpler approach
     if (error?.response?.status === 404) {
@@ -189,7 +189,7 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
  * 
  * Special handling for tasks which use /tasks API instead of /objects/tasks
  */
-async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<any> {
+async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<unknown> {
   // Handle tasks as special case - they don't use /objects/{type}/attributes
   if (resourceType === UniversalResourceType.TASKS) {
     return discoverTaskAttributes();
@@ -231,7 +231,7 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
  * Since tasks use /tasks API instead of /objects/tasks, we manually return
  * the known task attributes based on the task API structure and field mappings.
  */
-async function discoverTaskAttributes(): Promise<any> {
+async function discoverTaskAttributes(): Promise<unknown> {
   // Define task attributes based on the actual task API structure
   // From /src/api/operations/tasks.ts and field mappings
   const attributes = [
@@ -319,7 +319,7 @@ async function discoverTaskAttributes(): Promise<any> {
 /**
  * Get attributes for a specific record of any resource type
  */
-async function getAttributesForRecord(resourceType: UniversalResourceType, recordId: string): Promise<any> {
+async function getAttributesForRecord(resourceType: UniversalResourceType, recordId: string): Promise<unknown> {
   const client = getAttioClient();
   
   try {
@@ -407,7 +407,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
             // Defensive: Some APIs may not support empty filters, handle gracefully
             try {
               results = await advancedSearchCompanies({ filters: [] }, limit, offset);
-            } catch (error: any) {
+            } catch(error: unknown) {
               // If empty filters aren't supported, return empty array rather than failing
               console.warn('Companies search with empty filters failed, returning empty results:', error?.message);
               results = [];
@@ -444,7 +444,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
             try {
               const paginatedResult = await advancedSearchPeople({ filters: [] }, { limit, offset });
               results = paginatedResult.results;
-            } catch (error: any) {
+            } catch(error: unknown) {
               // If empty filters aren't supported, return empty array rather than failing
               console.warn('People search with empty filters failed, returning empty results:', error?.message);
               results = [];
@@ -484,7 +484,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           
           // Simple in-memory cache for tasks (30 second TTL)
           const now = Date.now();
-          let tasks: any[] | undefined;
+          let tasks: unknown[] | undefined;
           let fromCache = false;
           
           // Check if we have cached tasks that are still valid
@@ -565,7 +565,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
       
       return results;
       
-    } catch (apiError: any) {
+    } catch(apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
       const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
@@ -738,7 +738,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
             const task = await getTask(record_id);
             // Convert AttioTask to AttioRecord using proper type conversion
             result = convertTaskToRecord(task);
-          } catch (error: any) {
+          } catch(error: unknown) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
             throw createRecordNotFoundError(record_id, 'tasks');
@@ -757,7 +757,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       const filteredResult = filterResponseFields(result, fields);
       return filteredResult;
       
-    } catch (apiError: any) {
+    } catch(apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
       // Enhanced error handling for Issues #415, #416, #417
@@ -907,7 +907,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         }
         
         return result;
-      } catch (error: any) {
+      } catch(error: unknown) {
         if (process.env.NODE_ENV === 'development') {
           console.error('[handleUniversalCreate] Error in companies case:', error);
         }
@@ -948,7 +948,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         // Apply format conversions for common mistakes
         const correctedData = convertAttributeFormats('people', normalizedData);
         return await createPerson(correctedData);
-      } catch (error: any) {
+      } catch(error: unknown) {
         // Enhance error messages with format help
         if (error?.message?.includes('invalid value') || error?.message?.includes('Format Error')) {
           const match = error.message.match(/slug "([^"]+)"/);
@@ -978,7 +978,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     case UniversalResourceType.RECORDS:
       try {
         return await createObjectRecord('records', mappedData);
-      } catch (error: any) {
+      } catch(error: unknown) {
         // Check for uniqueness constraint violations
         if (error?.message?.includes('uniqueness constraint')) {
           const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
@@ -1016,7 +1016,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
       try {
         return await createObjectRecord('deals', dealData);
-      } catch (error: any) {
+      } catch(error: unknown) {
         // If stage still fails after validation, try with default stage
         // IMPORTANT: Skip validation in error path to prevent API calls during failures
         if (error?.message?.includes('Cannot find Status') && dealData.stage) {
@@ -1065,7 +1065,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         const createdTask = await createTask(content, options);
         // Convert AttioTask to AttioRecord using proper type conversion
         return convertTaskToRecord(createdTask);
-      } catch (error: any) {
+      } catch(error: unknown) {
         // Issue #417: Enhanced task error handling with field mapping guidance
         const enhancedError = ErrorEnhancer.autoEnhance(error, 'tasks', 'create-record');
         throw enhancedError;
@@ -1148,7 +1148,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     case UniversalResourceType.COMPANIES:
       try {
         return await updateCompany(record_id, mappedData);
-      } catch (error: any) {
+      } catch(error: unknown) {
         if (error?.message?.includes('Cannot find attribute')) {
           const match = error.message.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
@@ -1169,7 +1169,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
         validateEmailAddresses(mappedData, resource_type);
         
         return await updatePerson(record_id, mappedData);
-      } catch (error: any) {
+      } catch(error: unknown) {
         if (error?.message?.includes('Cannot find attribute')) {
           const match = error.message.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
@@ -1252,7 +1252,7 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
 /**
  * Universal get attributes handler
  */
-export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<any> {
+export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<unknown> {
   const { resource_type, record_id, categories } = params;
   
   let result: any;
@@ -1311,7 +1311,7 @@ export async function handleUniversalGetAttributes(params: UniversalAttributesPa
 /**
  * Universal discover attributes handler
  */
-export async function handleUniversalDiscoverAttributes(resource_type: UniversalResourceType): Promise<any> {
+export async function handleUniversalDiscoverAttributes(resource_type: UniversalResourceType): Promise<unknown> {
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
       return discoverCompanyAttributes();
@@ -1336,7 +1336,7 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
 /**
  * Universal get detailed info handler
  */
-export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<any> {
+export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<unknown> {
   const { resource_type, record_id, info_type } = params;
   
   // For now, we'll return the full record for non-company resource types

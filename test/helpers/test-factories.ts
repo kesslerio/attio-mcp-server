@@ -189,7 +189,7 @@ export class ApiResponseFactory {
 
   static createError(message: string, status: number = 400): Error {
     const error = new Error(message);
-    (error as any).response = {
+    (error as unknown).response = {
       status,
       data: { message },
     };
@@ -220,7 +220,7 @@ export class ApiResponseFactory {
  * Mock request factory for MCP tool testing
  */
 export class MockRequestFactory {
-  static createToolRequest(toolName: string, args: Record<string, any> = {}) {
+  static createToolRequest(toolName: string, args: Record<string, unknown> = {}) {
     return {
       method: 'tools/call',
       params: {

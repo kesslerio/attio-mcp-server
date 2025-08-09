@@ -270,7 +270,7 @@ describe('Real API Integration Tests', () => {
         await createCompany({
           // Missing required name field - should trigger validation
           website: 'https://invalid.com',
-        } as any);
+        } as unknown);
         throw new Error('Expected validation error was not thrown');
       } catch (error) {
         const isValidError = expectIntegrationError(error, [
@@ -307,7 +307,7 @@ describe('Real API Integration Tests', () => {
         await createPerson({
           // Missing required fields - should trigger enhanced validation
           phone_numbers: ['+1234567890'],
-        } as any);
+        } as unknown);
         throw new Error('Expected validation error was not thrown');
       } catch (error) {
         const isValidError = expectIntegrationError(error, [

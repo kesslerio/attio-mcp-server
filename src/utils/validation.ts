@@ -17,9 +17,9 @@ export interface ValidationResult {
 export interface ValidationSchema {
   type: string;
   required?: string[];
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   items?: ValidationSchema;
-  enum?: any[];
+  enum?: unknown[];
   minLength?: number;
   maxLength?: number;
   minimum?: number;
@@ -249,7 +249,7 @@ function validateValue(
             continue;
           }
 
-          const propErrors = validateValue(propValue, propSchema, propPath);
+          const propErrors = validateValue(propValue, propSchema as ValidationSchema, propPath);
           errors.push(...propErrors);
         }
       }

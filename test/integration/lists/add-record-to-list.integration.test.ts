@@ -113,7 +113,7 @@ describe('Add Record To List Integration', () => {
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as any,
+      mockRequest as unknown,
       listsToolConfigs.addRecordToList
     );
 
@@ -153,7 +153,7 @@ describe('Add Record To List Integration', () => {
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as any,
+      mockRequest as unknown,
       listsToolConfigs.addRecordToList
     );
 
@@ -207,7 +207,7 @@ describe('Add Record To List Integration', () => {
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as any,
+      mockRequest as unknown,
       listsToolConfigs.addRecordToList
     );
 
@@ -269,7 +269,7 @@ describe('Add Record To List Integration', () => {
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as any,
+      mockRequest as unknown,
       listsToolConfigs.addRecordToList
     );
 
@@ -311,7 +311,7 @@ describe('Add Record To List Integration', () => {
     };
 
     const resultNoListId = await handleAddRecordToListOperation(
-      mockRequestNoListId as any,
+      mockRequestNoListId as unknown,
       listsToolConfigs.addRecordToList
     );
 
@@ -329,7 +329,7 @@ describe('Add Record To List Integration', () => {
     };
 
     const resultNoRecordId = await handleAddRecordToListOperation(
-      mockRequestNoRecordId as any,
+      mockRequestNoRecordId as unknown,
       listsToolConfigs.addRecordToList
     );
 

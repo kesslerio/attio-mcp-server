@@ -12,7 +12,7 @@ const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 // Enable logging temporarily
-console.log = (...args: any[]) => {
+console.log = (...args: unknown[]) => {
   if (
     args[0]?.includes?.('b2b_segment') ||
     args[0]?.includes?.('type_persona') ||
@@ -24,7 +24,7 @@ console.log = (...args: any[]) => {
   }
 };
 
-console.error = (...args: any[]) => {
+console.error = (...args: unknown[]) => {
   if (
     args[0]?.includes?.('b2b_segment') ||
     args[0]?.includes?.('type_persona') ||
@@ -65,11 +65,11 @@ async function debugB2BSegmentMapping() {
     try {
       const results = await advancedSearchCompanies(translatedFilters);
       console.log('[TEST] Search succeeded! Results:', results.length);
-    } catch (error: any) {
+    } catch(error: unknown) {
       console.error('[TEST] Search failed:', error.message);
       console.error('[TEST] Full error:', error);
     }
-  } catch (error: any) {
+  } catch(error: unknown) {
     console.error('[TEST] Debug script error:', error);
   } finally {
     // Restore original console

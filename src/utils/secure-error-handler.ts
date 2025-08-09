@@ -33,7 +33,7 @@ export class SecureApiError extends Error {
   public readonly errorType: string;
   public readonly context: ErrorContext;
   public readonly originalError?: Error;
-  public readonly safeMetadata?: Record<string, any>;
+  public readonly safeMetadata?: Record<string, unknown>;
 
   constructor(
     message: string,
@@ -70,7 +70,7 @@ export class SecureApiError extends Error {
   /**
    * Get a safe JSON representation for API responses
    */
-  toJSON(): Record<string, any> {
+  toJSON(): Record<string, unknown> {
     return {
       error: {
         message: this.message,
@@ -90,12 +90,12 @@ export class SecureApiError extends Error {
  * @returns Wrapped function with automatic error sanitization
  */
 export function withSecureErrorHandling<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (...args: unknown[]) => Promise<unknown>,
 >(fn: T, context: ErrorContext): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch (error: any) {
+    } catch(error: unknown) {
       // Log the full error internally
       logError(
         context.module,
@@ -107,7 +107,7 @@ export function withSecureErrorHandling<
       );
 
       // Determine status code
-      const statusCode = error?.statusCode || error?.response?.status || 500;
+      const statusCode = (error as any)?.statusCode || (error as any)?.response?.status || 500;
 
       // Determine error type
       let errorType = 'internal_error';
@@ -120,7 +120,7 @@ export function withSecureErrorHandling<
 
       // Create secure error with sanitized message
       throw new SecureApiError(
-        error.message || 'An unexpected error occurred',
+        (error as Error).message || 'An unexpected error occurred',
         statusCode,
         errorType,
         context,
@@ -276,7 +276,7 @@ export async function retryWithSecureErrors<T>(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
+    } catch(error: unknown) {
       lastError = error;
 
       // Check if we should retry
@@ -368,7 +368,7 @@ export class SecureCircuitBreaker {
       this.failures = 0;
 
       return result;
-    } catch (error: any) {
+    } catch(error: unknown) {
       this.failures++;
       this.lastFailureTime = Date.now();
 
@@ -387,8 +387,8 @@ export class SecureCircuitBreaker {
 
       // Re-throw the error (sanitized)
       throw new SecureApiError(
-        error.message || 'Operation failed',
-        error?.statusCode || 500,
+        (error as Error).message || 'Operation failed',
+        (error as any)?.statusCode || 500,
         'circuit_breaker_error',
         this.context,
         error instanceof Error ? error : undefined

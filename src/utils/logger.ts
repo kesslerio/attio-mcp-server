@@ -121,7 +121,7 @@ function createLogMetadata(
   module: string,
   operation?: string,
   operationType?: OperationType,
-  additionalMetadata?: Record<string, any>
+  additionalMetadata?: Record<string, unknown>
 ): LogMetadata {
   return {
     timestamp: new Date().toISOString(),
@@ -142,7 +142,7 @@ function createLogMetadata(
  */
 function outputLog(
   entry: LogEntry,
-  logFunction: (message: string, ...args: any[]) => void
+  logFunction: (message: string, ...args: unknown[]) => void
 ): void {
   if (process.env.LOG_FORMAT === 'json') {
     // Output compact JSON using safe stringify to prevent errors
@@ -522,7 +522,7 @@ export async function withLogging<T>(
  * @param message - Message to log
  * @param args - Additional arguments to log
  */
-export function safeMcpLog(message: string, ...args: any[]): void {
+export function safeMcpLog(message: string, ...args: unknown[]): void {
   // Always use console.error to avoid interfering with MCP protocol
   console.error(`[MCP_SAFE_LOG] ${message}`, ...args);
 }

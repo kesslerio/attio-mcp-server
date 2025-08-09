@@ -281,7 +281,7 @@ describe('Records API', () => {
   describe('formatRecordAttributes', () => {
     it('should format multiple attributes', () => {
       const date = new Date('2023-01-01T00:00:00Z');
-      const attributes: Record<string, any> = {
+      const attributes: Record<string, unknown> = {
         name: 'Test Record',
         founded_date: date,
         annual_revenue: 5000000,

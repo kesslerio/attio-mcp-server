@@ -25,7 +25,7 @@ const generateUniqueName = () =>
   `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
 
 // Create a test company and return its ID
-async function createTestCompany(attributes: Record<string, any>) {
+async function createTestCompany(attributes: Record<string, unknown>) {
   // Ensure the company has a unique name
   const companyData = {
     name: generateUniqueName(),

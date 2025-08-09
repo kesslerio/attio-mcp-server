@@ -95,7 +95,7 @@ export interface UniversalRecordDetailsParams {
  */
 export interface UniversalCreateParams {
   resource_type: UniversalResourceType;
-  record_data: Record<string, any>;
+  record_data: Record<string, unknown>;
   return_details?: boolean;
 }
 
@@ -105,7 +105,7 @@ export interface UniversalCreateParams {
 export interface UniversalUpdateParams {
   resource_type: UniversalResourceType;
   record_id: string;
-  record_data: Record<string, any>;
+  record_data: Record<string, unknown>;
   return_details?: boolean;
 }
 
@@ -189,7 +189,7 @@ export interface TimeframeSearchParams {
 export interface BatchOperationsParams {
   resource_type: UniversalResourceType;
   operation_type: BatchOperationType;
-  records?: Array<Record<string, any>>;
+  records?: Array<Record<string, unknown>>;
   record_ids?: string[];
   limit?: number;
   offset?: number;
@@ -199,7 +199,7 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: any) => Promise<any>;
+  handler: (params: any) => Promise<unknown>;
   formatResult: (results: any) => string;
 }
 
@@ -207,10 +207,10 @@ export interface UniversalToolConfig extends ToolConfig {
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: any) => Promise<any>;
-  [UniversalResourceType.PEOPLE]: (params: any) => Promise<any>;
-  [UniversalResourceType.RECORDS]: (params: any) => Promise<any>;
-  [UniversalResourceType.TASKS]: (params: any) => Promise<any>;
+  [UniversalResourceType.COMPANIES]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.PEOPLE]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.RECORDS]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.TASKS]: (params: any) => Promise<unknown>;
 }
 
 /**

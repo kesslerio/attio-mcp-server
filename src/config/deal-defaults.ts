@@ -85,8 +85,8 @@ export function getDealDefaults(): DealDefaults {
  * 4. Allows user-provided values to override defaults
  */
 export function applyDealDefaults(
-  recordData: Record<string, any>
-): Record<string, any> {
+  recordData: Record<string, unknown>
+): Record<string, unknown> {
   const defaults = getDealDefaults();
   const dealData = { ...recordData };
 
@@ -202,7 +202,7 @@ export function applyDealDefaults(
  * Input validation helper for deal data
  * Provides immediate feedback on common mistakes before API calls
  */
-export function validateDealInput(recordData: Record<string, any>): {
+export function validateDealInput(recordData: Record<string, unknown>): {
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -420,9 +420,9 @@ export async function validateDealStage(
  * @param skipValidation - Skip API validation (used in error paths to prevent cascading failures)
  */
 export async function applyDealDefaultsWithValidation(
-  recordData: Record<string, any>,
+  recordData: Record<string, unknown>,
   skipValidation: boolean = false
-): Promise<Record<string, any>> {
+): Promise<Record<string, unknown>> {
   const dealData = applyDealDefaults(recordData);
 
   // Validate stage if present

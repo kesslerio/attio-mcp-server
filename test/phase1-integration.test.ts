@@ -109,14 +109,14 @@ describe.skipIf(SKIP_INTEGRATION)('Phase 1 Integration Tests', () => {
       ];
 
       for (const testCase of testCases) {
-        const path = ResourceMapper.getResourcePath(testCase.type as any, testCase.id);
+        const path = ResourceMapper.getResourcePath(testCase.type as unknown, testCase.id);
         expect(path).toBe(testCase.expected);
       }
     });
 
     it('should handle custom object types correctly', () => {
       const customType = 'custom_crm_object';
-      const path = ResourceMapper.getResourcePath(customType as any, 'xyz');
+      const path = ResourceMapper.getResourcePath(customType as unknown, 'xyz');
       expect(path).toBe('/objects/custom_crm_object/xyz');
       expect(path).not.toContain('/objects/objects/');
     });

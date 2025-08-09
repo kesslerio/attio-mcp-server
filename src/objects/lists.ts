@@ -29,7 +29,7 @@ export interface ListMembership {
   listId: string;
   listName: string;
   entryId: string;
-  entryValues?: Record<string, any>;
+  entryValues?: Record<string, unknown>;
 }
 
 /**
@@ -46,7 +46,7 @@ export async function getLists(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericLists(objectSlug, limit);
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic getLists failed: ${error.message || 'Unknown error'}`
@@ -75,7 +75,7 @@ export async function getListDetails(listId: string): Promise<AttioList> {
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListDetails(listId);
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic getListDetails failed: ${error.message || 'Unknown error'}`
@@ -185,7 +185,7 @@ async function tryMultipleListEntryEndpoints(
 
       // Process entries to ensure record_id is properly set from the utils function
       return processListEntries(entries);
-    } catch (error: any) {
+    } catch(error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${
@@ -233,7 +233,7 @@ export async function getListEntries(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListEntries(listId, limit, offset, filters);
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `[getListEntries] Generic list entries failed: ${
@@ -267,7 +267,7 @@ export async function addRecordToList(
   listId: string,
   recordId: string,
   objectType: string,
-  initialValues?: Record<string, any>
+  initialValues?: Record<string, unknown>
 ): Promise<AttioListEntry> {
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
@@ -300,7 +300,7 @@ export async function addRecordToList(
       objectType,
       initialValues
     );
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic addRecordToList failed: ${error.message || 'Unknown error'}`
@@ -347,7 +347,7 @@ export async function addRecordToList(
       }
 
       return response.data.data || response.data;
-    } catch (error: any) {
+    } catch(error: unknown) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
         console.error(
@@ -400,7 +400,7 @@ export async function addRecordToList(
 export async function updateListEntry(
   listId: string,
   entryId: string,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ): Promise<AttioListEntry> {
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -422,7 +422,7 @@ export async function updateListEntry(
   // Use the generic operation with fallback to direct implementation
   try {
     return await updateGenericListEntry(listId, entryId, attributes);
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic updateListEntry failed: ${error.message || 'Unknown error'}`
@@ -476,7 +476,7 @@ export async function removeRecordFromList(
   // Use the generic operation with fallback to direct implementation
   try {
     return await removeGenericRecordFromList(listId, entryId);
-  } catch (error: any) {
+  } catch(error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic removeRecordFromList failed: ${
@@ -677,7 +677,7 @@ export async function getRecordListMemberships(
               );
             }
           }
-        } catch (error: any) {
+        } catch(error: unknown) {
           // Log error but continue with other lists
           if (process.env.NODE_ENV === 'development') {
             console.error(
@@ -700,7 +700,7 @@ export async function getRecordListMemberships(
     }
 
     return allMemberships;
-  } catch (error: any) {
+  } catch(error: unknown) {
     // Log error for debugging
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -923,7 +923,7 @@ export async function filterListEntriesByParent(
     }
 
     return entries;
-  } catch (error: any) {
+  } catch(error: unknown) {
     // Enhanced error logging
     if (process.env.NODE_ENV === 'development') {
       console.error(
