@@ -52,7 +52,7 @@ export interface SchemaDefinition {
   maxLength?: number;
   pattern?: string;
   format?: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**

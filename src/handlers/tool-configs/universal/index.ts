@@ -285,7 +285,7 @@ export function getUniversalEquivalent(deprecatedToolName: string): string | und
 /**
  * Get migration parameters for converting a deprecated tool call to universal
  */
-export function getMigrationParams(deprecatedToolName: string, originalParams: any): any {
+export function getMigrationParams(deprecatedToolName: string, originalParams: unknown): any {
   const universalTool = getUniversalEquivalent(deprecatedToolName);
   const resourceType = resourceTypeMappings[deprecatedToolName];
   

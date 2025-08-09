@@ -179,7 +179,7 @@ describe('Real API Integration Tests', () => {
 
       const foundPerson = results.find((p) =>
         p.values.email_addresses?.some(
-          (e: any) => e.email_address === testData.personEmail
+          (e: unknown) => e.email_address === testData.personEmail
         )
       );
       expect(

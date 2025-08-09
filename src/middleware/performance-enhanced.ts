@@ -82,7 +82,7 @@ export interface PerformanceAlert {
  */
 interface CacheEntry {
   timestamp: number;
-  result: any;
+  result: unknown;
   ttl: number;
 }
 
@@ -357,7 +357,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Cache a 404 response
    */
-  cache404Response(key: string, result: any, ttl: number = 60000): void {
+  cache404Response(key: string, result: unknown, ttl: number = 60000): void {
     this.cache404.set(key, {
       timestamp: Date.now(),
       result,
@@ -368,7 +368,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Get cached 404 response
    */
-  getCached404(key: string): any | null {
+  getCached404(key: string): unknown | null {
     const entry = this.cache404.get(key);
     if (!entry) return null;
 

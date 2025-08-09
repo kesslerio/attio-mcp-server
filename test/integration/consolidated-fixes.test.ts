@@ -22,7 +22,7 @@ import {
 } from '../../src/utils/validation/uuid-validation.js';
 
 // Helper function to get error message, checking for enhanced methods
-function getErrorMessage(error: any): string {
+function getErrorMessage(error: unknown): string {
   if (
     error.getContextualMessage &&
     typeof error.getContextualMessage === 'function'
@@ -134,7 +134,7 @@ describe('Consolidated Fixes Integration Tests', () => {
       expect(result.mappings).toBeDefined();
 
       // Verify core task fields are included
-      const fieldNames = result.attributes.map((attr: any) => attr.api_slug);
+      const fieldNames = result.attributes.map((attr: unknown) => attr.api_slug);
       expect(fieldNames).toContain('content');
       expect(fieldNames).toContain('status');
       expect(fieldNames).toContain('due_date');

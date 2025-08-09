@@ -22,7 +22,7 @@ export interface ErrorContext {
   recordId?: string;
   userId?: string;
   correlationId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -107,7 +107,7 @@ export function withSecureErrorHandling<
       );
 
       // Determine status code
-      const statusCode = (error as any)?.statusCode || (error as any)?.response?.status || 500;
+      const statusCode = (error as unknown)?.statusCode || (error as unknown)?.response?.status || 500;
 
       // Determine error type
       let errorType = 'internal_error';
@@ -151,7 +151,7 @@ export interface SecureErrorResponse {
  * @returns Secure error response
  */
 export function createSecureErrorResponse(
-  error: any,
+  error: unknown,
   context?: Partial<ErrorContext>
 ): SecureErrorResponse {
   // If it's already a SecureApiError, use its safe data
@@ -197,7 +197,7 @@ export class BatchErrorHandler {
   /**
    * Add an error for a specific batch item
    */
-  addError(index: number, error: any): void {
+  addError(index: number, error: unknown): void {
     const secureError =
       error instanceof SecureApiError
         ? error
@@ -257,7 +257,7 @@ export async function retryWithSecureErrors<T>(
     maxRetries?: number;
     initialDelay?: number;
     maxDelay?: number;
-    shouldRetry?: (error: any) => boolean;
+    shouldRetry?: (error: unknown) => boolean;
   } = {}
 ): Promise<T> {
   const {
@@ -270,7 +270,7 @@ export async function retryWithSecureErrors<T>(
     },
   } = options;
 
-  let lastError: any;
+  let lastError: unknown;
   let delay = initialDelay;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -388,7 +388,7 @@ export class SecureCircuitBreaker {
       // Re-throw the error (sanitized)
       throw new SecureApiError(
         (error as Error).message || 'Operation failed',
-        (error as any)?.statusCode || 500,
+        (error as unknown)?.statusCode || 500,
         'circuit_breaker_error',
         this.context,
         error instanceof Error ? error : undefined

@@ -104,7 +104,7 @@ export function isInDateRange(dateStr: string, range: DateRange): boolean {
  * @param operation - The operation being performed
  * @param details - Additional details to log
  */
-export function debugFilterLog(operation: string, details: any): void {
+export function debugFilterLog(operation: string, details: unknown): void {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Filter ${operation}]`, details);
   }

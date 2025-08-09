@@ -381,7 +381,7 @@ Failed Operations: ${failedOps.length}
  */
 export function trackPerformance(toolName?: string) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {

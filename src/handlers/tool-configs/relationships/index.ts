@@ -19,11 +19,11 @@ export interface UnlinkPersonFromCompanyToolConfig extends ToolConfig {
 }
 
 export interface GetPersonCompaniesToolConfig extends ToolConfig {
-  handler: (personId: string) => Promise<any[]>;
+  handler: (personId: string) => Promise<unknown[]>;
 }
 
 export interface GetCompanyTeamToolConfig extends ToolConfig {
-  handler: (companyId: string) => Promise<any[]>;
+  handler: (companyId: string) => Promise<unknown[]>;
 }
 
 /**
@@ -37,7 +37,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
     // Extract current team members
     const currentTeam = company.values?.team || [];
     const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member: any) => 
+      ? currentTeam.map((member) => 
           member.target_record_id || member.record_id || member
         ).filter(Boolean)
       : [];
@@ -83,7 +83,7 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
     // Extract current team members
     const currentTeam = company.values?.team || [];
     const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member: any) => 
+      ? currentTeam.map((member) => 
           member.target_record_id || member.record_id || member
         ).filter(Boolean)
       : [];
@@ -121,13 +121,13 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
 /**
  * Get all companies a person is associated with
  */
-async function getPersonCompanies(personId: string): Promise<any[]> {
+async function getPersonCompanies(personId: string): Promise<unknown[]> {
   try {
     const person = await getPersonDetails(personId);
     const companies = person.values?.companies || [];
     
     return Array.isArray(companies)
-      ? companies.map((company: any) => ({
+      ? companies.map((company) => ({
           id: company.target_record_id || company.record_id || company,
           name: company.name || 'Unknown Company',
         }))
@@ -140,13 +140,13 @@ async function getPersonCompanies(personId: string): Promise<any[]> {
 /**
  * Get all team members for a company
  */
-async function getCompanyTeam(companyId: string): Promise<any[]> {
+async function getCompanyTeam(companyId: string): Promise<unknown[]> {
   try {
     const company = await getCompanyDetails(companyId);
     const team = company.values?.team || [];
     
     return Array.isArray(team)
-      ? team.map((member: any) => ({
+      ? team.map((member) => ({
           id: member.target_record_id || member.record_id || member,
           name: member.name || 'Unknown Person',
         }))
@@ -161,7 +161,7 @@ export const relationshipToolConfigs = {
   linkPersonToCompany: {
     name: 'link-person-to-company',
     handler: linkPersonToCompany,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       if (result.success) {
         return result.message;
       }
@@ -172,7 +172,7 @@ export const relationshipToolConfigs = {
   unlinkPersonFromCompany: {
     name: 'unlink-person-from-company',
     handler: unlinkPersonFromCompany,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       if (result.success) {
         return result.message;
       }

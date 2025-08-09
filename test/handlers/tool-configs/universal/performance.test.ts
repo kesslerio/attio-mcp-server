@@ -137,13 +137,13 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(10);
 
-      const successCount = result.filter((r: any) => r.success).length;
+      const successCount = result.filter((r: unknown) => r.success).length;
       const failureCount = result.length - successCount;
       expect(successCount).toBeGreaterThan(7, `Expected >7 successful operations, got ${successCount}. Failures: ${failureCount}`); // Allow for some API failures
       
       // Log failed operations for debugging
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
+        const failures = result.filter((r: unknown) => !r.success);
         console.warn(`Batch operation failures:`, failures.map(f => f.error).join(', '));
       }
 
@@ -152,8 +152,8 @@ describe('Universal Tools Performance Tests', () => {
 
       // Store created IDs for cleanup
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Batch create (10 records): ${duration}ms, ${successCount}/10 successful`);
@@ -181,13 +181,13 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(25);
 
-      const successCount = result.filter((r: any) => r.success).length;
+      const successCount = result.filter((r: unknown) => r.success).length;
       const failureCount = result.length - successCount;
       expect(successCount).toBeGreaterThan(20, `Expected >20 successful operations, got ${successCount}. Failures: ${failureCount}`); // Allow for some API failures
       
       // Log failed operations for debugging
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
+        const failures = result.filter((r: unknown) => !r.success);
         console.warn(`Batch operation failures:`, failures.map(f => f.error).join(', '));
       }
 
@@ -196,8 +196,8 @@ describe('Universal Tools Performance Tests', () => {
 
       // Store created IDs for cleanup
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Batch create (25 records): ${duration}ms, ${successCount}/25 successful`);
@@ -225,13 +225,13 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(50);
 
-      const successCount = result.filter((r: any) => r.success).length;
+      const successCount = result.filter((r: unknown) => r.success).length;
       const failureCount = result.length - successCount;
       expect(successCount).toBeGreaterThan(40, `Expected >40 successful operations, got ${successCount}. Failures: ${failureCount}`); // Allow for some API failures
       
       // Log failed operations for debugging
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
+        const failures = result.filter((r: unknown) => !r.success);
         console.warn(`Batch operation failures:`, failures.map(f => f.error).join(', '));
       }
 
@@ -240,8 +240,8 @@ describe('Universal Tools Performance Tests', () => {
 
       // Store created IDs for cleanup
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Batch create (50 records): ${duration}ms, ${successCount}/50 successful`);
@@ -271,13 +271,13 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(batchResult)).toBe(true);
       expect(batchResult).toHaveLength(5);
 
-      const successCount = batchResult.filter((r: any) => r.success).length;
+      const successCount = batchResult.filter((r: unknown) => r.success).length;
       expect(successCount).toBeGreaterThan(3);
 
       // Store created IDs for cleanup
       const createdIds = batchResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Batch (parallel) creation of 5 records: ${batchDuration}ms`);
@@ -311,7 +311,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(testIds.length);
 
-      const successCount = result.filter((r: any) => r.success).length;
+      const successCount = result.filter((r: unknown) => r.success).length;
       expect(successCount).toBe(testIds.length); // All should succeed for existing records
 
       // Batch get should be fast
@@ -334,8 +334,8 @@ describe('Universal Tools Performance Tests', () => {
       });
 
       const createdIds = createResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
 
       expect(createdIds.length).toBeGreaterThan(5, `Expected more than 5 created IDs, got ${createdIds.length}. This may indicate API failures during record creation.`);
 
@@ -355,7 +355,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(deleteResult)).toBe(true);
       expect(deleteResult).toHaveLength(createdIds.length);
 
-      const successCount = deleteResult.filter((r: any) => r.success).length;
+      const successCount = deleteResult.filter((r: unknown) => r.success).length;
       expect(successCount).toBe(createdIds.length); // All deletes should succeed
 
       // Batch delete should be fast
@@ -473,8 +473,8 @@ describe('Universal Tools Performance Tests', () => {
       expect(duration).toBeLessThan(15000); // Reasonable upper bound
 
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Rate limited batch (8 records): ${duration}ms`);
@@ -502,13 +502,13 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(15);
 
-      const successCount = result.filter((r: any) => r.success).length;
+      const successCount = result.filter((r: unknown) => r.success).length;
       const failureCount = result.length - successCount;
       expect(successCount).toBeGreaterThan(10, `Expected >10 successful operations, got ${successCount}. Failures: ${failureCount}`); // Most should succeed
       
       // Log failed operations for debugging
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
+        const failures = result.filter((r: unknown) => !r.success);
         console.warn(`Batch operation failures:`, failures.map(f => f.error).join(', '));
       }
 
@@ -516,8 +516,8 @@ describe('Universal Tools Performance Tests', () => {
       expect(duration).toBeLessThan(25000); // 25 seconds max
 
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Concurrency limited batch (15 records): ${duration}ms, ${successCount}/15 successful`);
@@ -552,8 +552,8 @@ describe('Universal Tools Performance Tests', () => {
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // Less than 50MB increase
 
       const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Memory test (30 records): Memory increase ${Math.round(memoryIncrease / 1024 / 1024)}MB`);
@@ -574,8 +574,8 @@ describe('Universal Tools Performance Tests', () => {
       });
 
       const createdIds = createResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
 
       expect(createdIds.length).toBeGreaterThan(3, `Expected more than 3 created IDs, got ${createdIds.length}. This may indicate API failures during record creation.`);
 
@@ -585,7 +585,7 @@ describe('Universal Tools Performance Tests', () => {
         record_ids: createdIds
       });
 
-      const deleteSuccessCount = deleteResult.filter((r: any) => r.success).length;
+      const deleteSuccessCount = deleteResult.filter((r: unknown) => r.success).length;
       expect(deleteSuccessCount).toBe(createdIds.length);
 
       // No memory leaks expected - this is more of a conceptual test

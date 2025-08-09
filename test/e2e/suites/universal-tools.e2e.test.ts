@@ -52,7 +52,7 @@ async function callUniversalTool(
 /**
  * Helper to create test data and track for cleanup
  */
-function trackForCleanup(type: string, id: string, data?: any): void {
+function trackForCleanup(type: string, id: string, data?: unknown): void {
   createdRecords.push({ type, id, data });
   E2ETestBase.trackForCleanup(type as unknown, id, data);
 }
@@ -60,7 +60,7 @@ function trackForCleanup(type: string, id: string, data?: any): void {
 /**
  * Helper to create a test record and return its ID
  */
-async function createTestRecord(resourceType: 'companies' | 'people', dataOverrides?: any): Promise<string> {
+async function createTestRecord(resourceType: 'companies' | 'people', dataOverrides?: unknown): Promise<string> {
   let testData;
   let recordData;
   

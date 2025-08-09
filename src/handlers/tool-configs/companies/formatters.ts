@@ -15,7 +15,7 @@ import { DetailsToolConfig } from '../../tool-types.js';
 function getCompanyValue(
   company: Company,
   field: string
-): Array<{ value: any; [key: string]: any }> | undefined {
+): Array<{ value: unknown; [key: string]: unknown }> | undefined {
   const values = company.values as unknown;
   return values?.[field];
 }
@@ -236,7 +236,7 @@ ${address || 'Not available'}`;
       const services = getCompanyValue(company as Company, 'services') || [];
       const categories =
         getCompanyValue(company as Company, 'categories')?.map(
-          (cat: any) => cat.option?.title
+          (cat: unknown) => cat.option?.title
         ) || [];
       const industry =
         getCompanyValue(company as Company, 'industry')?.[0]?.value ||

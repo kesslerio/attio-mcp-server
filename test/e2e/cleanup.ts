@@ -223,7 +223,7 @@ export class E2ECleanup {
   /**
    * Fetch all objects of a specific type
    */
-  private async fetchAllObjectsOfType(type: string): Promise<any[]> {
+  private async fetchAllObjectsOfType(type: string): Promise<unknown[]> {
     const allObjects: unknown[] = [];
     let cursor: string | undefined;
     let hasMore = true;
@@ -231,7 +231,7 @@ export class E2ECleanup {
     while (hasMore) {
       try {
         const response = await this.rateLimitedCall(async () => {
-          const params: any = { limit: 100 };
+          const params: unknown = { limit: 100 };
           if (cursor) params.cursor = cursor;
 
           switch (type) {
@@ -276,7 +276,7 @@ export class E2ECleanup {
   /**
    * Check if object is orphaned (matches test patterns and age criteria)
    */
-  private isOrphanedObject(obj: any, type: string): boolean {
+  private isOrphanedObject(obj: unknown, type: string): boolean {
     // Check if object matches test pattern
     if (!this.matchesTestPattern(obj)) {
       return false;
@@ -300,7 +300,7 @@ export class E2ECleanup {
   /**
    * Check if object matches test data patterns
    */
-  private matchesTestPattern(obj: any): boolean {
+  private matchesTestPattern(obj: unknown): boolean {
     const testPrefix = this.config.testData.testDataPrefix;
     const testDomain = this.config.testData.testEmailDomain;
     const testCompanyDomain = this.config.testData.testCompanyDomain;
@@ -318,7 +318,7 @@ export class E2ECleanup {
   /**
    * Extract object ID based on type
    */
-  private extractObjectId(obj: any, type: string): string {
+  private extractObjectId(obj: unknown, type: string): string {
     switch (type) {
       case 'companies':
       case 'people':
@@ -337,7 +337,7 @@ export class E2ECleanup {
   /**
    * Extract object name for logging
    */
-  private extractObjectName(obj: any, type: string): string | undefined {
+  private extractObjectName(obj: unknown, type: string): string | undefined {
     switch (type) {
       case 'companies':
       case 'people':
@@ -356,7 +356,7 @@ export class E2ECleanup {
   /**
    * Extract created date
    */
-  private extractCreatedAt(obj: any): Date | undefined {
+  private extractCreatedAt(obj: unknown): Date | undefined {
     const dateString = obj.created_at || obj.createdAt;
     return dateString ? new Date(dateString) : undefined;
   }

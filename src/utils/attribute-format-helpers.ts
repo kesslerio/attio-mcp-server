@@ -33,7 +33,7 @@ export function convertAttributeFormats(
 /**
  * Converts company attribute formats
  */
-function convertCompanyAttributes(attributes: any): any {
+function convertCompanyAttributes(attributes: unknown): any {
   const corrected = { ...attributes };
 
   // Convert 'domain' to 'domains' array
@@ -64,7 +64,7 @@ function convertCompanyAttributes(attributes: any): any {
 /**
  * Converts people attribute formats
  */
-function convertPeopleAttributes(attributes: any): any {
+function convertPeopleAttributes(attributes: unknown): any {
   const corrected = { ...attributes };
 
   // Convert name from object format to string
@@ -98,7 +98,7 @@ function convertPeopleAttributes(attributes: any): any {
 
   // Convert email_addresses from object format to string array
   if (corrected.email_addresses && Array.isArray(corrected.email_addresses)) {
-    const converted = corrected.email_addresses.map((item: any) => {
+    const converted = corrected.email_addresses.map((item: unknown) => {
       if (typeof item === 'object' && item.email_address) {
         console.log(`[Format Helper] Converting email object format to string`);
         return item.email_address;
@@ -116,7 +116,7 @@ function convertPeopleAttributes(attributes: any): any {
 
   // Convert phone_numbers from object format to string array
   if (corrected.phone_numbers && Array.isArray(corrected.phone_numbers)) {
-    const converted = corrected.phone_numbers.map((item: any) => {
+    const converted = corrected.phone_numbers.map((item: unknown) => {
       if (typeof item === 'object' && (item.phone_number || item.number)) {
         console.log(`[Format Helper] Converting phone object format to string`);
         return item.phone_number || item.number;

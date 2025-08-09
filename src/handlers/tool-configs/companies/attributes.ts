@@ -88,7 +88,7 @@ ${
   discoverAttributes: {
     name: 'discover-company-attributes',
     handler: discoverCompanyAttributes,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       // Sanity check for empty or invalid results
       if (
         !result ||
@@ -116,7 +116,7 @@ ${
       output += `\nCUSTOM FIELDS:\n`;
       if (result.custom?.length > 0) {
         result.custom.forEach((field: string) => {
-          const fieldInfo = result.all.find((f: any) => f.name === field);
+          const fieldInfo = (result.all as Array<Record<string, unknown>>).find((f) => f.name === field);
           output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
         });
       } else {
@@ -130,7 +130,7 @@ ${
   getAttributes: {
     name: 'get-company-attributes',
     handler: getCompanyAttributes,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>) => {
       // Enhanced error handling for unexpected result structure
       if (!result || typeof result !== 'object') {
         return `Error: Unable to process the response. Received: ${JSON.stringify(

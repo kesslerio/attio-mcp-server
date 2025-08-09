@@ -12,7 +12,7 @@ export const notesToolConfigs = {
   notes: {
     name: 'get-company-notes',
     handler: getCompanyNotes,
-    formatResult: (notes: any) => {
+    formatResult: (notes: Record<string, unknown>) => {
       if (!notes || notes.length === 0) {
         return 'No notes found for this company.';
       }
@@ -26,7 +26,7 @@ export const notesToolConfigs = {
       }
 
       return `Found ${notes.length} notes:\n${notes
-        .map((note: any) => {
+        .map((note) => {
           // The AttioNote interface shows these are direct properties
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
@@ -72,7 +72,7 @@ export const notesToolConfigs = {
     name: 'create-company-note',
     handler: createCompanyNote,
     idParam: 'companyId',
-    formatResult: (note: any) => {
+    formatResult: (note: Record<string, unknown>) => {
       if (!note) {
         return 'Failed to create note.';
       }

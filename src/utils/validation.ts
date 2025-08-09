@@ -46,7 +46,7 @@ function formatError(path: string, message: string): string {
  * @param path - Path to the property
  * @returns Error message if invalid, empty string if valid
  */
-function validateType(value: any, expectedType: string, path: string): string {
+function validateType(value: unknown, expectedType: string, path: string): string {
   // Handle null/undefined
   if (value === null || value === undefined) {
     return '';
@@ -92,7 +92,7 @@ function validateType(value: any, expectedType: string, path: string): string {
  * @returns Array of error messages
  */
 function validateConstraints(
-  value: any,
+  value: unknown,
   schema: ValidationSchema,
   path: string
 ): string[] {
@@ -201,7 +201,7 @@ function validateConstraints(
  * @returns Array of error messages
  */
 function validateValue(
-  value: any,
+  value: unknown,
   schema: ValidationSchema,
   path: string = ''
 ): string[] {
@@ -267,7 +267,7 @@ function validateValue(
  * @returns Validation result
  */
 export function validateInput(
-  input: any,
+  input: unknown,
   schema: ValidationSchema
 ): ValidationResult {
   const errors = validateValue(input, schema);
@@ -287,10 +287,10 @@ export function validateInput(
  * @returns Error response if invalid, null if valid
  */
 export function validateRequest(
-  input: any,
+  input: unknown,
   schema: ValidationSchema,
-  errorFormatter: (error: Error, type: ErrorType, details: any) => any
-): any | null {
+  errorFormatter: (error: Error, type: ErrorType, details: unknown) => any
+): unknown | null {
   const result = validateInput(input, schema);
 
   if (!result.isValid) {

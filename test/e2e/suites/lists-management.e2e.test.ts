@@ -59,7 +59,7 @@ const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 /**
  * Helper to create test data and track for cleanup
  */
-function trackForCleanup(type: string, id: string, data?: any): void {
+function trackForCleanup(type: string, id: string, data?: unknown): void {
   createdRecords.push({ type, id, data });
   E2ETestBase.trackForCleanup(type as unknown, id, data);
 }

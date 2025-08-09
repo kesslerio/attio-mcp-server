@@ -9,7 +9,7 @@ interface PromptErrorResponse {
     code: string | number;
     message: string;
     type: ErrorType;
-    details?: any;
+    details?: unknown;
   };
   content: Array<{ type: string; text: string }>;
   isError: boolean;
