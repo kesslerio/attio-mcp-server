@@ -72,17 +72,76 @@ export async function createTask(
 ): Promise<AttioTask> {
   const api = getAttioClient();
   const path = '/tasks';
-  const data: TaskCreateData = { 
+  
+  // Build task data with all required fields
+  const taskData: Record<string, unknown> = { 
     content,
-    format: 'plaintext'  // Required field for Attio API
+    format: 'plaintext',  // Required field for Attio API
+    is_completed: false,  // Default to not completed for new tasks
+    linked_records: [],   // Default to empty array
+    assignees: [],        // Default to empty array
+    deadline_at: null     // Must be explicitly null if not provided
   };
-  if (options.assigneeId)
-    data.assignee = { id: options.assigneeId, type: 'workspace-member' };
-  if (options.dueDate) data.deadline_at = options.dueDate;  // Use deadline_at instead of due_date
-  if (options.recordId) data.linked_records = [{ id: options.recordId }];
+  
+  // Add optional fields only if provided
+  if (options.assigneeId) {
+    taskData.assignees = [{ id: options.assigneeId, type: 'workspace-member' }];
+  }
+  
+  if (options.dueDate) {
+    taskData.deadline_at = options.dueDate;  // Override null with actual date
+  }
+  
+  // Add linked records if provided
+  if (options.recordId) {
+    taskData.linked_records = [{ id: options.recordId }];
+  }
+  
+  // Wrap in 'data' field as required by Attio API
+  const requestPayload = {
+    data: taskData
+  };
+  
   return callWithRetry(async () => {
-    const res = await api.post<AttioSingleResponse<AttioTask>>(path, data);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Debug logging for request
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createTask] Sending request to:', path);
+      console.log('[createTask] Request payload:', JSON.stringify(requestPayload, null, 2));
+      console.log('[createTask] API instance exists?', !!api);
+    }
+    
+    let res;
+    try {
+      console.log('[createTask] About to call api.post');
+      res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
+      console.log('[createTask] api.post returned:', res);
+    } catch (err) {
+      console.error('[createTask] api.post threw error:', err);
+      throw err;
+    }
+    
+    // Debug logging to identify the response structure
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[createTask] Raw res object:', res);
+      console.log('[createTask] API response:', JSON.stringify(res, null, 2));
+    }
+    
+    // Handle different response structures
+    let task: AttioTask;
+    if (res && typeof res === 'object' && 'data' in res) {
+      // Axios response object - extract the data property
+      const responseData = res.data;
+      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        // API response wrapped in data field
+        task = responseData.data as AttioTask;
+      } else {
+        // Direct response data
+        task = responseData as AttioTask;
+      }
+    } else {
+      throw new Error(`Unexpected response structure from tasks API: ${JSON.stringify(res)}`);
+    }
+    
     // Note: Only transform content field for create response (status not returned on create)
     return transformTaskResponse(task);
   }, retryConfig);
