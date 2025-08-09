@@ -12,6 +12,7 @@ import {
   CrossResourceValidator
 } from '../src/handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../src/handlers/tool-configs/universal/types.js';
+import { getErrorMessage, ensureError } from '../src/utils/error-utilities.js';
 
 describe('Enhanced Universal Error Handling', () => {
   describe('Input Sanitization', () => {
@@ -71,8 +72,9 @@ describe('Enhanced Universal Error Handling', () => {
         validateUniversalToolParams('search-records', params);
         expect.fail('Should have thrown validation error');
       } catch (error: unknown) {
-        expect(error).toBeInstanceOf(UniversalValidationError);
-        const validationError = error as UniversalValidationError;
+        const errorObj = ensureError(error);
+        expect(errorObj).toBeInstanceOf(UniversalValidationError);
+        const validationError = errorObj as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
         expect(validationError.example).toContain('companies, people, records, tasks');
       }

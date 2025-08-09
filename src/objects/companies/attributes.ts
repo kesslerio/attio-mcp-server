@@ -4,6 +4,7 @@
 import { Company } from '../../types/attio.js';
 import { getCompanyDetails, extractCompanyId } from './basic.js';
 import { listCompanies } from './basic.js';
+import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
 
 /**
  * Logs attribute operation errors in a consistent format
@@ -23,9 +24,7 @@ function logAttributeError(
       error instanceof Error ? error.constructor.name : typeof error
     }`
   );
-  console.error(
-    `- Message: ${error instanceof Error ? error.message : String(error)}`
-  );
+  console.error(`- Message: ${getErrorMessage(error)}`);
 
   if (error instanceof Error && error.stack) {
     console.error(`- Stack trace: ${error.stack}`);
@@ -95,10 +94,7 @@ export async function getCompanyFields(
 
     return result;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`Could not retrieve company fields: ${error.message}`);
-    }
-    throw error;
+    throw wrapError(error, 'Could not retrieve company fields');
   }
 }
 

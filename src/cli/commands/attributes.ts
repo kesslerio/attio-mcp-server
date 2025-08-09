@@ -9,6 +9,7 @@ import {
   writeMappingConfig,
   MappingConfig,
 } from '../../utils/config-loader.js';
+import { handleAxiosError } from '../../utils/error-utilities.js';
 
 /**
  * Interface for command arguments
@@ -71,14 +72,7 @@ export async function getAvailableObjects(apiKey: string): Promise<string[]> {
       .filter((obj: any) => obj.api_slug)
       .map((obj: any) => obj.api_slug);
   } catch (error: unknown) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(
-        `Failed to get objects: ${error.response.status} ${
-          error.response.statusText
-        }\n${JSON.stringify(error.response.data, null, 2)}`
-      );
-    }
-    throw error;
+    throw handleAxiosError(error, 'get objects');
   }
 }
 
@@ -110,18 +104,7 @@ export async function getObjectAttributes(
 
     return mappings;
   } catch (error: unknown) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(
-        `Failed to get attributes for object ${objectSlug}: ${
-          error.response.status
-        } ${error.response.statusText}\n${JSON.stringify(
-          error.response.data,
-          null,
-          2
-        )}`
-      );
-    }
-    throw error;
+    throw handleAxiosError(error, `get attributes for object ${objectSlug}`);
   }
 }
 
