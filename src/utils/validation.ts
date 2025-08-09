@@ -46,7 +46,11 @@ function formatError(path: string, message: string): string {
  * @param path - Path to the property
  * @returns Error message if invalid, empty string if valid
  */
-function validateType(value: unknown, expectedType: string, path: string): string {
+function validateType(
+  value: unknown,
+  expectedType: string,
+  path: string
+): string {
   // Handle null/undefined
   if (value === null || value === undefined) {
     return '';
@@ -106,7 +110,10 @@ function validateConstraints(
   // Enum validation
   if (schema.enum && !schema.enum.includes(value)) {
     errors.push(
-      formatError(path, `Value must be one of: ${schema.enum.map(String).join(', ')}`)
+      formatError(
+        path,
+        `Value must be one of: ${schema.enum.map(String).join(', ')}`
+      )
     );
   }
 
@@ -219,7 +226,13 @@ function validateValue(
   errors.push(...constraintErrors);
 
   // Object validation
-  if (schema.type === 'object' && schema.properties && value && typeof value === 'object' && !Array.isArray(value)) {
+  if (
+    schema.type === 'object' &&
+    schema.properties &&
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  ) {
     // Required properties validation
     if (schema.required) {
       const objValue = value as Record<string, unknown>;
@@ -251,7 +264,11 @@ function validateValue(
             continue;
           }
 
-          const propErrors = validateValue(propValue, propSchema as ValidationSchema, propPath);
+          const propErrors = validateValue(
+            propValue,
+            propSchema as ValidationSchema,
+            propPath
+          );
           errors.push(...propErrors);
         }
       }
@@ -291,7 +308,11 @@ export function validateInput(
 export function validateRequest(
   input: unknown,
   schema: ValidationSchema,
-  errorFormatter: (error: Error, type: ErrorType, details: Record<string, unknown>) => unknown
+  errorFormatter: (
+    error: Error,
+    type: ErrorType,
+    details: Record<string, unknown>
+  ) => unknown
 ): unknown | null {
   const result = validateInput(input, schema);
 

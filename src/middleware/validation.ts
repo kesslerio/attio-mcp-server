@@ -139,7 +139,11 @@ export class JsonSchemaValidator {
           if (schema.properties[key]) {
             const fieldPath = path ? `${path}.${key}` : key;
             errors.push(
-              ...this.validateValue(value, schema.properties[key] as SchemaDefinition, fieldPath)
+              ...this.validateValue(
+                value,
+                schema.properties[key] as SchemaDefinition,
+                fieldPath
+              )
             );
           } else if (schema.additionalProperties === false) {
             errors.push({

@@ -386,7 +386,8 @@ export function trackPerformance(toolName?: string) {
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
-    const name = toolName || `${(target as any).constructor.name}.${propertyKey}`;
+    const name =
+      toolName || `${(target as any).constructor.name}.${propertyKey}`;
 
     descriptor.value = async function (...args: unknown[]) {
       const startTime = PerformanceTracker.startOperation(name);

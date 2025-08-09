@@ -396,7 +396,10 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Get performance statistics
    */
-  getStatistics(toolName?: string, timeWindow?: number): Record<string, unknown> {
+  getStatistics(
+    toolName?: string,
+    timeWindow?: number
+  ): Record<string, unknown> {
     const now = Date.now();
     const windowStart = timeWindow ? now - timeWindow : 0;
 
