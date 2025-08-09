@@ -320,7 +320,7 @@ describe('Date Utils', () => {
   describe('isValidISODateString', () => {
     it('should validate ISO date strings', () => {
       const validCases = [
-        '2023-01-15T12:00:00.000Z', 
+        '2023-01-15T12:00:00.000Z',
         '2023-01-15T12:00:00Z',
         '2023-01-15', // date-only format is also valid (intentionally)
       ];
