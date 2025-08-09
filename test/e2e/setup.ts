@@ -105,7 +105,11 @@ export class E2ETestBase {
 
     // Initialize API client
     try {
-      await initializeAttioClient();
+      const apiKey = process.env.ATTIO_API_KEY;
+      if (!apiKey) {
+        throw new Error('ATTIO_API_KEY environment variable is required');
+      }
+      initializeAttioClient(apiKey);
       this.apiClient = getAttioClient();
       console.log('✅ Attio API client initialized');
     } catch (error: unknown) {
