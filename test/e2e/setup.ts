@@ -473,7 +473,7 @@ export class E2ESetupUtils {
   /**
    * Generate test report
    */
-  static generateTestReport(results: unknown[]): string {
+  static generateTestReport(results: any[]): string {
     const report = {
       timestamp: new Date().toISOString(),
       totalTests: results.length,

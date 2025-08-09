@@ -22,7 +22,7 @@ export const attributeToolConfigs = {
       const fields = Object.keys(company.values || {});
 
       // Create a simplified version of the values for display
-      const simplifiedValues: Record<string, unknown> = {};
+      const simplifiedValues: Record<string, any> = {};
       for (const [key, value] of Object.entries(company.values || {})) {
         if (Array.isArray(value) && value.length > 0) {
           // Extract just the actual value from the array structure

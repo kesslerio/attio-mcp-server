@@ -22,7 +22,7 @@ describe('Attribute Type Detection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (getAttioClient as unknown).mockReturnValue(mockApi);
+    (getAttioClient as any).mockReturnValue(mockApi);
     clearAttributeCache();
   });
 

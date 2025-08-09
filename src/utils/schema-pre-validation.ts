@@ -26,7 +26,7 @@ export interface AttributeMetadata {
   is_system?: boolean;
   is_writable?: boolean;
   is_required?: boolean;
-  allowed_values?: unknown[];
+  allowed_values?: any[];
   format?: string;
 }
 
@@ -414,7 +414,7 @@ export class SchemaPreValidator {
    */
   static async validateRecordData(
     resourceType: UniversalResourceType,
-    recordData: Record<string, unknown>,
+    recordData: Record<string, any>,
     context?: { workspaceId?: string; tenantId?: string }
   ): Promise<{
     valid: boolean;
@@ -646,7 +646,7 @@ export class SchemaPreValidator {
    */
   static async withPreValidation<T>(
     resourceType: UniversalResourceType,
-    recordData: Record<string, unknown>,
+    recordData: Record<string, any>,
     operation: () => Promise<T>
   ): Promise<T> {
     // Validate record data

@@ -82,7 +82,7 @@ function getObjectSize(obj: unknown): number {
  * @returns Validation result
  */
 export function validateBatchSize(
-  items: unknown[] | undefined | null,
+  items: any[] | undefined | null,
   operationType: string,
   resourceType?: string
 ): BatchValidationResult {
@@ -239,7 +239,7 @@ export function validateSearchQuery(
  * @returns Validation result
  */
 export function validateBatchOperation(params: {
-  items?: unknown[];
+  items?: any[];
   operationType: string;
   resourceType?: string;
   checkPayload?: boolean;

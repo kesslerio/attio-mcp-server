@@ -16,7 +16,7 @@ import { PaginatedResponse } from '../../utils/pagination.js';
  */
 interface PaginatedSearchToolConfig {
   name: string;
-  handler: (...args: unknown[]) => Promise<PaginatedResponse<Person>>;
+  handler: (...args: any[]) => Promise<PaginatedResponse<Person>>;
   formatResult: (result: PaginatedResponse<Person>) => string;
 }
 

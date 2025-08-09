@@ -30,7 +30,7 @@ export interface PromptTemplate {
  * Prompt execution request
  */
 export interface PromptExecutionRequest {
-  parameters: Record<string, unknown>;
+  parameters: Record<string, any>;
 }
 
 /**

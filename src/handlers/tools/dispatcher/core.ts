@@ -313,7 +313,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
     
     // Handle Universal tools (Issue #352 - Universal tool consolidation)
-    } else if (resourceType === 'UNIVERSAL' as unknown) {
+    } else if (resourceType === 'UNIVERSAL' as any) {
       // For universal tools, use the tool's own handler directly
       const args = request.params.arguments;
       
@@ -325,10 +325,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       if (toolConfig.formatResult) {
         try {
           // Try with all possible parameters (result, resourceType, infoType)
-          formattedResult = (toolConfig.formatResult as unknown)(rawResult, args?.resource_type, args?.info_type);
+          formattedResult = (toolConfig.formatResult as any)(rawResult, args?.resource_type, args?.info_type);
         } catch {
           // Fallback to just result if signature mismatch
-          formattedResult = (toolConfig.formatResult as unknown)(rawResult);
+          formattedResult = (toolConfig.formatResult as any)(rawResult);
         }
       } else {
         formattedResult = JSON.stringify(rawResult, null, 2);
@@ -340,10 +340,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       };
       
     // Handle General tools (relationship helpers, etc.)
-    } else if (resourceType === 'GENERAL' as unknown) {
+    } else if (resourceType === 'GENERAL' as any) {
       // For general tools, use the tool's own handler directly
       const args = request.params.arguments;
-      let handlerArgs: unknown[] = [];
+      let handlerArgs: any[] = [];
       
       // Map arguments based on tool type
       if (toolType === 'linkPersonToCompany' || toolType === 'unlinkPersonFromCompany') {
@@ -396,7 +396,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       additionalInfo:
         error && typeof error === 'object' && 'details' in error
-          ? (error as unknown).details
+          ? (error as any).details
           : undefined,
     };
 

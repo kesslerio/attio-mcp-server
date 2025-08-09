@@ -317,7 +317,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
  */
 export const getAttributesConfig: UniversalToolConfig = {
   name: 'get-attributes',
-  handler: async (params: UniversalAttributesParams): Promise<unknown> => {
+  handler: async (params: UniversalAttributesParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('get-attributes', params);
       return await handleUniversalGetAttributes(sanitizedParams);
@@ -359,7 +359,7 @@ export const getAttributesConfig: UniversalToolConfig = {
  */
 export const discoverAttributesConfig: UniversalToolConfig = {
   name: 'discover-attributes',
-  handler: async (params: { resource_type: UniversalResourceType }): Promise<unknown> => {
+  handler: async (params: { resource_type: UniversalResourceType }): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('discover-attributes', params);
       return await handleUniversalDiscoverAttributes(sanitizedParams.resource_type);
@@ -395,7 +395,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
  */
 export const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
-  handler: async (params: UniversalDetailedInfoParams): Promise<unknown> => {
+  handler: async (params: UniversalDetailedInfoParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('get-detailed-info', params);
       return await handleUniversalGetDetailedInfo(sanitizedParams);

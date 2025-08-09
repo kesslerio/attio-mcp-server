@@ -15,8 +15,8 @@ import { DetailsToolConfig } from '../../tool-types.js';
 function getCompanyValue(
   company: Company,
   field: string
-): Array<{ value: unknown; [key: string]: unknown }> | undefined {
-  const values = company.values as unknown;
+): Array<{ value: any; [key: string]: any }> | undefined {
+  const values = company.values as any;
   return values?.[field];
 }
 
@@ -36,7 +36,7 @@ export const formatterConfigs = {
       const description =
         getCompanyValue(company, 'description')?.[0]?.value ||
         'No description available';
-      const createdAt = (company as unknown).created_at || 'Unknown';
+      const createdAt = (company as any).created_at || 'Unknown';
 
       // Extract other key details
       const location = getCompanyValue(company, 'primary_location')?.[0];
@@ -73,7 +73,7 @@ For full details, use get-company-json with this ID: ${companyId}`;
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
       try {
-        const cleanedCompany = JSON.parse(JSON.stringify(company)) as unknown;
+        const cleanedCompany = JSON.parse(JSON.stringify(company)) as any;
 
         // Fix the typo in the response data
         if (cleanedCompany.values?.typpe) {
@@ -236,7 +236,7 @@ ${address || 'Not available'}`;
       const services = getCompanyValue(company as Company, 'services') || [];
       const categories =
         getCompanyValue(company as Company, 'categories')?.map(
-          (cat: unknown) => cat.option?.title
+          (cat: any) => cat.option?.title
         ) || [];
       const industry =
         getCompanyValue(company as Company, 'industry')?.[0]?.value ||

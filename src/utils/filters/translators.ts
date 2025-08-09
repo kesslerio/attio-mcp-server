@@ -207,7 +207,7 @@ function createOrFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
-  const orConditions: unknown[] = [];
+  const orConditions: any[] = [];
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);

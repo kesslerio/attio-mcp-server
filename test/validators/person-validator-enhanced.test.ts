@@ -30,7 +30,7 @@ describe('PersonValidator.validateCreate', () => {
     (searchPeopleByEmails as vi.Mock).mockResolvedValue([
       { email: 'dup@example.com', exists: true, personId: 'p1' },
     ]);
-    const attrs = { name: 'Test', email_addresses: ['dup@example.com'] } as unknown;
+    const attrs = { name: 'Test', email_addresses: ['dup@example.com'] } as any;
     await expect(PersonValidator.validateCreate(attrs)).rejects.toThrow(
       'Person(s) with email(s) dup@example.com already exist'
     );
@@ -47,7 +47,7 @@ describe('PersonValidator.validateCreate', () => {
       name: 'Test',
       company: 'Acme',
       email_addresses: ['a@b.com'],
-    } as unknown;
+    } as any;
     const result = await PersonValidator.validateCreate(attrs);
     expect(result.company).toEqual({ record_id: 'comp_1' });
   });
@@ -61,7 +61,7 @@ describe('PersonValidator.validateCreate', () => {
       name: 'Test',
       company: 'None',
       email_addresses: ['a@b.com'],
-    } as unknown;
+    } as any;
     await expect(PersonValidator.validateCreate(attrs)).rejects.toThrow(
       "Company 'None' not found. Provide a valid company ID."
     );

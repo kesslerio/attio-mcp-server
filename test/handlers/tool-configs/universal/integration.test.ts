@@ -548,7 +548,7 @@ describe('Universal Tools Integration Tests', () => {
           {
             // Invalid record - missing required name field
             website: `https://invalid-${timestamp}.com`
-          } as unknown
+          } as any
         ];
 
         const result = await advancedOperationsToolConfigs['batch-operations'].handler({

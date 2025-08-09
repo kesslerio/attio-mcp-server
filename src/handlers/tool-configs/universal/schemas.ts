@@ -567,7 +567,7 @@ export class CrossResourceValidator {
       const client = getAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
-    } catch(error: unknown) {
+    } catch (error: any) {
       // Classify the error based on response
       if (error?.response?.status === 404) {
         return {

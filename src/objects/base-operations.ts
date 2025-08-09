@@ -19,9 +19,9 @@ import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
  */
 function translateAttributeNames(
   objectType: ResourceType,
-  attributes: Record<string, unknown>
-): Record<string, unknown> {
-  const translated: Record<string, unknown> = {};
+  attributes: Record<string, any>
+): Record<string, any> {
+  const translated: Record<string, any> = {};
 
   for (const [userKey, value] of Object.entries(attributes)) {
     // Translate the attribute name using the mapping system
@@ -50,8 +50,8 @@ function translateAttributeNames(
  */
 export async function createObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
-  attributes: unknown,
-  validator?: (attrs: unknown) => Promise<unknown>
+  attributes: any,
+  validator?: (attrs: any) => Promise<any>
 ): Promise<T> {
   // Validate if validator provided
   const validatedAttributes = validator
@@ -128,8 +128,8 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
   recordId: string,
-  attributes: unknown,
-  validator?: (id: string, attrs: unknown) => Promise<unknown>
+  attributes: any,
+  validator?: (id: string, attrs: any) => Promise<any>
 ): Promise<T> {
   // Validate if validator provided
   const validatedAttributes = validator
@@ -187,8 +187,8 @@ export async function updateObjectAttributeWithDynamicFields<
   objectType: ResourceType,
   recordId: string,
   attributeName: string,
-  attributeValue: unknown,
-  updateFn: (id: string, attrs: unknown) => Promise<T>
+  attributeValue: any,
+  updateFn: (id: string, attrs: any) => Promise<T>
 ): Promise<T> {
   // Update the specific attribute using the provided update function
   const attributes = { [attributeName]: attributeValue };

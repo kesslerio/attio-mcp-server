@@ -82,7 +82,7 @@ function delay(ms: number): Promise<void> {
  */
 async function processInParallelWithErrorIsolation<T>(
   items: T[],
-  processor: (item: T, index: number) => Promise<unknown>,
+  processor: (item: T, index: number) => Promise<any>,
   maxConcurrency: number = MAX_CONCURRENT_REQUESTS
 ): Promise<Array<{ success: boolean; result?: unknown; error?: string; data?: T }>> {
   const results: Array<{ success: boolean; result?: unknown; error?: string; data?: T }> = [];
@@ -438,7 +438,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
  */
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: BatchOperationsParams): Promise<unknown> => {
+  handler: async (params: BatchOperationsParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('batch-operations', params);
       
@@ -464,7 +464,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, unknown>) => {
+            async (recordData: Record<string, any>) => {
               return await handleUniversalCreate({
                 resource_type,
                 record_data: recordData,
@@ -494,7 +494,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, unknown>) => {
+            async (recordData: Record<string, any>) => {
               if (!recordData.id) {
                 throw new Error('Record ID is required for update operation');
               }

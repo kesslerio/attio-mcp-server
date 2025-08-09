@@ -53,11 +53,11 @@ describe('Filter Validation Utilities', () => {
     });
 
     it('should throw error for filters missing filters property', () => {
-      expect(() => validateFiltersObject({} as unknown)).toThrow(
+      expect(() => validateFiltersObject({} as any)).toThrow(
         FilterValidationError
       );
 
-      expect(() => validateFiltersObject({} as unknown)).toThrow(
+      expect(() => validateFiltersObject({} as any)).toThrow(
         ERROR_MESSAGES.MISSING_FILTERS_PROPERTY
       );
     });
@@ -65,7 +65,7 @@ describe('Filter Validation Utilities', () => {
     it('should throw error for non-array filters property', () => {
       const filters = {
         filters: { not: 'an array' },
-      } as unknown;
+      } as any;
 
       expect(() => validateFiltersObject(filters)).toThrow(
         FilterValidationError
@@ -96,7 +96,7 @@ describe('Filter Validation Utilities', () => {
         {
           condition: FilterConditionType.CONTAINS,
           value: 'test',
-        } as unknown,
+        } as any,
       ];
 
       const invalidFilters = collectInvalidFilters(filters);
@@ -110,7 +110,7 @@ describe('Filter Validation Utilities', () => {
           attribute: {},
           condition: FilterConditionType.CONTAINS,
           value: 'test',
-        } as unknown,
+        } as any,
       ];
 
       const invalidFilters = collectInvalidFilters(filters);
@@ -125,7 +125,7 @@ describe('Filter Validation Utilities', () => {
         {
           attribute: { slug: 'name' },
           value: 'test',
-        } as unknown,
+        } as any,
       ];
 
       const invalidFilters = collectInvalidFilters(filters);
@@ -234,7 +234,7 @@ describe('Filter Validation Utilities', () => {
             attribute: {},
             condition: FilterConditionType.CONTAINS,
             value: 'test',
-          } as unknown,
+          } as any,
         ],
       };
 

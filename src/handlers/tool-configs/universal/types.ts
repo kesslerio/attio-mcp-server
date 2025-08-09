@@ -95,7 +95,7 @@ export interface UniversalRecordDetailsParams {
  */
 export interface UniversalCreateParams {
   resource_type: UniversalResourceType;
-  record_data: Record<string, unknown>;
+  record_data: Record<string, any>;
   return_details?: boolean;
 }
 
@@ -105,7 +105,7 @@ export interface UniversalCreateParams {
 export interface UniversalUpdateParams {
   resource_type: UniversalResourceType;
   record_id: string;
-  record_data: Record<string, unknown>;
+  record_data: Record<string, any>;
   return_details?: boolean;
 }
 
@@ -189,7 +189,7 @@ export interface TimeframeSearchParams {
 export interface BatchOperationsParams {
   resource_type: UniversalResourceType;
   operation_type: BatchOperationType;
-  records?: Array<Record<string, unknown>>;
+  records?: Array<Record<string, any>>;
   record_ids?: string[];
   limit?: number;
   offset?: number;
@@ -199,18 +199,18 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: unknown) => Promise<unknown>;
-  formatResult: (results: Record<string, unknown>) => string;
+  handler: (params: any) => Promise<any>;
+  formatResult: (results: any) => string;
 }
 
 /**
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.PEOPLE]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.RECORDS]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.TASKS]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.COMPANIES]: (params: any) => Promise<any>;
+  [UniversalResourceType.PEOPLE]: (params: any) => Promise<any>;
+  [UniversalResourceType.RECORDS]: (params: any) => Promise<any>;
+  [UniversalResourceType.TASKS]: (params: any) => Promise<any>;
 }
 
 /**
@@ -222,5 +222,5 @@ export interface UniversalResultFormatter {
   formatCreate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
   formatUpdate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
   formatDelete: (success: boolean, recordId: string, resourceType: UniversalResourceType) => string;
-  formatAttributes: (attributes: unknown, resourceType: UniversalResourceType) => string;
+  formatAttributes: (attributes: any, resourceType: UniversalResourceType) => string;
 }

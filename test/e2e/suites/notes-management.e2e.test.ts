@@ -168,7 +168,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const notes = E2EAssertions.expectMcpData(response);
       
       // Notes might be an array or a response object with data array
-      let noteArray: unknown[] = [];
+      let noteArray: any[] = [];
       if (Array.isArray(notes)) {
         noteArray = notes;
       } else if (notes && Array.isArray(notes.data)) {
@@ -303,7 +303,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const notes = E2EAssertions.expectMcpData(response);
       
       // Notes might be an array or a response object
-      let noteArray: unknown[] = [];
+      let noteArray: any[] = [];
       if (Array.isArray(notes)) {
         noteArray = notes;
       } else if (notes && Array.isArray(notes.data)) {

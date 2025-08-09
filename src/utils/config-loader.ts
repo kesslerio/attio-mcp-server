@@ -10,7 +10,7 @@ import path from 'path';
  */
 export interface MappingConfig {
   version: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
   mappings: {
     attributes: {
       common: Record<string, string>;
@@ -178,7 +178,7 @@ export async function writeMappingConfig(
  */
 export async function updateMappingSection(
   section: string,
-  mappings: Record<string, unknown>,
+  mappings: Record<string, any>,
   merge: boolean = true,
   filePath: string = CONFIG_PATHS.user
 ): Promise<void> {

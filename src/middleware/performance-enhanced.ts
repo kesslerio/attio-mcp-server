@@ -37,7 +37,7 @@ export interface EnhancedPerformanceMetrics {
   error?: string;
   statusCode?: number;
   recordCount?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -141,7 +141,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   startOperation(
     toolName: string,
     operationType: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): string {
     if (!this.enabled) return '';
 
@@ -201,7 +201,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     success: boolean = true,
     error?: string,
     statusCode?: number,
-    additionalMetadata?: Record<string, unknown>
+    additionalMetadata?: Record<string, any>
   ): EnhancedPerformanceMetrics | null {
     if (!this.enabled || !operationId) return null;
 

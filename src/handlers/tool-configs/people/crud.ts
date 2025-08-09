@@ -23,7 +23,7 @@ export const crudToolConfigs = {
         const contextualError = new Error(
           `Failed to create person via adapter: ${errorMessage}`
         );
-        (contextualError as unknown).cause = error;
+        (contextualError as any).cause = error;
         throw contextualError;
       }
     },

@@ -121,7 +121,7 @@ describe('Email Validation', () => {
 
       const result = await PersonValidator.validateCreate({
         name: 'Test User',
-        email_addresses: 'valid@example.com' as unknown, // Testing string input
+        email_addresses: 'valid@example.com' as any, // Testing string input
       });
 
       expect(Array.isArray(result.email_addresses)).toBe(true);

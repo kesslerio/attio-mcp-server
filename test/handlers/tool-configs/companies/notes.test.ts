@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Mock the formatter function based on the actual implementation
-function mockNotesFormatter(notes: unknown[]) {
+function mockNotesFormatter(notes: any[]) {
   if (!notes || notes.length === 0) {
     return 'No notes found for this company.';
   }

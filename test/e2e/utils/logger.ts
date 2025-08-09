@@ -135,8 +135,8 @@ class E2ELogger {
    */
   logToolCall(
     toolName: string,
-    parameters: Record<string, unknown>,
-    response: unknown,
+    parameters: Record<string, any>,
+    response: any,
     timing: { start: number; end: number },
     testName?: string,
     error?: Error
@@ -173,7 +173,7 @@ class E2ELogger {
       logEntry.error = {
         message: error.message,
         stack: error.stack,
-        code: (error as unknown).code
+        code: (error as any).code
       };
       
       if (this.currentTestRun) {
@@ -194,7 +194,7 @@ class E2ELogger {
   logTestDataCreation(
     type: string,
     id: string,
-    data: unknown,
+    data: any,
     testName?: string
   ): void {
     if (this.currentTestRun) {
@@ -286,7 +286,7 @@ class E2ELogger {
   /**
    * Log general information
    */
-  logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
+  logInfo(message: string, metadata?: Record<string, any>, testName?: string): void {
     this.log({
       timestamp: new Date().toISOString(),
       testSuite: this.currentTestSuite || 'unknown',
@@ -300,7 +300,7 @@ class E2ELogger {
   /**
    * Log errors with full context
    */
-  logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
+  logError(error: Error, context?: Record<string, any>, testName?: string): void {
     if (this.currentTestRun) {
       this.currentTestRun.errors.push({
         timestamp: new Date().toISOString(),
@@ -318,7 +318,7 @@ class E2ELogger {
       error: {
         message: error.message,
         stack: error.stack,
-        code: (error as unknown).code
+        code: (error as any).code
       },
       metadata: context
     });
@@ -399,7 +399,7 @@ class E2ELogger {
   /**
    * Sanitize parameters by removing sensitive data
    */
-  private sanitizeParameters(params: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeParameters(params: Record<string, any>): Record<string, any> {
     const sensitiveKeys = [
       'api_key', 'apiKey', 'token', 'password', 'secret',
       'authorization', 'auth', 'key', 'credentials'
@@ -407,14 +407,14 @@ class E2ELogger {
 
     const sanitized = { ...params };
     
-    const sanitizeObject = (obj: unknown): unknown => {
+    const sanitizeObject = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj;
       
       if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       }
       
-      const result: unknown = {};
+      const result: any = {};
       for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();
         if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
@@ -434,7 +434,7 @@ class E2ELogger {
   /**
    * Sanitize response data by limiting size and removing sensitive data
    */
-  private sanitizeResponse(response: unknown): any {
+  private sanitizeResponse(response: any): any {
     if (!response) return response;
 
     // Convert response to string to check size
@@ -479,8 +479,8 @@ export function endTestSuite(): void {
 
 export function logToolCall(
   toolName: string,
-  parameters: Record<string, unknown>,
-  response: unknown,
+  parameters: Record<string, any>,
+  response: any,
   timing: { start: number; end: number },
   testName?: string,
   error?: Error
@@ -491,7 +491,7 @@ export function logToolCall(
 export function logTestDataCreation(
   type: string,
   id: string,
-  data: unknown,
+  data: any,
   testName?: string
 ): void {
   e2eLogger.logTestDataCreation(type, id, data, testName);
@@ -507,11 +507,11 @@ export function logTestDataCleanup(
   e2eLogger.logTestDataCleanup(type, id, success, error, testName);
 }
 
-export function logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
+export function logInfo(message: string, metadata?: Record<string, any>, testName?: string): void {
   e2eLogger.logInfo(message, metadata, testName);
 }
 
-export function logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
+export function logError(error: Error, context?: Record<string, any>, testName?: string): void {
   e2eLogger.logError(error, context, testName);
 }
 

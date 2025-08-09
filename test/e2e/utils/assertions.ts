@@ -172,7 +172,7 @@ export class E2EAssertions {
   /**
    * Universal tool parameter validation
    */
-  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, unknown>): void {
+  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, any>): void {
     this.expectMcpSuccess(response);
     
     // Basic validation that the tool accepted the parameters
@@ -268,8 +268,8 @@ export class E2EAssertions {
         errorMessage = response.error;
       } else if (response.error && typeof response.error === 'object') {
         // Try to extract message from error object
-        errorMessage = (response.error as unknown).message || 
-                      (response.error as unknown).error || 
+        errorMessage = (response.error as any).message || 
+                      (response.error as any).error || 
                       JSON.stringify(response.error);
       } else {
         errorMessage = String(response.error);
@@ -563,7 +563,7 @@ export class E2EAssertions {
   static expectValidNoteCollection(response: unknown, minCount: number = 0): void {
     expect(response, 'Note collection response should be defined').toBeDefined();
     
-    let notes: unknown[];
+    let notes: any[];
     if (Array.isArray(response)) {
       notes = response;
     } else if (response.data && Array.isArray(response.data)) {

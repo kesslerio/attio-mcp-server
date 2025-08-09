@@ -302,7 +302,7 @@ export function mapFieldName(
  */
 export function detectFieldCollisions(
   resourceType: UniversalResourceType,
-  recordData: Record<string, unknown>
+  recordData: Record<string, any>
 ): { hasCollisions: boolean; errors: string[]; collisions: Record<string, string[]> } {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
@@ -390,8 +390,8 @@ function getFieldCollisionSuggestion(
  */
 export function mapRecordFields(
   resourceType: UniversalResourceType,
-  recordData: Record<string, unknown>
-): { mapped: Record<string, unknown>; warnings: string[]; errors?: string[] } {
+  recordData: Record<string, any>
+): { mapped: Record<string, any>; warnings: string[]; errors?: string[] } {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
@@ -407,7 +407,7 @@ export function mapRecordFields(
     };
   }
 
-  const mapped: Record<string, unknown> = {};
+  const mapped: Record<string, any> = {};
   const warnings: string[] = [];
 
   for (const [key, value] of Object.entries(recordData)) {
@@ -522,7 +522,7 @@ export function getFieldSuggestions(
  */
 export function validateFields(
   resourceType: UniversalResourceType,
-  recordData: Record<string, unknown>
+  recordData: Record<string, any>
 ): {
   valid: boolean;
   errors: string[];
@@ -593,7 +593,7 @@ export function validateFields(
 export async function enhanceUniquenessError(
   resourceType: UniversalResourceType,
   errorMessage: string,
-  recordData: Record<string, unknown>
+  recordData: Record<string, any>
 ): Promise<string> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping || !mapping.uniqueFields) {

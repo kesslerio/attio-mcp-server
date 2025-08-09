@@ -137,7 +137,7 @@ export function startHealthServer(
   };
 
   // Add shutdown method to server
-  (server as unknown).shutdown = shutdownServer;
+  (server as any).shutdown = shutdownServer;
 
   return server;
 }

@@ -205,12 +205,12 @@ export async function getCompanyLists(
   const seen = new Set<string>();
 
   for (const entry of entries) {
-    const listId = (entry as unknown).list?.id?.list_id || entry.list_id;
+    const listId = (entry as any).list?.id?.list_id || entry.list_id;
     if (!listId || seen.has(listId)) continue;
     seen.add(listId);
 
-    if ((entry as unknown).list) {
-      lists.push((entry as unknown).list as AttioList);
+    if ((entry as any).list) {
+      lists.push((entry as any).list as AttioList);
     } else {
       try {
         const detail = await getListDetails(listId);

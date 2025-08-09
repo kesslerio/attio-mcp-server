@@ -34,7 +34,7 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
 
 // Mock validation and schemas
 vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
-  const actual = await importOriginal() as unknown;
+  const actual = await importOriginal() as any;
   return {
     ...actual,
     validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
