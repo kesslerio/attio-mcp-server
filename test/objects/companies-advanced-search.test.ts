@@ -45,7 +45,7 @@ testSuite('Companies Advanced Search', () => {
       }
     } else {
       // If it's a paginated response, check pagination structure
-      const paginatedResults = results as any;
+      const paginatedResults = results as unknown;
       expect(paginatedResults).toBeDefined();
       expect(paginatedResults).toHaveProperty('data');
       expect(Array.isArray(paginatedResults.data)).toBe(true);

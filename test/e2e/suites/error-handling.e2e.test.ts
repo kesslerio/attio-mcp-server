@@ -86,7 +86,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     console.log('🧹 Cleaning up error handling test data...');
     
     // Clean up test data (best effort - errors expected in error handling tests)
-    const cleanupPromises: Promise<any>[] = [];
+    const cleanupPromises: Promise<unknown>[] = [];
     
     if (testCompanyId) {
       cleanupPromises.push(

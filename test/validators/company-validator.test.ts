@@ -168,11 +168,11 @@ describe('Company Validator', () => {
       });
 
       // Mock detectFieldType to avoid validation errors
-      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(
+      vi.spyOn(CompanyValidator as unknown, 'validateFieldType').mockResolvedValue(
         undefined
       );
       vi.spyOn(
-        CompanyValidator as any,
+        CompanyValidator as unknown,
         'performSpecialValidation'
       ).mockResolvedValue(undefined);
 
@@ -199,11 +199,11 @@ describe('Company Validator', () => {
       });
 
       // Mock validateFieldType to avoid validation errors
-      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(
+      vi.spyOn(CompanyValidator as unknown, 'validateFieldType').mockResolvedValue(
         undefined
       );
       vi.spyOn(
-        CompanyValidator as any,
+        CompanyValidator as unknown,
         'performSpecialValidation'
       ).mockResolvedValue(undefined);
 

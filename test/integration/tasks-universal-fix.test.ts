@@ -62,7 +62,7 @@ describe(
             expect.arrayContaining(['content', 'status'])
           );
         }
-      } catch (error: any) {
+      } catch(error: unknown) {
         // Expected to fail with a proper error message for non-existent task
         expect(error.message).toContain('task could not be found');
         // This proves we're using getTask directly, not listing all tasks

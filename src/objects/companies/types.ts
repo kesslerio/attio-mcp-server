@@ -35,7 +35,7 @@ export interface CompanyAttributes {
 
 export interface CompanyFieldUpdate {
   name: string;
-  values: any[];
+  values: unknown[];
 }
 
 // Re-export any company-specific types as needed

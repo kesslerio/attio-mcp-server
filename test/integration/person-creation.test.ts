@@ -153,7 +153,7 @@ describe('Person Creation Integration', () => {
     });
 
     // Mock the Attio client to return our mock axios instance
-    vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as any);
+    vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as unknown);
 
     // Clear the attribute cache before each test to ensure fresh metadata
     clearAttributeCache();
@@ -424,7 +424,7 @@ describe('Person Creation Integration', () => {
   it('should handle API errors gracefully', async () => {
     // Mock an API error response for person creation
     const mockError = new Error('API Error');
-    (mockError as any).response = {
+    (mockError as unknown).response = {
       status: 400,
       data: {
         message: "Required field 'name' is missing",

@@ -194,11 +194,11 @@ describe('Enhanced Company Validator', () => {
   describe('validateCreate', () => {
     it('should validate required fields and enhance with type validation', async () => {
       // Mock validateFieldType and performSpecialValidation
-      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(
+      vi.spyOn(CompanyValidator as unknown, 'validateFieldType').mockResolvedValue(
         undefined
       );
       vi.spyOn(
-        CompanyValidator as any,
+        CompanyValidator as unknown,
         'performSpecialValidation'
       ).mockResolvedValue(undefined);
 
@@ -248,11 +248,11 @@ describe('Enhanced Company Validator', () => {
   describe('validateUpdate', () => {
     it('should validate company ID and enhance with type validation', async () => {
       // Mock validateFieldType and performSpecialValidation
-      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(
+      vi.spyOn(CompanyValidator as unknown, 'validateFieldType').mockResolvedValue(
         undefined
       );
       vi.spyOn(
-        CompanyValidator as any,
+        CompanyValidator as unknown,
         'performSpecialValidation'
       ).mockResolvedValue(undefined);
 
@@ -303,7 +303,7 @@ describe('Enhanced Company Validator', () => {
   describe('validateAttributeUpdate', () => {
     it('should validate a single attribute and return converted value', async () => {
       // Mock validateFieldType
-      vi.spyOn(CompanyValidator as any, 'validateFieldType').mockResolvedValue(
+      vi.spyOn(CompanyValidator as unknown, 'validateFieldType').mockResolvedValue(
         undefined
       );
 

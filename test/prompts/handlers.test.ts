@@ -23,7 +23,7 @@ describe('Prompts Handlers', () => {
     server = new Server(
       { name: 'test-server', version: '1.0.0' },
       { capabilities: {} }
-    ) as any;
+    ) as unknown;
     vi.clearAllMocks();
   });
 

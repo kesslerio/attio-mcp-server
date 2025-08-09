@@ -116,7 +116,7 @@ describe('Filter Translators', () => {
       it('should return empty object for non-array filters property', () => {
         const filters = {
           filters: { notAnArray: true },
-        } as any;
+        } as unknown;
 
         const result = transformFiltersToApiFormat(filters);
         expect(result).toEqual({});
@@ -129,7 +129,7 @@ describe('Filter Translators', () => {
               // Missing attribute property
               condition: FilterConditionType.CONTAINS,
               value: 'test',
-            } as any,
+            } as unknown,
           ],
           matchAny: true,
         };
@@ -146,7 +146,7 @@ describe('Filter Translators', () => {
               attribute: {},
               condition: FilterConditionType.CONTAINS,
               value: 'test',
-            } as any,
+            } as unknown,
           ],
         };
 
@@ -195,7 +195,7 @@ describe('Filter Translators', () => {
         // Missing attribute
         condition: FilterConditionType.CONTAINS,
         value: 'test',
-      } as any;
+      } as unknown;
 
       expect(() => {
         transformSingleFilterToApi(filter);

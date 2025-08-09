@@ -291,7 +291,7 @@ export const edgeCaseCompanies = {
   nullishFields: (): E2ETestCompany => ({
     name: 'E2E Nullish Company',
     domain: undefined,
-    website: null as any,
+    website: null as unknown,
     description: '',
     annual_revenue: 0,
     employee_count: 1

@@ -301,7 +301,7 @@ export function isCI(): boolean {
 /**
  * Get environment info for debugging
  */
-export function getEnvironmentInfo(): Record<string, any> {
+export function getEnvironmentInfo(): Record<string, unknown> {
   return {
     node_version: process.version,
     platform: process.platform,

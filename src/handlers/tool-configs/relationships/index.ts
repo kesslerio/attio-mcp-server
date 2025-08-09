@@ -11,11 +11,11 @@ import { getPersonDetails } from '../../../objects/people/index.js';
 import { updateCompany } from '../../../objects/companies/index.js';
 
 export interface LinkPersonToCompanyToolConfig extends ToolConfig {
-  handler: (personId: string, companyId: string) => Promise<any>;
+  handler: (personId: string, companyId: string) => Promise<unknown>;
 }
 
 export interface UnlinkPersonFromCompanyToolConfig extends ToolConfig {
-  handler: (personId: string, companyId: string) => Promise<any>;
+  handler: (personId: string, companyId: string) => Promise<unknown>;
 }
 
 export interface GetPersonCompaniesToolConfig extends ToolConfig {
@@ -29,7 +29,7 @@ export interface GetCompanyTeamToolConfig extends ToolConfig {
 /**
  * Helper function to link a person to a company by updating the company's team field
  */
-async function linkPersonToCompany(personId: string, companyId: string): Promise<any> {
+async function linkPersonToCompany(personId: string, companyId: string): Promise<unknown> {
   try {
     // Get current company details to preserve existing team members
     const company = await getCompanyDetails(companyId);
@@ -75,7 +75,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
 /**
  * Helper function to unlink a person from a company
  */
-async function unlinkPersonFromCompany(personId: string, companyId: string): Promise<any> {
+async function unlinkPersonFromCompany(personId: string, companyId: string): Promise<unknown> {
   try {
     // Get current company details
     const company = await getCompanyDetails(companyId);
@@ -183,7 +183,7 @@ export const relationshipToolConfigs = {
   getPersonCompanies: {
     name: 'get-person-companies',
     handler: getPersonCompanies,
-    formatResult: (companies: any[]) => {
+    formatResult: (companies: unknown[]) => {
       if (companies.length === 0) {
         return 'This person is not associated with any companies.';
       }
@@ -196,7 +196,7 @@ export const relationshipToolConfigs = {
   getCompanyTeam: {
     name: 'get-company-team',
     handler: getCompanyTeam,
-    formatResult: (team: any[]) => {
+    formatResult: (team: unknown[]) => {
       if (team.length === 0) {
         return 'This company has no team members.';
       }

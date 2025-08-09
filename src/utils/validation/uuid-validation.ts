@@ -233,9 +233,9 @@ export const UUIDTestPatterns = {
   ],
   EDGE_CASES: [
     '', // Empty string
-    null as any, // Null
-    undefined as any, // Undefined
-    123 as any, // Number
-    {} as any // Object
+    null as unknown, // Null
+    undefined as unknown, // Undefined
+    123 as unknown, // Number
+    {} as unknown // Object
   ]
 };

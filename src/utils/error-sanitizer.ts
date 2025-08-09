@@ -195,7 +195,7 @@ export interface SanitizationOptions {
   /** Operation name for logging */
   operation?: string;
   /** Additional safe metadata to include */
-  safeMetadata?: Record<string, any>;
+  safeMetadata?: Record<string, unknown>;
 }
 
 /**
@@ -322,7 +322,7 @@ export interface SanitizedError {
   message: string;
   type: string;
   statusCode?: number;
-  safeMetadata?: Record<string, any>;
+  safeMetadata?: Record<string, unknown>;
 }
 
 /**
@@ -395,18 +395,22 @@ function inferStatusCode(errorType: string): number {
  * @returns Wrapped function that sanitizes errors
  */
 export function withErrorSanitization<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (...args: unknown[]) => Promise<unknown>,
 >(fn: T, options: SanitizationOptions = {}): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
     } catch (error) {
       const sanitized = createSanitizedError(error, undefined, options);
-      const sanitizedError = new Error(sanitized.message);
+      const sanitizedError = new Error(sanitized.message) as Error & {
+        statusCode?: number;
+        type?: string;
+        safeMetadata?: Record<string, unknown>;
+      };
       sanitizedError.name = 'SanitizedError';
-      (sanitizedError as any).statusCode = sanitized.statusCode;
-      (sanitizedError as any).type = sanitized.type;
-      (sanitizedError as any).safeMetadata = sanitized.safeMetadata;
+      sanitizedError.statusCode = sanitized.statusCode;
+      sanitizedError.type = sanitized.type;
+      sanitizedError.safeMetadata = sanitized.safeMetadata;
       throw sanitizedError;
     }
   }) as T;

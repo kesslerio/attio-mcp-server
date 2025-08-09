@@ -368,9 +368,9 @@ export const edgeCaseTasks = {
   nullishFields: (): E2ETestTask => ({
     title: 'E2E Nullish Task',
     content: undefined,
-    priority: null as any,
+    priority: null as unknown,
     status: undefined,
-    due_date: null as any
+    due_date: null as unknown
   }),
 
   /**

@@ -81,7 +81,7 @@ function hasNestedFilters(filter: any): boolean {
 /**
  * Translates nested filters
  */
-function translateNestedFilters(filters: any[], objectType?: string): any[] {
+function translateNestedFilters(filters: unknown[], objectType?: string): unknown[] {
   return filters.map((filter: any) => {
     if (isDirectFilterObject(filter)) {
       // Determine the object type to use for this specific filter

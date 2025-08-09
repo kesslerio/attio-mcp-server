@@ -68,10 +68,10 @@ export function logToolRequest(
     // Log full request structure in debug mode
     ...(debugMode && {
       rawRequest: {
-        method: (request as any).method,
+        method: (request as unknown).method,
         params: request.params,
-        jsonrpc: (request as any).jsonrpc,
-        id: (request as any).id,
+        jsonrpc: (request as unknown).jsonrpc,
+        id: (request as unknown).id,
       },
       paramsKeys: Object.keys(request.params || {}),
       argumentsStructure: request.params.arguments

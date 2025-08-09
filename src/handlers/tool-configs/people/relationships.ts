@@ -27,7 +27,7 @@ export const relationshipToolConfigs = {
   searchByCompany: {
     name: 'search-people-by-company',
     handler: async (args: ToolRequestArguments) => {
-      const companyFilter = args.companyFilter as any;
+      const companyFilter = args.companyFilter as unknown;
       if (
         !companyFilter?.filters ||
         !Array.isArray(companyFilter.filters) ||

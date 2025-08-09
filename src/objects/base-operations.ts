@@ -19,9 +19,9 @@ import { getAttributeSlug } from '../utils/attribute-mapping/index.js';
  */
 function translateAttributeNames(
   objectType: ResourceType,
-  attributes: Record<string, any>
-): Record<string, any> {
-  const translated: Record<string, any> = {};
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
+  const translated: Record<string, unknown> = {};
 
   for (const [userKey, value] of Object.entries(attributes)) {
     // Translate the attribute name using the mapping system
@@ -51,7 +51,7 @@ function translateAttributeNames(
 export async function createObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
   attributes: any,
-  validator?: (attrs: any) => Promise<any>
+  validator?: (attrs: any) => Promise<unknown>
 ): Promise<T> {
   // Validate if validator provided
   const validatedAttributes = validator
@@ -129,7 +129,7 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   objectType: ResourceType,
   recordId: string,
   attributes: any,
-  validator?: (id: string, attrs: any) => Promise<any>
+  validator?: (id: string, attrs: any) => Promise<unknown>
 ): Promise<T> {
   // Validate if validator provided
   const validatedAttributes = validator

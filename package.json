@@ -160,7 +160,7 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint . --ext .ts --max-warnings 1030",
+      "command": "npx eslint . --ext .ts --max-warnings 673",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
