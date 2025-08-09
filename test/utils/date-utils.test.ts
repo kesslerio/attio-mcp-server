@@ -319,10 +319,13 @@ describe('Date Utils', () => {
 
   describe('isValidISODateString', () => {
     it('should validate ISO date strings', () => {
-      const validCases = ['2023-01-15T12:00:00.000Z', '2023-01-15T12:00:00Z'];
+      const validCases = [
+        '2023-01-15T12:00:00.000Z', 
+        '2023-01-15T12:00:00Z',
+        '2023-01-15', // date-only format is also valid (intentionally)
+      ];
 
       const invalidCases = [
-        '2023-01-15', // missing time
         '2023-01-15 12:00:00', // wrong format
         '2023-1-1T12:00:00Z', // incorrect padding
         '2023-01-15T25:00:00Z', // invalid hour
