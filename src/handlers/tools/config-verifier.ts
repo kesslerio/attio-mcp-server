@@ -50,7 +50,7 @@ export function verifyToolConfigsWithRequiredTools(
 
   // Check for duplicates
   const duplicates = Object.entries(toolNameMap).filter(
-    ([_toolName, configTypes]) => configTypes.length > 1
+    ([, configTypes]) => configTypes.length > 1
   );
 
   if (duplicates.length > 0) {

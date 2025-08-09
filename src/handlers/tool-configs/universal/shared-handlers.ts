@@ -1072,7 +1072,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       }
     }
       
-    default:
+    default: {
       // Check if resource type can be corrected
       const resourceValidation = validateResourceType(resource_type);
       if (resourceValidation.corrected) {
@@ -1087,6 +1087,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
           suggestion: resourceValidation.suggestion || `Valid resource types are: ${getValidResourceTypes()}`
         }
       );
+    }
   }
 }
 
@@ -1199,7 +1200,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       return convertTaskToRecord(updatedTask);    
     }
       
-    default:
+    default: {
       // Check if resource type can be corrected
       const resourceValidation = validateResourceType(resource_type);
       if (resourceValidation.corrected) {
@@ -1214,6 +1215,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
           suggestion: resourceValidation.suggestion || `Valid resource types are: ${getValidResourceTypes()}`
         }
       );
+    }
   }
 }
 

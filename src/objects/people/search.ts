@@ -142,9 +142,6 @@ export async function searchPeopleByEmail(email: string): Promise<Person[]> {
  */
 export async function searchPeopleByPhone(phone: string): Promise<Person[]> {
   try {
-    // Format the phone number for search
-    const _cleanedPhone = phone.replace(/\D/g, '');
-
     const response = await searchObject<Person>(ResourceType.PEOPLE, phone);
 
     return response;

@@ -83,7 +83,7 @@ export class PerformanceTracker {
    */
   static startOperation(
     toolName: string,
-    metadata?: Record<string, any>
+    _metadata?: Record<string, any>
   ): number {
     if (!this.enabled) return 0;
 

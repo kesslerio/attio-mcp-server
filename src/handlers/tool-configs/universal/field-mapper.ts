@@ -313,7 +313,7 @@ export function detectFieldCollisions(
   const targetToInputs: Record<string, string[]> = {};
   const errors: string[] = [];
 
-  for (const [inputField, value] of Object.entries(recordData)) {
+  for (const [inputField] of Object.entries(recordData)) {
     // Skip null-mapped fields
     if (mapping.fieldMappings[inputField.toLowerCase()] === null) {
       continue;

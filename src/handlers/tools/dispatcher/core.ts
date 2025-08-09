@@ -91,7 +91,7 @@ export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
 
   // Initialize logging context for this tool execution
-  const _correlationId = initializeToolContext(toolName);
+  initializeToolContext(toolName);
   let timer: PerformanceTimer | undefined;
   let toolType: string | undefined;
 
@@ -219,8 +219,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     } else if (toolType === 'discoverAttributes') {
       result = await handleDiscoverAttributesOperation(
         request,
-        toolConfig,
-        resourceType
+        toolConfig
       );
     } else if (toolType === 'customFields') {
       result = await handleInfoOperation(request, toolConfig, resourceType);
@@ -522,8 +521,7 @@ async function handleGetAttributesOperation(
 
 async function handleDiscoverAttributesOperation(
   request: CallToolRequest,
-  toolConfig: any,
-  _resourceType: ResourceType
+  toolConfig: any
 ) {
   // This should be moved to an appropriate operations module
   const result = await toolConfig.handler();

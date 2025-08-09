@@ -31,7 +31,7 @@ export async function getCompanyNotes(
       try {
         // Try to parse the URI formally
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(
@@ -163,7 +163,7 @@ export async function createCompanyNote(
       try {
         // Try to parse the URI formally
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(

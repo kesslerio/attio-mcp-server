@@ -182,8 +182,6 @@ export function logToolValidationError(
   validationError: string,
   context?: any
 ): void {
-  const _logger = createToolLogger(toolName, toolType);
-
   warn(
     `tool:${toolName}`,
     `Validation failed: ${validationError}`,
@@ -220,8 +218,6 @@ export function logToolFallback(
   reason: string,
   fallbackMethod: string
 ): void {
-  const _logger = createToolLogger(toolName, toolType);
-
   warn(
     `tool:${toolName}`,
     `Using fallback method: ${fallbackMethod}`,

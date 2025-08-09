@@ -4,11 +4,7 @@
  */
 
 import axios, { AxiosError } from 'axios';
-import {
-  createErrorResult,
-  AttioApiError,
-  ErrorType,
-} from './error-handler.js';
+import { createErrorResult, AttioApiError } from './error-handler.js';
 
 /**
  * Safely gets the error message from an unknown error type
