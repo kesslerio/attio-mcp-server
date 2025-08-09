@@ -30,11 +30,12 @@ export async function listTasks(
     // Transform each task in the response
     return tasks.map(task => {
       // Transform response: content_plaintext -> content, is_completed -> status
-      if ('content_plaintext' in task && !('content' in task)) {
-        (task as any).content = (task as any).content_plaintext;
+      const transformedTask = task as Record<string, unknown>;
+      if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
+        transformedTask.content = transformedTask.content_plaintext;
       }
-      if ('is_completed' in task && !('status' in task)) {
-        (task as any).status = (task as any).is_completed ? 'completed' : 'pending';
+      if ('is_completed' in transformedTask && !('status' in transformedTask)) {
+        transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
       }
       return task;
     });
@@ -51,11 +52,12 @@ export async function getTask(
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
     const task = (res.data.data || res.data) as AttioTask;
     // Transform response: content_plaintext -> content, is_completed -> status
-    if ('content_plaintext' in task && !('content' in task)) {
-      (task as any).content = (task as any).content_plaintext;
+    const transformedTask = task as Record<string, unknown>;
+    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
+      transformedTask.content = transformedTask.content_plaintext;
     }
-    if ('is_completed' in task && !('status' in task)) {
-      (task as any).status = (task as any).is_completed ? 'completed' : 'pending';
+    if ('is_completed' in transformedTask && !('status' in transformedTask)) {
+      transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
     }
     return task;
   }, retryConfig);
@@ -80,8 +82,9 @@ export async function createTask(
     const res = await api.post<AttioSingleResponse<AttioTask>>(path, data);
     const task = (res.data.data || res.data) as AttioTask;
     // Transform response: content_plaintext -> content
-    if ('content_plaintext' in task && !('content' in task)) {
-      (task as any).content = (task as any).content_plaintext;
+    const transformedTask = task as Record<string, unknown>;
+    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
+      transformedTask.content = transformedTask.content_plaintext;
     }
     return task;
   }, retryConfig);
@@ -115,11 +118,12 @@ export async function updateTask(
     const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
     const task = (res.data.data || res.data) as AttioTask;
     // Transform response: content_plaintext -> content, is_completed -> status
-    if ('content_plaintext' in task && !('content' in task)) {
-      (task as any).content = (task as any).content_plaintext;
+    const transformedTask = task as Record<string, unknown>;
+    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
+      transformedTask.content = transformedTask.content_plaintext;
     }
-    if ('is_completed' in task && !('status' in task)) {
-      (task as any).status = (task as any).is_completed ? 'completed' : 'pending';
+    if ('is_completed' in transformedTask && !('status' in transformedTask)) {
+      transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
     }
     return task;
   }, retryConfig);
