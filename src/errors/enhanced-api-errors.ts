@@ -400,6 +400,99 @@ export class ErrorEnhancer {
   }
 
   /**
+   * Issue #425: Safe error message extraction utility
+   * Extracts a contextual message from any error type safely
+   * Handles: EnhancedApiError, AttioApiError, UniversalValidationError, and generic errors
+   */
+  static getErrorMessage(
+    error:
+      | Error
+      | EnhancedApiError
+      | AttioApiError
+      | { message?: string }
+      | unknown
+  ): string {
+    // If it's an EnhancedApiError, use getContextualMessage
+    if (error instanceof EnhancedApiError) {
+      return error.getContextualMessage();
+    }
+
+    // If it's an AttioApiError, UniversalValidationError, or has a message property, use that
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string'
+    ) {
+      return error.message;
+    }
+
+    // Fallback to string representation
+    return String(error);
+  }
+
+  /**
+   * Issue #425: Convert any error to EnhancedApiError
+   * Ensures all errors are properly enhanced for consistent handling
+   */
+  static ensureEnhanced(
+    error:
+      | Error
+      | EnhancedApiError
+      | AttioApiError
+      | {
+          message?: string;
+          statusCode?: number;
+          status?: number;
+          endpoint?: string;
+          path?: string;
+          method?: string;
+        }
+      | unknown,
+    defaultContext?: Partial<ErrorContext>
+  ): EnhancedApiError {
+    if (error instanceof EnhancedApiError) {
+      return error;
+    }
+
+    // Handle AttioApiError from axios interceptor
+    if (error instanceof AttioApiError) {
+      return new EnhancedApiError(
+        error.message,
+        error.statusCode,
+        error.endpoint,
+        error.method,
+        defaultContext
+      );
+    }
+
+    // Handle generic errors with status codes
+    const errorObj = error as {
+      message?: string;
+      statusCode?: number;
+      status?: number;
+      endpoint?: string;
+      path?: string;
+      method?: string;
+    };
+    const statusCode = errorObj?.statusCode || errorObj?.status || 500;
+    const endpoint = errorObj?.endpoint || errorObj?.path || '/unknown';
+    const method = errorObj?.method || 'UNKNOWN';
+
+    return new EnhancedApiError(
+      errorObj?.message || 'An error occurred',
+      statusCode,
+      endpoint,
+      method,
+      {
+        originalError:
+          error && typeof error === 'object' ? (error as Error) : undefined,
+        ...defaultContext,
+      }
+    );
+  }
+
+  /**
    * Auto-detect error type and apply appropriate enhancement
    */
   static autoEnhance(
