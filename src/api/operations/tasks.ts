@@ -10,6 +10,26 @@ import {
 import { callWithRetry, RetryConfig } from './retry.js';
 import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 
+/**
+ * Helper function to transform Attio API task response to internal format
+ * Handles field name transformations for backward compatibility
+ */
+function transformTaskResponse(task: AttioTask): AttioTask {
+  const transformedTask = task as Record<string, unknown>;
+  
+  // Transform content_plaintext -> content for backward compatibility
+  if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
+    transformedTask.content = transformedTask.content_plaintext;
+  }
+  
+  // Transform is_completed -> status for backward compatibility
+  if ('is_completed' in transformedTask && !('status' in transformedTask)) {
+    transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
+  }
+  
+  return transformedTask as AttioTask;
+}
+
 export async function listTasks(
   status?: string,
   assigneeId?: string,
@@ -27,18 +47,8 @@ export async function listTasks(
   return callWithRetry(async () => {
     const res = await api.get<AttioListResponse<AttioTask>>(path);
     const tasks = res.data.data || [];
-    // Transform each task in the response
-    return tasks.map(task => {
-      // Transform response: content_plaintext -> content, is_completed -> status
-      const transformedTask = task as Record<string, unknown>;
-      if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
-        transformedTask.content = transformedTask.content_plaintext;
-      }
-      if ('is_completed' in transformedTask && !('status' in transformedTask)) {
-        transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
-      }
-      return task;
-    });
+    // Transform each task in the response for backward compatibility
+    return tasks.map(task => transformTaskResponse(task));
   }, retryConfig);
 }
 
@@ -51,15 +61,7 @@ export async function getTask(
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
     const task = (res.data.data || res.data) as AttioTask;
-    // Transform response: content_plaintext -> content, is_completed -> status
-    const transformedTask = task as Record<string, unknown>;
-    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
-      transformedTask.content = transformedTask.content_plaintext;
-    }
-    if ('is_completed' in transformedTask && !('status' in transformedTask)) {
-      transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
-    }
-    return task;
+    return transformTaskResponse(task);
   }, retryConfig);
 }
 
@@ -81,12 +83,8 @@ export async function createTask(
   return callWithRetry(async () => {
     const res = await api.post<AttioSingleResponse<AttioTask>>(path, data);
     const task = (res.data.data || res.data) as AttioTask;
-    // Transform response: content_plaintext -> content
-    const transformedTask = task as Record<string, unknown>;
-    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
-      transformedTask.content = transformedTask.content_plaintext;
-    }
-    return task;
+    // Note: Only transform content field for create response (status not returned on create)
+    return transformTaskResponse(task);
   }, retryConfig);
 }
 
@@ -117,15 +115,7 @@ export async function updateTask(
   return callWithRetry(async () => {
     const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
     const task = (res.data.data || res.data) as AttioTask;
-    // Transform response: content_plaintext -> content, is_completed -> status
-    const transformedTask = task as Record<string, unknown>;
-    if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
-      transformedTask.content = transformedTask.content_plaintext;
-    }
-    if ('is_completed' in transformedTask && !('status' in transformedTask)) {
-      transformedTask.status = transformedTask.is_completed ? 'completed' : 'pending';
-    }
-    return task;
+    return transformTaskResponse(task);
   }, retryConfig);
 }
 
