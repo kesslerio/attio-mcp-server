@@ -35,7 +35,7 @@ interface AttioAttribute {
   title: string; // Changed from 'display_name' to match Attio API response
   description?: string;
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -69,8 +69,8 @@ export async function getAvailableObjects(apiKey: string): Promise<string[]> {
 
     // Extract API slugs from the objects
     return objects
-      .filter((obj: any) => obj.api_slug)
-      .map((obj: any) => obj.api_slug);
+      .filter((obj: Record<string, unknown>) => obj.api_slug)
+      .map((obj: Record<string, unknown>) => obj.api_slug);
   } catch (error: unknown) {
     throw handleAxiosError(error, 'get objects');
   }

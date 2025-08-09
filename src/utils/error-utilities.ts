@@ -157,11 +157,11 @@ export function createStandardErrorResult(
   error: unknown,
   operation: string,
   resource: string,
-  additionalDetails?: Record<string, any>
+  additionalDetails?: Record<string, unknown>
 ) {
   const errorObj = error instanceof Error ? error : new Error(getErrorMessage(error));
-  const url = additionalDetails?.url || `/${resource}/${operation}`;
-  const method = additionalDetails?.method || 'POST';
+  const url = String(additionalDetails?.url || `/${resource}/${operation}`);
+  const method = String(additionalDetails?.method || 'POST');
   
   return createErrorResult(
     errorObj,
@@ -194,7 +194,7 @@ export function createStandardErrorResult(
 export function logAndReturn(
   error: unknown,
   context: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): unknown {
   const message = getErrorMessage(error);
   
@@ -297,7 +297,7 @@ export function getErrorStatus(error: unknown): number | undefined {
   }
   
   if (error && typeof error === 'object' && 'status' in error) {
-    const status = (error as any).status;
+    const status = (error as Record<string, unknown>).status;
     return typeof status === 'number' ? status : undefined;
   }
   
