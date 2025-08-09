@@ -67,10 +67,10 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     universalToolName: 'update-record',
     resourceType: 'tasks',
     parameterTransform: (params: unknown) => {
-      const { task_id, record_id, ...recordData } = params;
+      const { task_id, taskId, record_id, ...recordData } = params;
       return {
         resource_type: 'tasks',
-        record_id: task_id || record_id,
+        record_id: task_id || taskId || record_id,
         record_data: recordData
       };
     },
@@ -82,7 +82,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     resourceType: 'tasks',
     parameterTransform: (params: unknown) => ({
       resource_type: 'tasks',
-      record_id: params.task_id || params.record_id
+      record_id: params.task_id || params.taskId || params.record_id
     }),
     description: 'Legacy delete-task → universal delete-record'
   },
