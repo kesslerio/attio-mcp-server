@@ -70,7 +70,7 @@ async function debugB2BSegmentMapping() {
       const results = await advancedSearchCompanies(translatedFilters);
       console.log('[TEST] Search succeeded! Results:', results.length);
     } catch(error: unknown) {
-      console.error('[TEST] Search failed:', error.message);
+      console.error('[TEST] Search failed:', (error as any).message);
       console.error('[TEST] Full error:', error);
     }
   } catch(error: unknown) {

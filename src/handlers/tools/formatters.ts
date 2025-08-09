@@ -95,7 +95,7 @@ export function formatRecordDetails(record: AttioRecord): string {
   const attributes = record.attributes || ({} as Record<string, unknown>);
   const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
-      const value = (attr as unknown).value || 'N/A';
+      const value = (attr as any).value || 'N/A';
       return `${key}: ${value}`;
     })
     .join('\n');

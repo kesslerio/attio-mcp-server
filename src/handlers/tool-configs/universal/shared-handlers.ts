@@ -808,7 +808,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   }
   
   // Enhanced validation for Issue #413 - provide actionable error messages
-  const validation = await validateRecordFields(resource_type, record_data.values || record_data, false);
+  const validation = await validateRecordFields(resource_type, (record_data.values || record_data) as Record<string, unknown>, false);
   if (!validation.isValid) {
     const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'create-record');
     
@@ -1097,7 +1097,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   const { resource_type, record_id, record_data } = params;
   
   // Enhanced validation for Issue #413 - provide actionable error messages
-  const validation = await validateRecordFields(resource_type, record_data.values || record_data, true);
+  const validation = await validateRecordFields(resource_type, (record_data.values || record_data) as Record<string, unknown>, true);
   if (!validation.isValid) {
     const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'update-record');
     
