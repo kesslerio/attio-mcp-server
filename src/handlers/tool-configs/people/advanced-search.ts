@@ -10,7 +10,7 @@ export const advancedSearchToolConfigs = {
   advancedSearch: {
     name: 'advanced-search-people',
     handler: advancedSearchPeople,
-    formatResult: (response: Record<string, unknown>) => {
+    formatResult: (response: any) => {
       const results =
         (response as { results?: AttioRecord[] }).results || response;
       return (results as AttioRecord[])

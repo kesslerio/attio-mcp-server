@@ -19,7 +19,7 @@ import {
  * @param value - The value to convert to boolean
  * @returns Boolean representation of the value
  */
-export function convertToBoolean(value: unknown): boolean {
+export function convertToBoolean(value: any): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
     const lowerValue = value.toLowerCase();
@@ -36,7 +36,7 @@ export function convertToBoolean(value: unknown): boolean {
 export class AttributeMappingError extends Error {
   constructor(
     message: string,
-    public details: Record<string, unknown> = {}
+    public details: Record<string, any> = {}
   ) {
     super(message);
     this.name = 'AttributeMappingError';

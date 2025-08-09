@@ -23,7 +23,7 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
     }
   }),
   getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
-  createUniversalError: vi.fn((operation: string, resourceType: string, error: unknown) => 
+  createUniversalError: vi.fn((operation: string, resourceType: string, error: any) => 
     new UniversalValidationError(
       `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`,
       ErrorType.API_ERROR,
@@ -34,10 +34,10 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
 
 // Mock validation and schemas
 vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
-  const actual = await importOriginal() as unknown;
+  const actual = await importOriginal() as any;
   return {
     ...actual,
-    validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
+    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
       // Just return the params as-is (simulating successful validation)
       // This matches the expected behavior in tests
       return params || {};

@@ -11,25 +11,25 @@ import { getPersonDetails } from '../../../objects/people/index.js';
 import { updateCompany } from '../../../objects/companies/index.js';
 
 export interface LinkPersonToCompanyToolConfig extends ToolConfig {
-  handler: (personId: string, companyId: string) => Promise<unknown>;
+  handler: (personId: string, companyId: string) => Promise<any>;
 }
 
 export interface UnlinkPersonFromCompanyToolConfig extends ToolConfig {
-  handler: (personId: string, companyId: string) => Promise<unknown>;
+  handler: (personId: string, companyId: string) => Promise<any>;
 }
 
 export interface GetPersonCompaniesToolConfig extends ToolConfig {
-  handler: (personId: string) => Promise<unknown[]>;
+  handler: (personId: string) => Promise<any[]>;
 }
 
 export interface GetCompanyTeamToolConfig extends ToolConfig {
-  handler: (companyId: string) => Promise<unknown[]>;
+  handler: (companyId: string) => Promise<any[]>;
 }
 
 /**
  * Helper function to link a person to a company by updating the company's team field
  */
-async function linkPersonToCompany(personId: string, companyId: string): Promise<unknown> {
+async function linkPersonToCompany(personId: string, companyId: string): Promise<any> {
   try {
     // Get current company details to preserve existing team members
     const company = await getCompanyDetails(companyId);
@@ -37,7 +37,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
     // Extract current team members
     const currentTeam = company.values?.team || [];
     const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member) => 
+      ? currentTeam.map((member: any) => 
           member.target_record_id || member.record_id || member
         ).filter(Boolean)
       : [];
@@ -75,7 +75,7 @@ async function linkPersonToCompany(personId: string, companyId: string): Promise
 /**
  * Helper function to unlink a person from a company
  */
-async function unlinkPersonFromCompany(personId: string, companyId: string): Promise<unknown> {
+async function unlinkPersonFromCompany(personId: string, companyId: string): Promise<any> {
   try {
     // Get current company details
     const company = await getCompanyDetails(companyId);
@@ -83,7 +83,7 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
     // Extract current team members
     const currentTeam = company.values?.team || [];
     const currentTeamIds = Array.isArray(currentTeam) 
-      ? currentTeam.map((member) => 
+      ? currentTeam.map((member: any) => 
           member.target_record_id || member.record_id || member
         ).filter(Boolean)
       : [];
@@ -121,13 +121,13 @@ async function unlinkPersonFromCompany(personId: string, companyId: string): Pro
 /**
  * Get all companies a person is associated with
  */
-async function getPersonCompanies(personId: string): Promise<unknown[]> {
+async function getPersonCompanies(personId: string): Promise<any[]> {
   try {
     const person = await getPersonDetails(personId);
     const companies = person.values?.companies || [];
     
     return Array.isArray(companies)
-      ? companies.map((company) => ({
+      ? companies.map((company: any) => ({
           id: company.target_record_id || company.record_id || company,
           name: company.name || 'Unknown Company',
         }))
@@ -140,13 +140,13 @@ async function getPersonCompanies(personId: string): Promise<unknown[]> {
 /**
  * Get all team members for a company
  */
-async function getCompanyTeam(companyId: string): Promise<unknown[]> {
+async function getCompanyTeam(companyId: string): Promise<any[]> {
   try {
     const company = await getCompanyDetails(companyId);
     const team = company.values?.team || [];
     
     return Array.isArray(team)
-      ? team.map((member) => ({
+      ? team.map((member: any) => ({
           id: member.target_record_id || member.record_id || member,
           name: member.name || 'Unknown Person',
         }))
@@ -161,7 +161,7 @@ export const relationshipToolConfigs = {
   linkPersonToCompany: {
     name: 'link-person-to-company',
     handler: linkPersonToCompany,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       if (result.success) {
         return result.message;
       }
@@ -172,7 +172,7 @@ export const relationshipToolConfigs = {
   unlinkPersonFromCompany: {
     name: 'unlink-person-from-company',
     handler: unlinkPersonFromCompany,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       if (result.success) {
         return result.message;
       }
@@ -183,7 +183,7 @@ export const relationshipToolConfigs = {
   getPersonCompanies: {
     name: 'get-person-companies',
     handler: getPersonCompanies,
-    formatResult: (companies: unknown[]) => {
+    formatResult: (companies: any[]) => {
       if (companies.length === 0) {
         return 'This person is not associated with any companies.';
       }
@@ -196,7 +196,7 @@ export const relationshipToolConfigs = {
   getCompanyTeam: {
     name: 'get-company-team',
     handler: getCompanyTeam,
-    formatResult: (team: unknown[]) => {
+    formatResult: (team: any[]) => {
       if (team.length === 0) {
         return 'This company has no team members.';
       }

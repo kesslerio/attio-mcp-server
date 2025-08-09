@@ -22,7 +22,7 @@ export const attributeToolConfigs = {
       const fields = Object.keys(company.values || {});
 
       // Create a simplified version of the values for display
-      const simplifiedValues: Record<string, unknown> = {};
+      const simplifiedValues: Record<string, any> = {};
       for (const [key, value] of Object.entries(company.values || {})) {
         if (Array.isArray(value) && value.length > 0) {
           // Extract just the actual value from the array structure
@@ -88,7 +88,7 @@ ${
   discoverAttributes: {
     name: 'discover-company-attributes',
     handler: discoverCompanyAttributes,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       // Sanity check for empty or invalid results
       if (
         !result ||
@@ -116,7 +116,7 @@ ${
       output += `\nCUSTOM FIELDS:\n`;
       if (result.custom?.length > 0) {
         result.custom.forEach((field: string) => {
-          const fieldInfo = (result.all as Array<Record<string, unknown>>).find((f) => f.name === field);
+          const fieldInfo = result.all.find((f: any) => f.name === field);
           output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
         });
       } else {
@@ -130,7 +130,7 @@ ${
   getAttributes: {
     name: 'get-company-attributes',
     handler: getCompanyAttributes,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       // Enhanced error handling for unexpected result structure
       if (!result || typeof result !== 'object') {
         return `Error: Unable to process the response. Received: ${JSON.stringify(

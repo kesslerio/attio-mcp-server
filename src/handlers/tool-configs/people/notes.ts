@@ -27,7 +27,7 @@ export const notesToolConfigs = {
       
       return `Found ${notes.length} notes:\n${notes
         .map(
-          (note: Record<string, unknown>) => {
+          (note: any) => {
             // Check multiple possible field structures from the API (Issue #365)
             // Field Priority Order (why this specific order was chosen):
             // 1. note.title/content - Standard API response fields (most common)

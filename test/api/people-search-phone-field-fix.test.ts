@@ -59,13 +59,13 @@ describe('People Search Phone Field Fix', () => {
 
     // Verify phone_numbers is used
     const phoneNumbersFilter = filterObject.$or.find(
-      (f: unknown) => f.phone_numbers
+      (f: any) => f.phone_numbers
     );
     expect(phoneNumbersFilter).toBeDefined();
     expect(phoneNumbersFilter.phone_numbers).toEqual({ $contains: query });
 
     // Verify the incorrect 'phone' field is NOT used
-    const incorrectPhoneFilter = filterObject.$or.find((f: unknown) => f.phone);
+    const incorrectPhoneFilter = filterObject.$or.find((f: any) => f.phone);
     expect(incorrectPhoneFilter).toBeUndefined();
   });
 });

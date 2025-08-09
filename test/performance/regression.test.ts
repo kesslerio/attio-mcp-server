@@ -134,7 +134,7 @@ describe('Performance Regression Tests', () => {
 
         // Should not reach here
         expect.fail('Expected error for invalid ID');
-      } catch(error: unknown) {
+      } catch (error: any) {
         const duration = performance.now() - startTime;
 
         // Verify it's a validation error (enhanced error message format)
@@ -163,7 +163,7 @@ describe('Performance Regression Tests', () => {
 
         // Should not reach here
         expect.fail('Expected error for non-existent ID');
-      } catch(error: unknown) {
+      } catch (error: any) {
         const duration = performance.now() - startTime;
 
         // Check performance budget
@@ -268,7 +268,7 @@ describe('Performance Regression Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           limit: -5, // Invalid parameter
         });
-      } catch(error: unknown) {
+      } catch (error: any) {
         const duration = performance.now() - startTime;
 
         // Validation should be very fast (under 100ms)

@@ -113,7 +113,7 @@ describe('Add Record To List Integration', () => {
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as unknown,
+      mockRequest as any,
       listsToolConfigs.addRecordToList
     );
 
@@ -142,18 +142,18 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as unknown,
+      mockRequest as any,
       listsToolConfigs.addRecordToList
     );
 
@@ -196,18 +196,18 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as unknown,
+      mockRequest as any,
       listsToolConfigs.addRecordToList
     );
 
@@ -258,18 +258,18 @@ describe('Add Record To List Integration', () => {
     };
 
     // Direct API call to spy on the payload
-    let capturedPayload: unknown;
+    let capturedPayload: any;
     const originalPost = getAttioClient().post;
 
     // Replace post method to capture the payload
-    getAttioClient().post = async (url: string, data: unknown) => {
+    getAttioClient().post = async (url: string, data: any) => {
       capturedPayload = data;
       return originalPost(url, data);
     };
 
     // Call the handler
     const result = await handleAddRecordToListOperation(
-      mockRequest as unknown,
+      mockRequest as any,
       listsToolConfigs.addRecordToList
     );
 
@@ -311,7 +311,7 @@ describe('Add Record To List Integration', () => {
     };
 
     const resultNoListId = await handleAddRecordToListOperation(
-      mockRequestNoListId as unknown,
+      mockRequestNoListId as any,
       listsToolConfigs.addRecordToList
     );
 
@@ -329,7 +329,7 @@ describe('Add Record To List Integration', () => {
     };
 
     const resultNoRecordId = await handleAddRecordToListOperation(
-      mockRequestNoRecordId as unknown,
+      mockRequestNoRecordId as any,
       listsToolConfigs.addRecordToList
     );
 

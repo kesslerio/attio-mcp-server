@@ -17,7 +17,7 @@ export interface PerformanceMetrics {
   duration: number;
   success: boolean;
   error?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -83,7 +83,7 @@ export class PerformanceTracker {
    */
   static startOperation(
     toolName: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): number {
     if (!this.enabled) return 0;
 
@@ -120,7 +120,7 @@ export class PerformanceTracker {
     startTime: number,
     success: boolean = true,
     error?: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): PerformanceMetrics {
     if (!this.enabled) {
       return {
@@ -285,7 +285,7 @@ export class PerformanceTracker {
   static async measureAsync<T>(
     toolName: string,
     fn: () => Promise<T>,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): Promise<T> {
     const startTime = this.startOperation(toolName, metadata);
 
@@ -311,7 +311,7 @@ export class PerformanceTracker {
   static measure<T>(
     toolName: string,
     fn: () => T,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): T {
     const startTime = this.startOperation(toolName, metadata);
 
@@ -381,14 +381,14 @@ Failed Operations: ${failedOps.length}
  */
 export function trackPerformance(toolName?: string) {
   return function (
-    target: unknown,
+    target: any,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
     const name = toolName || `${target.constructor.name}.${propertyKey}`;
 
-    descriptor.value = async function (...args: unknown[]) {
+    descriptor.value = async function (...args: any[]) {
       const startTime = PerformanceTracker.startOperation(name);
 
       try {

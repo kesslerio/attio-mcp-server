@@ -196,7 +196,7 @@ describe('Error Sanitizer', () => {
 
       try {
         await safeFunction();
-      } catch(error: unknown) {
+      } catch (error: any) {
         expect(error.message).not.toContain('192.168.1.1');
         expect(error.name).toBe('SanitizedError');
       }

@@ -9,26 +9,17 @@ import {
   batchGetCompanyDetails,
 } from '../../../objects/batch-companies.js';
 import { ToolConfig } from '../../tool-types.js';
-import type { EntityRecord } from '../../../types/common.js';
 
 // Company batch tool configurations
 export const batchToolConfigs = {
   batchCreate: {
     name: 'batch-create-companies',
     handler: batchCreateCompanies,
-    formatResult: (result: {
-      results: Array<{
-        success: boolean;
-        id?: string;
-        data?: EntityRecord;
-        error?: { message?: string };
-      }>;
-      summary: { succeeded: number; total: number };
-    }) => {
+    formatResult: (result: any) => {
       const { results, summary } = result;
       let output = `Batch Create Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
-      results.forEach((item) => {
+      results.forEach((item: any) => {
         if (item.success) {
           output += `✓ Created: ${
             item.data.values?.name?.[0]?.value || 'Unknown'
@@ -45,19 +36,11 @@ export const batchToolConfigs = {
   batchUpdate: {
     name: 'batch-update-companies',
     handler: batchUpdateCompanies,
-    formatResult: (result: {
-      results: Array<{
-        success: boolean;
-        id?: string;
-        data?: EntityRecord;
-        error?: { message?: string };
-      }>;
-      summary: { succeeded: number; total: number };
-    }) => {
+    formatResult: (result: any) => {
       const { results, summary } = result;
       let output = `Batch Update Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
-      results.forEach((item) => {
+      results.forEach((item: any) => {
         if (item.success) {
           output += `✓ Updated: ${
             item.data.values?.name?.[0]?.value || 'Unknown'
@@ -74,19 +57,11 @@ export const batchToolConfigs = {
   batchDelete: {
     name: 'batch-delete-companies',
     handler: batchDeleteCompanies,
-    formatResult: (result: {
-      results: Array<{
-        success: boolean;
-        id?: string;
-        data?: EntityRecord;
-        error?: { message?: string };
-      }>;
-      summary: { succeeded: number; total: number };
-    }) => {
+    formatResult: (result: any) => {
       const { results, summary } = result;
       let output = `Batch Delete Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
-      results.forEach((item) => {
+      results.forEach((item: any) => {
         if (item.success) {
           output += `✓ Deleted: ${item.id}\n`;
         } else {
@@ -103,22 +78,14 @@ export const batchToolConfigs = {
   batchSearch: {
     name: 'batch-search-companies',
     handler: batchSearchCompanies,
-    formatResult: (result: {
-      results: Array<{
-        success: boolean;
-        id?: string;
-        data?: EntityRecord;
-        error?: { message?: string };
-      }>;
-      summary: { succeeded: number; total: number };
-    }) => {
+    formatResult: (result: any) => {
       const { results, summary } = result;
       let output = `Batch Search Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
 
-      results.forEach((item, index: number) => {
+      results.forEach((item: any, index: number) => {
         if (item.success) {
           output += `Query ${index + 1}: Found ${item.data.length} companies\n`;
-          item.data.forEach((company) => {
+          item.data.forEach((company: any) => {
             output += `  - ${
               company.values?.name?.[0]?.value || 'Unknown'
             } (ID: ${company.id?.record_id})\n`;
@@ -138,19 +105,11 @@ export const batchToolConfigs = {
   batchGetDetails: {
     name: 'batch-get-company-details',
     handler: batchGetCompanyDetails,
-    formatResult: (result: {
-      results: Array<{
-        success: boolean;
-        id?: string;
-        data?: EntityRecord;
-        error?: { message?: string };
-      }>;
-      summary: { succeeded: number; total: number };
-    }) => {
+    formatResult: (result: any) => {
       const { results, summary } = result;
       let output = `Batch Get Details Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
 
-      results.forEach((item) => {
+      results.forEach((item: any) => {
         if (item.success) {
           const company = item.data;
           output += `✓ ${

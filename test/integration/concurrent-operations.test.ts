@@ -236,7 +236,7 @@ describe('Concurrent Operations - Integration Tests', () => {
       // Extract search results
       const searchResults = results
         .filter((r, i) => [0, 2, 4].includes(i) && r.status === 'fulfilled')
-        .map((r) => (r as unknown).value);
+        .map((r) => (r as any).value);
 
       // All searches should find the companies
       searchResults.forEach((result) => {

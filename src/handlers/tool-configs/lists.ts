@@ -197,7 +197,7 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
 
       // Extract stage information if available
       let stageInfo = '';
-      const values = result.values as unknown;
+      const values = result.values as any;
       if (values && values.stage) {
         const stageValue = Array.isArray(values.stage)
           ? values.stage[0]?.value || values.stage[0]

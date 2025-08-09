@@ -23,7 +23,7 @@ export const RESOURCE_TYPE_MAP: Record<ResourceSpecificCreateTool, string> = {
  */
 export const VALIDATION_RULES: Record<
   ResourceSpecificCreateTool,
-  (attributes: unknown) => string | null
+  (attributes: any) => string | null
 > = {
   'create-company': (attributes) => {
     if (!attributes.name) {

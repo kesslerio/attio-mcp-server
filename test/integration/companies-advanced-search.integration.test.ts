@@ -38,7 +38,7 @@ describe('Companies Advanced Search Integration', () => {
   testMethod(
     'should throw descriptive error for invalid filter structure',
     async () => {
-      const invalidFilters = {} as unknown; // Missing filters property
+      const invalidFilters = {} as any; // Missing filters property
 
       await expect(advancedSearchCompanies(invalidFilters)).rejects.toThrow(
         FilterValidationError
@@ -104,7 +104,7 @@ describe('Companies Advanced Search Integration', () => {
           {
             condition: FilterConditionType.CONTAINS,
             value: 'test',
-          } as unknown,
+          } as any,
         ],
       };
 

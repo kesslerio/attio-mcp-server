@@ -73,7 +73,7 @@ export async function getCompanyNotes(
         limit,
         offset
       );
-    } catch(error: unknown) {
+    } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[getCompanyNotes] Unified operation failed: ${
@@ -99,7 +99,7 @@ export async function getCompanyNotes(
 
         const response = await api.get(path);
         return response?.data?.data || [];
-      } catch(directError: unknown) {
+      } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
           console.error(`[getCompanyNotes] All attempts failed:`, {
             companyId,
@@ -207,7 +207,7 @@ export async function createCompanyNote(
         title,
         content
       );
-    } catch(error: unknown) {
+    } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[createCompanyNote] Unified operation failed: ${
@@ -239,7 +239,7 @@ export async function createCompanyNote(
           },
         });
         return response.data;
-      } catch(directError: unknown) {
+      } catch (directError: any) {
         if (process.env.NODE_ENV === 'development') {
           console.error(`[createCompanyNote] All attempts failed:`, {
             companyId,

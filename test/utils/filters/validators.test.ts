@@ -26,22 +26,22 @@ describe('Filter Validators', () => {
     });
 
     it('should return false for null or undefined filter', () => {
-      expect(validateFilterStructure(null as unknown)).toBe(false);
-      expect(validateFilterStructure(undefined as unknown)).toBe(false);
+      expect(validateFilterStructure(null as any)).toBe(false);
+      expect(validateFilterStructure(undefined as any)).toBe(false);
     });
 
     it('should return false when attribute is missing', () => {
       const filter = {
         condition: FilterConditionType.CONTAINS,
         value: 'test',
-      } as unknown;
+      } as any;
 
       expect(validateFilterStructure(filter)).toBe(false);
     });
 
     it('should return false when attribute.slug is missing', () => {
       const filter: ListEntryFilter = {
-        attribute: {} as unknown,
+        attribute: {} as any,
         condition: FilterConditionType.CONTAINS,
         value: 'test',
       };
@@ -52,7 +52,7 @@ describe('Filter Validators', () => {
     it('should return false when condition is missing', () => {
       const filter: ListEntryFilter = {
         attribute: { slug: 'name' },
-        condition: '' as unknown,
+        condition: '' as any,
         value: 'test',
       };
 
@@ -118,7 +118,7 @@ describe('Filter Validators', () => {
         // Missing attribute
         condition: FilterConditionType.CONTAINS,
         value: 'test',
-      } as unknown;
+      } as any;
 
       expect(() => {
         validateFilterWithConditions(filter);

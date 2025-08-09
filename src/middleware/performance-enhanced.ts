@@ -37,7 +37,7 @@ export interface EnhancedPerformanceMetrics {
   error?: string;
   statusCode?: number;
   recordCount?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -82,7 +82,7 @@ export interface PerformanceAlert {
  */
 interface CacheEntry {
   timestamp: number;
-  result: unknown;
+  result: any;
   ttl: number;
 }
 
@@ -141,7 +141,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   startOperation(
     toolName: string,
     operationType: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, any>
   ): string {
     if (!this.enabled) return '';
 
@@ -201,7 +201,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     success: boolean = true,
     error?: string,
     statusCode?: number,
-    additionalMetadata?: Record<string, unknown>
+    additionalMetadata?: Record<string, any>
   ): EnhancedPerformanceMetrics | null {
     if (!this.enabled || !operationId) return null;
 
@@ -357,7 +357,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Cache a 404 response
    */
-  cache404Response(key: string, result: unknown, ttl: number = 60000): void {
+  cache404Response(key: string, result: any, ttl: number = 60000): void {
     this.cache404.set(key, {
       timestamp: Date.now(),
       result,
@@ -368,7 +368,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   /**
    * Get cached 404 response
    */
-  getCached404(key: string): unknown | null {
+  getCached404(key: string): any | null {
     const entry = this.cache404.get(key);
     if (!entry) return null;
 

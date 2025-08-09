@@ -106,7 +106,7 @@ export async function getCompanyDetails(
     // Use the unified operation if available, with fallback to direct implementation
     try {
       return await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
-    } catch(error: unknown) {
+    } catch (error: any) {
       const firstError = error;
       if (process.env.NODE_ENV === 'development') {
         console.log(
@@ -134,7 +134,7 @@ export async function getCompanyDetails(
 
         const response = await api.get(path);
         return response.data;
-      } catch(error: unknown) {
+      } catch (error: any) {
         const secondError = error;
         if (process.env.NODE_ENV === 'development') {
           console.log(
@@ -167,7 +167,7 @@ export async function getCompanyDetails(
 
           const response = await api.get(alternatePath);
           return response.data;
-        } catch(error: unknown) {
+        } catch (error: any) {
           const thirdError = error;
           // If all attempts fail, throw a meaningful error with preserved original errors
           const errorDetails = {

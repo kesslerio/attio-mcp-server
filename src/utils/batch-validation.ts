@@ -32,7 +32,7 @@ export interface BatchValidationResult {
  * Calculate the approximate size of a JavaScript object in bytes
  * This is used to estimate payload sizes for validation
  */
-function getObjectSize(obj: unknown): number {
+function getObjectSize(obj: any): number {
   let size = 0;
 
   if (obj === null || obj === undefined) {
@@ -82,7 +82,7 @@ function getObjectSize(obj: unknown): number {
  * @returns Validation result
  */
 export function validateBatchSize(
-  items: unknown[] | undefined | null,
+  items: any[] | undefined | null,
   operationType: string,
   resourceType?: string
 ): BatchValidationResult {
@@ -142,7 +142,7 @@ export function validateBatchSize(
  * @returns Validation result
  */
 export function validatePayloadSize(
-  payload: unknown,
+  payload: any,
   checkSingleRecords: boolean = true
 ): BatchValidationResult {
   // Calculate total payload size
@@ -239,7 +239,7 @@ export function validateSearchQuery(
  * @returns Validation result
  */
 export function validateBatchOperation(params: {
-  items?: unknown[];
+  items?: any[];
   operationType: string;
   resourceType?: string;
   checkPayload?: boolean;

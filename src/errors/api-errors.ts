@@ -241,7 +241,7 @@ export function createApiErrorFromStatus(
  * @returns The appropriate error instance
  */
 export function createApiErrorFromAxiosError(
-  error: unknown,
+  error: any,
   endpoint: string,
   method: string
 ): AttioApiError {

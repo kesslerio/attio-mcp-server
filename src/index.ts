@@ -169,7 +169,7 @@ async function main() {
       // Handle graceful shutdown
       const shutdown = (signal: string) => {
         console.error(`[Shutdown] Received ${signal}. Shutting down...`);
-        const healthSrv = healthServer as unknown;
+        const healthSrv = healthServer as any;
 
         if (healthSrv && typeof healthSrv.shutdown === 'function') {
           healthSrv.shutdown(() => {

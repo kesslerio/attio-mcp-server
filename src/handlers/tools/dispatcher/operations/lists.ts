@@ -51,7 +51,7 @@ export async function handleAddRecordToListOperation(
   const recordId = request.params.arguments?.recordId as string;
   const objectType = request.params.arguments?.objectType as string | undefined;
   const initialValues = request.params.arguments?.initialValues as
-    | Record<string, unknown>
+    | Record<string, any>
     | undefined;
 
   if (!listId) {

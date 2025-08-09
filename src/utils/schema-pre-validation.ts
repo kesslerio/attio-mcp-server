@@ -26,7 +26,7 @@ export interface AttributeMetadata {
   is_system?: boolean;
   is_writable?: boolean;
   is_required?: boolean;
-  allowed_values?: unknown[];
+  allowed_values?: any[];
   format?: string;
 }
 
@@ -144,12 +144,12 @@ export class SchemaPreValidator {
   /**
    * Normalize attributes from API response
    */
-  private static normalizeAttributes(apiResponse: unknown): AttributeMetadata[] {
+  private static normalizeAttributes(apiResponse: any): AttributeMetadata[] {
     if (!apiResponse || !Array.isArray(apiResponse)) {
       return [];
     }
 
-    return apiResponse.map((attr: unknown) => ({
+    return apiResponse.map((attr: any) => ({
       id: attr.id || attr.slug,
       slug: attr.slug || attr.id,
       name: attr.name || attr.title || attr.slug,
@@ -414,7 +414,7 @@ export class SchemaPreValidator {
    */
   static async validateRecordData(
     resourceType: UniversalResourceType,
-    recordData: Record<string, unknown>,
+    recordData: Record<string, any>,
     context?: { workspaceId?: string; tenantId?: string }
   ): Promise<{
     valid: boolean;
@@ -565,7 +565,7 @@ export class SchemaPreValidator {
    */
   private static validateFieldType(
     field: string,
-    value: unknown,
+    value: any,
     attr: AttributeMetadata
   ): string | null {
     if (value === null || value === undefined) {
@@ -646,7 +646,7 @@ export class SchemaPreValidator {
    */
   static async withPreValidation<T>(
     resourceType: UniversalResourceType,
-    recordData: Record<string, unknown>,
+    recordData: Record<string, any>,
     operation: () => Promise<T>
   ): Promise<T> {
     // Validate record data

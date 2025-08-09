@@ -18,7 +18,7 @@ vi.mock('../../../src/handlers/tools/dispatcher.js', () => ({
 
 describe('MCP Tool Argument Compatibility (Issue #344)', () => {
   let server: Server;
-  let requestHandler: unknown;
+  let requestHandler: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,7 +30,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
           requestHandler = handler;
         }
       }),
-    } as unknown;
+    } as any;
 
     // Register handlers
     registerToolHandlers(server);
@@ -60,7 +60,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
           name: 'search-companies',
           query: 'Lenox Hill Plastic Surgery', // Arguments directly in params
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 
@@ -92,7 +92,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
             domain: 'test.com',
           },
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 
@@ -138,7 +138,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
           query: 'Test Query',
           limit: 10,
         },
-      } as unknown;
+      } as any;
 
       await requestHandler(request);
 
@@ -158,7 +158,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
         params: {
           name: 'discover-company-attributes',
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 
@@ -172,7 +172,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
           name: 'search-companies',
           // Missing required arguments
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 
@@ -192,7 +192,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
           arguments: { query: 'Already wrapped' },
           query: 'Should be ignored', // This should be ignored
         },
-      } as unknown;
+      } as any;
 
       await requestHandler(request);
 
@@ -201,7 +201,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
         query: 'Already wrapped',
       });
       // The loose 'query' parameter should not be included
-      expect((calledWith.params as unknown).query).toBeUndefined();
+      expect((calledWith.params as any).query).toBeUndefined();
     });
 
     it('should validate request structure', async () => {
@@ -209,7 +209,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
         params: {
           // Missing name
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 
@@ -227,7 +227,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
             query: largeString,
           },
         },
-      } as unknown;
+      } as any;
 
       const result = await requestHandler(request);
 

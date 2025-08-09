@@ -136,7 +136,7 @@ class E2ELogger {
   logToolCall(
     toolName: string,
     parameters: Record<string, unknown>,
-    response: unknown,
+    response: any,
     timing: { start: number; end: number },
     testName?: string,
     error?: Error
@@ -194,7 +194,7 @@ class E2ELogger {
   logTestDataCreation(
     type: string,
     id: string,
-    data: unknown,
+    data: any,
     testName?: string
   ): void {
     if (this.currentTestRun) {
@@ -407,14 +407,14 @@ class E2ELogger {
 
     const sanitized = { ...params };
     
-    const sanitizeObject = (obj: unknown): unknown => {
+    const sanitizeObject = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj;
       
       if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       }
       
-      const result: unknown = {};
+      const result: any = {};
       for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();
         if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
@@ -434,7 +434,7 @@ class E2ELogger {
   /**
    * Sanitize response data by limiting size and removing sensitive data
    */
-  private sanitizeResponse(response: unknown): any {
+  private sanitizeResponse(response: any): any {
     if (!response) return response;
 
     // Convert response to string to check size
@@ -480,7 +480,7 @@ export function endTestSuite(): void {
 export function logToolCall(
   toolName: string,
   parameters: Record<string, unknown>,
-  response: unknown,
+  response: any,
   timing: { start: number; end: number },
   testName?: string,
   error?: Error
@@ -491,7 +491,7 @@ export function logToolCall(
 export function logTestDataCreation(
   type: string,
   id: string,
-  data: unknown,
+  data: any,
   testName?: string
 ): void {
   e2eLogger.logTestDataCreation(type, id, data, testName);

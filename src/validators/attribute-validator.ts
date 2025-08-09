@@ -29,7 +29,7 @@ export interface ValidationResult {
   /** Whether the validation was successful */
   valid: boolean;
   /** The converted value (may differ from input if type conversion was applied) */
-  convertedValue?: unknown;
+  convertedValue?: any;
   /** Error message if validation failed */
   error?: string;
 }
@@ -68,7 +68,7 @@ export interface ValidationResult {
  */
 export function validateAttributeValue(
   attributeName: string,
-  value: unknown,
+  value: any,
   expectedType: AttributeType
 ): ValidationResult {
   // Handle null case first

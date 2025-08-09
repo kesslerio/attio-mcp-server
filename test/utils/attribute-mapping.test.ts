@@ -124,7 +124,7 @@ describe('Attribute Mapping', () => {
     it('should handle null or undefined input', () => {
       // Test with null or undefined
       expect(getAttributeSlug('')).toBe('');
-      expect(getAttributeSlug(undefined as unknown)).toBe(undefined);
+      expect(getAttributeSlug(undefined as any)).toBe(undefined);
     });
 
     it('should map industry to categories via special case handling', () => {

@@ -38,7 +38,7 @@ describe('response-formatter', () => {
         { id: '3', name: 'Item 3' },
       ];
 
-      const formatter = (item: unknown) => `${item.name} (ID: ${item.id})`;
+      const formatter = (item: any) => `${item.name} (ID: ${item.id})`;
       const result = formatListResponse('Test Items', items, formatter);
 
       expect(result.isError).toBe(false);
@@ -54,7 +54,7 @@ describe('response-formatter', () => {
 
     it('should handle empty list', () => {
       const items: unknown[] = [];
-      const formatter = (item: unknown) => `${item.name}`;
+      const formatter = (item: any) => `${item.name}`;
       const result = formatListResponse('Empty List', items, formatter);
 
       expect(result.isError).toBe(false);
@@ -65,7 +65,7 @@ describe('response-formatter', () => {
 
     it('should include pagination info if provided', () => {
       const items = [{ id: '1', name: 'Item 1' }];
-      const formatter = (item: unknown) => `${item.name}`;
+      const formatter = (item: any) => `${item.name}`;
       const pagination = { total: 100, hasMore: true, nextCursor: 'abc123' };
       const result = formatListResponse(
         'Test Items',
@@ -83,7 +83,7 @@ describe('response-formatter', () => {
   describe('formatRecordResponse', () => {
     it('should format a single record', () => {
       const record = { id: '123', name: 'Test Record', value: 42 };
-      const formatter = (r: unknown) =>
+      const formatter = (r: any) =>
         `Name: ${r.name}\nID: ${r.id}\nValue: ${r.value}`;
       const result = formatRecordResponse('Record Details', record, formatter);
 

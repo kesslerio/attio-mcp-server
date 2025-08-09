@@ -179,7 +179,7 @@ describe('Real API Integration Tests', () => {
 
       const foundPerson = results.find((p) =>
         p.values.email_addresses?.some(
-          (e: unknown) => e.email_address === testData.personEmail
+          (e: any) => e.email_address === testData.personEmail
         )
       );
       expect(
@@ -270,7 +270,7 @@ describe('Real API Integration Tests', () => {
         await createCompany({
           // Missing required name field - should trigger validation
           website: 'https://invalid.com',
-        } as unknown);
+        } as any);
         throw new Error('Expected validation error was not thrown');
       } catch (error) {
         const isValidError = expectIntegrationError(error, [
@@ -307,7 +307,7 @@ describe('Real API Integration Tests', () => {
         await createPerson({
           // Missing required fields - should trigger enhanced validation
           phone_numbers: ['+1234567890'],
-        } as unknown);
+        } as any);
         throw new Error('Expected validation error was not thrown');
       } catch (error) {
         const isValidError = expectIntegrationError(error, [

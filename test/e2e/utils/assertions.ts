@@ -172,7 +172,7 @@ export class E2EAssertions {
   /**
    * Universal tool parameter validation
    */
-  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, unknown>): void {
+  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, any>): void {
     this.expectMcpSuccess(response);
     
     // Basic validation that the tool accepted the parameters
@@ -268,8 +268,8 @@ export class E2EAssertions {
         errorMessage = response.error;
       } else if (response.error && typeof response.error === 'object') {
         // Try to extract message from error object
-        errorMessage = (response.error as unknown).message || 
-                      (response.error as unknown).error || 
+        errorMessage = (response.error as any).message || 
+                      (response.error as any).error || 
                       JSON.stringify(response.error);
       } else {
         errorMessage = String(response.error);
@@ -531,7 +531,7 @@ export class E2EAssertions {
   /**
    * Assert that note response has valid structure
    */
-  static expectValidNoteStructure(note: unknown): void {
+  static expectValidNoteStructure(note: any): void {
     expect(note, 'Note should be defined').toBeDefined();
     expect(typeof note, 'Note should be object').toBe('object');
     
@@ -560,10 +560,10 @@ export class E2EAssertions {
   /**
    * Assert that note collection response is valid
    */
-  static expectValidNoteCollection(response: unknown, minCount: number = 0): void {
+  static expectValidNoteCollection(response: any, minCount: number = 0): void {
     expect(response, 'Note collection response should be defined').toBeDefined();
     
-    let notes: unknown[];
+    let notes: any[];
     if (Array.isArray(response)) {
       notes = response;
     } else if (response.data && Array.isArray(response.data)) {
@@ -589,7 +589,7 @@ export class E2EAssertions {
   /**
    * Assert that note content matches expected format
    */
-  static expectNoteContentFormat(note: unknown, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
+  static expectNoteContentFormat(note: any, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
     this.expectValidNoteStructure(note);
     
     if (note.format) {
@@ -616,7 +616,7 @@ export class E2EAssertions {
   /**
    * Assert that note is properly linked to parent record
    */
-  static expectNoteLinkedToRecord(note: unknown, expectedParentType: string, expectedParentId?: string): void {
+  static expectNoteLinkedToRecord(note: any, expectedParentType: string, expectedParentId?: string): void {
     this.expectValidNoteStructure(note);
     
     // Check for parent object linkage (may vary by API implementation)
@@ -630,7 +630,7 @@ export class E2EAssertions {
     
     // Alternative structure checks for different API implementations
     if (note.linked_to && Array.isArray(note.linked_to)) {
-      const linkFound = note.linked_to.some((link: unknown) => 
+      const linkFound = note.linked_to.some((link: any) => 
         link.target_object === expectedParentType || 
         (expectedParentId && link.target_record_id === expectedParentId)
       );
@@ -641,7 +641,7 @@ export class E2EAssertions {
   /**
    * Assert that note has valid test data characteristics
    */
-  static expectTestNote(note: unknown): void {
+  static expectTestNote(note: any): void {
     this.expectValidNoteStructure(note);
     
     const config = configLoader.getConfig();

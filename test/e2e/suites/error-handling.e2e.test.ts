@@ -29,7 +29,7 @@ import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Error Handling E2E Tests', () => {
-  let config: unknown;
+  let config: any;
   let testCompanyId: string;
   let testPersonId: string;
   let testListId: string;
@@ -86,7 +86,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     console.log('🧹 Cleaning up error handling test data...');
     
     // Clean up test data (best effort - errors expected in error handling tests)
-    const cleanupPromises: Promise<unknown>[] = [];
+    const cleanupPromises: Promise<any>[] = [];
     
     if (testCompanyId) {
       cleanupPromises.push(

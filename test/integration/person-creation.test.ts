@@ -81,7 +81,7 @@ vi.mock('../../src/api/attribute-types.js', async () => {
 });
 
 describe('Person Creation Integration', () => {
-  let mockAxiosInstance: unknown;
+  let mockAxiosInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -153,7 +153,7 @@ describe('Person Creation Integration', () => {
     });
 
     // Mock the Attio client to return our mock axios instance
-    vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as unknown);
+    vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as any);
 
     // Clear the attribute cache before each test to ensure fresh metadata
     clearAttributeCache();
@@ -424,7 +424,7 @@ describe('Person Creation Integration', () => {
   it('should handle API errors gracefully', async () => {
     // Mock an API error response for person creation
     const mockError = new Error('API Error');
-    (mockError as unknown).response = {
+    (mockError as any).response = {
       status: 400,
       data: {
         message: "Required field 'name' is missing",

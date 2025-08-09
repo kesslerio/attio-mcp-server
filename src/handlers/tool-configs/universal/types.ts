@@ -199,18 +199,18 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: unknown) => Promise<unknown>;
-  formatResult: (results: Record<string, unknown>) => string;
+  handler: (params: any) => Promise<unknown>;
+  formatResult: (results: any) => string;
 }
 
 /**
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.PEOPLE]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.RECORDS]: (params: unknown) => Promise<unknown>;
-  [UniversalResourceType.TASKS]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.COMPANIES]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.PEOPLE]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.RECORDS]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.TASKS]: (params: any) => Promise<unknown>;
 }
 
 /**
@@ -222,5 +222,5 @@ export interface UniversalResultFormatter {
   formatCreate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
   formatUpdate: (record: AttioRecord, resourceType: UniversalResourceType) => string;
   formatDelete: (success: boolean, recordId: string, resourceType: UniversalResourceType) => string;
-  formatAttributes: (attributes: unknown, resourceType: UniversalResourceType) => string;
+  formatAttributes: (attributes: any, resourceType: UniversalResourceType) => string;
 }

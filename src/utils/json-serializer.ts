@@ -23,7 +23,7 @@ export interface SerializationOptions {
   /** Whether to include stack traces in error objects */
   includeStackTraces?: boolean;
   /** Custom replacer function */
-  replacer?: (key: string, value: unknown) => any;
+  replacer?: (key: string, value: any) => any;
   /** Indent spaces for pretty printing (default: 2) */
   indent?: number;
 }
@@ -49,7 +49,7 @@ const DEFAULT_OPTIONS: Required<SerializationOptions> = {
  * @returns Safe JSON string
  */
 export function safeJsonStringify(
-  obj: unknown,
+  obj: any,
   options: SerializationOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
@@ -59,7 +59,7 @@ export function safeJsonStringify(
 
   try {
     // Create a custom replacer to handle non-standard values
-    const customReplacer = (key: string, value: unknown): unknown => {
+    const customReplacer = (key: string, value: any): any => {
       // First apply user-provided replacer if any
       value = opts.replacer(key, value);
 
@@ -75,7 +75,7 @@ export function safeJsonStringify(
 
       // Handle special object types more gracefully
       if (value instanceof Error) {
-        const errorObj: unknown = {
+        const errorObj: any = {
           name: value.name,
           message: value.message,
         };
@@ -150,7 +150,7 @@ export function safeJsonStringify(
  */
 export function validateJsonString(jsonString: string): {
   isValid: boolean;
-  data?: unknown;
+  data?: any;
   error?: string;
   size: number;
 } {
@@ -183,12 +183,12 @@ export function validateJsonString(jsonString: string): {
  * @returns True if circular references are detected
  */
 export function hasCircularReferences(
-  obj: unknown,
+  obj: any,
   maxDepth: number = 10
 ): boolean {
   const seen = new WeakSet();
 
-  function check(value: unknown, depth: number): boolean {
+  function check(value: any, depth: number): boolean {
     if (depth > maxDepth) return false;
     if (value === null || typeof value !== 'object') return false;
 
@@ -220,7 +220,7 @@ export function hasCircularReferences(
  * @returns Safe copy of the object
  */
 export function createSafeCopy(
-  obj: unknown,
+  obj: any,
   options: SerializationOptions = {}
 ): any {
   try {
@@ -252,7 +252,7 @@ export function createSafeCopy(
  * @param response - The MCP response object to sanitize
  * @returns Sanitized response object
  */
-export function sanitizeMcpResponse(response: unknown): any {
+export function sanitizeMcpResponse(response: any): any {
   // Ensure response has the correct structure
   if (!response || typeof response !== 'object') {
     return {

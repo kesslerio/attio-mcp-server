@@ -362,7 +362,7 @@ export const edgeCasePeople = {
     name: 'E2E Nullish Person',
     email_addresses: ['nullish@e2e-test.example.com'],
     phone_numbers: undefined,
-    job_title: null as unknown,
+    job_title: null as any,
     seniority: undefined
   })
 };

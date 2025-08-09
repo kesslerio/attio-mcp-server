@@ -34,9 +34,9 @@ export interface ErrorDetails {
     method?: string;
     path?: string;
     detail?: string;
-    responseData?: Record<string, unknown>;
+    responseData?: Record<string, any>;
     originalError?: string;
-    [key: string]: unknown;
+    [key: string]: any;
   };
 }
 
@@ -48,7 +48,7 @@ export class AttioApiError extends Error {
   detail: string;
   path: string;
   method: string;
-  responseData: unknown;
+  responseData: any;
   type: ErrorType;
 
   constructor(
@@ -58,7 +58,7 @@ export class AttioApiError extends Error {
     path: string,
     method: string,
     type: ErrorType = ErrorType.API_ERROR,
-    responseData: unknown = {}
+    responseData: any = {}
   ) {
     super(message);
     this.name = 'AttioApiError';
@@ -80,7 +80,7 @@ export class AttioApiError extends Error {
  * @param responseData - Response data from API
  * @returns Appropriate error instance
  */
-export function createAttioError(error: unknown): Error {
+export function createAttioError(error: any): Error {
   // If it's already an AttioApiError, return it
   if (error instanceof AttioApiError) {
     return error;
@@ -111,7 +111,7 @@ export function createApiError(
   status: number,
   path: string,
   method: string,
-  responseData: unknown = {}
+  responseData: any = {}
 ): Error {
   const defaultMessage =
     responseData?.error?.message ||
@@ -290,7 +290,7 @@ export function formatErrorResponse(
   }
 
   // Create a safe copy of details to prevent circular reference issues during JSON serialization
-  let safeDetails: unknown = null;
+  let safeDetails: any = null;
 
   if (details) {
     try {

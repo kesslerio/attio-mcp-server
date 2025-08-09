@@ -17,7 +17,7 @@ import { ToolConfig } from '../../tool-types.js';
 export interface RecordCreateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    attributes: unknown,
+    attributes: any,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -35,7 +35,7 @@ export interface RecordUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
     recordId: string,
-    attributes: unknown,
+    attributes: any,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -51,7 +51,7 @@ export interface RecordDeleteToolConfig extends ToolConfig {
 export interface RecordListToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    options?: unknown,
+    options?: any,
     objectId?: string
   ) => Promise<AttioRecord[]>;
 }
@@ -59,17 +59,17 @@ export interface RecordListToolConfig extends ToolConfig {
 export interface RecordBatchCreateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    records: unknown[],
+    records: any[],
     objectId?: string
-  ) => Promise<unknown>;
+  ) => Promise<any>;
 }
 
 export interface RecordBatchUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    records: unknown[],
+    records: any[],
     objectId?: string
-  ) => Promise<unknown>;
+  ) => Promise<any>;
 }
 
 // Record tool configurations
@@ -112,7 +112,7 @@ export const recordToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} records:\n${results
         .map(
-          (record: unknown) =>
+          (record: any) =>
             `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${
               record.id?.record_id || 'unknown'
             })`
@@ -124,12 +124,12 @@ export const recordToolConfigs = {
   batchCreate: {
     name: 'batch-create-records',
     handler: batchCreateObjectRecords,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       return (
         `Batch create operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r: unknown, i: number) =>
+          .map((r: any, i: number) =>
             r.success
               ? `✅ Record ${i + 1}: Created successfully (ID: ${
                   r.data?.id?.record_id || 'unknown'
@@ -146,12 +146,12 @@ export const recordToolConfigs = {
   batchUpdate: {
     name: 'batch-update-records',
     handler: batchUpdateObjectRecords,
-    formatResult: (result: Record<string, unknown>) => {
+    formatResult: (result: any) => {
       return (
         `Batch update operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r) =>
+          .map((r: any) =>
             r.success
               ? `✅ Record ${r.id}: Updated successfully`
               : `❌ Record ${r.id}: Failed - ${

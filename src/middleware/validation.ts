@@ -42,7 +42,7 @@ export interface ValidationError {
  */
 export interface SchemaDefinition {
   type: string;
-  properties?: Record<string, unknown>;
+  properties?: Record<string, any>;
   required?: string[];
   additionalProperties?: boolean;
   enum?: string[];
@@ -52,7 +52,7 @@ export interface SchemaDefinition {
   maxLength?: number;
   pattern?: string;
   format?: string;
-  default?: unknown;
+  default?: any;
 }
 
 /**
@@ -501,12 +501,12 @@ export function createValidationErrorResponse(
 /**
  * Wrap a handler with validation middleware
  */
-export function withValidation<T extends (...args: unknown[]) => any>(
+export function withValidation<T extends (...args: any[]) => any>(
   handler: T,
   schema: SchemaDefinition,
   toolName: string
 ): T {
-  return (async (...args: unknown[]) => {
+  return (async (...args: any[]) => {
     try {
       // Validate parameters if provided
       if (args[0]) {

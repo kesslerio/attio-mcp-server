@@ -567,7 +567,7 @@ export class CrossResourceValidator {
       const client = getAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
-    } catch(error: unknown) {
+    } catch (error: any) {
       // Classify the error based on response
       if (error?.response?.status === 404) {
         return {
@@ -594,7 +594,7 @@ export class CrossResourceValidator {
   /**
    * Validate record relationships based on resource type and data
    */
-  static async validateRecordRelationships(resourceType: UniversalResourceType, recordData: unknown): Promise<void> {
+  static async validateRecordRelationships(resourceType: UniversalResourceType, recordData: any): Promise<void> {
     if (!recordData || typeof recordData !== 'object') return;
 
     switch (resourceType) {
@@ -860,7 +860,7 @@ function validateIdFields(params: SanitizedObject, toolName: string): void {
 /**
  * Enhanced schema validation utility function with better error messages
  */
-export function validateUniversalToolParams(toolName: string, params: unknown): any {
+export function validateUniversalToolParams(toolName: string, params: any): any {
   // Sanitize input parameters first
   const sanitizedValue = InputSanitizer.sanitizeObject(params);
   

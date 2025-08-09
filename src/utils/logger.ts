@@ -42,7 +42,7 @@ export interface LogMetadata {
   duration?: number;
   requestId?: string;
   userId?: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface LogMetadata {
 export interface LogEntry {
   message: string;
   metadata: LogMetadata;
-  data?: unknown;
+  data?: any;
   error?: {
     message: string;
     name: string;
@@ -121,7 +121,7 @@ function createLogMetadata(
   module: string,
   operation?: string,
   operationType?: OperationType,
-  additionalMetadata?: Record<string, unknown>
+  additionalMetadata?: Record<string, any>
 ): LogMetadata {
   return {
     timestamp: new Date().toISOString(),
@@ -142,7 +142,7 @@ function createLogMetadata(
  */
 function outputLog(
   entry: LogEntry,
-  logFunction: (message: string, ...args: unknown[]) => void
+  logFunction: (message: string, ...args: any[]) => void
 ): void {
   if (process.env.LOG_FORMAT === 'json') {
     // Output compact JSON using safe stringify to prevent errors
@@ -166,7 +166,7 @@ function outputLog(
 export function debug(
   module: string,
   message: string,
-  data?: unknown,
+  data?: any,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -192,7 +192,7 @@ export function debug(
 export function info(
   module: string,
   message: string,
-  data?: unknown,
+  data?: any,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -218,7 +218,7 @@ export function info(
 export function warn(
   module: string,
   message: string,
-  data?: unknown,
+  data?: any,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -245,8 +245,8 @@ export function warn(
 export function error(
   module: string,
   message: string,
-  errorObj?: unknown,
-  data?: unknown,
+  errorObj?: any,
+  data?: any,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -262,7 +262,7 @@ export function error(
                 message: errorObj.message,
                 name: errorObj.name,
                 stack: errorObj.stack,
-                code: (errorObj as unknown).code,
+                code: (errorObj as any).code,
               }
             : typeof errorObj === 'object' && errorObj !== null
               ? {
@@ -302,7 +302,7 @@ export class PerformanceTimer {
   /**
    * End timing and log the duration
    */
-  end(message?: string, data?: unknown): number {
+  end(message?: string, data?: any): number {
     const duration = Date.now() - this.startTime;
     debug(
       this.module,
@@ -352,7 +352,7 @@ export function operationStart(
 export function operationSuccess(
   module: string,
   operation: string,
-  resultSummary?: unknown,
+  resultSummary?: any,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -382,8 +382,8 @@ export function operationSuccess(
 export function operationFailure(
   module: string,
   operation: string,
-  errorObj: unknown,
-  context?: unknown,
+  errorObj: any,
+  context?: any,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -433,15 +433,15 @@ export function createScopedLogger(
   operationType?: OperationType
 ) {
   return {
-    debug: (message: string, data?: unknown) =>
+    debug: (message: string, data?: any) =>
       debug(module, message, data, operation, operationType),
-    info: (message: string, data?: unknown) =>
+    info: (message: string, data?: any) =>
       info(module, message, data, operation, operationType),
-    warn: (message: string, data?: unknown) =>
+    warn: (message: string, data?: any) =>
       warn(module, message, data, operation, operationType),
-    error: (message: string, errorObj?: unknown, data?: unknown) =>
+    error: (message: string, errorObj?: any, data?: any) =>
       error(module, message, errorObj, data, operation, operationType),
-    operationStart: (op?: string, opType?: OperationType, params?: unknown) =>
+    operationStart: (op?: string, opType?: OperationType, params?: any) =>
       operationStart(
         module,
         op || operation || 'unknown',
@@ -450,7 +450,7 @@ export function createScopedLogger(
       ),
     operationSuccess: (
       op?: string,
-      resultSummary?: unknown,
+      resultSummary?: any,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -463,8 +463,8 @@ export function createScopedLogger(
       ),
     operationFailure: (
       op?: string,
-      errorObj?: unknown,
-      context?: unknown,
+      errorObj?: any,
+      context?: any,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -522,7 +522,7 @@ export async function withLogging<T>(
  * @param message - Message to log
  * @param args - Additional arguments to log
  */
-export function safeMcpLog(message: string, ...args: unknown[]): void {
+export function safeMcpLog(message: string, ...args: any[]): void {
   // Always use console.error to avoid interfering with MCP protocol
   console.error(`[MCP_SAFE_LOG] ${message}`, ...args);
 }

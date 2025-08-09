@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { formatAllAttributes } from '../../src/api/attribute-types';
 
 // Mock dependencies
-const mockGet = vi.fn() as unknown;
+const mockGet = vi.fn() as any;
 vi.mock('../../src/api/attio-client', () => ({
   getAttioClient: vi.fn(() => ({
     get: mockGet,
@@ -11,7 +11,7 @@ vi.mock('../../src/api/attio-client', () => ({
 
 // Setup mock response
 beforeEach(() => {
-  (mockGet as unknown).mockResolvedValue({
+  (mockGet as any).mockResolvedValue({
     data: {
       data: [
         {

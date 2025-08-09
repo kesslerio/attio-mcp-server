@@ -228,7 +228,7 @@ export function generateIdCacheKey(resourceType: string, id: string): string {
  * @param error The error to check
  * @returns True if error appears to be ID-related
  */
-export function isIdFormatError(error: unknown): boolean {
+export function isIdFormatError(error: any): boolean {
   if (!error) return false;
   
   const errorMessage = error.message || error.toString() || '';

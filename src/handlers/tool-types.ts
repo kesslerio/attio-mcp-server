@@ -13,8 +13,8 @@ import { ListEntryFilters } from '../api/operations/index.js';
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;
-  handler: unknown; // Using any to allow different handler signatures
-  formatResult?: (results: unknown) => string;
+  handler: any; // Using any to allow different handler signatures
+  formatResult?: (results: any) => string;
 }
 
 // Search tool configuration
@@ -65,7 +65,7 @@ export interface GetListEntriesToolConfig extends ToolConfig {
 
 // List action tool configuration
 export interface ListActionToolConfig extends ToolConfig {
-  handler: (listId: string, recordId: string) => Promise<unknown>;
+  handler: (listId: string, recordId: string) => Promise<any>;
   idParams?: string[];
 }
 
@@ -76,6 +76,6 @@ export interface PromptsToolConfig extends ToolConfig {
 
 // Date-based search tool configuration
 export interface DateBasedSearchToolConfig extends ToolConfig {
-  handler: (...args: unknown[]) => Promise<AttioRecord[]>;
+  handler: (...args: any[]) => Promise<AttioRecord[]>;
   formatResult: (results: AttioRecord[]) => string;
 }

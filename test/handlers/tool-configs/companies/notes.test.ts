@@ -6,13 +6,13 @@
 import { describe, it, expect } from 'vitest';
 
 // Mock the formatter function based on the actual implementation
-function mockNotesFormatter(notes: unknown[]) {
+function mockNotesFormatter(notes: any[]) {
   if (!notes || notes.length === 0) {
     return 'No notes found for this company.';
   }
 
   return `Found ${notes.length} notes:\n${notes
-    .map((note: unknown) => {
+    .map((note: any) => {
       // Handle different possible field structures from the API
       const title =
         note.title || note.data?.title || note.values?.title || 'Untitled';

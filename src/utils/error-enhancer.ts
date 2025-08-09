@@ -58,7 +58,7 @@ interface ErrorContext {
 /**
  * Parse API error to extract context
  */
-function parseApiError(error: unknown): ErrorContext {
+function parseApiError(error: any): ErrorContext {
   console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
   console.error(
     `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${
@@ -181,7 +181,7 @@ function parseApiError(error: unknown): ErrorContext {
 /**
  * Enhance an API error with value suggestions if applicable
  */
-export function enhanceApiError(error: unknown): Error {
+export function enhanceApiError(error: any): Error {
   console.error(
     '[enhancer] Called with error type:',
     error?.constructor?.name,
@@ -251,7 +251,7 @@ export function enhanceApiError(error: unknown): Error {
 /**
  * Check if an error is a value mismatch that we can enhance
  */
-export function isValueMismatchError(error: unknown): {
+export function isValueMismatchError(error: any): {
   isMismatch: boolean;
   fieldSlug?: string;
   searchValue?: string;

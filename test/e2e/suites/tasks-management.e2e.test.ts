@@ -239,7 +239,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       expect(tasks).toBeDefined();
       
-      let taskArray: unknown[] = [];
+      let taskArray: any[] = [];
       if (Array.isArray(tasks)) {
         taskArray = tasks;
       } else if (tasks && Array.isArray(tasks.data)) {

@@ -11,13 +11,13 @@ import { ContactValue } from '../../../types/tool-types.js';
  * @returns The person's name or 'Unnamed' if not found
  */
 export function getPersonName(person: AttioRecord): string {
-  const values = person.values as unknown;
+  const values = person.values as any;
   return (
     values?.name?.[0]?.full_name ||
     values?.name?.[0]?.value ||
     values?.name?.[0]?.formatted ||
     values?.full_name?.[0]?.value ||
-    (person as unknown).attributes?.name?.value ||
+    (person as any).attributes?.name?.value ||
     'Unnamed'
   );
 }
@@ -34,7 +34,7 @@ export function formatPersonDetails(person: Person): string {
   }
 
   const personId = person.id.record_id || 'unknown';
-  const values = person.values as unknown;
+  const values = person.values as any;
   const name = values.name?.[0]?.value || 'Unnamed';
   const DISPLAYED_FIELDS = [
     'name',

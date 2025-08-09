@@ -59,9 +59,9 @@ const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 /**
  * Helper to create test data and track for cleanup
  */
-function trackForCleanup(type: string, id: string, data?: unknown): void {
+function trackForCleanup(type: string, id: string, data?: any): void {
   createdRecords.push({ type, id, data });
-  E2ETestBase.trackForCleanup(type as unknown, id, data);
+  E2ETestBase.trackForCleanup(type as any, id, data);
 }
 
 describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Lists Management E2E Tests', () => {
@@ -112,9 +112,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const data = E2EAssertions.expectMcpData(response);
       
       expect(data).toBeDefined();
-      expect(Array.isArray(data) || (data && Array.isArray((data as unknown).data))).toBe(true);
+      expect(Array.isArray(data) || (data && Array.isArray((data as any).data))).toBe(true);
       
-      console.log('📋 Found lists:', Array.isArray(data) ? data.length : (data as unknown)?.data?.length || 0);
+      console.log('📋 Found lists:', Array.isArray(data) ? data.length : (data as any)?.data?.length || 0);
     }, 30000);
 
     it('should handle empty lists response gracefully', async () => {
@@ -137,8 +137,8 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       if (Array.isArray(listsData) && listsData.length > 0) {
         availableListId = listsData[0].id?.list_id || listsData[0].id;
-      } else if (listsData && Array.isArray((listsData as unknown).data) && (listsData as unknown).data.length > 0) {
-        availableListId = (listsData as unknown).data[0].id?.list_id || (listsData as unknown).data[0].id;
+      } else if (listsData && Array.isArray((listsData as any).data) && (listsData as any).data.length > 0) {
+        availableListId = (listsData as any).data[0].id?.list_id || (listsData as any).data[0].id;
       }
       
       if (!availableListId) {
@@ -200,11 +200,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
       
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       // Find a company or people list
@@ -251,9 +251,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const entries = E2EAssertions.expectMcpData(response);
       
       expect(entries).toBeDefined();
-      expect(Array.isArray(entries) || (entries && Array.isArray((entries as unknown).data))).toBe(true);
+      expect(Array.isArray(entries) || (entries && Array.isArray((entries as any).data))).toBe(true);
       
-      const entryList = Array.isArray(entries) ? entries : (entries as unknown)?.data || [];
+      const entryList = Array.isArray(entries) ? entries : (entries as any)?.data || [];
       console.log('📝 List entries found:', entryList.length);
     }, 30000);
 
@@ -396,11 +396,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
       
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       filterListId = lists[0]?.id?.list_id || lists[0]?.id;
@@ -424,9 +424,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const filteredEntries = E2EAssertions.expectMcpData(response);
       
       expect(filteredEntries).toBeDefined();
-      expect(Array.isArray(filteredEntries) || (filteredEntries && Array.isArray((filteredEntries as unknown).data))).toBe(true);
+      expect(Array.isArray(filteredEntries) || (filteredEntries && Array.isArray((filteredEntries as any).data))).toBe(true);
       
-      console.log('🔍 Filtered entries found:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as unknown)?.data?.length || 0);
+      console.log('🔍 Filtered entries found:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
     }, 30000);
 
     it('should perform advanced filtering with multiple conditions', async () => {
@@ -454,7 +454,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const filteredEntries = E2EAssertions.expectMcpData(response);
       
       expect(filteredEntries).toBeDefined();
-      console.log('🔬 Advanced filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as unknown)?.data?.length || 0);
+      console.log('🔬 Advanced filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
     }, 30000);
 
     it('should handle empty filter results', async () => {
@@ -476,7 +476,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       // Empty results should still be valid
       expect(filteredEntries).toBeDefined();
-      const entryCount = Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as unknown)?.data?.length || 0;
+      const entryCount = Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0;
       expect(entryCount).toBe(0);
     }, 15000);
 
@@ -499,7 +499,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const filteredEntries = E2EAssertions.expectMcpData(response);
       
       expect(filteredEntries).toBeDefined();
-      console.log('👨‍👩‍👧‍👦 Parent-filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as unknown)?.data?.length || 0);
+      console.log('👨‍👩‍👧‍👦 Parent-filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
     }, 30000);
 
     it('should filter entries by specific parent record ID', async () => {
@@ -519,7 +519,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const filteredEntries = E2EAssertions.expectMcpData(response);
       
       expect(filteredEntries).toBeDefined();
-      console.log('🎯 Parent ID filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as unknown)?.data?.length || 0);
+      console.log('🎯 Parent ID filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
     }, 30000);
   });
 
@@ -641,11 +641,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         // Get any available list
         const listsResponse = await callListTool('get-lists', {});
         const listsData = E2EAssertions.expectMcpData(listsResponse);
-        let lists: unknown[] = [];
+        let lists: any[] = [];
         if (Array.isArray(listsData)) {
           lists = listsData;
-        } else if (listsData && Array.isArray((listsData as unknown).data)) {
-          lists = (listsData as unknown).data;
+        } else if (listsData && Array.isArray((listsData as any).data)) {
+          lists = (listsData as any).data;
         }
         
         if (lists.length === 0) {
@@ -675,11 +675,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should handle malformed advanced filter configurations', async () => {
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       if (lists.length === 0) {
@@ -715,11 +715,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should handle large result sets with pagination', async () => {
       const response = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(response);
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       if (lists.length === 0) {
@@ -760,11 +760,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should maintain performance with complex filters', async () => {
       const response = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(response);
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       if (lists.length === 0) {
@@ -806,12 +806,12 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should maintain consistent list entry structure', async () => {
       const response = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(response);
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       if (lists.length === 0) {
@@ -840,11 +840,11 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should handle special characters in filter values', async () => {
       const response = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(response);
-      let lists: unknown[] = [];
+      let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
-      } else if (listsData && Array.isArray((listsData as unknown).data)) {
-        lists = (listsData as unknown).data;
+      } else if (listsData && Array.isArray((listsData as any).data)) {
+        lists = (listsData as any).data;
       }
       
       if (lists.length === 0) {

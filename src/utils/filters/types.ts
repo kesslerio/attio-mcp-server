@@ -51,7 +51,7 @@ export const ATTRIBUTES = {
  */
 export type AttioApiFilter = {
   [attributeSlug: string]: {
-    [condition: string]: unknown;
+    [condition: string]: any;
   };
 };
 
@@ -91,20 +91,9 @@ export interface RelationshipFilterConfig {
 }
 
 /**
- * Type for special field handling configuration
- */
-export interface FieldSpecialHandling {
-  [operator: string]: string | boolean | string[] | undefined;
-  operators?: string[];
-  allowStringValue?: boolean;
-  disableDebugLogging?: boolean;
-  useShorthandFormat?: boolean;
-}
-
-/**
  * Special case field-operator mappings and handling flags
  */
-export const FIELD_SPECIAL_HANDLING: Record<string, FieldSpecialHandling> = {
+export const FIELD_SPECIAL_HANDLING: Record<string, any> = {
   // Special handling for B2B Segment field (type_persona)
   type_persona: {
     in: 'contains_any',

@@ -28,7 +28,7 @@ vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', ()
   handleUniversalDelete: vi.fn(),
   formatResourceType: vi.fn((type: string) => type),
   getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
-  createUniversalError: vi.fn((operation: string, resourceType: string, error: unknown) => 
+  createUniversalError: vi.fn((operation: string, resourceType: string, error: any) => 
     new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
   )
 }));
@@ -57,7 +57,7 @@ vi.mock('../../../../src/objects/people/index.js', async (importOriginal) => {
 
 // Mock validation and date utils
 vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', () => ({
-  validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
+  validateUniversalToolParams: vi.fn((operation: string, params: any) => {
     // Just return the params as-is (simulating successful validation)
     // This matches the expected behavior in tests
     return params || {};
@@ -105,9 +105,9 @@ describe('Universal Advanced Operations Tests', () => {
     const { validateUniversalToolParams } = await import('../../../../src/handlers/tool-configs/universal/schemas.js');
     
     vi.mocked(handleUniversalSearch).mockResolvedValue([]);
-    vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as unknown);
-    vi.mocked(handleUniversalCreate).mockResolvedValue({} as unknown);
-    vi.mocked(handleUniversalUpdate).mockResolvedValue({} as unknown);
+    vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
+    vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);
+    vi.mocked(handleUniversalUpdate).mockResolvedValue({} as any);
     vi.mocked(handleUniversalDelete).mockResolvedValue({ success: true, record_id: 'test' });
     vi.mocked(formatResourceType).mockImplementation((type: string) => {
       switch (type) {
@@ -118,7 +118,7 @@ describe('Universal Advanced Operations Tests', () => {
         default: return type;
       }
     });
-    vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: unknown) => 
+    vi.mocked(createUniversalError).mockImplementation((operation: string, resourceType: string, error: any) => 
       new Error(`${operation} failed for ${resourceType}: ${error.message || error}`)
     );
     // Removed the problematic validateUniversalToolParams override that was causing undefined destructuring
@@ -779,13 +779,13 @@ describe('Universal Advanced Operations Tests', () => {
       }
       
       // Restore the original mock behavior to not affect other tests
-      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: unknown) => {
+      vi.mocked(validateUniversalToolParams).mockImplementation((operation: string, params: any) => {
         return params || {};
       });
     });
 
     it('should handle empty results gracefully', async () => {
-      const emptyResults: unknown[] = [];
+      const emptyResults: any[] = [];
 
       // For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
       expect(advancedSearchConfig.formatResult(emptyResults)).toContain('Advanced search found 0 records:');
@@ -796,7 +796,7 @@ describe('Universal Advanced Operations Tests', () => {
 
     it('should handle invalid resource types', async () => {
       const invalidParams = {
-        resource_type: 'invalid-type' as unknown,
+        resource_type: 'invalid-type' as any,
         content_type: ContentSearchType.NOTES,
         search_query: 'test'
       };

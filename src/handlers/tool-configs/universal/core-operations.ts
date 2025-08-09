@@ -79,7 +79,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
     }
     
     return `Found ${results.length} ${plural}:\n${results
-      .map((record: unknown, index: number) => {
+      .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
                     record.values?.name?.[0]?.full_name ||
                     record.values?.full_name?.[0]?.value ||
@@ -141,7 +141,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         // Also show associated company if present
         if (record.values.associated_company && Array.isArray(record.values.associated_company)) {
           const companies = record.values.associated_company
-            .map((c) => c.target_record_name || c.name || c.value)
+            .map((c: any) => c.target_record_name || c.name || c.value)
             .filter(Boolean);
           if (companies.length > 0) {
             details += `Company: ${companies.join(', ')}\n`;
@@ -162,7 +162,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         // Show email addresses
         if (record.values.email_addresses && Array.isArray(record.values.email_addresses)) {
           const emails = record.values.email_addresses
-            .map((e) => e.email_address || e.value)
+            .map((e: any) => e.email_address || e.value)
             .filter(Boolean);
           if (emails.length > 0) {
             details += `Email: ${emails.join(', ')}\n`;
@@ -172,7 +172,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         // Show phone numbers
         if (record.values.phone_numbers && Array.isArray(record.values.phone_numbers)) {
           const phones = record.values.phone_numbers
-            .map((p) => p.phone_number || p.value)
+            .map((p: any) => p.phone_number || p.value)
             .filter(Boolean);
           if (phones.length > 0) {
             details += `Phone: ${phones.join(', ')}\n`;
@@ -317,7 +317,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
  */
 export const getAttributesConfig: UniversalToolConfig = {
   name: 'get-attributes',
-  handler: async (params: UniversalAttributesParams): Promise<unknown> => {
+  handler: async (params: UniversalAttributesParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('get-attributes', params);
       return await handleUniversalGetAttributes(sanitizedParams);
@@ -325,7 +325,7 @@ export const getAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('get attributes', params.resource_type, error);
     }
   },
-  formatResult: (attributes: unknown, resourceType?: UniversalResourceType) => {
+  formatResult: (attributes: any, resourceType?: UniversalResourceType) => {
     if (!attributes) {
       return 'No attributes found';
     }
@@ -334,7 +334,7 @@ export const getAttributesConfig: UniversalToolConfig = {
     
     if (Array.isArray(attributes)) {
       return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
-        .map((attr: unknown, index: number) => {
+        .map((attr: any, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
@@ -359,7 +359,7 @@ export const getAttributesConfig: UniversalToolConfig = {
  */
 export const discoverAttributesConfig: UniversalToolConfig = {
   name: 'discover-attributes',
-  handler: async (params: { resource_type: UniversalResourceType }): Promise<unknown> => {
+  handler: async (params: { resource_type: UniversalResourceType }): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('discover-attributes', params);
       return await handleUniversalDiscoverAttributes(sanitizedParams.resource_type);
@@ -367,7 +367,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('discover attributes', params.resource_type, error);
     }
   },
-  formatResult: (schema: unknown, resourceType?: UniversalResourceType) => {
+  formatResult: (schema: any, resourceType?: UniversalResourceType) => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -376,7 +376,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     
     if (Array.isArray(schema)) {
       return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
-        .map((attr: unknown, index: number) => {
+        .map((attr: any, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           const required = attr.required ? ' (required)' : '';
@@ -395,7 +395,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
  */
 export const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
-  handler: async (params: UniversalDetailedInfoParams): Promise<unknown> => {
+  handler: async (params: UniversalDetailedInfoParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('get-detailed-info', params);
       return await handleUniversalGetDetailedInfo(sanitizedParams);
@@ -403,7 +403,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       throw createUniversalError('get detailed info', params.resource_type, error);
     }
   },
-  formatResult: (info: unknown, resourceType?: UniversalResourceType, infoType?: DetailedInfoType) => {
+  formatResult: (info: any, resourceType?: UniversalResourceType, infoType?: DetailedInfoType) => {
     if (!info) {
       return 'No detailed information found';
     }

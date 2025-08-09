@@ -58,7 +58,7 @@ if (missingVars.length > 0) {
 }
 
 // Export a flag to indicate setup has completed
-(globalThis as unknown).__E2E_ENV_LOADED__ = true;
+(globalThis as any).__E2E_ENV_LOADED__ = true;
 
 // Also ensure the environment variables are truly available
 if (process.env.ATTIO_API_KEY) {

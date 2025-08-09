@@ -244,7 +244,7 @@ describe('Configuration Loader', () => {
 
     it('should update a specific section with merged mappings', async () => {
       // Mock writeMappingConfig to capture the updated config
-      let updatedConfig: unknown = null;
+      let updatedConfig: any = null;
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);
@@ -265,7 +265,7 @@ describe('Configuration Loader', () => {
 
     it('should replace section when merge is false', async () => {
       // Mock writeMappingConfig to capture the updated config
-      let updatedConfig: unknown = null;
+      let updatedConfig: any = null;
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);
@@ -289,7 +289,7 @@ describe('Configuration Loader', () => {
 
     it('should create missing sections as needed', async () => {
       // Mock writeMappingConfig to capture the updated config
-      let updatedConfig: unknown = null;
+      let updatedConfig: any = null;
       vi.spyOn(fs.promises, 'writeFile').mockImplementation(
         async (path, content) => {
           updatedConfig = JSON.parse(content as string);

@@ -10,7 +10,7 @@ import path from 'path';
  */
 export interface MappingConfig {
   version: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
   mappings: {
     attributes: {
       common: Record<string, string>;
@@ -20,7 +20,7 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    [key: string]: unknown; // Allow other mapping types
+    [key: string]: any; // Allow other mapping types
   };
 }
 
@@ -39,7 +39,7 @@ const CONFIG_PATHS = {
  * @param source - The source object to merge in
  * @returns The merged object
  */
-function deepMerge(target: unknown, source: unknown): any {
+function deepMerge(target: any, source: any): any {
   const result = { ...target };
 
   for (const key in source) {
@@ -178,7 +178,7 @@ export async function writeMappingConfig(
  */
 export async function updateMappingSection(
   section: string,
-  mappings: Record<string, unknown>,
+  mappings: Record<string, any>,
   merge: boolean = true,
   filePath: string = CONFIG_PATHS.user
 ): Promise<void> {

@@ -23,7 +23,7 @@ function getAttributeValue(
   record:
     | {
         values?: Record<string, unknown> | undefined;
-        [key: string]: unknown;
+        [key: string]: any;
       }
     | undefined,
   fieldName: string
@@ -95,7 +95,7 @@ export function formatRecordDetails(record: AttioRecord): string {
   const attributes = record.attributes || ({} as Record<string, unknown>);
   const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
-      const value = (attr as unknown).value || 'N/A';
+      const value = (attr as any).value || 'N/A';
       return `${key}: ${value}`;
     })
     .join('\n');
@@ -135,10 +135,10 @@ export function formatListEntries(entries: AttioListEntry[]): string {
  * @param operation - The type of batch operation
  * @returns Formatted string output
  */
-export function formatBatchResults(result: unknown, operation: string): string {
+export function formatBatchResults(result: any, operation: string): string {
   const summary = result.summary;
   const details = result.results
-    .map((r: unknown) =>
+    .map((r: any) =>
       r.success
         ? `✅ Record ${r.id}: ${operation} successfully`
         : `❌ Record ${r.id}: Failed - ${r.error?.message || 'Unknown error'}`

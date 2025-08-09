@@ -82,10 +82,10 @@ function delay(ms: number): Promise<void> {
  */
 async function processInParallelWithErrorIsolation<T>(
   items: T[],
-  processor: (item: T, index: number) => Promise<unknown>,
+  processor: (item: T, index: number) => Promise<any>,
   maxConcurrency: number = MAX_CONCURRENT_REQUESTS
-): Promise<Array<{ success: boolean; result?: unknown; error?: string; data?: T }>> {
-  const results: Array<{ success: boolean; result?: unknown; error?: string; data?: T }> = [];
+): Promise<Array<{ success: boolean; result?: any; error?: string; data?: T }>> {
+  const results: Array<{ success: boolean; result?: any; error?: string; data?: T }> = [];
   
   // Process items in chunks to control concurrency
   for (let i = 0; i < items.length; i += maxConcurrency) {
@@ -179,7 +179,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
     
     return `Advanced search found ${results.length} ${plural}:\n${results
-      .map((record: unknown, index: number) => {
+      .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
                     record.values?.name?.[0]?.full_name ||
                     record.values?.full_name?.[0]?.value ||
@@ -250,7 +250,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
     const relationshipName = relationshipType ? relationshipType.replace(/_/g, ' ') : 'relationship';
     
     return `Found ${results.length} records for ${relationshipName}:\n${results
-      .map((record: unknown, index: number) => {
+      .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
                     record.values?.name?.[0]?.full_name ||
                     record.values?.full_name?.[0]?.value ||
@@ -331,7 +331,7 @@ export const searchByContentConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
     
     return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
-      .map((record: unknown, index: number) => {
+      .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
                     record.values?.name?.[0]?.full_name ||
                     record.values?.full_name?.[0]?.value ||
@@ -407,7 +407,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
     
     return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
-      .map((record: unknown, index: number) => {
+      .map((record: any, index: number) => {
         const name = record.values?.name?.[0]?.value || 
                     record.values?.name?.[0]?.full_name ||
                     record.values?.full_name?.[0]?.value ||
@@ -438,7 +438,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
  */
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: BatchOperationsParams): Promise<unknown> => {
+  handler: async (params: BatchOperationsParams): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams('batch-operations', params);
       
@@ -464,7 +464,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, unknown>) => {
+            async (recordData: Record<string, any>) => {
               return await handleUniversalCreate({
                 resource_type,
                 record_data: recordData,
@@ -494,7 +494,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, unknown>) => {
+            async (recordData: Record<string, any>) => {
               if (!recordData.id) {
                 throw new Error('Record ID is required for update operation');
               }
@@ -591,7 +591,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       throw createUniversalError('batch operations', `${params.resource_type}:${params.operation_type}`, error);
     }
   },
-  formatResult: (results: unknown, operationType?: BatchOperationType, resourceType?: UniversalResourceType) => {
+  formatResult: (results: any, operationType?: BatchOperationType, resourceType?: UniversalResourceType) => {
     if (!results) {
       return 'Batch operation failed';
     }
@@ -608,7 +608,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       if (operationType === BatchOperationType.SEARCH) {
         // Format as search results
         return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
-          .map((record: unknown, index: number) => {
+          .map((record: any, index: number) => {
             const name = record.values?.name?.[0]?.value || 
                         record.values?.title?.[0]?.value || 
                         'Unnamed';
@@ -622,7 +622,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const successful = results.filter(r => r.success);
       if (successful.length > 0) {
         summary += `Successful operations:\n${successful
-          .map((op: unknown, index: number) => {
+          .map((op: any, index: number) => {
             const name = op.result?.values?.name?.[0]?.value || 
                         op.result?.values?.title?.[0]?.value ||
                         op.result?.record_id ||
@@ -636,7 +636,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const failed = results.filter(r => !r.success);
       if (failed.length > 0) {
         summary += `\n\nFailed operations:\n${failed
-          .map((op: unknown, index: number) => {
+          .map((op: any, index: number) => {
             const identifier = op.record_id || op.data?.name || 'Unknown';
             return `${index + 1}. ${identifier}: ${op.error}`;
           })
