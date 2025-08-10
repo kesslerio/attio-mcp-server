@@ -9,6 +9,7 @@ import {
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
+import { debug, OperationType } from '../../utils/logger.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -60,7 +61,11 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Simplified response handling
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
+    }
     return transformTaskResponse(task);
   }, retryConfig);
 }
@@ -107,48 +112,45 @@ export async function createTask(
   
   return callWithRetry(async () => {
     // Debug logging for request
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[createTask] Sending request to:', path);
-      console.log('[createTask] Request payload:', JSON.stringify(requestPayload, null, 2));
-      console.log('[createTask] API instance exists?', !!api);
-    }
+    debug(
+      'tasks.createTask',
+      'Sending request',
+      {
+        path,
+        payload: requestPayload,
+        apiInstanceExists: !!api
+      },
+      'createTask',
+      OperationType.API_CALL
+    );
     
     let res;
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[createTask] About to call api.post');
-      }
+      debug('tasks.createTask', 'About to call api.post', undefined, 'createTask', OperationType.API_CALL);
       res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[createTask] api.post returned:', res);
-      }
+      debug('tasks.createTask', 'api.post returned', { responseReceived: true }, 'createTask', OperationType.API_CALL);
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[createTask] api.post threw error:', err);
-      }
+      debug('tasks.createTask', 'api.post threw error', { error: err }, 'createTask', OperationType.API_CALL);
       throw err;
     }
     
     // Debug logging to identify the response structure
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[createTask] Raw res object:', res);
-      console.log('[createTask] API response:', JSON.stringify(res, null, 2));
-    }
+    debug(
+      'tasks.createTask',
+      'Response structure analysis',
+      {
+        hasData: !!res,
+        responseType: typeof res,
+        hasDataProperty: res && typeof res === 'object' && 'data' in res
+      },
+      'createTask',
+      OperationType.API_CALL
+    );
     
-    // Handle different response structures
-    let task: AttioTask;
-    if (res && typeof res === 'object' && 'data' in res) {
-      // Axios response object - extract the data property
-      const responseData = res.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        // API response wrapped in data field
-        task = responseData.data as AttioTask;
-      } else {
-        // Direct response data
-        task = responseData as AttioTask;
-      }
-    } else {
-      throw new Error(`Unexpected response structure from tasks API: ${JSON.stringify(res)}`);
+    // Simplified response handling as per review feedback
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
     }
     
     // Note: Only transform content field for create response (status not returned on create)
@@ -182,7 +184,11 @@ export async function updateTask(
     data.linked_records = updates.recordIds.map((id) => ({ id }));
   return callWithRetry(async () => {
     const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Simplified response handling
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
+    }
     return transformTaskResponse(task);
   }, retryConfig);
 }
