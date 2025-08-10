@@ -9,6 +9,7 @@ import {
 } from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
+import { debug, OperationType } from '../../utils/logger.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -60,7 +61,11 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Simplified response handling
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
+    }
     return transformTaskResponse(task);
   }, retryConfig);
 }
@@ -72,17 +77,82 @@ export async function createTask(
 ): Promise<AttioTask> {
   const api = getAttioClient();
   const path = '/tasks';
-  const data: TaskCreateData = { 
+  
+  // Build task data according to TaskCreateData interface
+  const taskData: TaskCreateData = { 
     content,
     format: 'plaintext'  // Required field for Attio API
   };
-  if (options.assigneeId)
-    data.assignee = { id: options.assigneeId, type: 'workspace-member' };
-  if (options.dueDate) data.deadline_at = options.dueDate;  // Use deadline_at instead of due_date
-  if (options.recordId) data.linked_records = [{ id: options.recordId }];
+  
+  // Add optional fields only if provided
+  if (options.assigneeId) {
+    taskData.assignee = { id: options.assigneeId, type: 'workspace-member' };
+  }
+  
+  if (options.dueDate) {
+    taskData.deadline_at = options.dueDate;
+  }
+  
+  // Add linked records if provided
+  if (options.recordId) {
+    taskData.linked_records = [{ id: options.recordId }];
+  }
+  
+  // Build the full request payload with all required fields for the API
+  // The API requires these fields to be present even if empty
+  const requestPayload = {
+    data: {
+      ...taskData,
+      is_completed: false,  // Always false for new tasks
+      assignees: taskData.assignee ? [taskData.assignee] : [],  // Convert to array format
+      linked_records: taskData.linked_records || [],
+      deadline_at: taskData.deadline_at || null  // Explicitly null if not provided
+    }
+  };
+  
   return callWithRetry(async () => {
-    const res = await api.post<AttioSingleResponse<AttioTask>>(path, data);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Debug logging for request
+    debug(
+      'tasks.createTask',
+      'Sending request',
+      {
+        path,
+        payload: requestPayload,
+        apiInstanceExists: !!api
+      },
+      'createTask',
+      OperationType.API_CALL
+    );
+    
+    let res;
+    try {
+      debug('tasks.createTask', 'About to call api.post', undefined, 'createTask', OperationType.API_CALL);
+      res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
+      debug('tasks.createTask', 'api.post returned', { responseReceived: true }, 'createTask', OperationType.API_CALL);
+    } catch (err) {
+      debug('tasks.createTask', 'api.post threw error', { error: err }, 'createTask', OperationType.API_CALL);
+      throw err;
+    }
+    
+    // Debug logging to identify the response structure
+    debug(
+      'tasks.createTask',
+      'Response structure analysis',
+      {
+        hasData: !!res,
+        responseType: typeof res,
+        hasDataProperty: res && typeof res === 'object' && 'data' in res
+      },
+      'createTask',
+      OperationType.API_CALL
+    );
+    
+    // Simplified response handling as per review feedback
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
+    }
+    
     // Note: Only transform content field for create response (status not returned on create)
     return transformTaskResponse(task);
   }, retryConfig);
@@ -114,7 +184,11 @@ export async function updateTask(
     data.linked_records = updates.recordIds.map((id) => ({ id }));
   return callWithRetry(async () => {
     const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
-    const task = (res.data.data || res.data) as AttioTask;
+    // Simplified response handling
+    const task = res?.data?.data || res?.data;
+    if (!task) {
+      throw new Error('Invalid API response structure: missing task data');
+    }
     return transformTaskResponse(task);
   }, retryConfig);
 }

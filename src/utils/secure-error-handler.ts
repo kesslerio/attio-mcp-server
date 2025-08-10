@@ -10,7 +10,12 @@ import {
   createSanitizedError,
 } from './error-sanitizer.js';
 import { error as logError, OperationType } from './logger.js';
-import { getErrorMessage, ensureError } from './error-utilities.js';
+import {
+  getErrorMessage,
+  ensureError,
+  getErrorStatus,
+  isAxiosError,
+} from './error-utilities.js';
 
 /**
  * Error context for enhanced error handling

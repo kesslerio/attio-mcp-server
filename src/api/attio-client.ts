@@ -3,6 +3,7 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { createAttioError } from '../utils/error-handler.js';
+import { debug, error as logError, OperationType } from '../utils/logger.js';
 
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
@@ -24,15 +25,46 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 
   // Add response interceptor for error handling
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Debug logging for successful responses
+      if (response.config?.url?.includes('/tasks')) {
+        debug(
+          'attio-client',
+          'Request succeeded',
+          {
+            url: response.config?.url,
+            method: response.config?.method,
+            status: response.status,
+            responseData: response.data,
+          },
+          'api-request',
+          OperationType.API_CALL
+        );
+      }
+      // IMPORTANT: Must return the response object for it to be available to the caller
+      return response;
+    },
     (error) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[Attio API] Request failed:');
-        console.error('URL:', error.config?.url);
-        console.error('Method:', error.config?.method);
-        console.error('Data:', error.config?.data);
-        console.error('Response status:', error.response?.status);
-        console.error('Response data:', error.response?.data);
+      if (error.config?.url?.includes('/tasks')) {
+        const errorData = {
+          url: error.config?.url,
+          method: error.config?.method,
+          requestHeaders: error.config?.headers,
+          requestData: error.config?.data,
+          requestDataType: typeof error.config?.data,
+          responseStatus: error.response?.status,
+          responseData: error.response?.data,
+          validationErrors: error.response?.data?.validation_errors,
+        };
+
+        logError(
+          'attio-client',
+          'Request failed',
+          error,
+          errorData,
+          'api-request',
+          OperationType.API_CALL
+        );
       }
       const enhancedError = createAttioError(error);
       return Promise.reject(enhancedError);
@@ -62,8 +94,12 @@ export function getAttioClient(): AxiosInstance {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
-      console.warn(
-        '[Attio API] API client not initialized, auto-initializing from environment variable'
+      debug(
+        'attio-client',
+        'API client not initialized, auto-initializing from environment variable',
+        undefined,
+        'initialization',
+        OperationType.SYSTEM
       );
       initializeAttioClient(apiKey);
       return apiInstance!;

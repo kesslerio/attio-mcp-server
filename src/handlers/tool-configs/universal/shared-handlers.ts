@@ -1056,18 +1056,43 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
           );
         }
         
-        const options = {
-          assigneeId: mappedData.assignee_id || mappedData.assigneeId,
-          dueDate: mappedData.due_date || mappedData.dueDate,
-          recordId: mappedData.record_id || mappedData.recordId
-        };
+        // Handle field mappings: The field mapper transforms to API field names
+        // assignees: can be array or single ID (from assignee_id mapping)
+        // deadline_at: from due_date mapping
+        // linked_records: from record_id mapping
+        const options: Record<string, unknown> = {};
+        
+        // Only add fields that have actual values (not undefined)
+        const assigneeId = mappedData.assignees || mappedData.assignee_id || mappedData.assigneeId;
+        if (assigneeId) options.assigneeId = assigneeId;
+        
+        const dueDate = mappedData.deadline_at || mappedData.due_date || mappedData.dueDate;
+        if (dueDate) options.dueDate = dueDate;
+        
+        const recordId = mappedData.linked_records || mappedData.record_id || mappedData.recordId;
+        if (recordId) options.recordId = recordId;
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Tasks] Creating task with:', { content, options });
+        }
         
         const createdTask = await createTask(content, options);
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Tasks] Created task:', createdTask);
+        }
+        
         // Convert AttioTask to AttioRecord using proper type conversion
         return convertTaskToRecord(createdTask);
-      } catch (error: any) {
+      } catch(error: unknown) {
+        // Log original error for debugging
+        console.error('[Tasks] Original error:', error);
+        
         // Issue #417: Enhanced task error handling with field mapping guidance
-        const enhancedError = ErrorEnhancer.autoEnhance(error, 'tasks', 'create-record');
+        const errorObj: Error = error instanceof Error ? error : new Error(String(error));
+        const enhancedError = ErrorEnhancer.autoEnhance(errorObj, 'tasks', 'create-record');
         throw enhancedError;
       }
     }
@@ -1195,7 +1220,49 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     }
       
     case UniversalResourceType.TASKS: {
-      const updatedTask = await updateTask(record_id, mappedData);
+      // Transform mapped fields for task update
+      // The field mapper has already transformed field names to API names
+      // Now we need to adapt them for the updateTask function
+      const taskUpdateData: Record<string, unknown> = {};
+      
+      // Handle content field if present
+      if (mappedData.content !== undefined) {
+        taskUpdateData.content = mappedData.content;
+      }
+      
+      // Handle status field
+      if (mappedData.is_completed !== undefined) {
+        taskUpdateData.status = mappedData.is_completed ? 'completed' : 'pending';
+      } else if (mappedData.status !== undefined) {
+        taskUpdateData.status = mappedData.status;
+      }
+      
+      // Handle assignee field
+      if (mappedData.assignees !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assignees;
+      } else if (mappedData.assignee_id !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assignee_id;
+      } else if (mappedData.assigneeId !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assigneeId;
+      }
+      
+      // Handle due date field
+      if (mappedData.deadline_at !== undefined) {
+        taskUpdateData.dueDate = mappedData.deadline_at;
+      } else if (mappedData.due_date !== undefined) {
+        taskUpdateData.dueDate = mappedData.due_date;
+      } else if (mappedData.dueDate !== undefined) {
+        taskUpdateData.dueDate = mappedData.dueDate;
+      }
+      
+      // Handle linked records field
+      if (mappedData.linked_records !== undefined) {
+        taskUpdateData.recordIds = mappedData.linked_records;
+      } else if (mappedData.record_id !== undefined) {
+        taskUpdateData.recordIds = [mappedData.record_id];
+      }
+      
+      const updatedTask = await updateTask(record_id, taskUpdateData);
       // Convert AttioTask to AttioRecord using proper type conversion
       return convertTaskToRecord(updatedTask);    
     }
@@ -1470,21 +1537,32 @@ export function createUniversalError(operation: string, resourceType: string, or
     return originalError;
   }
   
+  // Safely extract the error message
+  let errorMessage = 'Unknown error';
+  if (originalError instanceof Error) {
+    errorMessage = originalError.message;
+  } else if (typeof originalError === 'object' && originalError !== null && 'message' in originalError) {
+    errorMessage = String(originalError.message);
+  } else if (typeof originalError === 'string') {
+    errorMessage = originalError;
+  }
+  
   // Classify the error type based on the original error
   let errorType = ErrorType.SYSTEM_ERROR;
+  const errorObj = originalError as Record<string, unknown>;
   
-  if (originalError?.message?.includes('not found') || 
-      originalError?.message?.includes('invalid') ||
-      originalError?.message?.includes('required') ||
-      originalError?.status === 400) {
+  if (errorMessage.includes('not found') || 
+      errorMessage.includes('invalid') ||
+      errorMessage.includes('required') ||
+      (errorObj && typeof errorObj.status === 'number' && errorObj.status === 400)) {
     errorType = ErrorType.USER_ERROR;
-  } else if (originalError?.status >= 500 || 
-             originalError?.message?.includes('network') ||
-             originalError?.message?.includes('timeout')) {
+  } else if ((errorObj && typeof errorObj.status === 'number' && errorObj.status >= 500) || 
+             errorMessage.includes('network') ||
+             errorMessage.includes('timeout')) {
     errorType = ErrorType.API_ERROR;
   }
   
-  const message = `Universal ${operation} failed for resource type ${resourceType}: ${originalError.message}`;
+  const message = `Universal ${operation} failed for resource type ${resourceType}: ${errorMessage}`;
   
   return new UniversalValidationError(
     message,
@@ -1499,8 +1577,16 @@ export function createUniversalError(operation: string, resourceType: string, or
 /**
  * Get helpful suggestions based on the operation and error
  */
-function getOperationSuggestion(operation: string, resourceType: string, error: any): string | undefined {
-  const errorMessage = error?.message?.toLowerCase() || '';
+function getOperationSuggestion(operation: string, resourceType: string, error: unknown): string | undefined {
+  // Safely extract error message
+  let errorMessage = '';
+  if (error instanceof Error) {
+    errorMessage = error.message.toLowerCase();
+  } else if (typeof error === 'object' && error !== null && 'message' in error) {
+    errorMessage = String(error.message).toLowerCase();
+  } else if (typeof error === 'string') {
+    errorMessage = error.toLowerCase();
+  }
   
   // First check if this is an invalid resource type
   const resourceValidation = validateResourceType(resourceType);
@@ -1604,7 +1690,9 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
   
   // Handle "Cannot find attribute" errors with field suggestions
   if (errorMessage.includes('cannot find attribute')) {
-    const match = error?.message?.match(/cannot find attribute with slug\/id["\s]*([^"]*)/i);
+    const errorMessageForMatch = error instanceof Error ? error.message : 
+                                 (typeof error === 'object' && error !== null && 'message' in error) ? String((error as Record<string, unknown>).message) : '';
+    const match = errorMessageForMatch.match(/cannot find attribute with slug\/id["\s]*([^"]*)/i);
     if (match && match[1]) {
       const fieldName = match[1].replace(/["]/g, '').trim();
       // Try to get field suggestions for the resource type
