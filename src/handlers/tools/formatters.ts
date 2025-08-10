@@ -22,7 +22,7 @@ import {
 function getAttributeValue(
   record:
     | {
-        values?: Record<string, any> | undefined;
+        values?: Record<string, unknown> | undefined;
         [key: string]: any;
       }
     | undefined,
@@ -92,7 +92,7 @@ export function formatRecordDetails(record: AttioRecord): string {
     return 'No record found.';
   }
 
-  const attributes = record.attributes || ({} as Record<string, any>);
+  const attributes = record.attributes || ({} as Record<string, unknown>);
   const formattedAttrs = Object.entries(attributes)
     .map(([key, attr]) => {
       const value = (attr as any).value || 'N/A';
@@ -183,7 +183,7 @@ export function formatResponse(
               includeStackTraces: false,
             })
           : String(content);
-    } catch (error) {
+    } catch (error: unknown) {
       if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
         console.error(
           '[formatResponse] Error converting content to string:',

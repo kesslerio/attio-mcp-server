@@ -46,7 +46,7 @@ describe('Companies Advanced Search Integration', () => {
 
       try {
         await advancedSearchCompanies(invalidFilters);
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error instanceof FilterValidationError).toBeTruthy();
         // Should contain the specific error message and company context
         expect((error as FilterValidationError).message).toContain(
@@ -79,7 +79,7 @@ describe('Companies Advanced Search Integration', () => {
 
       try {
         await advancedSearchCompanies(invalidFilters);
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error instanceof FilterValidationError).toBeTruthy();
         // Should contain the specific error message, example, and company context
         expect((error as FilterValidationError).message).toContain(
@@ -114,7 +114,7 @@ describe('Companies Advanced Search Integration', () => {
 
       try {
         await advancedSearchCompanies(invalidFilters);
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error instanceof FilterValidationError).toBeTruthy();
         expect((error as FilterValidationError).message).toContain(
           'missing attribute'

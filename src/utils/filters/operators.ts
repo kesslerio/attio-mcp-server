@@ -210,7 +210,7 @@ export function simplifyFilters(filters: ListEntryFilters): ListEntryFilters {
     });
 
   // Simplify each group
-  filterMap.forEach((filterGroup, _attribute) => {
+  filterMap.forEach((filterGroup) => {
     if (filterGroup.length === 1) {
       // Single filter, no simplification needed
       simplifiedFilters.push(...filterGroup);

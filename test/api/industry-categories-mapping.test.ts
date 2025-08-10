@@ -45,7 +45,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
     for (const companyId of testCompanies) {
       try {
         await deleteCompany(companyId);
-      } catch (error) {
+      } catch (error: unknown) {
         // Ignore errors during cleanup
       }
     }
@@ -192,7 +192,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         testIndustries.forEach((industry) => {
           expect(industryString).toContain(industry);
         });
-      } catch (error) {
+      } catch (error: unknown) {
         // If multiple industries aren't supported, that's fine - log it
         console.log('Multiple industries not supported:', error.message);
         // Try with a single industry instead

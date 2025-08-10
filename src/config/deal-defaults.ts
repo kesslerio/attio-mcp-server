@@ -43,7 +43,7 @@ export function clearDealCaches(): void {
 export async function prewarmStageCache(): Promise<void> {
   try {
     await getAvailableDealStages();
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Failed to pre-warm stage cache:', error);
     }
@@ -347,7 +347,7 @@ async function getAvailableDealStages(): Promise<string[]> {
     errorCache = null;
 
     return stages;
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Failed to fetch available deal stages:', error);
     }
@@ -407,7 +407,7 @@ export async function validateDealStage(
     );
 
     return defaults.stage;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Stage validation failed:', error);
     return stage; // Return original stage if validation fails
   }

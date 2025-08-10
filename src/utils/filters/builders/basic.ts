@@ -10,14 +10,14 @@ import { FilterConditionType, ListEntryFilters } from './types.js';
  */
 export function createEqualsFilter(
   attributeSlug: string,
-  value: any
+  value: unknown
 ): ListEntryFilters {
   return {
     filters: [
       {
         attribute: { slug: attributeSlug },
         condition: FilterConditionType.EQUALS,
-        value,
+        value: value as any, // TODO: Update FilterValue type to accept unknown
       },
     ],
     matchAny: false,

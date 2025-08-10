@@ -27,11 +27,11 @@ enum SensitiveInfoType {
  */
 const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
   [SensitiveInfoType.FILE_PATH]:
-    /([A-Z]:)?[\/\\](?:Users|home|var|opt|etc|tmp|src|app)[\/\\][^\s"']+/gi,
+    /([A-Z]:)?[/\\](?:Users|home|var|opt|etc|tmp|src|app)[/\\][^\s"']+/gi,
   [SensitiveInfoType.API_KEY]:
     /(?:api[_-]?key|token|bearer|authorization|secret|password|passwd|pwd)[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi,
   [SensitiveInfoType.INTERNAL_ID]:
-    /(?:workspace_id|record_id|object_id|user_id|session_id)[\s:=]*["']?[a-f0-9\-]{20,}["']?/gi,
+    /(?:workspace_id|record_id|object_id|user_id|session_id)[\s:=]*["']?[a-f0-9-]{20,}["']?/gi,
   [SensitiveInfoType.STACK_TRACE]: /\s*at\s+[^\n]+/gi,
   [SensitiveInfoType.DATABASE_SCHEMA]:
     /(?:table|column|field|attribute|slug)[\s:]+["']?[a-z_][a-z0-9_]*["']?/gi,
@@ -400,7 +400,7 @@ export function withErrorSanitization<
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       const sanitized = createSanitizedError(error, undefined, options);
       const sanitizedError = new Error(sanitized.message);
       sanitizedError.name = 'SanitizedError';

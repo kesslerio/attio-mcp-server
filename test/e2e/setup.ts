@@ -92,7 +92,7 @@ export class E2ETestBase {
     try {
       this.config = await loadE2EConfig();
       console.log('✅ E2E configuration loaded successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Failed to load E2E configuration:', error);
       throw error;
     }
@@ -105,10 +105,14 @@ export class E2ETestBase {
 
     // Initialize API client
     try {
-      await initializeAttioClient();
+      const apiKey = process.env.ATTIO_API_KEY;
+      if (!apiKey) {
+        throw new Error('ATTIO_API_KEY environment variable is required');
+      }
+      initializeAttioClient(apiKey);
       this.apiClient = getAttioClient();
       console.log('✅ Attio API client initialized');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Failed to initialize API client:', error);
       throw error;
     }
@@ -117,7 +121,7 @@ export class E2ETestBase {
     try {
       await this.validateApiConnectivity();
       console.log('✅ API connectivity validated');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ API connectivity validation failed:', error);
       throw error;
     }
@@ -212,7 +216,7 @@ export class E2ETestBase {
       console.log(
         `📊 API validation: Found ${response.data.data.length} objects`
       );
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error(`API connectivity validation failed: ${error}`);
     }
   }
@@ -265,7 +269,7 @@ export class E2ETestBase {
       if (this.config?.testSettings.verboseLogging) {
         console.log(`🗑️  Cleaned up ${obj.type}:${obj.id}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Log warning but don't fail - object might already be deleted
       console.warn(`⚠️  Failed to cleanup ${obj.type}:${obj.id}:`, error);
     }
@@ -289,7 +293,7 @@ export class E2ETestBase {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         return await operation();
-      } catch (error) {
+      } catch (error: unknown) {
         lastError = error as Error;
 
         if (attempt === retries) {
@@ -436,7 +440,7 @@ export class E2ESetupUtils {
     // Check configuration file
     try {
       await loadE2EConfig();
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push(`Configuration error: ${error}`);
     }
 

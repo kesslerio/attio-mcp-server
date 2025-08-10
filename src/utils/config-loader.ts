@@ -107,7 +107,7 @@ function loadJsonFile(filePath: string): any {
       const content = fs.readFileSync(filePath, 'utf8');
       return JSON.parse(content);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn(`Warning: Failed to load config file ${filePath}:`, error);
   }
   return null;
@@ -163,7 +163,7 @@ export async function writeMappingConfig(
     // Write the file
     const content = JSON.stringify(config, null, 2);
     await fs.promises.writeFile(filePath, content, 'utf8');
-  } catch (error) {
+  } catch (error: unknown) {
     throw new Error(`Failed to write config file ${filePath}: ${error}`);
   }
 }

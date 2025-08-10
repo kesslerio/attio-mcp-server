@@ -42,7 +42,7 @@ export interface ValidationError {
  */
 export interface SchemaDefinition {
   type: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   required?: string[];
   additionalProperties?: boolean;
   enum?: string[];
@@ -52,7 +52,7 @@ export interface SchemaDefinition {
   maxLength?: number;
   pattern?: string;
   format?: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -63,8 +63,6 @@ export class JsonSchemaValidator {
    * Validate parameters against a JSON schema
    */
   static validate(params: unknown, schema: SchemaDefinition): ValidationResult {
-    const errors: ValidationError[] = [];
-
     // First sanitize the input
     const sanitized = InputSanitizer.sanitizeObject(params);
 
@@ -139,7 +137,11 @@ export class JsonSchemaValidator {
           if (schema.properties[key]) {
             const fieldPath = path ? `${path}.${key}` : key;
             errors.push(
-              ...this.validateValue(value, schema.properties[key], fieldPath)
+              ...this.validateValue(
+                value,
+                schema.properties[key] as SchemaDefinition,
+                fieldPath
+              )
             );
           } else if (schema.additionalProperties === false) {
             errors.push({
@@ -331,8 +333,8 @@ export class ParameterValidationMiddleware {
     const sanitizedParams = result.sanitizedParams!;
 
     // Additional specific validations for universal tools
-    this.validatePaginationParams(sanitizedParams, toolName);
-    this.validateIdFormat(sanitizedParams, toolName);
+    this.validatePaginationParams(sanitizedParams);
+    this.validateIdFormat(sanitizedParams);
 
     return sanitizedParams;
   }
@@ -340,10 +342,7 @@ export class ParameterValidationMiddleware {
   /**
    * Validate pagination parameters (limit, offset)
    */
-  private static validatePaginationParams(
-    params: SanitizedObject,
-    toolName: string
-  ): void {
+  private static validatePaginationParams(params: SanitizedObject): void {
     // Validate limit
     if (
       'limit' in params &&
@@ -431,10 +430,7 @@ export class ParameterValidationMiddleware {
   /**
    * Validate ID format for record_id and similar fields
    */
-  private static validateIdFormat(
-    params: SanitizedObject,
-    toolName: string
-  ): void {
+  private static validateIdFormat(params: SanitizedObject): void {
     const idFields = [
       'record_id',
       'source_id',
@@ -522,7 +518,7 @@ export function withValidation<T extends (...args: any[]) => any>(
 
       // Call the original handler
       return await handler(...args);
-    } catch (error) {
+    } catch (error: unknown) {
       // If it's already a validation error, re-throw
       if (error instanceof UniversalValidationError) {
         throw error;

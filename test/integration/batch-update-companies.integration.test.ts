@@ -74,7 +74,7 @@ describe('Batch Company Operations - Integration', () => {
         }));
 
       console.log(`Created ${createdCompanies.length} test companies`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error in test setup:', error);
       throw error;
     }
@@ -89,7 +89,7 @@ describe('Batch Company Operations - Integration', () => {
       const companyIds = createdCompanies.map((c) => c.id);
       await batchDeleteCompanies(companyIds);
       console.log(`Cleaned up ${companyIds.length} test companies`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error in test cleanup:', error);
     }
   }, 30000); // 30 second timeout
@@ -128,7 +128,7 @@ describe('Batch Company Operations - Integration', () => {
       console.log(
         `Successfully updated ${updateResult.summary.succeeded} companies in batch`
       );
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Batch update failed:', error);
       throw error;
     }

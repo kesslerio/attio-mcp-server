@@ -22,7 +22,7 @@ export class AttioApiError extends Error {
     public readonly statusCode: number,
     public readonly endpoint: string,
     public readonly method: string,
-    public readonly details?: any
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'AttioApiError';
@@ -61,7 +61,7 @@ export class AuthenticationError extends AttioApiError {
     message: string = 'Authentication failed. Please check your credentials.',
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     // Sanitize the message to avoid exposing API key format
     const sanitizedMessage = message.replace(
@@ -84,7 +84,7 @@ export class AuthorizationError extends AttioApiError {
     message: string = 'Authorization failed. You lack the necessary permissions.',
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     // Sanitize the message to avoid exposing permission details
     const sanitizedMessage = message.replace(
@@ -108,7 +108,7 @@ export class ResourceNotFoundError extends AttioApiError {
     resourceId: string,
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     // Sanitize resource ID to avoid exposing internal identifiers
     const sanitizedId = resourceId.length > 10 ? '[ID_REDACTED]' : resourceId;
@@ -134,7 +134,7 @@ export class InvalidRequestError extends AttioApiError {
     message: string,
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     super(message, 400, endpoint, method, details);
     this.name = 'InvalidRequestError';
@@ -152,7 +152,7 @@ export class RateLimitError extends AttioApiError {
     message: string = 'Rate limit exceeded. Please try again later.',
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     super(message, 429, endpoint, method, details);
     this.name = 'RateLimitError';
@@ -171,7 +171,7 @@ export class ServerError extends AttioApiError {
     message: string = 'Server error occurred',
     endpoint: string,
     method: string,
-    details?: any
+    details?: Record<string, unknown>
   ) {
     super(
       `Server error (${statusCode}): ${message}`,
@@ -202,7 +202,7 @@ export function createApiErrorFromStatus(
   message: string,
   endpoint: string,
   method: string,
-  details?: any
+  details?: Record<string, unknown>
 ): AttioApiError {
   switch (statusCode) {
     case 400:
@@ -241,14 +241,20 @@ export function createApiErrorFromStatus(
  * @returns The appropriate error instance
  */
 export function createApiErrorFromAxiosError(
-  error: any,
+  error: unknown,
   endpoint: string,
   method: string
 ): AttioApiError {
-  const statusCode = error.response?.status || 500;
+  const axiosError = error as {
+    response?: { status?: number; data?: { message?: string } };
+    message?: string;
+  };
+  const statusCode = axiosError.response?.status || 500;
   const message =
-    error.response?.data?.message || error.message || 'Unknown API error';
-  const details = error.response?.data || {};
+    axiosError.response?.data?.message ||
+    axiosError.message ||
+    'Unknown API error';
+  const details = axiosError.response?.data || {};
 
   // Special case for ResourceNotFoundError with object types
   if (statusCode === 404 && endpoint.includes('/objects/')) {
@@ -315,7 +321,7 @@ export enum FilterErrorCategory {
  *       FilterErrorCategory.CONDITION
  *     );
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof FilterValidationError) {
  *     // Handle filter validation error based on category
  *     if (error.category === FilterErrorCategory.CONDITION) {
@@ -357,7 +363,7 @@ export class FilterValidationError extends Error {
  *       'companies'
  *     );
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof RelationshipFilterError) {
  *     // Handle relationship filter error
  *     console.log(`Relationship error between ${error.sourceType} and ${error.targetType}`);
@@ -398,7 +404,7 @@ export class RelationshipFilterError extends FilterValidationError {
  *   if (!isValidListId(listId)) {
  *     throw new ListRelationshipError(`Invalid list ID: ${listId}`, 'people', listId);
  *   }
- * } catch (error) {
+ * } catch (error: unknown) {
  *   if (error instanceof ListRelationshipError) {
  *     // Handle list relationship error
  *   }

@@ -2,14 +2,10 @@
  * Tests for the enhanced company validator with attribute type validation
  */
 import { CompanyValidator } from '../../src/validators/company-validator.js';
-import {
-  getAttributeTypeInfo,
-  detectFieldType,
-} from '../../src/api/attribute-types.js';
+import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
 import {
   MissingCompanyFieldError,
-  InvalidCompanyFieldTypeError,
   InvalidCompanyDataError,
 } from '../../src/errors/company-errors.js';
 
@@ -309,7 +305,7 @@ describe('Enhanced Company Validator', () => {
 
       // Mock validateAttributeTypes for the single attribute
       vi.spyOn(CompanyValidator, 'validateAttributeTypes').mockImplementation(
-        async (attributeObj) => ({
+        async () => ({
           revenue: 1000000,
         })
       );

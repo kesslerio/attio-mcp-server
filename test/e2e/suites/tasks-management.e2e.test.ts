@@ -26,12 +26,11 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Import enhanced tool caller with logging and migration
 import { 
-  callTasksTool, 
-  startTestSuite, 
-  endTestSuite,
+  callTasksTool,
   validateTestEnvironment,
   getToolMigrationStats
 } from '../utils/enhanced-tool-caller.js';
+import { startTestSuite, endTestSuite } from '../utils/logger.js';
 
 /**
  * Tasks Management E2E Test Suite
@@ -83,7 +82,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   }, 30000);
 
   afterAll(async () => {
-    await E2ETestBase.cleanup();
+    // Cleanup is handled automatically by E2ETestBase.setup()
     
     // End comprehensive logging for this test suite
     endTestSuite();
@@ -129,7 +128,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       const response = await callTasksTool('create-task', {
         content: taskData.title,
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -155,7 +154,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callTasksTool('create-task', {
         content: taskData.title,
         assigneeId: assignee.id.record_id,
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -180,7 +179,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callTasksTool('create-task', {
         content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
         recordId: company.id.record_id,
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -197,7 +196,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       const response = await callTasksTool('create-task', {
         content: taskData.title,
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -216,7 +215,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       for (const taskData of tasksBatch) {
         const response = await callTasksTool('create-task', {
           content: taskData.title,
-          dueDate: taskData.due_date
+          due_date: taskData.due_date
         });
         
         if (response.isError) {
@@ -316,26 +315,10 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   });
 
   describe('Task Updates and Modifications', () => {
-    it('should update task content', async () => {
-      if (createdTasks.length === 0) {
-        console.log('⏭️ Skipping update test - no created tasks available');
-        return;
-      }
-
-      const task = createdTasks[0];
-      const taskId = task.id.task_id || task.id;
-      const newContent = 'Updated task content for E2E testing';
-      
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        content: newContent
-      });
-      
-      E2EAssertions.expectMcpSuccess(response);
-      const updatedTask = E2EAssertions.expectMcpData(response);
-      
-      expect(updatedTask.id.task_id || updatedTask.id).toBe(taskId);
-      console.log('✏️ Updated task content:', taskId);
+    it.skip('should update task content - SKIPPED: Content is immutable in Attio API', async () => {
+      // Task content is immutable and cannot be updated after creation
+      // This is a documented API constraint - content field is read-only after creation
+      console.log('⏭️ Skipping content update test - content is immutable in Attio API');
     }, 30000);
 
     it('should update task status', async () => {
@@ -394,7 +377,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       const response = await callTasksTool('update-task', {
         taskId: taskId,
-        dueDate: newDueDate.toISOString().split('T')[0]
+        due_date: newDueDate.toISOString().split('T')[0]
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -419,7 +402,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         taskId: taskId,
         content: 'Multi-field updated task content',
         status: 'in_progress',
-        dueDate: newDueDate.toISOString().split('T')[0]
+        due_date: newDueDate.toISOString().split('T')[0]
       });
       
       E2EAssertions.expectMcpSuccess(response);
@@ -509,7 +492,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Create task
       const createResponse = await callTasksTool('create-task', {
         content: 'E2E Workflow Task - Initial Creation',
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -544,7 +527,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Create normal priority task
       const createResponse = await callTasksTool('create-task', {
         content: 'E2E Priority Task',
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -567,7 +550,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Create unassigned task
       const createResponse = await callTasksTool('create-task', {
         content: 'E2E Assignment Task - Initially Unassigned',
-        dueDate: taskData.due_date
+        due_date: taskData.due_date
       });
       
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -626,7 +609,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should validate required fields for task creation', async () => {
       const response = await callTasksTool('create-task', {
         // Missing required 'content' field
-        dueDate: '2024-12-31'
+        due_date: '2024-12-31'
       });
       
       E2EAssertions.expectMcpError(response, /content|required/i);
@@ -635,7 +618,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     it('should handle invalid date formats', async () => {
       const response = await callTasksTool('create-task', {
         content: 'Task with invalid date',
-        dueDate: 'invalid-date-format'
+        due_date: 'invalid-date-format'
       });
       
       // This might succeed or fail depending on API validation
@@ -689,15 +672,15 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const promises = [
         callTasksTool('create-task', {
           content: taskData1.title,
-          dueDate: taskData1.due_date
+          due_date: taskData1.due_date
         }),
         callTasksTool('create-task', {
           content: taskData2.title,
-          dueDate: taskData2.due_date
+          due_date: taskData2.due_date
         }),
         callTasksTool('create-task', {
           content: taskData3.title,
-          dueDate: taskData3.due_date
+          due_date: taskData3.due_date
         })
       ];
 

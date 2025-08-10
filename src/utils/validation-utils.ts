@@ -27,23 +27,35 @@ export interface AttributeInfo {
 }
 
 /**
+ * Configuration from environment variables
+ */
+const CONFIG = {
+  CACHE_TTL: parseInt(process.env.ATTIO_CACHE_TTL || '300000', 10), // Default: 5 minutes
+  SIMILARITY_THRESHOLD: parseInt(process.env.ATTIO_SIMILARITY_THRESHOLD || '3', 10), // Default: 3
+  MAX_SUGGESTIONS: parseInt(process.env.ATTIO_MAX_FIELD_SUGGESTIONS || '3', 10), // Default: 3
+};
+
+/**
  * Cache for resource attributes to avoid repeated API calls
+ * Enhanced to include workspace/tenant context to prevent collisions
  */
 const attributeCache: Map<string, AttributeInfo[]> = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const cacheTimestamps: Map<string, number> = new Map();
 
 /**
  * Get resource attributes with caching
+ * Enhanced cache key includes workspace context to prevent collisions
  */
 export async function getResourceAttributes(resourceType: string): Promise<AttributeInfo[]> {
-  const cacheKey = resourceType;
+  // Enhanced cache key to include workspace/tenant context
+  const workspaceId = process.env.ATTIO_WORKSPACE_ID || 'default';
+  const cacheKey = `${workspaceId}:${resourceType}`;
   const now = Date.now();
   
   // Check if we have cached data that's still valid
   if (attributeCache.has(cacheKey) && 
       cacheTimestamps.has(cacheKey) && 
-      (now - cacheTimestamps.get(cacheKey)!) < CACHE_TTL) {
+      (now - cacheTimestamps.get(cacheKey)!) < CONFIG.CACHE_TTL) {
     return attributeCache.get(cacheKey)!;
   }
 
@@ -160,26 +172,40 @@ export async function validateReadOnlyFields(
 }
 
 /**
- * Calculate Levenshtein distance for field name similarity
+ * Optimized Levenshtein distance calculation using two-row optimization
+ * Reduces space complexity from O(n*m) to O(min(n,m))
  */
 function calculateSimilarity(a: string, b: string): number {
-  const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+  // Early exit for empty strings
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
   
-  for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
-  for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
-  
-  for (let j = 1; j <= b.length; j++) {
-    for (let i = 1; i <= a.length; i++) {
-      const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[j][i] = Math.min(
-        matrix[j][i - 1] + 1,     // deletion
-        matrix[j - 1][i] + 1,     // insertion
-        matrix[j - 1][i - 1] + indicator // substitution
-      );
-    }
+  // Ensure 'a' is the shorter string for space optimization
+  if (a.length > b.length) {
+    [a, b] = [b, a];
   }
   
-  return matrix[b.length][a.length];
+  // Use two rows instead of full matrix
+  let prevRow = Array(a.length + 1).fill(0).map((_, i) => i);
+  let currRow = Array(a.length + 1).fill(0);
+  
+  for (let j = 1; j <= b.length; j++) {
+    currRow[0] = j;
+    
+    for (let i = 1; i <= a.length; i++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      currRow[i] = Math.min(
+        currRow[i - 1] + 1,      // deletion
+        prevRow[i] + 1,          // insertion
+        prevRow[i - 1] + cost    // substitution
+      );
+    }
+    
+    // Swap rows
+    [prevRow, currRow] = [currRow, prevRow];
+  }
+  
+  return prevRow[a.length];
 }
 
 /**
@@ -193,15 +219,15 @@ export async function suggestFieldName(
     const attributes = await getResourceAttributes(resourceType);
     const validFieldNames = attributes.map(attr => attr.api_slug);
     
-    // Find similar field names (distance <= 3)
+    // Find similar field names using configurable threshold
     const suggestions = validFieldNames
       .map(validName => ({
         name: validName,
         distance: calculateSimilarity(invalidFieldName.toLowerCase(), validName.toLowerCase())
       }))
-      .filter(item => item.distance <= 3)
+      .filter(item => item.distance <= CONFIG.SIMILARITY_THRESHOLD)
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 3)  // Top 3 suggestions
+      .slice(0, CONFIG.MAX_SUGGESTIONS)  // Configurable suggestion limit
       .map(item => item.name);
     
     return suggestions;

@@ -91,7 +91,7 @@ export async function executeToolRequest(request: CallToolRequest) {
   const toolName = request.params.name;
 
   // Initialize logging context for this tool execution
-  const _correlationId = initializeToolContext(toolName);
+  initializeToolContext(toolName);
   let timer: PerformanceTimer | undefined;
   let toolType: string | undefined;
 
@@ -139,7 +139,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
     } else if (toolType === 'smartSearch') {
       result = await handleSmartSearch(
         request,
@@ -216,8 +219,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     } else if (toolType === 'discoverAttributes') {
       result = await handleDiscoverAttributesOperation(
         request,
-        toolConfig,
-        resourceType
+        toolConfig
       );
     } else if (toolType === 'customFields') {
       result = await handleInfoOperation(request, toolConfig, resourceType);
@@ -331,7 +333,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         formattedResult = JSON.stringify(rawResult, null, 2);
       }
       
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
       
     // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === 'GENERAL' as any) {
@@ -353,7 +358,10 @@ export async function executeToolRequest(request: CallToolRequest) {
       
       const rawResult = await toolConfig.handler(...handlerArgs);
       const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
-      result = { content: [{ type: 'text', text: formattedResult }] };
+      result = { 
+        content: [{ type: 'text', text: formattedResult }],
+        isError: false 
+      };
       
     } else {
       // Placeholder for other operations - will be extracted to modules later
@@ -368,7 +376,7 @@ export async function executeToolRequest(request: CallToolRequest) {
     // Ensure the response is safely serializable
     const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
-  } catch (error) {
+  } catch (error: unknown) {
     // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error
@@ -513,8 +521,7 @@ async function handleGetAttributesOperation(
 
 async function handleDiscoverAttributesOperation(
   request: CallToolRequest,
-  toolConfig: any,
-  _resourceType: ResourceType
+  toolConfig: any
 ) {
   // This should be moved to an appropriate operations module
   const result = await toolConfig.handler();

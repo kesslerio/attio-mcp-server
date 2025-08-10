@@ -65,7 +65,7 @@ describe('Universal Tools Integration Tests', () => {
           record_id: createdPersonId
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Cleanup failed:', error);
     }
   });
@@ -87,8 +87,7 @@ describe('Universal Tools Integration Tests', () => {
             resource_type: UniversalResourceType.COMPANIES,
             record_data: {
               name: testCompanyName,
-              website: `https://${testDomain}`,
-              description: 'Universal tool integration test company'
+              website: `https://${testDomain}`
             },
             return_details: true
           });
@@ -103,7 +102,7 @@ describe('Universal Tools Integration Tests', () => {
           expect(result.values.name[0].value).toBe(testCompanyName);
 
           createdCompanyId = result.id.record_id;
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Test error:', error);
           console.error('Error type:', error?.constructor?.name);
           console.error('Error message:', error?.message);
@@ -237,15 +236,15 @@ describe('Universal Tools Integration Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_id: createdCompanyId,
           record_data: {
-            description: 'Updated universal tool integration test company'
+            name: `${testCompanyName} (Updated)`
           },
           return_details: true
         });
 
         expect(result).toBeDefined();
-        expect(result.values.description).toBeDefined();
-        expect(result.values.description[0].value).toBe(
-          'Updated universal tool integration test company'
+        expect(result.values.name).toBeDefined();
+        expect(result.values.name[0].value).toBe(
+          `${testCompanyName} (Updated)`
         );
       });
 
@@ -378,7 +377,7 @@ describe('Universal Tools Integration Tests', () => {
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
-        } catch (error) {
+        } catch (error: unknown) {
           // This might fail if no relationships exist, which is expected
           console.log('No relationships found (expected for new test data)');
         }
@@ -408,7 +407,7 @@ describe('Universal Tools Integration Tests', () => {
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
-        } catch (error) {
+        } catch (error: unknown) {
           // Expected if no notes exist
           console.log('No content found in notes (expected for new test data)');
         }
@@ -702,7 +701,7 @@ describe('Universal Tools Integration Tests', () => {
       // Create a small batch to test rate limiting behavior
       const batchRecords = Array(5).fill(0).map((_, i) => ({
         name: `Rate Limit Test Company ${timestamp}-${i}`,
-        description: 'Testing rate limits'
+        website: `https://ratelimit-test-${timestamp}-${i}.com`
       }));
 
       const startTime = Date.now();

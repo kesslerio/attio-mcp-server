@@ -48,7 +48,7 @@ describe('Boolean Attribute API Tests', () => {
       });
 
       console.log(`Created test company: ${testCompany.id?.record_id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating test company:', error);
       throw error;
     }
@@ -68,7 +68,7 @@ describe('Boolean Attribute API Tests', () => {
     try {
       await deleteCompany(testCompany.id.record_id);
       console.log(`Deleted test company: ${testCompany.id.record_id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error deleting test company:', error);
     }
   }, TEST_TIMEOUT);

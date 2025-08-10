@@ -135,7 +135,7 @@ class E2ELogger {
    */
   logToolCall(
     toolName: string,
-    parameters: Record<string, any>,
+    parameters: Record<string, unknown>,
     response: any,
     timing: { start: number; end: number },
     testName?: string,
@@ -173,7 +173,7 @@ class E2ELogger {
       logEntry.error = {
         message: error.message,
         stack: error.stack,
-        code: (error as any).code
+        code: (error as unknown).code
       };
       
       if (this.currentTestRun) {
@@ -286,7 +286,7 @@ class E2ELogger {
   /**
    * Log general information
    */
-  logInfo(message: string, metadata?: Record<string, any>, testName?: string): void {
+  logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
     this.log({
       timestamp: new Date().toISOString(),
       testSuite: this.currentTestSuite || 'unknown',
@@ -300,7 +300,7 @@ class E2ELogger {
   /**
    * Log errors with full context
    */
-  logError(error: Error, context?: Record<string, any>, testName?: string): void {
+  logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
     if (this.currentTestRun) {
       this.currentTestRun.errors.push({
         timestamp: new Date().toISOString(),
@@ -318,7 +318,7 @@ class E2ELogger {
       error: {
         message: error.message,
         stack: error.stack,
-        code: (error as any).code
+        code: (error as unknown).code
       },
       metadata: context
     });
@@ -333,7 +333,7 @@ class E2ELogger {
     
     try {
       appendFileSync(logFile, logLine);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to write log entry:', error);
     }
 
@@ -399,7 +399,7 @@ class E2ELogger {
   /**
    * Sanitize parameters by removing sensitive data
    */
-  private sanitizeParameters(params: Record<string, any>): Record<string, any> {
+  private sanitizeParameters(params: Record<string, unknown>): Record<string, unknown> {
     const sensitiveKeys = [
       'api_key', 'apiKey', 'token', 'password', 'secret',
       'authorization', 'auth', 'key', 'credentials'
@@ -479,7 +479,7 @@ export function endTestSuite(): void {
 
 export function logToolCall(
   toolName: string,
-  parameters: Record<string, any>,
+  parameters: Record<string, unknown>,
   response: any,
   timing: { start: number; end: number },
   testName?: string,
@@ -507,11 +507,11 @@ export function logTestDataCleanup(
   e2eLogger.logTestDataCleanup(type, id, success, error, testName);
 }
 
-export function logInfo(message: string, metadata?: Record<string, any>, testName?: string): void {
+export function logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
   e2eLogger.logInfo(message, metadata, testName);
 }
 
-export function logError(error: Error, context?: Record<string, any>, testName?: string): void {
+export function logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
   e2eLogger.logError(error, context, testName);
 }
 

@@ -83,7 +83,7 @@ export class PerformanceTracker {
    */
   static startOperation(
     toolName: string,
-    metadata?: Record<string, any>
+    _metadata?: Record<string, any>
   ): number {
     if (!this.enabled) return 0;
 
@@ -293,7 +293,7 @@ export class PerformanceTracker {
       const result = await fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       this.endOperation(
         toolName,
         startTime,
@@ -319,7 +319,7 @@ export class PerformanceTracker {
       const result = fn();
       this.endOperation(toolName, startTime, true, undefined, metadata);
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       this.endOperation(
         toolName,
         startTime,
@@ -381,21 +381,22 @@ Failed Operations: ${failedOps.length}
  */
 export function trackPerformance(toolName?: string) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
-    const name = toolName || `${target.constructor.name}.${propertyKey}`;
+    const name =
+      toolName || `${(target as any).constructor.name}.${propertyKey}`;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const startTime = PerformanceTracker.startOperation(name);
 
       try {
         const result = await originalMethod.apply(this, args);
         PerformanceTracker.endOperation(name, startTime, true);
         return result;
-      } catch (error) {
+      } catch (error: unknown) {
         PerformanceTracker.endOperation(
           name,
           startTime,

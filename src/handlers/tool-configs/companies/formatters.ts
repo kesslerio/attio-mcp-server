@@ -113,7 +113,7 @@ For full details, use get-company-json with this ID: ${companyId}`;
         };
 
         return JSON.stringify(summary, null, 2);
-      } catch (error) {
+      } catch (error: unknown) {
         // If any error occurs during JSON processing, return a safe error message
         return JSON.stringify(
           {

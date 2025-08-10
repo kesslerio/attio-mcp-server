@@ -8,7 +8,7 @@ Before you begin, ensure you have the following:
 
 - **Node.js** (v18 or higher)
 - **npm** (usually comes with Node.js)
-- **Attio API Key** (obtain from [Attio API Explorer](https://developers.attio.com/reference/get_v2-objects))
+- **Attio API Key** (obtain from [Attio Developer Documentation](https://docs.attio.com/docs/overview))
 - **Git** (for development only)
 
 ## Installation Options

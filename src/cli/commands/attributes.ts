@@ -9,6 +9,7 @@ import {
   writeMappingConfig,
   MappingConfig,
 } from '../../utils/config-loader.js';
+import { handleAxiosError } from '../../utils/error-utilities.js';
 
 /**
  * Interface for command arguments
@@ -34,7 +35,7 @@ interface AttioAttribute {
   title: string; // Changed from 'display_name' to match Attio API response
   description?: string;
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -68,17 +69,10 @@ export async function getAvailableObjects(apiKey: string): Promise<string[]> {
 
     // Extract API slugs from the objects
     return objects
-      .filter((obj: any) => obj.api_slug)
-      .map((obj: any) => obj.api_slug);
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(
-        `Failed to get objects: ${error.response.status} ${
-          error.response.statusText
-        }\n${JSON.stringify(error.response.data, null, 2)}`
-      );
-    }
-    throw error;
+      .filter((obj: Record<string, unknown>) => obj.api_slug)
+      .map((obj: Record<string, unknown>) => obj.api_slug);
+  } catch (error: unknown) {
+    throw handleAxiosError(error, 'get objects');
   }
 }
 
@@ -109,19 +103,8 @@ export async function getObjectAttributes(
     });
 
     return mappings;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      throw new Error(
-        `Failed to get attributes for object ${objectSlug}: ${
-          error.response.status
-        } ${error.response.statusText}\n${JSON.stringify(
-          error.response.data,
-          null,
-          2
-        )}`
-      );
-    }
-    throw error;
+  } catch (error: unknown) {
+    throw handleAxiosError(error, `get attributes for object ${objectSlug}`);
   }
 }
 
@@ -150,7 +133,7 @@ export async function discoverAttributes(
     let config: MappingConfig;
     try {
       config = loadMappingConfig();
-    } catch (error) {
+    } catch (error: unknown) {
       spinner.warn(
         'Failed to load existing configuration, creating new one...'
       );
@@ -219,7 +202,7 @@ export async function discoverAttributes(
         } else {
           spinner.warn(`No attributes found for ${chalk.cyan(objectSlug)}`);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         spinner.fail(
           `Error fetching attributes for ${chalk.cyan(objectSlug)}: ${
             error instanceof Error ? error.message : String(error)
@@ -246,7 +229,7 @@ export async function discoverAttributes(
     spinner.succeed(
       chalk.green('✓ Attribute discovery completed successfully!')
     );
-  } catch (error) {
+  } catch (error: unknown) {
     spinner.fail(
       `Discovery failed: ${
         error instanceof Error ? error.message : String(error)

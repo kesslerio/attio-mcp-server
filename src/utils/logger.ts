@@ -42,7 +42,7 @@ export interface LogMetadata {
   duration?: number;
   requestId?: string;
   userId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface LogMetadata {
 export interface LogEntry {
   message: string;
   metadata: LogMetadata;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: {
     message: string;
     name: string;
@@ -121,7 +121,7 @@ function createLogMetadata(
   module: string,
   operation?: string,
   operationType?: OperationType,
-  additionalMetadata?: Record<string, any>
+  additionalMetadata?: Record<string, unknown>
 ): LogMetadata {
   return {
     timestamp: new Date().toISOString(),
@@ -142,7 +142,7 @@ function createLogMetadata(
  */
 function outputLog(
   entry: LogEntry,
-  logFunction: (message: string, ...args: any[]) => void
+  logFunction: (message: string, ...args: unknown[]) => void
 ): void {
   if (process.env.LOG_FORMAT === 'json') {
     // Output compact JSON using safe stringify to prevent errors
@@ -166,7 +166,7 @@ function outputLog(
 export function debug(
   module: string,
   message: string,
-  data?: any,
+  data?: Record<string, unknown>,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -174,7 +174,7 @@ export function debug(
     const entry: LogEntry = {
       message,
       metadata: createLogMetadata('DEBUG', module, operation, operationType),
-      ...(data && { data }),
+      ...(data ? { data } : {}),
     };
     outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
@@ -192,7 +192,7 @@ export function debug(
 export function info(
   module: string,
   message: string,
-  data?: any,
+  data?: Record<string, unknown>,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -200,7 +200,7 @@ export function info(
     const entry: LogEntry = {
       message,
       metadata: createLogMetadata('INFO', module, operation, operationType),
-      ...(data && { data }),
+      ...(data ? { data } : {}),
     };
     outputLog(entry, console.error); // Use stderr instead of stdout to avoid interfering with MCP protocol
   }
@@ -218,7 +218,7 @@ export function info(
 export function warn(
   module: string,
   message: string,
-  data?: any,
+  data?: Record<string, unknown>,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -226,7 +226,7 @@ export function warn(
     const entry: LogEntry = {
       message,
       metadata: createLogMetadata('WARN', module, operation, operationType),
-      ...(data && { data }),
+      ...(data ? { data } : {}),
     };
     outputLog(entry, console.warn);
   }
@@ -245,8 +245,8 @@ export function warn(
 export function error(
   module: string,
   message: string,
-  errorObj?: any,
-  data?: any,
+  errorObj?: unknown,
+  data?: Record<string, unknown>,
   operation?: string,
   operationType?: OperationType
 ): void {
@@ -254,18 +254,29 @@ export function error(
     const entry: LogEntry = {
       message,
       metadata: createLogMetadata('ERROR', module, operation, operationType),
-      ...(data && { data }),
-      ...(errorObj && {
-        error:
-          errorObj instanceof Error
-            ? {
-                message: errorObj.message,
-                name: errorObj.name,
-                stack: errorObj.stack,
-                code: (errorObj as any).code,
-              }
-            : { message: String(errorObj), name: 'Unknown' },
-      }),
+      ...(data ? { data } : {}),
+      ...(errorObj
+        ? {
+            error:
+              errorObj instanceof Error
+                ? {
+                    message: errorObj.message,
+                    name: errorObj.name,
+                    stack: errorObj.stack,
+                    code: (errorObj as Error & { code?: string | number }).code,
+                  }
+                : typeof errorObj === 'object' && errorObj !== null
+                  ? {
+                      message:
+                        (errorObj as any).message || JSON.stringify(errorObj),
+                      name: (errorObj as any).name || 'Unknown',
+                      stack: (errorObj as any).stack,
+                      code: (errorObj as any).code,
+                      ...(errorObj as object),
+                    }
+                  : { message: String(errorObj), name: 'Unknown' },
+          }
+        : {}),
     };
     outputLog(entry, console.error);
   }
@@ -294,7 +305,7 @@ export class PerformanceTimer {
   /**
    * End timing and log the duration
    */
-  end(message?: string, data?: any): number {
+  end(message?: string, data?: Record<string, unknown>): number {
     const duration = Date.now() - this.startTime;
     debug(
       this.module,
@@ -320,7 +331,7 @@ export function operationStart(
   module: string,
   operation: string,
   operationType: OperationType = OperationType.SYSTEM,
-  params?: any
+  params?: Record<string, unknown>
 ): PerformanceTimer {
   debug(
     module,
@@ -344,7 +355,7 @@ export function operationStart(
 export function operationSuccess(
   module: string,
   operation: string,
-  resultSummary?: any,
+  resultSummary?: Record<string, unknown>,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -374,8 +385,8 @@ export function operationSuccess(
 export function operationFailure(
   module: string,
   operation: string,
-  errorObj: any,
-  context?: any,
+  errorObj: unknown,
+  context?: Record<string, unknown>,
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
@@ -442,7 +453,7 @@ export function createScopedLogger(
       ),
     operationSuccess: (
       op?: string,
-      resultSummary?: any,
+      resultSummary?: Record<string, unknown>,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -455,7 +466,7 @@ export function createScopedLogger(
       ),
     operationFailure: (
       op?: string,
-      errorObj?: any,
+      errorObj?: unknown,
       context?: any,
       opType?: OperationType,
       duration?: number
@@ -493,7 +504,7 @@ export async function withLogging<T>(
       duration
     );
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = timer.end();
     operationFailure(
       module,

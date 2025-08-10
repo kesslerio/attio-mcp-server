@@ -41,7 +41,7 @@ async function createTestCompany(attributes: Record<string, any>) {
     );
 
     return response.data.data.id.record_id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to create test company:', error);
     throw error;
   }
@@ -52,7 +52,7 @@ async function deleteTestCompany(companyId: string) {
   try {
     const api = getAttioClient();
     await api.delete(`/objects/${ResourceType.COMPANIES}/records/${companyId}`);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Failed to delete test company ${companyId}:`, error);
   }
 }
@@ -78,7 +78,7 @@ async function cleanupTestCompanies() {
     for (const company of testCompanies) {
       await deleteTestCompany(company.id.record_id);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to cleanup test companies:', error);
   }
 }

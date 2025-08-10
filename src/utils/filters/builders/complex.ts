@@ -33,7 +33,7 @@ export function createListFilter(listId: string): ListEntryFilters {
 export function createFilterWithSpecialHandling(
   attributeSlug: string,
   operator: string,
-  value: any
+  value: unknown
 ): ListEntryFilters {
   const specialHandling = FIELD_SPECIAL_HANDLING[attributeSlug];
 
@@ -43,7 +43,7 @@ export function createFilterWithSpecialHandling(
         {
           attribute: { slug: attributeSlug },
           condition: operator as FilterConditionType,
-          value,
+          value: value as any, // TODO: Update FilterValue type to accept unknown
         },
       ],
       matchAny: false,
@@ -62,7 +62,7 @@ export function createFilterWithSpecialHandling(
       {
         attribute: { slug: attributeSlug },
         condition: mappedOperator as FilterConditionType,
-        value: processedValue,
+        value: processedValue as any, // TODO: Update FilterValue type to accept unknown
       },
     ],
     matchAny: false,

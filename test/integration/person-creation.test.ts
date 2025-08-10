@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createPerson } from '../../src/objects/people-write.js';
 import { getAttioClient } from '../../src/api/attio-client.js';
+import { clearAttributeCache } from '../../src/api/attribute-types.js';
 import axios from 'axios';
 
 // Mock the Attio client
@@ -93,8 +94,69 @@ describe('Person Creation Integration', () => {
       delete: vi.fn(),
     };
 
+    // Mock the attributes API call to return our test metadata
+    mockAxiosInstance.get.mockImplementation((url: string) => {
+      if (url === '/objects/people/attributes') {
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                id: {
+                  workspace_id: 'test-workspace',
+                  object_id: 'people-object',
+                  attribute_id: 'name-attribute',
+                },
+                api_slug: 'name',
+                title: 'Name',
+                type: 'personal-name',
+                is_system_attribute: true,
+                is_writable: true,
+                is_required: true,
+                is_unique: false,
+                is_multiselect: false,
+              },
+              {
+                id: {
+                  workspace_id: 'test-workspace',
+                  object_id: 'people-object',
+                  attribute_id: 'email-attribute',
+                },
+                api_slug: 'email_addresses',
+                title: 'Email Addresses',
+                type: 'email-address',
+                is_system_attribute: true,
+                is_writable: true,
+                is_required: false,
+                is_unique: false,
+                is_multiselect: true,
+              },
+              {
+                id: {
+                  workspace_id: 'test-workspace',
+                  object_id: 'people-object',
+                  attribute_id: 'title-attribute',
+                },
+                api_slug: 'title',
+                title: 'Title',
+                type: 'text',
+                is_system_attribute: false,
+                is_writable: true,
+                is_required: false,
+                is_unique: false,
+                is_multiselect: false,
+              },
+            ],
+          },
+        });
+      }
+      return Promise.reject(new Error(`Unexpected GET request to ${url}`));
+    });
+
     // Mock the Attio client to return our mock axios instance
     vi.mocked(getAttioClient).mockReturnValue(mockAxiosInstance as any);
+
+    // Clear the attribute cache before each test to ensure fresh metadata
+    clearAttributeCache();
   });
 
   afterEach(() => {
@@ -102,8 +164,15 @@ describe('Person Creation Integration', () => {
   });
 
   it('should create a person with a string name', async () => {
-    // Mock the API response
-    const mockResponse = {
+    // Mock the email validation query response (first call)
+    const mockEmailValidationResponse = {
+      data: {
+        data: [], // No existing people with this email
+      },
+    };
+
+    // Mock the create person response (second call)
+    const mockCreateResponse = {
       data: {
         data: {
           id: {
@@ -131,7 +200,10 @@ describe('Person Creation Integration', () => {
       },
     };
 
-    mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
+    // Setup mock responses in order
+    mockAxiosInstance.post
+      .mockResolvedValueOnce(mockEmailValidationResponse) // Email validation
+      .mockResolvedValueOnce(mockCreateResponse); // Person creation
 
     // Create a person with string name
     const result = await createPerson({
@@ -139,8 +211,25 @@ describe('Person Creation Integration', () => {
       email_addresses: ['john.doe@example.com'],
     });
 
-    // Verify the API was called with correct structure
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+    // Verify the email validation API call was made first
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      1,
+      '/objects/people/records/query',
+      {
+        filter: {
+          $or: [
+            {
+              email_addresses: { $contains: 'john.doe@example.com' },
+            },
+          ],
+        },
+        limit: 2,
+      }
+    );
+
+    // Verify the person creation API call was made with correct structure
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      2,
       '/objects/people/records',
       {
         data: {
@@ -157,7 +246,7 @@ describe('Person Creation Integration', () => {
     );
 
     // Verify the result
-    expect(result).toEqual(mockResponse.data.data);
+    expect(result).toEqual(mockCreateResponse.data.data);
   });
 
   it('should create a person with structured name', async () => {
@@ -212,7 +301,7 @@ describe('Person Creation Integration', () => {
               last_name: 'Smith',
               full_name: 'Jane Smith',
             },
-            job_title: 'CEO', // job_title is in the special list, no wrapping
+            title: 'CEO', // job_title maps to title, which is in the special list
           },
         },
       }
@@ -333,16 +422,17 @@ describe('Person Creation Integration', () => {
   });
 
   it('should handle API errors gracefully', async () => {
-    // Mock an API error response
-    const mockError = {
-      response: {
-        status: 400,
-        data: {
-          message: "Required field 'name' is missing",
-        },
+    // Mock an API error response for person creation
+    const mockError = new Error('API Error');
+    (mockError as any).response = {
+      status: 400,
+      data: {
+        message: "Required field 'name' is missing",
       },
     };
 
+    // For this test, the person has no email so no validation call will be made
+    // The person creation call should fail
     mockAxiosInstance.post.mockRejectedValueOnce(mockError);
 
     // Attempt to create a person
@@ -352,7 +442,11 @@ describe('Person Creation Integration', () => {
       })
     ).rejects.toThrow();
 
-    // Verify the API was called
-    expect(mockAxiosInstance.post).toHaveBeenCalled();
+    // Verify the API was called exactly once (no email validation)
+    expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1);
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+      '/objects/people/records',
+      expect.any(Object)
+    );
   });
 });

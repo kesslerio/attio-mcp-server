@@ -97,7 +97,7 @@ describe('Performance Regression Tests', () => {
 
       testRecordId = createResult?.id?.record_id || null;
       console.log('Created test record:', testRecordId);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to create test record:', error);
     }
   });
@@ -111,7 +111,7 @@ describe('Performance Regression Tests', () => {
           record_id: testRecordId,
         });
         console.log('Cleaned up test record:', testRecordId);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to clean up test record:', error);
       }
     }
@@ -137,8 +137,8 @@ describe('Performance Regression Tests', () => {
       } catch (error: any) {
         const duration = performance.now() - startTime;
 
-        // Verify it's a validation error
-        expect(error.message).toContain('Invalid record ID');
+        // Verify it's a validation error (enhanced error message format)
+        expect(error.message).toContain('Invalid record identifier format');
 
         // Check performance budget
         expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.notFound);
@@ -186,7 +186,7 @@ describe('Performance Regression Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_id: nonExistentId,
         });
-      } catch (error) {
+      } catch (error: unknown) {
         // Expected
       }
       const firstDuration = performance.now() - firstStart;
@@ -198,7 +198,7 @@ describe('Performance Regression Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_id: nonExistentId,
         });
-      } catch (error) {
+      } catch (error: unknown) {
         // Expected
       }
       const secondDuration = performance.now() - secondStart;
@@ -494,7 +494,7 @@ describe('Performance Regression Tests', () => {
           resource_type: UniversalResourceType.COMPANIES,
           limit: 100,
         });
-      } catch (error) {
+      } catch (error: unknown) {
         // Might fail due to limit validation
       }
 

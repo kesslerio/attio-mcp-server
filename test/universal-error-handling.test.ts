@@ -12,6 +12,7 @@ import {
   CrossResourceValidator
 } from '../src/handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../src/handlers/tool-configs/universal/types.js';
+import { getErrorMessage, ensureError } from '../src/utils/error-utilities.js';
 
 describe('Enhanced Universal Error Handling', () => {
   describe('Input Sanitization', () => {
@@ -70,9 +71,10 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('search-records', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
-        expect(error).toBeInstanceOf(UniversalValidationError);
-        const validationError = error as UniversalValidationError;
+      } catch (error: unknown) {
+        const errorObj = ensureError(error);
+        expect(errorObj).toBeInstanceOf(UniversalValidationError);
+        const validationError = errorObj as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
         expect(validationError.example).toContain('companies, people, records, tasks');
       }
@@ -84,7 +86,7 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('create-record', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('record_data');
@@ -103,7 +105,7 @@ describe('Enhanced Universal Error Handling', () => {
       try {
         validateUniversalToolParams('batch-operations', params);
         expect.fail('Should have thrown validation error');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('records');
@@ -139,7 +141,7 @@ describe('Enhanced Universal Error Handling', () => {
         try {
           validateUniversalToolParams('search-records', { resource_type: testCase.input });
           expect.fail(`Should have thrown validation error for ${testCase.input}`);
-        } catch (error) {
+        } catch (error: unknown) {
           expect(error).toBeInstanceOf(UniversalValidationError);
           const validationError = error as UniversalValidationError;
           expect(validationError.suggestion).toContain(testCase.expected);
@@ -181,7 +183,7 @@ describe('Cross-Resource Validation', () => {
           recordData
         );
         expect.fail('Should have thrown validation error for non-existent company');
-      } catch (error) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(UniversalValidationError);
         const validationError = error as UniversalValidationError;
         expect(validationError.field).toBe('company_id');

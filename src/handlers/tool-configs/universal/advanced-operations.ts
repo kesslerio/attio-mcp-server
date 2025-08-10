@@ -96,7 +96,7 @@ async function processInParallelWithErrorIsolation<T>(
       try {
         const result = await processor(item, i + chunkIndex);
         return { success: true, result };
-      } catch (error) {
+      } catch (error: unknown) {
         return { 
           success: false, 
           error: error instanceof Error ? error.message : String(error), 
@@ -149,7 +149,7 @@ export const advancedSearchConfig: UniversalToolConfig = {
         limit,
         offset
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // Add context-specific error information for advanced search
       if (error instanceof Error && error.message.includes('date')) {
         const enhancedError = new Error(
@@ -238,7 +238,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
         default:
           throw new Error(`Unsupported relationship type: ${relationship_type}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('relationship search', params.relationship_type, error);
     }
   },
@@ -318,7 +318,7 @@ export const searchByContentConfig: UniversalToolConfig = {
       }
       
       throw new Error(`Content search not supported for resource type ${resource_type} and content type ${content_type}`);
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('content search', `${params.resource_type}:${params.content_type}`, error);
     }
   },
@@ -394,7 +394,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             throw new Error(`Timeframe search not supported for resource type: ${resource_type}`);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('timeframe search', `${params.resource_type}:${params.timeframe_type}`, error);
     }
   },
@@ -445,7 +445,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const { resource_type, operation_type, records, record_ids, limit, offset } = sanitizedParams;
       
       switch (operation_type) {
-        case BatchOperationType.CREATE:
+        case BatchOperationType.CREATE: {
           if (!records || records.length === 0) {
             throw new Error('Records array is required for batch create operation');
           }
@@ -472,8 +472,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.UPDATE:
+        case BatchOperationType.UPDATE: {
           if (!records || records.length === 0) {
             throw new Error('Records array is required for batch update operation');
           }
@@ -505,8 +507,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.DELETE:
+        case BatchOperationType.DELETE: {
           if (!record_ids || record_ids.length === 0) {
             throw new Error('Record IDs array is required for batch delete operation');
           }
@@ -532,8 +536,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.GET:
+        case BatchOperationType.GET: {
           if (!record_ids || record_ids.length === 0) {
             throw new Error('Record IDs array is required for batch get operation');
           }
@@ -559,8 +565,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
+          break;
+        }
           
-        case BatchOperationType.SEARCH:
+        case BatchOperationType.SEARCH: {
           // Validate search query parameters
           const searchValidation = validateSearchQuery(undefined, { resource_type, limit, offset });
           if (!searchValidation.isValid) {
@@ -573,11 +581,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
             limit,
             offset
           });
+          break;
+        }
           
         default:
           throw new Error(`Unsupported batch operation type: ${operation_type}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       throw createUniversalError('batch operations', `${params.resource_type}:${params.operation_type}`, error);
     }
   },

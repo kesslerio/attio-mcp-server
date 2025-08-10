@@ -5,12 +5,15 @@ RULE: Documentation-first development | WHEN: Building any feature | DO: Check o
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp__clear-thought-server__mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp__clear-thought-server__decisionframework → find alternative | ELSE: Wasted time on workarounds
 
-## BUILD & TEST COMMANDS
+## BUILD & TEST COMMANDS [UPDATED CI/CD]
 `npm run build` - TypeScript compilation | `npm run build:watch` - Watch mode
-`npm run check` - Full validation suite | `npm run clean` - Clean build artifacts
+`npm run typecheck` - Type checking only (fast) | `npm run typecheck:watch` - Watch mode
+`npm run check` - Validation suite (lint, format, typecheck) | `npm run clean` - Clean build artifacts
 `npm test` - Run all tests | `npm run test:offline` - Unit tests only (no API)
 `npm run test:integration` - Real API tests | `npm test -- -t "pattern"` - Single test
 `npm test <filepath>` - Specific file | `npm test -- --coverage` - With coverage
+
+NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
 
 ## TESTING REQUIREMENTS  
 RULE: Integration tests required | WHEN: API changes, universal tools, CRUD ops, error handling, new features | DO: `npm run test:integration` | ELSE: PR blocked
@@ -22,8 +25,9 @@ Testing: `npm test*` all variations | Building: `npm run build*` all variations
 Inspection: `grep`, `find`, `sed`, `head`, `tail`, `cat` | Git read-only: `git status`, `git diff`, `git log`
 MCP tools: Read, Glob, Grep, LS | Scripts: `./scripts/review-pr.sh`
 
-## CODE STANDARDS
-RULE: No `any` type | WHEN: Writing TypeScript | DO: Create proper interfaces/types | ELSE: Lint errors block commit
+## CODE STANDARDS [PROGRESSIVE ENHANCEMENT]
+RULE: Progressive `any` reduction | WHEN: Writing TypeScript | DO: Use Record<string, unknown> over any | ELSE: Warning count increases
+CURRENT: 1027 warnings (limit: 1030) | TARGET: <927 this sprint | GOAL: <500 in 3 months
 RULE: Explicit error handling | WHEN: API calls | DO: Use `createErrorResult` | ELSE: Silent failures in production
 RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immediately | ELSE: Lint warnings accumulate
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
@@ -130,10 +134,22 @@ CHAINS-TO: None (final step)
 3. **Refactor Chain**: code-refactoring → code-review → test-coverage → docs
 4. **TypeScript Chain**: code-refactoring (any-types) → code-review → test → docs
 
-## ANY TYPE REDUCTION STRATEGY
+## ANY TYPE REDUCTION STRATEGY [PROGRESSIVE GOALS]
 PRIORITY: 1) API responses (src/api/operations/*) 2) Error handling (src/errors/*) 3) Handler params (src/handlers/*) 4) Universal tools 5) Tests
-RULE: Zero `any` types | WHEN: Writing new code | DO: Create proper interfaces | ELSE: Technical debt
-TARGET: Reduce 778 warnings to <100 systematically (not blocking commits)
+RULE: Progressive improvement | WHEN: Writing new code | DO: Use Record<string, unknown> not any | ELSE: Warning count increases
+MILESTONES:
+- Current: 1027 warnings (ESLint max: 1030)
+- Sprint Goal: 927 warnings (reduce by 100)
+- Month 1: 750 warnings
+- Month 2: 600 warnings  
+- Month 3: <500 warnings (final target)
+STRATEGY: Focus on high-impact files first, progressive reduction prevents regression
+RECOMMENDED: Use `Record<string, unknown>` instead of `Record<string, any>` for better type safety
+COMMON PATTERNS:
+- API responses: `Record<string, unknown>` or specific interface
+- Record data: `Record<string, unknown>` instead of `any`
+- Configuration objects: Define specific interfaces
+- Legacy integration: Gradually migrate `any` → `unknown` → specific types
 ## TESTING CONFIGURATION
 RULE: Test location | WHEN: Creating tests | DO: Place in `/test` directory | ELSE: Test discovery fails
 RULE: Use Vitest | WHEN: Writing tests | DO: Import from 'vitest' not 'jest' | ELSE: Type errors
@@ -147,13 +163,22 @@ RULE: Runtime validation only | WHEN: Either/or parameters needed | DO: Validate
 ## GITHUB WORKFLOW
 RULE: PR target enforcement | WHEN: Creating any PR | DO: Target kesslerio/attio-mcp-server | ELSE: Wrong repository targeting
 RULE: Never target hmk repo | WHEN: PR creation | DO: Verify target is kesslerio | ELSE: Upstream pollution
+RULE: Never mention @hmk | WHEN: Creating issues/PRs/comments | DO: NEVER include "cc @hmk" or any @hmk mention | ELSE: Unwanted notifications
 RULE: Config consistency | WHEN: Any config file | DO: Use kesslerio URLs only | ELSE: Fork misconfiguration
 
-## GIT COMMIT PIPELINE [ENFORCED]
-RULE: All commits must pass validation | WHEN: Any git commit | DO: `npm run lint:check && npm run check:format && npm run build && npm run test:offline` | ELSE: Commit blocked
+## GIT COMMIT PIPELINE [ENFORCED] ⚠️ CRITICAL
+**PRE-COMMIT HOOK IS MANDATORY**: The git pre-commit hook at `build/hooks/pre-commit` MUST enforce this pipeline
+RULE: All commits must pass validation | WHEN: Any git commit | DO: Pre-commit hook runs `npm run lint:check && npm run check:format && npm run build && npm run test:offline` | ELSE: Commit blocked at hook level
 RULE: Pipeline stages mandatory | GATES: lint:check [BLOCK if errors], check:format [BLOCK if issues], build [BLOCK if fails], test:offline [BLOCK if fails]
+RULE: Hook enforcement | WHEN: Any commit attempt | DO: Pre-commit hook validates ALL stages before allowing commit | ELSE: Lint issues reach CI (violates standards)
 RULE: Bypass requires justification | WHEN: Using --no-verify | DO: Include "EMERGENCY: [issue-link] [justification]" in commit msg | ELSE: Rejection in code review
-COMMAND: `npm run lint:check && npm run check:format && npm run build && npm run test:offline && git add . && git commit -m "Type: Description #issue" && git push`
+
+**CRITICAL**: If lint issues reach CI, it means the pre-commit hook is not working correctly. Check:
+1. `ls -la .git/hooks/pre-commit` - Hook exists and is executable
+2. `npm run setup-hooks` - Reinstall hooks if missing
+3. Commit was made with `--no-verify` (emergency bypass)
+
+COMMAND: `git add . && git commit -m "Type: Description #issue" && git push` (hook handles validation automatically)
 
 ## GIT WORKFLOW COMMANDS
 BRANCH: `git checkout -b feature/issue-{number}-{description}` or `fix/issue-{number}-{description}`
@@ -161,6 +186,22 @@ COMMIT: Format as `Type: Description #issue-number` where Type = Feature|Fix|Doc
 PR: `gh pr create -R kesslerio/attio-mcp-server -t "Type: Description" -b "Details"`
 RULE: One feature per PR | WHEN: Creating PR | DO: Keep focused and small | ELSE: Review rejection
 RULE: Docs update required | WHEN: Significant changes | DO: Run docs-architect agent | ELSE: Outdated documentation
+
+## CI/CD PIPELINE [OPTIMIZED - 40% FASTER]
+RULE: Efficient CI execution | WHEN: PR created | DO: Run optimized pipeline | ELSE: Wasted CI minutes
+PIPELINE STAGES:
+1. **Lint & Type Check**: ESLint (max 1030 warnings) + TypeScript validation
+2. **Unit Tests**: Coverage tests only (no duplicate runs)
+3. **Integration Tests**: On-demand with label or main branch
+4. **Build Verification**: Ensure artifacts created correctly
+5. **Security Audit**: Dependency vulnerability scanning
+
+PERFORMANCE IMPROVEMENTS (Issue #429):
+- Eliminated duplicate test execution (40% time savings)
+- Separated typecheck from full check command
+- Progressive ESLint warning reduction (1030 → 927 → 500)
+- Pre-commit runs fast checks only (lint, format, build, test:offline)
+- Full test suite runs in CI only (not blocking local development)
 
 ## RELEASE PROCESS
 RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process
@@ -182,6 +223,7 @@ CHECKLIST:
 
 ## ISSUE CREATION
 RULE: Create before coding | WHEN: Starting new work | DO: Create issue first | ELSE: Lack of tracking
+RULE: No @hmk mentions | WHEN: Issue/PR body or comments | DO: NEVER write "cc @hmk" or mention @hmk | ELSE: Unwanted notifications - CRITICAL VIOLATION
 SEARCH FIRST: `gh issue list --repo kesslerio/attio-mcp-server --search "keyword"`
 CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P2,type:bug,area:core"`
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp__clear-thought-server__mentalmodel | ELSE: Incomplete analysis

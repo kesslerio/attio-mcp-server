@@ -32,12 +32,11 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Import enhanced tool caller with logging and migration
 import { 
-  callListTool, 
-  startTestSuite, 
-  endTestSuite,
+  callListTool,
   validateTestEnvironment,
   getToolMigrationStats
 } from '../utils/enhanced-tool-caller.js';
+import { startTestSuite, endTestSuite } from '../utils/logger.js';
 
 /**
  * Lists Management E2E Test Suite

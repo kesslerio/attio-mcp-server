@@ -38,15 +38,13 @@ export async function handleNotesOperation(
   }
 
   let notesTargetId = directId;
-  let _notesResourceType = resourceType;
 
   try {
     if (uri) {
       try {
-        const [uriType, uriId] = parseResourceUri(uri);
-        _notesResourceType = uriType as ResourceType;
+        const [, uriId] = parseResourceUri(uri);
         notesTargetId = uriId;
-      } catch (error) {
+      } catch (error: unknown) {
         return createErrorResult(
           error instanceof Error ? error : new Error('Invalid URI format'),
           uri,
@@ -63,7 +61,7 @@ export async function handleNotesOperation(
     const formattedResult = toolConfig.formatResult!(notes);
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       uri || `/${resourceType}/${notesTargetId}/notes`,
@@ -127,15 +125,13 @@ export async function handleCreateNoteOperation(
   }
 
   let noteTargetId = directId;
-  let _noteResourceType = resourceType;
 
   try {
     if (uri) {
       try {
-        const [uriType, uriId] = parseResourceUri(uri);
-        _noteResourceType = uriType as ResourceType;
+        const [, uriId] = parseResourceUri(uri);
         noteTargetId = uriId;
-      } catch (error) {
+      } catch (error: unknown) {
         return createErrorResult(
           error instanceof Error ? error : new Error('Invalid URI format'),
           uri,
@@ -153,7 +149,7 @@ export async function handleCreateNoteOperation(
         }`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       uri || `/${resourceType}/${noteTargetId}/notes`,

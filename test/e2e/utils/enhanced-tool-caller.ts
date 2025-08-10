@@ -167,7 +167,7 @@ export async function callToolWithEnhancements(
       wasTransformed
     };
 
-  } catch (error) {
+  } catch (error: unknown) {
     const endTime = Date.now();
     const timing = {
       start: startTime,
@@ -354,7 +354,7 @@ export async function validateTestEnvironment(): Promise<{
       if (!result.success) {
         warnings.push(`Basic universal tool test failed: ${result.error?.toString()}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       warnings.push(`Universal tools not available: ${(error as Error).message}`);
     }
   } else {

@@ -731,7 +731,7 @@ function getEditDistance(str1: string, str2: string): number {
 /**
  * Validate pagination parameters
  */
-function validatePaginationParams(params: SanitizedObject, toolName: string): void {
+function validatePaginationParams(params: SanitizedObject): void {
   // Validate limit
   if ('limit' in params && params.limit !== null && params.limit !== undefined) {
     const limit = Number(params.limit);
@@ -817,7 +817,7 @@ function validatePaginationParams(params: SanitizedObject, toolName: string): vo
 /**
  * Validate ID format for record_id and similar fields
  */
-function validateIdFields(params: SanitizedObject, toolName: string): void {
+function validateIdFields(params: SanitizedObject): void {
   const idFields = ['record_id', 'source_id', 'target_id', 'company_id', 'person_id', 'list_id'];
   
   for (const field of idFields) {
@@ -880,10 +880,10 @@ export function validateUniversalToolParams(toolName: string, params: any): any 
   const sanitizedParams = sanitizedValue as SanitizedObject;
   
   // Validate pagination parameters (limit, offset)
-  validatePaginationParams(sanitizedParams, toolName);
+  validatePaginationParams(sanitizedParams);
   
   // Validate ID format for record_id and similar fields
-  validateIdFields(sanitizedParams, toolName);
+  validateIdFields(sanitizedParams);
   
   // Validate resource_type if present
   if (sanitizedParams.resource_type) {

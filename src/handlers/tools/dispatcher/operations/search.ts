@@ -70,7 +70,7 @@ export async function handleSearchOperation(
     );
 
     return formatResponse(responseText);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/objects/${resourceType}/records/query`,
@@ -120,7 +120,7 @@ export async function handleBasicSearch(
     );
 
     return formatResponse(responseText);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/objects/${resourceType}/records/query`,
@@ -296,7 +296,7 @@ export async function handleSmartSearch(
     );
 
     return formatResponse(responseText);
-  } catch (error) {
+  } catch (error: unknown) {
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
       `/objects/${resourceType}/records/query`,

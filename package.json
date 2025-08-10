@@ -36,6 +36,8 @@
     "test:integration:watch": "vitest --config vitest.config.integration.ts --watch",
     "test:integration:real-api": "vitest --config vitest.config.integration.ts --run test/integration/real-api-integration.test.ts",
     "test:unit": "vitest --run test/handlers/ test/objects/ test/utils/ test/validators/",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "test:performance": "vitest --run test/performance/regression.test.ts",
     "perf:monitor": "node scripts/performance-monitor.js",
     "perf:report": "npm run test:performance -- --reporter=json > performance-results.json",
@@ -158,7 +160,7 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "npx eslint . --ext .ts",
+      "command": "npx eslint . --ext .ts --max-warnings 988",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
@@ -188,7 +190,7 @@
         "syncpack:check",
         "check:format",
         "lint:check",
-        "test"
+        "typecheck"
       ]
     }
   }

@@ -302,7 +302,7 @@ function validateStringValue(
   if (typeof value === 'object' && value !== null) {
     try {
       return { valid: true, convertedValue: JSON.stringify(value) };
-    } catch (error) {
+    } catch (error: unknown) {
       // Failed to stringify
     }
   }

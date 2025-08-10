@@ -55,7 +55,7 @@ export async function handleListOperation(
       : `Found ${Array.isArray(result) ? result.length : 0} records`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     const objectSlug = request.params.arguments?.objectSlug || 'unknown';
     return createErrorResult(
       error instanceof Error ? error : new Error('Unknown error'),
@@ -102,7 +102,7 @@ export async function handleGetOperation(
       : `Record retrieved successfully`;
 
     return formatResponse(formattedResult);
-  } catch (error) {
+  } catch (error: unknown) {
     const objectSlug = request.params.arguments?.objectSlug || 'unknown';
     const recordId = request.params.arguments?.recordId || 'unknown';
     return createErrorResult(

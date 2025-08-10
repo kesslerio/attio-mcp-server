@@ -70,7 +70,7 @@ function normalizeToolRequest(
 
   // Handle loose arguments format
   const params = request.params as LooseCallToolRequest['params'];
-  const { name, arguments: _arguments, ...potentialArgs } = params;
+  const { name, ...potentialArgs } = params;
 
   // If there are additional params beyond 'name', treat them as arguments
   const hasAdditionalParams = Object.keys(potentialArgs).length > 0;
@@ -130,7 +130,7 @@ export function registerToolHandlers(server: Server): void {
     // Dynamically collect all available tool definitions
     const allTools = [];
     
-    for (const [_key, toolDefs] of Object.entries(TOOL_DEFINITIONS)) {
+    for (const toolDefs of Object.values(TOOL_DEFINITIONS)) {
       if (toolDefs) {
         if (Array.isArray(toolDefs)) {
           // Legacy format: array of tool definitions
@@ -156,7 +156,7 @@ export function registerToolHandlers(server: Server): void {
         request as CallToolRequest | LooseCallToolRequest
       );
       return await executeToolRequest(normalizedRequest);
-    } catch (error) {
+    } catch (error: unknown) {
       // Handle normalization errors
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown normalization error';

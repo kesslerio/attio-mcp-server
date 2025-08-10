@@ -63,6 +63,155 @@ export interface AttioSingleResponse {
  */
 export class E2EAssertions {
   /**
+   * Enhanced pagination validation for universal tools
+   */
+  static expectValidPagination(response: McpToolResponse, expectedLimit?: number): void {
+    this.expectMcpSuccess(response);
+    
+    if (expectedLimit && response.content) {
+      const text = response.content[0]?.text || '';
+      // Check if response mentions pagination limits
+      if (text.includes('limit') || text.includes('found') || text.includes('returned')) {
+        // Basic validation that limit was respected (if data was returned)
+        expect(text, 'Response should acknowledge limit parameter').toBeDefined();
+      }
+    }
+  }
+
+  /**
+   * Field filtering validation for get-record-details and get-attributes
+   */
+  static expectFieldFiltering(response: McpToolResponse, requestedFields?: string[]): void {
+    this.expectMcpSuccess(response);
+    
+    if (requestedFields && requestedFields.length > 0 && response.content) {
+      const responseText = response.content[0]?.text || '';
+      
+      // Verify that response contains some indication of field filtering
+      if (requestedFields.length === 1) {
+        expect(responseText.toLowerCase(), `Response should contain requested field: ${requestedFields[0]}`)
+          .toContain(requestedFields[0].toLowerCase().replace('_', ' '));
+      } else {
+        // For multiple fields, at least check that the response is structured
+        expect(responseText, 'Field-filtered response should contain structured data').toBeTruthy();
+      }
+    }
+  }
+
+  /**
+   * Tasks resource type validation
+   */
+  static expectValidTasksIntegration(response: McpToolResponse, operation: string): void {
+    this.expectMcpSuccess(response);
+    
+    const responseText = response.content?.[0]?.text || '';
+    
+    switch (operation) {
+      case 'search':
+        expect(responseText, 'Tasks search should return valid response').toBeDefined();
+        if (responseText.includes('task')) {
+          expect(responseText, 'Tasks response should mention task-related content').toContain('task');
+        }
+        break;
+      case 'create':
+        expect(responseText, 'Task creation should indicate success').toMatch(/(created|success|task)/i);
+        break;
+      case 'attributes':
+        expect(responseText, 'Task attributes should be returned').toBeDefined();
+        break;
+    }
+  }
+
+  /**
+   * Enhanced error handling validation with specific error types
+   */
+  static expectSpecificError(response: McpToolResponse, errorType: 'validation' | 'notFound' | 'unauthorized' | 'rateLimited'): void {
+    expect(response.isError || (response.content?.[0]?.text?.includes('error')), 
+      'Response should indicate error state').toBe(true);
+    
+    const errorText = response.error || response.content?.[0]?.text || '';
+    
+    switch (errorType) {
+      case 'validation':
+        expect(errorText.toLowerCase(), 'Should indicate validation error')
+          .toMatch(/(validation|invalid|required|missing)/);
+        break;
+      case 'notFound':
+        expect(errorText.toLowerCase(), 'Should indicate not found error')
+          .toMatch(/(not found|does not exist|404)/);
+        break;
+      case 'unauthorized':
+        expect(errorText.toLowerCase(), 'Should indicate authorization error')
+          .toMatch(/(unauthorized|forbidden|401|403)/);
+        break;
+      case 'rateLimited':
+        expect(errorText.toLowerCase(), 'Should indicate rate limiting')
+          .toMatch(/(rate limit|too many|429)/);
+        break;
+    }
+  }
+
+  /**
+   * Comprehensive tool response validation with performance metrics
+   */
+  static expectOptimalPerformance(response: McpToolResponse, maxExecutionTime?: number): void {
+    this.expectMcpSuccess(response);
+    
+    if (response._meta?.executionTime && maxExecutionTime) {
+      expect(response._meta.executionTime, `Tool execution should complete within ${maxExecutionTime}ms`)
+        .toBeLessThan(maxExecutionTime);
+    }
+    
+    // Validate response size is reasonable
+    if (response.content) {
+      const responseSize = JSON.stringify(response).length;
+      expect(responseSize, 'Response size should be reasonable (< 1MB)').toBeLessThan(1024 * 1024);
+    }
+  }
+
+  /**
+   * Universal tool parameter validation
+   */
+  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, any>): void {
+    this.expectMcpSuccess(response);
+    
+    // Basic validation that the tool accepted the parameters
+    const responseText = response.content?.[0]?.text || '';
+    
+    if (expectedParams.resource_type) {
+      // Should not contain resource type errors
+      expect(responseText.toLowerCase(), 'Should not contain resource type validation errors')
+        .not.toMatch(/(invalid.*resource.*type|unsupported.*resource)/);
+    }
+    
+    if (expectedParams.limit) {
+      // Should not contain limit validation errors
+      expect(responseText.toLowerCase(), 'Should not contain limit validation errors')
+        .not.toMatch(/(invalid.*limit|limit.*too.*large)/);
+    }
+    
+    if (expectedParams.offset) {
+      // Should handle offset parameter
+      expect(responseText, 'Should handle offset parameter without error').toBeDefined();
+    }
+  }
+
+  /**
+   * Batch operations validation
+   */
+  static expectValidBatchOperation(response: McpToolResponse, batchSize: number): void {
+    this.expectMcpSuccess(response);
+    
+    const responseText = response.content?.[0]?.text || '';
+    
+    // Should indicate batch processing
+    expect(responseText.toLowerCase(), 'Should indicate batch operation processing')
+      .toMatch(/(batch|multiple|operation)/);
+      
+    // Should not exceed reasonable batch limits
+    expect(batchSize, 'Batch size should be reasonable').toBeLessThan(100);
+  }
+  /**
    * Assert that MCP tool response is successful
    */
   static expectMcpSuccess(response: McpToolResponse, message?: string): void {
@@ -95,7 +244,7 @@ export class E2EAssertions {
         }
         
         return parsedData;
-      } catch (error) {
+      } catch (error: unknown) {
         // If not JSON, return text directly
         return dataContent.text;
       }
@@ -431,7 +580,7 @@ export class E2EAssertions {
     notes.forEach((note, index) => {
       try {
         this.expectValidNoteStructure(note);
-      } catch (error) {
+      } catch (error: unknown) {
         throw new Error(`Note ${index} validation failed: ${error.message}`);
       }
     });

@@ -53,7 +53,7 @@ export function registerResourceHandlers(server: Server): void {
               ),
               description: `Found ${people.length} people that you have interacted with most recently`,
             };
-          } catch (error) {
+          } catch (error: unknown) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/records/query`,
@@ -72,7 +72,7 @@ export function registerResourceHandlers(server: Server): void {
               ),
               description: `Found ${companies.length} companies that you have interacted with most recently`,
             };
-          } catch (error) {
+          } catch (error: unknown) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/companies/records/query`,
@@ -81,7 +81,7 @@ export function registerResourceHandlers(server: Server): void {
             );
           }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return createErrorResult(
         error instanceof Error ? error : new Error('Unknown error'),
         'unknown',
@@ -111,7 +111,7 @@ export function registerResourceHandlers(server: Server): void {
                 },
               ],
             };
-          } catch (error) {
+          } catch (error: unknown) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/${id}`,
@@ -133,7 +133,7 @@ export function registerResourceHandlers(server: Server): void {
                 },
               ],
             };
-          } catch (error) {
+          } catch (error: unknown) {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/companies/${id}`,
@@ -145,7 +145,7 @@ export function registerResourceHandlers(server: Server): void {
         default:
           throw new Error(`Unsupported resource type: ${resourceType}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return createErrorResult(
         error instanceof Error ? error : new Error('Unknown error'),
         request.params.uri,

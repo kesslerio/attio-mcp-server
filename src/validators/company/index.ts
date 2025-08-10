@@ -94,6 +94,7 @@ export class CompanyValidator {
 
     const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
     const processedAttributes =
@@ -104,7 +105,7 @@ export class CompanyValidator {
       const validatedAttributes =
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyCreateInput;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
@@ -126,6 +127,7 @@ export class CompanyValidator {
 
     const attributesWithDomain =
       CompanyValidator.extractDomainFromWebsite(attributes);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _autoExtractedDomains, ...cleanAttributes } = attributesWithDomain;
 
     const processedAttributes =
@@ -136,7 +138,7 @@ export class CompanyValidator {
       const validatedAttributes =
         await CompanyValidator.validateAttributeTypes(processedAttributes);
       return validatedAttributes as CompanyUpdateInput;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
@@ -213,7 +215,7 @@ export class CompanyValidator {
       const validatedObj =
         await CompanyValidator.validateAttributeTypes(attributeObj);
       return validatedObj[attributeName];
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof InvalidRequestError) {
         throw error;
       }
@@ -569,7 +571,7 @@ export class CompanyValidator {
             result.error || `Invalid value for ${attributeName}`;
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(
         'Unexpected error during batch validation:',
         (error as Error).message

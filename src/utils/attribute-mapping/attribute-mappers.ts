@@ -99,7 +99,7 @@ function getConfig(): MappingConfig {
       cachedConfig = loadMappingConfig();
       // Initialize lookup caches for faster access
       initializeLookupCaches(cachedConfig);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load mapping configuration:', error);
 
       // Create a simple config using the legacy map for backward compatibility
@@ -420,7 +420,7 @@ export function getAttributeSlug(
       }
       return result;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // If there's an error with the config, log detailed error and suggestions
     const errorMsg =
       error instanceof AttributeMappingError
@@ -478,7 +478,7 @@ export function getObjectSlug(objectName: string): string {
       objectName
     );
     if (result) return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // If there's an error with the config, fall back to simple normalization
     console.error('Error using config for object mapping:', error);
     console.warn(
@@ -512,7 +512,7 @@ export function getListSlug(listName: string): string {
     // Use case-insensitive lookup
     const result = lookupCaseInsensitive(caseInsensitiveCaches.lists, listName);
     if (result) return result;
-  } catch (error) {
+  } catch (error: unknown) {
     // If there's an error with the config, fall back to simple normalization
     console.error('Error using config for list mapping:', error);
     console.warn(

@@ -28,7 +28,7 @@ export async function listCompanies(limit: number = 20): Promise<Company[]> {
   // Use the unified operation if available, with fallback to direct implementation
   try {
     return await listObjects<Company>(ResourceType.COMPANIES, limit);
-  } catch (error) {
+  } catch (error: unknown) {
     // Fallback implementation
     const api = getAttioClient();
     const path = '/objects/companies/records/query';
@@ -67,7 +67,7 @@ export async function getCompanyDetails(
         // Try to parse the URI formally using parseResourceUri utility
         // This is more robust than string splitting
         const [resourceType, id] =
-          companyIdOrUri.match(/^attio:\/\/([^\/]+)\/(.+)$/)?.slice(1) || [];
+          companyIdOrUri.match(/^attio:\/\/([^/]+)\/(.+)$/)?.slice(1) || [];
 
         if (resourceType !== ResourceType.COMPANIES) {
           throw new Error(
@@ -106,12 +106,12 @@ export async function getCompanyDetails(
     // Use the unified operation if available, with fallback to direct implementation
     try {
       return await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const firstError = error;
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[getCompanyDetails] First attempt failed: ${
-            firstError.message || 'Unknown error'
+            firstError instanceof Error ? firstError.message : 'Unknown error'
           }`,
           {
             method: 'getObjectDetails',
@@ -134,12 +134,12 @@ export async function getCompanyDetails(
 
         const response = await api.get(path);
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const secondError = error;
         if (process.env.NODE_ENV === 'development') {
           console.log(
             `[getCompanyDetails] Second attempt failed: ${
-              secondError.message || 'Unknown error'
+              secondError instanceof Error ? secondError.message : 'Unknown error'
             }`,
             {
               method: 'direct API path',
@@ -167,7 +167,7 @@ export async function getCompanyDetails(
 
           const response = await api.get(alternatePath);
           return response.data;
-        } catch (error: any) {
+        } catch (error: unknown) {
           const thirdError = error;
           // If all attempts fail, throw a meaningful error with preserved original errors
           const errorDetails = {
@@ -178,9 +178,9 @@ export async function getCompanyDetails(
               `/companies/${companyId}`,
             ],
             errors: {
-              first: firstError.message || 'Unknown error',
-              second: secondError.message || 'Unknown error',
-              third: thirdError.message || 'Unknown error',
+              first: firstError instanceof Error ? firstError.message : 'Unknown error',
+              second: secondError instanceof Error ? secondError.message : 'Unknown error',
+              third: thirdError instanceof Error ? thirdError.message : 'Unknown error',
             },
           };
 
@@ -194,13 +194,13 @@ export async function getCompanyDetails(
 
           throw new Error(
             `Could not retrieve company details for ${companyIdOrUri}: ${
-              thirdError.message || 'Unknown error'
+              thirdError instanceof Error ? thirdError.message : 'Unknown error'
             }`
           );
         }
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Catch any errors in the URI parsing logic
     if (error instanceof Error && error.message.includes('match')) {
       throw new Error(
@@ -252,7 +252,7 @@ export async function createCompany(
     }
     
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[createCompany] Error caught:', error);
     }
@@ -295,7 +295,7 @@ export async function updateCompany(
       attributes,
       CompanyValidator.validateUpdate
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
@@ -351,7 +351,7 @@ export async function updateCompany(
 export async function updateCompanyAttribute(
   companyId: string,
   attributeName: string,
-  attributeValue: any
+  attributeValue: unknown
 ): Promise<Company> {
   try {
     let valueToProcess = attributeValue;
@@ -388,7 +388,7 @@ export async function updateCompanyAttribute(
     const processedValue = await CompanyValidator.validateAttributeUpdate(
       companyId,
       attributeName,
-      valueToProcess
+      valueToProcess as any // TODO: Replace with proper type once CompanyFieldValue is updated
     );
 
     return await updateObjectAttributeWithDynamicFields<Company>(
@@ -398,7 +398,7 @@ export async function updateCompanyAttribute(
       processedValue,
       updateCompany
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       error instanceof InvalidCompanyDataError ||
       error instanceof CompanyOperationError
@@ -435,7 +435,7 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
       companyId,
       CompanyValidator.validateDelete
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
