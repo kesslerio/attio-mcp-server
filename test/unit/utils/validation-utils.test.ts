@@ -142,7 +142,7 @@ describe('validation-utils', () => {
     });
 
     it('should reject invalid multi-select options', async () => {
-      const result = await validateMultiSelectField('companies', 'tags', ['valid_tag', 'invalid_tag']);
+      const result = await validateMultiSelectField('companies', 'tags', ['important', 'invalid_tag']);
       
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Invalid values ['invalid_tag'] for multi-select field 'tags'");
@@ -218,7 +218,7 @@ describe('validation-utils', () => {
     });
 
     it('should suggest field names based on similarity', async () => {
-      const suggestions = await suggestFieldName('companies', 'company_description');
+      const suggestions = await suggestFieldName('companies', 'descriptin');
       
       expect(suggestions).toContain('description');
       expect(suggestions.length).toBeLessThanOrEqual(3);
@@ -241,6 +241,7 @@ describe('validation-utils', () => {
     beforeEach(() => {
       const mockAttributes = [
         { api_slug: 'name', type: 'text' },
+        { api_slug: 'description', type: 'text' },
         { api_slug: 'note', type: 'text' },
         { api_slug: 'website', type: 'text' }
       ];
@@ -258,10 +259,10 @@ describe('validation-utils', () => {
     });
 
     it('should reject unknown fields with suggestions', async () => {
-      const result = await validateFieldExistence('companies', ['company_description']);
+      const result = await validateFieldExistence('companies', ['descriptin']);
       
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("Unknown field 'company_description' for resource type 'companies'");
+      expect(result.error).toContain("Unknown field 'descriptin' for resource type 'companies'");
       expect(result.error).toContain('Did you mean: ');
       expect(result.error).toContain('Use get-attributes to see all available fields');
     });

@@ -96,12 +96,14 @@ export async function validateSelectField(
     const field = attributes.find((attr) => attr.api_slug === fieldName);
 
     if (field?.type === 'select' && field.options) {
-      const validOptions = field.options.map((opt) => opt.title || opt.value);
+      // Check if the value matches any option's value (not title)
+      const validValues = field.options.map((opt) => opt.value);
+      const validTitles = field.options.map((opt) => opt.title || opt.value);
 
-      if (!validOptions.includes(value)) {
+      if (!validValues.includes(value)) {
         return {
           isValid: false,
-          error: `Invalid value '${value}' for field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}]. Please choose one of the valid values.`,
+          error: `Invalid value '${value}' for field '${fieldName}'. Valid options are: [${validTitles.map((opt) => `'${opt}'`).join(', ')}]. Please choose one of the valid values.`,
         };
       }
     }
@@ -127,13 +129,15 @@ export async function validateMultiSelectField(
     const field = attributes.find((attr) => attr.api_slug === fieldName);
 
     if (field?.type === 'multi_select' && field.options) {
-      const validOptions = field.options.map((opt) => opt.title || opt.value);
-      const invalidValues = values.filter((val) => !validOptions.includes(val));
+      // Check against actual values, not titles
+      const validValues = field.options.map((opt) => opt.value);
+      const validTitles = field.options.map((opt) => opt.title || opt.value);
+      const invalidValues = values.filter((val) => !validValues.includes(val));
 
       if (invalidValues.length > 0) {
         return {
           isValid: false,
-          error: `Invalid values [${invalidValues.map((v) => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}]. Please use only valid options.`,
+          error: `Invalid values [${invalidValues.map((v) => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validTitles.map((opt) => `'${opt}'`).join(', ')}]. Please use only valid options.`,
         };
       }
     }

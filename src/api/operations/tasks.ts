@@ -158,13 +158,14 @@ export async function createTask(
       console.warn('[WORKAROUND] API call succeeded but response is undefined. Returning minimal task object.');
       return {
         id: {
+          workspace_id: 'unknown',
           task_id: 'unknown-task-id-' + Date.now(),
         },
         content,
         status: 'pending', // Default status for new tasks
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      };
+      } as AttioTask;
     }
     
     // Debug logging to identify the response structure
