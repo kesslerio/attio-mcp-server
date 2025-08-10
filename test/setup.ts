@@ -13,7 +13,7 @@ if (process.env.E2E_MODE !== 'true') {
       getAttioClient: vi.fn(() => mockAxiosInstance),
       initializeAttioClient: vi.fn(() => {
         // Mock implementation that doesn't require real API key
-        return Promise.resolve(mockAxiosInstance);
+        return mockAxiosInstance;
       }),
       isAttioClientInitialized: vi.fn(() => true),
       createAttioClient: vi.fn(() => mockAxiosInstance),
