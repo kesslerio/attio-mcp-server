@@ -26,7 +26,10 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   client.interceptors.response.use(
     (response) => {
       // Debug logging for successful responses
-      if (process.env.NODE_ENV === 'development' && response.config?.url?.includes('/tasks')) {
+      if (
+        process.env.NODE_ENV === 'development' &&
+        response.config?.url?.includes('/tasks')
+      ) {
         console.log('[Attio API] Request succeeded:');
         console.log('URL:', response.config?.url);
         console.log('Method:', response.config?.method);
@@ -37,7 +40,10 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       return response;
     },
     (error) => {
-      if (process.env.NODE_ENV === 'development' || error.config?.url?.includes('/tasks')) {
+      if (
+        process.env.NODE_ENV === 'development' ||
+        error.config?.url?.includes('/tasks')
+      ) {
         console.error('[Attio API] Request failed:');
         console.error('URL:', error.config?.url);
         console.error('Method:', error.config?.method);
@@ -45,10 +51,16 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         console.error('Data (as sent):', error.config?.data);
         console.error('Data type:', typeof error.config?.data);
         console.error('Response status:', error.response?.status);
-        console.error('Response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response?.data, null, 2)
+        );
         // Show full validation errors for tasks
         if (error.response?.data?.validation_errors) {
-          console.error('Validation errors detail:', JSON.stringify(error.response.data.validation_errors, null, 2));
+          console.error(
+            'Validation errors detail:',
+            JSON.stringify(error.response.data.validation_errors, null, 2)
+          );
         }
       }
       const enhancedError = createAttioError(error);

@@ -1091,7 +1091,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         console.error('[Tasks] Original error:', error);
         
         // Issue #417: Enhanced task error handling with field mapping guidance
-        const enhancedError = ErrorEnhancer.autoEnhance(error, 'tasks', 'create-record');
+        const errorObj: Error = error instanceof Error ? error : new Error(String(error));
+        const enhancedError = ErrorEnhancer.autoEnhance(errorObj, 'tasks', 'create-record');
         throw enhancedError;
       }
     }
@@ -1222,16 +1223,44 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       // Transform mapped fields for task update
       // The field mapper has already transformed field names to API names
       // Now we need to adapt them for the updateTask function
-      const taskUpdateData = {
-        // Note: content field is immutable and cannot be updated
-        status: mappedData.is_completed !== undefined 
-          ? (mappedData.is_completed ? 'completed' : 'pending')
-          : mappedData.status,
-        assigneeId: mappedData.assignees || mappedData.assignee_id || mappedData.assigneeId,
-        dueDate: mappedData.deadline_at || mappedData.due_date || mappedData.dueDate,
-        recordIds: mappedData.linked_records || 
-          (mappedData.record_id ? [mappedData.record_id] : undefined)
-      };
+      const taskUpdateData: Record<string, unknown> = {};
+      
+      // Handle content field if present
+      if (mappedData.content !== undefined) {
+        taskUpdateData.content = mappedData.content;
+      }
+      
+      // Handle status field
+      if (mappedData.is_completed !== undefined) {
+        taskUpdateData.status = mappedData.is_completed ? 'completed' : 'pending';
+      } else if (mappedData.status !== undefined) {
+        taskUpdateData.status = mappedData.status;
+      }
+      
+      // Handle assignee field
+      if (mappedData.assignees !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assignees;
+      } else if (mappedData.assignee_id !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assignee_id;
+      } else if (mappedData.assigneeId !== undefined) {
+        taskUpdateData.assigneeId = mappedData.assigneeId;
+      }
+      
+      // Handle due date field
+      if (mappedData.deadline_at !== undefined) {
+        taskUpdateData.dueDate = mappedData.deadline_at;
+      } else if (mappedData.due_date !== undefined) {
+        taskUpdateData.dueDate = mappedData.due_date;
+      } else if (mappedData.dueDate !== undefined) {
+        taskUpdateData.dueDate = mappedData.dueDate;
+      }
+      
+      // Handle linked records field
+      if (mappedData.linked_records !== undefined) {
+        taskUpdateData.recordIds = mappedData.linked_records;
+      } else if (mappedData.record_id !== undefined) {
+        taskUpdateData.recordIds = [mappedData.record_id];
+      }
       
       const updatedTask = await updateTask(record_id, taskUpdateData);
       // Convert AttioTask to AttioRecord using proper type conversion
@@ -1525,9 +1554,9 @@ export function createUniversalError(operation: string, resourceType: string, or
   if (errorMessage.includes('not found') || 
       errorMessage.includes('invalid') ||
       errorMessage.includes('required') ||
-      errorObj?.status === 400) {
+      (errorObj && typeof errorObj.status === 'number' && errorObj.status === 400)) {
     errorType = ErrorType.USER_ERROR;
-  } else if (errorObj?.status >= 500 || 
+  } else if ((errorObj && typeof errorObj.status === 'number' && errorObj.status >= 500) || 
              errorMessage.includes('network') ||
              errorMessage.includes('timeout')) {
     errorType = ErrorType.API_ERROR;
@@ -1661,7 +1690,9 @@ function getOperationSuggestion(operation: string, resourceType: string, error: 
   
   // Handle "Cannot find attribute" errors with field suggestions
   if (errorMessage.includes('cannot find attribute')) {
-    const match = error?.message?.match(/cannot find attribute with slug\/id["\s]*([^"]*)/i);
+    const errorMessageForMatch = error instanceof Error ? error.message : 
+                                 (typeof error === 'object' && error !== null && 'message' in error) ? String((error as Record<string, unknown>).message) : '';
+    const match = errorMessageForMatch.match(/cannot find attribute with slug\/id["\s]*([^"]*)/i);
     if (match && match[1]) {
       const fieldName = match[1].replace(/["]/g, '').trim();
       // Try to get field suggestions for the resource type

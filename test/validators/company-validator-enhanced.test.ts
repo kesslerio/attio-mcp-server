@@ -2,9 +2,7 @@
  * Tests for the enhanced company validator with attribute type validation
  */
 import { CompanyValidator } from '../../src/validators/company-validator.js';
-import {
-  getAttributeTypeInfo,
-} from '../../src/api/attribute-types.js';
+import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
 import {
   MissingCompanyFieldError,

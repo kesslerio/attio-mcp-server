@@ -27,10 +27,10 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     
     expect(titleMapping.mapped).toEqual({
       content: 'Q4 Follow-up: Test Task',
-      due_date: '2025-02-15',
-      assignee_id: 'user-123', 
-      status: 'pending',
-      record_id: 'record-456'
+      deadline_at: '2025-02-15',
+      assignees: 'user-123', 
+      is_completed: 'pending',
+      linked_records: 'record-456'
     });
     
     expect(titleMapping.warnings.some(w => w.includes('title') && w.includes('content'))).toBe(true);
@@ -49,12 +49,12 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     
     const result = mapRecordFields(UniversalResourceType.TASKS, recordData);
     
-    // The camelCase variants should be mapped to snake_case  
+    // The camelCase variants should be mapped to new Attio API field names  
     expect(result.mapped).toEqual({
       content: 'Test task content',
-      due_date: '2025-02-15',
-      assignee_id: 'user-123',
-      record_id: 'record-456'
+      deadline_at: '2025-02-15',
+      assignees: 'user-123',
+      linked_records: 'record-456'
     });
     
     // Should have warnings about the camelCase mappings

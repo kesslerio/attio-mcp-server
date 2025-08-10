@@ -166,20 +166,16 @@ export function createStandardErrorResult(
   resource: string,
   additionalDetails?: Record<string, unknown>
 ) {
-  const errorObj = error instanceof Error ? error : new Error(getErrorMessage(error));
+  const errorObj =
+    error instanceof Error ? error : new Error(getErrorMessage(error));
   const url = String(additionalDetails?.url || `/${resource}/${operation}`);
   const method = String(additionalDetails?.method || 'POST');
-  
-  return createErrorResult(
-    errorObj,
-    url,
-    method,
-    {
-      ...additionalDetails,
-      operation,
-      resource,
-    }
-  );
+
+  return createErrorResult(errorObj, url, method, {
+    ...additionalDetails,
+    operation,
+    resource,
+  });
 }
 
 /**
