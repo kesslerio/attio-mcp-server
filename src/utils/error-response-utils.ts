@@ -1,6 +1,6 @@
 /**
  * Enhanced error response utilities for structured error handling
- * 
+ *
  * This module provides structured error response formats that include:
  * - Human-readable error messages
  * - Machine-readable error codes
@@ -10,12 +10,12 @@
  */
 
 export interface EnhancedErrorResponse {
-  error: string;                    // Human-readable error message
-  error_code: string;               // Machine-readable error code
-  field?: string;                   // Field that caused the error
-  suggestions?: string[];           // Actionable suggestions
-  help_url?: string;               // Link to documentation
-  context?: Record<string, any>;   // Additional context
+  error: string; // Human-readable error message
+  error_code: string; // Machine-readable error code
+  field?: string; // Field that caused the error
+  suggestions?: string[]; // Actionable suggestions
+  help_url?: string; // Link to documentation
+  context?: Record<string, any>; // Additional context
 }
 
 /**
@@ -28,7 +28,7 @@ export enum ValidationErrorCode {
   READ_ONLY_FIELD_UPDATE = 'READ_ONLY_FIELD_UPDATE',
   UNKNOWN_FIELD = 'UNKNOWN_FIELD',
   FIELD_TYPE_MISMATCH = 'FIELD_TYPE_MISMATCH',
-  REQUIRED_FIELD_MISSING = 'REQUIRED_FIELD_MISSING'
+  REQUIRED_FIELD_MISSING = 'REQUIRED_FIELD_MISSING',
 }
 
 /**
@@ -36,7 +36,7 @@ export enum ValidationErrorCode {
  */
 export function createFieldValidationError(
   fieldName: string,
-  resourceType: string, 
+  resourceType: string,
   issue: string,
   suggestions: string[] = []
 ): EnhancedErrorResponse {
@@ -44,9 +44,12 @@ export function createFieldValidationError(
     error: `Field validation failed for '${fieldName}' in ${resourceType}: ${issue}`,
     error_code: ValidationErrorCode.FIELD_VALIDATION_ERROR,
     field: fieldName,
-    suggestions: suggestions.length > 0 ? suggestions : [`Use get-attributes to see valid fields for ${resourceType}`],
+    suggestions:
+      suggestions.length > 0
+        ? suggestions
+        : [`Use get-attributes to see valid fields for ${resourceType}`],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
-    context: { resource_type: resourceType, field_name: fieldName }
+    context: { resource_type: resourceType, field_name: fieldName },
   };
 }
 
@@ -59,18 +62,18 @@ export function createSelectOptionError(
   validOptions: string[]
 ): EnhancedErrorResponse {
   return {
-    error: `Invalid value '${invalidValue}' for select field '${fieldName}'. Valid options are: [${validOptions.map(opt => `'${opt}'`).join(', ')}].`,
+    error: `Invalid value '${invalidValue}' for select field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}].`,
     error_code: ValidationErrorCode.INVALID_SELECT_OPTION,
     field: fieldName,
     suggestions: [
-      `Choose one of: ${validOptions.slice(0, 3).join(', ')}${validOptions.length > 3 ? '...' : ''}`, 
-      'Use get-attributes to see all available options'
+      `Choose one of: ${validOptions.slice(0, 3).join(', ')}${validOptions.length > 3 ? '...' : ''}`,
+      'Use get-attributes to see all available options',
     ],
-    context: { 
-      field_name: fieldName, 
+    context: {
+      field_name: fieldName,
       provided_value: invalidValue,
-      valid_options: validOptions 
-    }
+      valid_options: validOptions,
+    },
   };
 }
 
@@ -83,18 +86,18 @@ export function createMultiSelectOptionError(
   validOptions: string[]
 ): EnhancedErrorResponse {
   return {
-    error: `Invalid values [${invalidValues.map(v => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validOptions.map(opt => `'${opt}'`).join(', ')}].`,
+    error: `Invalid values [${invalidValues.map((v) => `'${v}'`).join(', ')}] for multi-select field '${fieldName}'. Valid options are: [${validOptions.map((opt) => `'${opt}'`).join(', ')}].`,
     error_code: ValidationErrorCode.INVALID_MULTI_SELECT_OPTION,
     field: fieldName,
     suggestions: [
       `Valid options include: ${validOptions.slice(0, 5).join(', ')}${validOptions.length > 5 ? '...' : ''}`,
-      'Use get-attributes to see all available options'
+      'Use get-attributes to see all available options',
     ],
-    context: { 
-      field_name: fieldName, 
+    context: {
+      field_name: fieldName,
       invalid_values: invalidValues,
-      valid_options: validOptions 
-    }
+      valid_options: validOptions,
+    },
   };
 }
 
@@ -106,21 +109,21 @@ export function createReadOnlyFieldError(
   resourceType: string
 ): EnhancedErrorResponse {
   const plural = fieldNames.length > 1;
-  const fieldList = fieldNames.map(field => `'${field}'`).join(', ');
-  
+  const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
+
   return {
     error: `Cannot update read-only field${plural ? 's' : ''} ${fieldList}. ${plural ? 'These fields are' : 'This field is'} automatically managed by the system and cannot be modified.`,
     error_code: ValidationErrorCode.READ_ONLY_FIELD_UPDATE,
     field: fieldNames.length === 1 ? fieldNames[0] : undefined,
     suggestions: [
       `Remove ${plural ? 'these fields' : 'this field'} from your update request`,
-      `Use get-attributes to see which fields are read-only for ${resourceType}`
+      `Use get-attributes to see which fields are read-only for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
-    context: { 
+    context: {
       resource_type: resourceType,
-      read_only_fields: fieldNames
-    }
+      read_only_fields: fieldNames,
+    },
   };
 }
 
@@ -134,25 +137,27 @@ export function createUnknownFieldError(
 ): EnhancedErrorResponse {
   let errorMessage = `Unknown field '${fieldName}' for resource type '${resourceType}'.`;
   const actionableSuggestions = [];
-  
+
   if (suggestions.length > 0) {
-    errorMessage += ` Did you mean: ${suggestions.map(s => `'${s}'`).join(', ')}?`;
+    errorMessage += ` Did you mean: ${suggestions.map((s) => `'${s}'`).join(', ')}?`;
     actionableSuggestions.push(`Try using: ${suggestions[0]}`);
   }
-  
-  actionableSuggestions.push(`Use get-attributes to see all available fields for ${resourceType}`);
-  
+
+  actionableSuggestions.push(
+    `Use get-attributes to see all available fields for ${resourceType}`
+  );
+
   return {
     error: errorMessage,
     error_code: ValidationErrorCode.UNKNOWN_FIELD,
     field: fieldName,
     suggestions: actionableSuggestions,
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
-    context: { 
-      resource_type: resourceType, 
+    context: {
+      resource_type: resourceType,
       invalid_field: fieldName,
-      suggested_fields: suggestions
-    }
+      suggested_fields: suggestions,
+    },
   };
 }
 
@@ -171,15 +176,15 @@ export function createFieldTypeMismatchError(
     field: fieldName,
     suggestions: [
       `Convert the value to ${expectedType} format`,
-      `Check the field definition using get-attributes`
+      `Check the field definition using get-attributes`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: {
       resource_type: resourceType,
       field_name: fieldName,
       expected_type: expectedType,
-      actual_type: actualType
-    }
+      actual_type: actualType,
+    },
   };
 }
 
@@ -191,34 +196,36 @@ export function createRequiredFieldError(
   resourceType: string
 ): EnhancedErrorResponse {
   const plural = fieldNames.length > 1;
-  const fieldList = fieldNames.map(field => `'${field}'`).join(', ');
-  
+  const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
+
   return {
     error: `Required field${plural ? 's' : ''} ${fieldList} ${plural ? 'are' : 'is'} missing.`,
     error_code: ValidationErrorCode.REQUIRED_FIELD_MISSING,
     field: fieldNames.length === 1 ? fieldNames[0] : undefined,
     suggestions: [
       `Add ${plural ? 'these required fields' : 'this required field'} to your request`,
-      `Use get-attributes to see all required fields for ${resourceType}`
+      `Use get-attributes to see all required fields for ${resourceType}`,
     ],
     help_url: `https://docs.attio.com/api-reference/${resourceType}`,
     context: {
       resource_type: resourceType,
-      missing_fields: fieldNames
-    }
+      missing_fields: fieldNames,
+    },
   };
 }
 
 /**
  * Format an enhanced error response for MCP client consumption
  */
-export function formatEnhancedErrorResponse(errorResponse: EnhancedErrorResponse): any {
+export function formatEnhancedErrorResponse(
+  errorResponse: EnhancedErrorResponse
+): any {
   const formattedError = {
     content: [
       {
         type: 'text',
-        text: errorResponse.error
-      }
+        text: errorResponse.error,
+      },
     ],
     isError: true,
     error: {
@@ -227,14 +234,16 @@ export function formatEnhancedErrorResponse(errorResponse: EnhancedErrorResponse
       field: errorResponse.field,
       suggestions: errorResponse.suggestions,
       help_url: errorResponse.help_url,
-      context: errorResponse.context
-    }
+      context: errorResponse.context,
+    },
   };
 
   // Add suggestions to the text content if available
   if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
     formattedError.content[0].text += '\n\n💡 Suggestions:\n';
-    formattedError.content[0].text += errorResponse.suggestions.map(s => `  • ${s}`).join('\n');
+    formattedError.content[0].text += errorResponse.suggestions
+      .map((s) => `  • ${s}`)
+      .join('\n');
   }
 
   // Add help URL if available
@@ -253,12 +262,12 @@ export function createErrorResponse(message: string): any {
     content: [
       {
         type: 'text',
-        text: message
-      }
+        text: message,
+      },
     ],
     isError: true,
     error: {
-      message: message
-    }
+      message: message,
+    },
   };
 }

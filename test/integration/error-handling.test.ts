@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { handleUniversalUpdate, handleUniversalCreate } from '../../src/handlers/tool-configs/universal/shared-handlers.js';
+import {
+  handleUniversalUpdate,
+  handleUniversalCreate,
+} from '../../src/handlers/tool-configs/universal/shared-handlers.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { clearAttributeCache } from '../../src/utils/validation-utils.js';
 
@@ -30,18 +33,20 @@ describe('Enhanced Error Handling Integration', () => {
           record_id: 'test-company-123',
           record_data: {
             values: {
-              company_type: 'invalid_option' // This should be a real select field
-            }
-          }
+              company_type: 'invalid_option', // This should be a real select field
+            },
+          },
         });
-        
+
         // If we reach here, the validation didn't work
         expect.fail('Expected validation error for invalid select option');
       } catch (error: any) {
         expect(error.message).toContain('Invalid value');
         expect(error.message).toContain('company_type');
         expect(error.message).toContain('Valid options are:');
-        expect(error.message).toContain('Please choose one of the valid values');
+        expect(error.message).toContain(
+          'Please choose one of the valid values'
+        );
       }
     });
 
@@ -52,12 +57,14 @@ describe('Enhanced Error Handling Integration', () => {
           record_id: 'test-company-123',
           record_data: {
             values: {
-              tags: ['valid_tag', 'invalid_tag'] // Assuming tags is a multi-select field
-            }
-          }
+              tags: ['valid_tag', 'invalid_tag'], // Assuming tags is a multi-select field
+            },
+          },
         });
-        
-        expect.fail('Expected validation error for invalid multi-select option');
+
+        expect.fail(
+          'Expected validation error for invalid multi-select option'
+        );
       } catch (error: any) {
         expect(error.message).toContain('Invalid values');
         expect(error.message).toContain('tags');
@@ -74,17 +81,19 @@ describe('Enhanced Error Handling Integration', () => {
           record_id: 'test-company-123',
           record_data: {
             values: {
-              created_at: '2024-01-01T00:00:00Z' // This should be read-only
-            }
-          }
+              created_at: '2024-01-01T00:00:00Z', // This should be read-only
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error for read-only field update');
       } catch (error: any) {
         expect(error.message).toContain('Cannot update read-only field');
         expect(error.message).toContain('created_at');
         expect(error.message).toContain('automatically managed by the system');
-        expect(error.message).toContain('Remove this field from your update request');
+        expect(error.message).toContain(
+          'Remove this field from your update request'
+        );
       }
     });
 
@@ -96,11 +105,11 @@ describe('Enhanced Error Handling Integration', () => {
           record_data: {
             values: {
               created_at: '2024-01-01T00:00:00Z',
-              updated_at: '2024-01-01T00:00:00Z'
-            }
-          }
+              updated_at: '2024-01-01T00:00:00Z',
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error for multiple read-only fields');
       } catch (error: any) {
         expect(error.message).toContain('Cannot update read-only fields');
@@ -118,17 +127,19 @@ describe('Enhanced Error Handling Integration', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_data: {
             values: {
-              company_description: 'A great company' // Should suggest 'note' or similar
-            }
-          }
+              company_description: 'A great company', // Should suggest 'note' or similar
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error for unknown field');
       } catch (error: any) {
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('company_description');
         expect(error.message).toContain('Did you mean');
-        expect(error.message).toContain('Use get-attributes to see all available fields');
+        expect(error.message).toContain(
+          'Use get-attributes to see all available fields'
+        );
       }
     });
 
@@ -138,11 +149,11 @@ describe('Enhanced Error Handling Integration', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_data: {
             values: {
-              companyname: 'Test Company' // Should suggest 'name'
-            }
-          }
+              companyname: 'Test Company', // Should suggest 'name'
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error for field alias mistake');
       } catch (error: any) {
         expect(error.message).toContain('Unknown field');
@@ -163,11 +174,11 @@ describe('Enhanced Error Handling Integration', () => {
           record_data: {
             values: {
               non_existent_field: 'value',
-              created_at: '2024-01-01T00:00:00Z' // Also read-only, but field existence should be checked first
-            }
-          }
+              created_at: '2024-01-01T00:00:00Z', // Also read-only, but field existence should be checked first
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error');
       } catch (error: any) {
         // Should get the unknown field error first
@@ -186,10 +197,10 @@ describe('Enhanced Error Handling Integration', () => {
               invalid_field: 'should fail',
               company_type: 'invalid_option', // Assuming this is a select field
               // created_at would be read-only but creation typically doesn't include it
-            }
-          }
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error');
       } catch (error: any) {
         // Should catch the first validation error (likely the unknown field)
@@ -206,18 +217,18 @@ describe('Enhanced Error Handling Integration', () => {
           record_id: 'test-person-123',
           record_data: {
             values: {
-              unknown_field: 'test_value'
-            }
-          }
+              unknown_field: 'test_value',
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error');
       } catch (error: any) {
         // Check that error message is actionable
         expect(error.message).toContain('Unknown field');
         expect(error.message).toContain('people'); // Resource type context
         expect(error.message).toContain('get-attributes'); // Actionable suggestion
-        
+
         // Should not contain generic error messages
         expect(error.message).not.toContain('Internal server error');
         expect(error.message).not.toContain('Something went wrong');
@@ -231,11 +242,11 @@ describe('Enhanced Error Handling Integration', () => {
           resource_type: UniversalResourceType.DEALS,
           record_data: {
             values: {
-              deal_description: 'A new deal' // Assuming this field doesn't exist
-            }
-          }
+              deal_description: 'A new deal', // Assuming this field doesn't exist
+            },
+          },
         });
-        
+
         expect.fail('Expected validation error');
       } catch (error: any) {
         // Check for professional tone
@@ -243,7 +254,7 @@ describe('Enhanced Error Handling Integration', () => {
         expect(error.message).not.toContain('wrong');
         expect(error.message).not.toContain('bad');
         expect(error.message).not.toContain('error');
-        
+
         // Should contain helpful guidance
         expect(error.message).toContain('Unknown field');
         expect(error.message).toMatch(/Did you mean|Use get-attributes/);
@@ -251,44 +262,48 @@ describe('Enhanced Error Handling Integration', () => {
     });
   });
 
-  describe('Resource Type Specific Errors', { skip: skipIntegrationTests }, () => {
-    it('should provide resource-specific field suggestions for companies', async () => {
-      try {
-        await handleUniversalCreate({
-          resource_type: UniversalResourceType.COMPANIES,
-          record_data: {
-            values: {
-              company_desc: 'Description' // Should suggest actual company fields
-            }
-          }
-        });
-        
-        expect.fail('Expected validation error');
-      } catch (error: any) {
-        expect(error.message).toContain('companies');
-        expect(error.message).toContain('company_desc');
-        expect(error.message).toContain('get-attributes');
-      }
-    });
+  describe(
+    'Resource Type Specific Errors',
+    { skip: skipIntegrationTests },
+    () => {
+      it('should provide resource-specific field suggestions for companies', async () => {
+        try {
+          await handleUniversalCreate({
+            resource_type: UniversalResourceType.COMPANIES,
+            record_data: {
+              values: {
+                company_desc: 'Description', // Should suggest actual company fields
+              },
+            },
+          });
 
-    it('should provide resource-specific field suggestions for people', async () => {
-      try {
-        await handleUniversalCreate({
-          resource_type: UniversalResourceType.PEOPLE,
-          record_data: {
-            values: {
-              person_name: 'John Doe' // Should suggest 'name' for people
-            }
-          }
-        });
-        
-        expect.fail('Expected validation error');
-      } catch (error: any) {
-        expect(error.message).toContain('people');
-        expect(error.message).toContain('person_name');
-        // Should suggest 'name' as it's similar
-        expect(error.message.toLowerCase()).toMatch(/name/);
-      }
-    });
-  });
+          expect.fail('Expected validation error');
+        } catch (error: any) {
+          expect(error.message).toContain('companies');
+          expect(error.message).toContain('company_desc');
+          expect(error.message).toContain('get-attributes');
+        }
+      });
+
+      it('should provide resource-specific field suggestions for people', async () => {
+        try {
+          await handleUniversalCreate({
+            resource_type: UniversalResourceType.PEOPLE,
+            record_data: {
+              values: {
+                person_name: 'John Doe', // Should suggest 'name' for people
+              },
+            },
+          });
+
+          expect.fail('Expected validation error');
+        } catch (error: any) {
+          expect(error.message).toContain('people');
+          expect(error.message).toContain('person_name');
+          // Should suggest 'name' as it's similar
+          expect(error.message.toLowerCase()).toMatch(/name/);
+        }
+      });
+    }
+  );
 });
