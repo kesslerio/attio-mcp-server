@@ -26,6 +26,18 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add response interceptor for error handling
   client.interceptors.response.use(
     (response) => {
+      // CRITICAL DEBUG: Log ALL responses in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AXIOS INTERCEPTOR] Response received:', {
+          url: response.config?.url,
+          method: response.config?.method,
+          status: response?.status,
+          hasResponse: !!response,
+          responseType: typeof response,
+          hasData: !!response?.data,
+        });
+      }
+
       // Debug logging for successful responses
       if (response.config?.url?.includes('/tasks')) {
         debug(
@@ -79,8 +91,9 @@ export function createAttioClient(apiKey: string): AxiosInstance {
  *
  * @param apiKey - The Attio API key
  */
-export function initializeAttioClient(apiKey: string): void {
+export function initializeAttioClient(apiKey: string): AxiosInstance {
   apiInstance = createAttioClient(apiKey);
+  return apiInstance;
 }
 
 /**
@@ -90,6 +103,15 @@ export function initializeAttioClient(apiKey: string): void {
  * @throws If the API client hasn't been initialized and no API key is available
  */
 export function getAttioClient(): AxiosInstance {
+  // CRITICAL DEBUG: Log client state
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[getAttioClient] Client state:', {
+      hasApiInstance: !!apiInstance,
+      baseURL: apiInstance?.defaults?.baseURL,
+      hasInterceptors: !!apiInstance?.interceptors?.response,
+    });
+  }
+
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
@@ -101,8 +123,18 @@ export function getAttioClient(): AxiosInstance {
         'initialization',
         OperationType.SYSTEM
       );
-      initializeAttioClient(apiKey);
-      return apiInstance!;
+      const initializedClient = initializeAttioClient(apiKey);
+
+      // CRITICAL DEBUG: Log client state after initialization
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[getAttioClient] After auto-init:', {
+          hasApiInstance: true,
+          baseURL: initializedClient.defaults?.baseURL || 'none',
+          hasInterceptors: !!initializedClient.interceptors?.response,
+        });
+      }
+
+      return initializedClient;
     }
     throw new Error(
       'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'

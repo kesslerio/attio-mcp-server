@@ -183,11 +183,38 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
  * // record.values now contains: content, status, assignee, due_date, linked_records
  */
 function convertTaskToRecord(task: AttioTask): AttioRecord {
+  // Debug logging to understand task structure
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[convertTaskToRecord] Task structure:', JSON.stringify(task, null, 2));
+    console.log('[convertTaskToRecord] Task.id structure:', task?.id ? JSON.stringify(task.id, null, 2) : 'undefined');
+  }
+  
+  // More robust ID handling
+  let record_id: string;
+  let workspace_id: string = '';
+  
+  if (task.id) {
+    // Handle different possible ID structures
+    if ('task_id' in task.id) {
+      record_id = task.id.task_id;
+    } else if ('id' in task.id) {
+      record_id = (task.id as any).id;
+    } else if (typeof task.id === 'string') {
+      record_id = task.id as any;
+    } else {
+      throw new Error(`Task ID structure not recognized: ${JSON.stringify(task.id)}`);
+    }
+    
+    workspace_id = (task.id as any).workspace_id || '';
+  } else {
+    throw new Error(`Task missing id property: ${JSON.stringify(task)}`);
+  }
+  
   return {
     id: {
-      record_id: task.id.task_id,
+      record_id,
       object_id: 'tasks',
-      workspace_id: task.id.workspace_id || ''
+      workspace_id
     },
     values: {
       // Map task properties to values object
