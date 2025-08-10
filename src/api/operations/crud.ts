@@ -73,11 +73,37 @@ export async function createRecord<T extends AttioRecord>(
         hasData: !!response?.data,
         hasNestedData: !!response?.data?.data,
         dataKeys: response?.data ? Object.keys(response.data) : [],
-        nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : []
+        nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : [],
+        dataType: Array.isArray(response?.data) ? 'array' : typeof response?.data,
+        nestedDataType: Array.isArray(response?.data?.data) ? 'array' : typeof response?.data?.data
       });
     }
 
-    return response?.data?.data || response?.data;
+    // Handle different response structures
+    let result: T;
+    
+    if (response?.data?.data) {
+      // Standard nested structure
+      result = response.data.data;
+    } else if (response?.data && typeof response.data === 'object') {
+      // Direct data structure
+      if (Array.isArray(response.data)) {
+        // If it's an array, take the first element (should be the created record)
+        result = response.data[0] as T;
+      } else {
+        result = response.data as unknown as T;
+      }
+    } else {
+      throw new Error('Invalid API response structure: no data found');
+    }
+    
+    // Ensure we have a valid record with an ID
+    if (!result || !('id' in result)) {
+      console.error('[createRecord] Invalid result structure:', result);
+      throw new Error('Invalid API response: record missing ID');
+    }
+    
+    return result;
   }, retryConfig);
 }
 

@@ -25,7 +25,6 @@ import { isValidEmail } from '../../../utils/validation/email-validation.js';
 
 // Import enhanced validation utilities for Issue #413
 import { 
-  validateRecordFields, 
   createEnhancedErrorResponse,
   EnhancedErrorResponse
 } from '../../../utils/enhanced-validation.js';
@@ -110,6 +109,25 @@ import {
   FIELD_MAPPINGS
 } from './field-mapper.js';
 
+// Import enhanced validation utilities
+import {
+  validateRecordFields,
+  validateSelectField,
+  validateMultiSelectField,
+  validateReadOnlyFields,
+  validateFieldExistence
+} from '../../../utils/validation-utils.js';
+
+// Import enhanced error response utilities
+import {
+  createErrorResponse,
+  formatEnhancedErrorResponse as formatErrorResponse,
+  createSelectOptionError,
+  createMultiSelectOptionError,
+  createReadOnlyFieldError,
+  createUnknownFieldError
+} from '../../../utils/error-response-utils.js';
+
 // Simple cache for tasks pagination performance optimization
 interface CacheEntry {
   data: any[];
@@ -165,11 +183,38 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
  * // record.values now contains: content, status, assignee, due_date, linked_records
  */
 function convertTaskToRecord(task: AttioTask): AttioRecord {
+  // Debug logging to understand task structure
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[convertTaskToRecord] Task structure:', JSON.stringify(task, null, 2));
+    console.log('[convertTaskToRecord] Task.id structure:', task?.id ? JSON.stringify(task.id, null, 2) : 'undefined');
+  }
+  
+  // More robust ID handling
+  let record_id: string;
+  let workspace_id: string = '';
+  
+  if (task.id) {
+    // Handle different possible ID structures
+    if ('task_id' in task.id) {
+      record_id = task.id.task_id;
+    } else if ('id' in task.id) {
+      record_id = (task.id as any).id;
+    } else if (typeof task.id === 'string') {
+      record_id = task.id as any;
+    } else {
+      throw new Error(`Task ID structure not recognized: ${JSON.stringify(task.id)}`);
+    }
+    
+    workspace_id = (task.id as any).workspace_id || '';
+  } else {
+    throw new Error(`Task missing id property: ${JSON.stringify(task)}`);
+  }
+  
   return {
     id: {
-      record_id: task.id.task_id,
+      record_id,
       object_id: 'tasks',
-      workspace_id: task.id.workspace_id || ''
+      workspace_id
     },
     values: {
       // Map task properties to values object
@@ -807,27 +852,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('[handleUniversalCreate] Input params:', { resource_type, record_data });
   }
   
-  // Enhanced validation for Issue #413 - provide actionable error messages
-  const validation = await validateRecordFields(resource_type, (record_data.values || record_data) as Record<string, unknown>, false);
-  if (!validation.isValid) {
-    const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'create-record');
-    
-    // Create detailed error message with suggestions
-    let errorMessage = errorResponse.error;
-    if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
-      errorMessage += '\n\nSuggestions:\n' + errorResponse.suggestions.map(s => `• ${s}`).join('\n');
-    }
-    
-    throw new UniversalValidationError(
-      errorMessage,
-      ErrorType.USER_ERROR,
-      {
-        suggestion: errorResponse.suggestions?.join(' ') || 'Please fix the validation errors and try again.',
-        field: errorResponse.invalidFields?.join(', ') || errorResponse.missingFields?.join(', ')
-      }
-    );
-  }
-  
   // Pre-validate fields and provide helpful suggestions
   const fieldValidation = validateFields(resource_type, record_data.values || record_data);
   if (fieldValidation.warnings.length > 0) {
@@ -883,6 +907,20 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
   const { mapped: mappedData, warnings } = mappingResult;
   if (warnings.length > 0) {
     console.log('Field mapping applied:', warnings.join('\n'));
+  }
+  
+  // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
+  // Will be re-enabled after tasks API validation is properly configured
+  if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
+    const validation = await validateRecordFields(resource_type, mappedData as Record<string, unknown>, false);
+    if (!validation.isValid) {
+      const errorMessage = validation.error || 'Validation failed';
+      throw new UniversalValidationError(
+        errorMessage,
+        ErrorType.USER_ERROR,
+        { suggestion: 'Please fix the validation errors and try again.', field: undefined }
+      );
+    }
   }
   
   switch (resource_type) {
@@ -1122,27 +1160,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
 export async function handleUniversalUpdate(params: UniversalUpdateParams): Promise<AttioRecord> {
   const { resource_type, record_id, record_data } = params;
   
-  // Enhanced validation for Issue #413 - provide actionable error messages
-  const validation = await validateRecordFields(resource_type, (record_data.values || record_data) as Record<string, unknown>, true);
-  if (!validation.isValid) {
-    const errorResponse: EnhancedErrorResponse = createEnhancedErrorResponse(validation, 'update-record');
-    
-    // Create detailed error message with suggestions
-    let errorMessage = errorResponse.error;
-    if (errorResponse.suggestions && errorResponse.suggestions.length > 0) {
-      errorMessage += '\n\nSuggestions:\n' + errorResponse.suggestions.map(s => `• ${s}`).join('\n');
-    }
-    
-    throw new UniversalValidationError(
-      errorMessage,
-      ErrorType.USER_ERROR,
-      {
-        suggestion: errorResponse.suggestions?.join(' ') || 'Please fix the validation errors and try again.',
-        field: errorResponse.invalidFields?.join(', ') || validation.readOnlyFields?.join(', ')
-      }
-    );
-  }
-  
   // Pre-validate fields and provide helpful suggestions (less strict for updates)
   const fieldValidation = validateFields(resource_type, record_data.values || record_data);
   if (fieldValidation.warnings.length > 0) {
@@ -1168,6 +1185,20 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   const { mapped: mappedData, warnings } = mappingResult;
   if (warnings.length > 0) {
     console.log('Field mapping applied:', warnings.join('\n'));
+  }
+  
+  // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
+  // Will be re-enabled after tasks API validation is properly configured
+  if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
+    const validation = await validateRecordFields(resource_type, mappedData as Record<string, unknown>, false);
+    if (!validation.isValid) {
+      const errorMessage = validation.error || 'Validation failed';
+      throw new UniversalValidationError(
+        errorMessage,
+        ErrorType.USER_ERROR,
+        { suggestion: 'Please fix the validation errors and try again.', field: undefined }
+      );
+    }
   }
   
   switch (resource_type) {
