@@ -1183,7 +1183,8 @@ export async function deleteList(listId: string): Promise<boolean> {
  */
 export async function searchLists(
   query: string,
-  limit: number = 20
+  limit: number = 20,
+  offset: number = 0
 ): Promise<AttioList[]> {
   // For now, we'll get all lists and filter client-side
   // since Attio API may not support direct list search
@@ -1196,7 +1197,7 @@ export async function searchLists(
     return name.includes(lowerQuery) || description.includes(lowerQuery);
   });
 
-  return filtered.slice(0, limit);
+  return filtered.slice(offset, offset + limit);
 }
 
 /**
