@@ -43,16 +43,16 @@ import { UniversalResourceType } from '../../src/handlers/tool-configs/universal
 import { initializeAttioClient } from '../../src/api/attio-client.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 
-// Performance test configuration
+// Performance test configuration - use environment variables or defaults
 const PERFORMANCE_BUDGETS = {
-  notFound: 2000, // 2 seconds for 404 responses
-  search: 3000, // 3 seconds for search operations
-  create: 3000, // 3 seconds for create operations
-  update: 3000, // 3 seconds for update operations
-  delete: 2000, // 2 seconds for delete operations
-  getDetails: 2000, // 2 seconds for get details
-  batchSmall: 5000, // 5 seconds for small batch operations
-  batchLarge: 10000, // 10 seconds for large batch operations
+  notFound: parseInt(process.env.PERF_BUDGET_NOT_FOUND || '2000', 10),
+  search: parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10),
+  create: parseInt(process.env.PERF_BUDGET_CREATE || '3000', 10),
+  update: parseInt(process.env.PERF_BUDGET_UPDATE || '3000', 10),
+  delete: parseInt(process.env.PERF_BUDGET_DELETE || '2000', 10),
+  getDetails: parseInt(process.env.PERF_BUDGET_GET_DETAILS || '2000', 10),
+  batchSmall: parseInt(process.env.PERF_BUDGET_BATCH_SMALL || '5000', 10),
+  batchLarge: parseInt(process.env.PERF_BUDGET_BATCH_LARGE || '10000', 10),
 };
 
 // Test timeout with buffer

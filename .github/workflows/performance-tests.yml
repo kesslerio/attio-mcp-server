@@ -36,19 +36,20 @@ jobs:
       
       - name: Run performance tests
         env:
-          ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
+          # Run with mocks for consistent performance measurements
+          # Real API tests would be too variable for regression detection
           NODE_ENV: test
           PERFORMANCE_TRACKING: true
-          PERF_MAX_METRICS: 5000
-          # Performance budgets (milliseconds)
-          PERF_BUDGET_NOT_FOUND: 2000
-          PERF_BUDGET_SEARCH: 3000
-          PERF_BUDGET_CREATE: 3000
-          PERF_BUDGET_UPDATE: 3000
-          PERF_BUDGET_DELETE: 2000
-          PERF_BUDGET_BATCH_SMALL: 5000
-          PERF_BUDGET_BATCH_LARGE: 10000
-          PERF_BUDGET_DEFAULT: 3000
+          SKIP_PERFORMANCE_TESTS: false
+          # Performance budgets (milliseconds) - adjusted for mock responses
+          PERF_BUDGET_NOT_FOUND: 100
+          PERF_BUDGET_SEARCH: 200
+          PERF_BUDGET_CREATE: 200
+          PERF_BUDGET_UPDATE: 200
+          PERF_BUDGET_DELETE: 100
+          PERF_BUDGET_BATCH_SMALL: 500
+          PERF_BUDGET_BATCH_LARGE: 1000
+          PERF_BUDGET_DEFAULT: 200
         run: npm test test/performance/regression.test.ts
         continue-on-error: true
         id: perf-test
