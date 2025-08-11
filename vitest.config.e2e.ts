@@ -163,7 +163,7 @@ export default defineConfig({
 
   // Esbuild configuration for E2E tests
   esbuild: {
-    target: 'node18',
+    target: 'node20',
     format: 'esm',
   },
 });
