@@ -129,7 +129,7 @@
     "dotenv": "^17.2.1",
     "fast-safe-stringify": "^2.1.1",
     "handlebars": "^4.7.8",
-    "ora": "^7.0.1",
+    "ora": "^8.2.0",
     "safe-stable-stringify": "^2.5.0",
     "user": "^0.0.0",
     "yargs": "^18.0.0"
