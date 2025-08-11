@@ -54,7 +54,8 @@ export function createAttioClient(apiKey: string): AxiosInstance {
           requestDataType: typeof error.config?.data,
           responseStatus: error.response?.status,
           responseData: error.response?.data,
-          validationErrors: (error.response?.data as Record<string, unknown>)?.validation_errors,
+          validationErrors: (error.response?.data as Record<string, unknown>)
+            ?.validation_errors,
         };
 
         logError(

@@ -80,7 +80,7 @@ export async function createRecord<T extends AttioRecord>(
         // If it's an array, take the first element (should be the created record)
         result = response.data[0] as T;
       } else {
-        result = response.data as T;
+        result = response.data as unknown as T;
       }
     } else {
       throw new Error('Invalid API response structure: no data found');

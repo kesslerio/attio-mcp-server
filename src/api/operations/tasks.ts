@@ -16,7 +16,7 @@ import { debug, OperationType } from '../../utils/logger.js';
  * Handles field name transformations for backward compatibility
  */
 function transformTaskResponse(task: AttioTask): AttioTask {
-  const transformedTask = task as AttioTask & Record<string, unknown>;
+  const transformedTask = task as Record<string, unknown>;
   
   // Transform content_plaintext -> content for backward compatibility
   if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
@@ -69,7 +69,7 @@ export async function getTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as AttioTask;
+      task = res.data as unknown as AttioTask;
     } else {
       throw new Error('Invalid API response structure: missing task data');
     }
@@ -176,7 +176,7 @@ export async function createTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as AttioTask;
+      task = res.data as unknown as AttioTask;
     } else {
       // Enhanced error with response structure details for debugging
       debug(
@@ -239,7 +239,7 @@ export async function updateTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as AttioTask;
+      task = res.data as unknown as AttioTask;
     } else {
       throw new Error('Invalid API response structure: missing task data');
     }
