@@ -79,15 +79,19 @@ export const searchRecordsConfig: UniversalToolConfig = {
     }
     
     return `Found ${results.length} ${plural}:\n${results
-      .map((record: any, index: number) => {
-        const name = record.values?.name?.[0]?.value || 
-                    record.values?.name?.[0]?.full_name ||
-                    record.values?.full_name?.[0]?.value ||
-                    record.values?.title?.[0]?.value || 
+      .map((record: Record<string, unknown>, index: number) => {
+        const values = record.values as Record<string, unknown>;
+        const recordId = record.id as Record<string, unknown>;
+        const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                    (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
+                    (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value || 
                     'Unnamed';
-        const id = record.id?.record_id || 'unknown';
-        const website = record.values?.website?.[0]?.value;
-        const email = record.values?.email?.[0]?.value;
+        const id = recordId?.record_id || 'unknown';
+        const website = (values?.website as Record<string, unknown>[])?.[0]?.value;
+        const email = record.values && typeof record.values === 'object' ? 
+                     ((record.values as Record<string, unknown>)?.email as Record<string, unknown>[])?.[0]?.value : 
+                     undefined;
         
         let details = '';
         if (website) details += ` (${website})`;
@@ -140,8 +144,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         
         // Also show associated company if present
         if (record.values.associated_company && Array.isArray(record.values.associated_company)) {
-          const companies = record.values.associated_company
-            .map((c: any) => c.target_record_name || c.name || c.value)
+          const companies = (record.values.associated_company as Record<string, unknown>[])
+            .map((c: Record<string, unknown>) => c.target_record_name || c.name || c.value)
             .filter(Boolean);
           if (companies.length > 0) {
             details += `Company: ${companies.join(', ')}\n`;
@@ -161,8 +165,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       if (resourceType === UniversalResourceType.PEOPLE) {
         // Show email addresses
         if (record.values.email_addresses && Array.isArray(record.values.email_addresses)) {
-          const emails = record.values.email_addresses
-            .map((e: any) => e.email_address || e.value)
+          const emails = (record.values.email_addresses as Record<string, unknown>[])
+            .map((e: Record<string, unknown>) => e.email_address || e.value)
             .filter(Boolean);
           if (emails.length > 0) {
             details += `Email: ${emails.join(', ')}\n`;
@@ -171,8 +175,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         
         // Show phone numbers
         if (record.values.phone_numbers && Array.isArray(record.values.phone_numbers)) {
-          const phones = record.values.phone_numbers
-            .map((p: any) => p.phone_number || p.value)
+          const phones = (record.values.phone_numbers as Record<string, unknown>[])
+            .map((p: Record<string, unknown>) => p.phone_number || p.value)
             .filter(Boolean);
           if (phones.length > 0) {
             details += `Phone: ${phones.join(', ')}\n`;
@@ -334,7 +338,7 @@ export const getAttributesConfig: UniversalToolConfig = {
     
     if (Array.isArray(attributes)) {
       return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
-        .map((attr: any, index: number) => {
+        .map((attr: Record<string, unknown>, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
@@ -376,7 +380,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
     
     if (Array.isArray(schema)) {
       return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
-        .map((attr: any, index: number) => {
+        .map((attr: Record<string, unknown>, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           const required = attr.required ? ' (required)' : '';

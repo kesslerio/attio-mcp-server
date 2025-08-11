@@ -80,12 +80,12 @@ function delay(ms: number): Promise<void> {
  * Processes items in parallel with controlled concurrency and error isolation
  * Each item's success/failure is tracked independently for batch operations
  */
-async function processInParallelWithErrorIsolation<T>(
+async function processInParallelWithErrorIsolation<T, R = unknown>(
   items: T[],
-  processor: (item: T, index: number) => Promise<any>,
+  processor: (item: T, index: number) => Promise<R>,
   maxConcurrency: number = MAX_CONCURRENT_REQUESTS
-): Promise<Array<{ success: boolean; result?: any; error?: string; data?: T }>> {
-  const results: Array<{ success: boolean; result?: any; error?: string; data?: T }> = [];
+): Promise<Array<{ success: boolean; result?: R; error?: string; data?: T }>> {
+  const results: Array<{ success: boolean; result?: R; error?: string; data?: T }> = [];
   
   // Process items in chunks to control concurrency
   for (let i = 0; i < items.length; i += maxConcurrency) {
@@ -179,19 +179,21 @@ export const advancedSearchConfig: UniversalToolConfig = {
     }
     
     return `Advanced search found ${results.length} ${plural}:\n${results
-      .map((record: any, index: number) => {
-        const name = record.values?.name?.[0]?.value || 
-                    record.values?.name?.[0]?.full_name ||
-                    record.values?.full_name?.[0]?.value ||
-                    record.values?.title?.[0]?.value || 
+      .map((record: Record<string, unknown>, index: number) => {
+        const values = record.values as Record<string, unknown>;
+        const recordId = record.id as Record<string, unknown>;
+        const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                    (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
+                    (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value || 
                     'Unnamed';
-        const id = record.id?.record_id || 'unknown';
+        const id = recordId?.record_id || 'unknown';
         
         // Include additional context for advanced search results
-        const website = record.values?.website?.[0]?.value;
-        const email = record.values?.email?.[0]?.value;
-        const industry = record.values?.industry?.[0]?.value;
-        const location = record.values?.location?.[0]?.value;
+        const website = (values?.website as Record<string, unknown>[])?.[0]?.value;
+        const email = (values?.email as Record<string, unknown>[])?.[0]?.value;
+        const industry = (values?.industry as Record<string, unknown>[])?.[0]?.value;
+        const location = (values?.location as Record<string, unknown>[])?.[0]?.value;
         
         let context = '';
         if (industry) context += ` [${industry}]`;
@@ -250,15 +252,17 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
     const relationshipName = relationshipType ? relationshipType.replace(/_/g, ' ') : 'relationship';
     
     return `Found ${results.length} records for ${relationshipName}:\n${results
-      .map((record: any, index: number) => {
-        const name = record.values?.name?.[0]?.value || 
-                    record.values?.name?.[0]?.full_name ||
-                    record.values?.full_name?.[0]?.value ||
-                    record.values?.title?.[0]?.value || 
+      .map((record: Record<string, unknown>, index: number) => {
+        const values = record.values as Record<string, unknown>;
+        const recordId = record.id as Record<string, unknown>;
+        const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                    (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
+                    (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value || 
                     'Unnamed';
-        const id = record.id?.record_id || 'unknown';
-        const email = record.values?.email?.[0]?.value;
-        const role = record.values?.role?.[0]?.value || record.values?.position?.[0]?.value;
+        const id = recordId?.record_id || 'unknown';
+        const email = (values?.email as Record<string, unknown>[])?.[0]?.value;
+        const role = (values?.role as Record<string, unknown>[])?.[0]?.value || (values?.position as Record<string, unknown>[])?.[0]?.value;
         
         let details = '';
         if (role) details += ` (${role})`;
@@ -331,13 +335,15 @@ export const searchByContentConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
     
     return `Found ${results.length} ${resourceTypeName}s with matching ${contentTypeName}:\n${results
-      .map((record: any, index: number) => {
-        const name = record.values?.name?.[0]?.value || 
-                    record.values?.name?.[0]?.full_name ||
-                    record.values?.full_name?.[0]?.value ||
-                    record.values?.title?.[0]?.value || 
+      .map((record: Record<string, unknown>, index: number) => {
+        const values = record.values as Record<string, unknown>;
+        const recordId = record.id as Record<string, unknown>;
+        const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                    (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
+                    (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value || 
                     'Unnamed';
-        const id = record.id?.record_id || 'unknown';
+        const id = recordId?.record_id || 'unknown';
         
         return `${index + 1}. ${name} (ID: ${id})`;
       })
@@ -407,22 +413,24 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
     
     return `Found ${results.length} ${resourceTypeName}s by ${timeframeName}:\n${results
-      .map((record: any, index: number) => {
-        const name = record.values?.name?.[0]?.value || 
-                    record.values?.name?.[0]?.full_name ||
-                    record.values?.full_name?.[0]?.value ||
-                    record.values?.title?.[0]?.value || 
+      .map((record: Record<string, unknown>, index: number) => {
+        const values = record.values as Record<string, unknown>;
+        const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                    (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
+                    (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value || 
                     'Unnamed';
-        const id = record.id?.record_id || 'unknown';
+        const recordId = record.id as Record<string, unknown>;
+        const id = recordId?.record_id || 'unknown';
         
         // Try to show relevant date information
         const created = record.created_at;
         const modified = record.updated_at;
         let dateInfo = '';
         
-        if (timeframeType === TimeframeType.CREATED && created) {
+        if (timeframeType === TimeframeType.CREATED && created && (typeof created === 'string' || typeof created === 'number')) {
           dateInfo = ` (created: ${new Date(created).toLocaleDateString()})`;
-        } else if (timeframeType === TimeframeType.MODIFIED && modified) {
+        } else if (timeframeType === TimeframeType.MODIFIED && modified && (typeof modified === 'string' || typeof modified === 'number')) {
           dateInfo = ` (modified: ${new Date(modified).toLocaleDateString()})`;
         }
         
@@ -464,7 +472,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, any>) => {
+            async (recordData: Record<string, unknown>) => {
               return await handleUniversalCreate({
                 resource_type,
                 record_data: recordData,
@@ -494,14 +502,14 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Use parallel processing with controlled concurrency
           return await processInParallelWithErrorIsolation(
             records,
-            async (recordData: Record<string, any>) => {
+            async (recordData: Record<string, unknown>) => {
               if (!recordData.id) {
                 throw new Error('Record ID is required for update operation');
               }
               
               return await handleUniversalUpdate({
                 resource_type,
-                record_id: recordData.id,
+                record_id: typeof recordData.id === 'string' ? recordData.id : String(recordData.id),
                 record_data: recordData,
                 return_details: true
               });
@@ -608,11 +616,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
       if (operationType === BatchOperationType.SEARCH) {
         // Format as search results
         return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
-          .map((record: any, index: number) => {
-            const name = record.values?.name?.[0]?.value || 
-                        record.values?.title?.[0]?.value || 
+          .map((record: Record<string, unknown>, index: number) => {
+            const values = record.values as Record<string, unknown>;
+            const recordId = record.id as Record<string, unknown>;
+            const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                        (values?.title as Record<string, unknown>[])?.[0]?.value || 
                         'Unnamed';
-            const id = record.id?.record_id || 'unknown';
+            const id = recordId?.record_id || 'unknown';
             return `${index + 1}. ${name} (ID: ${id})`;
           })
           .join('\n')}`;
@@ -622,10 +632,12 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const successful = results.filter(r => r.success);
       if (successful.length > 0) {
         summary += `Successful operations:\n${successful
-          .map((op: any, index: number) => {
-            const name = op.result?.values?.name?.[0]?.value || 
-                        op.result?.values?.title?.[0]?.value ||
-                        op.result?.record_id ||
+          .map((op: Record<string, unknown>, index: number) => {
+            const opResult = op.result as Record<string, unknown>;
+            const values = opResult?.values as Record<string, unknown>;
+            const name = (values?.name as Record<string, unknown>[])?.[0]?.value || 
+                        (values?.title as Record<string, unknown>[])?.[0]?.value ||
+                        opResult?.record_id ||
                         'Unknown';
             return `${index + 1}. ${name}`;
           })
@@ -636,8 +648,9 @@ export const batchOperationsConfig: UniversalToolConfig = {
       const failed = results.filter(r => !r.success);
       if (failed.length > 0) {
         summary += `\n\nFailed operations:\n${failed
-          .map((op: any, index: number) => {
-            const identifier = op.record_id || op.data?.name || 'Unknown';
+          .map((op: Record<string, unknown>, index: number) => {
+            const opData = op.data as Record<string, unknown>;
+            const identifier = op.record_id || opData?.name || 'Unknown';
             return `${index + 1}. ${identifier}: ${op.error}`;
           })
           .join('\n')}`;
