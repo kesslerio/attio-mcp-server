@@ -207,12 +207,14 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
   return {
     id: {
       record_id,
+      task_id: record_id,  // Issue #480: Preserve task_id for E2E test compatibility
       object_id: 'tasks',
       workspace_id
     },
     values: {
       // Map task properties to values object
       content: task.content,
+      title: task.content,  // Issue #480: Provide both content and title for test compatibility
       status: task.status,
       assignee: task.assignee,
       due_date: task.due_date,
