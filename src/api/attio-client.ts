@@ -1,7 +1,7 @@
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import { createAttioError } from '../utils/error-handler.js';
 import { debug, error as logError, OperationType } from '../utils/logger.js';
 
@@ -26,18 +26,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add response interceptor for error handling
   client.interceptors.response.use(
     (response) => {
-      // CRITICAL DEBUG: Log ALL responses in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AXIOS INTERCEPTOR] Response received:', {
-          url: response.config?.url,
-          method: response.config?.method,
-          status: response?.status,
-          hasResponse: !!response,
-          responseType: typeof response,
-          hasData: !!response?.data,
-        });
-      }
-
       // Debug logging for successful responses
       if (response.config?.url?.includes('/tasks')) {
         debug(
@@ -56,7 +44,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       // IMPORTANT: Must return the response object for it to be available to the caller
       return response;
     },
-    (error) => {
+    (error: AxiosError) => {
       if (error.config?.url?.includes('/tasks')) {
         const errorData = {
           url: error.config?.url,
@@ -66,7 +54,8 @@ export function createAttioClient(apiKey: string): AxiosInstance {
           requestDataType: typeof error.config?.data,
           responseStatus: error.response?.status,
           responseData: error.response?.data,
-          validationErrors: error.response?.data?.validation_errors,
+          validationErrors: (error.response?.data as Record<string, unknown>)
+            ?.validation_errors,
         };
 
         logError(
@@ -103,15 +92,6 @@ export function initializeAttioClient(apiKey: string): AxiosInstance {
  * @throws If the API client hasn't been initialized and no API key is available
  */
 export function getAttioClient(): AxiosInstance {
-  // CRITICAL DEBUG: Log client state
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[getAttioClient] Client state:', {
-      hasApiInstance: !!apiInstance,
-      baseURL: apiInstance?.defaults?.baseURL,
-      hasInterceptors: !!apiInstance?.interceptors?.response,
-    });
-  }
-
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
@@ -123,18 +103,7 @@ export function getAttioClient(): AxiosInstance {
         'initialization',
         OperationType.SYSTEM
       );
-      const initializedClient = initializeAttioClient(apiKey);
-
-      // CRITICAL DEBUG: Log client state after initialization
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[getAttioClient] After auto-init:', {
-          hasApiInstance: true,
-          baseURL: initializedClient.defaults?.baseURL || 'none',
-          hasInterceptors: !!initializedClient.interceptors?.response,
-        });
-      }
-
-      return initializedClient;
+      return initializeAttioClient(apiKey);
     }
     throw new Error(
       'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
