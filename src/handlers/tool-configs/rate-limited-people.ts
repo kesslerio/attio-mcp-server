@@ -5,7 +5,7 @@ import {
   paginatedPeopleToolConfigs,
   paginatedPeopleToolDefinitions,
 } from './paginated-people.js';
-import { withRateLimiting } from '../rate-limited-handler.js';
+import { withRateLimiting, ApiResponse } from '../rate-limited-handler.js';
 
 /**
  * Rate-limited versions of paginated people tool configs

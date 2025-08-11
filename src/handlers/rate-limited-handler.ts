@@ -17,12 +17,23 @@ interface RateLimitError {
 /**
  * Generic API response interface
  */
-interface ApiResponse {
+export interface ApiResponse {
   content: {
     type: string;
     text: string;
   }[];
   isError: boolean;
+}
+
+/**
+ * Request object with response methods
+ */
+interface RequestWithResponse {
+  res?: {
+    setHeader: (key: string, value: unknown) => void;
+    status: (code: number) => { json: (data: unknown) => void };
+  };
+  [key: string]: unknown;
 }
 
 /**
@@ -38,7 +49,7 @@ export function withRateLimiting<T extends readonly unknown[], R>(
 ): (...args: T) => Promise<R | ApiResponse> {
   return async (...args: T) => {
     // First argument is typically the request object
-    const req = args[0];
+    const req: RequestWithResponse = args[0] as RequestWithResponse;
 
     // Check rate limit
     const rateLimit = checkFilterRateLimit(req, endpointName);
@@ -102,7 +113,7 @@ export function withSearchRateLimiting<T extends readonly unknown[], R>(
 ): (...args: T) => Promise<R | ApiResponse> {
   return async (...args: T) => {
     // First argument is typically the request object
-    const req = args[0];
+    const req: RequestWithResponse = args[0] as RequestWithResponse;
 
     // Add response object if not present
     if (!req.res) {
@@ -116,19 +127,23 @@ export function withSearchRateLimiting<T extends readonly unknown[], R>(
     const rateLimit = checkFilterRateLimit(req, endpointName);
 
     // Add rate limit headers
-    req.res.setHeader('X-RateLimit-Limit', 60);
-    req.res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
-    req.res.setHeader('X-RateLimit-Reset', rateLimit.resetTime);
+    if (req.res) {
+      req.res.setHeader('X-RateLimit-Limit', 60);
+      req.res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+      req.res.setHeader('X-RateLimit-Reset', rateLimit.resetTime);
+    }
 
     // If rate limit exceeded, return error
     if (!rateLimit.allowed) {
-      req.res.status(429).json({
-        error: 'Rate limit exceeded',
-        message: `Too many requests. Try again in ${Math.ceil(
-          rateLimit.msUntilReset / 1000
-        )} seconds.`,
-        retryAfter: Math.ceil(rateLimit.msUntilReset / 1000),
-      });
+      if (req.res) {
+        req.res.status(429).json({
+          error: 'Rate limit exceeded',
+          message: `Too many requests. Try again in ${Math.ceil(
+            rateLimit.msUntilReset / 1000
+          )} seconds.`,
+          retryAfter: Math.ceil(rateLimit.msUntilReset / 1000),
+        });
+      }
 
       // Format error for API response
       const response: ApiResponse = {

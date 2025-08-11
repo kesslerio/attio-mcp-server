@@ -11,6 +11,10 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
 } from '../../../objects/records/index.js';
+import {
+  BatchConfig,
+  BatchResponse,
+} from '../../../api/operations/index.js';
 import { ToolConfig } from '../../tool-types.js';
 
 // Type definitions for record operations
@@ -27,8 +31,8 @@ interface ListOptions {
   direction?: 'asc' | 'desc';
 }
 
-interface BatchRecord {
-  id?: string;
+interface BatchUpdateRecord {
+  id: string;
   attributes: RecordAttributes;
 }
 
@@ -94,17 +98,18 @@ export interface RecordListToolConfig extends ToolConfig {
 }
 
 export interface RecordBatchCreateToolConfig extends ToolConfig {
-  handler: (
+  handler: <T extends AttioRecord>(
     objectSlug: string,
-    records: BatchRecord[],
-    objectId?: string
-  ) => Promise<BatchOperationResult>;
+    records: RecordAttributes[],
+    objectId?: string,
+    batchConfig?: Partial<BatchConfig>
+  ) => Promise<BatchResponse<T>>;
 }
 
 export interface RecordBatchUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    records: BatchRecord[],
+    records: BatchUpdateRecord[],
     objectId?: string
   ) => Promise<BatchOperationResult>;
 }
