@@ -12,8 +12,9 @@ import {
   getCompanyDetails,
 } from '../objects/companies/index.js';
 import { listPeople, getPersonDetails } from '../objects/people/index.js';
+import { getLists, getListDetails } from '../objects/lists.js';
 import { parseResourceUri, formatResourceUri } from '../utils/uri-parser.js';
-import { ResourceType, AttioRecord } from '../types/attio.js';
+import { ResourceType, AttioRecord, AttioList } from '../types/attio.js';
 
 /**
  * Format a single record for resource response
@@ -31,12 +32,26 @@ function formatRecordAsResource(record: AttioRecord, type: ResourceType) {
 }
 
 /**
+ * Format a list for resource response
+ *
+ * @param list - The list to format
+ * @returns Formatted resource object
+ */
+function formatListAsResource(list: AttioList) {
+  return {
+    uri: formatResourceUri(ResourceType.LISTS, list.id?.list_id || ''),
+    name: list.name || 'Unknown list',
+    mimeType: 'application/json',
+  };
+}
+
+/**
  * Registers resource-related request handlers with the server
  *
  * @param server - The MCP server instance
  */
 export function registerResourceHandlers(server: Server): void {
-  // Handler for listing resources (Companies and People)
+  // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
     try {
       // Determine resource type (default to companies if not specified)
@@ -58,6 +73,22 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/records/query`,
               'POST',
+              (error as any).response?.data || {}
+            );
+          }
+
+        case ResourceType.LISTS:
+          try {
+            const lists = await getLists();
+            return {
+              resources: lists.map((list) => formatListAsResource(list)),
+              description: `Found ${lists.length} lists in your workspace`,
+            };
+          } catch (error: unknown) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error('Unknown error'),
+              `/lists`,
+              'GET',
               (error as any).response?.data || {}
             );
           }
@@ -91,7 +122,7 @@ export function registerResourceHandlers(server: Server): void {
     }
   });
 
-  // Handler for reading resource details (Companies and People)
+  // Handler for reading resource details (Companies, People, and Lists)
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     try {
       const uri = request.params.uri;
@@ -115,6 +146,28 @@ export function registerResourceHandlers(server: Server): void {
             return createErrorResult(
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/${id}`,
+              'GET',
+              (error as any).response?.data || {}
+            );
+          }
+
+        case ResourceType.LISTS:
+          try {
+            const list = await getListDetails(id);
+
+            return {
+              contents: [
+                {
+                  uri,
+                  text: JSON.stringify(list, null, 2),
+                  mimeType: 'application/json',
+                },
+              ],
+            };
+          } catch (error: unknown) {
+            return createErrorResult(
+              error instanceof Error ? error : new Error('Unknown error'),
+              `/lists/${id}`,
               'GET',
               (error as any).response?.data || {}
             );

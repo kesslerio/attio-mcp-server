@@ -15,7 +15,12 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
-import { AttioList, AttioListEntry, ResourceType } from '../types/attio.js';
+import {
+  AttioList,
+  AttioListEntry,
+  ResourceType,
+  AttioRecord,
+} from '../types/attio.js';
 import {
   processListEntries,
   transformFiltersToApiFormat,
@@ -981,4 +986,244 @@ export async function filterListEntriesByParentId(
     limit,
     offset
   );
+}
+
+/**
+ * Creates a new list in Attio
+ *
+ * @param attributes - List attributes including name, parent_object, etc.
+ * @returns The created list
+ */
+export async function createList(
+  attributes: Record<string, unknown>
+): Promise<AttioList> {
+  // Input validation
+  if (!attributes || typeof attributes !== 'object') {
+    throw new Error('Invalid attributes: Must be a non-empty object');
+  }
+
+  if (!attributes.name) {
+    throw new Error('List name is required');
+  }
+
+  if (!attributes.parent_object) {
+    throw new Error(
+      'Parent object type is required (e.g., "companies", "people")'
+    );
+  }
+
+  const api = getAttioClient();
+  const path = '/lists';
+
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[createList] Creating list with attributes:`,
+        JSON.stringify(attributes)
+      );
+    }
+
+    const response = await api.post(path, {
+      data: attributes,
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[createList] Success:`, JSON.stringify(response.data));
+    }
+
+    return response.data.data || response.data;
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[createList] Error:`, error.message || 'Unknown error');
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response.data || {})
+        );
+      }
+    }
+
+    // Add context to error message
+    if (error.response?.status === 400) {
+      throw new Error(
+        `Invalid list attributes: ${error.message || 'Bad request'}`
+      );
+    } else if (error.response?.status === 403) {
+      throw new Error('Insufficient permissions to create list');
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Updates a list in Attio
+ *
+ * @param listId - The ID of the list to update
+ * @param attributes - List attributes to update
+ * @returns The updated list
+ */
+export async function updateList(
+  listId: string,
+  attributes: Record<string, unknown>
+): Promise<AttioList> {
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+
+  if (!attributes || typeof attributes !== 'object') {
+    throw new Error('Invalid attributes: Must be a non-empty object');
+  }
+
+  const api = getAttioClient();
+  const path = `/lists/${listId}`;
+
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `[updateList] Updating list ${listId} with attributes:`,
+        JSON.stringify(attributes)
+      );
+    }
+
+    const response = await api.patch(path, {
+      data: attributes,
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[updateList] Success:`, JSON.stringify(response.data));
+    }
+
+    return response.data.data || response.data;
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[updateList] Error:`, error.message || 'Unknown error');
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response.data || {})
+        );
+      }
+    }
+
+    // Add context to error message
+    if (error.response?.status === 404) {
+      throw new Error(`List ${listId} not found`);
+    } else if (error.response?.status === 400) {
+      throw new Error(
+        `Invalid list attributes: ${error.message || 'Bad request'}`
+      );
+    } else if (error.response?.status === 403) {
+      throw new Error(`Insufficient permissions to update list ${listId}`);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Deletes a list in Attio
+ *
+ * @param listId - The ID of the list to delete
+ * @returns True if successful
+ */
+export async function deleteList(listId: string): Promise<boolean> {
+  // Input validation
+  if (!listId || typeof listId !== 'string') {
+    throw new Error('Invalid list ID: Must be a non-empty string');
+  }
+
+  const api = getAttioClient();
+  const path = `/lists/${listId}`;
+
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[deleteList] Deleting list ${listId}`);
+    }
+
+    await api.delete(path);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[deleteList] Success: List ${listId} deleted`);
+    }
+
+    return true;
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[deleteList] Error:`, error.message || 'Unknown error');
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response.data || {})
+        );
+      }
+    }
+
+    // Add context to error message
+    if (error.response?.status === 404) {
+      throw new Error(`List ${listId} not found`);
+    } else if (error.response?.status === 403) {
+      throw new Error(`Insufficient permissions to delete list ${listId}`);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Searches for lists by query
+ *
+ * @param query - Search query string
+ * @param limit - Maximum number of results (default: 20)
+ * @returns Array of matching lists
+ */
+export async function searchLists(
+  query: string,
+  limit: number = 20
+): Promise<AttioList[]> {
+  // For now, we'll get all lists and filter client-side
+  // since Attio API may not support direct list search
+  const allLists = await getLists(undefined, 100);
+
+  const lowerQuery = query.toLowerCase();
+  const filtered = allLists.filter((list) => {
+    const name = (list.name || '').toLowerCase();
+    const description = (list.description || '').toLowerCase();
+    return name.includes(lowerQuery) || description.includes(lowerQuery);
+  });
+
+  return filtered.slice(0, limit);
+}
+
+/**
+ * Gets the attributes schema for lists
+ *
+ * @returns List attributes schema
+ */
+export async function getListAttributes(): Promise<Record<string, unknown>> {
+  const api = getAttioClient();
+  const path = '/lists/attributes';
+
+  try {
+    const response = await api.get(path);
+    return response.data.data || response.data || [];
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        `[getListAttributes] Error:`,
+        error.message || 'Unknown error'
+      );
+    }
+
+    // Return a default schema if the endpoint doesn't exist
+    return {
+      name: { type: 'string', required: true },
+      parent_object: { type: 'string', required: true },
+      description: { type: 'string', required: false },
+    };
+  }
 }
