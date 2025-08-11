@@ -10,7 +10,7 @@
 // or an alternative interceptor. For now, it's a placeholder to avoid build issues
 // stemming from previous incorrect edits.
 
-export function placeholderInterceptorLogic(error: any): any {
+export function placeholderInterceptorLogic(error: unknown): unknown {
   console.warn(
     '[placeholderInterceptorLogic] This is a placeholder in src/handlers/error-interceptor.ts. Original error passed through:',
     error instanceof Error ? error.message : String(error)

@@ -11,13 +11,54 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
 } from '../../../objects/records/index.js';
+import {
+  BatchConfig,
+  BatchResponse,
+} from '../../../api/operations/index.js';
 import { ToolConfig } from '../../tool-types.js';
+
+// Type definitions for record operations
+interface RecordAttributes {
+  [key: string]: unknown;
+}
+
+interface ListOptions {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+  attributes?: string[];
+  sort?: string;
+  direction?: 'asc' | 'desc';
+}
+
+interface BatchUpdateRecord {
+  id: string;
+  attributes: RecordAttributes;
+}
+
+interface BatchOperationResult {
+  summary: {
+    total: number;
+    succeeded: number;
+    failed: number;
+  };
+  results: BatchResultItem[];
+}
+
+interface BatchResultItem {
+  success: boolean;
+  id?: string;
+  data?: AttioRecord;
+  error?: {
+    message: string;
+  };
+}
 
 // Define new tool type interfaces specific to records
 export interface RecordCreateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    attributes: any,
+    attributes: RecordAttributes,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -35,7 +76,7 @@ export interface RecordUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
     recordId: string,
-    attributes: any,
+    attributes: RecordAttributes,
     objectId?: string
   ) => Promise<AttioRecord>;
 }
@@ -51,25 +92,26 @@ export interface RecordDeleteToolConfig extends ToolConfig {
 export interface RecordListToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    options?: any,
+    options?: ListOptions,
     objectId?: string
   ) => Promise<AttioRecord[]>;
 }
 
 export interface RecordBatchCreateToolConfig extends ToolConfig {
-  handler: (
+  handler: <T extends AttioRecord>(
     objectSlug: string,
-    records: any[],
-    objectId?: string
-  ) => Promise<any>;
+    records: RecordAttributes[],
+    objectId?: string,
+    batchConfig?: Partial<BatchConfig>
+  ) => Promise<BatchResponse<T>>;
 }
 
 export interface RecordBatchUpdateToolConfig extends ToolConfig {
   handler: (
     objectSlug: string,
-    records: any[],
+    records: BatchUpdateRecord[],
     objectId?: string
-  ) => Promise<any>;
+  ) => Promise<BatchOperationResult>;
 }
 
 // Record tool configurations
@@ -112,7 +154,7 @@ export const recordToolConfigs = {
     formatResult: (results: AttioRecord[]) => {
       return `Found ${results.length} records:\n${results
         .map(
-          (record: any) =>
+          (record: AttioRecord) =>
             `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${
               record.id?.record_id || 'unknown'
             })`
@@ -124,12 +166,12 @@ export const recordToolConfigs = {
   batchCreate: {
     name: 'batch-create-records',
     handler: batchCreateObjectRecords,
-    formatResult: (result: any) => {
+    formatResult: (result: BatchOperationResult) => {
       return (
         `Batch create operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r: any, i: number) =>
+          .map((r: BatchResultItem, i: number) =>
             r.success
               ? `✅ Record ${i + 1}: Created successfully (ID: ${
                   r.data?.id?.record_id || 'unknown'
@@ -146,12 +188,12 @@ export const recordToolConfigs = {
   batchUpdate: {
     name: 'batch-update-records',
     handler: batchUpdateObjectRecords,
-    formatResult: (result: any) => {
+    formatResult: (result: BatchOperationResult) => {
       return (
         `Batch update operation completed:\n` +
         `Total: ${result.summary.total}, Succeeded: ${result.summary.succeeded}, Failed: ${result.summary.failed}\n` +
         `${result.results
-          .map((r: any) =>
+          .map((r: BatchResultItem) =>
             r.success
               ? `✅ Record ${r.id}: Updated successfully`
               : `❌ Record ${r.id}: Failed - ${
