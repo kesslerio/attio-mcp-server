@@ -137,6 +137,7 @@
   "author": "@kesslerio",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
     "@types/express": "^5.0.2",
     "@types/jest": "^29.5.14",
     "@types/string-similarity": "^4.0.2",
@@ -160,26 +161,24 @@
   },
   "wireit": {
     "lint:check": {
-      "command": "ESLINT_USE_FLAT_CONFIG=false npx eslint . --ext .ts --max-warnings 879",
+      "command": "npx eslint --max-warnings 881",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
         "*.ts",
-        ".eslintrc.cjs",
-        ".eslintignore",
+        "eslint.config.js",
         "tsconfig.json",
         ".prettierrc"
       ],
       "output": []
     },
     "lint:fix": {
-      "command": "ESLINT_USE_FLAT_CONFIG=false npx eslint . --ext .ts --fix",
+      "command": "npx eslint --fix",
       "files": [
         "src/**/*.ts",
         "test/**/*.ts",
         "*.ts",
-        ".eslintrc.cjs",
-        ".eslintignore",
+        "eslint.config.js",
         "tsconfig.json",
         ".prettierrc"
       ],
