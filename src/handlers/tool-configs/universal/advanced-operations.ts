@@ -428,9 +428,9 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         const modified = record.updated_at;
         let dateInfo = '';
         
-        if (timeframeType === TimeframeType.CREATED && created) {
+        if (timeframeType === TimeframeType.CREATED && created && (typeof created === 'string' || typeof created === 'number')) {
           dateInfo = ` (created: ${new Date(created).toLocaleDateString()})`;
-        } else if (timeframeType === TimeframeType.MODIFIED && modified) {
+        } else if (timeframeType === TimeframeType.MODIFIED && modified && (typeof modified === 'string' || typeof modified === 'number')) {
           dateInfo = ` (modified: ${new Date(modified).toLocaleDateString()})`;
         }
         
@@ -509,7 +509,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
               
               return await handleUniversalUpdate({
                 resource_type,
-                record_id: recordData.id,
+                record_id: typeof recordData.id === 'string' ? recordData.id : String(recordData.id),
                 record_data: recordData,
                 return_details: true
               });

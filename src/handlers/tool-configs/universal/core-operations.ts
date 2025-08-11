@@ -89,7 +89,9 @@ export const searchRecordsConfig: UniversalToolConfig = {
                     'Unnamed';
         const id = recordId?.record_id || 'unknown';
         const website = (values?.website as Record<string, unknown>[])?.[0]?.value;
-        const email = record.values?.email?.[0]?.value;
+        const email = record.values && typeof record.values === 'object' ? 
+                     ((record.values as Record<string, unknown>)?.email as Record<string, unknown>[])?.[0]?.value : 
+                     undefined;
         
         let details = '';
         if (website) details += ` (${website})`;
