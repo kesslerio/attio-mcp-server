@@ -142,8 +142,8 @@
     "@types/string-similarity": "^4.0.2",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@vitest/coverage-v8": "^3.1.4",
-    "@vitest/ui": "^3.1.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "axios": "^1.9.0",
     "dotenv-cli": "^10.0.0",
     "eslint": "^8.0.0",
@@ -155,7 +155,7 @@
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.4",
+    "vitest": "^3.2.4",
     "wireit": "^0.14.12"
   },
   "wireit": {
