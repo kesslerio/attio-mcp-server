@@ -32,10 +32,10 @@ interface ApiResponse {
  * @param endpointName - Name of the endpoint for rate limiting tracking
  * @returns Rate-limited handler function
  */
-export function withRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+export function withRateLimiting<T extends readonly unknown[], R>(
+  handler: (...args: T) => Promise<R>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<R | ApiResponse> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];
@@ -96,10 +96,10 @@ export function withRateLimiting<T extends any[]>(
  * @param endpointName - Name of the endpoint for rate limiting tracking
  * @returns Rate-limited handler function with headers
  */
-export function withSearchRateLimiting<T extends any[]>(
-  handler: (...args: T) => Promise<any>,
+export function withSearchRateLimiting<T extends readonly unknown[], R>(
+  handler: (...args: T) => Promise<R>,
   endpointName: string
-): (...args: T) => Promise<any> {
+): (...args: T) => Promise<R | ApiResponse> {
   return async (...args: T) => {
     // First argument is typically the request object
     const req = args[0];
