@@ -132,7 +132,7 @@
     "ora": "^7.0.1",
     "safe-stable-stringify": "^2.5.0",
     "user": "^0.0.0",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   },
   "author": "@kesslerio",
   "license": "Apache-2.0",
