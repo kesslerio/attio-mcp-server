@@ -19,14 +19,59 @@ This document outlines a comprehensive testing strategy for validating all tools
 - 3 Test Categories per tool (Happy Path, Edge Cases, Error Conditions)
 - 2 Testing Phases (Self-testing, Sub-agent testing)
 
-## Testing Methodology
+## Progressive Test Execution Framework
+
+### Core Principles
+- **Quality Gates**: Each priority level must meet minimum thresholds before proceeding
+- **Time-boxed Execution**: Maximum 2 hours per priority level
+- **Clear Stop/Go Decisions**: Explicit criteria for continuing to next level
+- **Data-driven Testing**: Pre-created test data with documented IDs
+
+### Execution Dashboard Template
+```markdown
+## Test Execution Dashboard - [Date]
+Priority | Total Tests | Completed | Passed | Failed | Skipped | Time Spent | Status
+---------|-------------|-----------|--------|--------|---------|------------|--------
+P0       | 5           | 0         | 0      | 0      | 0       | 0:00       | PENDING
+P1       | 4           | 0         | 0      | 0      | 0       | 0:00       | BLOCKED
+P2       | 4           | 0         | 0      | 0      | 0       | 0:00       | BLOCKED
+```
+
+### Priority Level Definitions
+
+#### Priority 0 (P0) - CORE FOUNDATION ⚡ MANDATORY
+**Duration**: Maximum 2 hours  
+**Success Criteria**: 100% of P0 tests must PASS (5/5)  
+**Quality Gate**: Zero tolerance for critical failures  
+**Tools**: search-records, get-record-details, create-record, update-record, delete-record  
+**Decision Point**: If P0 fails, STOP - system not ready for testing
+
+#### Priority 1 (P1) - ESSENTIAL EXTENSIONS 🔧 REQUIRED  
+**Duration**: Maximum 2 hours  
+**Success Criteria**: Minimum 80% pass rate (3.2/4 ≥ 3/4)  
+**Tools**: get-attributes, discover-attributes, get-detailed-info, advanced-search  
+**Decision Point**: If <80% pass rate, evaluate if production ready
+
+#### Priority 2 (P2) - ADVANCED FEATURES 🚀 OPTIONAL
+**Duration**: Maximum 2 hours  
+**Success Criteria**: Minimum 50% pass rate (2/4)  
+**Tools**: search-by-relationship, search-by-content, search-by-timeframe, batch-operations  
+**Decision Point**: Nice-to-have features, don't block release
+
+### Testing Methodology
 
 ### Phase 1: Self-Testing (Functional Validation)
 
 **Executor**: Agent familiar with codebase and Attio API
 **Focus**: Comprehensive functionality validation
-**Duration**: Estimated 4-6 hours
+**Duration**: 6 hours maximum (2 hours per priority)
 **Objective**: Validate that all tools work as designed and handle expected scenarios
+
+**Execution Order**:
+1. **Setup Phase** (30 minutes): Prepare test data, verify environment
+2. **P0 Core Testing** (2 hours): Must achieve 100% pass rate
+3. **P1 Essential Testing** (2 hours): Target 80% pass rate
+4. **P2 Advanced Testing** (1.5 hours): Target 50% pass rate
 
 ### Phase 2: Sub-Agent Testing (Usability Validation)
 
@@ -35,25 +80,220 @@ This document outlines a comprehensive testing strategy for validating all tools
 **Duration**: Estimated 2-3 hours
 **Objective**: Identify documentation gaps and parameter confusion that could affect real users
 
-## Tool Coverage Matrix
+## Test Data Management
 
-| Tool Name                      | Resource Types                                        | Test Categories                | Priority |
-| ------------------------------ | ----------------------------------------------------- | ------------------------------ | -------- |
-| search-records                 | All (companies, people, lists, records, tasks, deals) | Happy Path, Edge Cases, Errors | P0       |
-| get-record-details             | All                                                   | Happy Path, Edge Cases, Errors | P0       |
-| create-record                  | All                                                   | Happy Path, Edge Cases, Errors | P0       |
-| update-record                  | All                                                   | Happy Path, Edge Cases, Errors | P0       |
-| delete-record                  | All                                                   | Happy Path, Edge Cases, Errors | P0       |
-| get-attributes                 | All                                                   | Happy Path, Edge Cases, Errors | P1       |
-| discover-attributes            | All                                                   | Happy Path, Edge Cases, Errors | P1       |
-| get-detailed-info              | All                                                   | Happy Path, Edge Cases, Errors | P1       |
-| advanced-search                | All                                                   | Happy Path, Edge Cases, Errors | P1       |
-| search-by-relationship         | All                                                   | Happy Path, Edge Cases, Errors | P2       |
-| search-by-content              | All                                                   | Happy Path, Edge Cases, Errors | P2       |
-| search-by-timeframe            | All                                                   | Happy Path, Edge Cases, Errors | P2       |
-| batch-operations               | All                                                   | Happy Path, Edge Cases, Errors | P2       |
-| **NEW: Lists Operations**      | Lists                                                 | Happy Path, Edge Cases, Errors | P0       |
-| **NEW: Notes CRUD Operations** | All                                                   | Happy Path, Edge Cases, Errors | P0       |
+### Pre-Test Data Setup Requirements
+
+Before executing any tests, ensure the following test data exists:
+
+#### Core Test Records (Create these first)
+```bash
+# Test Company Records (minimum 3 required)
+QA_COMPANY_1_ID="[TO_BE_CREATED]"  # Name: "QA Test Company Alpha"
+QA_COMPANY_2_ID="[TO_BE_CREATED]"  # Name: "QA Test Company Beta"  
+QA_COMPANY_3_ID="[TO_BE_CREATED]"  # Name: "QA Test Company Gamma"
+
+# Test Person Records (minimum 3 required)
+QA_PERSON_1_ID="[TO_BE_CREATED]"   # Name: "Alice QA Tester"
+QA_PERSON_2_ID="[TO_BE_CREATED]"   # Name: "Bob QA Validator"
+QA_PERSON_3_ID="[TO_BE_CREATED]"   # Name: "Carol QA Analyst"
+
+# Test Task Records (minimum 2 required)
+QA_TASK_1_ID="[TO_BE_CREATED]"     # Title: "QA Test Task Alpha"
+QA_TASK_2_ID="[TO_BE_CREATED]"     # Title: "QA Test Task Beta"
+
+# Test Deal Records (minimum 2 required)
+QA_DEAL_1_ID="[TO_BE_CREATED]"     # Name: "QA Test Deal Alpha"
+QA_DEAL_2_ID="[TO_BE_CREATED]"     # Name: "QA Test Deal Beta"
+```
+
+#### Test Data Creation Commands
+```bash
+# 1. Create Test Companies
+mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Alpha", "domain": "qa-alpha.test", "industry": "Technology"}'
+mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Beta", "domain": "qa-beta.test", "industry": "Finance"}'
+mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Gamma", "domain": "qa-gamma.test", "industry": "Healthcare"}'
+
+# 2. Create Test People  
+mcp__attio__create-record resource_type="people" record_data='{"name": "Alice QA Tester", "email": "alice@qa-testing.com", "title": "QA Manager"}'
+mcp__attio__create-record resource_type="people" record_data='{"name": "Bob QA Validator", "email": "bob@qa-validation.com", "title": "QA Engineer"}'
+mcp__attio__create-record resource_type="people" record_data='{"name": "Carol QA Analyst", "email": "carol@qa-analysis.com", "title": "QA Analyst"}'
+
+# 3. Create Test Tasks
+mcp__attio__create-record resource_type="tasks" record_data='{"title": "QA Test Task Alpha", "description": "Primary QA validation task", "status": "open", "priority": "high"}'
+mcp__attio__create-record resource_type="tasks" record_data='{"title": "QA Test Task Beta", "description": "Secondary QA verification task", "status": "in_progress", "priority": "medium"}'
+
+# 4. Create Test Deals
+mcp__attio__create-record resource_type="deals" record_data='{"name": "QA Test Deal Alpha", "value": 50000, "stage": "qualification"}'
+mcp__attio__create-record resource_type="deals" record_data='{"name": "QA Test Deal Beta", "value": 75000, "stage": "proposal"}'
+```
+
+#### Test Data Manifest Template
+After creating test data, fill in this manifest:
+
+```markdown
+# Test Data Manifest - [Date Created]
+
+## Company Records
+- QA Test Company Alpha: ID = [FILL_IN_ID]
+- QA Test Company Beta: ID = [FILL_IN_ID]  
+- QA Test Company Gamma: ID = [FILL_IN_ID]
+
+## People Records
+- Alice QA Tester: ID = [FILL_IN_ID]
+- Bob QA Validator: ID = [FILL_IN_ID]
+- Carol QA Analyst: ID = [FILL_IN_ID]
+
+## Task Records
+- QA Test Task Alpha: ID = [FILL_IN_ID]
+- QA Test Task Beta: ID = [FILL_IN_ID]
+
+## Deal Records  
+- QA Test Deal Alpha: ID = [FILL_IN_ID]
+- QA Test Deal Beta: ID = [FILL_IN_ID]
+
+## Test Data Status
+- Created Date: [YYYY-MM-DD HH:MM]
+- Creator: [Name/Agent]
+- Environment: [Test Environment]
+- Status: [ACTIVE/ARCHIVED/CLEANUP_PENDING]
+```
+
+### Test Data Cleanup Protocol
+
+**CRITICAL**: Always clean up test data after completion:
+
+```bash
+# After testing is complete, remove all test records
+mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_1_ID"
+mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_2_ID" 
+mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_3_ID"
+
+mcp__attio__delete-record resource_type="people" record_id="$QA_PERSON_1_ID"
+mcp__attio__delete-record resource_type="people" record_id="$QA_PERSON_2_ID"
+mcp__attio__delete-record resource_type="people" record_id="$QA_PERSON_3_ID"
+
+mcp__attio__delete-record resource_type="tasks" record_id="$QA_TASK_1_ID"
+mcp__attio__delete-record resource_type="tasks" record_id="$QA_TASK_2_ID"
+
+mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_1_ID"
+mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_2_ID"
+```
+
+## Test Execution Tracking Matrix
+
+### Priority 0 (P0) - Core Foundation Tests ⚡ [Must Complete: 5/5]
+
+| Test ID | Tool Name | Test Cases | Dependencies | Time Est. | Status | Notes |
+|---------|-----------|------------|--------------|-----------|--------|-------|
+| TC-001 | search-records | 6 test cases (HP: 3, EC: 2, ER: 3) | Test data setup | 20 min | ⏳ PENDING | Core search functionality |
+| TC-002 | get-record-details | 6 test cases (HP: 3, EC: 2, ER: 2) | TC-001 results | 15 min | ⏳ PENDING | Record retrieval |
+| TC-003 | create-record | 9 test cases (HP: 3, EC: 3, ER: 3) | Test data setup | 25 min | ⏳ PENDING | Record creation |
+| TC-004 | update-record | 9 test cases (HP: 3, EC: 3, ER: 3) | TC-003 results | 20 min | ⏳ PENDING | Record modification |
+| TC-005 | delete-record | 6 test cases (HP: 3, EC: 2, ER: 3) | TC-003 results | 15 min | ⏳ PENDING | Record removal |
+
+**P0 Quality Gate**: ALL 5 tools must PASS happy path tests. Zero critical failures allowed.
+
+### Priority 1 (P1) - Essential Extensions Tests 🔧 [Target: 3/4]
+
+| Test ID | Tool Name | Test Cases | Dependencies | Time Est. | Status | Notes |
+|---------|-----------|------------|--------------|-----------|--------|-------|
+| TC-006 | get-attributes | 6 test cases (HP: 3, EC: 2, ER: 2) | P0 completion | 15 min | 🚫 BLOCKED | Schema discovery |
+| TC-007 | discover-attributes | 3 test cases (HP: 3, EC: 0, ER: 0) | P0 completion | 10 min | 🚫 BLOCKED | Attribute exploration |
+| TC-008 | get-detailed-info | 6 test cases (HP: 3, EC: 2, ER: 2) | P0 completion | 20 min | 🚫 BLOCKED | Specific info types |
+| TC-009 | advanced-search | 6 test cases (HP: 3, EC: 2, ER: 2) | P0 completion | 25 min | 🚫 BLOCKED | Complex filtering |
+
+**P1 Quality Gate**: Minimum 3/4 tools must PASS (80% success rate). Consider production readiness.
+
+### Priority 2 (P2) - Advanced Features Tests 🚀 [Target: 2/4]
+
+| Test ID | Tool Name | Test Cases | Dependencies | Time Est. | Status | Notes |
+|---------|-----------|------------|--------------|-----------|--------|-------|
+| TC-010 | search-by-relationship | 6 test cases (HP: 3, EC: 2, ER: 2) | P0+P1 completion | 20 min | 🚫 BLOCKED | Relationship queries |
+| TC-011 | search-by-content | 6 test cases (HP: 3, EC: 2, ER: 2) | P0+P1 completion | 20 min | 🚫 BLOCKED | Content-based search |
+| TC-012 | search-by-timeframe | 6 test cases (HP: 3, EC: 2, ER: 2) | P0+P1 completion | 20 min | 🚫 BLOCKED | Time-based filtering |
+| TC-013 | batch-operations | 9 test cases (HP: 3, EC: 3, ER: 3) | P0+P1 completion | 30 min | 🚫 BLOCKED | Bulk operations |
+
+**P2 Quality Gate**: Minimum 2/4 tools must PASS (50% success rate). Nice-to-have features.
+
+### Status Legend
+- ✅ **PASSED**: All test cases completed successfully
+- ⚠️ **PASSED WITH ISSUES**: Core functionality works but issues noted
+- ❌ **FAILED**: Critical functionality broken
+- ⏳ **PENDING**: Ready to execute
+- 🚫 **BLOCKED**: Waiting for dependencies
+- ⏸️ **SKIPPED**: Intentionally skipped due to time/priority
+
+### Special Operations Tests
+
+| Test ID | Tool Name | Resource Types | Priority | Dependencies | Status |
+|---------|-----------|----------------|----------|--------------|--------|
+| TC-014 | Lists Operations | Lists only | P0 | Test data setup | ⏳ PENDING |
+| TC-015 | Notes CRUD Operations | All resource types | P0 | P0 completion | 🚫 BLOCKED |
+| TC-016 | Advanced Universal Operations | All resource types | P1 | P0 completion | 🚫 BLOCKED |
+| TC-017 | Tasks Resource Operations | Tasks only | P1 | P0 completion | 🚫 BLOCKED |
+| TC-018 | Data Validation Checks | All resource types | P2 | P0+P1 completion | 🚫 BLOCKED |
+
+## Quick Test Commands Reference
+
+Use these copy-paste ready commands with your test data IDs:
+
+### P0 Core Tests (Use with test data IDs from manifest)
+
+```bash
+# TC-001: Search Records
+mcp__attio__search-records resource_type="companies" query="QA Test" limit=10
+mcp__attio__search-records resource_type="people" query="QA" limit=5 offset=0
+mcp__attio__search-records resource_type="tasks" filters='{"status":"open"}' limit=20
+
+# TC-002: Get Record Details  
+mcp__attio__get-record-details resource_type="companies" record_id="$QA_COMPANY_1_ID"
+mcp__attio__get-record-details resource_type="people" record_id="$QA_PERSON_1_ID" fields='["name","email","title"]'
+
+# TC-003: Create Records (Creates additional test data)
+mcp__attio__create-record resource_type="companies" record_data='{"name":"QA Dynamic Company","domain":"qa-dynamic.test"}' return_details=true
+
+# TC-004: Update Records (Use created record IDs)
+mcp__attio__update-record resource_type="companies" record_id="$QA_COMPANY_1_ID" record_data='{"name":"QA Test Company Alpha Updated"}' return_details=true
+
+# TC-005: Delete Records (Use dynamically created IDs from TC-003)
+mcp__attio__delete-record resource_type="companies" record_id="$DYNAMIC_COMPANY_ID"
+```
+
+### P1 Essential Tests
+
+```bash
+# TC-006: Get Attributes
+mcp__attio__get-attributes resource_type="companies"
+mcp__attio__get-attributes resource_type="people" categories='["contact","business"]'
+
+# TC-007: Discover Attributes  
+mcp__attio__discover-attributes resource_type="companies"
+mcp__attio__discover-attributes resource_type="deals"
+
+# TC-008: Get Detailed Info
+mcp__attio__get-detailed-info resource_type="companies" record_id="$QA_COMPANY_1_ID" info_type="business"
+mcp__attio__get-detailed-info resource_type="people" record_id="$QA_PERSON_1_ID" info_type="contact"
+
+# TC-009: Advanced Search
+mcp__attio__advanced-search resource_type="companies" filters='{"industry":"Technology","employee_count":{"$gte":100}}' sort_by="created_at" sort_order="desc"
+```
+
+### P2 Advanced Tests
+
+```bash
+# TC-010: Search by Relationship
+mcp__attio__search-by-relationship relationship_type="company_to_people" source_id="$QA_COMPANY_1_ID" limit=20
+
+# TC-011: Search by Content
+mcp__attio__search-by-content resource_type="companies" content_type="notes" search_query="quarterly" limit=10
+
+# TC-012: Search by Timeframe  
+mcp__attio__search-by-timeframe resource_type="companies" timeframe_type="created" start_date="2024-01-01" end_date="2024-12-31"
+
+# TC-013: Batch Operations
+mcp__attio__batch-operations resource_type="companies" operation_type="get" record_ids='["$QA_COMPANY_1_ID","$QA_COMPANY_2_ID"]'
+```
 
 ## Phase 1: Self-Testing Detailed Test Cases
 
@@ -1733,41 +1973,267 @@ Phase [1|2] - [Self-testing|Sub-agent testing]
 - `/tmp/bug-attio-YYYYMMDD-001-[tool-name]-[brief-description].md`
 - Example: `/tmp/bug-attio-20240115-001-search-records-invalid-resource-type.md`
 
-## Success Criteria
+## Progressive Success Criteria
 
-### Phase 1 Success Criteria
-- [ ] All P0 tools (search, get, create, update, delete) pass happy path tests
-- [ ] All P0 tools handle common edge cases appropriately
-- [ ] All P0 tools return proper errors for invalid inputs
-- [ ] All resource types (companies, people, lists, records, tasks, deals) work with core tools
-- [ ] Response times are reasonable (< 30 seconds for complex operations)
-- [ ] No tool causes system crashes or hangs
-- [ ] Error messages are present (not necessarily user-friendly yet)
+### Priority 0 (P0) - Core Foundation ⚡ MANDATORY GATE
+**Success Requirements** (ALL must be met):
+- [ ] **100% Tool Pass Rate**: All 5 P0 tools (TC-001 through TC-005) must PASS
+- [ ] **Zero Critical Failures**: No tool crashes, hangs, or corrupts data
+- [ ] **Happy Path Validation**: All happy path test cases must succeed
+- [ ] **Error Handling**: Proper error messages for invalid inputs
+- [ ] **Performance**: Response times < 30 seconds for all operations
+- [ ] **Data Integrity**: No data loss or corruption in CRUD operations
 
-### Phase 2 Success Criteria
-- [ ] Sub-agent can successfully use tools with only schema documentation
-- [ ] Parameter requirements are clear without referring to code
-- [ ] Error messages provide actionable guidance
-- [ ] Success confirmations are obvious
-- [ ] No major usability blockers for new users
-- [ ] Documentation gaps are identified and logged
+**Quality Gate Decision**: 
+- ✅ **PROCEED**: If all P0 criteria met → Continue to P1
+- ❌ **STOP**: If any P0 criteria fail → System not ready, fix issues first
 
-### Overall Success Criteria
-- [ ] Phase 1 completion with <5 critical bugs
-- [ ] Phase 2 completion with identified usability improvements
-- [ ] Complete bug report documentation in /tmp/
-- [ ] Test execution summary document created
-- [ ] Regression test suite recommendations provided
+### Priority 1 (P1) - Essential Extensions 🔧 PRODUCTION GATE  
+**Success Requirements** (80% threshold):
+- [ ] **80% Tool Pass Rate**: Minimum 3/4 P1 tools must PASS
+- [ ] **Schema Discovery**: Attribute and schema tools working
+- [ ] **Complex Operations**: Advanced search capabilities functional
+- [ ] **Data Validation**: Field validation and type checking works
+- [ ] **Error Clarity**: Clear error messages for validation failures
 
-## Test Execution Workflow
+**Quality Gate Decision**:
+- ✅ **PRODUCTION READY**: If ≥80% pass rate → System ready for production
+- ⚠️ **CONDITIONAL**: If 60-79% pass rate → Limited production with known issues
+- ❌ **NOT READY**: If <60% pass rate → Delay production deployment
 
-### Phase 1 Execution Steps
-1. **Setup**: Ensure Attio MCP Server is running and accessible
-2. **Environment**: Configure test environment with API access
-3. **Execution**: Run test cases systematically (TC-001 through TC-018)
-4. **Documentation**: Record results for each test case
-5. **Bug Logging**: Create bug reports for any failures
-6. **Summary**: Compile Phase 1 results and readiness for Phase 2
+### Priority 2 (P2) - Advanced Features 🚀 ENHANCEMENT GATE
+**Success Requirements** (50% threshold):
+- [ ] **50% Tool Pass Rate**: Minimum 2/4 P2 tools should PASS
+- [ ] **Relationship Queries**: Basic relationship functionality
+- [ ] **Content Search**: Text-based search capabilities  
+- [ ] **Batch Processing**: Bulk operation capabilities
+- [ ] **Time-based Filtering**: Date range queries working
+
+**Quality Gate Decision**:
+- ✅ **ENHANCED**: If ≥50% pass rate → Full feature set available
+- ⚠️ **BASIC**: If 25-49% pass rate → Core features only
+- ❌ **MINIMAL**: If <25% pass rate → Advanced features unavailable
+
+### Phase 2 Success Criteria (Usability Validation)
+- [ ] **Parameter Clarity**: Tool parameters are self-explanatory
+- [ ] **Documentation Adequacy**: Schema docs sufficient for usage
+- [ ] **Error Message Quality**: Errors provide actionable guidance
+- [ ] **Success Indicators**: Clear confirmation when operations succeed
+- [ ] **Resource Type Clarity**: Resource type selection is obvious
+- [ ] **No Major Blockers**: New users can complete basic operations
+
+### Overall Execution Success Criteria
+
+#### Time Management
+- [ ] **P0 Completion**: Within 2-hour time limit
+- [ ] **P1 Completion**: Within 2-hour time limit  
+- [ ] **P2 Completion**: Within 2-hour time limit
+- [ ] **Total Execution**: Within 6-hour maximum duration
+
+#### Documentation & Tracking
+- [ ] **Test Data Management**: Clean setup and teardown completed
+- [ ] **Execution Tracking**: All test statuses properly recorded
+- [ ] **Bug Documentation**: Issues documented with severity levels
+- [ ] **Results Summary**: Comprehensive findings report created
+- [ ] **Recommendations**: Clear next steps and priorities identified
+
+#### Production Readiness Assessment
+- [ ] **Critical Path Validated**: Core CRUD operations fully functional
+- [ ] **Error Boundaries**: Proper error handling across all scenarios
+- [ ] **Performance Benchmarks**: Response times within acceptable limits
+- [ ] **Data Safety**: No risk of data loss or corruption
+- [ ] **User Experience**: Reasonable usability for intended users
+
+### Final Go/No-Go Decision Matrix
+
+| P0 Status | P1 Status | P2 Status | Production Recommendation |
+|-----------|-----------|-----------|---------------------------|
+| ✅ PASS | ✅ ≥80% | ✅ ≥50% | 🚀 **FULL RELEASE** - All features ready |
+| ✅ PASS | ✅ ≥80% | ⚠️ 25-49% | ✅ **PRODUCTION READY** - Advanced features limited |
+| ✅ PASS | ✅ ≥80% | ❌ <25% | ✅ **CORE RELEASE** - Basic functionality only |
+| ✅ PASS | ⚠️ 60-79% | Any | ⚠️ **CONDITIONAL** - Production with documented limitations |
+| ✅ PASS | ❌ <60% | Any | ❌ **DELAY RELEASE** - Essential features not ready |
+| ❌ FAIL | Any | Any | 🛑 **BLOCK RELEASE** - Core functionality broken |
+
+## Automated Test Execution Guidelines
+
+### Pre-Test Environment Verification
+Run these commands to verify your testing environment is ready:
+
+```bash
+# 1. Verify MCP server is accessible
+echo "Testing basic server connection..."
+
+# 2. Test basic connectivity with a simple search
+mcp__attio__search-records resource_type="companies" query="" limit=1
+
+# 3. Verify you can create test data (test with a temp record)
+mcp__attio__create-record resource_type="companies" record_data='{"name":"Temp Test - Delete Me","domain":"temp-delete-me.test"}' return_details=true
+
+# 4. Clean up temp record immediately 
+# (Use the ID returned from step 3)
+mcp__attio__delete-record resource_type="companies" record_id="[TEMP_ID_FROM_STEP_3]"
+
+echo "✅ Environment verification complete"
+```
+
+### Automated Test Runner Template
+
+Create a test execution script:
+
+```bash
+#!/bin/bash
+# qa-test-runner.sh
+
+set -e  # Exit on any error
+
+echo "🚀 Starting Progressive QA Test Execution"
+echo "Started at: $(date)"
+
+# Initialize tracking variables
+P0_PASSED=0
+P0_TOTAL=5
+P1_PASSED=0
+P1_TOTAL=4
+P2_PASSED=0
+P2_TOTAL=4
+
+START_TIME=$(date +%s)
+
+# Function to run test and track results
+run_test() {
+    local test_id="$1"
+    local test_command="$2"
+    local priority="$3"
+    
+    echo "▶️  Running $test_id..."
+    
+    if eval "$test_command" > "/tmp/test-$test_id-output.log" 2>&1; then
+        echo "✅ $test_id PASSED"
+        case $priority in
+            "P0") ((P0_PASSED++)) ;;
+            "P1") ((P1_PASSED++)) ;;
+            "P2") ((P2_PASSED++)) ;;
+        esac
+        return 0
+    else
+        echo "❌ $test_id FAILED"
+        echo "   See /tmp/test-$test_id-output.log for details"
+        return 1
+    fi
+}
+
+# Quality gate checker
+check_quality_gate() {
+    local gate_name="$1"
+    local passed="$2"
+    local total="$3"
+    local threshold="$4"
+    
+    local pass_rate=$(echo "scale=2; $passed * 100 / $total" | bc)
+    echo "📊 $gate_name: $passed/$total passed ($pass_rate%)"
+    
+    if (( $(echo "$pass_rate >= $threshold" | bc -l) )); then
+        echo "✅ $gate_name QUALITY GATE: PASSED (≥$threshold%)"
+        return 0
+    else
+        echo "❌ $gate_name QUALITY GATE: FAILED (<$threshold%)"
+        return 1
+    fi
+}
+
+echo "🏁 Phase 1: P0 Core Foundation Tests"
+echo "Quality Gate: 100% pass rate required"
+
+# TODO: Add actual test command execution here
+# run_test "TC-001" "mcp__attio__search-records resource_type=\"companies\" query=\"test\" limit=5" "P0"
+
+echo "🏁 Phase 1 Complete"
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+echo "⏱️  Total execution time: $DURATION seconds"
+echo "📊 Final Results:"
+echo "   P0: $P0_PASSED/$P0_TOTAL"  
+echo "   P1: $P1_PASSED/$P1_TOTAL"
+echo "   P2: $P2_PASSED/$P2_TOTAL"
+```
+
+### Progressive Test Execution Workflow
+
+### Phase 1 Execution Steps (Updated)
+
+#### Step 1: Environment Setup (30 minutes)
+```bash
+# Create test data manifest
+cp /tmp/test-data-manifest-template.md /tmp/test-data-manifest-$(date +%Y%m%d).md
+
+# Run environment verification
+./qa-test-environment-check.sh
+
+# Create core test data using commands from Test Data Management section
+# Record all created IDs in manifest
+```
+
+#### Step 2: P0 Core Foundation Tests (Maximum 2 hours)
+```bash
+# Execute P0 tests in dependency order
+# TC-001: search-records (no dependencies)
+# TC-002: get-record-details (uses TC-001 results)
+# TC-003: create-record (creates test data)
+# TC-004: update-record (uses TC-003 results) 
+# TC-005: delete-record (uses TC-003 results)
+
+# Quality Gate Check: ALL P0 tests must PASS
+if [ P0_PASS_RATE -ne 100 ]; then
+    echo "🛑 P0 QUALITY GATE FAILED - STOPPING EXECUTION"
+    exit 1
+fi
+```
+
+#### Step 3: P1 Essential Extensions Tests (Maximum 2 hours)
+```bash
+# Execute P1 tests (order flexible)
+# TC-006: get-attributes
+# TC-007: discover-attributes  
+# TC-008: get-detailed-info
+# TC-009: advanced-search
+
+# Quality Gate Check: ≥80% pass rate required
+P1_PASS_RATE=$(calculate_pass_rate $P1_PASSED $P1_TOTAL)
+if [ $P1_PASS_RATE -ge 80 ]; then
+    echo "✅ P1 QUALITY GATE PASSED - PRODUCTION READY"
+else
+    echo "⚠️  P1 QUALITY GATE WARNING - EVALUATE PRODUCTION READINESS"
+fi
+```
+
+#### Step 4: P2 Advanced Features Tests (Maximum 2 hours)
+```bash
+# Execute P2 tests (order flexible)
+# TC-010: search-by-relationship
+# TC-011: search-by-content
+# TC-012: search-by-timeframe  
+# TC-013: batch-operations
+
+# Quality Gate Check: ≥50% pass rate target
+P2_PASS_RATE=$(calculate_pass_rate $P2_PASSED $P2_TOTAL)
+if [ $P2_PASS_RATE -ge 50 ]; then
+    echo "✅ P2 QUALITY GATE PASSED - ENHANCED FEATURES AVAILABLE"
+fi
+```
+
+#### Step 5: Results Compilation and Cleanup
+```bash
+# Generate final report using template
+./generate-test-results-report.sh > /tmp/qa-test-results-$(date +%Y%m%d).md
+
+# Clean up all test data
+./cleanup-test-data.sh
+
+# Archive test artifacts
+tar -czf /tmp/qa-test-artifacts-$(date +%Y%m%d).tar.gz /tmp/test-*.log /tmp/*qa*.md
+```
 
 ### Phase 2 Execution Steps
 1. **Agent Briefing**: Provide fresh agent with only tool schemas

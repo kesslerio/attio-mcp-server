@@ -200,8 +200,7 @@ export function simplifyFilters(filters: ListEntryFilters): ListEntryFilters {
   const filterMap = new Map<string, ListEntryFilter[]>();
 
   // Group filters by attribute
-  filters.filters &&
-    filters.filters.forEach((filter) => {
+  filters.filters?.forEach((filter) => {
       const key = filter.attribute.slug;
       if (!filterMap.has(key)) {
         filterMap.set(key, []);

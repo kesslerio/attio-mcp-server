@@ -480,7 +480,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
-          break;
         }
           
         case BatchOperationType.UPDATE: {
@@ -515,7 +514,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
-          break;
         }
           
         case BatchOperationType.DELETE: {
@@ -544,7 +542,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
-          break;
         }
           
         case BatchOperationType.GET: {
@@ -573,7 +570,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
               });
             }
           );
-          break;
         }
           
         case BatchOperationType.SEARCH: {
@@ -589,7 +585,6 @@ export const batchOperationsConfig: UniversalToolConfig = {
             limit,
             offset
           });
-          break;
         }
           
         default:
