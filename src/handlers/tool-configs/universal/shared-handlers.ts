@@ -23,11 +23,6 @@ import { convertAttributeFormats, getFormatErrorHelp } from '../../../utils/attr
 // Import email validation utilities for consistent validation
 import { isValidEmail } from '../../../utils/validation/email-validation.js';
 
-// Import enhanced validation utilities for Issue #413
-import { 
-  createEnhancedErrorResponse,
-  EnhancedErrorResponse
-} from '../../../utils/enhanced-validation.js';
 
 // Import enhanced error handling for Issues #415, #416, #417
 import { 
@@ -111,26 +106,13 @@ import {
 
 // Import enhanced validation utilities
 import {
-  validateRecordFields,
-  validateSelectField,
-  validateMultiSelectField,
-  validateReadOnlyFields,
-  validateFieldExistence
+  validateRecordFields
 } from '../../../utils/validation-utils.js';
 
-// Import enhanced error response utilities
-import {
-  createErrorResponse,
-  formatEnhancedErrorResponse as formatErrorResponse,
-  createSelectOptionError,
-  createMultiSelectOptionError,
-  createReadOnlyFieldError,
-  createUnknownFieldError
-} from '../../../utils/error-response-utils.js';
 
 // Simple cache for tasks pagination performance optimization
 interface CacheEntry {
-  data: any[];
+  data: AttioRecord[];
   timestamp: number;
 }
 const tasksCache = new Map<string, CacheEntry>();
@@ -154,7 +136,7 @@ async function queryDealRecords({ limit = 10, offset = 0 }): Promise<AttioRecord
     });
     
     return response?.data?.data || [];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to query deal records:', error);
     // If the query endpoint also fails, try the simpler approach
     if (error?.response?.status === 404) {
@@ -198,14 +180,14 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
     if ('task_id' in task.id) {
       record_id = task.id.task_id;
     } else if ('id' in task.id) {
-      record_id = (task.id as any).id;
+      record_id = (task.id as Record<string, unknown>).id as string;
     } else if (typeof task.id === 'string') {
-      record_id = task.id as any;
+      record_id = task.id;
     } else {
       throw new Error(`Task ID structure not recognized: ${JSON.stringify(task.id)}`);
     }
     
-    workspace_id = (task.id as any).workspace_id || '';
+    workspace_id = (task.id as Record<string, unknown>).workspace_id as string || '';
   } else {
     throw new Error(`Task missing id property: ${JSON.stringify(task)}`);
   }
@@ -234,7 +216,7 @@ function convertTaskToRecord(task: AttioTask): AttioRecord {
  * 
  * Special handling for tasks which use /tasks API instead of /objects/tasks
  */
-async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<any> {
+async function discoverAttributesForResourceType(resourceType: UniversalResourceType): Promise<Record<string, unknown>> {
   // Handle tasks as special case - they don't use /objects/{type}/attributes
   if (resourceType === UniversalResourceType.TASKS) {
     return discoverTaskAttributes();
@@ -248,7 +230,7 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
     
     // Create mapping from title to api_slug for compatibility
     const mappings: Record<string, string> = {};
-    attributes.forEach((attr: any) => {
+    attributes.forEach((attr: Record<string, unknown>) => {
       if (attr.title && attr.api_slug) {
         mappings[attr.title] = attr.api_slug;
       }
@@ -276,7 +258,7 @@ async function discoverAttributesForResourceType(resourceType: UniversalResource
  * Since tasks use /tasks API instead of /objects/tasks, we manually return
  * the known task attributes based on the task API structure and field mappings.
  */
-async function discoverTaskAttributes(): Promise<any> {
+async function discoverTaskAttributes(): Promise<Record<string, unknown>> {
   // Define task attributes based on the actual task API structure
   // From /src/api/operations/tasks.ts and field mappings
   const attributes = [
@@ -340,7 +322,7 @@ async function discoverTaskAttributes(): Promise<any> {
 
   // Create mapping from title to api_slug for compatibility
   const mappings: Record<string, string> = {};
-  attributes.forEach((attr: any) => {
+  attributes.forEach((attr: Record<string, unknown>) => {
     if (attr.title && attr.api_slug) {
       mappings[attr.title] = attr.api_slug;
     }
@@ -364,7 +346,7 @@ async function discoverTaskAttributes(): Promise<any> {
 /**
  * Get attributes for a specific record of any resource type
  */
-async function getAttributesForRecord(resourceType: UniversalResourceType, recordId: string): Promise<any> {
+async function getAttributesForRecord(resourceType: UniversalResourceType, recordId: string): Promise<Record<string, unknown>> {
   const client = getAttioClient();
   
   try {
@@ -395,11 +377,10 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
     }
   );
   
-  try {
-    // Track validation timing
-    const validationStart = performance.now();
-    
-    // Validate limit parameter to prevent abuse
+  // Track validation timing
+  const validationStart = performance.now();
+  
+  // Validate limit parameter to prevent abuse
     if (limit !== undefined) {
       if (!Number.isInteger(limit) || limit <= 0) {
         enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid limit parameter', 400);
@@ -452,9 +433,10 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
             // Defensive: Some APIs may not support empty filters, handle gracefully
             try {
               results = await advancedSearchCompanies({ filters: [] }, limit, offset);
-            } catch (error: any) {
+            } catch (error: unknown) {
               // If empty filters aren't supported, return empty array rather than failing
-              console.warn('Companies search with empty filters failed, returning empty results:', error?.message);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              console.warn('Companies search with empty filters failed, returning empty results:', errorMessage);
               results = [];
             }
           }
@@ -489,9 +471,10 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
             try {
               const paginatedResult = await advancedSearchPeople({ filters: [] }, { limit, offset });
               results = paginatedResult.results;
-            } catch (error: any) {
+            } catch (error: unknown) {
               // If empty filters aren't supported, return empty array rather than failing
-              console.warn('People search with empty filters failed, returning empty results:', error?.message);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              console.warn('People search with empty filters failed, returning empty results:', errorMessage);
               results = [];
             }
           }
@@ -529,7 +512,7 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           
           // Simple in-memory cache for tasks (30 second TTL)
           const now = Date.now();
-          let tasks: any[] | undefined;
+          let tasks: AttioRecord[] | undefined;
           let fromCache = false;
           
           // Check if we have cached tasks that are still valid
@@ -544,12 +527,15 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           if (!tasks) {
             // Load all tasks from API (unavoidable due to API limitation)
             try {
-              tasks = await listTasks();
+              const tasksList = await listTasks();
               
-              // Ensure tasks is always an array
-              if (!Array.isArray(tasks)) {
-                console.warn(`⚠️  TASKS API WARNING: listTasks() returned non-array value:`, typeof tasks);
+              // Convert tasks to records and ensure it's always an array
+              if (!Array.isArray(tasksList)) {
+                console.warn(`⚠️  TASKS API WARNING: listTasks() returned non-array value:`, typeof tasksList);
                 tasks = [];
+              } else {
+                // Convert AttioTask[] to AttioRecord[]
+                tasks = tasksList.map(convertTaskToRecord);
               }
             } catch (error: unknown) {
               console.error(`Failed to load tasks from API:`, error);
@@ -584,8 +570,8 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
             const end = Math.min(start + requestedLimit, tasks.length);
             const paginatedTasks = tasks.slice(start, end);
             
-            // Convert AttioTask[] to AttioRecord[] using proper type conversion
-            results = paginatedTasks.map(convertTaskToRecord);
+            // Tasks are already converted to AttioRecord[] in cache
+            results = paginatedTasks;
             
             // Log pagination performance metrics
             enhancedPerformanceTracker.markTiming(perfId, 'serialization', 
@@ -610,36 +596,33 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
       
       return results;
       
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
-      const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      const errorObj = apiError as Record<string, unknown>;
+      const statusCode = (errorObj?.response as Record<string, unknown>)?.status as number || errorObj?.statusCode as number || 500;
+      const errorMessage = apiError instanceof Error ? apiError.message : 'Search failed';
       enhancedPerformanceTracker.endOperation(
         perfId,
         false,
-        apiError.message || 'Search failed',
+        errorMessage,
         statusCode
       );
       throw apiError;
     }
-    
-  } catch (error: unknown) {
-    // Error already handled and tracked
-    throw error;
-  }
 }
 
 /**
  * Filter attributes by category
  */
-function filterAttributesByCategory(attributes: any, requestedCategories?: string[]): any {
+function filterAttributesByCategory(attributes: Record<string, unknown>, requestedCategories?: string[]): Record<string, unknown> {
   if (!requestedCategories || requestedCategories.length === 0) {
     return attributes; // Return all attributes if no categories specified
   }
   
   // Handle array of attributes
   if (Array.isArray(attributes)) {
-    return attributes.filter((attr: any) => {
+    return attributes.filter((attr: Record<string, unknown>) => {
       // Check various possible category field names
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
@@ -648,7 +631,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
   
   // Handle attributes response with data array
   if (attributes && typeof attributes === 'object' && attributes.data && Array.isArray(attributes.data)) {
-    const filteredData = attributes.data.filter((attr: any) => {
+    const filteredData = (attributes.data as Record<string, unknown>[]).filter((attr: Record<string, unknown>) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
@@ -662,7 +645,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
   
   // Handle attributes response with attributes array
   if (attributes && typeof attributes === 'object' && attributes.attributes && Array.isArray(attributes.attributes)) {
-    const filteredAttributes = attributes.attributes.filter((attr: any) => {
+    const filteredAttributes = (attributes.attributes as Record<string, unknown>[]).filter((attr: Record<string, unknown>) => {
       const category = attr.category || attr.type || attr.attribute_type || attr.group;
       return category && requestedCategories.includes(category);
     });
@@ -680,7 +663,7 @@ function filterAttributesByCategory(attributes: any, requestedCategories?: strin
 /**
  * Filter response fields to only include requested fields
  */
-function filterResponseFields(data: any, requestedFields?: string[]): any {
+function filterResponseFields(data: Record<string, unknown>, requestedFields?: string[]): Record<string, unknown> {
   if (!requestedFields || requestedFields.length === 0) {
     return data; // Return full data if no fields specified
   }
@@ -688,7 +671,7 @@ function filterResponseFields(data: any, requestedFields?: string[]): any {
   // Handle AttioRecord structure with id, values, created_at, updated_at
   if (data && typeof data === 'object' && data.id && data.values) {
     // Always preserve core AttioRecord structure
-    const filtered: any = {
+    const filtered: Record<string, unknown> = {
       id: data.id,
       created_at: data.created_at,
       updated_at: data.updated_at,
@@ -707,7 +690,7 @@ function filterResponseFields(data: any, requestedFields?: string[]): any {
   
   // Handle simple object structure
   if (data && typeof data === 'object') {
-    const filtered: any = {};
+    const filtered: Record<string, unknown> = {};
     for (const field of requestedFields) {
       if (field in data) {
         filtered[field] = data[field];
@@ -732,12 +715,11 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
     { resourceType: resource_type, recordId: record_id }
   );
   
-  try {
-    // Enhanced UUID validation for Issue #416
-    const validationStart = performance.now();
-    
-    // Use enhanced UUID validation with clear error distinction
-    // Skip UUID validation for tasks as they may use different ID formats
+  // Enhanced UUID validation for Issue #416
+  const validationStart = performance.now();
+  
+  // Use enhanced UUID validation with clear error distinction
+  // Skip UUID validation for tasks as they may use different ID formats
     if (resource_type !== UniversalResourceType.TASKS && !isValidUUID(record_id)) {
       enhancedPerformanceTracker.markTiming(perfId, 'validation', performance.now() - validationStart);
       enhancedPerformanceTracker.endOperation(perfId, false, 'Invalid UUID format', 400);
@@ -783,7 +765,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
             const task = await getTask(record_id);
             // Convert AttioTask to AttioRecord using proper type conversion
             result = convertTaskToRecord(task);
-          } catch (error: any) {
+          } catch (error: unknown) {
             // Cache 404 for tasks
             enhancedPerformanceTracker.cache404Response(cacheKey, { error: 'Task not found' }, 60000);
             throw createRecordNotFoundError(record_id, 'tasks');
@@ -802,11 +784,12 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       const filteredResult = filterResponseFields(result, fields);
       return filteredResult;
       
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
       
       // Enhanced error handling for Issues #415, #416, #417
-      const statusCode = apiError?.response?.status || apiError?.statusCode || 500;
+      const errorObj = apiError as Record<string, unknown>;
+      const statusCode = (errorObj?.response as Record<string, unknown>)?.status as number || errorObj?.statusCode as number || 500;
       
       if (statusCode === 404 || apiError.message?.includes('not found')) {
         // Cache 404 responses for 60 seconds
@@ -835,11 +818,6 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       );
       throw enhancedError;
     }
-    
-  } catch (error: unknown) {
-    // Error already handled and tracked
-    throw error;
-  }
 }
 
 /**
@@ -945,13 +923,15 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         }
         
         return result;
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (process.env.NODE_ENV === 'development') {
           console.error('[handleUniversalCreate] Error in companies case:', error);
         }
+        const errorObj = error as Record<string, unknown>;
         // Enhance error messages with format help
-        if (error?.message?.includes('Cannot find attribute')) {
-          const match = error.message.match(/slug\/ID "([^"]+)"/);
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
+        if (errorMessage.includes('Cannot find attribute')) {
+          const match = errorMessage.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
             const suggestion = getFieldSuggestions(resource_type, match[1]);
             const enhancedError = getFormatErrorHelp('companies', match[1], error.message);
@@ -963,8 +943,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
           }
         }
         // Check for uniqueness constraint violations
-        if (error?.message?.includes('uniqueness constraint')) {
-          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+        if (errorMessage.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, errorMessage, mappedData);
           throw new UniversalValidationError(
             enhancedMessage,
             ErrorType.USER_ERROR,
@@ -986,10 +966,12 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         // Apply format conversions for common mistakes
         const correctedData = convertAttributeFormats('people', normalizedData);
         return await createPerson(correctedData);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
         // Enhance error messages with format help
-        if (error?.message?.includes('invalid value') || error?.message?.includes('Format Error')) {
-          const match = error.message.match(/slug "([^"]+)"/);
+        if (errorMessage.includes('invalid value') || errorMessage.includes('Format Error')) {
+          const match = errorMessage.match(/slug "([^"]+)"/);
           if (match && match[1]) {
             const suggestion = getFieldSuggestions(resource_type, match[1]);
             const enhancedError = getFormatErrorHelp('people', match[1], error.message);
@@ -1001,8 +983,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
           }
         }
         // Check for uniqueness constraint violations
-        if (error?.message?.includes('uniqueness constraint')) {
-          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+        if (errorMessage.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, errorMessage, mappedData);
           throw new UniversalValidationError(
             enhancedMessage,
             ErrorType.USER_ERROR,
@@ -1016,10 +998,12 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     case UniversalResourceType.RECORDS:
       try {
         return await createObjectRecord('records', mappedData);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
         // Check for uniqueness constraint violations
-        if (error?.message?.includes('uniqueness constraint')) {
-          const enhancedMessage = await enhanceUniquenessError(resource_type, error.message, mappedData);
+        if (errorMessage.includes('uniqueness constraint')) {
+          const enhancedMessage = await enhanceUniquenessError(resource_type, errorMessage, mappedData);
           throw new UniversalValidationError(
             enhancedMessage,
             ErrorType.USER_ERROR,
@@ -1054,13 +1038,16 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       
       try {
         return await createObjectRecord('deals', dealData);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
         // If stage still fails after validation, try with default stage
         // IMPORTANT: Skip validation in error path to prevent API calls during failures
-        if (error?.message?.includes('Cannot find Status') && dealData.stage) {
+        if (errorMessage.includes('Cannot find Status') && dealData.stage) {
           const defaults = getDealDefaults();
           if (process.env.NODE_ENV === 'development') {
-            const invalidStage = dealData.stage[0]?.status;
+            const stageArray = dealData.stage as Record<string, unknown>[];
+            const invalidStage = stageArray[0]?.status;
             console.error(`Deal stage "${invalidStage}" still failed after validation, using fallback to default stage "${defaults.stage}"...`);
           }
           
@@ -1205,9 +1192,11 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     case UniversalResourceType.COMPANIES:
       try {
         return await updateCompany(record_id, mappedData);
-      } catch (error: any) {
-        if (error?.message?.includes('Cannot find attribute')) {
-          const match = error.message.match(/slug\/ID "([^"]+)"/);
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
+        if (errorMessage.includes('Cannot find attribute')) {
+          const match = errorMessage.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
             const suggestion = getFieldSuggestions(resource_type, match[1]);
             throw new UniversalValidationError(
@@ -1226,9 +1215,11 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
         validateEmailAddresses(mappedData, resource_type);
         
         return await updatePerson(record_id, mappedData);
-      } catch (error: any) {
-        if (error?.message?.includes('Cannot find attribute')) {
-          const match = error.message.match(/slug\/ID "([^"]+)"/);
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
+        if (errorMessage.includes('Cannot find attribute')) {
+          const match = errorMessage.match(/slug\/ID "([^"]+)"/);
           if (match && match[1]) {
             const suggestion = getFieldSuggestions(resource_type, match[1]);
             throw new UniversalValidationError(
@@ -1352,10 +1343,10 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
 /**
  * Universal get attributes handler
  */
-export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<any> {
+export async function handleUniversalGetAttributes(params: UniversalAttributesParams): Promise<Record<string, unknown>> {
   const { resource_type, record_id, categories } = params;
   
-  let result: any;
+  let result: Record<string, unknown>;
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
@@ -1411,7 +1402,7 @@ export async function handleUniversalGetAttributes(params: UniversalAttributesPa
 /**
  * Universal discover attributes handler
  */
-export async function handleUniversalDiscoverAttributes(resource_type: UniversalResourceType): Promise<any> {
+export async function handleUniversalDiscoverAttributes(resource_type: UniversalResourceType): Promise<Record<string, unknown>> {
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
       return discoverCompanyAttributes();
@@ -1436,7 +1427,7 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
 /**
  * Universal get detailed info handler
  */
-export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<any> {
+export async function handleUniversalGetDetailedInfo(params: UniversalDetailedInfoParams): Promise<Record<string, unknown>> {
   const { resource_type, record_id, info_type } = params;
   
   // For now, we'll return the full record for non-company resource types
@@ -1517,7 +1508,7 @@ export function isValidResourceType(resourceType: string): resourceType is Unive
 /**
  * Validate email addresses in record data for consistent validation across create/update
  */
-function validateEmailAddresses(recordData: any, resourceType: string): void {
+function validateEmailAddresses(recordData: Record<string, unknown>): void {
   if (!recordData || typeof recordData !== 'object') return;
   
   // Handle various email field formats
@@ -1562,7 +1553,7 @@ function validateEmailAddresses(recordData: any, resourceType: string): void {
 /**
  * Enhanced error handling utility for universal operations
  */
-export function createUniversalError(operation: string, resourceType: string, originalError: any): Error {
+export function createUniversalError(operation: string, resourceType: string, originalError: unknown): Error {
   // If it's already a UniversalValidationError or EnhancedApiError, pass it through
   if (originalError instanceof UniversalValidationError || originalError instanceof EnhancedApiError) {
     return originalError;
