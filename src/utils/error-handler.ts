@@ -129,10 +129,15 @@ export function createApiError(
   switch (status) {
     case 400:
       // Detect common parameter and format errors in the 400 response
+      const detailsString =
+        typeof responseData?.error?.details === 'string'
+          ? responseData.error.details
+          : JSON.stringify(responseData?.error?.details || '');
+
       if (
         defaultMessage.includes('parameter') ||
         defaultMessage.includes('param') ||
-        responseData?.error?.details?.includes('parameter')
+        detailsString.includes('parameter')
       ) {
         errorType = ErrorType.PARAMETER_ERROR;
         message = `Parameter Error: ${defaultMessage}`;

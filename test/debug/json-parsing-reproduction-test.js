@@ -145,7 +145,7 @@ async function testFormatters() {
     // Import the actual formatter functions
     const formattersPath = path.join(
       __dirname,
-      '../../src/handlers/tools/formatters.js'
+      '../../dist/handlers/tools/formatters.js'
     );
 
     if (!fs.existsSync(formattersPath)) {
