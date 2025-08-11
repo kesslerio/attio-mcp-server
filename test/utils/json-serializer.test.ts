@@ -188,7 +188,7 @@ describe('JSON Serializer', () => {
       const result = sanitizeMcpResponse(response);
 
       expect(result.content[0].text).toBe('Test response');
-      expect(JSON.stringify(result)).not.toThrow;
+      expect(() => JSON.stringify(result)).not.toThrow();
     });
 
     it('should handle non-object responses', () => {
