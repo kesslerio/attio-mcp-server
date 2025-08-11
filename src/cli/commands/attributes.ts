@@ -133,7 +133,7 @@ export async function discoverAttributes(
     let config: MappingConfig;
     try {
       config = loadMappingConfig();
-    } catch (error: unknown) {
+    } catch {
       spinner.warn(
         'Failed to load existing configuration, creating new one...'
       );
