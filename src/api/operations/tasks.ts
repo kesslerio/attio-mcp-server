@@ -16,7 +16,7 @@ import { debug, OperationType } from '../../utils/logger.js';
  * Handles field name transformations for backward compatibility
  */
 function transformTaskResponse(task: AttioTask): AttioTask {
-  const transformedTask = task as Record<string, unknown>;
+  const transformedTask = task as AttioTask & Record<string, unknown>;
   
   // Transform content_plaintext -> content for backward compatibility
   if ('content_plaintext' in transformedTask && !('content' in transformedTask)) {
@@ -47,7 +47,7 @@ export async function listTasks(
   const path = `/tasks?${params.toString()}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioListResponse<AttioTask>>(path);
-    const tasks = res.data.data || [];
+    const tasks = res?.data?.data || [];
     // Transform each task in the response for backward compatibility
     return tasks.map(task => transformTaskResponse(task));
   }, retryConfig);
@@ -69,7 +69,7 @@ export async function getTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as unknown as AttioTask;
+      task = res.data as AttioTask;
     } else {
       throw new Error('Invalid API response structure: missing task data');
     }
@@ -150,22 +150,9 @@ export async function createTask(
       throw err;
     }
 
-    // CRITICAL: Handle response interceptor issues
+    // Handle response validation
     if (!res) {
-      // If response is undefined but no error was thrown, this indicates an interceptor issue
-      // The task was likely created successfully, but we can't parse the response
-      // Return a minimal valid AttioTask object to prevent the error
-      console.warn('[WORKAROUND] API call succeeded but response is undefined. Returning minimal task object.');
-      return {
-        id: {
-          workspace_id: 'unknown',
-          task_id: 'unknown-task-id-' + Date.now(),
-        },
-        content,
-        status: 'pending', // Default status for new tasks
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as AttioTask;
+      throw new Error('Invalid API response: no response data received');
     }
     
     // Debug logging to identify the response structure
@@ -189,7 +176,7 @@ export async function createTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as unknown as AttioTask;
+      task = res.data as AttioTask;
     } else {
       // Enhanced error with response structure details for debugging
       debug(
@@ -252,7 +239,7 @@ export async function updateTask(
       task = res.data.data;
     } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
       // Direct task object in data
-      task = res.data as unknown as AttioTask;
+      task = res.data as AttioTask;
     } else {
       throw new Error('Invalid API response structure: missing task data');
     }

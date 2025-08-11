@@ -68,17 +68,6 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[createRecord] API response structure:', {
-        hasData: !!response?.data,
-        hasNestedData: !!response?.data?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : [],
-        nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : [],
-        dataType: Array.isArray(response?.data) ? 'array' : typeof response?.data,
-        nestedDataType: Array.isArray(response?.data?.data) ? 'array' : typeof response?.data?.data
-      });
-    }
-
     // Handle different response structures
     let result: T;
     
@@ -91,7 +80,7 @@ export async function createRecord<T extends AttioRecord>(
         // If it's an array, take the first element (should be the created record)
         result = response.data[0] as T;
       } else {
-        result = response.data as unknown as T;
+        result = response.data as T;
       }
     } else {
       throw new Error('Invalid API response structure: no data found');
@@ -99,7 +88,6 @@ export async function createRecord<T extends AttioRecord>(
     
     // Ensure we have a valid record with an ID
     if (!result || !('id' in result)) {
-      console.error('[createRecord] Invalid result structure:', result);
       throw new Error('Invalid API response: record missing ID');
     }
     
@@ -137,9 +125,6 @@ export async function getRecord<T extends AttioRecord>(
   }
 
   return callWithRetry(async () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[getRecord] Final request path:', path);
-    }
     const response = await api.get<AttioSingleResponse<T>>(path);
     return response?.data?.data || response?.data;
   }, retryConfig);
