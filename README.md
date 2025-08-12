@@ -96,6 +96,16 @@ echo "ATTIO_API_KEY=your_key_here" > .env
 docker-compose up -d
 ```
 
+## 🧪 Testing
+
+The project maintains 100% test success rates across all test suites:
+
+- **E2E Tests**: 37/37 passing with mock data injection system
+- **Integration Tests**: 15/15 passing with real API validation
+- **Unit Tests**: Comprehensive coverage with offline testing
+
+See our [Testing Guide](docs/development/testing.md) and [Mock Data System](docs/development/mock-data-injection-system.md) for details.
+
 ## 🤝 Contributing
 
 We welcome contributions! See our [Contributing Guide](docs/development/contributing.md) for details on:

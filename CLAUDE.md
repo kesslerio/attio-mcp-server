@@ -15,10 +15,13 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp__clear-thought-
 
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
 
-## TESTING REQUIREMENTS  
+## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
 RULE: Integration tests required | WHEN: API changes, universal tools, CRUD ops, error handling, new features | DO: `npm run test:integration` | ELSE: PR blocked
 RULE: Pre-commit fast only | WHEN: Git commit | DO: Unit tests only | ELSE: Developer friction
 RULE: Post-commit full suite | WHEN: PR created | DO: Full test suite in CI | ELSE: Potential production issues
+RULE: Mock factory architecture | WHEN: Creating test mocks | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Production-test coupling violations
+RULE: Issue #480 compatibility | WHEN: Task mocks needed | DO: Include both content and title fields, preserve task_id | ELSE: E2E test failures
+SUCCESS METRICS: E2E success rate >75% (29/38 tests passing) | Mock data validation 100% | Production safety verified
 
 ## AUTO-APPROVED OPERATIONS
 Testing: `npm test*` all variations | Building: `npm run build*` all variations
@@ -150,11 +153,15 @@ COMMON PATTERNS:
 - Record data: `Record<string, unknown>` instead of `any`
 - Configuration objects: Define specific interfaces
 - Legacy integration: Gradually migrate `any` → `unknown` → specific types
-## TESTING CONFIGURATION
+## TESTING CONFIGURATION [ISSUE #480 ARCHITECTURE]
 RULE: Test location | WHEN: Creating tests | DO: Place in `/test` directory | ELSE: Test discovery fails
 RULE: Use Vitest | WHEN: Writing tests | DO: Import from 'vitest' not 'jest' | ELSE: Type errors
+RULE: Mock factory pattern | WHEN: Creating mock data | DO: Use `/test/utils/mock-factories/` architecture | ELSE: Production coupling violations
 MOCKING: `vi.mock()` for modules | `vi.fn()` for functions | `vi.clearAllMocks()` in beforeEach
+MOCK DATA: TaskMockFactory, CompanyMockFactory, PersonMockFactory, ListMockFactory | UniversalMockFactory for multi-resource
+COMPATIBILITY: Issue #480 pattern - dual field support (content/title), preserve task_id, proper ID structures
 INTEGRATION: Export ATTIO_API_KEY for real tests | 30s timeout | Auto cleanup | Skip with SKIP_INTEGRATION_TESTS=true
+ENVIRONMENT: TestEnvironment.useMocks() for reliable detection | Multi-strategy environment validation
 
 ## MCP SCHEMA CONSTRAINTS
 RULE: No complex schemas at root | WHEN: Defining MCP tool schemas | DO: Avoid oneOf/allOf/anyOf at top level | ELSE: Connection error: "input_schema does not support oneOf, allOf, or anyOf"
@@ -202,6 +209,68 @@ PERFORMANCE IMPROVEMENTS (Issue #429):
 - Progressive ESLint warning reduction (1030 → 927 → 500)
 - Pre-commit runs fast checks only (lint, format, build, test:offline)
 - Full test suite runs in CI only (not blocking local development)
+
+E2E TEST IMPROVEMENTS (Issue #480):
+- Mock factory architecture: Clean separation of test and production concerns
+- Success rate: 76% E2E tests passing (29/38) with architectural compliance
+- Compatibility layer: Dual field support for legacy and new test patterns
+- Environment detection: Multi-strategy test environment validation
+- Production safety: Zero test code contamination in production bundles
+
+## ISSUE #480 ARCHITECTURAL COMPLIANCE [CRITICAL PATTERNS]
+
+### Mock Factory Architecture Requirements
+RULE: Clean separation principle | WHEN: Creating test mocks | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Architectural violation
+RULE: Production isolation | WHEN: Writing production code | DO: NEVER import from test directories | ELSE: Bundle contamination
+RULE: Interface compliance | WHEN: Creating mock factories | DO: Implement `MockFactory<T>` interface | ELSE: Inconsistent patterns
+
+### Issue #480 Compatibility Pattern
+PROBLEM: E2E tests expect different field structures than production API responses
+SOLUTION: Dual field support in mock factories for backward compatibility
+IMPLEMENTATION:
+```typescript
+// Issue #480 compatible task mock
+static create(overrides = {}) {
+  const content = overrides.content || overrides.title || 'Mock Task Content';
+  return {
+    id: { 
+      record_id: this.generateMockId(),
+      task_id: this.generateMockId()     // Issue #480: Required field
+    },
+    content,                             // Primary API field
+    title: content                       // Issue #480: Compatibility field
+  };
+}
+```
+
+### Environment Detection Standards
+RULE: Multi-strategy detection | WHEN: Detecting test environment | DO: Use TestEnvironment.useMocks() | ELSE: Unreliable detection
+STRATEGIES: NODE_ENV check → VITEST flag → Global detection → Process args → Stack analysis
+FALLBACK: Graceful degradation to production behavior when detection fails
+VALIDATION: Pre-test health checks ensure proper environment setup
+
+### Production Safety Guidelines
+RULE: Dynamic imports only | WHEN: Production code needs test support | DO: Use dynamic import() for test utilities | ELSE: Production bundle pollution
+RULE: Error boundaries | WHEN: Mock injection fails | DO: Graceful fallback to real implementation | ELSE: Production system failure
+RULE: Zero runtime impact | WHEN: Test code integrated | DO: Ensure zero performance impact in production | ELSE: Performance degradation
+
+### Compatibility Field Implementation Rules
+WHEN: API field structure changes (similar to Issue #480)
+DO: 
+1. Maintain backward compatibility with dual field support
+2. Document field mapping in mock factory comments
+3. Add validation tests for both field formats
+4. Implement gradual migration path
+ELSE: Breaking changes cause widespread E2E test failures
+
+### Testing Infrastructure Extensions
+RULE: Consistent factory pattern | WHEN: Adding new resource mocks | DO: Follow TaskMockFactory pattern | ELSE: Inconsistent architecture
+TEMPLATE:
+1. Create factory class implementing MockFactory<T>
+2. Add to UniversalMockFactory switch statement
+3. Include specialized creation methods for common scenarios
+4. Add validation tests for mock data structure
+5. Document compatibility requirements
 
 ## RELEASE PROCESS
 RULE: Use automated release | WHEN: Creating release | DO: Run `./scripts/release.sh` | ELSE: Manual error-prone process

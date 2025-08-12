@@ -17,15 +17,18 @@ export async function listTasks(
 ): Promise<AttioTask[]> {
   return apiList(status, assigneeId, page, pageSize);
 }
+
 export async function getTask(taskId: string): Promise<AttioTask> {
   return apiGet(taskId);
 }
+
 export async function createTask(
   content: string,
   options: { assigneeId?: string; dueDate?: string; recordId?: string } = {}
 ): Promise<AttioTask> {
   return apiCreate(content, options);
 }
+
 export async function updateTask(
   taskId: string,
   updates: {
@@ -38,15 +41,18 @@ export async function updateTask(
 ): Promise<AttioTask> {
   return apiUpdate(taskId, updates);
 }
+
 export async function deleteTask(taskId: string): Promise<boolean> {
   return apiDelete(taskId);
 }
+
 export async function linkRecordToTask(
   taskId: string,
   recordId: string
 ): Promise<boolean> {
   return apiLink(taskId, recordId);
 }
+
 export async function unlinkRecordFromTask(
   taskId: string,
   recordId: string

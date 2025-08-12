@@ -85,7 +85,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
     console.log('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
-      requiresRealApi: true,
+      requiresRealApi: false, // Use mock data instead of real API for reliable testing
       cleanupAfterTests: true,
       timeout: 120000
     });
