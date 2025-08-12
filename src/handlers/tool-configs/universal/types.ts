@@ -14,7 +14,8 @@ import { ListEntryFilters } from '../../../api/operations/index.js';
  */
 export enum UniversalResourceType {
   COMPANIES = 'companies',
-  PEOPLE = 'people', 
+  PEOPLE = 'people',
+  LISTS = 'lists',
   RECORDS = 'records',
   TASKS = 'tasks',
   DEALS = 'deals'
@@ -209,6 +210,7 @@ export interface UniversalToolConfig extends ToolConfig {
 export interface ResourceTypeHandler {
   [UniversalResourceType.COMPANIES]: (params: any) => Promise<unknown>;
   [UniversalResourceType.PEOPLE]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.LISTS]: (params: any) => Promise<unknown>;
   [UniversalResourceType.RECORDS]: (params: any) => Promise<unknown>;
   [UniversalResourceType.TASKS]: (params: any) => Promise<unknown>;
 }

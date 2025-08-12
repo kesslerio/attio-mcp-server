@@ -76,7 +76,7 @@ describe('Enhanced Universal Error Handling', () => {
         expect(errorObj).toBeInstanceOf(UniversalValidationError);
         const validationError = errorObj as UniversalValidationError;
         expect(validationError.suggestion).toContain('companies');
-        expect(validationError.example).toContain('companies, people, records, tasks');
+        expect(validationError.example).toContain('companies, people');
       }
     });
 

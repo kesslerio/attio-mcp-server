@@ -206,7 +206,7 @@ export class InputSanitizer {
 const resourceTypeProperty = {
   type: 'string' as const,
   enum: Object.values(UniversalResourceType),
-  description: 'Type of resource to operate on (companies, people, records, tasks)'
+  description: 'Type of resource to operate on (companies, people, lists, records, tasks)'
 };
 
 /**

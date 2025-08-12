@@ -65,6 +65,15 @@ import {
 } from '../../../objects/companies/index.js';
 
 import {
+  searchLists,
+  getListDetails,
+  createList,
+  updateList,
+  deleteList,
+  getListAttributes
+} from '../../../objects/lists.js';
+
+import {
   advancedSearchPeople,
   getPersonDetails,
   createPerson
@@ -103,6 +112,17 @@ import {
   getValidResourceTypes,
   FIELD_MAPPINGS
 } from './field-mapper.js';
+
+/**
+ * Truncate suggestions to prevent buffer overflow in MCP protocol
+ */
+function truncateSuggestions(suggestions: string[], maxCount: number = 3): string[] {
+  const limited = suggestions.slice(0, maxCount);
+  if (suggestions.length > maxCount) {
+    limited.push(`... and ${suggestions.length - maxCount} more suggestions`);
+  }
+  return limited;
+}
 
 // Import enhanced validation utilities
 import {
@@ -483,6 +503,30 @@ export async function handleUniversalSearch(params: UniversalSearchParams): Prom
           }
           break;
           
+        case UniversalResourceType.LISTS: {
+          const lists = query && query.trim().length > 0
+            ? await searchLists(query, limit || 10, offset || 0)
+            : await searchLists('', limit || 10, offset || 0);
+          
+          // Convert AttioList[] to AttioRecord[] format
+          results = lists.map(list => ({
+            id: {
+              record_id: list.id.list_id,
+              list_id: list.id.list_id
+            },
+            values: {
+              name: list.name || list.title,
+              description: list.description,
+              parent_object: list.object_slug || list.parent_object,
+              api_slug: list.api_slug,
+              workspace_id: list.workspace_id,
+              workspace_member_access: list.workspace_member_access,
+              created_at: list.created_at
+            }
+          } as unknown as AttioRecord));
+          break;
+        }
+          
         case UniversalResourceType.RECORDS:
           results = await listObjectRecords('records', { 
             pageSize: limit, 
@@ -757,6 +801,27 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
           result = await getPersonDetails(record_id);
           break;
           
+        case UniversalResourceType.LISTS: {
+          const list = await getListDetails(record_id);
+          // Convert AttioList to AttioRecord format
+          result = {
+            id: {
+              record_id: list.id.list_id,
+              list_id: list.id.list_id
+            },
+            values: {
+              name: list.name || list.title,
+              description: list.description,
+              parent_object: list.object_slug || list.parent_object,
+              api_slug: list.api_slug,
+              workspace_id: list.workspace_id,
+              workspace_member_access: list.workspace_member_access,
+              created_at: list.created_at
+            }
+          } as unknown as AttioRecord;
+          break;
+        }
+          
         case UniversalResourceType.RECORDS:
           result = await getObjectRecord('records', record_id);
           break;
@@ -852,7 +917,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
   if (fieldValidation.suggestions.length > 0) {
-    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    console.log('Field suggestions:', truncated.join('\n'));
   }
   if (!fieldValidation.valid) {
     // Build a clear, helpful error message
@@ -863,10 +929,11 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       errorMessage += fieldValidation.errors.map(err => `  ❌ ${err}`).join('\n');
     }
     
-    // Add suggestions if available
+    // Add suggestions if available (truncated to prevent buffer overflow)
     if (fieldValidation.suggestions.length > 0) {
+      const truncated = truncateSuggestions(fieldValidation.suggestions);
       errorMessage += '\n\n💡 Suggestions:\n';
-      errorMessage += fieldValidation.suggestions.map(sug => `  • ${sug}`).join('\n');
+      errorMessage += truncated.map(sug => `  • ${sug}`).join('\n');
     }
     
     // List available fields for this resource type
@@ -879,7 +946,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       errorMessage,
       ErrorType.USER_ERROR,
       {
-        suggestion: fieldValidation.suggestions.join('. '),
+        suggestion: truncateSuggestions(fieldValidation.suggestions).join('. '),
         field: 'record_data'
       }
     );
@@ -971,6 +1038,43 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       }
     }
       
+    case UniversalResourceType.LISTS: {
+      try {
+        const list = await createList(mappedData);
+        // Convert AttioList to AttioRecord format
+        return {
+          id: {
+            record_id: list.id.list_id,
+            list_id: list.id.list_id
+          },
+          values: {
+            name: list.name || list.title,
+            description: list.description,
+            parent_object: list.object_slug || list.parent_object,
+            api_slug: list.api_slug,
+            workspace_id: list.workspace_id,
+            workspace_member_access: list.workspace_member_access,
+            created_at: list.created_at
+          }
+        } as unknown as AttioRecord;
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
+        if (errorMessage.includes('Cannot find attribute')) {
+          const match = errorMessage.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
+            throw new UniversalValidationError(
+              (error as Error).message,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
+          }
+        }
+        throw error;
+      }
+    }
+    
     case UniversalResourceType.PEOPLE: {
       try {
         // Validate email addresses first for consistent validation with updates
@@ -1169,7 +1273,8 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
   if (fieldValidation.suggestions.length > 0) {
-    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    console.log('Field suggestions:', truncated.join('\n'));
   }
   
   // Map field names to correct ones with collision detection
@@ -1224,6 +1329,43 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
         }
         throw error;
       }
+      
+    case UniversalResourceType.LISTS: {
+      try {
+        const list = await updateList(record_id, mappedData);
+        // Convert AttioList to AttioRecord format
+        return {
+          id: {
+            record_id: list.id.list_id,
+            list_id: list.id.list_id
+          },
+          values: {
+            name: list.name || list.title,
+            description: list.description,
+            parent_object: list.object_slug || list.parent_object,
+            api_slug: list.api_slug,
+            workspace_id: list.workspace_id,
+            workspace_member_access: list.workspace_member_access,
+            created_at: list.created_at
+          }
+        } as unknown as AttioRecord;
+      } catch (error: unknown) {
+        const errorObj = error as Record<string, unknown>;
+        const errorMessage = error instanceof Error ? error.message : String(errorObj?.message || '');
+        if (errorMessage.includes('Cannot find attribute')) {
+          const match = errorMessage.match(/slug\/ID "([^"]+)"/);
+          if (match && match[1]) {
+            const suggestion = getFieldSuggestions(resource_type, match[1]);
+            throw new UniversalValidationError(
+              (error as Error).message,
+              ErrorType.USER_ERROR,
+              { suggestion, field: match[1] }
+            );
+          }
+        }
+        throw error;
+      }
+    }
       
     case UniversalResourceType.PEOPLE:
       try {
@@ -1339,6 +1481,10 @@ export async function handleUniversalDelete(params: UniversalDeleteParams): Prom
       await deletePerson(record_id);
       return { success: true, record_id };
       
+    case UniversalResourceType.LISTS:
+      await deleteList(record_id);
+      return { success: true, record_id };
+      
     case UniversalResourceType.RECORDS:
       await deleteObjectRecord('records', record_id);
       return { success: true, record_id };
@@ -1381,6 +1527,10 @@ export async function handleUniversalGetAttributes(params: UniversalAttributesPa
         // Return schema-level attributes if no record_id provided
         result = await discoverAttributesForResourceType(resource_type);
       }
+      break;
+      
+    case UniversalResourceType.LISTS:
+      result = await getListAttributes();
       break;
       
     case UniversalResourceType.RECORDS:
@@ -1426,6 +1576,9 @@ export async function handleUniversalDiscoverAttributes(resource_type: Universal
     case UniversalResourceType.PEOPLE:
       return discoverAttributesForResourceType(resource_type);
       
+    case UniversalResourceType.LISTS:
+      return getListAttributes();
+      
     case UniversalResourceType.RECORDS:
       return discoverAttributesForResourceType(resource_type);
       
@@ -1453,6 +1606,25 @@ export async function handleUniversalGetDetailedInfo(params: UniversalDetailedIn
     switch (resource_type) {
       case UniversalResourceType.PEOPLE:
         return getPersonDetails(record_id);
+      case UniversalResourceType.LISTS: {
+        const list = await getListDetails(record_id);
+        // Convert AttioList to AttioRecord format
+        return {
+          id: {
+            record_id: list.id.list_id,
+            list_id: list.id.list_id
+          },
+          values: {
+            name: list.name || list.title,
+            description: list.description,
+            parent_object: list.object_slug || list.parent_object,
+            api_slug: list.api_slug,
+            workspace_id: list.workspace_id,
+            workspace_member_access: list.workspace_member_access,
+            created_at: list.created_at
+          }
+        } as unknown as AttioRecord;
+      }
       case UniversalResourceType.DEALS:
         return getObjectRecord('deals', record_id);
       case UniversalResourceType.TASKS:

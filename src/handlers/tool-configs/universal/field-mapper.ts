@@ -64,8 +64,8 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       'company_name': 'name',
       'company_domain': 'domains',
       'primary_domain': 'domains',
-      'description': 'note',
-      'notes': 'note',
+      'description': 'notes',
+      'note': 'notes',
       'employee_count': 'estimated_arr',
       'size': 'estimated_arr',
       'revenue': 'estimated_arr',
@@ -77,13 +77,13 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
     },
     validFields: [
       'name', 'domains', 'type', 'industry', 'description', 
-      'founded', 'estimated_arr', 'location', 'note',
+      'founded', 'estimated_arr', 'location', 'notes',
       'primary_domain', 'twitter', 'linkedin', 'facebook'
     ],
     commonMistakes: {
       'domain': 'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
       'website': 'Use "domains" field with an array of domain names',
-      'description': 'Use "note" field for company descriptions',
+      'description': 'Use "notes" field for company descriptions',
       'employee_count': 'Employee count is not a standard field, consider using custom fields',
       'revenue': 'Use "estimated_arr" for revenue/ARR data',
     },
@@ -119,14 +119,14 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       'organization': 'company_id',
       'employer': 'company_id',
       // Other fields
-      'description': 'note',
-      'notes': 'note',
-      'bio': 'note',
+      'description': 'notes',
+      'note': 'notes',
+      'bio': 'notes',
     },
     validFields: [
       'name', 'email_addresses', 'phone_numbers', 'title',
       'company_id', 'location', 'twitter', 'linkedin', 
-      'facebook', 'note', 'first_name', 'last_name'
+      'facebook', 'notes', 'first_name', 'last_name'
     ],
     commonMistakes: {
       'email': 'Use "email_addresses" (plural) as an array',
@@ -136,6 +136,31 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
     },
     requiredFields: ['name'],
     uniqueFields: ['email_addresses']
+  },
+
+  [UniversalResourceType.LISTS]: {
+    fieldMappings: {
+      // Name variations
+      'list_name': 'name',
+      'title': 'name',
+      // Description variations
+      'description': 'description',
+      'notes': 'description',
+      // Parent variations
+      'parent': 'parent_object',
+      'parent_id': 'parent_object',
+      'object': 'parent_object',
+    },
+    validFields: [
+      'name', 'description', 'parent_object', 'api_slug', 
+      'workspace_id', 'workspace_member_access'
+    ],
+    commonMistakes: {
+      'title': 'Use "name" field for the list name',
+      'parent': 'Use "parent_object" to specify the parent object type',
+    },
+    requiredFields: ['name'],
+    uniqueFields: ['api_slug']
   },
 
   [UniversalResourceType.DEALS]: {
@@ -264,16 +289,16 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       // Generic record mappings
       'title': 'name',
       'record_name': 'name',
-      'description': 'note',
-      'notes': 'note',
+      'description': 'notes',
+      'note': 'notes',
     },
     validFields: [
-      'name', 'note', 'created_at', 'updated_at'
+      'name', 'notes', 'created_at', 'updated_at'
       // Note: Records can have dynamic fields based on the object type
     ],
     commonMistakes: {
       'title': 'Use "name" for record titles',
-      'description': 'Use "note" for descriptions or additional text',
+      'description': 'Use "notes" for descriptions or additional text',
     },
     requiredFields: [],
     uniqueFields: []

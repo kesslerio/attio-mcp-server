@@ -201,7 +201,7 @@ describe('validation-utils', () => {
         { api_slug: 'name', type: 'text' },
         { api_slug: 'company_name', type: 'text' },
         { api_slug: 'description', type: 'text' },
-        { api_slug: 'note', type: 'text' },
+        { api_slug: 'notes', type: 'text' },
         { api_slug: 'website', type: 'text' }
       ];
 
@@ -242,7 +242,7 @@ describe('validation-utils', () => {
       const mockAttributes = [
         { api_slug: 'name', type: 'text' },
         { api_slug: 'description', type: 'text' },
-        { api_slug: 'note', type: 'text' },
+        { api_slug: 'notes', type: 'text' },
         { api_slug: 'website', type: 'text' }
       ];
 
