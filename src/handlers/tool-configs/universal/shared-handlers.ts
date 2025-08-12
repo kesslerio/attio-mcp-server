@@ -103,6 +103,17 @@ import {
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
+
+/**
+ * Truncate suggestions to prevent buffer overflow in MCP protocol
+ */
+function truncateSuggestions(suggestions: string[], maxCount: number = 3): string[] {
+  const limited = suggestions.slice(0, maxCount);
+  if (suggestions.length > maxCount) {
+    limited.push(`... and ${suggestions.length - maxCount} more suggestions`);
+  }
+  return limited;
+}
 import {
   mapRecordFields,
   validateResourceType,
@@ -906,7 +917,8 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
   if (fieldValidation.suggestions.length > 0) {
-    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    console.log('Field suggestions:', truncated.join('\n'));
   }
   if (!fieldValidation.valid) {
     // Build a clear, helpful error message
@@ -917,10 +929,11 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       errorMessage += fieldValidation.errors.map(err => `  ❌ ${err}`).join('\n');
     }
     
-    // Add suggestions if available
+    // Add suggestions if available (truncated to prevent buffer overflow)
     if (fieldValidation.suggestions.length > 0) {
+      const truncated = truncateSuggestions(fieldValidation.suggestions);
       errorMessage += '\n\n💡 Suggestions:\n';
-      errorMessage += fieldValidation.suggestions.map(sug => `  • ${sug}`).join('\n');
+      errorMessage += truncated.map(sug => `  • ${sug}`).join('\n');
     }
     
     // List available fields for this resource type
@@ -933,7 +946,7 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
       errorMessage,
       ErrorType.USER_ERROR,
       {
-        suggestion: fieldValidation.suggestions.join('. '),
+        suggestion: truncateSuggestions(fieldValidation.suggestions).join('. '),
         field: 'record_data'
       }
     );
@@ -1260,7 +1273,8 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
     console.log('Field validation warnings:', fieldValidation.warnings.join('\n'));
   }
   if (fieldValidation.suggestions.length > 0) {
-    console.log('Field suggestions:', fieldValidation.suggestions.join('\n'));
+    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    console.log('Field suggestions:', truncated.join('\n'));
   }
   
   // Map field names to correct ones with collision detection
