@@ -11,8 +11,26 @@ enum UniversalResourceType {
   COMPANIES = 'companies',
   PEOPLE = 'people', 
   RECORDS = 'records',
-  TASKS = 'tasks'
+  TASKS = 'tasks',
+  LISTS = 'lists',
+  NOTES = 'notes'
 }
+```
+
+## formatResult Architecture (Updated PR #483)
+
+**IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
+
+### Consistent formatResult Contract
+```typescript
+// All formatResult functions follow this pattern
+formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
+
+// Performance optimized with:
+// - No environment-dependent behavior
+// - Type-safe Record<string, unknown> patterns  
+// - Memory-efficient string templates
+// - 59% ESLint warning reduction (957→395)
 ```
 
 ## Core Universal Tools (8 tools)

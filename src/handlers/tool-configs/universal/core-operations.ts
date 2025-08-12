@@ -60,15 +60,9 @@ export const searchRecordsConfig: UniversalToolConfig = {
       throw createUniversalError('search', params.resource_type, error);
     }
   },
-  formatResult: (results: AttioRecord[], resourceType?: UniversalResourceType) => {
+  formatResult: (results: AttioRecord[], resourceType?: UniversalResourceType): string => {
     if (!Array.isArray(results)) {
       return 'No results found';
-    }
-    
-    // For E2E tests, return the raw array as JSON so it can be parsed correctly
-    // This allows tests to validate the actual data structure
-    if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
-      return JSON.stringify(results);
     }
     
     const resourceTypeName = resourceType ? formatResourceType(resourceType) : 'record';
@@ -123,15 +117,9 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       throw createUniversalError('get details', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record not found';
-    }
-    
-    // For E2E tests, return the raw object as JSON so it can be parsed correctly
-    // This allows tests to validate the actual data structure
-    if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
-      return JSON.stringify(record);
     }
     
     const resourceTypeName = resourceType ? getSingularResourceType(resourceType) : 'record';
@@ -251,41 +239,9 @@ export const createRecordConfig: UniversalToolConfig = {
       throw createUniversalError('create', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record creation failed';
-    }
-    
-    // For E2E tests, return dual format that preserves both legacy and new test expectations
-    // This allows E2E tests to access both record.content and record.values.content
-    if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
-      // Dual format: keep values object AND flatten fields for backward compatibility
-      const flattened: Record<string, unknown> = {};
-      
-      // Flatten array fields to simple values for test compatibility
-      if (record.values) {
-        Object.entries(record.values).forEach(([key, value]) => {
-          if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0].value !== undefined) {
-            // Extract value from Attio array format [{value: "..."}] -> "..."
-            flattened[key] = value[0].value;
-          } else if (Array.isArray(value)) {
-            // Keep arrays as-is for other cases
-            flattened[key] = value;
-          } else {
-            // Keep primitive values as-is
-            flattened[key] = value;
-          }
-        });
-      }
-      
-      const dual = {
-        id: record.id,
-        values: record.values, // Keep original values object for assertions
-        ...flattened, // Spread flattened fields for legacy access
-        created_at: record.created_at,
-        updated_at: record.updated_at
-      };
-      return JSON.stringify(dual);
     }
     
     const resourceTypeName = resourceType ? getSingularResourceType(resourceType) : 'record';
@@ -320,41 +276,9 @@ export const updateRecordConfig: UniversalToolConfig = {
       throw createUniversalError('update', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record update failed';
-    }
-    
-    // For E2E tests, return dual format that preserves both legacy and new test expectations
-    // This allows E2E tests to access both record.content and record.values.content
-    if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
-      // Dual format: keep values object AND flatten fields for backward compatibility
-      const flattened: Record<string, unknown> = {};
-      
-      // Flatten array fields to simple values for test compatibility
-      if (record.values) {
-        Object.entries(record.values).forEach(([key, value]) => {
-          if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0].value !== undefined) {
-            // Extract value from Attio array format [{value: "..."}] -> "..."
-            flattened[key] = value[0].value;
-          } else if (Array.isArray(value)) {
-            // Keep arrays as-is for other cases
-            flattened[key] = value;
-          } else {
-            // Keep primitive values as-is
-            flattened[key] = value;
-          }
-        });
-      }
-      
-      const dual = {
-        id: record.id,
-        values: record.values, // Keep original values object for assertions
-        ...flattened, // Spread flattened fields for legacy access
-        created_at: record.created_at,
-        updated_at: record.updated_at
-      };
-      return JSON.stringify(dual);
     }
     
     const resourceTypeName = resourceType ? getSingularResourceType(resourceType) : 'record';
@@ -381,7 +305,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
       throw createUniversalError('delete', params.resource_type, error);
     }
   },
-  formatResult: (result: { success: boolean; record_id: string }, resourceType?: UniversalResourceType) => {
+  formatResult: (result: { success: boolean; record_id: string }, resourceType?: UniversalResourceType): string => {
     if (!result.success) {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }
@@ -405,7 +329,7 @@ export const getAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('get attributes', params.resource_type, error);
     }
   },
-  formatResult: (attributes: any, resourceType?: UniversalResourceType) => {
+  formatResult: (attributes: any, resourceType?: UniversalResourceType): string => {
     if (!attributes) {
       return 'No attributes found';
     }
@@ -447,7 +371,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('discover attributes', params.resource_type, error);
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType) => {
+  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -483,7 +407,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       throw createUniversalError('get detailed info', params.resource_type, error);
     }
   },
-  formatResult: (info: any, resourceType?: UniversalResourceType, infoType?: DetailedInfoType) => {
+  formatResult: (info: any, resourceType?: UniversalResourceType, infoType?: DetailedInfoType): string => {
     if (!info) {
       return 'No detailed information found';
     }

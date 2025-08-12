@@ -112,7 +112,10 @@ export function getBatchSizeLimit(resourceType?: string): number {
   if (!resourceType) return BATCH_SIZE_LIMITS.DEFAULT;
 
   const upperType = resourceType.toUpperCase();
-  return (BATCH_SIZE_LIMITS as any)[upperType] || BATCH_SIZE_LIMITS.DEFAULT;
+  return (
+    (BATCH_SIZE_LIMITS as Record<string, number>)[upperType] ||
+    BATCH_SIZE_LIMITS.DEFAULT
+  );
 }
 
 /**

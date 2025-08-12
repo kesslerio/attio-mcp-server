@@ -909,7 +909,7 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       
       // Preserve the requested record ID
       if (mockResult.id && typeof mockResult.id === 'object') {
-        (mockResult.id as any).record_id = record_id;
+        (mockResult.id as Record<string, unknown>).record_id = record_id;
       }
       
       enhancedPerformanceTracker.endOperation(perfId, true, 'Mock data returned', 200, { mock: true });
@@ -1568,7 +1568,7 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
       if (mappedData.linked_records !== undefined) {
         // Extract record IDs from linked_records array structure
         if (Array.isArray(mappedData.linked_records)) {
-          taskUpdateData.recordIds = mappedData.linked_records.map((link: any) => 
+          taskUpdateData.recordIds = mappedData.linked_records.map((link: Record<string, unknown>) => 
             link.record_id || link.id || link
           );
         } else {

@@ -22,7 +22,7 @@ export const attributeToolConfigs = {
       const fields = Object.keys(company.values || {});
 
       // Create a simplified version of the values for display
-      const simplifiedValues: Record<string, any> = {};
+      const simplifiedValues: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(company.values || {})) {
         if (Array.isArray(value) && value.length > 0) {
           // Extract just the actual value from the array structure
@@ -88,36 +88,42 @@ ${
   discoverAttributes: {
     name: 'discover-company-attributes',
     handler: discoverCompanyAttributes,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property access with proper narrowing
+      const all = Array.isArray(result.all) ? result.all : [];
+      const standard = Array.isArray(result.standard) ? result.standard : [];
+      const custom = Array.isArray(result.custom) ? result.custom : [];
+
       // Sanity check for empty or invalid results
-      if (
-        !result ||
-        (!result?.all?.length &&
-          !result?.standard?.length &&
-          !result?.custom?.length)
-      ) {
+      if (all.length === 0 && standard.length === 0 && custom.length === 0) {
         return 'No company attributes found. This may occur if there are no companies in the workspace.';
       }
 
       let output = `Company Attributes Discovery\n`;
-      output += `Total attributes: ${result?.all?.length || 0}\n`;
-      output += `Standard fields: ${result?.standard?.length || 0}\n`;
-      output += `Custom fields: ${result?.custom?.length || 0}\n\n`;
+      output += `Total attributes: ${all.length}\n`;
+      output += `Standard fields: ${standard.length}\n`;
+      output += `Custom fields: ${custom.length}\n\n`;
 
       output += `STANDARD FIELDS:\n`;
-      if (result?.standard?.length > 0) {
-        result.standard.forEach((field: string) => {
-          output += `  - ${field}\n`;
+      if (standard.length > 0) {
+        standard.forEach((field: unknown) => {
+          output += `  - ${String(field)}\n`;
         });
       } else {
         output += '  None found\n';
       }
 
       output += `\nCUSTOM FIELDS:\n`;
-      if (result.custom?.length > 0) {
-        result.custom.forEach((field: string) => {
-          const fieldInfo = result.all.find((f: any) => f.name === field);
-          output += `  - ${field} (${fieldInfo?.type || 'unknown'})\n`;
+      if (custom.length > 0) {
+        custom.forEach((field: unknown) => {
+          const fieldInfo = all.find((f: unknown) => 
+            typeof f === 'object' && f !== null && 
+            'name' in f && (f as { name: unknown }).name === field
+          );
+          const fieldType = fieldInfo && typeof fieldInfo === 'object' && 'type' in fieldInfo 
+            ? String((fieldInfo as { type: unknown }).type) 
+            : 'unknown';
+          output += `  - ${String(field)} (${fieldType})\n`;
         });
       } else {
         output += '  None found\n';
@@ -130,7 +136,7 @@ ${
   getAttributes: {
     name: 'get-company-attributes',
     handler: getCompanyAttributes,
-    formatResult: (result: any) => {
+    formatResult: (result: Record<string, unknown>): string => {
       // Enhanced error handling for unexpected result structure
       if (!result || typeof result !== 'object') {
         return `Error: Unable to process the response. Received: ${JSON.stringify(
@@ -140,24 +146,28 @@ ${
 
       // Handle case where the result contains an error object
       if (result.error) {
-        return `Error retrieving attribute: ${
-          result.error.message || JSON.stringify(result.error)
-        }`;
+        const errorMessage = typeof result.error === 'object' && result.error !== null && 
+          'message' in result.error && typeof (result.error as { message: unknown }).message === 'string'
+          ? (result.error as { message: string }).message
+          : JSON.stringify(result.error);
+        return `Error retrieving attribute: ${errorMessage}`;
       }
 
       if (result.value !== undefined) {
         // Return specific attribute value
-        return `Company: ${result.company}\nAttribute value: ${
+        const company = typeof result.company === 'string' ? result.company : 'Unknown';
+        return `Company: ${company}\nAttribute value: ${
           typeof result.value === 'object'
             ? JSON.stringify(result.value, null, 2)
-            : result.value
+            : String(result.value)
         }`;
-      } else if (result.attributes) {
+      } else if (result.attributes && Array.isArray(result.attributes)) {
         // Return list of attributes
-        return `Company: ${result.company}\nAvailable attributes (${
+        const company = typeof result.company === 'string' ? result.company : 'Unknown';
+        return `Company: ${company}\nAvailable attributes (${
           result.attributes.length
         }):\n${result.attributes
-          .map((attr: string) => `  - ${attr}`)
+          .map((attr: unknown) => `  - ${String(attr)}`)
           .join('\n')}`;
       } else {
         // Fallback for unexpected result structure

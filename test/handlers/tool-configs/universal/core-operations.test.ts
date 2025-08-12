@@ -570,6 +570,7 @@ describe('Universal Core Operations Tests', () => {
       const resourceTypes = [
         UniversalResourceType.COMPANIES,
         UniversalResourceType.PEOPLE,
+        UniversalResourceType.LISTS,
         UniversalResourceType.RECORDS,
         UniversalResourceType.TASKS,
         UniversalResourceType.DEALS
@@ -585,7 +586,7 @@ describe('Universal Core Operations Tests', () => {
         expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
       }
 
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(6);
     });
 
     it('should handle all resource types for CRUD operations', async () => {
@@ -630,10 +631,10 @@ describe('Universal Core Operations Tests', () => {
         });
       }
 
-      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(6);
     });
   });
 });

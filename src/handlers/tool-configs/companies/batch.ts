@@ -15,17 +15,28 @@ export const batchToolConfigs = {
   batchCreate: {
     name: 'batch-create-companies',
     handler: batchCreateCompanies,
-    formatResult: (result: any) => {
-      const { results, summary } = result;
-      let output = `Batch Create Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property extraction
+      const results = Array.isArray(result.results) ? result.results : [];
+      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
+      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
+      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+      
+      let output = `Batch Create Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
-      results.forEach((item: any) => {
-        if (item.success) {
-          output += `✓ Created: ${
-            item.data.values?.name?.[0]?.value || 'Unknown'
-          } (ID: ${item.data.id?.record_id})\n`;
-        } else {
-          output += `✗ Failed: ${item.error?.message || 'Unknown error'}\n`;
+      results.forEach((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemObj = item as Record<string, unknown>;
+          if (itemObj.success) {
+            const data = itemObj.data as any;
+            const name = data?.values?.name?.[0]?.value || 'Unknown';
+            const recordId = data?.id?.record_id || 'Unknown';
+            output += `✓ Created: ${name} (ID: ${recordId})\n`;
+          } else {
+            const error = itemObj.error as any;
+            const message = error?.message || 'Unknown error';
+            output += `✗ Failed: ${message}\n`;
+          }
         }
       });
 
@@ -36,17 +47,28 @@ export const batchToolConfigs = {
   batchUpdate: {
     name: 'batch-update-companies',
     handler: batchUpdateCompanies,
-    formatResult: (result: any) => {
-      const { results, summary } = result;
-      let output = `Batch Update Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property extraction
+      const results = Array.isArray(result.results) ? result.results : [];
+      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
+      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
+      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+      
+      let output = `Batch Update Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
-      results.forEach((item: any) => {
-        if (item.success) {
-          output += `✓ Updated: ${
-            item.data.values?.name?.[0]?.value || 'Unknown'
-          } (ID: ${item.data.id?.record_id})\n`;
-        } else {
-          output += `✗ Failed: ${item.error?.message || 'Unknown error'}\n`;
+      results.forEach((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemObj = item as Record<string, unknown>;
+          if (itemObj.success) {
+            const data = itemObj.data as any;
+            const name = data?.values?.name?.[0]?.value || 'Unknown';
+            const recordId = data?.id?.record_id || 'Unknown';
+            output += `✓ Updated: ${name} (ID: ${recordId})\n`;
+          } else {
+            const error = itemObj.error as any;
+            const message = error?.message || 'Unknown error';
+            output += `✗ Failed: ${message}\n`;
+          }
         }
       });
 
@@ -57,17 +79,25 @@ export const batchToolConfigs = {
   batchDelete: {
     name: 'batch-delete-companies',
     handler: batchDeleteCompanies,
-    formatResult: (result: any) => {
-      const { results, summary } = result;
-      let output = `Batch Delete Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property extraction
+      const results = Array.isArray(result.results) ? result.results : [];
+      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
+      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
+      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+      
+      let output = `Batch Delete Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
-      results.forEach((item: any) => {
-        if (item.success) {
-          output += `✓ Deleted: ${item.id}\n`;
-        } else {
-          output += `✗ Failed: ${item.id} - ${
-            item.error?.message || 'Unknown error'
-          }\n`;
+      results.forEach((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemObj = item as Record<string, unknown>;
+          if (itemObj.success) {
+            output += `✓ Deleted: ${String(itemObj.id)}\n`;
+          } else {
+            const error = itemObj.error as any;
+            const message = error?.message || 'Unknown error';
+            output += `✗ Failed: ${String(itemObj.id)} - ${message}\n`;
+          }
         }
       });
 
@@ -78,24 +108,36 @@ export const batchToolConfigs = {
   batchSearch: {
     name: 'batch-search-companies',
     handler: batchSearchCompanies,
-    formatResult: (result: any) => {
-      const { results, summary } = result;
-      let output = `Batch Search Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property extraction
+      const results = Array.isArray(result.results) ? result.results : [];
+      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
+      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
+      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+      
+      let output = `Batch Search Summary: ${summarySucceeded}/${summaryTotal} succeeded\n\n`;
 
-      results.forEach((item: any, index: number) => {
-        if (item.success) {
-          output += `Query ${index + 1}: Found ${item.data.length} companies\n`;
-          item.data.forEach((company: any) => {
-            output += `  - ${
-              company.values?.name?.[0]?.value || 'Unknown'
-            } (ID: ${company.id?.record_id})\n`;
-          });
-        } else {
-          output += `Query ${index + 1}: Failed - ${
-            item.error?.message || 'Unknown error'
-          }\n`;
+      results.forEach((item: unknown, index: number) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemObj = item as Record<string, unknown>;
+          if (itemObj.success) {
+            const data = Array.isArray(itemObj.data) ? itemObj.data : [];
+            output += `Query ${index + 1}: Found ${data.length} companies\n`;
+            data.forEach((company: unknown) => {
+              if (typeof company === 'object' && company !== null) {
+                const companyObj = company as any;
+                const name = companyObj?.values?.name?.[0]?.value || 'Unknown';
+                const recordId = companyObj?.id?.record_id || 'Unknown';
+                output += `  - ${name} (ID: ${recordId})\n`;
+              }
+            });
+          } else {
+            const error = itemObj.error as any;
+            const message = error?.message || 'Unknown error';
+            output += `Query ${index + 1}: Failed - ${message}\n`;
+          }
+          output += '\n';
         }
-        output += '\n';
       });
 
       return output;
@@ -105,28 +147,35 @@ export const batchToolConfigs = {
   batchGetDetails: {
     name: 'batch-get-company-details',
     handler: batchGetCompanyDetails,
-    formatResult: (result: any) => {
-      const { results, summary } = result;
-      let output = `Batch Get Details Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
+    formatResult: (result: Record<string, unknown>): string => {
+      // Type-safe property extraction
+      const results = Array.isArray(result.results) ? result.results : [];
+      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
+      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
+      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+      
+      let output = `Batch Get Details Summary: ${summarySucceeded}/${summaryTotal} succeeded\n\n`;
 
-      results.forEach((item: any) => {
-        if (item.success) {
-          const company = item.data;
-          output += `✓ ${
-            company.values?.name?.[0]?.value || 'Unknown'
-          } (ID: ${company.id?.record_id})\n`;
-          output += `  Website: ${
-            company.values?.website?.[0]?.value || 'N/A'
-          }\n`;
-          output += `  Industry: ${
-            company.values?.industry?.[0]?.value || 'N/A'
-          }\n`;
-        } else {
-          output += `✗ Failed: ${item.id} - ${
-            item.error?.message || 'Unknown error'
-          }\n`;
+      results.forEach((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemObj = item as Record<string, unknown>;
+          if (itemObj.success) {
+            const company = itemObj.data as any;
+            const name = company?.values?.name?.[0]?.value || 'Unknown';
+            const recordId = company?.id?.record_id || 'Unknown';
+            const website = company?.values?.website?.[0]?.value || 'N/A';
+            const industry = company?.values?.industry?.[0]?.value || 'N/A';
+            
+            output += `✓ ${name} (ID: ${recordId})\n`;
+            output += `  Website: ${website}\n`;
+            output += `  Industry: ${industry}\n`;
+          } else {
+            const error = itemObj.error as any;
+            const message = error?.message || 'Unknown error';
+            output += `✗ Failed: ${String(itemObj.id)} - ${message}\n`;
+          }
+          output += '\n';
         }
-        output += '\n';
       });
 
       return output;
