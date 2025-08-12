@@ -15,7 +15,8 @@ export default [
       'test/**/*.cjs',
       '*.js',
       '*.mjs', 
-      '*.cjs'
+      '*.cjs',
+      '**/*.d.ts'  // Ignore TypeScript declaration files
     ]
   },
   js.configs.recommended,
