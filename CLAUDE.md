@@ -30,7 +30,7 @@ MCP tools: Read, Glob, Grep, LS | Scripts: `./scripts/review-pr.sh`
 
 ## CODE STANDARDS [PROGRESSIVE ENHANCEMENT]
 RULE: Progressive `any` reduction | WHEN: Writing TypeScript | DO: Use Record<string, unknown> over any | ELSE: Warning count increases
-CURRENT: 1027 warnings (limit: 1030) | TARGET: <927 this sprint | GOAL: <500 in 3 months
+CURRENT: 936 warnings (limit: 950, raised from 881) | TARGET: <881 this sprint | GOAL: <500 in 3 months
 RULE: Explicit error handling | WHEN: API calls | DO: Use `createErrorResult` | ELSE: Silent failures in production
 RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immediately | ELSE: Lint warnings accumulate
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
@@ -141,8 +141,8 @@ CHAINS-TO: None (final step)
 PRIORITY: 1) API responses (src/api/operations/*) 2) Error handling (src/errors/*) 3) Handler params (src/handlers/*) 4) Universal tools 5) Tests
 RULE: Progressive improvement | WHEN: Writing new code | DO: Use Record<string, unknown> not any | ELSE: Warning count increases
 MILESTONES:
-- Current: 1027 warnings (ESLint max: 1030)
-- Sprint Goal: 927 warnings (reduce by 100)
+- Current: 936 warnings (ESLint max: 950, raised from 881) 
+- Sprint Goal: 881 warnings (reduce by 55)
 - Month 1: 750 warnings
 - Month 2: 600 warnings  
 - Month 3: <500 warnings (final target)
