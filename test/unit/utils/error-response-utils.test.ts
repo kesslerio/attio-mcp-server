@@ -121,18 +121,18 @@ describe('error-response-utils', () => {
       const error = createUnknownFieldError(
         'company_description',
         'companies',
-        ['description', 'note']
+        ['description', 'notes']
       );
 
       expect(error.error).toContain("Unknown field 'company_description' for resource type 'companies'");
-      expect(error.error).toContain("Did you mean: 'description', 'note'?");
+      expect(error.error).toContain("Did you mean: 'description', 'notes'?");
       expect(error.error_code).toBe(ValidationErrorCode.UNKNOWN_FIELD);
       expect(error.field).toBe('company_description');
       expect(error.suggestions).toContain('Try using: description');
       expect(error.context).toEqual({
         resource_type: 'companies',
         invalid_field: 'company_description',
-        suggested_fields: ['description', 'note']
+        suggested_fields: ['description', 'notes']
       });
     });
 
