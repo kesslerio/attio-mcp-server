@@ -630,10 +630,10 @@ describe('Universal Core Operations Tests', () => {
         });
       }
 
-      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(5);
-      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(5);
+      expect(vi.mocked(handleUniversalGetDetails)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(6);
     });
   });
 });

@@ -103,6 +103,15 @@ import {
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
 import { getAttioClient } from '../../../api/attio-client.js';
 import { UniversalValidationError, ErrorType } from './schemas.js';
+import {
+  mapRecordFields,
+  validateResourceType,
+  getFieldSuggestions,
+  validateFields,
+  enhanceUniquenessError,
+  getValidResourceTypes,
+  FIELD_MAPPINGS
+} from './field-mapper.js';
 
 /**
  * Truncate suggestions to prevent buffer overflow in MCP protocol
@@ -114,15 +123,6 @@ function truncateSuggestions(suggestions: string[], maxCount: number = 3): strin
   }
   return limited;
 }
-import {
-  mapRecordFields,
-  validateResourceType,
-  getFieldSuggestions,
-  validateFields,
-  enhanceUniquenessError,
-  getValidResourceTypes,
-  FIELD_MAPPINGS
-} from './field-mapper.js';
 
 // Import enhanced validation utilities
 import {

@@ -291,7 +291,7 @@ describe('Field Collision Detection', () => {
 
       // Check all collisions are detected
       expect(result.collisions).toHaveProperty('domains');
-      expect(result.collisions).toHaveProperty('note');
+      expect(result.collisions).toHaveProperty('notes');
       expect(result.collisions).toHaveProperty('estimated_arr');
     });
   });
