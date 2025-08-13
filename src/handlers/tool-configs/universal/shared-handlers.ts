@@ -49,117 +49,11 @@ import { enhancedPerformanceTracker } from '../../../middleware/performance-enha
 import { generateIdCacheKey } from '../../../utils/validation/id-validation.js';
 import { performance } from 'perf_hooks';
 
-/**
- * Test environment detection for Issue #480
- * Determines if mock data should be used instead of real API calls
- */
-function shouldUseMockData(): boolean {
-  return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-}
 
-/**
- * Create mock company data for test environments
- * Issue #480: Ensures proper ID structure for E2E test compatibility
- */
-function createMockCompany(data: Record<string, unknown>): AttioRecord {
-  const timestamp = Date.now();
-  const recordId = `mock-company-${timestamp}`;
-  
-  return {
-    id: {
-      record_id: recordId,
-      object_id: 'companies',
-      workspace_id: 'mock-workspace'
-    },
-    values: {
-      name: Array.isArray(data.name) ? data.name : [{ value: data.name || `Mock Company ${recordId.slice(-4)}` }],
-      website: Array.isArray(data.website) ? data.website : [{ value: data.website || `${recordId}.example.com` }],
-      industry: Array.isArray(data.industry) ? data.industry : [{ value: data.industry || 'Technology' }],
-      description: Array.isArray(data.description) ? data.description : [{ value: data.description || 'Mock company for testing' }]
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  } as AttioRecord;
-}
 
-/**
- * Create mock person data for test environments 
- * Issue #480: Ensures proper ID structure for E2E test compatibility
- */
-function createMockPerson(data: Record<string, unknown>): AttioRecord {
-  const timestamp = Date.now();
-  const recordId = `mock-person-${timestamp}`;
-  
-  return {
-    id: {
-      record_id: recordId,
-      object_id: 'people',
-      workspace_id: 'mock-workspace'
-    },
-    values: {
-      name: Array.isArray(data.name) ? data.name : [{ value: data.name || `Mock Person ${recordId.slice(-4)}`, first_name: 'Mock', last_name: 'Person' }],
-      email_addresses: Array.isArray(data.email_addresses) ? data.email_addresses : [{ email_address: data.email || `${recordId}@example.com` }],
-      phone_numbers: Array.isArray(data.phone_numbers) ? data.phone_numbers : [{ phone_number: data.phone || '+1-555-0123' }],
-      job_title: Array.isArray(data.job_title) ? data.job_title : [{ value: data.job_title || 'Mock Employee' }]
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  } as AttioRecord;
-}
 
-/**
- * Create mock task data for test environments
- * Issue #480: Ensures proper ID structure with both record_id and task_id
- */
-function createMockTaskRecord(content: string, options: Record<string, unknown> = {}): AttioRecord {
-  const timestamp = Date.now();
-  const taskId = `mock-task-${timestamp}`;
-  
-  // Ensure task content includes test identifier for cleanup validation
-  const testContent = content.includes('E2E') || content.includes('Test') || content.includes('testing') 
-    ? content 
-    : `E2E ${content}`;
-  
-  return {
-    id: {
-      record_id: taskId,
-      task_id: taskId, // Issue #480: Both IDs for E2E compatibility
-      object_id: 'tasks',
-      workspace_id: 'mock-workspace'
-    },
-    values: {
-      content: [{ value: testContent }],
-      title: [{ value: testContent }], // Issue #480: Both content and title for compatibility
-      status: [{ value: options.status || 'open' }],
-      assignee_id: options.assigneeId ? [{ value: options.assigneeId }] : undefined,
-      due_date: options.dueDate ? [{ value: options.dueDate }] : undefined,
-      linked_records: options.recordId ? [{ 
-        id: options.recordId,
-        object_id: 'mock-object',
-        object_slug: 'companies',
-        title: 'Mock Linked Record'
-      }] : undefined
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  } as AttioRecord;
-}
 
-/**
- * Validate mock IDs and throw appropriate errors for test scenarios
- * Issue #480: Ensures error tests still work with mock data
- */
-function validateMockId(id: string, resourceType: string): void {
-  // Check for obviously invalid IDs that should trigger errors
-  if (id.includes('invalid') || id.includes('nonexistent') || id.includes('12345')) {
-    throw new Error(`${resourceType} not found: ${id}`);
-  }
-  
-  // Check for malformed IDs  
-  if (id.length < 3 || (!id.startsWith('mock-') && !id.match(/^[a-zA-Z0-9\-_]+$/))) {
-    throw new Error(`Invalid ${resourceType} ID format: ${id}`);
-  }
-}
+
 
 // Import existing handlers by resource type
 import {
@@ -896,36 +790,6 @@ export async function handleUniversalGetDetails(params: UniversalRecordDetailsPa
       throw createRecordNotFoundError(record_id, resource_type);
     }
     
-    // Issue #480: Use mock data in test environment with validation
-    if (shouldUseMockData()) {
-      validateMockId(record_id, getSingularResourceType(resource_type));
-      
-      // Create appropriate mock record based on resource type
-      let mockResult: AttioRecord;
-      switch (resource_type) {
-        case UniversalResourceType.COMPANIES:
-          mockResult = createMockCompany({ name: `Mock Company ${record_id.slice(-4)}` });
-          break;
-        case UniversalResourceType.PEOPLE:
-          mockResult = createMockPerson({ name: `Mock Person ${record_id.slice(-4)}` });
-          break;
-        case UniversalResourceType.TASKS:
-          mockResult = createMockTaskRecord(`Mock Task ${record_id.slice(-4)}`, {});
-          break;
-        default:
-          // For other resource types, create a basic mock record
-          mockResult = createMockCompany({ name: `Mock ${getSingularResourceType(resource_type)} ${record_id.slice(-4)}` });
-          break;
-      }
-      
-      // Preserve the requested record ID
-      if (mockResult.id && typeof mockResult.id === 'object') {
-        (mockResult.id as Record<string, unknown>).record_id = record_id;
-      }
-      
-      enhancedPerformanceTracker.endOperation(perfId, true, 'Mock data returned', 200, { mock: true });
-      return filterResponseFields(mockResult, fields) as AttioRecord;
-    }
     
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
@@ -1130,10 +994,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         
         // Note: Debug logging moved to development utilities
         
-        // Issue #480: Use mock data in test environment
-        if (shouldUseMockData()) {
-          return createMockCompany(correctedData);
-        }
         
         const result = await createCompany(correctedData);
         
@@ -1218,10 +1078,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         // Apply format conversions for common mistakes
         const correctedData = convertAttributeFormats('people', normalizedData);
         
-        // Issue #480: Use mock data in test environment
-        if (shouldUseMockData()) {
-          return createMockPerson(correctedData);
-        }
         
         return await createPerson(correctedData);
       } catch (error: unknown) {
@@ -1345,10 +1201,6 @@ export async function handleUniversalCreate(params: UniversalCreateParams): Prom
         
         // Note: Debug logging moved to development utilities
         
-        // Issue #480: Use mock data in test environment
-        if (shouldUseMockData()) {
-          return createMockTaskRecord(content, options);
-        }
         
         const createdTask = await createTask(content, options);
         
@@ -1437,14 +1289,6 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
       try {
-        // Issue #480: Use mock data in test environment with validation
-        if (shouldUseMockData()) {
-          validateMockId(record_id, 'Company');
-          const updatedCompany = createMockCompany(mappedData);
-          updatedCompany.id.record_id = record_id; // Preserve original ID
-          updatedCompany.updated_at = new Date().toISOString();
-          return updatedCompany;
-        }
         
         return await updateCompany(record_id, mappedData);
       } catch (error: unknown) {
@@ -1506,14 +1350,6 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
         // Validate email addresses for consistency with create operations
         validateEmailAddresses(mappedData);
         
-        // Issue #480: Use mock data in test environment with validation
-        if (shouldUseMockData()) {
-          validateMockId(record_id, 'Person');
-          const updatedPerson = createMockPerson(mappedData);
-          updatedPerson.id.record_id = record_id; // Preserve original ID
-          updatedPerson.updated_at = new Date().toISOString();
-          return updatedPerson;
-        }
         
         return await updatePerson(record_id, mappedData);
       } catch (error: unknown) {
@@ -1592,45 +1428,6 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
         taskUpdateData.recordIds = [mappedData.record_id];
       }
       
-      // Issue #480: Use mock data in test environment with validation
-      if (shouldUseMockData()) {
-        validateMockId(record_id, 'Task');
-        
-        // Validate assignee ID if provided
-        if (taskUpdateData.assigneeId) {
-          try {
-            validateMockId(taskUpdateData.assigneeId as string, 'Assignee');
-          } catch (error) {
-            throw new Error(`Invalid assignee ID: ${taskUpdateData.assigneeId}`);
-          }
-        }
-        
-        // Validate linked record IDs if provided
-        if (taskUpdateData.recordIds && Array.isArray(taskUpdateData.recordIds)) {
-          for (const recordId of taskUpdateData.recordIds) {
-            try {
-              validateMockId(recordId as string, 'Record');
-            } catch (error) {
-              throw new Error(`Invalid record ID for linking: ${recordId}`);
-            }
-          }
-        }
-        
-        // Convert recordIds array to recordId for mock creation compatibility
-        const mockOptions = { ...taskUpdateData };
-        if (taskUpdateData.recordIds && Array.isArray(taskUpdateData.recordIds) && taskUpdateData.recordIds.length > 0) {
-          mockOptions.recordId = taskUpdateData.recordIds[0]; // Use first linked record
-        }
-        
-        const updatedTask = createMockTaskRecord(
-          taskUpdateData.content as string || 'Updated task', 
-          mockOptions
-        );
-        updatedTask.id.record_id = record_id; // Preserve original ID
-        updatedTask.id.task_id = record_id; // Preserve task_id too
-        updatedTask.updated_at = new Date().toISOString();
-        return updatedTask;
-      }
       
       const updatedTask = await updateTask(record_id, taskUpdateData);
       // Convert AttioTask to AttioRecord using proper type conversion
@@ -1662,12 +1459,6 @@ export async function handleUniversalUpdate(params: UniversalUpdateParams): Prom
 export async function handleUniversalDelete(params: UniversalDeleteParams): Promise<{ success: boolean; record_id: string }> {
   const { resource_type, record_id } = params;
   
-  // Issue #480: Use mock data in test environment with validation
-  if (shouldUseMockData()) {
-    validateMockId(record_id, getSingularResourceType(resource_type));
-    // Mock successful deletion - all resources handled the same way in test
-    return { success: true, record_id };
-  }
   
   switch (resource_type) {
     case UniversalResourceType.COMPANIES:
