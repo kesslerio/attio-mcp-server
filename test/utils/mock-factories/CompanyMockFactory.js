@@ -7,6 +7,7 @@
  * response format with proper AttioValue wrappers and nested structure.
  */
 import { TestEnvironment } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 /**
  * CompanyMockFactory - Generates mock AttioRecord data for companies
  *
@@ -31,12 +32,13 @@ import { TestEnvironment } from './test-environment.js';
  */
 export class CompanyMockFactory {
     /**
-     * Generates a unique mock company ID
+     * Generates a unique mock company ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId() {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
-        return `mock-company-${timestamp}-${random}`;
+        return UUIDMockGenerator.generateCompanyUUID();
     }
     /**
      * Creates a mock company AttioRecord with realistic data

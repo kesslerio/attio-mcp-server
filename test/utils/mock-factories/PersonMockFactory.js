@@ -7,6 +7,7 @@
  * response format with proper email, phone, and company associations.
  */
 import { TestEnvironment } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 /**
  * PersonMockFactory - Generates mock AttioRecord data for people
  *
@@ -31,12 +32,13 @@ import { TestEnvironment } from './test-environment.js';
  */
 export class PersonMockFactory {
     /**
-     * Generates a unique mock person ID
+     * Generates a unique mock person ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId() {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
-        return `mock-person-${timestamp}-${random}`;
+        return UUIDMockGenerator.generatePersonUUID();
     }
     /**
      * Creates a mock person AttioRecord with realistic data

@@ -14,6 +14,9 @@ Welcome to the comprehensive documentation for the Attio MCP Server. This hub pr
 #### 🎯 PR #483: formatResult Architecture Refactoring (EXCEPTIONAL SUCCESS)
 - **[Architecture Decision Record](./architecture/adr-formatresult-refactoring.md)** - Complete ADR for 97.15/100 production readiness
 - **[Performance Report](./performance/formatresult-performance-report.md)** - 89.7% speed improvement documentation  
+- **[formatResult Optimization Guide](./performance/formatResult-optimization.md)** - Practical optimization techniques and patterns
+- **[Mock Factory Pattern](./architecture/mock-factory-pattern.md)** - Clean test/production separation architecture
+- **[Production-Test Separation](./testing/production-test-separation.md)** - Complete architectural separation guide
 - **[Migration Guide](./migration/formatresult-consistency-migration.md)** - formatResult consistency patterns
 - **[Performance Optimization Strategies](./performance/optimization-strategies.md)** - Reusable optimization techniques
 - **[Anti-Pattern Prevention](./development/anti-patterns.md)** - Prevent architecture regressions

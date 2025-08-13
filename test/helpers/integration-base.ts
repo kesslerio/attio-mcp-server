@@ -64,7 +64,7 @@ export class IntegrationTestBase {
 
       // Initialize API client
       try {
-        await initializeAttioClient();
+        initializeAttioClient(process.env.ATTIO_API_KEY!);
         console.log('API client initialized for integration tests');
       } catch (error: unknown) {
         console.error('Failed to initialize API client:', error);

@@ -62,7 +62,10 @@ export interface MockListEntryOptions {
  */
 export declare class ListMockFactory implements MockFactory<AttioList> {
     /**
-     * Generates a unique mock list ID
+     * Generates a unique mock list ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId(): string;
     /**

@@ -15,11 +15,24 @@
  */
 import { TaskMockFactory, CompanyMockFactory, PersonMockFactory, ListMockFactory } from './index.js';
 import { TestEnvironment, shouldUseMockData } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 // In-memory storage for created mock records (persists during test session)
 const mockStorage = new Map();
-// Helper to generate persistent mock IDs
+// Helper to generate persistent mock IDs in UUID format
+// Addresses PR #483: Use UUID-compliant IDs for validation compatibility
 function generateMockId(prefix = 'mock') {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    switch (prefix) {
+        case 'company':
+            return UUIDMockGenerator.generateCompanyUUID();
+        case 'person':
+            return UUIDMockGenerator.generatePersonUUID();
+        case 'task':
+            return UUIDMockGenerator.generateTaskUUID();
+        case 'list':
+            return UUIDMockGenerator.generateListUUID();
+        default:
+            return UUIDMockGenerator.generateDeterministicUUID(prefix);
+    }
 }
 // Helper to store and retrieve mock objects
 function storeMock(id, object) {

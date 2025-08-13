@@ -34,11 +34,38 @@ export async function createPerson(
   attributes: PersonAttributes
 ): Promise<Person> {
   try {
-    return await createObjectWithDynamicFields<Person>(
+    const result = await createObjectWithDynamicFields<Person>(
       ResourceType.PEOPLE,
       attributes,
       PersonValidator.validateCreate
     );
+    
+    // Defensive validation: Ensure we have a valid person record
+    if (!result) {
+      throw new PersonOperationError(
+        'create',
+        undefined,
+        'API returned null/undefined response for person creation'
+      );
+    }
+    
+    if (!result.id || !result.id.record_id) {
+      throw new PersonOperationError(
+        'create',
+        undefined,
+        `API returned invalid person record without proper ID structure. Response: ${JSON.stringify(result)}`
+      );
+    }
+    
+    if (!result.values || typeof result.values !== 'object') {
+      throw new PersonOperationError(
+        'create',
+        undefined,
+        `API returned invalid person record without values object. Response: ${JSON.stringify(result)}`
+      );
+    }
+    
+    return result;
   } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {
       throw error;

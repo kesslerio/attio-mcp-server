@@ -159,6 +159,7 @@ export async function callToolWithEnhancements(
 
     return {
       success: !isErrorResponse,
+      isError: isErrorResponse,
       content: finalResponse.content,
       error: errorInfo,
       timing,
@@ -200,6 +201,7 @@ export async function callToolWithEnhancements(
 
     return {
       success: false,
+      isError: true,
       error: errorInfo,
       timing,
       toolName: actualToolName,

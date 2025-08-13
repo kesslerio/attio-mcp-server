@@ -11,6 +11,7 @@
  * Replaces the hardcoded mock data previously embedded in production handlers.
  */
 import { TestEnvironment } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 /**
  * TaskMockFactory - Generates mock AttioTask data for testing
  *
@@ -34,12 +35,13 @@ import { TestEnvironment } from './test-environment.js';
  */
 export class TaskMockFactory {
     /**
-     * Generates a unique mock task ID
+     * Generates a unique mock task ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId() {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
-        return `mock-task-${timestamp}-${random}`;
+        return UUIDMockGenerator.generateTaskUUID();
     }
     /**
      * Creates a mock AttioTask with realistic data

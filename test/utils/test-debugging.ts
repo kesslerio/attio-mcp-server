@@ -419,11 +419,11 @@ export class MockDataValidator {
   /**
    * Validates all mock factories and returns comprehensive report
    */
-  static validateAllFactories(): FactoryValidationReport {
-    const taskFactory = this.validateTaskFactory();
-    const companyFactory = this.validateCompanyFactory();
-    const personFactory = this.validatePersonFactory();
-    const listFactory = this.validateListFactory();
+  static async validateAllFactories(): Promise<FactoryValidationReport> {
+    const taskFactory = await this.validateTaskFactory();
+    const companyFactory = await this.validateCompanyFactory();
+    const personFactory = await this.validatePersonFactory();
+    const listFactory = await this.validateListFactory();
 
     const overallScore =
       (taskFactory.fieldCoverage +
@@ -437,11 +437,13 @@ export class MockDataValidator {
     // Collect critical issues
     [taskFactory, companyFactory, personFactory, listFactory].forEach(
       (result) => {
-        result.errors.forEach((error) => {
-          if (error.includes('Issue #480') || error.includes('required')) {
-            criticalIssues.push(error);
-          }
-        });
+        if (result && result.errors && Array.isArray(result.errors)) {
+          result.errors.forEach((error) => {
+            if (error.includes('Issue #480') || error.includes('required')) {
+              criticalIssues.push(error);
+            }
+          });
+        }
       }
     );
 
@@ -681,13 +683,13 @@ export class TestEnvironmentDiagnostics {
   /**
    * Runs full diagnostic suite
    */
-  static runFullDiagnostic(): DiagnosticReport {
+  static async runFullDiagnostic(): Promise<DiagnosticReport> {
     return {
       environmentDetection: this.checkEnvironmentDetection(),
-      mockFactoryStatus: MockDataValidator.validateAllFactories(),
+      mockFactoryStatus: await MockDataValidator.validateAllFactories(),
       apiMockStatus: this.checkApiMockingStatus(),
       testDataCleanup: this.validateTestDataCleanup(),
-      recommendations: this.generateRecommendations(),
+      recommendations: await this.generateRecommendations(),
     };
   }
 
@@ -729,9 +731,9 @@ export class TestEnvironmentDiagnostics {
   /**
    * Generates actionable recommendations
    */
-  private static generateRecommendations(): string[] {
+  private static async generateRecommendations(): Promise<string[]> {
     const recommendations: string[] = [];
-    const report = MockDataValidator.validateAllFactories();
+    const report = await MockDataValidator.validateAllFactories();
 
     if (report.overallScore < 0.9) {
       recommendations.push(

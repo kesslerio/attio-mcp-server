@@ -24,7 +24,7 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
 
   beforeAll(async () => {
     // Run full diagnostic before tests
-    diagnosticReport = TestEnvironmentDiagnostics.runFullDiagnostic();
+    diagnosticReport = await TestEnvironmentDiagnostics.runFullDiagnostic();
   });
 
   describe('Task Mock Factory Validation - Issue #480 Compatibility', () => {
@@ -311,8 +311,8 @@ describe('Mock Data Validation for E2E Test Compatibility', () => {
       });
     });
 
-    it('should have no critical validation errors', () => {
-      const report = MockDataValidator.validateAllFactories();
+    it('should have no critical validation errors', async () => {
+      const report = await MockDataValidator.validateAllFactories();
 
       // Critical errors that would break E2E tests
       const criticalErrors = report.criticalIssues.filter(

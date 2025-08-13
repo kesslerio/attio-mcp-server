@@ -50,7 +50,10 @@ export interface MockPersonOptions {
  */
 export declare class PersonMockFactory implements MockFactory<AttioRecord> {
     /**
-     * Generates a unique mock person ID
+     * Generates a unique mock person ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId(): string;
     /**

@@ -7,6 +7,7 @@
  * response format for lists and list entries.
  */
 import { TestEnvironment } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 /**
  * ListMockFactory - Generates mock AttioList data for lists
  *
@@ -30,12 +31,13 @@ import { TestEnvironment } from './test-environment.js';
  */
 export class ListMockFactory {
     /**
-     * Generates a unique mock list ID
+     * Generates a unique mock list ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId() {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
-        return `mock-list-${timestamp}-${random}`;
+        return UUIDMockGenerator.generateListUUID();
     }
     /**
      * Creates a mock AttioList with realistic data

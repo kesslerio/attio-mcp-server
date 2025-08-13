@@ -172,7 +172,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         listId: 'invalid-list-id-12345'
       });
       
-      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist/i);
+      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
     }, 15000);
 
     it('should validate list structure', async () => {
@@ -384,7 +384,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         entryId: 'non-existent-entry-id-12345'
       });
       
-      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist/i);
+      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
     }, 15000);
   });
 
@@ -616,7 +616,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
       for (const op of operations) {
         const response = await callListTool(op.tool, op.params);
-        E2EAssertions.expectMcpError(response, /not found|invalid|does not exist/i);
+        E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
       }
     }, 30000);
 

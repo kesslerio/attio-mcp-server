@@ -60,7 +60,10 @@ export interface MockFactory<T> {
  */
 export declare class TaskMockFactory implements MockFactory<AttioTask> {
     /**
-     * Generates a unique mock task ID
+     * Generates a unique mock task ID in UUID format
+     *
+     * Uses deterministic UUID generation for consistent performance testing
+     * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId(): string;
     /**

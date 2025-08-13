@@ -68,6 +68,7 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
+
     // Handle different response structures
     let result: T;
     
