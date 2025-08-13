@@ -31,16 +31,19 @@
       },
       "objects": {
         "companies": {
+          "Name": "name_companies",
           "B2B Segment": "type_persona",
           "Type Persona": "type_persona",
-          "Company Name": "name",
+          "Company Name": "name_companies",
           "Company Website": "website",
           "Company Type": "company_type"
         },
         "people": {
+          "Name": "name_people",
           "First Name": "first_name",
           "Last Name": "last_name",
-          "Full Name": "name",
+          "Full Name": "name_people",
+          "Phone": "phone_number",
           "Title": "title",
           "Job Title": "title",
           "Position": "title",
@@ -56,7 +59,10 @@
       "Users": "users",
       "Activities": "activities"
     },
-    "lists": {},
+    "lists": {
+      "Important Leads": "important_leads",
+      "VIP Contacts": "vip_contacts"
+    },
     "relationships": {}
   }
 }

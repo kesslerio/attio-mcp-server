@@ -7,6 +7,7 @@ import {
   getListSlug,
   translateAttributeNamesInFilters,
   COMMON_ATTRIBUTE_MAP,
+  invalidateConfigCache,
 } from '../../src/utils/attribute-mapping/index';
 import * as configLoader from '../../src/utils/config-loader';
 
@@ -147,7 +148,7 @@ describe('Attribute Mapping', () => {
         mappings: {
           attributes: {
             common: {
-              Name: 'name_common',
+              Name: 'name',
             },
             objects: {
               companies: {
@@ -163,7 +164,7 @@ describe('Attribute Mapping', () => {
       });
 
       // Reset cached config first to ensure we use the mock
-      vi.resetModules();
+      invalidateConfigCache();
 
       // Should use the company-specific mapping
       const companySlug = getAttributeSlug('Name', 'companies');
@@ -171,7 +172,7 @@ describe('Attribute Mapping', () => {
 
       // Should use the common mapping without object type
       const commonSlug = getAttributeSlug('Name');
-      expect(commonSlug).toBe('name_common');
+      expect(commonSlug).toBe('name');
     });
   });
 
@@ -265,7 +266,7 @@ describe('Attribute Mapping', () => {
       });
 
       // Reset cached config to ensure we use the latest mock
-      vi.resetModules();
+      invalidateConfigCache();
 
       // Test list mappings
       const importantLeadsSlug = getListSlug('Important Leads');
@@ -354,6 +355,9 @@ describe('Attribute Mapping', () => {
     });
 
     it('should use object context for translations', () => {
+      // Ensure we use the real configuration
+      invalidateConfigCache();
+
       const filter = {
         attribute: {
           slug: 'Name',
@@ -393,6 +397,9 @@ describe('Attribute Mapping', () => {
     });
 
     it('should respect object-specific context in nested filters', () => {
+      // Ensure we use the real configuration
+      invalidateConfigCache();
+
       const filter = {
         operator: 'and',
         filters: [
@@ -426,6 +433,9 @@ describe('Attribute Mapping', () => {
     });
 
     it('should process deeply nested object structures', () => {
+      // Ensure we use the real configuration
+      invalidateConfigCache();
+
       const complexFilter = {
         operator: 'and',
         filters: [
