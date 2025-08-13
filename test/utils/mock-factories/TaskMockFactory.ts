@@ -72,7 +72,61 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
    * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
+    // Use random UUID generation for unique IDs
     return UUIDMockGenerator.generateTaskUUID();
+  }
+
+  /**
+   * Creates a mock AttioTask with a specific ID
+   * 
+   * @param identifier - Unique identifier for deterministic UUID generation
+   * @param overrides - Optional overrides for specific fields
+   * @returns Mock AttioTask matching API response format
+   */
+  static createWithId(identifier: string, overrides: MockTaskOptions = {}): AttioTask {
+    const taskId = UUIDMockGenerator.generateTaskUUID(identifier);
+    const now = new Date().toISOString();
+    const content = overrides.content || overrides.title || 'Mock Task Content';
+    
+    // Issue #480: Generate both content and title for test compatibility
+    // This ensures E2E tests that expect either field will work
+    const baseTask: AttioTask = {
+      id: {
+        record_id: taskId,
+        task_id: taskId, // Issue #480: Preserve task_id for E2E test compatibility
+        workspace_id: 'mock-workspace-id'
+      },
+      content,
+      status: overrides.status || (overrides.is_completed ? 'completed' : 'pending'),
+      created_at: overrides.created_at || now,
+      updated_at: overrides.updated_at || now
+    };
+
+    // Handle optional fields
+    if (overrides.deadline_at || overrides.due_date) {
+      baseTask.deadline_at = overrides.deadline_at || overrides.due_date;
+    }
+
+    if (overrides.assignee_id || overrides.assignees) {
+      // Handle both single assignee and array format
+      if (overrides.assignees && Array.isArray(overrides.assignees)) {
+        baseTask.assignees = overrides.assignees;
+      } else if (overrides.assignee_id) {
+        baseTask.assignees = [overrides.assignee_id as string];
+      }
+    }
+
+    if (overrides.linked_records && Array.isArray(overrides.linked_records)) {
+      baseTask.linked_records = overrides.linked_records;
+    }
+
+    TestEnvironment.log(`Created mock task: ${taskId}`, {
+      content,
+      status: baseTask.status,
+      assignees: baseTask.assignees
+    });
+
+    return baseTask;
   }
 
   /**

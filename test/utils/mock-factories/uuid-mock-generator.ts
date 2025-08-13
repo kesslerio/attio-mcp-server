@@ -60,32 +60,71 @@ export class UUIDMockGenerator {
    * Generate mock company UUID with company prefix
    */
   static generateCompanyUUID(identifier?: string): string {
-    const seed = identifier ? `company-${identifier}` : `company-${Date.now()}`;
-    return this.generateDeterministicUUID(seed);
+    if (identifier) {
+      const seed = `company-${identifier}`;
+      return this.generateDeterministicUUID(seed);
+    }
+    // For no identifier, use truly random UUID
+    return this.generateRandomUUID();
   }
   
   /**
    * Generate mock person UUID with person prefix
    */
   static generatePersonUUID(identifier?: string): string {
-    const seed = identifier ? `person-${identifier}` : `person-${Date.now()}`;
-    return this.generateDeterministicUUID(seed);
+    if (identifier) {
+      const seed = `person-${identifier}`;
+      return this.generateDeterministicUUID(seed);
+    }
+    // For no identifier, use truly random UUID
+    return this.generateRandomUUID();
   }
   
   /**
    * Generate mock task UUID with task prefix
    */
   static generateTaskUUID(identifier?: string): string {
-    const seed = identifier ? `task-${identifier}` : `task-${Date.now()}`;
-    return this.generateDeterministicUUID(seed);
+    if (identifier) {
+      const seed = `task-${identifier}`;
+      return this.generateDeterministicUUID(seed);
+    }
+    // For no identifier, use truly random UUID
+    return this.generateRandomUUID();
   }
   
   /**
    * Generate mock list UUID with list prefix
    */
   static generateListUUID(identifier?: string): string {
-    const seed = identifier ? `list-${identifier}` : `list-${Date.now()}`;
-    return this.generateDeterministicUUID(seed);
+    if (identifier) {
+      const seed = `list-${identifier}`;
+      return this.generateDeterministicUUID(seed);
+    }
+    // For no identifier, use truly random UUID
+    return this.generateRandomUUID();
+  }
+  
+  /**
+   * Generate a truly random UUID v4
+   */
+  private static generateRandomUUID(): string {
+    // Use crypto.randomUUID() if available (Node.js 14.17+)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    
+    // Fallback to manual random UUID generation
+    const randomHex = () => Math.floor(Math.random() * 16).toString(16);
+    const randomBytes = (length: number) => 
+      Array.from({ length }, () => randomHex()).join('');
+    
+    return [
+      randomBytes(8),
+      randomBytes(4),
+      '4' + randomBytes(3), // Version 4
+      (8 + Math.floor(Math.random() * 4)).toString(16) + randomBytes(3), // Variant
+      randomBytes(12)
+    ].join('-');
   }
   
   /**

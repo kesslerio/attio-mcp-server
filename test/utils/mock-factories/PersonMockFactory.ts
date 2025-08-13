@@ -59,6 +59,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
    * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
+    // Use random UUID generation for unique IDs
     return UUIDMockGenerator.generatePersonUUID();
   }
 

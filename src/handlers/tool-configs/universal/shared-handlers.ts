@@ -142,7 +142,10 @@ async function createCompanyWithMockSupport(
     }
     
     // Generate inline mock data to avoid importing from test directories
-    const mockId = `mock-company-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomUUID() for proper UUID format to match validation requirements
+    const mockId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID()
+      : `${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}${Date.now().toString(16)}-${Math.floor(Math.random() * 65535).toString(16).padStart(4, '0')}-4${Math.floor(Math.random() * 4095).toString(16).padStart(3, '0')}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${Math.floor(Math.random() * 4095).toString(16).padStart(3, '0')}-${Math.floor(Math.random() * 281474976710655).toString(16).padStart(12, '0')}`;
     const companyName = (companyData.name as string) || `Mock Company ${mockId.slice(-4)}`;
     
     return {
@@ -184,7 +187,10 @@ async function createPersonWithMockSupport(
     }
     
     // Generate inline mock data to avoid importing from test directories
-    const mockId = `mock-person-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomUUID() for proper UUID format to match validation requirements
+    const mockId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID()
+      : `${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}${Date.now().toString(16)}-${Math.floor(Math.random() * 65535).toString(16).padStart(4, '0')}-4${Math.floor(Math.random() * 4095).toString(16).padStart(3, '0')}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${Math.floor(Math.random() * 4095).toString(16).padStart(3, '0')}-${Math.floor(Math.random() * 281474976710655).toString(16).padStart(12, '0')}`;
     const personName = (personData.name as string) || `Mock Person ${mockId.slice(-4)}`;
     
     return {

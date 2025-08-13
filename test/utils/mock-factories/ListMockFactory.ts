@@ -76,6 +76,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
    * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
+    // Use random UUID generation for unique IDs
     return UUIDMockGenerator.generateListUUID();
   }
 
