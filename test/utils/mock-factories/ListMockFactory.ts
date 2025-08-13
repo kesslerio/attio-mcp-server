@@ -10,6 +10,7 @@
 import type { AttioList, AttioListEntry, AttioRecord } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import type { MockFactory } from './TaskMockFactory.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 
 /**
  * Interface for mock list factory options
@@ -69,12 +70,13 @@ export interface MockListEntryOptions {
  */
 export class ListMockFactory implements MockFactory<AttioList> {
   /**
-   * Generates a unique mock list ID
+   * Generates a unique mock list ID in UUID format
+   * 
+   * Uses deterministic UUID generation for consistent performance testing
+   * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    return `mock-list-${timestamp}-${random}`;
+    return UUIDMockGenerator.generateListUUID();
   }
 
   /**

@@ -10,6 +10,7 @@
 import type { AttioRecord, AttioValue } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import type { MockFactory } from './TaskMockFactory.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 
 /**
  * Interface for mock company factory options
@@ -53,12 +54,13 @@ export interface MockCompanyOptions {
  */
 export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
-   * Generates a unique mock company ID
+   * Generates a unique mock company ID in UUID format
+   * 
+   * Uses deterministic UUID generation for consistent performance testing
+   * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    return `mock-company-${timestamp}-${random}`;
+    return UUIDMockGenerator.generateCompanyUUID();
   }
 
   /**

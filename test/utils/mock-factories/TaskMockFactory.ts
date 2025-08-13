@@ -13,6 +13,7 @@
 
 import type { AttioTask } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
+import { UUIDMockGenerator } from './uuid-mock-generator.js';
 
 /**
  * Interface for mock task factory options
@@ -65,12 +66,13 @@ export interface MockFactory<T> {
  */
 export class TaskMockFactory implements MockFactory<AttioTask> {
   /**
-   * Generates a unique mock task ID
+   * Generates a unique mock task ID in UUID format
+   * 
+   * Uses deterministic UUID generation for consistent performance testing
+   * while satisfying UUID validation requirements (addresses PR #483).
    */
   static generateMockId(): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    return `mock-task-${timestamp}-${random}`;
+    return UUIDMockGenerator.generateTaskUUID();
   }
 
   /**

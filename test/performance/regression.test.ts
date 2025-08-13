@@ -19,7 +19,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
       post: vi.fn().mockResolvedValue({
         data: {
           data: {
-            id: { record_id: 'mock-record-id' },
+            id: { record_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
             values: {
               name: [{ value: 'Mock Company' }],
             },
