@@ -418,31 +418,150 @@ export class TestDataInspector {
 export class MockDataValidator {
   /**
    * Validates all mock factories and returns comprehensive report
+   * Enhanced with CI environment robustness and timeout protection
    */
   static async validateAllFactories(): Promise<FactoryValidationReport> {
-    const taskFactory = await this.validateTaskFactory();
-    const companyFactory = await this.validateCompanyFactory();
-    const personFactory = await this.validatePersonFactory();
-    const listFactory = await this.validateListFactory();
+    // Default factory result for fallback scenarios
+    const defaultFactoryResult: ValidationResult = {
+      valid: false,
+      errors: ['Factory validation failed - using fallback result'],
+      warnings: ['CI environment might have module loading issues'],
+      fieldCoverage: 0,
+      missingRequiredFields: [],
+    };
+
+    // Timeout wrapper for async operations (CI protection)
+    const withTimeout = <T>(
+      promise: Promise<T>,
+      timeoutMs: number = 10000
+    ): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Operation timed out after ${timeoutMs}ms`)),
+            timeoutMs
+          )
+        ),
+      ]);
+    };
+
+    // Enhanced validation with error recovery
+    const safeValidate = async (
+      factoryName: string,
+      validator: () => Promise<ValidationResult>
+    ): Promise<ValidationResult> => {
+      try {
+        const result = await withTimeout(validator(), 10000);
+
+        // Additional safety check - ensure result has required structure
+        if (!result || typeof result !== 'object') {
+          console.warn(
+            `[CI Warning] ${factoryName} returned invalid result, using fallback`
+          );
+          return {
+            ...defaultFactoryResult,
+            errors: [`${factoryName} returned invalid result type`],
+          };
+        }
+
+        // Ensure all required fields exist
+        if (!Array.isArray(result.errors)) result.errors = [];
+        if (!Array.isArray(result.warnings)) result.warnings = [];
+        if (!Array.isArray(result.missingRequiredFields))
+          result.missingRequiredFields = [];
+        if (typeof result.fieldCoverage !== 'number') result.fieldCoverage = 0;
+        if (typeof result.valid !== 'boolean') result.valid = false;
+
+        return result;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[CI Warning] ${factoryName} validation failed:`,
+          errorMessage
+        );
+        return {
+          ...defaultFactoryResult,
+          errors: [`${factoryName} validation failed: ${errorMessage}`],
+        };
+      }
+    };
+
+    // Run validations with enhanced error handling
+    const taskFactory = await safeValidate('TaskFactory', () =>
+      this.validateTaskFactory()
+    );
+    const companyFactory = await safeValidate('CompanyFactory', () =>
+      this.validateCompanyFactory()
+    );
+    const personFactory = await safeValidate('PersonFactory', () =>
+      this.validatePersonFactory()
+    );
+    const listFactory = await safeValidate('ListFactory', () =>
+      this.validateListFactory()
+    );
+
+    // Calculate overall score with safety checks
+    const validCoverages = [
+      taskFactory,
+      companyFactory,
+      personFactory,
+      listFactory,
+    ]
+      .map((f) => (typeof f.fieldCoverage === 'number' ? f.fieldCoverage : 0))
+      .filter((coverage) => !isNaN(coverage));
 
     const overallScore =
-      (taskFactory.fieldCoverage +
-        companyFactory.fieldCoverage +
-        personFactory.fieldCoverage +
-        listFactory.fieldCoverage) /
-      4;
+      validCoverages.length > 0
+        ? validCoverages.reduce((sum, coverage) => sum + coverage, 0) /
+          validCoverages.length
+        : 0;
 
     const criticalIssues: string[] = [];
 
-    // Collect critical issues
+    // Collect critical issues with enhanced safety
     [taskFactory, companyFactory, personFactory, listFactory].forEach(
-      (result) => {
-        if (result && result.errors && Array.isArray(result.errors)) {
+      (result, index) => {
+        const factoryNames = [
+          'TaskFactory',
+          'CompanyFactory',
+          'PersonFactory',
+          'ListFactory',
+        ];
+        const factoryName = factoryNames[index];
+
+        // Multiple layers of safety checks for CI environments
+        if (!result) {
+          criticalIssues.push(
+            `${factoryName}: Result object is null/undefined`
+          );
+          return;
+        }
+
+        if (!result.errors) {
+          criticalIssues.push(`${factoryName}: Missing errors array`);
+          return;
+        }
+
+        if (!Array.isArray(result.errors)) {
+          criticalIssues.push(`${factoryName}: Errors is not an array`);
+          return;
+        }
+
+        try {
           result.errors.forEach((error) => {
-            if (error.includes('Issue #480') || error.includes('required')) {
-              criticalIssues.push(error);
+            if (
+              typeof error === 'string' &&
+              (error.includes('Issue #480') || error.includes('required'))
+            ) {
+              criticalIssues.push(`${factoryName}: ${error}`);
             }
           });
+        } catch (iterationError) {
+          criticalIssues.push(
+            `${factoryName}: Error during iteration: ${iterationError}`
+          );
         }
       }
     );
@@ -516,10 +635,30 @@ export class MockDataValidator {
         missingRequiredFields: basicValidation.missingRequiredFields,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack =
+        error instanceof Error && error.stack
+          ? ` Stack: ${error.stack.split('\n')[0]}`
+          : '';
+
+      // Enhanced error reporting for CI environments
+      console.warn(`[CI Debug] TaskMockFactory validation failed:`, {
+        error: errorMessage,
+        type: typeof error,
+        isError: error instanceof Error,
+        nodeVersion: process.version,
+        platform: process.platform,
+      });
+
       return {
         valid: false,
-        errors: [`TaskMockFactory validation failed: ${error.message}`],
-        warnings: [],
+        errors: [
+          `TaskMockFactory validation failed: ${errorMessage}${errorStack}`,
+        ],
+        warnings: [
+          'Error occurred during factory validation - check CI environment',
+        ],
         fieldCoverage: 0,
         missingRequiredFields: [],
       };
@@ -551,10 +690,30 @@ export class MockDataValidator {
       const company = CompanyMockFactory.create();
       return TestDataInspector.validateCompanyStructure(company);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack =
+        error instanceof Error && error.stack
+          ? ` Stack: ${error.stack.split('\n')[0]}`
+          : '';
+
+      // Enhanced error reporting for CI environments
+      console.warn(`[CI Debug] CompanyMockFactory validation failed:`, {
+        error: errorMessage,
+        type: typeof error,
+        isError: error instanceof Error,
+        nodeVersion: process.version,
+        platform: process.platform,
+      });
+
       return {
         valid: false,
-        errors: [`CompanyMockFactory validation failed: ${error.message}`],
-        warnings: [],
+        errors: [
+          `CompanyMockFactory validation failed: ${errorMessage}${errorStack}`,
+        ],
+        warnings: [
+          'Error occurred during factory validation - check CI environment',
+        ],
         fieldCoverage: 0,
         missingRequiredFields: [],
       };
@@ -586,10 +745,30 @@ export class MockDataValidator {
       const person = PersonMockFactory.create();
       return TestDataInspector.validatePersonStructure(person);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack =
+        error instanceof Error && error.stack
+          ? ` Stack: ${error.stack.split('\n')[0]}`
+          : '';
+
+      // Enhanced error reporting for CI environments
+      console.warn(`[CI Debug] PersonMockFactory validation failed:`, {
+        error: errorMessage,
+        type: typeof error,
+        isError: error instanceof Error,
+        nodeVersion: process.version,
+        platform: process.platform,
+      });
+
       return {
         valid: false,
-        errors: [`PersonMockFactory validation failed: ${error.message}`],
-        warnings: [],
+        errors: [
+          `PersonMockFactory validation failed: ${errorMessage}${errorStack}`,
+        ],
+        warnings: [
+          'Error occurred during factory validation - check CI environment',
+        ],
         fieldCoverage: 0,
         missingRequiredFields: [],
       };
@@ -665,10 +844,30 @@ export class MockDataValidator {
         missingRequiredFields,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack =
+        error instanceof Error && error.stack
+          ? ` Stack: ${error.stack.split('\n')[0]}`
+          : '';
+
+      // Enhanced error reporting for CI environments
+      console.warn(`[CI Debug] ListMockFactory validation failed:`, {
+        error: errorMessage,
+        type: typeof error,
+        isError: error instanceof Error,
+        nodeVersion: process.version,
+        platform: process.platform,
+      });
+
       return {
         valid: false,
-        errors: [`ListMockFactory validation failed: ${error.message}`],
-        warnings: [],
+        errors: [
+          `ListMockFactory validation failed: ${errorMessage}${errorStack}`,
+        ],
+        warnings: [
+          'Error occurred during factory validation - check CI environment',
+        ],
         fieldCoverage: 0,
         missingRequiredFields: [],
       };
