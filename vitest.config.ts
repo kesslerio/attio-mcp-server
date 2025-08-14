@@ -10,7 +10,7 @@ export default defineConfig({
       'test/handlers/tool-configs/universal/integration.test.ts',
       'test/handlers/tool-configs/universal/performance.test.ts',
     ],
-    globals: true,
+    globals: false,
     testTimeout: 30000,
     setupFiles: ['./test/setup.ts'],
     coverage: {
@@ -35,13 +35,6 @@ export default defineConfig({
       all: true,
       clean: true,
     },
-    watchExclude: [
-      'node_modules/**',
-      'dist/**',
-      '.git/**',
-      'coverage/**',
-      '**/*.d.ts',
-    ],
   },
   resolve: {
     alias: {

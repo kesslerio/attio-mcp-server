@@ -279,7 +279,7 @@ export class E2ETaskFactory extends E2ETestDataFactory {
     
     const defaults: E2ETestTask = {
       title: `Test Task ${testId}`,
-      content: `E2E test task created for testing purposes - ${testId}`,
+      content: `E2E Test Task created for testing purposes - ${testId}`,
       due_date: futureDate.toISOString().split('T')[0],
       status: 'open',
       priority: 'medium'
@@ -297,7 +297,7 @@ export class E2ETaskFactory extends E2ETestDataFactory {
       return this.create({
         ...overrides,
         title: `Test Task ${testId}`,
-        content: `E2E test task ${i + 1} created for testing purposes - ${testId}`,
+        content: `E2E Test Task ${i + 1} created for testing purposes - ${testId}`,
         due_date: futureDate.toISOString().split('T')[0]
       });
     });

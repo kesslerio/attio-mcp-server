@@ -127,7 +127,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const taskData = TaskFactory.create();
       
       const response = await callTasksTool('create-task', {
-        content: taskData.title,
+        content: taskData.content,
         due_date: taskData.due_date
       });
       
@@ -138,7 +138,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       expect(createdTask.id.task_id).toBeDefined();
       
       // Access content from the correct field in the record structure
-      const taskContent = createdTask.values?.content || createdTask.content || createdTask.title;
+      const taskContent = createdTask.values?.content?.[0]?.value || createdTask.content || createdTask.title;
       expect(taskContent).toContain('Test Task');
       
       createdTasks.push(createdTask);
@@ -155,7 +155,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const assignee = testPeople[0];
       
       const response = await callTasksTool('create-task', {
-        content: taskData.title,
+        content: taskData.content,
         assigneeId: assignee.id.record_id,
         due_date: taskData.due_date
       });
@@ -198,7 +198,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const taskData = TaskFactory.createHighPriority();
       
       const response = await callTasksTool('create-task', {
-        content: taskData.title,
+        content: taskData.content,
         due_date: taskData.due_date
       });
       
@@ -217,7 +217,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       
       for (const taskData of tasksBatch) {
         const response = await callTasksTool('create-task', {
-          content: taskData.title,
+          content: taskData.content,
           due_date: taskData.due_date
         });
         
@@ -318,11 +318,8 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   });
 
   describe('Task Updates and Modifications', () => {
-    it.skip('should update task content - SKIPPED: Content is immutable in Attio API', async () => {
-      // Task content is immutable and cannot be updated after creation
-      // This is a documented API constraint - content field is read-only after creation
-      console.log('⏭️ Skipping content update test - content is immutable in Attio API');
-    }, 30000);
+    // Note: Task content updates are not tested because content is immutable in Attio API
+    // Content cannot be modified after task creation - this is a documented API constraint
 
     it('should update task status', async () => {
       if (createdTasks.length === 0) {
@@ -620,7 +617,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
     it('should handle invalid date formats', async () => {
       const response = await callTasksTool('create-task', {
-        content: 'Task with invalid date',
+        content: 'E2E Test Task with invalid date format for testing',
         due_date: 'invalid-date-format'
       });
       
@@ -674,15 +671,15 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
       const promises = [
         callTasksTool('create-task', {
-          content: taskData1.title,
+          content: taskData1.content,
           due_date: taskData1.due_date
         }),
         callTasksTool('create-task', {
-          content: taskData2.title,
+          content: taskData2.content,
           due_date: taskData2.due_date
         }),
         callTasksTool('create-task', {
-          content: taskData3.title,
+          content: taskData3.content,
           due_date: taskData3.due_date
         })
       ];

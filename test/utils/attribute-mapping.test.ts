@@ -2,17 +2,24 @@
  * Tests for the attribute mapping utilities
  */
 import {
+  vi,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  type MockedFunction,
+} from 'vitest';
+import {
   getAttributeSlug,
   getObjectSlug,
   getListSlug,
   translateAttributeNamesInFilters,
-  COMMON_ATTRIBUTE_MAP,
   invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/index';
-import * as configLoader from '../../src/utils/config-loader';
+} from '../../src/utils/attribute-mapping/index.js';
+import * as configLoader from '../../src/utils/config-loader.js';
 
 // Mock the config-loader
-vi.mock('../../src/utils/config-loader', () => ({
+vi.mock('../../src/utils/config-loader.js', () => ({
   loadMappingConfig: vi.fn(),
 }));
 
@@ -25,7 +32,11 @@ describe('Attribute Mapping', () => {
   describe('getAttributeSlug', () => {
     it('should return the matching slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -61,7 +72,11 @@ describe('Attribute Mapping', () => {
 
     it('should handle case-insensitive matching', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -84,7 +99,11 @@ describe('Attribute Mapping', () => {
 
     it('should fall back to legacy map if not found in config', () => {
       // Mock the config loader to return a test configuration without the requested mapping
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -104,7 +123,11 @@ describe('Attribute Mapping', () => {
 
     it('should return the original input if no mapping found', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -143,7 +166,11 @@ describe('Attribute Mapping', () => {
 
     it('should prioritize object-specific mappings over common mappings', () => {
       // Mock the config loader to return a test configuration with both common and object-specific mappings
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -179,7 +206,11 @@ describe('Attribute Mapping', () => {
   describe('getObjectSlug', () => {
     it('should return the matching object slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -203,7 +234,11 @@ describe('Attribute Mapping', () => {
 
     it('should handle case-insensitive matching for objects', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -226,7 +261,11 @@ describe('Attribute Mapping', () => {
 
     it('should normalize unknown object names', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -248,7 +287,11 @@ describe('Attribute Mapping', () => {
   describe('getListSlug', () => {
     it('should return the matching list slug from config', () => {
       // Mock the config loader to return a test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -278,7 +321,11 @@ describe('Attribute Mapping', () => {
 
     it('should return the original input for unknown lists', () => {
       // Mock the config loader to return an empty configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -306,7 +353,11 @@ describe('Attribute Mapping', () => {
       vi.resetModules();
 
       // Mock the config loader with a comprehensive test configuration
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (
+        configLoader.loadMappingConfig as MockedFunction<
+          typeof configLoader.loadMappingConfig
+        >
+      ).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
