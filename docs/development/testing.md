@@ -100,11 +100,15 @@ npm run test:integration:watch
 # Run all E2E tests (51 tests, should show 100% pass rate)
 npm run e2e
 
+# ⚠️ CRITICAL: Use proper E2E commands, NOT npm test
 # Run specific E2E test suite
-npm test -- test/e2e/suites/universal-tools.e2e.test.ts
+npm run e2e:universal
 
 # Run E2E tests with performance monitoring
-npm test -- test/e2e/suites/universal-tools.e2e.test.ts --reporter=verbose
+npm run e2e:debug
+
+# Alternative: Direct vitest with correct config
+npx vitest --config vitest.config.e2e.ts --run test/e2e/suites/universal-tools.e2e.test.ts
 ```
 
 ## E2E Test Framework
@@ -223,8 +227,10 @@ npm run e2e
 # Run with detailed output
 npm run e2e --reporter=verbose
 
-# Single test suite
-npm test -- test/e2e/suites/universal-tools.e2e.test.ts
+# Single test suite - Use proper E2E commands
+npm run e2e:universal
+# OR with direct vitest (correct config):
+npx vitest --config vitest.config.e2e.ts --run test/e2e/suites/universal-tools.e2e.test.ts
 ```
 
 ### E2E Test Architecture
