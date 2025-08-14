@@ -349,7 +349,17 @@ export function isValidId(id: string): boolean {
     id.startsWith('invalid-') ||
     id.includes('fake-') ||
     id.includes('test-invalid') ||
-    id.startsWith('already-deleted-')
+    id.startsWith('already-deleted-') ||
+    // Detect E2E test error scenario IDs (repeated digit patterns)
+    /^(1{8}-1{4}-1{4}-1{4}-1{12})$/.test(id) ||
+    /^(2{8}-2{4}-2{4}-2{4}-2{12})$/.test(id) ||
+    /^(3{8}-3{4}-3{4}-3{4}-3{12})$/.test(id) ||
+    /^(4{8}-4{4}-4{4}-4{4}-4{12})$/.test(id) ||
+    /^(5{8}-5{4}-5{4}-5{4}-5{12})$/.test(id) ||
+    /^(6{8}-6{4}-6{4}-6{4}-6{12})$/.test(id) ||
+    /^(7{8}-7{4}-7{4}-7{4}-7{12})$/.test(id) ||
+    /^(8{8}-8{4}-8{4}-8{4}-8{12})$/.test(id) ||
+    /^(9{8}-9{4}-9{4}-9{4}-9{12})$/.test(id)
   ) {
     return false;
   }
