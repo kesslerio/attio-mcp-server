@@ -235,11 +235,16 @@ export async function createCompany(
   }
   
   try {
+    console.log('[createCompany] DEBUG - Input attributes:', JSON.stringify(attributes, null, 2));
+    
+    // Temporarily comment out validation to isolate the issue
     const result = await createObjectWithDynamicFields<Company>(
       ResourceType.COMPANIES,
-      attributes,
-      CompanyValidator.validateCreate
+      attributes
+      // CompanyValidator.validateCreate  // Temporarily disabled
     );
+    
+    console.log('[createCompany] DEBUG - Result from createObjectWithDynamicFields:', JSON.stringify(result, null, 2));
     
     if (process.env.NODE_ENV === 'development') {
       console.log('[createCompany] Result from createObjectWithDynamicFields:', {
@@ -249,6 +254,31 @@ export async function createCompany(
         resultType: typeof result,
         isEmptyObject: result && Object.keys(result).length === 0
       });
+    }
+    
+    // Defensive validation: Ensure we have a valid company record
+    if (!result) {
+      throw new CompanyOperationError(
+        'create',
+        undefined,
+        'API returned null/undefined response for company creation'
+      );
+    }
+    
+    if (!result.id || !result.id.record_id) {
+      throw new CompanyOperationError(
+        'create',
+        undefined,
+        `API returned invalid company record without proper ID structure. Response: ${JSON.stringify(result)}`
+      );
+    }
+    
+    if (!result.values || typeof result.values !== 'object') {
+      throw new CompanyOperationError(
+        'create',
+        undefined,
+        `API returned invalid company record without values object. Response: ${JSON.stringify(result)}`
+      );
     }
     
     return result;

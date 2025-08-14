@@ -60,7 +60,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
       throw createUniversalError('search', params.resource_type, error);
     }
   },
-  formatResult: (results: AttioRecord[], resourceType?: UniversalResourceType) => {
+  formatResult: (results: AttioRecord[], resourceType?: UniversalResourceType): string => {
     if (!Array.isArray(results)) {
       return 'No results found';
     }
@@ -117,7 +117,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       throw createUniversalError('get details', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record not found';
     }
@@ -202,15 +202,7 @@ export const createRecordConfig: UniversalToolConfig = {
   name: 'create-record',
   handler: async (params: UniversalCreateParams): Promise<AttioRecord> => {
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[createRecordConfig:handler] Input params:', params);
-      }
-      
       const sanitizedParams = validateUniversalToolParams('create-record', params);
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[createRecordConfig:handler] Sanitized params:', sanitizedParams);
-      }
       
       // Perform cross-resource validation for create operations
       const { CrossResourceValidator } = await import('./schemas.js');
@@ -221,25 +213,12 @@ export const createRecordConfig: UniversalToolConfig = {
       
       const result = await handleUniversalCreate(sanitizedParams);
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[createRecordConfig:handler] Final result:', {
-          result,
-          hasId: !!result?.id,
-          hasValues: !!result?.values,
-          resultType: typeof result,
-          isEmptyObject: Object.keys(result || {}).length === 0
-        });
-      }
-      
       return result;
     } catch (error: unknown) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[createRecordConfig:handler] Error:', error);
-      }
       throw createUniversalError('create', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record creation failed';
     }
@@ -276,7 +255,7 @@ export const updateRecordConfig: UniversalToolConfig = {
       throw createUniversalError('update', params.resource_type, error);
     }
   },
-  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType) => {
+  formatResult: (record: AttioRecord, resourceType?: UniversalResourceType): string => {
     if (!record) {
       return 'Record update failed';
     }
@@ -305,7 +284,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
       throw createUniversalError('delete', params.resource_type, error);
     }
   },
-  formatResult: (result: { success: boolean; record_id: string }, resourceType?: UniversalResourceType) => {
+  formatResult: (result: { success: boolean; record_id: string }, resourceType?: UniversalResourceType): string => {
     if (!result.success) {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }
@@ -321,7 +300,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
  */
 export const getAttributesConfig: UniversalToolConfig = {
   name: 'get-attributes',
-  handler: async (params: UniversalAttributesParams): Promise<any> => {
+  handler: async (params: UniversalAttributesParams): Promise<Record<string, unknown>> => {
     try {
       const sanitizedParams = validateUniversalToolParams('get-attributes', params);
       return await handleUniversalGetAttributes(sanitizedParams);
@@ -329,7 +308,7 @@ export const getAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('get attributes', params.resource_type, error);
     }
   },
-  formatResult: (attributes: any, resourceType?: UniversalResourceType) => {
+  formatResult: (attributes: any, resourceType?: UniversalResourceType): string => {
     if (!attributes) {
       return 'No attributes found';
     }
@@ -371,7 +350,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       throw createUniversalError('discover attributes', params.resource_type, error);
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType) => {
+  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
     if (!schema) {
       return 'No attribute schema found';
     }
@@ -407,7 +386,7 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       throw createUniversalError('get detailed info', params.resource_type, error);
     }
   },
-  formatResult: (info: any, resourceType?: UniversalResourceType, infoType?: DetailedInfoType) => {
+  formatResult: (info: any, resourceType?: UniversalResourceType, infoType?: DetailedInfoType): string => {
     if (!info) {
       return 'No detailed information found';
     }

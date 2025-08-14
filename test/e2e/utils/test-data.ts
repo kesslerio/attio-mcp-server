@@ -55,15 +55,53 @@ export interface E2ETestNote {
  */
 export abstract class E2ETestDataFactory {
   protected static getTestId(prefix: string): string {
-    return configLoader.getTestIdentifier(prefix);
+    try {
+      return configLoader.getTestIdentifier(prefix);
+    } catch (error) {
+      // Configuration not loaded - provide fallback
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 6);
+      return `TEST_${prefix}_${timestamp}_${random}`;
+    }
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
-    return configLoader.getTestEmail(prefix);
+    try {
+      return configLoader.getTestEmail(prefix);
+    } catch (error) {
+      // Configuration not loaded - provide fallback
+      const testId = this.getTestId(prefix);
+      return `${testId}@test-domain.com`;
+    }
   }
 
   protected static getTestDomain(): string {
-    return configLoader.getTestCompanyDomain();
+    try {
+      return configLoader.getTestCompanyDomain();
+    } catch (error) {
+      // Configuration not loaded - provide fallback
+      const testId = this.getTestId('domain');
+      return `${testId}.test-company.com`;
+    }
+  }
+
+  /**
+   * Ensure configuration is loaded before using config-dependent methods
+   */
+  protected static async ensureConfigLoaded(): Promise<void> {
+    try {
+      // Try to get config - if it fails, attempt to load it
+      configLoader.getConfig();
+    } catch (error) {
+      if (error.message?.includes('Configuration not loaded')) {
+        try {
+          await configLoader.loadConfig();
+        } catch (loadError) {
+          // Configuration loading failed - factories will use fallbacks
+          console.warn('Configuration loading failed, using fallback values:', loadError);
+        }
+      }
+    }
   }
 }
 
@@ -241,7 +279,7 @@ export class E2ETaskFactory extends E2ETestDataFactory {
     
     const defaults: E2ETestTask = {
       title: `Test Task ${testId}`,
-      content: `E2E test task created for testing purposes - ${testId}`,
+      content: `E2E Test Task created for testing purposes - ${testId}`,
       due_date: futureDate.toISOString().split('T')[0],
       status: 'open',
       priority: 'medium'
@@ -259,7 +297,7 @@ export class E2ETaskFactory extends E2ETestDataFactory {
       return this.create({
         ...overrides,
         title: `Test Task ${testId}`,
-        content: `E2E test task ${i + 1} created for testing purposes - ${testId}`,
+        content: `E2E Test Task ${i + 1} created for testing purposes - ${testId}`,
         due_date: futureDate.toISOString().split('T')[0]
       });
     });
@@ -410,8 +448,14 @@ export class E2ETestDataValidator {
    * Validate that test data has proper prefixing
    */
   static validateTestDataPrefix(data: any, expectedPrefix?: string): boolean {
-    const config = configLoader.getConfig();
-    const prefix = expectedPrefix || config.testData.testDataPrefix;
+    let prefix: string;
+    try {
+      const config = configLoader.getConfig();
+      prefix = expectedPrefix || config.testData.testDataPrefix;
+    } catch (error) {
+      // Configuration not loaded - use fallback or provided prefix
+      prefix = expectedPrefix || 'TEST';
+    }
 
     if (typeof data === 'string') {
       return data.includes(prefix);
@@ -449,16 +493,26 @@ export class E2ETestDataValidator {
    * Check if email follows test domain pattern
    */
   static isTestEmail(email: string): boolean {
-    const config = configLoader.getConfig();
-    return email.includes(config.testData.testEmailDomain);
+    try {
+      const config = configLoader.getConfig();
+      return email.includes(config.testData.testEmailDomain);
+    } catch (error) {
+      // Configuration not loaded - use fallback domain pattern
+      return email.includes('@test-domain.com');
+    }
   }
 
   /**
    * Check if domain follows test domain pattern
    */
   static isTestDomain(domain: string): boolean {
-    const config = configLoader.getConfig();
-    return domain.includes(config.testData.testCompanyDomain);
+    try {
+      const config = configLoader.getConfig();
+      return domain.includes(config.testData.testCompanyDomain);
+    } catch (error) {
+      // Configuration not loaded - use fallback domain pattern
+      return domain.includes('.test-company.com');
+    }
   }
 }
 

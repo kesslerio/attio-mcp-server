@@ -26,16 +26,33 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add response interceptor for error handling
   client.interceptors.response.use(
     (response) => {
-      // Debug logging for successful responses
+      // Debug logging for ALL successful responses to understand what's happening
+      debug(
+        'attio-client',
+        'Response interceptor called',
+        {
+          url: response.config?.url,
+          method: response.config?.method,
+          status: response.status,
+          hasData: !!response.data,
+          isTasksRequest: response.config?.url?.includes('/tasks'),
+        },
+        'api-request',
+        OperationType.API_CALL
+      );
+
+      // More detailed logging for tasks requests
       if (response.config?.url?.includes('/tasks')) {
         debug(
           'attio-client',
-          'Request succeeded',
+          'Tasks request succeeded',
           {
             url: response.config?.url,
             method: response.config?.method,
             status: response.status,
             responseData: response.data,
+            responseType: typeof response,
+            responseKeys: Object.keys(response),
           },
           'api-request',
           OperationType.API_CALL
@@ -45,6 +62,23 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       return response;
     },
     (error: AxiosError) => {
+      // Log ALL errors to understand what's happening
+      debug(
+        'attio-client',
+        'Error interceptor called',
+        {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: error.message,
+          code: error.code,
+          hasResponse: !!error.response,
+          responseStatus: error.response?.status,
+          isTasksRequest: error.config?.url?.includes('/tasks'),
+        },
+        'api-request',
+        OperationType.API_CALL
+      );
+
       if (error.config?.url?.includes('/tasks')) {
         const errorData = {
           url: error.config?.url,
@@ -60,7 +94,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 
         logError(
           'attio-client',
-          'Request failed',
+          'Tasks request failed',
           error,
           errorData,
           'api-request',

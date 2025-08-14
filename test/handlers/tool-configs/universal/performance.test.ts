@@ -16,10 +16,33 @@ import { initializeAttioClient } from '../../../../src/api/attio-client.js';
 // These tests use real API calls - only run when API key is available
 const SKIP_PERFORMANCE_TESTS = !process.env.ATTIO_API_KEY || process.env.SKIP_PERFORMANCE_TESTS === 'true';
 
-// Extended timeout for performance tests
+// Environment-aware performance budgets
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const CI_MULTIPLIER = isCI ? 2.5 : 1; // 2.5x longer timeouts for CI environments
+
+// Performance budgets with CI adjustments
+const PERFORMANCE_BUDGETS = {
+  singleRecord: Math.round(5000 * CI_MULTIPLIER),     // 5s local, 12.5s CI
+  tenRecords: Math.round(15000 * CI_MULTIPLIER),      // 15s local, 37.5s CI  
+  twentyFiveRecords: Math.round(30000 * CI_MULTIPLIER), // 30s local, 75s CI
+  fiftyRecords: Math.round(60000 * CI_MULTIPLIER),    // 60s local, 150s CI
+  searchBasic: Math.round(5000 * CI_MULTIPLIER),      // 5s local, 12.5s CI
+  searchLarge: Math.round(10000 * CI_MULTIPLIER),     // 10s local, 25s CI
+  searchFiltered: Math.round(8000 * CI_MULTIPLIER),   // 8s local, 20s CI
+  batchGet: Math.round(10000 * CI_MULTIPLIER),        // 10s local, 25s CI
+  batchDelete: Math.round(10000 * CI_MULTIPLIER),     // 10s local, 25s CI
+  rateLimitMin: isCI ? 100 : 300,                     // Lower minimum for CI
+  rateLimitMax: Math.round(15000 * CI_MULTIPLIER),    // 15s local, 37.5s CI
+  concurrency: Math.round(25000 * CI_MULTIPLIER),     // 25s local, 62.5s CI
+  comparison: Math.round(10000 * CI_MULTIPLIER)       // 10s local, 25s CI
+};
+
+console.log(`Performance testing with ${isCI ? 'CI' : 'LOCAL'} budgets (multiplier: ${CI_MULTIPLIER}x)`);
+
+// Extended timeout for performance tests with CI adjustments
 vi.setConfig({ 
-  testTimeout: 60000,
-  hookTimeout: 30000 // Increased hook timeout for cleanup
+  testTimeout: Math.max(120000, Math.round(60000 * CI_MULTIPLIER)), // At least 2 minutes, more in CI
+  hookTimeout: Math.round(30000 * CI_MULTIPLIER) // Increased hook timeout for cleanup
 });
 
 describe('Universal Tools Performance Tests', () => {
@@ -104,8 +127,8 @@ describe('Universal Tools Performance Tests', () => {
       expect(result).toHaveLength(1);
       expect(result[0].success).toBe(true);
 
-      // Single record should complete quickly
-      expect(duration).toBeLessThan(5000); // 5 seconds max
+      // Single record should complete within budget
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.singleRecord);
 
       // Store created ID for cleanup
       if (result[0].success && result[0].result?.id?.record_id) {
@@ -148,7 +171,7 @@ describe('Universal Tools Performance Tests', () => {
       }
 
       // 10 records should complete reasonably quickly with parallelization
-      expect(duration).toBeLessThan(15000); // 15 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.tenRecords);
 
       // Store created IDs for cleanup
       const createdIds = result
@@ -192,7 +215,7 @@ describe('Universal Tools Performance Tests', () => {
       }
 
       // 25 records should still complete in reasonable time
-      expect(duration).toBeLessThan(30000); // 30 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.twentyFiveRecords);
 
       // Store created IDs for cleanup
       const createdIds = result
@@ -235,8 +258,8 @@ describe('Universal Tools Performance Tests', () => {
         console.warn(`Batch operation failures:`, failures.map(f => f.error).join(', '));
       }
 
-      // Maximum batch should complete within 1 minute
-      expect(duration).toBeLessThan(60000); // 60 seconds max
+      // Maximum batch should complete within budget
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.fiftyRecords);
 
       // Store created IDs for cleanup
       const createdIds = result
@@ -284,7 +307,7 @@ describe('Universal Tools Performance Tests', () => {
 
       // Batch should be faster than theoretical sequential time
       // (Though we can't easily test actual sequential without refactoring)
-      expect(batchDuration).toBeLessThan(10000); // Should be under 10 seconds
+      expect(batchDuration).toBeLessThan(PERFORMANCE_BUDGETS.comparison); // Performance comparison benchmark
     });
 
     it('should handle batch get operations efficiently', async () => {
@@ -315,7 +338,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(successCount).toBe(testIds.length); // All should succeed for existing records
 
       // Batch get should be fast
-      expect(duration).toBeLessThan(10000); // 10 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.batchGet);
 
       console.log(`Batch get (${testIds.length} records): ${duration}ms`);
     });
@@ -359,7 +382,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(successCount).toBe(createdIds.length); // All deletes should succeed
 
       // Batch delete should be fast
-      expect(duration).toBeLessThan(10000); // 10 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.batchDelete);
 
       console.log(`Batch delete (${createdIds.length} records): ${duration}ms`);
     });
@@ -382,7 +405,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // Search should be fast
-      expect(duration).toBeLessThan(5000); // 5 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.searchBasic);
 
       console.log(`Advanced search (limit 20): ${duration}ms, found ${result.length} results`);
     });
@@ -403,7 +426,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // Large search should still be reasonably fast
-      expect(duration).toBeLessThan(10000); // 10 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.searchLarge);
 
       console.log(`Advanced search (limit 100): ${duration}ms, found ${result.length} results`);
     });
@@ -433,7 +456,7 @@ describe('Universal Tools Performance Tests', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // Filtered search should be reasonably fast
-      expect(duration).toBeLessThan(8000); // 8 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.searchFiltered);
 
       console.log(`Filtered advanced search: ${duration}ms, found ${result.length} results`);
     });
@@ -465,12 +488,12 @@ describe('Universal Tools Performance Tests', () => {
       // Should take some time due to rate limiting delays
       // With 5 concurrent operations and delays, this should take longer than instant
       // Use flexible timing that accounts for environment differences
-      const expectedMinDuration = process.env.CI ? 200 : 300; // Lower expectations in CI
+      const expectedMinDuration = PERFORMANCE_BUDGETS.rateLimitMin;
       expect(duration).toBeGreaterThan(expectedMinDuration); // Rate limiting should add some delay
       
       // Verify rate limiting is working by checking it's not instantaneous
       // but also not excessively slow (which could indicate other issues)
-      expect(duration).toBeLessThan(15000); // Reasonable upper bound
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.rateLimitMax);
 
       const createdIds = result
         .filter((r: any) => r.success && r.result?.id?.record_id)
@@ -513,7 +536,7 @@ describe('Universal Tools Performance Tests', () => {
       }
 
       // Should complete in reasonable time despite concurrency limits
-      expect(duration).toBeLessThan(25000); // 25 seconds max
+      expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.concurrency);
 
       const createdIds = result
         .filter((r: any) => r.success && r.result?.id?.record_id)

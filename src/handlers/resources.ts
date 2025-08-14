@@ -17,6 +17,15 @@ import { parseResourceUri, formatResourceUri } from '../utils/uri-parser.js';
 import { ResourceType, AttioRecord, AttioList } from '../types/attio.js';
 
 /**
+ * Type for API errors with response data
+ */
+interface ApiError extends Error {
+  response?: {
+    data?: Record<string, unknown>;
+  };
+}
+
+/**
  * Format a single record for resource response
  *
  * @param record - The record to format
@@ -73,7 +82,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/records/query`,
               'POST',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
 
@@ -89,7 +98,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/lists`,
               'GET',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
 
@@ -108,7 +117,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/companies/records/query`,
               'POST',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
       }
@@ -147,7 +156,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/people/${id}`,
               'GET',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
 
@@ -169,7 +178,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/lists/${id}`,
               'GET',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
 
@@ -191,7 +200,7 @@ export function registerResourceHandlers(server: Server): void {
               error instanceof Error ? error : new Error('Unknown error'),
               `/objects/companies/${id}`,
               'GET',
-              (error as any).response?.data || {}
+              (error as ApiError).response?.data || {}
             );
           }
 

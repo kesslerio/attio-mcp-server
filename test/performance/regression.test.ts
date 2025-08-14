@@ -12,6 +12,11 @@ import { performance } from 'perf_hooks';
 // Load environment variables
 config();
 
+// Set performance test flag to use mock data when API key is not available
+if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
+  process.env.PERFORMANCE_TEST = 'true';
+}
+
 // Mock the API client for tests (when not using real API)
 if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   vi.mock('../../src/api/attio-client', () => ({
@@ -19,7 +24,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
       post: vi.fn().mockResolvedValue({
         data: {
           data: {
-            id: { record_id: 'mock-record-id' },
+            id: { record_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
             values: {
               name: [{ value: 'Mock Company' }],
             },

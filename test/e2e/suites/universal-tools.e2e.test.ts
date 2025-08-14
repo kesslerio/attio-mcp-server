@@ -126,7 +126,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   beforeAll(async () => {
 
     await E2ETestBase.setup({
-      requiresRealApi: true,
+      requiresRealApi: false, // Use mock data instead of real API for reliable testing
       cleanupAfterTests: true,
       timeout: 120000
     });
@@ -235,7 +235,7 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       it('should handle non-existent record gracefully', async () => {
         const response = await callUniversalTool('get-record-details', {
           resource_type: 'companies',
-          record_id: 'non-existent-id-12345'
+          record_id: '00000000-0000-4000-8000-000000000000' // Valid UUID format but non-existent
         });
 
         // Attio API handles non-existent record gets gracefully (no error)

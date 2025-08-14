@@ -56,7 +56,7 @@ let stageCacheTimestamp: number = 0;
 const STAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Error cache to prevent repeated failed API calls during outages
-let errorCache: { timestamp: number; error: any } | null = null;
+let errorCache: { timestamp: number; error: unknown } | null = null;
 const ERROR_CACHE_TTL = 30 * 1000; // 30 seconds - shorter TTL for errors
 
 /**
@@ -85,8 +85,8 @@ export function getDealDefaults(): DealDefaults {
  * 4. Allows user-provided values to override defaults
  */
 export function applyDealDefaults(
-  recordData: Record<string, any>
-): Record<string, any> {
+  recordData: Record<string, unknown>
+): Record<string, unknown> {
   const defaults = getDealDefaults();
   const dealData = { ...recordData };
 
@@ -318,7 +318,7 @@ async function getAvailableDealStages(): Promise<string[]> {
 
     // Find the stage attribute
     const stageAttribute = attributes.find(
-      (attr: any) => attr.api_slug === 'stage'
+      (attr: Record<string, unknown>) => attr.api_slug === 'stage'
     );
 
     if (!stageAttribute) {
@@ -420,9 +420,9 @@ export async function validateDealStage(
  * @param skipValidation - Skip API validation (used in error paths to prevent cascading failures)
  */
 export async function applyDealDefaultsWithValidation(
-  recordData: Record<string, any>,
+  recordData: Record<string, unknown>,
   skipValidation: boolean = false
-): Promise<Record<string, any>> {
+): Promise<Record<string, unknown>> {
   const dealData = applyDealDefaults(recordData);
 
   // Validate stage if present

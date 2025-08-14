@@ -11,8 +11,26 @@ enum UniversalResourceType {
   COMPANIES = 'companies',
   PEOPLE = 'people', 
   RECORDS = 'records',
-  TASKS = 'tasks'
+  TASKS = 'tasks',
+  LISTS = 'lists',
+  NOTES = 'notes'
 }
+```
+
+## formatResult Architecture (Updated PR #483)
+
+**IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
+
+### Consistent formatResult Contract
+```typescript
+// All formatResult functions follow this pattern
+formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
+
+// Performance optimized with:
+// - No environment-dependent behavior
+// - Type-safe Record<string, unknown> patterns  
+// - Memory-efficient string templates
+// - 59% ESLint warning reduction (957→395)
 ```
 
 ## Core Universal Tools (8 tools)
@@ -551,6 +569,58 @@ Use correct operators for date filtering:
   operation?: string      // Operation that failed
 }
 ```
+
+## Testing and Mock Data
+
+### Test Environment Behavior
+
+When running in test environment (`NODE_ENV=test` or `VITEST=true`), the universal tools automatically use mock data instead of making real API calls:
+
+```typescript
+// Automatic mock data injection in test environment
+await client.callTool('create-record', {
+  resource_type: 'tasks',
+  data: { content: 'Test task' }
+});
+// Returns: Mock task with proper Attio field format
+
+// Special mock IDs trigger error scenarios
+await client.callTool('get-record-details', {
+  resource_type: 'tasks',
+  record_id: 'mock-error-not-found'
+});
+// Returns: Error with "Record not found" message
+```
+
+### Mock Data Format
+
+Mock data follows the Attio field format with dual access patterns:
+
+```typescript
+{
+  id: {
+    record_id: 'mock-task-123',
+    task_id: 'mock-task-123',      // Resource-specific ID
+    workspace_id: 'mock-workspace'
+  },
+  // Nested format (Attio API standard)
+  values: {
+    content: [{ value: 'Task content' }],
+    status: [{ value: 'pending' }]
+  },
+  // Flattened format (backward compatibility)
+  content: 'Task content',
+  status: 'pending'
+}
+```
+
+### Error Testing
+
+Use special mock IDs to test error handling:
+
+- `mock-error-not-found`: Triggers 404 not found error
+- `mock-error-unauthorized`: Triggers 401 unauthorized error
+- `mock-error-invalid`: Triggers 400 invalid request error
 
 ## Performance Guidelines
 

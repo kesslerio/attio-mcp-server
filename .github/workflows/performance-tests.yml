@@ -13,27 +13,27 @@ on:
 jobs:
   performance-regression:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [20.x, 22.x]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build project
         run: npm run build
-      
+
       - name: Run performance tests
         env:
           # Run with mocks for consistent performance measurements
@@ -50,32 +50,32 @@ jobs:
           PERF_BUDGET_BATCH_SMALL: 500
           PERF_BUDGET_BATCH_LARGE: 1000
           PERF_BUDGET_DEFAULT: 200
-        run: npm test test/performance/regression.test.ts
+        run: npm test test/handlers/tool-configs/universal/performance.test.ts
         continue-on-error: true
         id: perf-test
-      
+
       - name: Parse performance results
         if: always()
         id: parse-results
         run: |
           # Extract performance metrics from test output
           echo "Parsing performance test results..."
-          
+
           # Set outputs for job summary
           echo "test_status=${{ steps.perf-test.outcome }}" >> $GITHUB_OUTPUT
-      
+
       - name: Generate performance report
         if: always()
         run: |
           cat << EOF > performance-report.md
           # Performance Test Report
-          
+
           **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           **Branch:** ${{ github.ref_name }}
           **Commit:** ${{ github.sha }}
           **Node Version:** ${{ matrix.node-version }}
           **Status:** ${{ steps.perf-test.outcome }}
-          
+
           ## Performance Budgets
           - 404 Responses: < 2000ms
           - Search Operations: < 3000ms
@@ -83,23 +83,23 @@ jobs:
           - Delete: < 2000ms
           - Batch (small): < 5000ms
           - Batch (large): < 10000ms
-          
+
           ## Test Results
           See test output above for detailed timing information.
-          
+
           EOF
-      
+
       - name: Upload performance report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: performance-report-${{ matrix.node-version }}
           path: performance-report.md
-      
+
       # Performance test commenting removed - now handled by consolidated test-summary job in ci.yml
       # All test results (CI/CD + Performance) are posted in a single consolidated comment
       # This prevents multiple bot comments cluttering the PR conversation
-      
+
       - name: Check for performance regression
         if: steps.perf-test.outcome == 'failure'
         run: |
@@ -112,48 +112,48 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: performance-regression
-    
+
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build project
         run: npm run build
-      
+
       - name: Run performance tests on PR branch
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
           npm test test/performance/regression.test.ts > pr-performance.txt 2>&1 || true
-      
+
       - name: Checkout base branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
-      
+
       - name: Install dependencies (base)
         run: npm ci
-      
+
       - name: Build project (base)
         run: npm run build
-      
+
       - name: Run performance tests on base branch
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_API_KEY }}
           NODE_ENV: test
         run: |
           npm test test/performance/regression.test.ts > base-performance.txt 2>&1 || true
-      
+
       - name: Compare performance
         run: |
           echo "## Performance Comparison" > comparison.md
@@ -167,7 +167,7 @@ jobs:
           echo '```' >> comparison.md
           grep -E "(response time:|operation time:|cache performance:)" base-performance.txt || echo "No timing data found" >> comparison.md
           echo '```' >> comparison.md
-      
+
       - name: Upload comparison report
         uses: actions/upload-artifact@v4
         with:
@@ -178,7 +178,7 @@ jobs:
     if: failure() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: performance-regression
-    
+
     steps:
       - name: Send alert
         run: |

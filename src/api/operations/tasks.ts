@@ -126,7 +126,13 @@ export async function createTask(
       {
         path,
         payload: requestPayload,
-        apiInstanceExists: !!api
+        apiInstanceExists: !!api,
+        apiClientDetails: {
+          baseURL: api.defaults?.baseURL || 'NOT_SET',
+          hasAuth: !!(api.defaults?.headers?.Authorization),
+          authPreview: api.defaults?.headers?.Authorization ? 
+            String(api.defaults.headers.Authorization).substring(0, 20) + '...' : 'NOT_SET'
+        }
       },
       'createTask',
       OperationType.API_CALL
@@ -136,23 +142,102 @@ export async function createTask(
     try {
       debug('tasks.createTask', 'About to call api.post', { 
         apiHasInterceptors: !!api.interceptors?.response,
-        baseURL: api.defaults?.baseURL
+        baseURL: api.defaults?.baseURL,
+        apiInstance: !!api,
+        hasAxiosDefaults: !!api.defaults,
+        hasAxiosBaseURL: !!api.defaults?.baseURL
       }, 'createTask', OperationType.API_CALL);
-      res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
+      // Try direct axios call to isolate interceptor issues
+      debug('tasks.createTask', 'Making direct API call', {
+        url: `${api.defaults?.baseURL}${path}`,
+        method: 'POST',
+        hasInterceptors: !!api.interceptors?.response,
+        interceptorCount: 'unknown'
+      }, 'createTask', OperationType.API_CALL);
+      
+      // TEMPORARY FIX: Try to isolate the undefined response issue
+      try {
+        debug('tasks.createTask', 'About to make axios call', {
+          apiExists: !!api,
+          pathSet: !!path,
+          payloadSet: !!requestPayload,
+          axiosPost: typeof api.post,
+        }, 'createTask', OperationType.API_CALL);
+        
+        const axiosResponse = api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
+        
+        debug('tasks.createTask', 'Axios call initiated', {
+          promiseCreated: !!axiosResponse,
+          promiseType: typeof axiosResponse,
+          isPromise: axiosResponse instanceof Promise,
+        }, 'createTask', OperationType.API_CALL);
+        
+        res = await axiosResponse;
+        
+        debug('tasks.createTask', 'Promise awaited', {
+          resultReceived: !!res,
+          resultType: typeof res,
+          resultIsNull: res === null,
+          resultIsUndefined: res === undefined,
+        }, 'createTask', OperationType.API_CALL);
+        
+      } catch (promiseError) {
+        debug('tasks.createTask', 'Promise rejected', {
+          error: promiseError,
+          errorType: typeof promiseError,
+        }, 'createTask', OperationType.API_CALL);
+        throw promiseError;
+      }
+      
+      debug('tasks.createTask', 'Direct API call completed', {
+        hasResult: !!res,
+        resultType: typeof res,
+        isObject: res !== null && typeof res === 'object'
+      }, 'createTask', OperationType.API_CALL);
       debug('tasks.createTask', 'api.post returned', { 
         responseReceived: true,
         hasResponse: !!res,
         responseStatus: res?.status,
-        responseType: typeof res
+        responseType: typeof res,
+        responseHasData: !!(res?.data),
+        responseDataType: typeof res?.data,
+        responseKeys: res ? Object.keys(res) : [],
+        responseData: res?.data ? 'DATA_PRESENT' : 'NO_DATA',
+        responseStatusText: res?.statusText,
+        responseHeaders: res?.headers ? 'HEADERS_PRESENT' : 'NO_HEADERS'
       }, 'createTask', OperationType.API_CALL);
     } catch (err) {
-      debug('tasks.createTask', 'api.post threw error', { error: err }, 'createTask', OperationType.API_CALL);
+      debug('tasks.createTask', 'api.post threw error', { 
+        error: err,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorType: typeof err,
+        isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
+        hasResponse: err && typeof err === 'object' && 'response' in err,
+        responseStatus: err && typeof err === 'object' && 'response' in err ? (err as any).response?.status : null
+      }, 'createTask', OperationType.API_CALL);
       throw err;
     }
 
     // Handle response validation
     if (!res) {
-      throw new Error('Invalid API response: no response data received');
+      // This is the critical issue - API call returning undefined
+      debug(
+        'tasks.createTask',
+        'CRITICAL: api.post returned undefined',
+        {
+          path,
+          requestPayload: JSON.stringify(requestPayload),
+          apiClient: {
+            hasBaseURL: !!api.defaults?.baseURL,
+            baseURL: api.defaults?.baseURL,
+            hasAuth: !!api.defaults?.headers?.Authorization,
+            hasInterceptors: !!api.interceptors?.response
+          }
+        },
+        'createTask',
+        OperationType.API_CALL
+      );
+      throw new Error('Invalid API response: no response data received - api.post returned undefined');
     }
     
     // Debug logging to identify the response structure

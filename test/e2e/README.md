@@ -372,6 +372,41 @@ npm run e2e:cleanup:dry
 
 ## 🚨 Troubleshooting
 
+### ⚠️ CRITICAL: E2E Test Configuration Issue
+
+**Problem:** E2E tests fail when run with `npm test` instead of proper E2E commands.
+
+**Root Cause:** E2E tests require `E2E_MODE=true` environment variable to activate mock data, but `npm test` uses the default vitest config instead of `vitest.config.e2e.ts`.
+
+**Symptoms:**
+- Tests fail with "ATTIO_API_KEY environment variable is required" even when it's set
+- Tests try to make real API calls instead of using mock data
+- Tests that previously passed suddenly fail after configuration changes
+
+**Solution:**
+```bash
+# ❌ WRONG - Uses default vitest config, E2E tests will fail
+npm test
+
+# ✅ CORRECT - Uses E2E-specific config with E2E_MODE=true
+npm run test:e2e
+# OR directly with vitest:
+npx vitest --config vitest.config.e2e.ts
+```
+
+**Why This Happens:**
+1. `npm test` runs `vitest` with default config (`vitest.config.ts`)
+2. Default config excludes integration tests but doesn't set `E2E_MODE=true`
+3. E2E tests need `vitest.config.e2e.ts` which sets critical environment variables:
+   - `E2E_MODE: 'true'` (activates mock data)
+   - Proper ATTIO_API_KEY handling
+   - E2E-specific test timeouts and setup
+
+**Prevention:**
+- Always use `npm run test:e2e` for E2E tests
+- Never run E2E tests with generic `npm test`
+- Check vitest config when tests mysteriously fail
+
 ### Common Issues
 
 #### Configuration Errors

@@ -58,7 +58,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     resourceType: 'tasks',
     parameterTransform: (params: any) => ({
       resource_type: 'tasks',
-      record_id: params.task_id || params.record_id
+      record_id: params.taskId || params.task_id || params.record_id // Handle both camelCase and snake_case
     }),
     description: 'Legacy get-task-details → universal get-record-details'
   },
@@ -67,10 +67,10 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     universalToolName: 'update-record',
     resourceType: 'tasks',
     parameterTransform: (params: any) => {
-      const { task_id, record_id, ...recordData } = params;
+      const { task_id, taskId, record_id, ...recordData } = params;
       return {
         resource_type: 'tasks',
-        record_id: task_id || record_id,
+        record_id: taskId || task_id || record_id, // Handle both camelCase and snake_case
         record_data: recordData
       };
     },
@@ -82,7 +82,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     resourceType: 'tasks',
     parameterTransform: (params: any) => ({
       resource_type: 'tasks',
-      record_id: params.task_id || params.record_id
+      record_id: params.taskId || params.task_id || params.record_id // Handle both camelCase and snake_case
     }),
     description: 'Legacy delete-task → universal delete-record'
   },
@@ -362,12 +362,12 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     resourceType: 'tasks',
     parameterTransform: (params: any) => ({
       resource_type: 'tasks',
-      record_id: params.task_id,
+      record_id: params.taskId || params.task_id,
       record_data: {
         linked_records: [
           {
-            record_type: params.record_type,
-            record_id: params.record_id
+            record_type: params.record_type || 'companies', // Default to companies if not specified
+            record_id: params.recordId || params.record_id
           }
         ]
       }
