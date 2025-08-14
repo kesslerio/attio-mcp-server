@@ -381,12 +381,7 @@ export function isValidId(id: string): boolean {
     }
   }
 
-  // Accept properly formatted UUIDs or mock IDs (test-aware validation)
-  const uuidPattern =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const mockIdPattern = /^mock-[a-z0-9-]+$/i;
-
-  return uuidPattern.test(id) || mockIdPattern.test(id) || id.length >= 10;
+  return true;
 }
 
 /**

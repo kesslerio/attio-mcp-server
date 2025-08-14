@@ -113,16 +113,12 @@ import {
  * Helper function to check if we should use mock data based on environment
  */
 function shouldUseMockData(): boolean {
+  // Only activate for E2E tests, not unit tests
+  // Unit tests use vi.mock() and should not be interfered with
   return (
-    process.env.NODE_ENV === 'test' ||
-    process.env.VITEST === 'true' ||
-    process.env.VITEST !== undefined ||
     process.env.E2E_MODE === 'true' ||
     process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    (typeof global !== 'undefined' &&
-      (typeof global.it === 'function' ||
-        typeof global.describe === 'function'))
+    process.env.OFFLINE_MODE === 'true'
   );
 }
 
@@ -380,7 +376,7 @@ async function createTaskWithMockSupport(
 
     // Add assignee object format if assignee provided
     if (taskData.assigneeId) {
-      mockTask.assignee = { 
+      (mockTask as any).assignee = { 
         id: taskData.assigneeId as string,
         type: 'person' 
       };
@@ -495,7 +491,7 @@ async function updateTaskWithMockSupport(
 
     // Add assignee object format if assignee provided
     if (updateData.assigneeId) {
-      updatedMockTask.assignee = { 
+      (updatedMockTask as any).assignee = { 
         id: updateData.assigneeId as string,
         type: 'person' 
       };
