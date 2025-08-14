@@ -113,12 +113,13 @@ import {
  * Helper function to check if we should use mock data based on environment
  */
 function shouldUseMockData(): boolean {
-  // Only activate for E2E tests, not unit tests
+  // Only activate for E2E tests and specific performance tests
   // Unit tests use vi.mock() and should not be interfered with
   return (
     process.env.E2E_MODE === 'true' ||
     process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true'
+    process.env.OFFLINE_MODE === 'true' ||
+    process.env.PERFORMANCE_TEST === 'true'  // Added for performance tests
   );
 }
 
@@ -389,8 +390,8 @@ async function createTaskWithMockSupport(
   try {
     const { createTask } = await import('../../../objects/tasks.js');
     return (await createTask(taskData.content as string, {
-      assigneeId: taskData.assignee as string,
-      dueDate: taskData.due_date as string,
+      assigneeId: taskData.assigneeId as string,
+      dueDate: taskData.dueDate as string,
       recordId: taskData.recordId as string,
     })) as unknown as AttioRecord;
   } catch (error) {
