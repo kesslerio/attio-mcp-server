@@ -67,6 +67,14 @@ export declare class TaskMockFactory implements MockFactory<AttioTask> {
      */
     static generateMockId(): string;
     /**
+     * Creates a mock AttioTask with a specific ID
+     *
+     * @param identifier - Unique identifier for deterministic UUID generation
+     * @param overrides - Optional overrides for specific fields
+     * @returns Mock AttioTask matching API response format
+     */
+    static createWithId(identifier: string, overrides?: MockTaskOptions): AttioTask;
+    /**
      * Creates a mock AttioTask with realistic data
      *
      * @param overrides - Optional overrides for specific fields
