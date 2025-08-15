@@ -125,6 +125,7 @@ The project maintains high-quality test coverage with modern mock factory archit
 - **E2E Tests**: 76% success rate (29/38 passing) with Issue #480 compatibility
 - **Integration Tests**: 100% success rate with real API validation  
 - **Unit Tests**: 100% success rate (26/26 passing) with clean architecture
+- **Performance Tests**: Environment-aware budgets with dual testing strategy
 - **Mock Factory Pattern**: Complete production-test separation for reliable testing
 
 See our [Testing Guide](docs/development/testing.md), [Mock Factory Pattern](docs/architecture/mock-factory-pattern.md), and [Production-Test Separation](docs/testing/production-test-separation.md) for details.
