@@ -102,11 +102,19 @@ export class UniversalMetadataService {
         required: false,
       },
       {
+        id: 'assignee_id',
+        api_slug: 'assignee_id',
+        title: 'Assignee ID',
+        type: 'text',
+        description: 'ID of the workspace member assigned to this task',
+        required: false,
+      },
+      {
         id: 'due_date',
         api_slug: 'due_date',
         title: 'Due Date',
         type: 'date',
-        description: 'When the task is due',
+        description: 'When the task is due (ISO date format)',
         required: false,
       },
       {
@@ -124,6 +132,14 @@ export class UniversalMetadataService {
     attributes.forEach((attr) => {
       mappings[attr.title] = attr.api_slug;
     });
+
+    // Add common field mappings for task creation
+    mappings['title'] = 'content';
+    mappings['name'] = 'content';
+    mappings['description'] = 'content';
+    mappings['assignee'] = 'assignee_id';
+    mappings['due'] = 'due_date';
+    mappings['record'] = 'record_id';
 
     return {
       attributes: attributes,

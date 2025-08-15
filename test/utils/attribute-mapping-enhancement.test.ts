@@ -2,6 +2,7 @@
  * Tests for enhanced attribute mapping functionality
  * Specifically tests special case handling and fuzzy matching
  */
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 import {
   getAttributeSlug,
   invalidateConfigCache,

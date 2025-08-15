@@ -17,16 +17,7 @@ import {
   DetailedInfoType,
 } from './types.js';
 
-// Import format helpers
-import {
-  convertAttributeFormats,
-  getFormatErrorHelp,
-} from '../../../utils/attribute-format-helpers.js';
-
 // Import extracted services from Issue #489 Phase 2 & 3
-import { CachingService } from '../../../services/CachingService.js';
-import { ValidationService } from '../../../services/ValidationService.js';
-import { ErrorService } from '../../../services/ErrorService.js';
 import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
 import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
 import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
@@ -35,49 +26,8 @@ import { UniversalRetrievalService } from '../../../services/UniversalRetrievalS
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
 
-// Import debug utilities
-import { debug, OperationType } from '../../../utils/logger.js';
-
-// Import validation utilities for consistent validation
-import { isValidEmail } from '../../../utils/validation/email-validation.js';
-import { isValidId } from '../../../utils/validation.js';
-
-// Import enhanced error handling for Issues #415, #416, #417
+// Import existing handlers by resource type (used by handleUniversalGetDetailedInfo)
 import {
-  ErrorTemplates,
-  ErrorEnhancer,
-  EnhancedApiError,
-} from '../../../errors/enhanced-api-errors.js';
-
-import {
-  isValidUUID,
-  createRecordNotFoundError,
-  createInvalidUUIDError,
-} from '../../../utils/validation/uuid-validation.js';
-
-// Import deal defaults configuration
-import {
-  applyDealDefaultsWithValidation,
-  getDealDefaults,
-  validateDealInput,
-} from '../../../config/deal-defaults.js';
-
-// Import people normalization utilities
-import { PeopleDataNormalizer } from '../../../utils/normalization/people-normalization.js';
-
-// Import performance tracking and ID validation
-import { enhancedPerformanceTracker } from '../../../middleware/performance-enhanced.js';
-import { generateIdCacheKey } from '../../../utils/validation/id-validation.js';
-import { performance } from 'perf_hooks';
-
-// Import existing handlers by resource type
-import {
-  advancedSearchCompanies,
-  getCompanyDetails,
-  createCompany,
-  updateCompany,
-  getCompanyAttributes,
-  discoverCompanyAttributes,
   getCompanyBasicInfo,
   getCompanyContactInfo,
   getCompanyBusinessInfo,
@@ -85,47 +35,22 @@ import {
 } from '../../../objects/companies/index.js';
 
 import {
-  searchLists,
   getListDetails,
-  createList,
-  updateList,
-  getListAttributes,
 } from '../../../objects/lists.js';
 
 import {
-  advancedSearchPeople,
   getPersonDetails,
-  createPerson,
 } from '../../../objects/people/index.js';
 
-import { updatePerson } from '../../../objects/people-write.js';
-
 import {
-  createObjectRecord,
   getObjectRecord,
-  updateObjectRecord,
-  listObjectRecords,
 } from '../../../objects/records/index.js';
 
 import {
-  createTask,
-  updateTask,
   getTask,
-  listTasks,
 } from '../../../objects/tasks.js';
 
-import { AttioRecord, AttioTask } from '../../../types/attio.js';
-import { getAttioClient } from '../../../api/attio-client.js';
-import { UniversalValidationError, ErrorType } from './schemas.js';
-import {
-  mapRecordFields,
-  validateResourceType,
-  getFieldSuggestions,
-  validateFields,
-  enhanceUniquenessError,
-  getValidResourceTypes,
-  FIELD_MAPPINGS,
-} from './field-mapper.js';
+import { AttioRecord } from '../../../types/attio.js';
 
 /**
  * Universal search handler - delegates to UniversalSearchService

@@ -2,6 +2,16 @@
  * Tests for date utility functions
  */
 import {
+  describe,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  it,
+  expect,
+  vi,
+} from 'vitest';
+import {
   resolveRelativeDate,
   createDateRangeFromPreset,
   resolveDateRange,

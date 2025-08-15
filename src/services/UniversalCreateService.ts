@@ -600,17 +600,22 @@ export class UniversalCreateService {
   ): Promise<AttioRecord> {
     try {
       // Issue #417: Enhanced task creation with field mapping guidance
-      // Check for content field first, then validate
+      // Check for content field first, then validate (handle empty strings)
       const content =
-        mappedData.content ?? mappedData.title ?? mappedData.name ?? 'New task';
+        (mappedData.content &&
+          typeof mappedData.content === 'string' &&
+          mappedData.content.trim()) ||
+        (mappedData.title &&
+          typeof mappedData.title === 'string' &&
+          mappedData.title.trim()) ||
+        (mappedData.name &&
+          typeof mappedData.name === 'string' &&
+          mappedData.name.trim()) ||
+        'New task';
 
-      // Validate required content field - check if explicitly empty
-      if (
-        mappedData.content !== undefined &&
-        (!mappedData.content ||
-          (typeof mappedData.content === 'string' &&
-            mappedData.content.trim() === ''))
-      ) {
+      // Validate field mapping - only suggest using content instead of title
+      // if the user actually provided a title field but no content
+      if (mappedData.title !== undefined && mappedData.content === undefined) {
         throw ErrorTemplates.TASK_FIELD_MAPPING(
           'title', // Show 'title' as the field they tried to use
           'content' // Suggest 'content' as the correct field
@@ -663,7 +668,25 @@ export class UniversalCreateService {
       // Convert AttioTask to AttioRecord using proper type conversion
       // For tests, MockService.createTask already returns AttioRecord format
       // For production, we need to convert from AttioTask to AttioRecord
-      const convertedRecord = createdTask; // MockService handles conversion internally
+
+      // Handle both AttioTask and AttioRecord inputs
+      let convertedRecord: AttioRecord;
+      if ('values' in createdTask && createdTask.id?.record_id) {
+        // Already in AttioRecord format (from MockService)
+        convertedRecord = createdTask as AttioRecord;
+      } else {
+        // Convert from AttioTask to AttioRecord
+        // Ensure we have the properties needed for AttioTask conversion
+        if ('content' in createdTask) {
+          convertedRecord = UniversalUtilityService.convertTaskToRecord(
+            createdTask as unknown as AttioTask
+          );
+        } else {
+          throw new Error(
+            `Invalid task object structure: ${JSON.stringify(createdTask)}`
+          );
+        }
+      }
 
       // Debug logging after conversion
       debug(

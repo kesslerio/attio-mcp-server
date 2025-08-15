@@ -4,6 +4,7 @@
  * These tests require a valid ATTIO_API_KEY environment variable.
  * They can be skipped by setting SKIP_INTEGRATION_TESTS=true.
  */
+import { describe, beforeAll, afterAll, it, expect, test } from 'vitest';
 import {
   createCompany,
   updateCompany,

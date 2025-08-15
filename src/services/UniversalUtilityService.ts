@@ -100,7 +100,7 @@ export class UniversalUtilityService {
       throw new Error(`Task missing id property: ${JSON.stringify(task)}`);
     }
 
-    return {
+    const baseRecord: AttioRecord = {
       id: {
         record_id,
         task_id: record_id, // Issue #480: Preserve task_id for E2E test compatibility
@@ -108,16 +108,54 @@ export class UniversalUtilityService {
         workspace_id,
       },
       values: {
-        // Map task properties to values object
-        content: task.content,
-        status: task.status,
-        assignee: task.assignee,
-        due_date: task.due_date,
-        linked_records: task.linked_records,
-      } as AttioRecord['values'],
+        // Map task properties to proper AttioRecord array format
+        content: [{ value: task.content }],
+        status: [{ value: task.status }],
+        assignee: task.assignee
+          ? [
+              {
+                value:
+                  typeof task.assignee === 'string'
+                    ? task.assignee
+                    : task.assignee.id,
+                name:
+                  typeof task.assignee === 'string'
+                    ? undefined
+                    : task.assignee.name,
+              },
+            ]
+          : undefined,
+        due_date: task.due_date ? [{ value: task.due_date }] : undefined,
+        linked_records: task.linked_records || undefined,
+      },
       created_at: task.created_at,
       updated_at: task.updated_at,
     };
+
+    // Add flat field compatibility for test environments (Issue #480 pattern)
+    const flatFields = {
+      content: task.content,
+      status: task.status,
+      due_date: task.due_date,
+      assignee_id:
+        typeof task.assignee === 'string' ? task.assignee : task.assignee?.id,
+    };
+
+    // Add assignee object format if assignee provided
+    if (task.assignee) {
+      (flatFields as any).assignee = {
+        id:
+          typeof task.assignee === 'string' ? task.assignee : task.assignee.id,
+        type:
+          typeof task.assignee === 'string'
+            ? 'person'
+            : task.assignee.type || 'person',
+        name:
+          typeof task.assignee === 'string' ? undefined : task.assignee.name,
+      };
+    }
+
+    return { ...baseRecord, ...flatFields };
   }
 
   /**

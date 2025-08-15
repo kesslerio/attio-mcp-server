@@ -146,14 +146,24 @@ describe('UniversalUtilityService', () => {
           workspace_id: 'ws_456',
         },
         values: {
-          content: 'Test task content',
-          status: 'pending',
-          assignee: 'user_789',
-          due_date: '2024-01-15',
+          content: [{ value: 'Test task content' }],
+          status: [{ value: 'pending' }],
+          assignee: [{ value: 'user_789', name: undefined }],
+          due_date: [{ value: '2024-01-15' }],
           linked_records: [],
         },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-02T00:00:00Z',
+        // Flat field compatibility
+        content: 'Test task content',
+        status: 'pending',
+        due_date: '2024-01-15',
+        assignee_id: 'user_789',
+        assignee: {
+          id: 'user_789',
+          type: 'person',
+          name: undefined,
+        },
       });
     });
 
@@ -182,14 +192,19 @@ describe('UniversalUtilityService', () => {
           workspace_id: 'ws_def',
         },
         values: {
-          content: 'Another task',
-          status: 'completed',
-          assignee: null,
-          due_date: null,
-          linked_records: null,
+          content: [{ value: 'Another task' }],
+          status: [{ value: 'completed' }],
+          assignee: undefined,
+          due_date: undefined,
+          linked_records: undefined,
         },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
+        // Flat field compatibility
+        content: 'Another task',
+        status: 'completed',
+        due_date: null,
+        assignee_id: undefined,
       });
     });
 
@@ -215,14 +230,24 @@ describe('UniversalUtilityService', () => {
           workspace_id: '',
         },
         values: {
-          content: 'Simple task',
-          status: 'in_progress',
-          assignee: 'user_xyz',
-          due_date: '2024-02-01',
+          content: [{ value: 'Simple task' }],
+          status: [{ value: 'in_progress' }],
+          assignee: [{ value: 'user_xyz', name: undefined }],
+          due_date: [{ value: '2024-02-01' }],
           linked_records: [{ type: 'company', id: 'comp_123' }],
         },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-03T00:00:00Z',
+        // Flat field compatibility
+        content: 'Simple task',
+        status: 'in_progress',
+        due_date: '2024-02-01',
+        assignee_id: 'user_xyz',
+        assignee: {
+          id: 'user_xyz',
+          type: 'person',
+          name: undefined,
+        },
       });
     });
 

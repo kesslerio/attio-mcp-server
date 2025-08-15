@@ -458,8 +458,36 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle task creation with empty content', async () => {
+      // Set E2E mode to test mock data path
+      process.env.E2E_MODE = 'true';
+
+      const mockTaskRecord: AttioRecord = {
+        id: { record_id: 'task_123', task_id: 'task_123' },
+        values: { content: 'New task' }, // Default content will be used
+      };
+      vi.mocked(MockService.createTask).mockResolvedValue(mockTaskRecord);
+
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: { content: '' },
+        warnings: [],
+        errors: [],
+      });
+
+      const result = await UniversalCreateService.createRecord({
+        resource_type: UniversalResourceType.TASKS,
+        record_data: { values: { content: '' } },
+      });
+
+      expect(result).toEqual(mockTaskRecord);
+      expect(MockService.createTask).toHaveBeenCalledWith({
+        content: 'New task', // Default content used when input is empty
+        title: 'New task', // Dual field support
+      });
+    });
+
+    it('should throw error when title is provided instead of content', async () => {
+      vi.mocked(mapRecordFields).mockReturnValue({
+        mapped: { title: 'Task Title' }, // Using 'title' instead of 'content'
         warnings: [],
         errors: [],
       });
@@ -467,7 +495,7 @@ describe('UniversalCreateService', () => {
       await expect(
         UniversalCreateService.createRecord({
           resource_type: UniversalResourceType.TASKS,
-          record_data: { values: { content: '' } },
+          record_data: { values: { title: 'Task Title' } },
         })
       ).rejects.toThrow('Use content instead of title');
     });

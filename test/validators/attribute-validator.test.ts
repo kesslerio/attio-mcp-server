@@ -1,6 +1,7 @@
 /**
  * Tests for the attribute validator
  */
+import { describe, it, expect } from 'vitest';
 import {
   validateAttributeValue,
   ValidationResult,

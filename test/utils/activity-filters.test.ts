@@ -1,6 +1,7 @@
 /**
  * Tests for activity and historical filtering functionality
  */
+import { describe, it, expect } from 'vitest';
 import {
   createDateRangeFilter,
   createCreatedDateFilter,

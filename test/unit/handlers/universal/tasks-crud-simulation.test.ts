@@ -96,7 +96,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
 
     expect(createdRecord).toHaveProperty('id');
     expect(createdRecord.id.record_id).toBe('task-123');
-    expect(createdRecord.values.content).toBe('Q4 Follow-up: Test Task');
+    expect(createdRecord.values.content[0].value).toBe('Q4 Follow-up: Test Task');
     expect(createTask).toHaveBeenCalledWith(
       'Q4 Follow-up: Test Task',
       expect.objectContaining({
@@ -113,7 +113,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
 
     expect(retrievedRecord).toHaveProperty('id');
     expect(retrievedRecord.id.record_id).toBe('task-123');
-    expect(retrievedRecord.values.content).toBe('Q4 Follow-up: Test Task');
+    expect(retrievedRecord.values.content[0].value).toBe('Q4 Follow-up: Test Task');
     expect(getTask).toHaveBeenCalledWith('task-123');
 
     // 3. Test task update with field mapping
@@ -128,8 +128,8 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       record_data: updateData,
     });
 
-    expect(updatedRecord.values.content).toBe('Updated: Q4 Follow-up Task');
-    expect(updatedRecord.values.status).toBe('completed');
+    expect(updatedRecord.values.content[0].value).toBe('Updated: Q4 Follow-up Task');
+    expect(updatedRecord.values.status[0].value).toBe('completed');
     expect(updateTask).toHaveBeenCalledWith(
       'task-123',
       expect.objectContaining({
@@ -211,7 +211,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       record_data: { description: 'Test with variations' },
     });
 
-    expect(result1.values.content).toBe('Test with variations');
+    expect(result1.values.content[0].value).toBe('Test with variations');
 
     // Test with camelCase fields
     const result2 = await handleUniversalCreate({

@@ -550,13 +550,18 @@ describe('UniversalUpdateService', () => {
           workspace_id: '',
         },
         values: {
-          content: 'Real Task',
-          status: 'pending',
-          assignee: null,
-          due_date: null,
-          linked_records: null,
+          content: [{ value: 'Real Task' }],
+          status: [{ value: 'pending' }],
+          assignee: undefined,
+          due_date: undefined,
+          linked_records: undefined,
         },
         created_at: '2024-01-01T00:00:00Z',
+        // Flat field compatibility
+        content: 'Real Task',
+        status: 'pending',
+        due_date: null,
+        assignee_id: undefined,
         updated_at: '2024-01-01T00:00:00Z',
       });
     });

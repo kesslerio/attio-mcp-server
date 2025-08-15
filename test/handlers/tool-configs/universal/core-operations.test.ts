@@ -33,6 +33,12 @@ vi.mock(
       }
     }),
     getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
+  })
+);
+
+// Mock the ErrorService (createUniversalError moved here during service extraction)
+vi.mock('../../../../src/services/ErrorService.js', () => ({
+  ErrorService: {
     createUniversalError: vi.fn(
       (operation: string, resourceType: string, error: any) =>
         new UniversalValidationError(
@@ -41,8 +47,8 @@ vi.mock(
           { cause: error }
         )
     ),
-  })
-);
+  },
+}));
 
 // Mock validation and schemas
 vi.mock(
@@ -155,11 +161,14 @@ describe('Universal Core Operations Tests', () => {
 
     it('should handle search errors properly', async () => {
       const mockError = new Error('API error');
-      const { handleUniversalSearch, createUniversalError } = await import(
+      const { handleUniversalSearch } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
+      const { ErrorService } = await import(
+        '../../../../src/services/ErrorService.js'
+      );
       vi.mocked(handleUniversalSearch).mockRejectedValue(mockError);
-      vi.mocked(createUniversalError).mockReturnValue(
+      vi.mocked(ErrorService.createUniversalError).mockReturnValue(
         new UniversalValidationError(
           'Universal search failed for resource type companies: API error',
           ErrorType.API_ERROR,
@@ -175,7 +184,7 @@ describe('Universal Core Operations Tests', () => {
       await expect(searchRecordsConfig.handler(params)).rejects.toThrow(
         'Universal search failed for resource type companies: API error'
       );
-      expect(vi.mocked(createUniversalError)).toHaveBeenCalledWith(
+      expect(vi.mocked(ErrorService.createUniversalError)).toHaveBeenCalledWith(
         'search',
         UniversalResourceType.COMPANIES,
         mockError

@@ -1,6 +1,7 @@
 /**
  * Tests for MCP Prompts handlers
  */
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   ListPromptsRequestSchema,
