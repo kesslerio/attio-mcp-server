@@ -38,6 +38,7 @@ export class PersonMockFactory {
      * while satisfying UUID validation requirements (addresses PR #483).
      */
     static generateMockId() {
+        // Use random UUID generation for unique IDs
         return UUIDMockGenerator.generatePersonUUID();
     }
     /**

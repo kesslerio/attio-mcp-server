@@ -37,6 +37,10 @@ export { CompanyMockFactory, type MockCompanyOptions };
 export { PersonMockFactory, type MockPersonOptions };
 export { ListMockFactory, type MockListOptions, type MockListEntryOptions };
 
+// Universal mock service for production code integration
+import { UniversalMockService } from './UniversalMockService.js';
+export { UniversalMockService };
+
 // Test environment utilities
 import { 
   TestEnvironment,
@@ -214,6 +218,7 @@ export default {
   PersonMockFactory,
   ListMockFactory,
   UniversalMockFactory,
+  UniversalMockService,
   TestEnvironment,
   MockFactories,
   QuickMocks

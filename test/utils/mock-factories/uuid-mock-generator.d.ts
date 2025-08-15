@@ -41,6 +41,10 @@ export declare class UUIDMockGenerator {
      */
     static generateListUUID(identifier?: string): string;
     /**
+     * Generate a truly random UUID v4
+     */
+    private static generateRandomUUID;
+    /**
      * Reset seed counter for test isolation
      */
     static resetSeedCounter(): void;

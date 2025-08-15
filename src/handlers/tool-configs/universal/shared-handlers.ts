@@ -136,386 +136,52 @@ function createValidationError(message: string, resourceType: string = 'resource
 }
 
 /**
- * Mock data generation for company creation (test environments only)
+ * Company creation with mock support - uses production MockService
+ * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.VERBOSE_TESTS === 'true'
-    ) {
-      console.log('[MockInjection] Using mock data for company creation');
-    }
-
-    // Generate inline mock data to avoid importing from test directories
-    // Use crypto.randomUUID() for proper UUID format to match validation requirements
-    const mockId =
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, '0')}${Date.now().toString(16)}-${Math.floor(
-            Math.random() * 65535
-          )
-            .toString(16)
-            .padStart(4, '0')}-4${Math.floor(Math.random() * 4095)
-            .toString(16)
-            .padStart(
-              3,
-              '0'
-            )}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${Math.floor(
-            Math.random() * 4095
-          )
-            .toString(16)
-            .padStart(3, '0')}-${Math.floor(Math.random() * 281474976710655)
-            .toString(16)
-            .padStart(12, '0')}`;
-    const companyName =
-      (companyData.name as string) || `Mock Company ${mockId.slice(-4)}`;
-
-    return {
-      id: {
-        record_id: mockId,
-        object_id: 'companies',
-        workspace_id: 'mock-workspace-id',
-      },
-      values: {
-        name: [{ value: companyName }],
-        domains: [{ value: `${mockId}.example.com` }],
-        industry: [{ value: (companyData.industry as string) || 'Technology' }],
-        description: [
-          {
-            value:
-              (companyData.description as string) ||
-              `Mock company for testing - ${mockId}`,
-          },
-        ],
-        // Pass through any additional fields with proper wrapping
-        ...Object.fromEntries(
-          Object.entries(companyData)
-            .filter(
-              ([key]) =>
-                !['name', 'domains', 'industry', 'description'].includes(key)
-            )
-            .map(([key, value]) => [
-              key,
-              Array.isArray(value) ? value : [{ value: String(value) }],
-            ])
-        ),
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  // Use real API in production
-  return await createCompany(companyData as any);
+  // Delegate to production MockService to avoid TypeScript build errors
+  const { MockService } = await import('../../../services/MockService.js');
+  return await MockService.createCompany(companyData);
 }
 
 /**
- * Mock data generation for person creation (test environments only)
+ * Person creation with mock support - uses production MockService
+ * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.VERBOSE_TESTS === 'true'
-    ) {
-      console.log('[MockInjection] Using mock data for person creation');
-    }
-
-    // Generate inline mock data to avoid importing from test directories
-    // Use crypto.randomUUID() for proper UUID format to match validation requirements
-    const mockId =
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, '0')}${Date.now().toString(16)}-${Math.floor(
-            Math.random() * 65535
-          )
-            .toString(16)
-            .padStart(4, '0')}-4${Math.floor(Math.random() * 4095)
-            .toString(16)
-            .padStart(
-              3,
-              '0'
-            )}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${Math.floor(
-            Math.random() * 4095
-          )
-            .toString(16)
-            .padStart(3, '0')}-${Math.floor(Math.random() * 281474976710655)
-            .toString(16)
-            .padStart(12, '0')}`;
-    const personName =
-      (personData.name as string) || `Mock Person ${mockId.slice(-4)}`;
-
-    return {
-      id: {
-        record_id: mockId,
-        object_id: 'people',
-        workspace_id: 'mock-workspace-id',
-      },
-      values: {
-        name: [{ value: personName }],
-        email_addresses: Array.isArray(personData.email_addresses)
-          ? personData.email_addresses
-          : [{ value: `${mockId}@example.com` }],
-        // Pass through any additional fields with proper wrapping
-        ...Object.fromEntries(
-          Object.entries(personData)
-            .filter(([key]) => !['name', 'email_addresses'].includes(key))
-            .map(([key, value]) => [
-              key,
-              Array.isArray(value) ? value : [{ value: String(value) }],
-            ])
-        ),
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  // Use real API in production
-  return await createPerson(personData as any);
+  // Delegate to production MockService to avoid TypeScript build errors
+  const { MockService } = await import('../../../services/MockService.js');
+  return await MockService.createPerson(personData);
 }
 
 /**
- * Mock data generation for task creation (test environments only)
+ * Task creation with mock support - uses production MockService
+ * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
 async function createTaskWithMockSupport(
   taskData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.VERBOSE_TESTS === 'true'
-    ) {
-      console.log('[MockInjection] Using mock data for task creation');
-    }
-
-    // Generate inline mock data to avoid importing from test directories
-    // Use crypto.randomUUID() for proper UUID format to match validation requirements
-    const mockId =
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, '0')}${Date.now().toString(16)}-${Math.floor(
-            Math.random() * 65535
-          )
-            .toString(16)
-            .padStart(4, '0')}-4${Math.floor(Math.random() * 4095)
-            .toString(16)
-            .padStart(
-              3,
-              '0'
-            )}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${Math.floor(
-            Math.random() * 4095
-          )
-            .toString(16)
-            .padStart(3, '0')}-${Math.floor(Math.random() * 281474976710655)
-            .toString(16)
-            .padStart(12, '0')}`;
-    const taskContent =
-      (taskData.content as string) ||
-      (taskData.title as string) ||
-      `Mock Test Task ${mockId.slice(-4)}`;
-
-    // Build the mock task with both Attio API format and flat field compatibility
-    const mockTask = {
-      id: {
-        record_id: mockId,
-        task_id: mockId, // Issue #480 compatibility
-        object_id: 'tasks',
-        workspace_id: 'mock-workspace-id',
-      },
-      values: {
-        content: [{ value: taskContent }],
-        title: [{ value: taskContent }], // Dual field support
-        status: [{ value: (taskData.status as string) || 'pending' }],
-        due_date: taskData.due_date
-          ? [{ value: taskData.due_date as string }]
-          : undefined,
-        assignee: taskData.assigneeId
-          ? [{ value: taskData.assigneeId as string }]
-          : undefined,
-        // Pass through any additional fields with proper wrapping
-        ...Object.fromEntries(
-          Object.entries(taskData)
-            .filter(
-              ([key]) =>
-                ![
-                  'content',
-                  'title',
-                  'status',
-                  'due_date',
-                  'assignee',
-                ].includes(key)
-            )
-            .map(([key, value]) => [
-              key,
-              Array.isArray(value) ? value : [{ value: String(value) }],
-            ])
-        ),
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      
-      // Add flat field compatibility for E2E tests
-      content: taskContent,
-      title: taskContent,
-      status: (taskData.status as string) || 'pending',
-      due_date: taskData.due_date as string,
-      assignee_id: taskData.assigneeId as string,
-      priority: (taskData.priority as string) || 'medium',
-    };
-
-    // Add assignee object format if assignee provided
-    if (taskData.assigneeId) {
-      (mockTask as any).assignee = { 
-        id: taskData.assigneeId as string,
-        type: 'person' 
-      };
-    }
-
-    return mockTask;
-  }
-
-  // Use real API in production - import task functions dynamically to avoid circular deps
-  try {
-    const { createTask } = await import('../../../objects/tasks.js');
-    return (await createTask(taskData.content as string, {
-      assigneeId: taskData.assigneeId as string,
-      dueDate: taskData.dueDate as string,
-      recordId: taskData.recordId as string,
-    })) as unknown as AttioRecord;
-  } catch (error) {
-    throw new Error(
-      `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+  // Delegate to production MockService to avoid TypeScript build errors
+  const { MockService } = await import('../../../services/MockService.js');
+  return await MockService.createTask(taskData);
 }
 
 /**
- * Mock data generation for task updates (test environments only)
+ * Task update with mock support - uses production MockService  
+ * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
 async function updateTaskWithMockSupport(
   taskId: string,
   updateData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  if (shouldUseMockData()) {
-    // Validate task ID before proceeding
-    if (!isValidId(taskId)) {
-      throw new Error(`Task not found: ${taskId}`);
-    }
-
-    // Validate assignee ID if provided
-    if (updateData.assigneeId && !isValidId(updateData.assigneeId as string)) {
-      throw new Error(`Invalid assignee ID: ${updateData.assigneeId}`);
-    }
-
-    // Validate record IDs if provided (for linked records from tool migration)
-    if (updateData.recordIds && Array.isArray(updateData.recordIds)) {
-      for (const recordId of updateData.recordIds) {
-        if (!isValidId(recordId as string)) {
-          throw new Error(`Record not found: ${recordId}`);
-        }
-      }
-    }
-
-    if (
-      process.env.NODE_ENV === 'development' ||
-      process.env.VERBOSE_TESTS === 'true'
-    ) {
-      console.log('[MockInjection] Using mock data for task update');
-    }
-
-    // Return updated mock task record
-    const taskContent =
-      (updateData.content as string) ||
-      (updateData.title as string) ||
-      `Updated Mock Test Task ${taskId.slice(-4)}`;
-
-    // Build the updated mock task with both Attio API format and flat field compatibility
-    const updatedMockTask = {
-      id: {
-        record_id: taskId,
-        task_id: taskId, // Issue #480 compatibility
-        object_id: 'tasks',
-        workspace_id: 'mock-workspace-id',
-      },
-      values: {
-        content: [{ value: taskContent }],
-        title: [{ value: taskContent }], // Dual field support
-        status: [{ value: (updateData.status as string) || 'updated' }],
-        due_date: updateData.due_date
-          ? [{ value: updateData.due_date as string }]
-          : undefined,
-        assignee: updateData.assigneeId
-          ? [{ value: updateData.assigneeId as string }]
-          : undefined,
-        // Pass through any additional fields with proper wrapping
-        ...Object.fromEntries(
-          Object.entries(updateData)
-            .filter(
-              ([key]) =>
-                ![
-                  'content',
-                  'title',
-                  'status',
-                  'due_date',
-                  'assignee',
-                ].includes(key)
-            )
-            .map(([key, value]) => [
-              key,
-              Array.isArray(value) ? value : [{ value: String(value) }],
-            ])
-        ),
-      },
-      created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-      updated_at: new Date().toISOString(),
-      
-      // Add flat field compatibility for E2E tests
-      content: taskContent,
-      title: taskContent,
-      status: (updateData.status as string) || 'updated',
-      due_date: updateData.due_date as string,
-      assignee_id: updateData.assigneeId as string,
-      priority: (updateData.priority as string) || 'medium',
-    };
-
-    // Add assignee object format if assignee provided
-    if (updateData.assigneeId) {
-      (updatedMockTask as any).assignee = { 
-        id: updateData.assigneeId as string,
-        type: 'person' 
-      };
-    }
-
-    return updatedMockTask;
-  }
-
-  // Use real API in production - import task functions dynamically to avoid circular deps
-  try {
-    const { updateTask } = await import('../../../objects/tasks.js');
-    return (await updateTask(taskId, {
-      content: updateData.content as string,
-      status: updateData.status as string,
-      assigneeId: updateData.assignee as string,
-      dueDate: updateData.due_date as string,
-      recordIds: updateData.recordIds as string[],
-    })) as unknown as AttioRecord;
-  } catch (error) {
-    throw new Error(
-      `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+  // Delegate to production MockService to avoid TypeScript build errors
+  const { MockService } = await import('../../../services/MockService.js');
+  return await MockService.updateTask(taskId, updateData);
 }
 
 import { AttioRecord, AttioTask } from '../../../types/attio.js';
