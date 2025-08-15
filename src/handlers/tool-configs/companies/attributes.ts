@@ -116,13 +116,17 @@ ${
       output += `\nCUSTOM FIELDS:\n`;
       if (custom.length > 0) {
         custom.forEach((field: unknown) => {
-          const fieldInfo = all.find((f: unknown) => 
-            typeof f === 'object' && f !== null && 
-            'name' in f && (f as { name: unknown }).name === field
+          const fieldInfo = all.find(
+            (f: unknown) =>
+              typeof f === 'object' &&
+              f !== null &&
+              'name' in f &&
+              (f as { name: unknown }).name === field
           );
-          const fieldType = fieldInfo && typeof fieldInfo === 'object' && 'type' in fieldInfo 
-            ? String((fieldInfo as { type: unknown }).type) 
-            : 'unknown';
+          const fieldType =
+            fieldInfo && typeof fieldInfo === 'object' && 'type' in fieldInfo
+              ? String((fieldInfo as { type: unknown }).type)
+              : 'unknown';
           output += `  - ${String(field)} (${fieldType})\n`;
         });
       } else {
@@ -146,16 +150,20 @@ ${
 
       // Handle case where the result contains an error object
       if (result.error) {
-        const errorMessage = typeof result.error === 'object' && result.error !== null && 
-          'message' in result.error && typeof (result.error as { message: unknown }).message === 'string'
-          ? (result.error as { message: string }).message
-          : JSON.stringify(result.error);
+        const errorMessage =
+          typeof result.error === 'object' &&
+          result.error !== null &&
+          'message' in result.error &&
+          typeof (result.error as { message: unknown }).message === 'string'
+            ? (result.error as { message: string }).message
+            : JSON.stringify(result.error);
         return `Error retrieving attribute: ${errorMessage}`;
       }
 
       if (result.value !== undefined) {
         // Return specific attribute value
-        const company = typeof result.company === 'string' ? result.company : 'Unknown';
+        const company =
+          typeof result.company === 'string' ? result.company : 'Unknown';
         return `Company: ${company}\nAttribute value: ${
           typeof result.value === 'object'
             ? JSON.stringify(result.value, null, 2)
@@ -163,7 +171,8 @@ ${
         }`;
       } else if (result.attributes && Array.isArray(result.attributes)) {
         // Return list of attributes
-        const company = typeof result.company === 'string' ? result.company : 'Unknown';
+        const company =
+          typeof result.company === 'string' ? result.company : 'Unknown';
         return `Company: ${company}\nAvailable attributes (${
           result.attributes.length
         }):\n${result.attributes

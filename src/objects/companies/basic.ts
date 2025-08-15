@@ -139,7 +139,9 @@ export async function getCompanyDetails(
         if (process.env.NODE_ENV === 'development') {
           console.log(
             `[getCompanyDetails] Second attempt failed: ${
-              secondError instanceof Error ? secondError.message : 'Unknown error'
+              secondError instanceof Error
+                ? secondError.message
+                : 'Unknown error'
             }`,
             {
               method: 'direct API path',
@@ -178,9 +180,18 @@ export async function getCompanyDetails(
               `/companies/${companyId}`,
             ],
             errors: {
-              first: firstError instanceof Error ? firstError.message : 'Unknown error',
-              second: secondError instanceof Error ? secondError.message : 'Unknown error',
-              third: thirdError instanceof Error ? thirdError.message : 'Unknown error',
+              first:
+                firstError instanceof Error
+                  ? firstError.message
+                  : 'Unknown error',
+              second:
+                secondError instanceof Error
+                  ? secondError.message
+                  : 'Unknown error',
+              third:
+                thirdError instanceof Error
+                  ? thirdError.message
+                  : 'Unknown error',
             },
           };
 
@@ -233,29 +244,38 @@ export async function createCompany(
   if (process.env.NODE_ENV === 'development') {
     console.log('[createCompany] Input attributes:', attributes);
   }
-  
+
   try {
-    console.log('[createCompany] DEBUG - Input attributes:', JSON.stringify(attributes, null, 2));
-    
+    console.log(
+      '[createCompany] DEBUG - Input attributes:',
+      JSON.stringify(attributes, null, 2)
+    );
+
     // Temporarily comment out validation to isolate the issue
     const result = await createObjectWithDynamicFields<Company>(
       ResourceType.COMPANIES,
       attributes
       // CompanyValidator.validateCreate  // Temporarily disabled
     );
-    
-    console.log('[createCompany] DEBUG - Result from createObjectWithDynamicFields:', JSON.stringify(result, null, 2));
-    
+
+    console.log(
+      '[createCompany] DEBUG - Result from createObjectWithDynamicFields:',
+      JSON.stringify(result, null, 2)
+    );
+
     if (process.env.NODE_ENV === 'development') {
-      console.log('[createCompany] Result from createObjectWithDynamicFields:', {
-        result,
-        hasId: !!result?.id,
-        hasValues: !!result?.values,
-        resultType: typeof result,
-        isEmptyObject: result && Object.keys(result).length === 0
-      });
+      console.log(
+        '[createCompany] Result from createObjectWithDynamicFields:',
+        {
+          result,
+          hasId: !!result?.id,
+          hasValues: !!result?.values,
+          resultType: typeof result,
+          isEmptyObject: result && Object.keys(result).length === 0,
+        }
+      );
     }
-    
+
     // Defensive validation: Ensure we have a valid company record
     if (!result) {
       throw new CompanyOperationError(
@@ -264,7 +284,7 @@ export async function createCompany(
         'API returned null/undefined response for company creation'
       );
     }
-    
+
     if (!result.id || !result.id.record_id) {
       throw new CompanyOperationError(
         'create',
@@ -272,7 +292,7 @@ export async function createCompany(
         `API returned invalid company record without proper ID structure. Response: ${JSON.stringify(result)}`
       );
     }
-    
+
     if (!result.values || typeof result.values !== 'object') {
       throw new CompanyOperationError(
         'create',
@@ -280,13 +300,13 @@ export async function createCompany(
         `API returned invalid company record without values object. Response: ${JSON.stringify(result)}`
       );
     }
-    
+
     return result;
   } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[createCompany] Error caught:', error);
     }
-    
+
     if (error instanceof InvalidCompanyDataError) {
       throw error;
     }
@@ -487,7 +507,9 @@ export async function deleteCompany(companyId: string): Promise<boolean> {
 export function extractCompanyId(companyIdOrUri: string): string {
   // Validate input
   if (!companyIdOrUri || typeof companyIdOrUri !== 'string') {
-    throw new Error(`Invalid company ID or URI: expected non-empty string, got ${typeof companyIdOrUri}: ${companyIdOrUri}`);
+    throw new Error(
+      `Invalid company ID or URI: expected non-empty string, got ${typeof companyIdOrUri}: ${companyIdOrUri}`
+    );
   }
 
   // Determine if the input is a URI or a direct ID

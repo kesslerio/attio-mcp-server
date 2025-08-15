@@ -1,18 +1,18 @@
 /**
  * Unit test for Issue #417 - Complete Tasks CRUD simulation
- * 
+ *
  * This test simulates the full CRUD flow for tasks through the universal tools
  * to ensure all operations work correctly after the fix.
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { 
+import {
   handleUniversalCreate,
   handleUniversalGetDetails,
   handleUniversalUpdate,
   handleUniversalDelete,
   handleUniversalGetAttributes,
-  handleUniversalDiscoverAttributes
+  handleUniversalDiscoverAttributes,
 } from '../../../../src/handlers/tool-configs/universal/shared-handlers.js';
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 
@@ -22,19 +22,19 @@ vi.mock('../../../../src/objects/tasks.js', () => ({
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
   getTask: vi.fn(),
-  listTasks: vi.fn()
+  listTasks: vi.fn(),
 }));
 
 // Mock validation functions to avoid validation errors in tests
 vi.mock('../../../../src/utils/enhanced-validation.js', () => ({
   validateRecordFields: vi.fn().mockResolvedValue({ isValid: true }),
-  createEnhancedErrorResponse: vi.fn()
+  createEnhancedErrorResponse: vi.fn(),
 }));
 
 // Mock ID validation to avoid strict ID format checks
 vi.mock('../../../../src/utils/validation/id-validation.js', () => ({
   validateRecordId: vi.fn().mockReturnValue({ isValid: true }),
-  generateIdCacheKey: vi.fn().mockReturnValue('cache-key')
+  generateIdCacheKey: vi.fn().mockReturnValue('cache-key'),
 }));
 
 // Mock performance tracking
@@ -46,16 +46,17 @@ vi.mock('../../../../src/middleware/performance-enhanced.js', () => ({
     markApiStart: vi.fn().mockReturnValue(Date.now()),
     markApiEnd: vi.fn(),
     getCached404: vi.fn().mockReturnValue(null),
-    cache404Response: vi.fn()
-  }
+    cache404Response: vi.fn(),
+  },
 }));
 
 describe('Tasks Complete CRUD Simulation - Issue #417', () => {
-  
   it('should support full task lifecycle through universal tools', async () => {
     // Import the mocked functions
-    const { createTask, updateTask, deleteTask, getTask } = await import('../../../../src/objects/tasks.js');
-    
+    const { createTask, updateTask, deleteTask, getTask } = await import(
+      '../../../../src/objects/tasks.js'
+    );
+
     // Mock task responses
     const mockTask = {
       id: { task_id: 'task-123', workspace_id: 'workspace-456' },
@@ -65,14 +66,14 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       due_date: '2025-02-15',
       linked_records: [],
       created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
+      updated_at: '2024-01-01T00:00:00Z',
     };
 
     const mockUpdatedTask = {
       ...mockTask,
       content: 'Updated: Q4 Follow-up Task',
       status: 'completed',
-      updated_at: '2024-01-02T00:00:00Z'
+      updated_at: '2024-01-02T00:00:00Z',
     };
 
     vi.mocked(createTask).mockResolvedValue(mockTask);
@@ -85,12 +86,12 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       title: 'Q4 Follow-up: Test Task', // Should map to 'content'
       status: 'pending',
       due: '2025-02-15', // Should map to 'due_date'
-      assignee: 'user-123' // Should map to 'assignee_id'
+      assignee: 'user-123', // Should map to 'assignee_id'
     };
 
     const createdRecord = await handleUniversalCreate({
       resource_type: UniversalResourceType.TASKS,
-      record_data: creationData
+      record_data: creationData,
     });
 
     expect(createdRecord).toHaveProperty('id');
@@ -100,14 +101,14 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       'Q4 Follow-up: Test Task',
       expect.objectContaining({
         assigneeId: 'user-123',
-        dueDate: '2025-02-15'
+        dueDate: '2025-02-15',
       })
     );
 
     // 2. Test task retrieval
     const retrievedRecord = await handleUniversalGetDetails({
       resource_type: UniversalResourceType.TASKS,
-      record_id: 'task-123'
+      record_id: 'task-123',
     });
 
     expect(retrievedRecord).toHaveProperty('id');
@@ -118,13 +119,13 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     // 3. Test task update with field mapping
     const updateData = {
       name: 'Updated: Q4 Follow-up Task', // Should map to 'content'
-      status: 'completed'
+      status: 'completed',
     };
 
     const updatedRecord = await handleUniversalUpdate({
       resource_type: UniversalResourceType.TASKS,
       record_id: 'task-123',
-      record_data: updateData
+      record_data: updateData,
     });
 
     expect(updatedRecord.values.content).toBe('Updated: Q4 Follow-up Task');
@@ -133,14 +134,14 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       'task-123',
       expect.objectContaining({
         content: 'Updated: Q4 Follow-up Task',
-        status: 'completed'
+        status: 'completed',
       })
     );
 
     // 4. Test task deletion
     const deleteResult = await handleUniversalDelete({
       resource_type: UniversalResourceType.TASKS,
-      record_id: 'task-123'
+      record_id: 'task-123',
     });
 
     expect(deleteResult.success).toBe(true);
@@ -151,7 +152,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
   it('should support task attribute discovery operations', async () => {
     // Test get-attributes without record ID (should use discovery)
     const attributesResult = await handleUniversalGetAttributes({
-      resource_type: UniversalResourceType.TASKS
+      resource_type: UniversalResourceType.TASKS,
     });
 
     expect(attributesResult).toHaveProperty('attributes');
@@ -159,17 +160,27 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     expect(attributesResult.attributes.length).toBeGreaterThan(0);
 
     // Test explicit discover-attributes
-    const discoveryResult = await handleUniversalDiscoverAttributes(UniversalResourceType.TASKS);
+    const discoveryResult = await handleUniversalDiscoverAttributes(
+      UniversalResourceType.TASKS
+    );
 
     expect(discoveryResult).toHaveProperty('attributes');
     expect(discoveryResult).toHaveProperty('mappings');
     expect(discoveryResult.attributes.length).toBeGreaterThan(0);
 
     // Verify essential task attributes are present
-    const contentAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'content');
-    const statusAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'status');
-    const dueDateAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'due_date');
-    const assigneeAttr = discoveryResult.attributes.find((attr: any) => attr.api_slug === 'assignee_id');
+    const contentAttr = discoveryResult.attributes.find(
+      (attr: any) => attr.api_slug === 'content'
+    );
+    const statusAttr = discoveryResult.attributes.find(
+      (attr: any) => attr.api_slug === 'status'
+    );
+    const dueDateAttr = discoveryResult.attributes.find(
+      (attr: any) => attr.api_slug === 'due_date'
+    );
+    const assigneeAttr = discoveryResult.attributes.find(
+      (attr: any) => attr.api_slug === 'assignee_id'
+    );
 
     expect(contentAttr).toBeDefined();
     expect(contentAttr.required).toBe(true);
@@ -180,7 +191,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
 
   it('should handle task creation with various field name variations', async () => {
     const { createTask } = await import('../../../../src/objects/tasks.js');
-    
+
     const mockTask = {
       id: { task_id: 'task-456', workspace_id: 'workspace-456' },
       content: 'Test with variations',
@@ -189,7 +200,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       due_date: null,
       linked_records: [],
       created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
+      updated_at: '2024-01-01T00:00:00Z',
     };
 
     vi.mocked(createTask).mockResolvedValue(mockTask);
@@ -197,7 +208,7 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     // Test with description instead of title
     const result1 = await handleUniversalCreate({
       resource_type: UniversalResourceType.TASKS,
-      record_data: { description: 'Test with variations' }
+      record_data: { description: 'Test with variations' },
     });
 
     expect(result1.values.content).toBe('Test with variations');
@@ -205,18 +216,18 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     // Test with camelCase fields
     const result2 = await handleUniversalCreate({
       resource_type: UniversalResourceType.TASKS,
-      record_data: { 
+      record_data: {
         content: 'Test with variations',
         dueDate: '2025-02-15',
-        assigneeId: 'user-789'
-      }
+        assigneeId: 'user-789',
+      },
     });
 
     expect(createTask).toHaveBeenLastCalledWith(
       'Test with variations',
       expect.objectContaining({
         assigneeId: 'user-789',
-        dueDate: '2025-02-15'
+        dueDate: '2025-02-15',
       })
     );
   });

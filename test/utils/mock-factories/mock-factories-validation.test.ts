@@ -1,27 +1,28 @@
 /**
  * Mock Factories Validation Test
- * 
+ *
  * Validates that all mock factories produce data compatible with the
  * existing E2E test patterns and API response formats.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { 
-  TaskMockFactory, 
-  CompanyMockFactory, 
-  PersonMockFactory, 
+import {
+  TaskMockFactory,
+  CompanyMockFactory,
+  PersonMockFactory,
   ListMockFactory,
   TestEnvironment,
   UniversalMockFactory,
-  MockDataInjector
+  MockDataInjector,
 } from './index.js';
 
 // Also import specific injectors to test them
-import { 
-  TaskMockInjector,
-  UniversalMockInjector 
-} from './mock-injector.js';
-import type { AttioTask, AttioRecord, AttioList } from '../../../src/types/attio.js';
+import { TaskMockInjector, UniversalMockInjector } from './mock-injector.js';
+import type {
+  AttioTask,
+  AttioRecord,
+  AttioList,
+} from '../../../src/types/attio.js';
 
 describe('Mock Factories Validation', () => {
   beforeEach(() => {
@@ -32,7 +33,7 @@ describe('Mock Factories Validation', () => {
   describe('TaskMockFactory', () => {
     it('should create valid AttioTask with Issue #480 compatibility', () => {
       const task = TaskMockFactory.create({
-        content: 'Test task content'
+        content: 'Test task content',
       });
 
       // Validate structure matches AttioTask interface
@@ -46,7 +47,9 @@ describe('Mock Factories Validation', () => {
       expect(task.id).toHaveProperty('task_id');
       expect(typeof task.id.task_id).toBe('string');
       // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-      expect(task.id.task_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(task.id.task_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
     });
 
     it('should create task with both content and title for E2E compatibility', () => {
@@ -62,14 +65,16 @@ describe('Mock Factories Validation', () => {
       const tasks = TaskMockFactory.createMultiple(3);
 
       expect(tasks).toHaveLength(3);
-      
-      tasks.forEach(task => {
+
+      tasks.forEach((task) => {
         // Each task should have valid structure
         expect(task).toHaveProperty('id');
         expect(task.id).toHaveProperty('task_id');
         expect(typeof task.id.task_id).toBe('string');
         // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-        expect(task.id.task_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        expect(task.id.task_id).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        );
         expect(task).toHaveProperty('content');
         expect(task).toHaveProperty('status');
       });
@@ -77,21 +82,21 @@ describe('Mock Factories Validation', () => {
 
     it('should create high priority task', () => {
       const task = TaskMockFactory.createHighPriority();
-      
+
       expect(task.status).toBeDefined();
       expect(task.content).toBeDefined();
     });
 
     it('should create completed task', () => {
       const task = TaskMockFactory.createCompleted();
-      
+
       expect(task.status).toBe('completed');
     });
 
     it('should create task with assignee', () => {
       const assigneeId = 'test-assignee-123';
       const task = TaskMockFactory.createWithAssignee(assigneeId);
-      
+
       expect(task.assignee).toBeDefined();
       expect(task.assignee?.id).toBe(assigneeId);
     });
@@ -99,7 +104,7 @@ describe('Mock Factories Validation', () => {
     it('should create task with linked records', () => {
       const recordIds = ['record-1', 'record-2'];
       const task = TaskMockFactory.createWithLinkedRecords(recordIds);
-      
+
       expect(task.linked_records).toBeDefined();
       expect(task.linked_records).toHaveLength(2);
       expect(task.linked_records?.[0].id).toBe('record-1');
@@ -110,7 +115,7 @@ describe('Mock Factories Validation', () => {
   describe('CompanyMockFactory', () => {
     it('should create valid AttioRecord for company', () => {
       const company = CompanyMockFactory.create({
-        name: 'Test Company Inc.'
+        name: 'Test Company Inc.',
       });
 
       expect(company).toHaveProperty('id');
@@ -121,7 +126,9 @@ describe('Mock Factories Validation', () => {
       // Validate ID structure
       expect(company.id).toHaveProperty('record_id');
       // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-      expect(company.id.record_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(company.id.record_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
 
       // Validate values structure with AttioValue wrappers
       expect(company.values.name).toBeDefined();
@@ -130,7 +137,7 @@ describe('Mock Factories Validation', () => {
 
     it('should create technology company', () => {
       const company = CompanyMockFactory.createTechnology();
-      
+
       expect(company.values.industry).toBeDefined();
       expect(Array.isArray(company.values.industry)).toBe(true);
       expect((company.values.industry as any)[0].value).toBe('Technology');
@@ -140,14 +147,16 @@ describe('Mock Factories Validation', () => {
       const companies = CompanyMockFactory.createMultiple(3);
 
       expect(companies).toHaveLength(3);
-      
-      companies.forEach(company => {
+
+      companies.forEach((company) => {
         // Each company should have valid structure
         expect(company).toHaveProperty('id');
         expect(company.id).toHaveProperty('record_id');
         expect(typeof company.id.record_id).toBe('string');
         // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-        expect(company.id.record_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        expect(company.id.record_id).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        );
         expect(company).toHaveProperty('values');
         expect(company.values).toHaveProperty('name');
       });
@@ -157,7 +166,7 @@ describe('Mock Factories Validation', () => {
   describe('PersonMockFactory', () => {
     it('should create valid AttioRecord for person', () => {
       const person = PersonMockFactory.create({
-        name: 'John Smith'
+        name: 'John Smith',
       });
 
       expect(person).toHaveProperty('id');
@@ -168,7 +177,9 @@ describe('Mock Factories Validation', () => {
       // Validate ID structure
       expect(person.id).toHaveProperty('record_id');
       // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-      expect(person.id.record_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(person.id.record_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
 
       // Validate values structure
       expect(person.values.name).toBeDefined();
@@ -178,7 +189,7 @@ describe('Mock Factories Validation', () => {
 
     it('should create executive person', () => {
       const person = PersonMockFactory.createExecutive();
-      
+
       expect(person.values.seniority).toBeDefined();
       expect((person.values.seniority as any)[0].value).toBe('Executive');
     });
@@ -186,7 +197,7 @@ describe('Mock Factories Validation', () => {
     it('should create person with company association', () => {
       const companyId = 'test-company-123';
       const person = PersonMockFactory.createWithCompany(companyId);
-      
+
       expect(person.values.company).toBeDefined();
       expect((person.values.company as any)[0].value).toBe(companyId);
     });
@@ -195,7 +206,7 @@ describe('Mock Factories Validation', () => {
   describe('ListMockFactory', () => {
     it('should create valid AttioList', () => {
       const list = ListMockFactory.create({
-        name: 'Test List'
+        name: 'Test List',
       });
 
       expect(list).toHaveProperty('id');
@@ -208,12 +219,14 @@ describe('Mock Factories Validation', () => {
       // Validate ID structure
       expect(list.id).toHaveProperty('list_id');
       // Should be UUID format (8-4-4-4-12 hexadecimal characters)
-      expect(list.id.list_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(list.id.list_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
     });
 
     it('should create company list', () => {
       const list = ListMockFactory.createCompanyList();
-      
+
       expect(list.object_slug).toBe('companies');
     });
 
@@ -221,7 +234,7 @@ describe('Mock Factories Validation', () => {
       const listId = 'test-list-123';
       const recordId = 'test-record-456';
       const entry = ListMockFactory.createListEntry(listId, recordId);
-      
+
       expect(entry.list_id).toBe(listId);
       expect(entry.record_id).toBe(recordId);
       expect(entry.id?.entry_id).toBeDefined();
@@ -266,11 +279,9 @@ describe('Mock Factories Validation', () => {
 
   describe('MockDataInjector', () => {
     it('should inject mock data in test environment', async () => {
-      const result = await UniversalMockInjector.inject(
-        'tasks',
-        'create',
-        { content: 'Test task' }
-      );
+      const result = await UniversalMockInjector.inject('tasks', 'create', {
+        content: 'Test task',
+      });
 
       // Should return mock data, not real data
       expect(result).toHaveProperty('id');
@@ -278,10 +289,9 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create task using TaskMockInjector', async () => {
-      const result = await TaskMockInjector.createTask(
-        'Test task content',
-        { assigneeId: 'test-assignee' }
-      );
+      const result = await TaskMockInjector.createTask('Test task content', {
+        assigneeId: 'test-assignee',
+      });
 
       expect(result).toHaveProperty('id');
       expect(result).toHaveProperty('content', 'Test task content');
@@ -296,7 +306,7 @@ describe('Mock Factories Validation', () => {
         title: 'E2E Test Task',
         content: 'Test content for E2E',
         priority: 'high',
-        status: 'open'
+        status: 'open',
       });
 
       // Should have the expected fields that E2E tests look for
@@ -307,7 +317,7 @@ describe('Mock Factories Validation', () => {
 
     it('should maintain Issue #480 task_id preservation', () => {
       const task = TaskMockFactory.create({
-        content: 'Issue #480 test task'
+        content: 'Issue #480 test task',
       });
 
       // Issue #480: Ensure task_id is preserved for E2E test compatibility

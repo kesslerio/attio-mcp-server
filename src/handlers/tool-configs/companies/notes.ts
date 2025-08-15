@@ -36,9 +36,20 @@ export const notesToolConfigs = {
           // 4. note.text - Alternative content field name (legacy support)
           // 5. note.body - Another alternative content field (third-party integrations)
           // This order ensures backward compatibility while supporting API variations
-          const title = note.title || note.data?.title || note.values?.title || 'Untitled';
-          const content = note.content || note.data?.content || note.values?.content || note.text || note.body || '';
-          const timestamp = note.created_at || note.data?.created_at || note.values?.created_at || 'unknown';
+          const title =
+            note.title || note.data?.title || note.values?.title || 'Untitled';
+          const content =
+            note.content ||
+            note.data?.content ||
+            note.values?.content ||
+            note.text ||
+            note.body ||
+            '';
+          const timestamp =
+            note.created_at ||
+            note.data?.created_at ||
+            note.values?.created_at ||
+            'unknown';
 
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {

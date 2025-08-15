@@ -1,10 +1,10 @@
 /**
  * Comprehensive unit tests for error handling fixes in Issue #425
- * 
+ *
  * Tests the safe error message extraction utility and error handling paths
  * that were fixed to prevent crashes when calling getContextualMessage() on
  * errors that don't have that method.
- * 
+ *
  * CORE ISSUE: The code was calling error.getContextualMessage() on errors
  * that only had AttioApiError, UniversalValidationError, or generic Error
  * types, causing crashes. The fix uses ErrorEnhancer.getErrorMessage()
@@ -14,20 +14,20 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Import error types
-import { 
-  EnhancedApiError, 
-  ErrorEnhancer, 
-  createEnhancedApiError 
+import {
+  EnhancedApiError,
+  ErrorEnhancer,
+  createEnhancedApiError,
 } from '../../../../src/errors/enhanced-api-errors.js';
-import { 
+import {
   AttioApiError,
   AuthenticationError,
   ResourceNotFoundError,
-  InvalidRequestError
+  InvalidRequestError,
 } from '../../../../src/errors/api-errors.js';
-import { 
-  UniversalValidationError, 
-  ErrorType 
+import {
+  UniversalValidationError,
+  ErrorType,
 } from '../../../../src/handlers/tool-configs/universal/schemas.js';
 
 describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () => {
@@ -41,7 +41,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
 
   describe('ErrorEnhancer.getErrorMessage() - The Core Fix', () => {
     it('should extract message from EnhancedApiError (which has getContextualMessage)', () => {
-      // Create an EnhancedApiError 
+      // Create an EnhancedApiError
       const enhancedError = createEnhancedApiError(
         'Record not found',
         404,
@@ -51,12 +51,12 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
           recordId: 'invalid-uuid',
           resourceType: 'companies',
           httpStatus: 404,
-          documentationHint: 'Use search-records to find valid companies IDs.'
+          documentationHint: 'Use search-records to find valid companies IDs.',
         }
       );
 
       const message = ErrorEnhancer.getErrorMessage(enhancedError);
-      
+
       // Should extract a message successfully
       expect(typeof message).toBe('string');
       expect(message.length).toBeGreaterThan(0);
@@ -75,7 +75,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       // This is the critical test - before Issue #425 fix, this would have crashed
       // when the code tried to call attioError.getContextualMessage()
       const message = ErrorEnhancer.getErrorMessage(attioError);
-      
+
       // Should safely extract message using the .message property
       expect(message).toBe('API request failed');
     });
@@ -86,14 +86,14 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         ErrorType.USER_ERROR,
         {
           field: 'resource_type',
-          suggestion: 'Use one of: companies, people, tasks'
+          suggestion: 'Use one of: companies, people, tasks',
         }
       );
 
       // This is the critical test - before Issue #425 fix, this would have crashed
       // when the code tried to call validationError.getContextualMessage()
       const message = ErrorEnhancer.getErrorMessage(validationError);
-      
+
       // Should safely extract message using the .message property
       expect(message).toBe('Invalid resource type provided');
     });
@@ -128,7 +128,10 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
     });
 
     it('should fallback to string representation for unknown error types', () => {
-      const unknownError = { foo: 'bar', toString: () => 'Custom error object' };
+      const unknownError = {
+        foo: 'bar',
+        toString: () => 'Custom error object',
+      };
       const message = ErrorEnhancer.getErrorMessage(unknownError);
       expect(message).toBe('Custom error object');
     });
@@ -156,7 +159,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         new ResourceNotFoundError('Resource', 'id', '/test', 'GET'),
         new InvalidRequestError('Invalid request', '/test', 'POST'),
         new Error('Generic error'),
-        
+
         // Edge cases
         { message: 'Custom error' },
         { message: null },
@@ -167,9 +170,9 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         undefined,
         'string error',
         42,
-        
+
         // This one DOES have getContextualMessage (if working properly)
-        createEnhancedApiError('Enhanced error', 400, '/test', 'GET')
+        createEnhancedApiError('Enhanced error', 400, '/test', 'GET'),
       ];
 
       // All of these should extract a message without crashing
@@ -178,7 +181,9 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
           const message = ErrorEnhancer.getErrorMessage(error);
           expect(typeof message).toBe('string');
           expect(message.length).toBeGreaterThan(0);
-        }).not.toThrow(`Error extraction failed on index ${index} for error: ${JSON.stringify(error)}`);
+        }).not.toThrow(
+          `Error extraction failed on index ${index} for error: ${JSON.stringify(error)}`
+        );
       });
     });
   });
@@ -193,7 +198,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       );
 
       const result = ErrorEnhancer.ensureEnhanced(enhancedError);
-      
+
       // Should return same error (reference equality might not work in test environment)
       expect(result.message).toBe('Already enhanced');
       expect(result.statusCode).toBe(400);
@@ -211,9 +216,9 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
 
       const result = ErrorEnhancer.ensureEnhanced(attioError, {
         resourceType: 'tasks',
-        operation: 'create'
+        operation: 'create',
       });
-      
+
       // Should create a new enhanced error
       expect(result).not.toBe(attioError);
       expect(result.message).toBe('API error');
@@ -229,11 +234,11 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         message: 'Network timeout',
         statusCode: 408,
         endpoint: '/api/test',
-        method: 'GET'
+        method: 'GET',
       };
 
       const result = ErrorEnhancer.ensureEnhanced(genericError);
-      
+
       expect(result.message).toBe('Network timeout');
       expect(result.statusCode).toBe(408);
       expect(result.endpoint).toBe('/api/test');
@@ -245,11 +250,11 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       const errorWithStatus = {
         message: 'Server error',
         status: 503,
-        path: '/api/health'
+        path: '/api/health',
       };
 
       const result = ErrorEnhancer.ensureEnhanced(errorWithStatus);
-      
+
       expect(result.statusCode).toBe(503);
       expect(result.endpoint).toBe('/api/health');
     });
@@ -258,7 +263,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       const minimalError = { message: 'Simple error' };
 
       const result = ErrorEnhancer.ensureEnhanced(minimalError);
-      
+
       expect(result.message).toBe('Simple error');
       expect(result.statusCode).toBe(500);
       expect(result.endpoint).toBe('/unknown');
@@ -269,7 +274,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       const errorWithoutMessage = { code: 'E_FAIL' };
 
       const result = ErrorEnhancer.ensureEnhanced(errorWithoutMessage);
-      
+
       expect(result.message).toBe('An error occurred');
       expect(result.statusCode).toBe(500);
     });
@@ -279,13 +284,13 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
     it('should demonstrate the Issue #425 fix in action', () => {
       // Before the fix: Lines 776 and 788 in shared-handlers.ts tried to call:
       // error.getContextualMessage() directly, which would crash for these error types
-      
+
       const problematicErrors = [
         new AttioApiError('API failed', 500, '/test', 'GET'),
-        new UniversalValidationError('Validation failed', ErrorType.USER_ERROR)
+        new UniversalValidationError('Validation failed', ErrorType.USER_ERROR),
       ];
-      
-      problematicErrors.forEach(error => {
+
+      problematicErrors.forEach((error) => {
         // The fix: Use ErrorEnhancer.getErrorMessage() instead of error.getContextualMessage()
         expect(() => {
           const message = ErrorEnhancer.getErrorMessage(error);
@@ -302,11 +307,11 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         '/objects/companies/non-existent-id',
         'GET'
       );
-      
+
       // Should extract message safely
       const message = ErrorEnhancer.getErrorMessage(notFoundError);
       expect(message).toMatch(/Company.*not found/);
-      
+
       // Error enhancement should work
       const enhanced = ErrorEnhancer.ensureEnhanced(notFoundError);
       expect(enhanced).not.toBe(notFoundError);
@@ -319,17 +324,17 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         '/objects/tasks',
         'POST'
       );
-      
+
       // Test error enhancement process
       const enhanced = ErrorEnhancer.ensureEnhanced(originalError, {
         resourceType: 'tasks',
-        operation: 'get-record-details'
+        operation: 'get-record-details',
       });
-      
+
       // Should be enhanced
       expect(enhanced).not.toBe(originalError);
       expect(enhanced.context?.resourceType).toBe('tasks');
-      
+
       // Should be able to safely extract message from enhanced error
       const message = ErrorEnhancer.getErrorMessage(enhanced);
       expect(message).toContain('Validation failed');
@@ -343,7 +348,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
         new Error('Generic error'),
         { message: 'Custom error object' },
         null,
-        undefined
+        undefined,
       ];
 
       // All should be handled safely
@@ -359,12 +364,22 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
 
   describe('Error message consistency and reliability', () => {
     it('should provide consistent error messages for the same error type', () => {
-      const error1 = new AttioApiError('Same message', 400, '/endpoint1', 'GET');
-      const error2 = new AttioApiError('Same message', 400, '/endpoint2', 'POST');
-      
+      const error1 = new AttioApiError(
+        'Same message',
+        400,
+        '/endpoint1',
+        'GET'
+      );
+      const error2 = new AttioApiError(
+        'Same message',
+        400,
+        '/endpoint2',
+        'POST'
+      );
+
       const message1 = ErrorEnhancer.getErrorMessage(error1);
       const message2 = ErrorEnhancer.getErrorMessage(error2);
-      
+
       expect(message1).toBe(message2);
       expect(message1).toBe('Same message');
     });
@@ -372,11 +387,11 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
     it('should handle edge cases in error message extraction', () => {
       const edgeCases = [
         { message: '' }, // Empty message
-        { message: null }, // Null message  
+        { message: null }, // Null message
         { message: undefined }, // Undefined message
         { message: 0 }, // Falsy number
         { message: false }, // Boolean false
-        {} // No message property
+        {}, // No message property
       ];
 
       edgeCases.forEach((errorObj, index) => {
@@ -397,7 +412,7 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
 
       const enhanced = ErrorEnhancer.ensureEnhanced(originalError, {
         resourceType: 'companies',
-        operation: 'create'
+        operation: 'create',
       });
 
       expect(enhanced.message).toBe(originalError.message);
@@ -414,16 +429,16 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       // This test specifically addresses the lines mentioned in Issue #425:
       // Lines 776 and 788 in shared-handlers.ts were calling getContextualMessage()
       // on errors that didn't have this method
-      
+
       const errorTypesThatCausedCrashes = [
         new AttioApiError('API failed', 500, '/test', 'GET'),
-        new UniversalValidationError('Validation failed', ErrorType.USER_ERROR)
+        new UniversalValidationError('Validation failed', ErrorType.USER_ERROR),
       ];
-      
-      errorTypesThatCausedCrashes.forEach(error => {
+
+      errorTypesThatCausedCrashes.forEach((error) => {
         // Before fix: error.getContextualMessage() would crash
         // After fix: ErrorEnhancer.getErrorMessage(error) works safely
-        
+
         expect(() => {
           const message = ErrorEnhancer.getErrorMessage(error);
           expect(typeof message).toBe('string');
@@ -436,22 +451,26 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       const errorTypesFromIssue = [
         {
           error: createEnhancedApiError('Enhanced', 400, '/test', 'GET'),
-          description: 'EnhancedApiError (has getContextualMessage method)'
+          description: 'EnhancedApiError (has getContextualMessage method)',
         },
         {
           error: new AttioApiError('Attio', 400, '/test', 'GET'),
-          description: 'AttioApiError (from axios interceptor, only has message property)'
+          description:
+            'AttioApiError (from axios interceptor, only has message property)',
         },
         {
-          error: new UniversalValidationError('Validation', ErrorType.USER_ERROR),
-          description: 'UniversalValidationError (only has message property)'
+          error: new UniversalValidationError(
+            'Validation',
+            ErrorType.USER_ERROR
+          ),
+          description: 'UniversalValidationError (only has message property)',
         },
         {
           error: new Error('Generic'),
-          description: 'Generic Error objects'
-        }
+          description: 'Generic Error objects',
+        },
       ];
-      
+
       errorTypesFromIssue.forEach(({ error, description }) => {
         // Verify safe message extraction works for all types
         const message = ErrorEnhancer.getErrorMessage(error);
@@ -464,17 +483,17 @@ describe('Issue #425: Error Handling Fixes - Safe Error Message Extraction', () 
       // This simulates the pattern used in shared-handlers.ts around lines 776 and 788
       const errors = [
         new AttioApiError('Resource not found', 404, '/test', 'GET'),
-        new UniversalValidationError('Invalid input', ErrorType.USER_ERROR)
+        new UniversalValidationError('Invalid input', ErrorType.USER_ERROR),
       ];
 
-      errors.forEach(error => {
+      errors.forEach((error) => {
         // OLD CODE (that crashed):
         // const message = error.getContextualMessage(); // CRASH!
-        
+
         // NEW CODE (Issue #425 fix):
         const enhancedError = ErrorEnhancer.ensureEnhanced(error);
         const message = ErrorEnhancer.getErrorMessage(enhancedError);
-        
+
         // Should work without crashes
         expect(typeof message).toBe('string');
         expect(message.length).toBeGreaterThan(0);

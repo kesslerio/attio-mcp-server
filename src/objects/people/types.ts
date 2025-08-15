@@ -24,7 +24,13 @@ export interface PersonAttributes {
   company?: string | { record_id: string };
 
   /** Custom attributes */
-  [key: string]: string | string[] | number | boolean | { record_id: string } | undefined;
+  [key: string]:
+    | string
+    | string[]
+    | number
+    | boolean
+    | { record_id: string }
+    | undefined;
 }
 
 // Re-export error classes for backward compatibility
@@ -105,7 +111,9 @@ export class PersonValidator {
         if (typeof email === 'string' && !isValidEmail(email)) {
           throw new InvalidPersonDataError(`Invalid email format: ${email}`);
         } else if (typeof email !== 'string') {
-          throw new InvalidPersonDataError(`Email must be a string, got: ${typeof email}`);
+          throw new InvalidPersonDataError(
+            `Email must be a string, got: ${typeof email}`
+          );
         }
       }
     }

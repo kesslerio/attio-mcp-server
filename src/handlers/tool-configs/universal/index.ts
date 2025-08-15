@@ -1,21 +1,21 @@
 /**
  * Universal MCP tool configurations - Main module
- * 
+ *
  * This module implements the universal tool consolidation strategy from Issue #352
  * to reduce tool count from 70 to ~30 tools while maintaining full functionality.
- * 
+ *
  * Universal tools use parameter-based routing with resource_type discrimination
  * to provide consolidated operations across companies, people, records, and tasks.
  */
 
 import {
   coreOperationsToolConfigs,
-  coreOperationsToolDefinitions
+  coreOperationsToolDefinitions,
 } from './core-operations.js';
 
 import {
   advancedOperationsToolConfigs,
-  advancedOperationsToolDefinitions
+  advancedOperationsToolDefinitions,
 } from './advanced-operations.js';
 
 // Re-export individual tool config objects for testing
@@ -23,7 +23,7 @@ export {
   coreOperationsToolConfigs,
   coreOperationsToolDefinitions,
   advancedOperationsToolConfigs,
-  advancedOperationsToolDefinitions
+  advancedOperationsToolDefinitions,
 };
 
 // Re-export types for external use
@@ -37,7 +37,7 @@ export * from './shared-handlers.js';
  */
 export const universalToolConfigs = {
   ...coreOperationsToolConfigs,
-  ...advancedOperationsToolConfigs
+  ...advancedOperationsToolConfigs,
 };
 
 /**
@@ -45,7 +45,7 @@ export const universalToolConfigs = {
  */
 export const universalToolDefinitions = {
   ...coreOperationsToolDefinitions,
-  ...advancedOperationsToolDefinitions
+  ...advancedOperationsToolDefinitions,
 };
 
 /**
@@ -54,13 +54,13 @@ export const universalToolDefinitions = {
  */
 export const coreUniversalTools = [
   'search-records',
-  'get-record-details', 
+  'get-record-details',
   'create-record',
   'update-record',
   'delete-record',
   'get-attributes',
   'discover-attributes',
-  'get-detailed-info'
+  'get-detailed-info',
 ];
 
 /**
@@ -72,7 +72,7 @@ export const advancedUniversalTools = [
   'search-by-relationship',
   'search-by-content',
   'search-by-timeframe',
-  'batch-operations'
+  'batch-operations',
 ];
 
 /**
@@ -80,12 +80,12 @@ export const advancedUniversalTools = [
  */
 export const allUniversalTools = [
   ...coreUniversalTools,
-  ...advancedUniversalTools
+  ...advancedUniversalTools,
 ];
 
 /**
  * Tools that will be deprecated and replaced by universal operations
- * 
+ *
  * These mappings help with migration and alias creation
  */
 export const deprecatedToolMappings: Record<string, string> = {
@@ -104,7 +104,7 @@ export const deprecatedToolMappings: Record<string, string> = {
   'advanced-search-companies': 'advanced-search',
   'search-companies-by-notes': 'search-by-content',
   'search-companies-by-people': 'search-by-relationship',
-  
+
   // People tools → Universal equivalents
   'search-people': 'search-records',
   'get-person-details': 'get-record-details',
@@ -116,7 +116,7 @@ export const deprecatedToolMappings: Record<string, string> = {
   'search-people-by-creation-date': 'search-by-timeframe',
   'search-people-by-modification-date': 'search-by-timeframe',
   'search-people-by-last-interaction': 'search-by-timeframe',
-  
+
   // Record tools → Universal equivalents
   'create-record': 'create-record', // Already universal
   'get-record': 'get-record-details',
@@ -125,19 +125,19 @@ export const deprecatedToolMappings: Record<string, string> = {
   'list-records': 'search-records',
   'batch-create-records': 'batch-operations',
   'batch-update-records': 'batch-operations',
-  
+
   // Task tools → Universal equivalents
   'create-task': 'create-record',
   'update-task': 'update-record',
   'delete-task': 'delete-record',
   'list-tasks': 'search-records',
-  
+
   // Batch tools → Universal equivalent
   'batch-create-companies': 'batch-operations',
   'batch-update-companies': 'batch-operations',
   'batch-delete-companies': 'batch-operations',
   'batch-search-companies': 'batch-operations',
-  'batch-get-company-details': 'batch-operations'
+  'batch-get-company-details': 'batch-operations',
 };
 
 /**
@@ -165,7 +165,7 @@ export const resourceTypeMappings: Record<string, string> = {
   'batch-delete-companies': 'companies',
   'batch-search-companies': 'companies',
   'batch-get-company-details': 'companies',
-  
+
   // People tools
   'search-people': 'people',
   'get-person-details': 'people',
@@ -177,8 +177,8 @@ export const resourceTypeMappings: Record<string, string> = {
   'search-people-by-creation-date': 'people',
   'search-people-by-modification-date': 'people',
   'search-people-by-last-interaction': 'people',
-  
-  // Record tools  
+
+  // Record tools
   'create-record': 'records',
   'get-record': 'records',
   'update-record': 'records',
@@ -186,12 +186,12 @@ export const resourceTypeMappings: Record<string, string> = {
   'list-records': 'records',
   'batch-create-records': 'records',
   'batch-update-records': 'records',
-  
+
   // Task tools
   'create-task': 'tasks',
   'update-task': 'tasks',
   'delete-task': 'tasks',
-  'list-tasks': 'tasks'
+  'list-tasks': 'tasks',
 };
 
 /**
@@ -201,7 +201,7 @@ export const infoTypeMappings: Record<string, string> = {
   'get-company-basic-info': 'basic',
   'get-company-contact-info': 'contact',
   'get-company-business-info': 'business',
-  'get-company-social-info': 'social'
+  'get-company-social-info': 'social',
 };
 
 /**
@@ -210,7 +210,7 @@ export const infoTypeMappings: Record<string, string> = {
 export const contentTypeMappings: Record<string, string> = {
   'search-companies-by-notes': 'notes',
   'search-people-by-notes': 'notes',
-  'search-people-by-activity': 'activity'
+  'search-people-by-activity': 'activity',
 };
 
 /**
@@ -219,7 +219,7 @@ export const contentTypeMappings: Record<string, string> = {
 export const timeframeTypeMappings: Record<string, string> = {
   'search-people-by-creation-date': 'created',
   'search-people-by-modification-date': 'modified',
-  'search-people-by-last-interaction': 'last_interaction'
+  'search-people-by-last-interaction': 'last_interaction',
 };
 
 /**
@@ -227,7 +227,7 @@ export const timeframeTypeMappings: Record<string, string> = {
  */
 export const relationshipTypeMappings: Record<string, string> = {
   'search-companies-by-people': 'people_to_company',
-  'search-people-by-company': 'company_to_people'
+  'search-people-by-company': 'company_to_people',
 };
 
 /**
@@ -235,12 +235,12 @@ export const relationshipTypeMappings: Record<string, string> = {
  */
 export const batchOperationTypeMappings: Record<string, string> = {
   'batch-create-companies': 'create',
-  'batch-update-companies': 'update', 
+  'batch-update-companies': 'update',
   'batch-delete-companies': 'delete',
   'batch-search-companies': 'search',
   'batch-get-company-details': 'get',
   'batch-create-records': 'create',
-  'batch-update-records': 'update'
+  'batch-update-records': 'update',
 };
 
 /**
@@ -250,14 +250,16 @@ export function getConsolidationStats() {
   const deprecatedCount = Object.keys(deprecatedToolMappings).length;
   const universalCount = allUniversalTools.length;
   const reductionCount = deprecatedCount - universalCount;
-  const reductionPercentage = Math.round((reductionCount / deprecatedCount) * 100);
-  
+  const reductionPercentage = Math.round(
+    (reductionCount / deprecatedCount) * 100
+  );
+
   return {
     deprecatedCount,
     universalCount,
     reductionCount,
     reductionPercentage,
-    summary: `${deprecatedCount} → ${universalCount} tools (${reductionPercentage}% reduction)`
+    summary: `${deprecatedCount} → ${universalCount} tools (${reductionPercentage}% reduction)`,
   };
 }
 
@@ -278,27 +280,34 @@ export function isDeprecatedTool(toolName: string): boolean {
 /**
  * Get the universal tool equivalent for a deprecated tool
  */
-export function getUniversalEquivalent(deprecatedToolName: string): string | undefined {
+export function getUniversalEquivalent(
+  deprecatedToolName: string
+): string | undefined {
   return deprecatedToolMappings[deprecatedToolName];
 }
 
 /**
  * Get migration parameters for converting a deprecated tool call to universal
  */
-export function getMigrationParams(deprecatedToolName: string, originalParams: any): any {
+export function getMigrationParams(
+  deprecatedToolName: string,
+  originalParams: any
+): any {
   const universalTool = getUniversalEquivalent(deprecatedToolName);
   const resourceType = resourceTypeMappings[deprecatedToolName];
-  
+
   if (!universalTool || !resourceType) {
-    throw new Error(`No migration path found for deprecated tool: ${deprecatedToolName}`);
+    throw new Error(
+      `No migration path found for deprecated tool: ${deprecatedToolName}`
+    );
   }
-  
+
   // Base parameters for all universal tools
   const baseParams = {
     resource_type: resourceType,
-    ...originalParams
+    ...originalParams,
   };
-  
+
   // Add specific parameters based on the universal tool type
   switch (universalTool) {
     case 'get-detailed-info': {
@@ -308,7 +317,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
       }
       break;
     }
-      
+
     case 'search-by-content': {
       const contentType = contentTypeMappings[deprecatedToolName];
       if (contentType) {
@@ -316,7 +325,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
       }
       break;
     }
-      
+
     case 'search-by-timeframe': {
       const timeframeType = timeframeTypeMappings[deprecatedToolName];
       if (timeframeType) {
@@ -324,7 +333,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
       }
       break;
     }
-      
+
     case 'search-by-relationship': {
       const relationshipType = relationshipTypeMappings[deprecatedToolName];
       if (relationshipType) {
@@ -332,7 +341,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
       }
       break;
     }
-      
+
     case 'batch-operations': {
       const operationType = batchOperationTypeMappings[deprecatedToolName];
       if (operationType) {
@@ -341,7 +350,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
       break;
     }
   }
-  
+
   return baseParams;
 }
 
@@ -351,5 +360,7 @@ export function getMigrationParams(deprecatedToolName: string, originalParams: a
 export function logConsolidationStats(): void {
   const stats = getConsolidationStats();
   console.log(`Universal tool consolidation: ${stats.summary}`);
-  console.log(`Reduced tool count by ${stats.reductionCount} tools (${stats.reductionPercentage}% reduction)`);
+  console.log(
+    `Reduced tool count by ${stats.reductionCount} tools (${stats.reductionPercentage}% reduction)`
+  );
 }

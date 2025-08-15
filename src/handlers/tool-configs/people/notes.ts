@@ -16,7 +16,7 @@ export const notesToolConfigs = {
       if (!notes || notes.length === 0) {
         return 'No notes found for this person.';
       }
-      
+
       // Debug logging in development to help identify API response structure (Issue #365)
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
         console.log(
@@ -24,49 +24,59 @@ export const notesToolConfigs = {
           JSON.stringify(notes.slice(0, 1), null, 2)
         );
       }
-      
+
       return `Found ${notes.length} notes:\n${notes
-        .map(
-          (note: any) => {
-            // Check multiple possible field structures from the API (Issue #365)
-            // Field Priority Order (why this specific order was chosen):
-            // 1. note.title/content - Standard API response fields (most common)
-            // 2. note.timestamp - Person-specific timestamp field (checked first for person notes)
-            // 3. note.created_at - Standard creation timestamp (fallback)
-            // 4. note.data?.* - Nested data structure (seen in some API versions)
-            // 5. note.values?.* - Attio-style custom field responses
-            // 6. note.text/body - Alternative content field names (legacy/third-party support)
-            // Note: Person notes include note.timestamp check that company notes don't have
-            // This is intentional as person notes may use different timestamp field naming
-            const title = note.title || note.data?.title || note.values?.title || 'Untitled';
-            const content = note.content || note.data?.content || note.values?.content || note.text || note.body || '';
-            const timestamp = note.timestamp || note.created_at || note.data?.created_at || note.values?.created_at || 'unknown';
-            
-            // Additional debug logging for each note
-            if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-              console.log(
-                `[get-person-notes] Note fields available:`,
-                Object.keys(note)
-              );
-              console.log(
-                `[get-person-notes] Content found:`,
-                !!content,
-                content ? `(${content.length} chars)` : '(none)'
-              );
-            }
-            
-            // Truncate at 100 chars for person notes (shorter for readability in lists)
-            // This is intentionally shorter than company notes (200 chars) as person notes
-            // are often briefer and displayed in longer lists where conciseness is valued
-            return `- ${title} (Created: ${timestamp})\n  ${
-              content
-                ? content.length > 100
-                  ? content.substring(0, 100) + '...'
-                  : content
-                : 'No content'
-            }`;
+        .map((note: any) => {
+          // Check multiple possible field structures from the API (Issue #365)
+          // Field Priority Order (why this specific order was chosen):
+          // 1. note.title/content - Standard API response fields (most common)
+          // 2. note.timestamp - Person-specific timestamp field (checked first for person notes)
+          // 3. note.created_at - Standard creation timestamp (fallback)
+          // 4. note.data?.* - Nested data structure (seen in some API versions)
+          // 5. note.values?.* - Attio-style custom field responses
+          // 6. note.text/body - Alternative content field names (legacy/third-party support)
+          // Note: Person notes include note.timestamp check that company notes don't have
+          // This is intentional as person notes may use different timestamp field naming
+          const title =
+            note.title || note.data?.title || note.values?.title || 'Untitled';
+          const content =
+            note.content ||
+            note.data?.content ||
+            note.values?.content ||
+            note.text ||
+            note.body ||
+            '';
+          const timestamp =
+            note.timestamp ||
+            note.created_at ||
+            note.data?.created_at ||
+            note.values?.created_at ||
+            'unknown';
+
+          // Additional debug logging for each note
+          if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+            console.log(
+              `[get-person-notes] Note fields available:`,
+              Object.keys(note)
+            );
+            console.log(
+              `[get-person-notes] Content found:`,
+              !!content,
+              content ? `(${content.length} chars)` : '(none)'
+            );
           }
-        )
+
+          // Truncate at 100 chars for person notes (shorter for readability in lists)
+          // This is intentionally shorter than company notes (200 chars) as person notes
+          // are often briefer and displayed in longer lists where conciseness is valued
+          return `- ${title} (Created: ${timestamp})\n  ${
+            content
+              ? content.length > 100
+                ? content.substring(0, 100) + '...'
+                : content
+              : 'No content'
+          }`;
+        })
         .join('\n\n')}`;
     },
   } as NotesToolConfig,

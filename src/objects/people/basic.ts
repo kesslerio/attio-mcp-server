@@ -39,7 +39,7 @@ export async function createPerson(
       attributes,
       PersonValidator.validateCreate
     );
-    
+
     // Defensive validation: Ensure we have a valid person record
     if (!result) {
       throw new PersonOperationError(
@@ -48,7 +48,7 @@ export async function createPerson(
         'API returned null/undefined response for person creation'
       );
     }
-    
+
     if (!result.id || !result.id.record_id) {
       throw new PersonOperationError(
         'create',
@@ -56,7 +56,7 @@ export async function createPerson(
         `API returned invalid person record without proper ID structure. Response: ${JSON.stringify(result)}`
       );
     }
-    
+
     if (!result.values || typeof result.values !== 'object') {
       throw new PersonOperationError(
         'create',
@@ -64,7 +64,7 @@ export async function createPerson(
         `API returned invalid person record without values object. Response: ${JSON.stringify(result)}`
       );
     }
-    
+
     return result;
   } catch (error: unknown) {
     if (error instanceof InvalidPersonDataError) {

@@ -2,9 +2,7 @@
  * Enhanced logging utilities for tool execution using structured logging
  */
 
-import {
-  ToolErrorContext,
-} from '../../../types/tool-types.js';
+import { ToolErrorContext } from '../../../types/tool-types.js';
 import {
   error,
   warn,

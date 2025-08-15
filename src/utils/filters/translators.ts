@@ -411,12 +411,12 @@ function createAndFilterStructure(
       // Direct value assignment for shorthand format
       if (filter.value !== undefined && filter.value !== null) {
         if (!apiFilter[slug]) {
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: any };
         } else {
           console.warn(
             `Multiple filters for ${slug} using shorthand format will overwrite previous values`
           );
-          apiFilter[slug] = filter.value as { [condition: string]: any; };
+          apiFilter[slug] = filter.value as { [condition: string]: any };
         }
       }
     } else {

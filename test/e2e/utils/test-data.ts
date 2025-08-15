@@ -1,6 +1,6 @@
 /**
  * E2E Test Data Generation Utilities
- * 
+ *
  * Provides factories and utilities for generating consistent test data
  * with proper prefixing and cleanup tracking.
  */
@@ -98,7 +98,10 @@ export abstract class E2ETestDataFactory {
           await configLoader.loadConfig();
         } catch (loadError) {
           // Configuration loading failed - factories will use fallbacks
-          console.warn('Configuration loading failed, using fallback values:', loadError);
+          console.warn(
+            'Configuration loading failed, using fallback values:',
+            loadError
+          );
         }
       }
     }
@@ -112,7 +115,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestCompany> = {}): E2ETestCompany {
     const testId = this.getTestId('company');
     const domain = this.getTestDomain();
-    
+
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
       domain,
@@ -121,44 +124,51 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
       description: `E2E test company created for testing purposes - ${testId}`,
       annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
       employee_count: String(Math.floor(Math.random() * 1000) + 10),
-      categories: ['Software', 'B2B']
+      categories: ['Software', 'B2B'],
     };
 
     return { ...defaults, ...overrides };
   }
 
-  static createMany(count: number, overrides: Partial<E2ETestCompany> = {}): E2ETestCompany[] {
+  static createMany(
+    count: number,
+    overrides: Partial<E2ETestCompany> = {}
+  ): E2ETestCompany[] {
     return Array.from({ length: count }, (_, i) => {
       const testId = this.getTestId(`company_${i}`);
       const domain = this.getTestDomain();
-      
+
       return this.create({
         ...overrides,
         name: `Test Company ${testId}`,
         domain: `${testId}.${domain}`,
         // Removed website field to avoid collision - both domain and website map to 'domains' field
-        description: `E2E test company ${i + 1} created for testing purposes - ${testId}`
+        description: `E2E test company ${i + 1} created for testing purposes - ${testId}`,
       });
     });
   }
 
-  static createTechnology(overrides: Partial<E2ETestCompany> = {}): E2ETestCompany {
+  static createTechnology(
+    overrides: Partial<E2ETestCompany> = {}
+  ): E2ETestCompany {
     return this.create({
       industry: 'Technology',
       categories: ['Software', 'SaaS', 'B2B'],
       annual_revenue: String(Math.floor(Math.random() * 50000000) + 5000000), // Convert to string
       employee_count: String(Math.floor(Math.random() * 500) + 50),
-      ...overrides
+      ...overrides,
     });
   }
 
-  static createFinance(overrides: Partial<E2ETestCompany> = {}): E2ETestCompany {
+  static createFinance(
+    overrides: Partial<E2ETestCompany> = {}
+  ): E2ETestCompany {
     return this.create({
       industry: 'Financial Services',
       categories: ['Banking', 'Finance', 'B2B'],
       annual_revenue: String(Math.floor(Math.random() * 100000000) + 10000000), // Convert to string
       employee_count: String(Math.floor(Math.random() * 1000) + 100),
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -170,48 +180,57 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
     const testId = this.getTestId('person');
     const email = this.getTestEmail('person');
-    
+
     const defaults: E2ETestPerson = {
       name: `Test Person ${testId}`,
       email_addresses: [email],
-      phone_numbers: [`+1-555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`],
+      phone_numbers: [
+        `+1-555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
+      ],
       job_title: 'Software Engineer',
       // department field removed - not supported by API
-      seniority: 'Mid-level'
+      seniority: 'Mid-level',
     };
 
     return { ...defaults, ...overrides };
   }
 
-  static createMany(count: number, overrides: Partial<E2ETestPerson> = {}): E2ETestPerson[] {
+  static createMany(
+    count: number,
+    overrides: Partial<E2ETestPerson> = {}
+  ): E2ETestPerson[] {
     return Array.from({ length: count }, (_, i) => {
       const testId = this.getTestId(`person_${i}`);
       const email = this.getTestEmail(`person_${i}`);
-      
+
       return this.create({
         ...overrides,
         name: `Test Person ${testId}`,
         email_addresses: [email],
-        job_title: overrides.job_title || `Test Role ${i + 1}`
+        job_title: overrides.job_title || `Test Role ${i + 1}`,
       });
     });
   }
 
-  static createExecutive(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
+  static createExecutive(
+    overrides: Partial<E2ETestPerson> = {}
+  ): E2ETestPerson {
     return this.create({
       job_title: 'Chief Executive Officer',
       // department field removed - not supported by API
       seniority: 'Executive',
-      ...overrides
+      ...overrides,
     });
   }
 
-  static createSalesPerson(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
+  static createSalesPerson(
+    overrides: Partial<E2ETestPerson> = {}
+  ): E2ETestPerson {
     return this.create({
       job_title: 'Account Executive',
       // department field removed - not supported by API
       seniority: 'Mid-level',
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -220,7 +239,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
       job_title: 'Software Engineer',
       // department field removed - not supported by API
       seniority: 'Mid-level',
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -231,24 +250,27 @@ export class E2EPersonFactory extends E2ETestDataFactory {
 export class E2EListFactory extends E2ETestDataFactory {
   static create(overrides: Partial<E2ETestList> = {}): E2ETestList {
     const testId = this.getTestId('list');
-    
+
     const defaults: E2ETestList = {
       name: `Test List ${testId}`,
       parent_object: 'companies',
-      description: `E2E test list created for testing purposes - ${testId}`
+      description: `E2E test list created for testing purposes - ${testId}`,
     };
 
     return { ...defaults, ...overrides };
   }
 
-  static createMany(count: number, overrides: Partial<E2ETestList> = {}): E2ETestList[] {
+  static createMany(
+    count: number,
+    overrides: Partial<E2ETestList> = {}
+  ): E2ETestList[] {
     return Array.from({ length: count }, (_, i) => {
       const testId = this.getTestId(`list_${i}`);
-      
+
       return this.create({
         ...overrides,
         name: `Test List ${testId}`,
-        description: `E2E test list ${i + 1} created for testing purposes - ${testId}`
+        description: `E2E test list ${i + 1} created for testing purposes - ${testId}`,
       });
     });
   }
@@ -256,14 +278,14 @@ export class E2EListFactory extends E2ETestDataFactory {
   static createCompanyList(overrides: Partial<E2ETestList> = {}): E2ETestList {
     return this.create({
       parent_object: 'companies',
-      ...overrides
+      ...overrides,
     });
   }
 
   static createPersonList(overrides: Partial<E2ETestList> = {}): E2ETestList {
     return this.create({
       parent_object: 'people',
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -276,29 +298,32 @@ export class E2ETaskFactory extends E2ETestDataFactory {
     const testId = this.getTestId('task');
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7); // Due in 7 days
-    
+
     const defaults: E2ETestTask = {
       title: `Test Task ${testId}`,
       content: `E2E Test Task created for testing purposes - ${testId}`,
       due_date: futureDate.toISOString().split('T')[0],
       status: 'open',
-      priority: 'medium'
+      priority: 'medium',
     };
 
     return { ...defaults, ...overrides };
   }
 
-  static createMany(count: number, overrides: Partial<E2ETestTask> = {}): E2ETestTask[] {
+  static createMany(
+    count: number,
+    overrides: Partial<E2ETestTask> = {}
+  ): E2ETestTask[] {
     return Array.from({ length: count }, (_, i) => {
       const testId = this.getTestId(`task_${i}`);
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + (i + 1)); // Stagger due dates
-      
+
       return this.create({
         ...overrides,
         title: `Test Task ${testId}`,
         content: `E2E Test Task ${i + 1} created for testing purposes - ${testId}`,
-        due_date: futureDate.toISOString().split('T')[0]
+        due_date: futureDate.toISOString().split('T')[0],
       });
     });
   }
@@ -307,7 +332,7 @@ export class E2ETaskFactory extends E2ETestDataFactory {
     return this.create({
       priority: 'high',
       status: 'open',
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -316,45 +341,53 @@ export class E2ETaskFactory extends E2ETestDataFactory {
  * Note test data factory
  */
 export class E2ENoteFactory extends E2ETestDataFactory {
-  static create(parentObject: string, parentRecordId: string, overrides: Partial<E2ETestNote> = {}): E2ETestNote {
+  static create(
+    parentObject: string,
+    parentRecordId: string,
+    overrides: Partial<E2ETestNote> = {}
+  ): E2ETestNote {
     const testId = this.getTestId('note');
-    
+
     const defaults: E2ETestNote = {
       title: `Test Note ${testId}`,
       content: `E2E test note created for testing purposes - ${testId}\n\nThis note contains test content and should be cleaned up after testing.`,
       format: 'plaintext' as const,
       parent_object: parentObject,
-      parent_record_id: parentRecordId
+      parent_record_id: parentRecordId,
     };
 
     return { ...defaults, ...overrides };
   }
 
   static createMany(
-    parentObject: string, 
-    parentRecordId: string, 
-    count: number, 
+    parentObject: string,
+    parentRecordId: string,
+    count: number,
     overrides: Partial<E2ETestNote> = {}
   ): E2ETestNote[] {
     return Array.from({ length: count }, (_, i) => {
       const testId = this.getTestId(`note_${i}`);
-      
+
       return this.create(parentObject, parentRecordId, {
         ...overrides,
         title: `Test Note ${testId}`,
-        content: `E2E test note ${i + 1} created for testing purposes - ${testId}\n\nThis is note content for testing.`
+        content: `E2E test note ${i + 1} created for testing purposes - ${testId}\n\nThis is note content for testing.`,
       });
     });
   }
 
-  static createMarkdown(parentObject: string, parentRecordId: string, overrides: Partial<E2ETestNote> = {}): E2ETestNote {
+  static createMarkdown(
+    parentObject: string,
+    parentRecordId: string,
+    overrides: Partial<E2ETestNote> = {}
+  ): E2ETestNote {
     const testId = this.getTestId('note_md');
-    
+
     return this.create(parentObject, parentRecordId, {
       format: 'markdown' as const,
       title: `Test Markdown Note ${testId}`,
       content: `# E2E Test Note ${testId}\n\nThis is a **markdown** note created for testing purposes.\n\n- Item 1\n- Item 2\n- Item 3`,
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -408,19 +441,19 @@ export class E2ETestScenarios {
       financeCompany: E2ECompanyFactory.createFinance(),
       executives: [
         E2EPersonFactory.createExecutive(),
-        E2EPersonFactory.createExecutive()
+        E2EPersonFactory.createExecutive(),
       ],
       salesPeople: [
         E2EPersonFactory.createSalesPerson(),
         E2EPersonFactory.createSalesPerson(),
-        E2EPersonFactory.createSalesPerson()
+        E2EPersonFactory.createSalesPerson(),
       ],
       engineers: [
         E2EPersonFactory.createEngineer(),
         E2EPersonFactory.createEngineer(),
         E2EPersonFactory.createEngineer(),
-        E2EPersonFactory.createEngineer()
-      ]
+        E2EPersonFactory.createEngineer(),
+      ],
     };
   }
 
@@ -435,7 +468,7 @@ export class E2ETestScenarios {
     return {
       companies: E2ECompanyFactory.createMany(batchSize),
       people: E2EPersonFactory.createMany(batchSize),
-      lists: E2EListFactory.createMany(Math.ceil(batchSize / 2))
+      lists: E2EListFactory.createMany(Math.ceil(batchSize / 2)),
     };
   }
 }
@@ -463,7 +496,7 @@ export class E2ETestDataValidator {
 
     if (data && typeof data === 'object') {
       const stringValues = this.extractStringValues(data);
-      return stringValues.some(value => value.includes(prefix));
+      return stringValues.some((value) => value.includes(prefix));
     }
 
     return false;

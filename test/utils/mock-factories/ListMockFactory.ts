@@ -1,13 +1,17 @@
 /**
  * List Mock Factory
- * 
+ *
  * Generates mock AttioList data for list resources.
- * 
+ *
  * This factory creates realistic list mock data matching the Attio API
  * response format for lists and list entries.
  */
 
-import type { AttioList, AttioListEntry, AttioRecord } from '../../../src/types/attio.js';
+import type {
+  AttioList,
+  AttioListEntry,
+  AttioRecord,
+} from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
@@ -49,21 +53,21 @@ export interface MockListEntryOptions {
 
 /**
  * ListMockFactory - Generates mock AttioList data for lists
- * 
+ *
  * Creates mock list data that matches the Attio API response format
  * for both lists and list entries.
- * 
+ *
  * @example
  * ```typescript
  * // Basic list
  * const list = ListMockFactory.create();
- * 
+ *
  * // Company list with custom data
  * const companyList = ListMockFactory.create({
  *   name: 'Important Clients',
  *   parent_object: 'companies'
  * });
- * 
+ *
  * // Multiple lists
  * const lists = ListMockFactory.createMultiple(5);
  * ```
@@ -71,7 +75,7 @@ export interface MockListEntryOptions {
 export class ListMockFactory implements MockFactory<AttioList> {
   /**
    * Generates a unique mock list ID in UUID format
-   * 
+   *
    * Uses deterministic UUID generation for consistent performance testing
    * while satisfying UUID validation requirements (addresses PR #483).
    */
@@ -82,7 +86,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
   /**
    * Creates a mock AttioList with realistic data
-   * 
+   *
    * @param overrides - Optional overrides for specific fields
    * @returns Mock AttioList matching API response format
    */
@@ -90,24 +94,28 @@ export class ListMockFactory implements MockFactory<AttioList> {
     const listId = this.generateMockId();
     const now = new Date().toISOString();
     const listNumber = this.extractNumberFromId(listId);
-    
+
     // Generate realistic list data
-    const title = overrides.title || overrides.name || `Mock List ${listNumber}`;
-    const objectSlug = overrides.object_slug || overrides.parent_object || 'companies';
-    
+    const title =
+      overrides.title || overrides.name || `Mock List ${listNumber}`;
+    const objectSlug =
+      overrides.object_slug || overrides.parent_object || 'companies';
+
     const baseList: AttioList = {
       id: {
         list_id: listId,
-        workspace_id: overrides.workspace_id || 'mock-workspace-id'
+        workspace_id: overrides.workspace_id || 'mock-workspace-id',
       },
       title,
       name: overrides.name || title, // Some API responses use name, others use title
-      description: overrides.description || `Mock list created for testing purposes - ${listNumber}`,
+      description:
+        overrides.description ||
+        `Mock list created for testing purposes - ${listNumber}`,
       object_slug: objectSlug,
       workspace_id: overrides.workspace_id || 'mock-workspace-id',
       created_at: overrides.created_at || now,
       updated_at: overrides.updated_at || now,
-      entry_count: overrides.entry_count || Math.floor(Math.random() * 100)
+      entry_count: overrides.entry_count || Math.floor(Math.random() * 100),
     };
 
     // Add optional fields
@@ -121,7 +129,21 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
     // Add any additional overrides
     Object.entries(overrides).forEach(([key, value]) => {
-      if (!['name', 'title', 'description', 'parent_object', 'object_slug', 'workspace_id', 'entry_count', 'created_at', 'updated_at', 'api_slug', 'workspace_member_access'].includes(key)) {
+      if (
+        ![
+          'name',
+          'title',
+          'description',
+          'parent_object',
+          'object_slug',
+          'workspace_id',
+          'entry_count',
+          'created_at',
+          'updated_at',
+          'api_slug',
+          'workspace_member_access',
+        ].includes(key)
+      ) {
         (baseList as any)[key] = value;
       }
     });
@@ -129,7 +151,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
     TestEnvironment.log(`Created mock list: ${listId}`, {
       title,
       objectSlug,
-      entryCount: baseList.entry_count
+      entryCount: baseList.entry_count,
     });
 
     return baseList;
@@ -137,18 +159,21 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
   /**
    * Creates multiple mock lists
-   * 
+   *
    * @param count - Number of lists to create
    * @param overrides - Optional overrides applied to all lists
    * @returns Array of mock AttioList objects
    */
-  static createMultiple(count: number, overrides: MockListOptions = {}): AttioList[] {
+  static createMultiple(
+    count: number,
+    overrides: MockListOptions = {}
+  ): AttioList[] {
     return Array.from({ length: count }, (_, index) => {
       const listNumber = index + 1;
       return this.create({
         ...overrides,
         name: overrides.name || `Mock List ${listNumber}`,
-        title: overrides.title || overrides.name || `Mock List ${listNumber}`
+        title: overrides.title || overrides.name || `Mock List ${listNumber}`,
       });
     });
   }
@@ -162,7 +187,8 @@ export class ListMockFactory implements MockFactory<AttioList> {
       parent_object: 'companies',
       object_slug: 'companies',
       name: overrides.name || 'Mock Company List',
-      description: overrides.description || 'Mock company list for testing purposes'
+      description:
+        overrides.description || 'Mock company list for testing purposes',
     });
   }
 
@@ -175,7 +201,8 @@ export class ListMockFactory implements MockFactory<AttioList> {
       parent_object: 'people',
       object_slug: 'people',
       name: overrides.name || 'Mock People List',
-      description: overrides.description || 'Mock people list for testing purposes'
+      description:
+        overrides.description || 'Mock people list for testing purposes',
     });
   }
 
@@ -188,21 +215,22 @@ export class ListMockFactory implements MockFactory<AttioList> {
       parent_object: 'deals',
       object_slug: 'deals',
       name: overrides.name || 'Mock Deal List',
-      description: overrides.description || 'Mock deal list for testing purposes'
+      description:
+        overrides.description || 'Mock deal list for testing purposes',
     });
   }
 
   /**
    * Creates a list entry mock
-   * 
+   *
    * @param listId - ID of the parent list
    * @param recordId - ID of the record being added to the list
    * @param overrides - Optional overrides for specific fields
    * @returns Mock AttioListEntry
    */
   static createListEntry(
-    listId: string, 
-    recordId: string, 
+    listId: string,
+    recordId: string,
     overrides: MockListEntryOptions = {}
   ): AttioListEntry {
     const entryId = `mock-entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -210,12 +238,12 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
     const baseEntry: AttioListEntry = {
       id: {
-        entry_id: entryId
+        entry_id: entryId,
       },
       list_id: listId,
       record_id: recordId,
       created_at: overrides.created_at || now,
-      updated_at: overrides.updated_at || now
+      updated_at: overrides.updated_at || now,
     };
 
     // Add optional fields
@@ -237,7 +265,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
     TestEnvironment.log(`Created mock list entry: ${entryId}`, {
       listId,
-      recordId
+      recordId,
     });
 
     return baseEntry;
@@ -245,7 +273,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
 
   /**
    * Creates multiple list entries for a list
-   * 
+   *
    * @param listId - ID of the parent list
    * @param recordIds - Array of record IDs to add to the list
    * @param overrides - Optional overrides applied to all entries
@@ -256,7 +284,7 @@ export class ListMockFactory implements MockFactory<AttioList> {
     recordIds: string[],
     overrides: MockListEntryOptions = {}
   ): AttioListEntry[] {
-    return recordIds.map(recordId => 
+    return recordIds.map((recordId) =>
       this.createListEntry(listId, recordId, overrides)
     );
   }
@@ -281,7 +309,9 @@ export class ListMockFactory implements MockFactory<AttioList> {
    */
   private static extractNumberFromId(id: string): string {
     const match = id.match(/(\d+)/);
-    return match ? match[1].slice(-4) : Math.floor(Math.random() * 9999).toString();
+    return match
+      ? match[1].slice(-4)
+      : Math.floor(Math.random() * 9999).toString();
   }
 }
 

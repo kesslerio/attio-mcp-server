@@ -1,11 +1,11 @@
 /**
  * Mock Data Injection System
- * 
+ *
  * Provides clean injection points for mock data into production code paths
  * when running in test environments. This replaces the scattered test
- * environment checks and hardcoded mock data previously embedded in 
+ * environment checks and hardcoded mock data previously embedded in
  * production handlers.
- * 
+ *
  * Key Features:
  * - Clean separation between test and production code
  * - Type-safe mock data injection
@@ -14,8 +14,17 @@
  * - Issue #480 compatibility for E2E tests
  */
 
-import type { AttioTask, AttioRecord, AttioList } from '../../../src/types/attio.js';
-import { TaskMockFactory, CompanyMockFactory, PersonMockFactory, ListMockFactory } from './index.js';
+import type {
+  AttioTask,
+  AttioRecord,
+  AttioList,
+} from '../../../src/types/attio.js';
+import {
+  TaskMockFactory,
+  CompanyMockFactory,
+  PersonMockFactory,
+  ListMockFactory,
+} from './index.js';
 import { TestEnvironment, shouldUseMockData } from './test-environment.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
 
@@ -65,7 +74,7 @@ export function clearMockStorage(): void {
 
 /**
  * Task-specific mock injection utilities
- * 
+ *
  * Handles the specific requirements for Issue #480:
  * - Provides both content and title fields for E2E test compatibility
  * - Ensures task_id is preserved in the ID structure
@@ -74,7 +83,7 @@ export function clearMockStorage(): void {
 export class TaskMockInjector {
   /**
    * Creates a task using mock data when in test environment, otherwise calls real API
-   * 
+   *
    * @param content - Task content
    * @param options - Task creation options
    * @param realCreateTask - Function that performs the real API call
@@ -83,14 +92,20 @@ export class TaskMockInjector {
   static async createTask(
     content: string,
     options: Record<string, unknown> = {},
-    realCreateTask?: (content: string, options: Record<string, unknown>) => Promise<AttioTask>
+    realCreateTask?: (
+      content: string,
+      options: Record<string, unknown>
+    ) => Promise<AttioTask>
   ): Promise<AttioTask> {
     if (shouldUseMockData()) {
-      TestEnvironment.log('Using mock data for task creation', { content, options });
-      
+      TestEnvironment.log('Using mock data for task creation', {
+        content,
+        options,
+      });
+
       // Generate a persistent task ID
       const taskId = generateMockId('task');
-      
+
       // Issue #480: Create mock task with E2E test compatibility
       const mockTask = TaskMockFactory.create({
         content,
@@ -98,12 +113,14 @@ export class TaskMockInjector {
         assignee_id: options.assigneeId as string,
         due_date: options.dueDate as string,
         record_id: options.recordId as string,
-        linked_records: options.recordIds ? (options.recordIds as string[]).map(id => ({
-          id,
-          object_id: 'mock-object',
-          object_slug: 'companies',
-          title: 'Mock Linked Record'
-        })) : undefined
+        linked_records: options.recordIds
+          ? (options.recordIds as string[]).map((id) => ({
+              id,
+              object_id: 'mock-object',
+              object_slug: 'companies',
+              title: 'Mock Linked Record',
+            }))
+          : undefined,
       });
 
       // Issue #480: Set consistent task ID
@@ -119,7 +136,9 @@ export class TaskMockInjector {
     }
 
     if (!realCreateTask) {
-      throw new Error('Real task creation function not provided for production environment');
+      throw new Error(
+        'Real task creation function not provided for production environment'
+      );
     }
 
     return await realCreateTask(content, options);
@@ -131,11 +150,17 @@ export class TaskMockInjector {
   static async updateTask(
     taskId: string,
     updateData: Record<string, unknown>,
-    realUpdateTask?: (taskId: string, updateData: Record<string, unknown>) => Promise<AttioTask>
+    realUpdateTask?: (
+      taskId: string,
+      updateData: Record<string, unknown>
+    ) => Promise<AttioTask>
   ): Promise<AttioTask> {
     if (shouldUseMockData()) {
-      TestEnvironment.log('Using mock data for task update', { taskId, updateData });
-      
+      TestEnvironment.log('Using mock data for task update', {
+        taskId,
+        updateData,
+      });
+
       // Try to retrieve existing task
       const existingTask = retrieveMock(taskId);
       if (!existingTask) {
@@ -144,7 +169,7 @@ export class TaskMockInjector {
         error.name = 'TaskNotFoundError';
         throw error;
       }
-      
+
       // Update the existing task with new data
       const updatedTask = {
         ...existingTask,
@@ -154,7 +179,7 @@ export class TaskMockInjector {
         status: updateData.status || existingTask.status,
         assignee_id: updateData.assigneeId || existingTask.assignee_id,
         due_date: updateData.dueDate || existingTask.due_date,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       // Preserve task ID structure
@@ -170,7 +195,9 @@ export class TaskMockInjector {
     }
 
     if (!realUpdateTask) {
-      throw new Error('Real task update function not provided for production environment');
+      throw new Error(
+        'Real task update function not provided for production environment'
+      );
     }
 
     return await realUpdateTask(taskId, updateData);
@@ -185,7 +212,7 @@ export class TaskMockInjector {
   ): Promise<AttioTask> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for task retrieval', { taskId });
-      
+
       // Try to retrieve existing task
       const existingTask = retrieveMock(taskId);
       if (!existingTask) {
@@ -199,7 +226,9 @@ export class TaskMockInjector {
     }
 
     if (!realGetTask) {
-      throw new Error('Real task get function not provided for production environment');
+      throw new Error(
+        'Real task get function not provided for production environment'
+      );
     }
 
     return await realGetTask(taskId);
@@ -213,16 +242,18 @@ export class TaskMockInjector {
   ): Promise<AttioTask[]> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for task listing');
-      
+
       // Return all stored tasks
       const storedTasks = getAllMocksByType('task');
-      
+
       // If no tasks stored, return empty array (not create new ones)
       return storedTasks;
     }
 
     if (!realListTasks) {
-      throw new Error('Real task list function not provided for production environment');
+      throw new Error(
+        'Real task list function not provided for production environment'
+      );
     }
 
     return await realListTasks();
@@ -233,11 +264,13 @@ export class TaskMockInjector {
    */
   static async deleteTask(
     taskId: string,
-    realDeleteTask?: (taskId: string) => Promise<{ success: boolean; record_id: string }>
+    realDeleteTask?: (
+      taskId: string
+    ) => Promise<{ success: boolean; record_id: string }>
   ): Promise<{ success: boolean; record_id: string }> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for task deletion', { taskId });
-      
+
       // Check if task exists
       const existingTask = retrieveMock(taskId);
       if (!existingTask) {
@@ -246,15 +279,17 @@ export class TaskMockInjector {
         error.name = 'TaskNotFoundError';
         throw error;
       }
-      
+
       // Remove task from storage
       mockStorage.delete(taskId);
-      
+
       return { success: true, record_id: taskId };
     }
 
     if (!realDeleteTask) {
-      throw new Error('Real task delete function not provided for production environment');
+      throw new Error(
+        'Real task delete function not provided for production environment'
+      );
     }
 
     return await realDeleteTask(taskId);
@@ -267,7 +302,9 @@ export class TaskMockInjector {
 export class CompanyMockInjector {
   static async createCompany(
     companyData: Record<string, unknown>,
-    realCreateCompany?: (companyData: Record<string, unknown>) => Promise<AttioRecord>
+    realCreateCompany?: (
+      companyData: Record<string, unknown>
+    ) => Promise<AttioRecord>
   ): Promise<AttioRecord> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for company creation', companyData);
@@ -275,7 +312,9 @@ export class CompanyMockInjector {
     }
 
     if (!realCreateCompany) {
-      throw new Error('Real company creation function not provided for production environment');
+      throw new Error(
+        'Real company creation function not provided for production environment'
+      );
     }
 
     return await realCreateCompany(companyData);
@@ -286,10 +325,12 @@ export class CompanyMockInjector {
     realGetCompany?: (companyId: string) => Promise<AttioRecord>
   ): Promise<AttioRecord> {
     if (shouldUseMockData()) {
-      TestEnvironment.log('Using mock data for company retrieval', { companyId });
-      
+      TestEnvironment.log('Using mock data for company retrieval', {
+        companyId,
+      });
+
       const mockCompany = CompanyMockFactory.create({
-        name: `Mock Company ${companyId.slice(-4)}`
+        name: `Mock Company ${companyId.slice(-4)}`,
       });
 
       // Preserve the requested company ID
@@ -301,7 +342,9 @@ export class CompanyMockInjector {
     }
 
     if (!realGetCompany) {
-      throw new Error('Real company get function not provided for production environment');
+      throw new Error(
+        'Real company get function not provided for production environment'
+      );
     }
 
     return await realGetCompany(companyId);
@@ -314,7 +357,9 @@ export class CompanyMockInjector {
 export class PersonMockInjector {
   static async createPerson(
     personData: Record<string, unknown>,
-    realCreatePerson?: (personData: Record<string, unknown>) => Promise<AttioRecord>
+    realCreatePerson?: (
+      personData: Record<string, unknown>
+    ) => Promise<AttioRecord>
   ): Promise<AttioRecord> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for person creation', personData);
@@ -322,7 +367,9 @@ export class PersonMockInjector {
     }
 
     if (!realCreatePerson) {
-      throw new Error('Real person creation function not provided for production environment');
+      throw new Error(
+        'Real person creation function not provided for production environment'
+      );
     }
 
     return await realCreatePerson(personData);
@@ -334,9 +381,9 @@ export class PersonMockInjector {
   ): Promise<AttioRecord> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for person retrieval', { personId });
-      
+
       const mockPerson = PersonMockFactory.create({
-        name: `Mock Person ${personId.slice(-4)}`
+        name: `Mock Person ${personId.slice(-4)}`,
       });
 
       // Preserve the requested person ID
@@ -348,7 +395,9 @@ export class PersonMockInjector {
     }
 
     if (!realGetPerson) {
-      throw new Error('Real person get function not provided for production environment');
+      throw new Error(
+        'Real person get function not provided for production environment'
+      );
     }
 
     return await realGetPerson(personId);
@@ -369,7 +418,9 @@ export class ListMockInjector {
     }
 
     if (!realCreateList) {
-      throw new Error('Real list creation function not provided for production environment');
+      throw new Error(
+        'Real list creation function not provided for production environment'
+      );
     }
 
     return await realCreateList(listData);
@@ -381,9 +432,9 @@ export class ListMockInjector {
   ): Promise<AttioList> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for list retrieval', { listId });
-      
+
       const mockList = ListMockFactory.create({
-        name: `Mock List ${listId.slice(-4)}`
+        name: `Mock List ${listId.slice(-4)}`,
       });
 
       // Preserve the requested list ID
@@ -395,7 +446,9 @@ export class ListMockInjector {
     }
 
     if (!realGetList) {
-      throw new Error('Real list get function not provided for production environment');
+      throw new Error(
+        'Real list get function not provided for production environment'
+      );
     }
 
     return await realGetList(listId);
@@ -407,17 +460,19 @@ export class ListMockInjector {
   ): Promise<AttioList[]> {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for list listing', options);
-      
+
       const count = Math.min(options.limit || 5, 10);
       const mockLists = ListMockFactory.createMultiple(count, {
-        object_slug: options.objectSlug
+        object_slug: options.objectSlug,
       });
 
       return mockLists;
     }
 
     if (!realListLists) {
-      throw new Error('Real list listing function not provided for production environment');
+      throw new Error(
+        'Real list listing function not provided for production environment'
+      );
     }
 
     return await realListLists();
@@ -439,12 +494,17 @@ export class UniversalMockInjector {
   ): Promise<any> {
     if (!shouldUseMockData()) {
       if (!realOperation) {
-        throw new Error(`Real ${operation} function not provided for production environment`);
+        throw new Error(
+          `Real ${operation} function not provided for production environment`
+        );
       }
       return await realOperation(data);
     }
 
-    TestEnvironment.log(`Using mock data for ${resourceType} ${operation}`, data);
+    TestEnvironment.log(
+      `Using mock data for ${resourceType} ${operation}`,
+      data
+    );
 
     switch (resourceType.toLowerCase()) {
       case 'tasks':
@@ -456,16 +516,24 @@ export class UniversalMockInjector {
       case 'lists':
         return this.handleListOperation(operation, data);
       default:
-        throw new Error(`Unsupported resource type for mock injection: ${resourceType}`);
+        throw new Error(
+          `Unsupported resource type for mock injection: ${resourceType}`
+        );
     }
   }
 
-  private static handleTaskOperation(operation: string, data: Record<string, unknown>): any {
+  private static handleTaskOperation(
+    operation: string,
+    data: Record<string, unknown>
+  ): any {
     switch (operation) {
       case 'create':
         return TaskMockFactory.create(data);
       case 'update':
-        return TaskMockFactory.create({ ...data, updated_at: new Date().toISOString() });
+        return TaskMockFactory.create({
+          ...data,
+          updated_at: new Date().toISOString(),
+        });
       case 'list':
         return TaskMockFactory.createMultiple(5);
       default:
@@ -473,12 +541,18 @@ export class UniversalMockInjector {
     }
   }
 
-  private static handleCompanyOperation(operation: string, data: Record<string, unknown>): any {
+  private static handleCompanyOperation(
+    operation: string,
+    data: Record<string, unknown>
+  ): any {
     switch (operation) {
       case 'create':
         return CompanyMockFactory.create(data);
       case 'update':
-        return CompanyMockFactory.create({ ...data, updated_at: new Date().toISOString() });
+        return CompanyMockFactory.create({
+          ...data,
+          updated_at: new Date().toISOString(),
+        });
       case 'list':
         return CompanyMockFactory.createMultiple(5);
       default:
@@ -486,12 +560,18 @@ export class UniversalMockInjector {
     }
   }
 
-  private static handlePersonOperation(operation: string, data: Record<string, unknown>): any {
+  private static handlePersonOperation(
+    operation: string,
+    data: Record<string, unknown>
+  ): any {
     switch (operation) {
       case 'create':
         return PersonMockFactory.create(data);
       case 'update':
-        return PersonMockFactory.create({ ...data, updated_at: new Date().toISOString() });
+        return PersonMockFactory.create({
+          ...data,
+          updated_at: new Date().toISOString(),
+        });
       case 'list':
         return PersonMockFactory.createMultiple(5);
       default:
@@ -499,12 +579,18 @@ export class UniversalMockInjector {
     }
   }
 
-  private static handleListOperation(operation: string, data: Record<string, unknown>): any {
+  private static handleListOperation(
+    operation: string,
+    data: Record<string, unknown>
+  ): any {
     switch (operation) {
       case 'create':
         return ListMockFactory.create(data);
       case 'update':
-        return ListMockFactory.create({ ...data, updated_at: new Date().toISOString() });
+        return ListMockFactory.create({
+          ...data,
+          updated_at: new Date().toISOString(),
+        });
       case 'list':
         return ListMockFactory.createMultiple(5);
       default:

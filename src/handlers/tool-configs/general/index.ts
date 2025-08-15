@@ -1,6 +1,6 @@
 /**
  * General tool configurations module
- * 
+ *
  * This module provides tool configurations for operations that span
  * multiple resource types or provide general utility functions.
  */
@@ -21,6 +21,4 @@ export const generalToolConfigs = {
 /**
  * Aggregated general tool definitions
  */
-export const generalToolDefinitions = [
-  ...relationshipToolDefinitions,
-];
+export const generalToolDefinitions = [...relationshipToolDefinitions];
