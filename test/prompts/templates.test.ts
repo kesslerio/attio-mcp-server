@@ -1,6 +1,7 @@
 /**
  * Tests for prompt templates
  */
+import { describe, it, expect } from 'vitest';
 import {
   getAllPrompts,
   getPromptById,

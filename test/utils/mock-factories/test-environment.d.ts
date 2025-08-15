@@ -78,45 +78,49 @@ export declare function isContinuousIntegrationEnvironment(): boolean;
  *
  * @returns the detected test context
  */
-export declare function getTestContext(): 'unit' | 'integration' | 'e2e' | 'production';
+export declare function getTestContext():
+  | 'unit'
+  | 'integration'
+  | 'e2e'
+  | 'production';
 /**
  * Test environment configuration utilities
  */
 export declare const TestEnvironment: {
-    /**
-     * Check if current environment is test
-     */
-    readonly isTest: typeof isTestEnvironment;
-    /**
-     * Check if mock data should be used
-     */
-    readonly useMocks: typeof shouldUseMockData;
-    /**
-     * Check if in development mode
-     */
-    readonly isDev: typeof isDevelopmentEnvironment;
-    /**
-     * Check if in CI environment
-     */
-    readonly isCI: typeof isContinuousIntegrationEnvironment;
-    /**
-     * Get current test context
-     */
-    readonly getContext: typeof getTestContext;
-    /**
-     * Quick environment checks
-     */
-    readonly isUnit: boolean;
-    readonly isIntegration: boolean;
-    readonly isE2E: boolean;
-    readonly isProduction: boolean;
-    /**
-     * Environment-specific logging helper
-     */
-    readonly log: (message: string, ...args: any[]) => void;
-    /**
-     * Environment-specific warning helper
-     */
-    readonly warn: (message: string, ...args: any[]) => void;
+  /**
+   * Check if current environment is test
+   */
+  readonly isTest: typeof isTestEnvironment;
+  /**
+   * Check if mock data should be used
+   */
+  readonly useMocks: typeof shouldUseMockData;
+  /**
+   * Check if in development mode
+   */
+  readonly isDev: typeof isDevelopmentEnvironment;
+  /**
+   * Check if in CI environment
+   */
+  readonly isCI: typeof isContinuousIntegrationEnvironment;
+  /**
+   * Get current test context
+   */
+  readonly getContext: typeof getTestContext;
+  /**
+   * Quick environment checks
+   */
+  readonly isUnit: boolean;
+  readonly isIntegration: boolean;
+  readonly isE2E: boolean;
+  readonly isProduction: boolean;
+  /**
+   * Environment-specific logging helper
+   */
+  readonly log: (message: string, ...args: any[]) => void;
+  /**
+   * Environment-specific warning helper
+   */
+  readonly warn: (message: string, ...args: any[]) => void;
 };
 //# sourceMappingURL=test-environment.d.ts.map

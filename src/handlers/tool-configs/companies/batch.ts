@@ -18,10 +18,17 @@ export const batchToolConfigs = {
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property extraction
       const results = Array.isArray(result.results) ? result.results : [];
-      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
-      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
-      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
-      
+      const summary =
+        typeof result.summary === 'object' && result.summary !== null
+          ? result.summary
+          : {};
+      const summarySucceeded =
+        typeof (summary as any).succeeded === 'number'
+          ? (summary as any).succeeded
+          : 0;
+      const summaryTotal =
+        typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+
       let output = `Batch Create Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
       results.forEach((item: unknown) => {
@@ -50,10 +57,17 @@ export const batchToolConfigs = {
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property extraction
       const results = Array.isArray(result.results) ? result.results : [];
-      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
-      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
-      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
-      
+      const summary =
+        typeof result.summary === 'object' && result.summary !== null
+          ? result.summary
+          : {};
+      const summarySucceeded =
+        typeof (summary as any).succeeded === 'number'
+          ? (summary as any).succeeded
+          : 0;
+      const summaryTotal =
+        typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+
       let output = `Batch Update Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
       results.forEach((item: unknown) => {
@@ -82,10 +96,17 @@ export const batchToolConfigs = {
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property extraction
       const results = Array.isArray(result.results) ? result.results : [];
-      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
-      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
-      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
-      
+      const summary =
+        typeof result.summary === 'object' && result.summary !== null
+          ? result.summary
+          : {};
+      const summarySucceeded =
+        typeof (summary as any).succeeded === 'number'
+          ? (summary as any).succeeded
+          : 0;
+      const summaryTotal =
+        typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+
       let output = `Batch Delete Summary: ${summarySucceeded}/${summaryTotal} succeeded\n`;
 
       results.forEach((item: unknown) => {
@@ -111,10 +132,17 @@ export const batchToolConfigs = {
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property extraction
       const results = Array.isArray(result.results) ? result.results : [];
-      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
-      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
-      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
-      
+      const summary =
+        typeof result.summary === 'object' && result.summary !== null
+          ? result.summary
+          : {};
+      const summarySucceeded =
+        typeof (summary as any).succeeded === 'number'
+          ? (summary as any).succeeded
+          : 0;
+      const summaryTotal =
+        typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+
       let output = `Batch Search Summary: ${summarySucceeded}/${summaryTotal} succeeded\n\n`;
 
       results.forEach((item: unknown, index: number) => {
@@ -150,10 +178,17 @@ export const batchToolConfigs = {
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property extraction
       const results = Array.isArray(result.results) ? result.results : [];
-      const summary = typeof result.summary === 'object' && result.summary !== null ? result.summary : {};
-      const summarySucceeded = typeof (summary as any).succeeded === 'number' ? (summary as any).succeeded : 0;
-      const summaryTotal = typeof (summary as any).total === 'number' ? (summary as any).total : 0;
-      
+      const summary =
+        typeof result.summary === 'object' && result.summary !== null
+          ? result.summary
+          : {};
+      const summarySucceeded =
+        typeof (summary as any).succeeded === 'number'
+          ? (summary as any).succeeded
+          : 0;
+      const summaryTotal =
+        typeof (summary as any).total === 'number' ? (summary as any).total : 0;
+
       let output = `Batch Get Details Summary: ${summarySucceeded}/${summaryTotal} succeeded\n\n`;
 
       results.forEach((item: unknown) => {
@@ -165,7 +200,7 @@ export const batchToolConfigs = {
             const recordId = company?.id?.record_id || 'Unknown';
             const website = company?.values?.website?.[0]?.value || 'N/A';
             const industry = company?.values?.industry?.[0]?.value || 'N/A';
-            
+
             output += `✓ ${name} (ID: ${recordId})\n`;
             output += `  Website: ${website}\n`;
             output += `  Industry: ${industry}\n`;

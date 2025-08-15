@@ -91,7 +91,7 @@ if (process.env.E2E_MODE !== 'true') {
     };
   });
 
-    // Global mock for companies search module
+  // Global mock for companies search module
   vi.mock('../src/objects/companies/search', () => ({
     searchCompaniesByName: vi.fn(async (name: string) => {
       // Mock behavior based on company name for testing

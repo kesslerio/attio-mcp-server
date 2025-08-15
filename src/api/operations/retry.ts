@@ -73,7 +73,10 @@ function sleep(ms: number): Promise<void> {
  * @param config - Retry configuration
  * @returns Whether the error should trigger a retry
  */
-export function isRetryableError(error: ApiError, config: RetryConfig): boolean {
+export function isRetryableError(
+  error: ApiError,
+  config: RetryConfig
+): boolean {
   // Network errors should be retried
   if (!error.response) {
     return true;

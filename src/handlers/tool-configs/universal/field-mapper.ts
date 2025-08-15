@@ -1,9 +1,9 @@
 /**
  * Field Mapping Helper for Universal Tools
- * 
+ *
  * Maps common incorrect field names to correct ones and provides
  * "did you mean?" suggestions for better user experience.
- * 
+ *
  * Addresses Issue #388: Enhanced field validation and error messages
  */
 
@@ -30,25 +30,25 @@ interface FieldMapping {
  * Resource type mappings - maps invalid resource types to valid ones
  */
 const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
-  'record': UniversalResourceType.RECORDS,
-  'records': UniversalResourceType.RECORDS,
-  'company': UniversalResourceType.COMPANIES,
-  'companies': UniversalResourceType.COMPANIES,
-  'person': UniversalResourceType.PEOPLE,
-  'people': UniversalResourceType.PEOPLE,
-  'deal': UniversalResourceType.DEALS,
-  'deals': UniversalResourceType.DEALS,
-  'task': UniversalResourceType.TASKS,
-  'tasks': UniversalResourceType.TASKS,
+  record: UniversalResourceType.RECORDS,
+  records: UniversalResourceType.RECORDS,
+  company: UniversalResourceType.COMPANIES,
+  companies: UniversalResourceType.COMPANIES,
+  person: UniversalResourceType.PEOPLE,
+  people: UniversalResourceType.PEOPLE,
+  deal: UniversalResourceType.DEALS,
+  deals: UniversalResourceType.DEALS,
+  task: UniversalResourceType.TASKS,
+  tasks: UniversalResourceType.TASKS,
   // Common typos and variations
-  'comapny': UniversalResourceType.COMPANIES,
-  'compnay': UniversalResourceType.COMPANIES,
-  'poeple': UniversalResourceType.PEOPLE,
-  'peolpe': UniversalResourceType.PEOPLE,
-  'dela': UniversalResourceType.DEALS,
-  'dael': UniversalResourceType.DEALS,
-  'taks': UniversalResourceType.TASKS,
-  'tsak': UniversalResourceType.TASKS,
+  comapny: UniversalResourceType.COMPANIES,
+  compnay: UniversalResourceType.COMPANIES,
+  poeple: UniversalResourceType.PEOPLE,
+  peolpe: UniversalResourceType.PEOPLE,
+  dela: UniversalResourceType.DEALS,
+  dael: UniversalResourceType.DEALS,
+  taks: UniversalResourceType.TASKS,
+  tsak: UniversalResourceType.TASKS,
 };
 
 /**
@@ -58,251 +58,297 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
   [UniversalResourceType.COMPANIES]: {
     fieldMappings: {
       // Common incorrect field names -> correct ones
-      'domain': 'domains',
-      'website': 'domains',
-      'url': 'domains',
-      'company_name': 'name',
-      'company_domain': 'domains',
-      'primary_domain': 'domains',
-      'description': 'notes',
-      'note': 'notes',
-      'employee_count': 'estimated_arr',
-      'size': 'estimated_arr',
-      'revenue': 'estimated_arr',
-      'typpe': 'type',  // Common typo
-      'company_type': 'type',
-      'founded_date': 'founded',
-      'founding_date': 'founded',
-      'year_founded': 'founded',
+      domain: 'domains',
+      website: 'domains',
+      url: 'domains',
+      company_name: 'name',
+      company_domain: 'domains',
+      primary_domain: 'domains',
+      description: 'notes',
+      note: 'notes',
+      employee_count: 'estimated_arr',
+      size: 'estimated_arr',
+      revenue: 'estimated_arr',
+      typpe: 'type', // Common typo
+      company_type: 'type',
+      founded_date: 'founded',
+      founding_date: 'founded',
+      year_founded: 'founded',
     },
     validFields: [
-      'name', 'domains', 'type', 'industry', 'description', 
-      'founded', 'estimated_arr', 'location', 'notes',
-      'primary_domain', 'twitter', 'linkedin', 'facebook'
+      'name',
+      'domains',
+      'type',
+      'industry',
+      'description',
+      'founded',
+      'estimated_arr',
+      'location',
+      'notes',
+      'primary_domain',
+      'twitter',
+      'linkedin',
+      'facebook',
     ],
     commonMistakes: {
-      'domain': 'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
-      'website': 'Use "domains" field with an array of domain names',
-      'description': 'Use "notes" field for company descriptions',
-      'employee_count': 'Employee count is not a standard field, consider using custom fields',
-      'revenue': 'Use "estimated_arr" for revenue/ARR data',
+      domain:
+        'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
+      website: 'Use "domains" field with an array of domain names',
+      description: 'Use "notes" field for company descriptions',
+      employee_count:
+        'Employee count is not a standard field, consider using custom fields',
+      revenue: 'Use "estimated_arr" for revenue/ARR data',
     },
     requiredFields: ['name'],
-    uniqueFields: ['domains']
+    uniqueFields: ['domains'],
   },
 
   [UniversalResourceType.PEOPLE]: {
     fieldMappings: {
       // Name variations
-      'full_name': 'name',
-      'person_name': 'name',
-      'contact_name': 'name',
-      'first_name': 'name',  // Will need special handling
-      'last_name': 'name',   // Will need special handling
+      full_name: 'name',
+      person_name: 'name',
+      contact_name: 'name',
+      first_name: 'name', // Will need special handling
+      last_name: 'name', // Will need special handling
       // Email variations
-      'email': 'email_addresses',
-      'emails': 'email_addresses',
-      'email_address': 'email_addresses',
-      'primary_email': 'email_addresses',
+      email: 'email_addresses',
+      emails: 'email_addresses',
+      email_address: 'email_addresses',
+      primary_email: 'email_addresses',
       // Phone variations
-      'phone': 'phone_numbers',
-      'phones': 'phone_numbers',
-      'phone_number': 'phone_numbers',
-      'mobile': 'phone_numbers',
-      'cell': 'phone_numbers',
+      phone: 'phone_numbers',
+      phones: 'phone_numbers',
+      phone_number: 'phone_numbers',
+      mobile: 'phone_numbers',
+      cell: 'phone_numbers',
       // Title variations
-      'job_title': 'title',
-      'position': 'title',
-      'role': 'title',
+      job_title: 'title',
+      position: 'title',
+      role: 'title',
       // Company variations
-      'company': 'company_id',
-      'organization': 'company_id',
-      'employer': 'company_id',
+      company: 'company_id',
+      organization: 'company_id',
+      employer: 'company_id',
       // Other fields
-      'description': 'notes',
-      'note': 'notes',
-      'bio': 'notes',
+      description: 'notes',
+      note: 'notes',
+      bio: 'notes',
     },
     validFields: [
-      'name', 'email_addresses', 'phone_numbers', 'title',
-      'company_id', 'location', 'twitter', 'linkedin', 
-      'facebook', 'notes', 'first_name', 'last_name'
+      'name',
+      'email_addresses',
+      'phone_numbers',
+      'title',
+      'company_id',
+      'location',
+      'twitter',
+      'linkedin',
+      'facebook',
+      'notes',
+      'first_name',
+      'last_name',
     ],
     commonMistakes: {
-      'email': 'Use "email_addresses" (plural) as an array',
-      'phone': 'Use "phone_numbers" (plural) as an array',
-      'first_name': 'Use "name" field with full name, or pass first_name/last_name in a name object',
-      'company': 'Use "company_id" with the actual company record ID',
+      email: 'Use "email_addresses" (plural) as an array',
+      phone: 'Use "phone_numbers" (plural) as an array',
+      first_name:
+        'Use "name" field with full name, or pass first_name/last_name in a name object',
+      company: 'Use "company_id" with the actual company record ID',
     },
     requiredFields: ['name'],
-    uniqueFields: ['email_addresses']
+    uniqueFields: ['email_addresses'],
   },
 
   [UniversalResourceType.LISTS]: {
     fieldMappings: {
       // Name variations
-      'list_name': 'name',
-      'title': 'name',
+      list_name: 'name',
+      title: 'name',
       // Description variations
-      'description': 'description',
-      'notes': 'description',
+      description: 'description',
+      notes: 'description',
       // Parent variations
-      'parent': 'parent_object',
-      'parent_id': 'parent_object',
-      'object': 'parent_object',
+      parent: 'parent_object',
+      parent_id: 'parent_object',
+      object: 'parent_object',
     },
     validFields: [
-      'name', 'description', 'parent_object', 'api_slug', 
-      'workspace_id', 'workspace_member_access'
+      'name',
+      'description',
+      'parent_object',
+      'api_slug',
+      'workspace_id',
+      'workspace_member_access',
     ],
     commonMistakes: {
-      'title': 'Use "name" field for the list name',
-      'parent': 'Use "parent_object" to specify the parent object type',
+      title: 'Use "name" field for the list name',
+      parent: 'Use "parent_object" to specify the parent object type',
     },
     requiredFields: ['name'],
-    uniqueFields: ['api_slug']
+    uniqueFields: ['api_slug'],
   },
 
   [UniversalResourceType.DEALS]: {
     fieldMappings: {
       // Value variations
-      'amount': 'value',
-      'deal_value': 'value',
-      'deal_amount': 'value',
-      'price': 'value',
-      'revenue': 'value',
+      amount: 'value',
+      deal_value: 'value',
+      deal_amount: 'value',
+      price: 'value',
+      revenue: 'value',
       // Name variations
-      'title': 'name',
-      'deal_name': 'name',
-      'deal_title': 'name',
-      'opportunity_name': 'name',
+      title: 'name',
+      deal_name: 'name',
+      deal_title: 'name',
+      opportunity_name: 'name',
       // Stage variations
-      'status': 'stage',
-      'deal_stage': 'stage',
-      'pipeline_stage': 'stage',
-      'deal_status': 'stage',
+      status: 'stage',
+      deal_stage: 'stage',
+      pipeline_stage: 'stage',
+      deal_status: 'stage',
       // Company variations
-      'company': 'associated_company',
-      'company_id': 'associated_company',
-      'account': 'associated_company',
-      'customer': 'associated_company',
-      // People variations  
-      'contact': 'associated_people',
-      'contacts': 'associated_people',
-      'primary_contact': 'associated_people',
-      'people': 'associated_people',
+      company: 'associated_company',
+      company_id: 'associated_company',
+      account: 'associated_company',
+      customer: 'associated_company',
+      // People variations
+      contact: 'associated_people',
+      contacts: 'associated_people',
+      primary_contact: 'associated_people',
+      people: 'associated_people',
       // Invalid fields that users often try
-      'description': null,  // Not available for deals
-      'notes': null,        // Should be created separately
-      'close_date': null,   // Not a built-in field
-      'expected_close_date': null,
-      'probability': null,
-      'source': null,
-      'lead_source': null,
-      'currency': null,     // Handled automatically
-      'tags': null,
-      'labels': null,
-      'type': null,
-      'deal_type': null,
+      description: null, // Not available for deals
+      notes: null, // Should be created separately
+      close_date: null, // Not a built-in field
+      expected_close_date: null,
+      probability: null,
+      source: null,
+      lead_source: null,
+      currency: null, // Handled automatically
+      tags: null,
+      labels: null,
+      type: null,
+      deal_type: null,
     },
     validFields: [
-      'name', 'stage', 'value', 'owner', 
-      'associated_company', 'associated_people'
+      'name',
+      'stage',
+      'value',
+      'owner',
+      'associated_company',
+      'associated_people',
     ],
     commonMistakes: {
-      'company_id': 'Use "associated_company" to link deals to companies',
-      'company': 'Use "associated_company" with the company record ID',
-      'amount': 'Use "value" for deal amounts (numeric only, no currency symbols)',
-      'status': 'Use "stage" for deal pipeline stages',
-      'description': 'Deals do not have a description field. Create notes separately after the deal',
-      'close_date': 'Close date is not a built-in field. Use custom fields if needed',
-      'probability': 'Probability is not a built-in field. Track in stage names or custom fields',
-      'currency': 'Currency is set automatically based on workspace settings',
-      'contact': 'Use "associated_people" to link contacts to deals',
+      company_id: 'Use "associated_company" to link deals to companies',
+      company: 'Use "associated_company" with the company record ID',
+      amount:
+        'Use "value" for deal amounts (numeric only, no currency symbols)',
+      status: 'Use "stage" for deal pipeline stages',
+      description:
+        'Deals do not have a description field. Create notes separately after the deal',
+      close_date:
+        'Close date is not a built-in field. Use custom fields if needed',
+      probability:
+        'Probability is not a built-in field. Track in stage names or custom fields',
+      currency: 'Currency is set automatically based on workspace settings',
+      contact: 'Use "associated_people" to link contacts to deals',
     },
     requiredFields: ['name', 'stage'],
-    uniqueFields: []
+    uniqueFields: [],
   },
 
   [UniversalResourceType.TASKS]: {
     fieldMappings: {
       // Content variations
-      'title': 'content',
-      'name': 'content',
-      'task_name': 'content',
-      'task_title': 'content',
-      'description': 'content',
-      'task_description': 'content',
-      'task': 'content',
-      'text': 'content',
-      'body': 'content',
+      title: 'content',
+      name: 'content',
+      task_name: 'content',
+      task_title: 'content',
+      description: 'content',
+      task_description: 'content',
+      task: 'content',
+      text: 'content',
+      body: 'content',
       // Status variations - Map to is_completed (the correct API field)
-      'status': 'is_completed',  // Transform status string to is_completed boolean
-      'state': 'is_completed',
-      'completed': 'is_completed',
-      'done': 'is_completed',
-      'complete': 'is_completed',
-      'task_status': 'is_completed',
+      status: 'is_completed', // Transform status string to is_completed boolean
+      state: 'is_completed',
+      completed: 'is_completed',
+      done: 'is_completed',
+      complete: 'is_completed',
+      task_status: 'is_completed',
       // Due date variations - Map to deadline_at (the correct API field)
-      'due_date': 'deadline_at',  // Common field name to correct API field
-      'due': 'deadline_at',
-      'deadline': 'deadline_at',
-      'due_by': 'deadline_at',
-      'due_on': 'deadline_at',
-      'duedate': 'deadline_at', // camelCase variant (lowercase for lookup)
+      due_date: 'deadline_at', // Common field name to correct API field
+      due: 'deadline_at',
+      deadline: 'deadline_at',
+      due_by: 'deadline_at',
+      due_on: 'deadline_at',
+      duedate: 'deadline_at', // camelCase variant (lowercase for lookup)
       // Assignee variations - Map to assignees array (the correct API field)
-      'assignee_id': 'assignees',  // Transform single assignee to array
-      'assignee': 'assignees',
-      'assigned_to': 'assignees',
-      'owner': 'assignees',
-      'user': 'assignees',
-      'assigneeid': 'assignees', // camelCase variant (lowercase for lookup)
+      assignee_id: 'assignees', // Transform single assignee to array
+      assignee: 'assignees',
+      assigned_to: 'assignees',
+      owner: 'assignees',
+      user: 'assignees',
+      assigneeid: 'assignees', // camelCase variant (lowercase for lookup)
       // Record association - Keep as linked_records (already correct)
-      'record_id': 'linked_records',
-      'record': 'linked_records',
-      'linked_record': 'linked_records',
-      'parent': 'linked_records',
-      'related_to': 'linked_records',
-      'recordid': 'linked_records', // camelCase variant (lowercase for lookup)
+      record_id: 'linked_records',
+      record: 'linked_records',
+      linked_record: 'linked_records',
+      parent: 'linked_records',
+      related_to: 'linked_records',
+      recordid: 'linked_records', // camelCase variant (lowercase for lookup)
     },
     validFields: [
-      'content', 'format', 'deadline_at', 'is_completed',
-      'assignees', 'linked_records', 'priority',
+      'content',
+      'format',
+      'deadline_at',
+      'is_completed',
+      'assignees',
+      'linked_records',
+      'priority',
       // Also accept the common field names for backward compatibility
-      'due_date', 'status', 'assignee_id', 'record_id', 'assignee'
+      'due_date',
+      'status',
+      'assignee_id',
+      'record_id',
+      'assignee',
     ],
     commonMistakes: {
-      'title': 'Use "content" for task text/description',
-      'name': 'Use "content" for task text/description', 
-      'description': 'Use "content" for task text/description',
-      'assignee': 'Use "assignee_id" or "assignees" with workspace member ID(s)',
-      'due': 'Use "due_date" or "deadline_at" with ISO date format',
-      'record': 'Use "record_id" or "linked_records" to link the task to records',
-      'status': 'Use "status" (pending/completed) or "is_completed" (true/false)',
+      title: 'Use "content" for task text/description',
+      name: 'Use "content" for task text/description',
+      description: 'Use "content" for task text/description',
+      assignee: 'Use "assignee_id" or "assignees" with workspace member ID(s)',
+      due: 'Use "due_date" or "deadline_at" with ISO date format',
+      record: 'Use "record_id" or "linked_records" to link the task to records',
+      status: 'Use "status" (pending/completed) or "is_completed" (true/false)',
     },
     requiredFields: ['content'],
-    uniqueFields: []
+    uniqueFields: [],
   },
 
   [UniversalResourceType.RECORDS]: {
     fieldMappings: {
       // Generic record mappings
-      'title': 'name',
-      'record_name': 'name',
-      'description': 'notes',
-      'note': 'notes',
+      title: 'name',
+      record_name: 'name',
+      description: 'notes',
+      note: 'notes',
     },
     validFields: [
-      'name', 'notes', 'created_at', 'updated_at'
+      'name',
+      'notes',
+      'created_at',
+      'updated_at',
       // Note: Records can have dynamic fields based on the object type
     ],
     commonMistakes: {
-      'title': 'Use "name" for record titles',
-      'description': 'Use "notes" for descriptions or additional text',
+      title: 'Use "name" for record titles',
+      description: 'Use "notes" for descriptions or additional text',
     },
     requiredFields: [],
-    uniqueFields: []
-  }
+    uniqueFields: [],
+  },
 };
 
 /**
@@ -319,12 +365,12 @@ export function mapFieldName(
 
   // Check if there's a direct mapping
   const mappedField = mapping.fieldMappings[fieldName.toLowerCase()];
-  
+
   // If mapped to null, it means the field doesn't exist
   if (mappedField === null) {
     return fieldName; // Return original, will trigger proper error
   }
-  
+
   return mappedField || fieldName;
 }
 
@@ -334,7 +380,11 @@ export function mapFieldName(
 export function detectFieldCollisions(
   resourceType: UniversalResourceType,
   recordData: Record<string, any>
-): { hasCollisions: boolean; errors: string[]; collisions: Record<string, string[]> } {
+): {
+  hasCollisions: boolean;
+  errors: string[];
+  collisions: Record<string, string[]>;
+} {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { hasCollisions: false, errors: [], collisions: {} };
@@ -351,7 +401,7 @@ export function detectFieldCollisions(
     }
 
     const targetField = mapFieldName(resourceType, inputField);
-    
+
     if (!targetToInputs[targetField]) {
       targetToInputs[targetField] = [];
     }
@@ -365,21 +415,27 @@ export function detectFieldCollisions(
   for (const [targetField, inputFields] of Object.entries(targetToInputs)) {
     if (inputFields.length > 1) {
       // Special case: first_name + last_name → name is allowed
-      if (resourceType === UniversalResourceType.PEOPLE && 
-          targetField === 'name' && 
-          inputFields.every(f => ['first_name', 'last_name'].includes(f))) {
+      if (
+        resourceType === UniversalResourceType.PEOPLE &&
+        targetField === 'name' &&
+        inputFields.every((f) => ['first_name', 'last_name'].includes(f))
+      ) {
         continue; // This collision is handled specially
       }
 
       collisions[targetField] = inputFields;
       hasCollisions = true;
 
-      const inputFieldsList = inputFields.map(f => `"${f}"`).join(', ');
-      const suggestion = getFieldCollisionSuggestion(resourceType, targetField, inputFields);
-      
+      const inputFieldsList = inputFields.map((f) => `"${f}"`).join(', ');
+      const suggestion = getFieldCollisionSuggestion(
+        resourceType,
+        targetField,
+        inputFields
+      );
+
       errors.push(
         `Field collision detected: ${inputFieldsList} all map to "${targetField}". ` +
-        `Please use only one field. ${suggestion}`
+          `Please use only one field. ${suggestion}`
       );
     }
   }
@@ -399,7 +455,7 @@ function getFieldCollisionSuggestion(
   if (!mapping) return '';
 
   // Check if any of the conflicting fields is the actual target field
-  const preferredField = conflictingFields.find(f => f === targetField);
+  const preferredField = conflictingFields.find((f) => f === targetField);
   if (preferredField) {
     return `Recommended: Use "${preferredField}" instead of the mapped alternatives.`;
   }
@@ -407,8 +463,10 @@ function getFieldCollisionSuggestion(
   // Find the most "canonical" field name (shortest, most direct)
   const sortedFields = conflictingFields.sort((a, b) => {
     // Prefer fields without underscores/prefixes
-    const aScore = (a.includes('_') ? 1 : 0) + (a.includes(resourceType) ? 1 : 0);
-    const bScore = (b.includes('_') ? 1 : 0) + (b.includes(resourceType) ? 1 : 0);
+    const aScore =
+      (a.includes('_') ? 1 : 0) + (a.includes(resourceType) ? 1 : 0);
+    const bScore =
+      (b.includes('_') ? 1 : 0) + (b.includes(resourceType) ? 1 : 0);
     if (aScore !== bScore) return aScore - bScore;
     return a.length - b.length;
   });
@@ -434,7 +492,7 @@ export function mapRecordFields(
     return {
       mapped: {},
       warnings: [],
-      errors: collisionResult.errors
+      errors: collisionResult.errors,
     };
   }
 
@@ -443,26 +501,32 @@ export function mapRecordFields(
 
   for (const [key, value] of Object.entries(recordData)) {
     const mappedKey = mapFieldName(resourceType, key);
-    
+
     // Skip null-mapped fields
     if (mapping.fieldMappings[key.toLowerCase()] === null) {
-      warnings.push(`Field "${key}" is not available for ${resourceType}. ${mapping.commonMistakes[key.toLowerCase()] || ''}`);
+      warnings.push(
+        `Field "${key}" is not available for ${resourceType}. ${mapping.commonMistakes[key.toLowerCase()] || ''}`
+      );
       continue;
     }
-    
+
     // Check if this field was mapped
     if (mappedKey !== key) {
       const mistake = mapping.commonMistakes[key.toLowerCase()];
       if (mistake) {
         warnings.push(`Field "${key}" mapped to "${mappedKey}": ${mistake}`);
       } else {
-        warnings.push(`Field "${key}" was automatically mapped to "${mappedKey}"`);
+        warnings.push(
+          `Field "${key}" was automatically mapped to "${mappedKey}"`
+        );
       }
     }
 
     // Special handling for certain fields
-    if (resourceType === UniversalResourceType.PEOPLE && 
-        (key === 'first_name' || key === 'last_name')) {
+    if (
+      resourceType === UniversalResourceType.PEOPLE &&
+      (key === 'first_name' || key === 'last_name')
+    ) {
       // Combine first and last name into full name
       if (!mapped.name) {
         const firstName = recordData.first_name || '';
@@ -488,7 +552,11 @@ export function validateResourceType(resourceType: string): {
   suggestion?: string;
 } {
   // Check if it's already valid
-  if (Object.values(UniversalResourceType).includes(resourceType as UniversalResourceType)) {
+  if (
+    Object.values(UniversalResourceType).includes(
+      resourceType as UniversalResourceType
+    )
+  ) {
     return { valid: true, corrected: resourceType as UniversalResourceType };
   }
 
@@ -498,19 +566,21 @@ export function validateResourceType(resourceType: string): {
     return {
       valid: false,
       corrected: mapped,
-      suggestion: `Did you mean "${mapped}"? The resource type "${resourceType}" was automatically corrected.`
+      suggestion: `Did you mean "${mapped}"? The resource type "${resourceType}" was automatically corrected.`,
     };
   }
 
   // Generate suggestions using fuzzy matching
   const validTypes = Object.values(UniversalResourceType);
   const suggestions = findSimilarStrings(resourceType, validTypes);
-  
+
   return {
     valid: false,
     suggestion: `Invalid resource type "${resourceType}". Valid types are: ${validTypes.join(', ')}${
-      suggestions.length > 0 ? `. Did you mean: ${suggestions.join(' or ')}?` : ''
-    }`
+      suggestions.length > 0
+        ? `. Did you mean: ${suggestions.join(' or ')}?`
+        : ''
+    }`,
   };
 }
 
@@ -534,13 +604,15 @@ export function getFieldSuggestions(
 
   // Check if it maps to null (invalid field)
   if (mapping.fieldMappings[fieldName.toLowerCase()] === null) {
-    return mapping.commonMistakes[fieldName.toLowerCase()] || 
-           `Field "${fieldName}" is not available for ${resourceType}`;
+    return (
+      mapping.commonMistakes[fieldName.toLowerCase()] ||
+      `Field "${fieldName}" is not available for ${resourceType}`
+    );
   }
 
   // Find similar valid fields
   const suggestions = findSimilarStrings(fieldName, mapping.validFields);
-  
+
   if (suggestions.length > 0) {
     return `Unknown field "${fieldName}". Did you mean: ${suggestions.join(' or ')}?`;
   }
@@ -562,11 +634,11 @@ export function validateFields(
 } {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
-    return { 
-      valid: true, 
-      errors: [], 
+    return {
+      valid: true,
+      errors: [],
       warnings: [`No field validation available for ${resourceType}`],
-      suggestions: []
+      suggestions: [],
     };
   }
 
@@ -579,10 +651,10 @@ export function validateFields(
     for (const required of mapping.requiredFields) {
       if (!(required in recordData)) {
         // Check if a mapped version exists
-        const hasMappedVersion = Object.keys(recordData).some(key => 
-          mapFieldName(resourceType, key) === required
+        const hasMappedVersion = Object.keys(recordData).some(
+          (key) => mapFieldName(resourceType, key) === required
         );
-        
+
         if (!hasMappedVersion) {
           errors.push(`Required field "${required}" is missing`);
         }
@@ -593,7 +665,7 @@ export function validateFields(
   // Check for unknown fields
   for (const field of Object.keys(recordData)) {
     const mappedField = mapFieldName(resourceType, field);
-    
+
     // If field maps to null, it's explicitly invalid
     if (mapping.fieldMappings[field.toLowerCase()] === null) {
       warnings.push(getFieldSuggestions(resourceType, field));
@@ -614,7 +686,7 @@ export function validateFields(
     valid: errors.length === 0,
     errors,
     warnings,
-    suggestions
+    suggestions,
   };
 }
 
@@ -638,25 +710,28 @@ export async function enhanceUniquenessError(
   }
 
   const attributeId = attributeMatch[1];
-  
+
   // Try to map the attribute ID to a human-readable field name
   try {
     const client = getAttioClient();
     const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes = response.data.data || [];
-    
-    const attribute = attributes.find((attr: any) => 
-      attr.id === attributeId || attr.api_slug === attributeId
+
+    const attribute = attributes.find(
+      (attr: any) => attr.id === attributeId || attr.api_slug === attributeId
     );
-    
+
     if (attribute) {
       const fieldName = attribute.title || attribute.api_slug;
-      const fieldValue = recordData[attribute.api_slug] || 
-                        recordData[fieldName] || 
-                        'unknown value';
-      
-      return `Uniqueness constraint violation: A ${resourceType} record with ${fieldName} "${fieldValue}" already exists. ` +
-             `Please use a different value or update the existing record instead.`;
+      const fieldValue =
+        recordData[attribute.api_slug] ||
+        recordData[fieldName] ||
+        'unknown value';
+
+      return (
+        `Uniqueness constraint violation: A ${resourceType} record with ${fieldName} "${fieldValue}" already exists. ` +
+        `Please use a different value or update the existing record instead.`
+      );
     }
   } catch (error: unknown) {
     // Fall back to original message if we can't enhance it
@@ -666,31 +741,43 @@ export async function enhanceUniquenessError(
   // Try to guess based on unique fields
   for (const uniqueField of mapping.uniqueFields) {
     if (recordData[uniqueField]) {
-      return `Uniqueness constraint violation: A ${resourceType} record with ${uniqueField} "${recordData[uniqueField]}" may already exist. ` +
-             `Please use a different value or search for the existing record.`;
+      return (
+        `Uniqueness constraint violation: A ${resourceType} record with ${uniqueField} "${recordData[uniqueField]}" may already exist. ` +
+        `Please use a different value or search for the existing record.`
+      );
     }
   }
 
-  return errorMessage + ` (This typically means a record with the same unique identifier already exists)`;
+  return (
+    errorMessage +
+    ` (This typically means a record with the same unique identifier already exists)`
+  );
 }
 
 /**
  * Simple string similarity function for suggestions
  */
-function findSimilarStrings(input: string, candidates: string[], threshold: number = 0.6): string[] {
+function findSimilarStrings(
+  input: string,
+  candidates: string[],
+  threshold: number = 0.6
+): string[] {
   const similarities: Array<{ str: string; score: number }> = [];
-  
+
   for (const candidate of candidates) {
-    const score = calculateSimilarity(input.toLowerCase(), candidate.toLowerCase());
+    const score = calculateSimilarity(
+      input.toLowerCase(),
+      candidate.toLowerCase()
+    );
     if (score >= threshold) {
       similarities.push({ str: candidate, score });
     }
   }
-  
+
   return similarities
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
-    .map(s => s.str);
+    .map((s) => s.str);
 }
 
 /**
@@ -699,11 +786,11 @@ function findSimilarStrings(input: string, candidates: string[], threshold: numb
 function calculateSimilarity(str1: string, str2: string): number {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
-  
+
   if (longer.length === 0) {
     return 1.0;
   }
-  
+
   const editDistance = levenshteinDistance(longer, shorter);
   return (longer.length - editDistance) / longer.length;
 }
@@ -713,15 +800,15 @@ function calculateSimilarity(str1: string, str2: string): number {
  */
 function levenshteinDistance(str1: string, str2: string): number {
   const matrix: number[][] = [];
-  
+
   for (let i = 0; i <= str2.length; i++) {
     matrix[i] = [i];
   }
-  
+
   for (let j = 0; j <= str1.length; j++) {
     matrix[0][j] = j;
   }
-  
+
   for (let i = 1; i <= str2.length; i++) {
     for (let j = 1; j <= str1.length; j++) {
       if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -729,13 +816,13 @@ function levenshteinDistance(str1: string, str2: string): number {
       } else {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1 // deletion
         );
       }
     }
   }
-  
+
   return matrix[str2.length][str1.length];
 }
 

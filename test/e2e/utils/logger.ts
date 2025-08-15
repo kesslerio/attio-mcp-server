@@ -1,9 +1,9 @@
 /**
  * Comprehensive E2E Test Logger
- * 
+ *
  * Provides detailed logging for E2E tests with structured JSON output,
  * API request/response tracking, timing information, and error context.
- * 
+ *
  * Features:
  * - Structured JSON logging for easy parsing and analysis
  * - API request/response logging with timing
@@ -16,13 +16,23 @@
 
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type { LogParameters, LogResponse, LogMetadata, ApiError } from '../types';
+import type {
+  LogParameters,
+  LogResponse,
+  LogMetadata,
+  ApiError,
+} from '../types';
 
 export interface LogEntry {
   timestamp: string;
   testSuite: string;
   testName?: string;
-  operation: 'tool_call' | 'test_data_creation' | 'test_data_cleanup' | 'error' | 'info';
+  operation:
+    | 'tool_call'
+    | 'test_data_creation'
+    | 'test_data_cleanup'
+    | 'error'
+    | 'info';
   toolName?: string;
   parameters?: LogParameters;
   response?: LogResponse;
@@ -86,15 +96,15 @@ class E2ELogger {
       failedApiCalls: 0,
       averageResponseTime: 0,
       createdRecords: [],
-      errors: []
+      errors: [],
     };
-    
+
     this.log({
       timestamp: new Date().toISOString(),
       testSuite: testSuiteName,
       operation: 'info',
       success: true,
-      metadata: { message: `Starting test suite: ${testSuiteName}` }
+      metadata: { message: `Starting test suite: ${testSuiteName}` },
     });
   }
 
@@ -105,12 +115,17 @@ class E2ELogger {
     if (!this.currentTestRun || !this.currentTestSuite) return;
 
     this.currentTestRun.endTime = new Date().toISOString();
-    this.currentTestRun.averageResponseTime = this.apiCallTimes.length > 0 
-      ? this.apiCallTimes.reduce((a, b) => a + b, 0) / this.apiCallTimes.length 
-      : 0;
+    this.currentTestRun.averageResponseTime =
+      this.apiCallTimes.length > 0
+        ? this.apiCallTimes.reduce((a, b) => a + b, 0) /
+          this.apiCallTimes.length
+        : 0;
 
     // Write test run summary
-    const summaryFile = join(this.logsDir, `${this.currentTestSuite}-summary-${Date.now()}.json`);
+    const summaryFile = join(
+      this.logsDir,
+      `${this.currentTestSuite}-summary-${Date.now()}.json`
+    );
     writeFileSync(summaryFile, JSON.stringify(this.currentTestRun, null, 2));
 
     this.log({
@@ -118,10 +133,10 @@ class E2ELogger {
       testSuite: this.currentTestSuite,
       operation: 'info',
       success: true,
-      metadata: { 
+      metadata: {
         message: `Completed test suite: ${this.currentTestSuite}`,
-        summary: this.currentTestRun
-      }
+        summary: this.currentTestRun,
+      },
     });
 
     // Reset for next test suite
@@ -164,23 +179,23 @@ class E2ELogger {
       timing: {
         start: timing.start,
         end: timing.end,
-        duration
+        duration,
       },
-      success: !error
+      success: !error,
     };
 
     if (error) {
       logEntry.error = {
         message: error.message,
         stack: error.stack,
-        code: (error as unknown).code
+        code: (error as unknown).code,
       };
-      
+
       if (this.currentTestRun) {
         this.currentTestRun.errors.push({
           timestamp: logEntry.timestamp,
           message: error.message,
-          testName
+          testName,
         });
       }
     }
@@ -201,7 +216,7 @@ class E2ELogger {
       this.currentTestRun.createdRecords.push({
         type,
         id,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -214,8 +229,8 @@ class E2ELogger {
       metadata: {
         recordType: type,
         recordId: id,
-        recordData: this.sanitizeResponse(data)
-      }
+        recordData: this.sanitizeResponse(data),
+      },
     });
   }
 
@@ -237,14 +252,14 @@ class E2ELogger {
       success,
       metadata: {
         recordType: type,
-        recordId: id
-      }
+        recordId: id,
+      },
     };
 
     if (error) {
       logEntry.error = {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       };
     }
 
@@ -270,13 +285,13 @@ class E2ELogger {
       testName,
       operation: 'info',
       success: passed,
-      metadata: { testResult: passed ? 'PASSED' : 'FAILED' }
+      metadata: { testResult: passed ? 'PASSED' : 'FAILED' },
     };
 
     if (error) {
       logEntry.error = {
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       };
     }
 
@@ -286,26 +301,34 @@ class E2ELogger {
   /**
    * Log general information
    */
-  logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
+  logInfo(
+    message: string,
+    metadata?: Record<string, unknown>,
+    testName?: string
+  ): void {
     this.log({
       timestamp: new Date().toISOString(),
       testSuite: this.currentTestSuite || 'unknown',
       testName,
       operation: 'info',
       success: true,
-      metadata: { message, ...metadata }
+      metadata: { message, ...metadata },
     });
   }
 
   /**
    * Log errors with full context
    */
-  logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
+  logError(
+    error: Error,
+    context?: Record<string, unknown>,
+    testName?: string
+  ): void {
     if (this.currentTestRun) {
       this.currentTestRun.errors.push({
         timestamp: new Date().toISOString(),
         message: error.message,
-        testName
+        testName,
       });
     }
 
@@ -318,9 +341,9 @@ class E2ELogger {
       error: {
         message: error.message,
         stack: error.stack,
-        code: (error as unknown).code
+        code: (error as unknown).code,
       },
-      metadata: context
+      metadata: context,
     });
   }
 
@@ -330,7 +353,7 @@ class E2ELogger {
   private log(entry: LogEntry): void {
     const logFile = this.getLogFile();
     const logLine = JSON.stringify(entry) + '\n';
-    
+
     try {
       appendFileSync(logFile, logLine);
     } catch (error: unknown) {
@@ -339,7 +362,9 @@ class E2ELogger {
 
     // Also log to console in development for immediate feedback
     if (process.env.NODE_ENV === 'development' || process.env.E2E_DEBUG_LOGS) {
-      console.log(`[E2E-LOG] ${entry.operation.toUpperCase()}: ${entry.toolName || entry.metadata?.message || 'info'}`);
+      console.log(
+        `[E2E-LOG] ${entry.operation.toUpperCase()}: ${entry.toolName || entry.metadata?.message || 'info'}`
+      );
       if (entry.error) {
         console.error(`[E2E-ERROR] ${entry.error.message}`);
       }
@@ -351,8 +376,9 @@ class E2ELogger {
    */
   private getLogFile(): string {
     const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const testSuite = this.currentTestSuite || this.inferTestSuiteFromCallStack() || 'unknown';
-    
+    const testSuite =
+      this.currentTestSuite || this.inferTestSuiteFromCallStack() || 'unknown';
+
     // Use a more stable filename that doesn't change during the test suite run
     const runId = this.getOrCreateRunId();
     return join(this.logsDir, `${testSuite}-${timestamp}-${runId}.jsonl`);
@@ -364,23 +390,23 @@ class E2ELogger {
   private inferTestSuiteFromCallStack(): string | null {
     const stack = new Error().stack;
     if (!stack) return null;
-    
+
     // Look for test file names in the stack
     const testFilePattern = /\/test\/e2e\/suites\/([^\/]+)\.e2e\.test\.ts/;
     const match = stack.match(testFilePattern);
-    
+
     if (match && match[1]) {
       return match[1]; // Extract the test suite name from filename
     }
-    
+
     // Fallback patterns for other test file structures
     const fallbackPattern = /\/([^\/]+)\.e2e\.test\.ts/;
     const fallbackMatch = stack.match(fallbackPattern);
-    
+
     if (fallbackMatch && fallbackMatch[1]) {
       return fallbackMatch[1];
     }
-    
+
     return null;
   }
 
@@ -399,25 +425,34 @@ class E2ELogger {
   /**
    * Sanitize parameters by removing sensitive data
    */
-  private sanitizeParameters(params: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeParameters(
+    params: Record<string, unknown>
+  ): Record<string, unknown> {
     const sensitiveKeys = [
-      'api_key', 'apiKey', 'token', 'password', 'secret',
-      'authorization', 'auth', 'key', 'credentials'
+      'api_key',
+      'apiKey',
+      'token',
+      'password',
+      'secret',
+      'authorization',
+      'auth',
+      'key',
+      'credentials',
     ];
 
     const sanitized = { ...params };
-    
+
     const sanitizeObject = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj;
-      
+
       if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       }
-      
+
       const result: any = {};
       for (const [key, value] of Object.entries(obj)) {
         const lowerKey = key.toLowerCase();
-        if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
+        if (sensitiveKeys.some((sensitive) => lowerKey.includes(sensitive))) {
           result[key] = '[REDACTED]';
         } else if (typeof value === 'object') {
           result[key] = sanitizeObject(value);
@@ -439,7 +474,7 @@ class E2ELogger {
 
     // Convert response to string to check size
     const responseStr = JSON.stringify(response);
-    
+
     // If response is too large (>10KB), create a safe preview
     if (responseStr.length > 10000) {
       return {
@@ -448,9 +483,12 @@ class E2ELogger {
         _preview: {
           type: 'truncated',
           length: responseStr.length,
-          sample: responseStr.substring(0, 500) // Raw string sample, no parsing
+          sample: responseStr.substring(0, 500), // Raw string sample, no parsing
         },
-        _message: 'Response truncated for logging. Original size: ' + responseStr.length + ' characters'
+        _message:
+          'Response truncated for logging. Original size: ' +
+          responseStr.length +
+          ' characters',
       };
     }
 
@@ -485,7 +523,14 @@ export function logToolCall(
   testName?: string,
   error?: Error
 ): void {
-  e2eLogger.logToolCall(toolName, parameters, response, timing, testName, error);
+  e2eLogger.logToolCall(
+    toolName,
+    parameters,
+    response,
+    timing,
+    testName,
+    error
+  );
 }
 
 export function logTestDataCreation(
@@ -507,14 +552,26 @@ export function logTestDataCleanup(
   e2eLogger.logTestDataCleanup(type, id, success, error, testName);
 }
 
-export function logInfo(message: string, metadata?: Record<string, unknown>, testName?: string): void {
+export function logInfo(
+  message: string,
+  metadata?: Record<string, unknown>,
+  testName?: string
+): void {
   e2eLogger.logInfo(message, metadata, testName);
 }
 
-export function logError(error: Error, context?: Record<string, unknown>, testName?: string): void {
+export function logError(
+  error: Error,
+  context?: Record<string, unknown>,
+  testName?: string
+): void {
   e2eLogger.logError(error, context, testName);
 }
 
-export function logTestCompletion(testName: string, passed: boolean, error?: Error): void {
+export function logTestCompletion(
+  testName: string,
+  passed: boolean,
+  error?: Error
+): void {
   e2eLogger.logTestCompletion(testName, passed, error);
 }

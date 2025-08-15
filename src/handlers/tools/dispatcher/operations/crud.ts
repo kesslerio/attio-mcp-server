@@ -74,7 +74,7 @@ export async function handleUpdateOperation(
       return createErrorResult(
         new Error(
           `ID parameter is required for update operation. ` +
-          `Expected 'recordId' or '${idParamName}' parameter.`
+            `Expected 'recordId' or '${idParamName}' parameter.`
         ),
         `/${resourceType}`,
         'PUT',
@@ -137,7 +137,7 @@ export async function handleUpdateAttributeOperation(
       return createErrorResult(
         new Error(
           `ID parameter is required for updateAttribute operation. ` +
-          `Expected 'recordId' or '${idParamName}' parameter.`
+            `Expected 'recordId' or '${idParamName}' parameter.`
         ),
         `/${resourceType}`,
         'PATCH',

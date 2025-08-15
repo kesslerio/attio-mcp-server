@@ -2,6 +2,7 @@
  * End-to-end tests for attribute validation with real Attio API
  * These tests require a valid Attio API key and will be skipped if SKIP_INTEGRATION_TESTS=true
  */
+import { describe, beforeAll, afterAll, it, expect } from 'vitest';
 import { CompanyValidator } from '../../src/validators/company-validator.js';
 import { getAttioClient } from '../../src/api/attio-client.js';
 import {

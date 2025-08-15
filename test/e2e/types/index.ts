@@ -1,6 +1,6 @@
 /**
  * Type definitions for E2E test suite
- * 
+ *
  * Provides proper TypeScript types to replace `any` usage
  * and improve type safety in E2E tests.
  */
@@ -47,13 +47,25 @@ export interface RecordData {
   [key: string]: unknown;
 }
 
-export type AttributeValue = string | number | boolean | null | AttributeValue[] | { [key: string]: AttributeValue };
+export type AttributeValue =
+  | string
+  | number
+  | boolean
+  | null
+  | AttributeValue[]
+  | { [key: string]: AttributeValue };
 
 export interface FilterParams {
   [key: string]: FilterValue;
 }
 
-export type FilterValue = string | number | boolean | null | FilterCondition | FilterValue[];
+export type FilterValue =
+  | string
+  | number
+  | boolean
+  | null
+  | FilterCondition
+  | FilterValue[];
 
 export interface FilterCondition {
   operator?: string;

@@ -1,13 +1,13 @@
 /**
  * Universal Mock Service
- * 
+ *
  * Centralized service for generating mock data across all resource types
  * used by universal handlers in E2E and performance testing environments.
- * 
+ *
  * This service consolidates the mock generation functionality previously
  * scattered throughout production code, providing clean separation between
  * test utilities and production logic.
- * 
+ *
  * Key Features:
  * - Uses existing mock factories for consistency
  * - Maintains Issue #480 compatibility patterns
@@ -43,7 +43,7 @@ export class UniversalMockService {
 
   /**
    * Creates a company record with mock support
-   * 
+   *
    * @param companyData - Company data to create
    * @returns AttioRecord in universal format or real API result
    */
@@ -52,13 +52,15 @@ export class UniversalMockService {
   ): Promise<AttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
-      const { createCompany } = await import('../../../src/objects/companies/index.js');
+      const { createCompany } = await import(
+        '../../../src/objects/companies/index.js'
+      );
       return await createCompany(companyData as any);
     }
 
     TestEnvironment.log('[UniversalMockService] Creating mock company', {
       name: companyData.name,
-      industry: companyData.industry
+      industry: companyData.industry,
     });
 
     // Use the existing CompanyMockFactory but convert to AttioRecord format
@@ -67,7 +69,7 @@ export class UniversalMockService {
       domains: companyData.domains as string[],
       industry: companyData.industry as string,
       description: companyData.description as string,
-      ...companyData
+      ...companyData,
     });
 
     // Convert to AttioRecord format expected by universal handlers
@@ -78,20 +80,33 @@ export class UniversalMockService {
         workspace_id: mockCompany.id.workspace_id || 'mock-workspace-id',
       },
       values: {
-        name: [{ value: mockCompany.values.name || `Mock Company ${mockCompany.id.company_id.slice(-4)}` }],
-        domains: mockCompany.values.domains ? 
-          (Array.isArray(mockCompany.values.domains) 
-            ? mockCompany.values.domains.map(d => ({ value: d }))
+        name: [
+          {
+            value:
+              mockCompany.values.name ||
+              `Mock Company ${mockCompany.id.company_id.slice(-4)}`,
+          },
+        ],
+        domains: mockCompany.values.domains
+          ? Array.isArray(mockCompany.values.domains)
+            ? mockCompany.values.domains.map((d) => ({ value: d }))
             : [{ value: mockCompany.values.domains }]
-          ) : [{ value: `${mockCompany.id.company_id}.example.com` }],
+          : [{ value: `${mockCompany.id.company_id}.example.com` }],
         industry: [{ value: mockCompany.values.industry || 'Technology' }],
-        description: [{ 
-          value: mockCompany.values.description || `Mock company for testing - ${mockCompany.id.company_id}` 
-        }],
+        description: [
+          {
+            value:
+              mockCompany.values.description ||
+              `Mock company for testing - ${mockCompany.id.company_id}`,
+          },
+        ],
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
           Object.entries(companyData)
-            .filter(([key]) => !['name', 'domains', 'industry', 'description'].includes(key))
+            .filter(
+              ([key]) =>
+                !['name', 'domains', 'industry', 'description'].includes(key)
+            )
             .map(([key, value]) => [
               key,
               Array.isArray(value) ? value : [{ value: String(value) }],
@@ -105,7 +120,7 @@ export class UniversalMockService {
 
   /**
    * Creates a person record with mock support
-   * 
+   *
    * @param personData - Person data to create
    * @returns AttioRecord in universal format or real API result
    */
@@ -114,20 +129,22 @@ export class UniversalMockService {
   ): Promise<AttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
-      const { createPerson } = await import('../../../src/objects/people/index.js');
+      const { createPerson } = await import(
+        '../../../src/objects/people/index.js'
+      );
       return await createPerson(personData as any);
     }
 
     TestEnvironment.log('[UniversalMockService] Creating mock person', {
       name: personData.name,
-      email_addresses: personData.email_addresses
+      email_addresses: personData.email_addresses,
     });
 
     // Use the existing PersonMockFactory but convert to AttioRecord format
     const mockPerson = PersonMockFactory.create({
       name: personData.name as string,
       email_addresses: personData.email_addresses as string[],
-      ...personData
+      ...personData,
     });
 
     // Convert to AttioRecord format expected by universal handlers
@@ -138,9 +155,15 @@ export class UniversalMockService {
         workspace_id: mockPerson.id.workspace_id || 'mock-workspace-id',
       },
       values: {
-        name: [{ value: mockPerson.values.name || `Mock Person ${mockPerson.id.person_id.slice(-4)}` }],
+        name: [
+          {
+            value:
+              mockPerson.values.name ||
+              `Mock Person ${mockPerson.id.person_id.slice(-4)}`,
+          },
+        ],
         email_addresses: Array.isArray(personData.email_addresses)
-          ? personData.email_addresses.map(email => ({ value: email }))
+          ? personData.email_addresses.map((email) => ({ value: email }))
           : [{ value: `${mockPerson.id.person_id}@example.com` }],
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
@@ -160,7 +183,7 @@ export class UniversalMockService {
   /**
    * Creates a task record with mock support
    * Maintains Issue #480 compatibility with dual field support
-   * 
+   *
    * @param taskData - Task data to create
    * @returns AttioRecord in universal format or real API result
    */
@@ -183,7 +206,7 @@ export class UniversalMockService {
       }
     }
 
-    const taskContent = 
+    const taskContent =
       (taskData.content as string) ||
       (taskData.title as string) ||
       `Mock Test Task`;
@@ -191,7 +214,7 @@ export class UniversalMockService {
     TestEnvironment.log('[UniversalMockService] Creating mock task', {
       content: taskContent,
       status: taskData.status,
-      assigneeId: taskData.assigneeId
+      assigneeId: taskData.assigneeId,
     });
 
     // Use the existing TaskMockFactory
@@ -216,12 +239,25 @@ export class UniversalMockService {
         content: [{ value: taskContent }],
         title: [{ value: taskContent }], // Issue #480: Dual field support
         status: [{ value: mockTask.status }],
-        due_date: mockTask.due_date ? [{ value: mockTask.due_date }] : undefined,
-        assignee: mockTask.assignee ? [{ value: mockTask.assignee.id }] : undefined,
+        due_date: mockTask.due_date
+          ? [{ value: mockTask.due_date }]
+          : undefined,
+        assignee: mockTask.assignee
+          ? [{ value: mockTask.assignee.id }]
+          : undefined,
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
           Object.entries(taskData)
-            .filter(([key]) => !['content', 'title', 'status', 'due_date', 'assignee'].includes(key))
+            .filter(
+              ([key]) =>
+                ![
+                  'content',
+                  'title',
+                  'status',
+                  'due_date',
+                  'assignee',
+                ].includes(key)
+            )
             .map(([key, value]) => [
               key,
               Array.isArray(value) ? value : [{ value: String(value) }],
@@ -246,7 +282,7 @@ export class UniversalMockService {
     if (taskData.assigneeId && mockTask.assignee) {
       (flatFields as any).assignee = {
         id: taskData.assigneeId as string,
-        type: 'person'
+        type: 'person',
       };
     }
 
@@ -255,7 +291,7 @@ export class UniversalMockService {
 
   /**
    * Updates a task record with mock support
-   * 
+   *
    * @param taskId - Task ID to update
    * @param updateData - Update data
    * @returns AttioRecord in universal format or real API result
@@ -308,14 +344,14 @@ export class UniversalMockService {
     TestEnvironment.log('[UniversalMockService] Updating mock task', {
       taskId,
       content: taskContent,
-      status: updateData.status
+      status: updateData.status,
     });
 
     // Create an updated task using the TaskMockFactory
     const mockTask = TaskMockFactory.create({
       content: taskContent,
       title: taskContent, // Issue #480: Dual field support
-      status: updateData.status as string || 'updated',
+      status: (updateData.status as string) || 'updated',
       due_date: updateData.due_date as string,
       assignee_id: updateData.assigneeId as string,
     });
@@ -336,12 +372,25 @@ export class UniversalMockService {
         content: [{ value: taskContent }],
         title: [{ value: taskContent }], // Issue #480: Dual field support
         status: [{ value: mockTask.status }],
-        due_date: mockTask.due_date ? [{ value: mockTask.due_date }] : undefined,
-        assignee: mockTask.assignee ? [{ value: mockTask.assignee.id }] : undefined,
+        due_date: mockTask.due_date
+          ? [{ value: mockTask.due_date }]
+          : undefined,
+        assignee: mockTask.assignee
+          ? [{ value: mockTask.assignee.id }]
+          : undefined,
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
           Object.entries(updateData)
-            .filter(([key]) => !['content', 'title', 'status', 'due_date', 'assignee'].includes(key))
+            .filter(
+              ([key]) =>
+                ![
+                  'content',
+                  'title',
+                  'status',
+                  'due_date',
+                  'assignee',
+                ].includes(key)
+            )
             .map(([key, value]) => [
               key,
               Array.isArray(value) ? value : [{ value: String(value) }],
@@ -366,7 +415,7 @@ export class UniversalMockService {
     if (updateData.assigneeId) {
       (flatFields as any).assignee = {
         id: updateData.assigneeId as string,
-        type: 'person'
+        type: 'person',
       };
     }
 

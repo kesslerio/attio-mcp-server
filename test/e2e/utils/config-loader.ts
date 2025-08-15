@@ -1,6 +1,6 @@
 /**
  * E2E Test Configuration Loader
- * 
+ *
  * Loads and validates configuration from config.local.json with fallbacks
  * to environment variables for CI/CD environments.
  */
@@ -112,7 +112,9 @@ export class ConfigLoader {
         config = JSON.parse(templateContent);
         console.log('Loaded E2E configuration from template (CI/CD mode)');
       } else {
-        throw new Error('No configuration file found. Please create config.local.json from config.template.json');
+        throw new Error(
+          'No configuration file found. Please create config.local.json from config.template.json'
+        );
       }
     }
 
@@ -134,11 +136,11 @@ export class ConfigLoader {
     if (!process.env.ATTIO_API_KEY && process.env.SKIP_E2E_TESTS !== 'true') {
       console.warn(
         '⚠️  ATTIO_API_KEY environment variable is missing for E2E tests.\n' +
-        '   E2E tests may fail without proper API authentication.\n' +
-        '   Set SKIP_E2E_TESTS=true to skip these tests, or provide ATTIO_API_KEY.\n' +
-        '   Some tests will be skipped automatically to prevent API errors.'
+          '   E2E tests may fail without proper API authentication.\n' +
+          '   Set SKIP_E2E_TESTS=true to skip these tests, or provide ATTIO_API_KEY.\n' +
+          '   Some tests will be skipped automatically to prevent API errors.'
       );
-      
+
       // Don't throw error - let individual tests handle missing API key gracefully
       // This allows the test suite to run and skip tests that require API access
     }
@@ -192,19 +194,29 @@ export class ConfigLoader {
 
     // Test settings
     if (process.env.E2E_CLEANUP_AFTER_TESTS) {
-      config.testSettings!.cleanupAfterTests = process.env.E2E_CLEANUP_AFTER_TESTS === 'true';
+      config.testSettings!.cleanupAfterTests =
+        process.env.E2E_CLEANUP_AFTER_TESTS === 'true';
     }
 
     if (process.env.E2E_MAX_RETRIES) {
-      config.testSettings!.maxRetries = parseInt(process.env.E2E_MAX_RETRIES, 10);
+      config.testSettings!.maxRetries = parseInt(
+        process.env.E2E_MAX_RETRIES,
+        10
+      );
     }
 
     if (process.env.E2E_RETRY_DELAY) {
-      config.testSettings!.retryDelay = parseInt(process.env.E2E_RETRY_DELAY, 10);
+      config.testSettings!.retryDelay = parseInt(
+        process.env.E2E_RETRY_DELAY,
+        10
+      );
     }
 
     if (process.env.E2E_TEST_TIMEOUT) {
-      config.testSettings!.testTimeout = parseInt(process.env.E2E_TEST_TIMEOUT, 10);
+      config.testSettings!.testTimeout = parseInt(
+        process.env.E2E_TEST_TIMEOUT,
+        10
+      );
     }
 
     if (process.env.E2E_VERBOSE_LOGGING === 'true') {
@@ -239,17 +251,28 @@ export class ConfigLoader {
       errors.push('workspace.dealStages must be an array');
     }
 
-    if (!config.workspace?.customFields?.companies || !Array.isArray(config.workspace.customFields.companies)) {
+    if (
+      !config.workspace?.customFields?.companies ||
+      !Array.isArray(config.workspace.customFields.companies)
+    ) {
       errors.push('workspace.customFields.companies must be an array');
     }
 
-    if (!config.workspace?.customFields?.people || !Array.isArray(config.workspace.customFields.people)) {
+    if (
+      !config.workspace?.customFields?.people ||
+      !Array.isArray(config.workspace.customFields.people)
+    ) {
       errors.push('workspace.customFields.people must be an array');
     }
 
     // Validate timeouts
-    if (config.testSettings?.testTimeout && config.testSettings.testTimeout < 10000) {
-      errors.push('testSettings.testTimeout should be at least 10000ms for E2E tests');
+    if (
+      config.testSettings?.testTimeout &&
+      config.testSettings.testTimeout < 10000
+    ) {
+      errors.push(
+        'testSettings.testTimeout should be at least 10000ms for E2E tests'
+      );
     }
 
     if (config.testSettings?.maxRetries && config.testSettings.maxRetries < 1) {
@@ -257,8 +280,13 @@ export class ConfigLoader {
     }
 
     // Validate test data prefix
-    if (config.testData?.testDataPrefix && !config.testData.testDataPrefix.includes('TEST')) {
-      console.warn('Warning: testDataPrefix should contain "TEST" to clearly identify test data');
+    if (
+      config.testData?.testDataPrefix &&
+      !config.testData.testDataPrefix.includes('TEST')
+    ) {
+      console.warn(
+        'Warning: testDataPrefix should contain "TEST" to clearly identify test data'
+      );
     }
 
     if (errors.length > 0) {
@@ -324,14 +352,15 @@ export class ConfigLoader {
    */
   getApiKeyStatus(): { available: boolean; message?: string } {
     const hasKey = this.hasApiKey();
-    
+
     if (!hasKey) {
       return {
         available: false,
-        message: 'ATTIO_API_KEY environment variable is not set. API-dependent tests will be skipped.'
+        message:
+          'ATTIO_API_KEY environment variable is not set. API-dependent tests will be skipped.',
       };
     }
-    
+
     return { available: true };
   }
 

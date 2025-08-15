@@ -1,6 +1,7 @@
 /**
  * Tests for attribute mapping functionality
  */
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 import {
   getAttributeSlug,
   invalidateConfigCache,

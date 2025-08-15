@@ -11,10 +11,11 @@ import { listsToolConfigs } from '../../../src/handlers/tool-configs/lists';
 // Mock axios for API client in case we're skipping real API tests
 vi.mock('axios', async () => {
   const actual = await vi.importActual('axios');
-  
+
   // Check if we should mock based on environment
-  const shouldMock = !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
-  
+  const shouldMock =
+    !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+
   if (shouldMock) {
     return {
       default: {

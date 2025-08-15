@@ -61,31 +61,34 @@ export async function createObjectRecord<T extends AttioRecord>(
       console.log('[createObjectRecord] Calling createRecord with:', {
         objectSlug: normalizedSlug,
         objectId,
-        attributes
+        attributes,
       });
     }
-    
+
     const result = await createRecord<T>({
       objectSlug: normalizedSlug,
       objectId,
       attributes,
     });
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log('[createObjectRecord] createRecord returned:', {
         result,
         hasId: !!result?.id,
         hasValues: !!result?.values,
-        resultType: typeof result
+        resultType: typeof result,
       });
     }
-    
+
     return result;
   } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[createObjectRecord] Primary createRecord failed, trying fallback:', error);
+      console.log(
+        '[createObjectRecord] Primary createRecord failed, trying fallback:',
+        error
+      );
     }
-    
+
     // If it's an error from the original implementation, just pass it through
     if (error instanceof Error) {
       throw error;
@@ -119,7 +122,9 @@ export async function createObjectRecord<T extends AttioRecord>(
           hasData: !!response?.data,
           hasNestedData: !!response?.data?.data,
           dataKeys: response?.data ? Object.keys(response.data) : [],
-          nestedDataKeys: response?.data?.data ? Object.keys(response.data.data) : []
+          nestedDataKeys: response?.data?.data
+            ? Object.keys(response.data.data)
+            : [],
         });
       }
 

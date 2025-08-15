@@ -19,7 +19,7 @@ describe('Email Validation Function', () => {
       'user.example.com',
       '',
       ' ',
-      'user@ex ample.com'
+      'user@ex ample.com',
     ];
 
     for (const invalidEmail of invalidEmails) {
@@ -39,7 +39,7 @@ describe('Email Validation Function', () => {
       'user-name@example.com',
       'user@subdomain.example.com',
       'user@example.co.uk',
-      'User@Example.Com'
+      'User@Example.Com',
     ];
 
     for (const validEmail of validEmails) {

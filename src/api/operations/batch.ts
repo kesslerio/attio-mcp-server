@@ -58,13 +58,13 @@ export async function batchCreateRecords<T extends AttioRecord>(
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
-  
+
   // Validate payload size
   const payloadValidation = validatePayloadSize(params.records);
   if (!payloadValidation.isValid) {
     throw new Error(payloadValidation.error);
   }
-  
+
   const api = getAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
@@ -102,13 +102,13 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
-  
+
   // Validate payload size
   const payloadValidation = validatePayloadSize(params.records);
   if (!payloadValidation.isValid) {
     throw new Error(payloadValidation.error);
   }
-  
+
   const api = getAttioClient();
   const objectPath = getObjectPath(params.objectSlug, params.objectId);
   const path = `${objectPath}/records/batch`;
@@ -154,7 +154,7 @@ export async function executeBatchOperations<T, R>(
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
-  
+
   // Merge with default config, ensuring maxBatchSize doesn't exceed limits
   const batchConfig: BatchConfig = {
     ...DEFAULT_BATCH_CONFIG,
@@ -246,7 +246,7 @@ export async function batchSearchObjects<T extends AttioRecord>(
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
-  
+
   // Convert queries to batch request items
   const operations: BatchRequestItem<string>[] = queries.map(
     (query, index) => ({
@@ -283,7 +283,7 @@ export async function batchGetObjectDetails<T extends AttioRecord>(
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
-  
+
   // Convert record IDs to batch request items
   const operations: BatchRequestItem<string>[] = recordIds.map((recordId) => ({
     params: recordId,

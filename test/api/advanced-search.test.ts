@@ -6,6 +6,7 @@
  * Tests will be skipped if SKIP_INTEGRATION_TESTS is set to true or
  * if ATTIO_API_KEY is not provided.
  */
+import { describe, beforeAll, it, expect, test } from 'vitest';
 import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { advancedSearchObject } from '../../src/api/operations/search';
 import { FilterConditionType, ResourceType } from '../../src/types/attio';

@@ -139,9 +139,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
-      result = { 
+      result = {
         content: [{ type: 'text', text: formattedResult }],
-        isError: false 
+        isError: false,
       };
     } else if (toolType === 'smartSearch') {
       result = await handleSmartSearch(
@@ -217,10 +217,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         resourceType
       );
     } else if (toolType === 'discoverAttributes') {
-      result = await handleDiscoverAttributesOperation(
-        request,
-        toolConfig
-      );
+      result = await handleDiscoverAttributesOperation(request, toolConfig);
     } else if (toolType === 'customFields') {
       result = await handleInfoOperation(request, toolConfig, resourceType);
 
@@ -301,32 +298,30 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Handle generic record operations
     } else if (toolType === 'list') {
-      result = await handleListOperation(
-        request,
-        toolConfig as ToolConfig
-      );
+      result = await handleListOperation(request, toolConfig as ToolConfig);
     } else if (toolType === 'get') {
-      result = await handleGetOperation(
-        request,
-        toolConfig as ToolConfig
-      );
-    
-    // Handle Universal tools (Issue #352 - Universal tool consolidation)
-    } else if (resourceType === 'UNIVERSAL' as any) {
+      result = await handleGetOperation(request, toolConfig as ToolConfig);
+
+      // Handle Universal tools (Issue #352 - Universal tool consolidation)
+    } else if (resourceType === ('UNIVERSAL' as any)) {
       // For universal tools, use the tool's own handler directly
       const args = request.params.arguments;
-      
+
       // Universal tools have their own parameter validation and handling
       const rawResult = await toolConfig.handler(args);
-      
+
       // Universal tools may have different formatResult signatures - handle flexibly
       let formattedResult: string;
-      
+
       // For E2E tests, return raw JSON data instead of formatted strings
       // This allows tests to parse and validate the actual data structures
-      const isE2EMode = process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
-      
-      if (isE2EMode && (toolName === 'create-record' || toolName === 'update-record')) {
+      const isE2EMode =
+        process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
+
+      if (
+        isE2EMode &&
+        (toolName === 'create-record' || toolName === 'update-record')
+      ) {
         // Return raw JSON for record operations in E2E mode
         // Defensive check: Ensure rawResult is valid before stringifying
         if (!rawResult) {
@@ -336,7 +331,11 @@ export async function executeToolRequest(request: CallToolRequest) {
       } else if (toolConfig.formatResult) {
         try {
           // Try with all possible parameters (result, resourceType, infoType)
-          formattedResult = (toolConfig.formatResult as any)(rawResult, args?.resource_type, args?.info_type);
+          formattedResult = (toolConfig.formatResult as any)(
+            rawResult,
+            args?.resource_type,
+            args?.info_type
+          );
         } catch {
           // Fallback to just result if signature mismatch
           formattedResult = (toolConfig.formatResult as any)(rawResult);
@@ -344,20 +343,23 @@ export async function executeToolRequest(request: CallToolRequest) {
       } else {
         formattedResult = JSON.stringify(rawResult, null, 2);
       }
-      
-      result = { 
+
+      result = {
         content: [{ type: 'text', text: formattedResult }],
-        isError: false 
+        isError: false,
       };
-      
-    // Handle General tools (relationship helpers, etc.)
-    } else if (resourceType === 'GENERAL' as any) {
+
+      // Handle General tools (relationship helpers, etc.)
+    } else if (resourceType === ('GENERAL' as any)) {
       // For general tools, use the tool's own handler directly
       const args = request.params.arguments;
       let handlerArgs: any[] = [];
-      
+
       // Map arguments based on tool type
-      if (toolType === 'linkPersonToCompany' || toolType === 'unlinkPersonFromCompany') {
+      if (
+        toolType === 'linkPersonToCompany' ||
+        toolType === 'unlinkPersonFromCompany'
+      ) {
         handlerArgs = [args?.personId, args?.companyId];
       } else if (toolType === 'getPersonCompanies') {
         handlerArgs = [args?.personId];
@@ -367,14 +369,15 @@ export async function executeToolRequest(request: CallToolRequest) {
         // For other general tools, pass arguments as is
         handlerArgs = [args];
       }
-      
+
       const rawResult = await toolConfig.handler(...handlerArgs);
-      const formattedResult = toolConfig.formatResult?.(rawResult) || JSON.stringify(rawResult, null, 2);
-      result = { 
+      const formattedResult =
+        toolConfig.formatResult?.(rawResult) ||
+        JSON.stringify(rawResult, null, 2);
+      result = {
         content: [{ type: 'text', text: formattedResult }],
-        isError: false 
+        isError: false,
       };
-      
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(

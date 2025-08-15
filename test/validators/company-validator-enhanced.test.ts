@@ -1,6 +1,7 @@
 /**
  * Tests for the enhanced company validator with attribute type validation
  */
+import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { CompanyValidator } from '../../src/validators/company-validator.js';
 import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';

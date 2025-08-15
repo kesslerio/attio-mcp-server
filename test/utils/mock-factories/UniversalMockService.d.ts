@@ -21,46 +21,53 @@ import type { AttioRecord } from '../../../src/types/attio.js';
  * across all resource types in the universal handlers system.
  */
 export declare class UniversalMockService {
-    /**
-     * Environment detection function for mock injection
-     * This matches the logic from shared-handlers.ts shouldUseMockData()
-     */
-    private static shouldUseMockData;
-    /**
-     * Creates a company record with mock support
-     *
-     * @param companyData - Company data to create
-     * @returns AttioRecord in universal format or real API result
-     */
-    static createCompany(companyData: Record<string, unknown>): Promise<AttioRecord>;
-    /**
-     * Creates a person record with mock support
-     *
-     * @param personData - Person data to create
-     * @returns AttioRecord in universal format or real API result
-     */
-    static createPerson(personData: Record<string, unknown>): Promise<AttioRecord>;
-    /**
-     * Creates a task record with mock support
-     * Maintains Issue #480 compatibility with dual field support
-     *
-     * @param taskData - Task data to create
-     * @returns AttioRecord in universal format or real API result
-     */
-    static createTask(taskData: Record<string, unknown>): Promise<AttioRecord>;
-    /**
-     * Updates a task record with mock support
-     *
-     * @param taskId - Task ID to update
-     * @param updateData - Update data
-     * @returns AttioRecord in universal format or real API result
-     */
-    static updateTask(taskId: string, updateData: Record<string, unknown>): Promise<AttioRecord>;
-    /**
-     * Checks if mock data should be used based on environment
-     * This provides a public interface for the environment detection logic
-     */
-    static isUsingMockData(): boolean;
+  /**
+   * Environment detection function for mock injection
+   * This matches the logic from shared-handlers.ts shouldUseMockData()
+   */
+  private static shouldUseMockData;
+  /**
+   * Creates a company record with mock support
+   *
+   * @param companyData - Company data to create
+   * @returns AttioRecord in universal format or real API result
+   */
+  static createCompany(
+    companyData: Record<string, unknown>
+  ): Promise<AttioRecord>;
+  /**
+   * Creates a person record with mock support
+   *
+   * @param personData - Person data to create
+   * @returns AttioRecord in universal format or real API result
+   */
+  static createPerson(
+    personData: Record<string, unknown>
+  ): Promise<AttioRecord>;
+  /**
+   * Creates a task record with mock support
+   * Maintains Issue #480 compatibility with dual field support
+   *
+   * @param taskData - Task data to create
+   * @returns AttioRecord in universal format or real API result
+   */
+  static createTask(taskData: Record<string, unknown>): Promise<AttioRecord>;
+  /**
+   * Updates a task record with mock support
+   *
+   * @param taskId - Task ID to update
+   * @param updateData - Update data
+   * @returns AttioRecord in universal format or real API result
+   */
+  static updateTask(
+    taskId: string,
+    updateData: Record<string, unknown>
+  ): Promise<AttioRecord>;
+  /**
+   * Checks if mock data should be used based on environment
+   * This provides a public interface for the environment detection logic
+   */
+  static isUsingMockData(): boolean;
 }
 /**
  * Convenience exports for direct usage

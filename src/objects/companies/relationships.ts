@@ -35,7 +35,7 @@ export async function searchCompaniesByPeople(
   try {
     // Handle the case where we receive just a person ID (from search-by-relationship)
     let filterObject: ListEntryFilters;
-    
+
     if (typeof peopleFilter === 'string') {
       // Create a filter to find companies associated with this person ID
       filterObject = {
@@ -43,9 +43,9 @@ export async function searchCompaniesByPeople(
           {
             attribute: { slug: 'associated_people' },
             condition: 'contains',
-            value: peopleFilter
-          }
-        ]
+            value: peopleFilter,
+          },
+        ],
       };
     } else if (
       typeof peopleFilter === 'object' &&

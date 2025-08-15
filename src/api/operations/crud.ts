@@ -68,10 +68,9 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
-
     // Handle different response structures
     let result: T;
-    
+
     if (response?.data?.data) {
       // Standard nested structure
       result = response.data.data;
@@ -86,12 +85,12 @@ export async function createRecord<T extends AttioRecord>(
     } else {
       throw new Error('Invalid API response structure: no data found');
     }
-    
+
     // Ensure we have a valid record with an ID
     if (!result || !('id' in result)) {
       throw new Error('Invalid API response: record missing ID');
     }
-    
+
     return result;
   }, retryConfig);
 }

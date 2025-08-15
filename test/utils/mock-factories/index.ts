@@ -1,24 +1,24 @@
 /**
  * Mock Factories - Unified Export
- * 
+ *
  * Centralized export for all mock factory classes and utilities.
- * 
+ *
  * This module provides clean separation between test mock data generation
  * and production code, replacing the scattered test environment checks
  * and hardcoded mock data previously embedded in production handlers.
- * 
+ *
  * Architecture Benefits:
  * - Clean separation of concerns (test vs production)
  * - Consistent mock data interfaces across all resource types
  * - Centralized test environment detection
  * - Type-safe mock data generation
  * - Easy extensibility for new resource types
- * 
+ *
  * Usage Examples:
- * 
+ *
  * ```typescript
  * import { TaskMockFactory, TestEnvironment } from '@test/utils/mock-factories';
- * 
+ *
  * if (TestEnvironment.useMocks()) {
  *   const task = TaskMockFactory.create({ content: 'Test task' });
  *   return task;
@@ -28,9 +28,19 @@
 
 // Core mock factory classes
 import { TaskMockFactory, type MockTaskOptions } from './TaskMockFactory.js';
-import { CompanyMockFactory, type MockCompanyOptions } from './CompanyMockFactory.js';
-import { PersonMockFactory, type MockPersonOptions } from './PersonMockFactory.js';
-import { ListMockFactory, type MockListOptions, type MockListEntryOptions } from './ListMockFactory.js';
+import {
+  CompanyMockFactory,
+  type MockCompanyOptions,
+} from './CompanyMockFactory.js';
+import {
+  PersonMockFactory,
+  type MockPersonOptions,
+} from './PersonMockFactory.js';
+import {
+  ListMockFactory,
+  type MockListOptions,
+  type MockListEntryOptions,
+} from './ListMockFactory.js';
 
 export { TaskMockFactory, type MockTaskOptions };
 export { CompanyMockFactory, type MockCompanyOptions };
@@ -42,116 +52,130 @@ import { UniversalMockService } from './UniversalMockService.js';
 export { UniversalMockService };
 
 // Test environment utilities
-import { 
+import {
   TestEnvironment,
   isTestEnvironment,
   shouldUseMockData,
   isDevelopmentEnvironment,
   isContinuousIntegrationEnvironment,
-  getTestContext
+  getTestContext,
 } from './test-environment.js';
 
-export { 
+export {
   TestEnvironment,
   isTestEnvironment,
   shouldUseMockData,
   isDevelopmentEnvironment,
   isContinuousIntegrationEnvironment,
-  getTestContext
+  getTestContext,
 };
 
 // Base mock factory interface
 export type { MockFactory } from './TaskMockFactory.js';
 
 // Type imports for external use
-import type { AttioTask, AttioRecord, AttioList, AttioListEntry } from '../../../src/types/attio.js';
+import type {
+  AttioTask,
+  AttioRecord,
+  AttioList,
+  AttioListEntry,
+} from '../../../src/types/attio.js';
 export type { AttioTask, AttioRecord, AttioList, AttioListEntry };
 
 /**
  * Universal Mock Factory - Factory selector based on resource type
- * 
+ *
  * Provides a unified interface for creating mock data for any resource type.
  * This simplifies mock data injection in production code that needs to
  * support multiple resource types.
- * 
+ *
  * @example
  * ```typescript
- * const mockData = UniversalMockFactory.create('tasks', { 
- *   content: 'Test task content' 
+ * const mockData = UniversalMockFactory.create('tasks', {
+ *   content: 'Test task content'
  * });
  * ```
  */
 export class UniversalMockFactory {
   /**
    * Creates mock data for the specified resource type
-   * 
+   *
    * @param resourceType - The type of resource to create mock data for
    * @param overrides - Optional overrides for specific fields
    * @returns Mock data matching the resource type
    */
-  static create(resourceType: string, overrides: Record<string, unknown> = {}): unknown {
+  static create(
+    resourceType: string,
+    overrides: Record<string, unknown> = {}
+  ): unknown {
     switch (resourceType.toLowerCase()) {
       case 'tasks':
         return TaskMockFactory.create(overrides);
-      
+
       case 'companies':
         return CompanyMockFactory.create(overrides);
-      
+
       case 'people':
         return PersonMockFactory.create(overrides);
-      
+
       case 'lists':
         return ListMockFactory.create(overrides);
-      
+
       default:
-        throw new Error(`Unsupported resource type for mock data generation: ${resourceType}`);
+        throw new Error(
+          `Unsupported resource type for mock data generation: ${resourceType}`
+        );
     }
   }
 
   /**
    * Creates multiple mock data items for the specified resource type
-   * 
+   *
    * @param resourceType - The type of resource to create mock data for
    * @param count - Number of items to create
    * @param overrides - Optional overrides for specific fields
    * @returns Array of mock data matching the resource type
    */
   static createMultiple(
-    resourceType: string, 
-    count: number, 
+    resourceType: string,
+    count: number,
     overrides: Record<string, unknown> = {}
   ): unknown[] {
     switch (resourceType.toLowerCase()) {
       case 'tasks':
         return TaskMockFactory.createMultiple(count, overrides);
-      
+
       case 'companies':
         return CompanyMockFactory.createMultiple(count, overrides);
-      
+
       case 'people':
         return PersonMockFactory.createMultiple(count, overrides);
-      
+
       case 'lists':
         return ListMockFactory.createMultiple(count, overrides);
-      
+
       default:
-        throw new Error(`Unsupported resource type for mock data generation: ${resourceType}`);
+        throw new Error(
+          `Unsupported resource type for mock data generation: ${resourceType}`
+        );
     }
   }
 
   /**
    * Checks if mock data is supported for the given resource type
-   * 
+   *
    * @param resourceType - The resource type to check
    * @returns True if mock data is supported, false otherwise
    */
   static isSupported(resourceType: string): boolean {
-    return ['tasks', 'companies', 'people', 'lists'].includes(resourceType.toLowerCase());
+    return ['tasks', 'companies', 'people', 'lists'].includes(
+      resourceType.toLowerCase()
+    );
   }
 
   /**
    * Gets all supported resource types
-   * 
+   *
    * @returns Array of supported resource type names
    */
   static getSupportedTypes(): string[] {
@@ -166,9 +190,9 @@ export class UniversalMockFactory {
  */
 export const MockFactories = {
   Task: TaskMockFactory,
-  Company: CompanyMockFactory, 
+  Company: CompanyMockFactory,
   Person: PersonMockFactory,
-  List: ListMockFactory
+  List: ListMockFactory,
 } as const;
 
 /**
@@ -178,22 +202,26 @@ export const QuickMocks = {
   /**
    * Generate a complete task with realistic data
    */
-  task: (overrides?: Record<string, unknown>) => TaskMockFactory.create(overrides),
-  
+  task: (overrides?: Record<string, unknown>) =>
+    TaskMockFactory.create(overrides),
+
   /**
    * Generate a complete company with realistic data
    */
-  company: (overrides?: Record<string, unknown>) => CompanyMockFactory.create(overrides),
-  
+  company: (overrides?: Record<string, unknown>) =>
+    CompanyMockFactory.create(overrides),
+
   /**
    * Generate a complete person with realistic data
    */
-  person: (overrides?: Record<string, unknown>) => PersonMockFactory.create(overrides),
-  
+  person: (overrides?: Record<string, unknown>) =>
+    PersonMockFactory.create(overrides),
+
   /**
    * Generate a complete list with realistic data
    */
-  list: (overrides?: Record<string, unknown>) => ListMockFactory.create(overrides),
+  list: (overrides?: Record<string, unknown>) =>
+    ListMockFactory.create(overrides),
 
   /**
    * Generate a realistic sales scenario with related records
@@ -202,8 +230,8 @@ export const QuickMocks = {
     company: CompanyMockFactory.createTechnology(),
     contacts: PersonMockFactory.createMultiple(3),
     tasks: TaskMockFactory.createMultiple(5),
-    list: ListMockFactory.createCompanyList({ name: 'Sales Prospects' })
-  })
+    list: ListMockFactory.createCompanyList({ name: 'Sales Prospects' }),
+  }),
 } as const;
 
 // Export MockDataInjector separately from its own file
@@ -221,5 +249,5 @@ export default {
   UniversalMockService,
   TestEnvironment,
   MockFactories,
-  QuickMocks
+  QuickMocks,
 };

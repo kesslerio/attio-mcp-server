@@ -11,10 +11,7 @@ import {
   batchCreateObjectRecords,
   batchUpdateObjectRecords,
 } from '../../../objects/records/index.js';
-import {
-  BatchConfig,
-  BatchResponse,
-} from '../../../api/operations/index.js';
+import { BatchConfig, BatchResponse } from '../../../api/operations/index.js';
 import { ToolConfig } from '../../tool-types.js';
 
 // Type definitions for record operations
@@ -309,7 +306,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'list-records',
-    description: 'List CRM records with filtering options (companies, people, etc.)',
+    description:
+      'List CRM records with filtering options (companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -355,7 +353,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-create-records',
-    description: 'Create multiple CRM records in a single batch operation (bulk import companies, people, etc.)',
+    description:
+      'Create multiple CRM records in a single batch operation (bulk import companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -380,7 +379,8 @@ export const recordToolDefinitions = [
   },
   {
     name: 'batch-update-records',
-    description: 'Update multiple CRM records in a single batch operation (bulk update companies, people, etc.)',
+    description:
+      'Update multiple CRM records in a single batch operation (bulk update companies, people, etc.)',
     inputSchema: {
       type: 'object',
       properties: {

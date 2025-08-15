@@ -1,6 +1,7 @@
 /**
  * Tests for list ID validation to prevent injection attacks
  */
+import { describe, it, expect } from 'vitest';
 import { isValidListId, isValidId } from '../../src/utils/validation';
 
 describe('List ID Validation', () => {

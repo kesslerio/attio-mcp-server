@@ -1,9 +1,9 @@
 /**
  * Lists Management E2E Tests
- * 
+ *
  * Comprehensive end-to-end testing of lists-related MCP tools
  * including CRUD operations, filtering, membership management, and error scenarios.
- * 
+ *
  * Tools tested (now using universal tools with automatic migration):
  * - get-lists → search-records (resource_type: 'lists')
  * - get-list-details → get-record-details (resource_type: 'lists')
@@ -18,29 +18,37 @@
  * - filter-list-entries-by-parent-id → search-by-relationship
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { loadE2EConfig } from '../utils/config-loader.js';
-import { 
-  CompanyFactory, 
-  PersonFactory, 
+import {
+  CompanyFactory,
+  PersonFactory,
   ListFactory,
-  TestScenarios
+  TestScenarios,
 } from '../fixtures/index.js';
 import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Import enhanced tool caller with logging and migration
-import { 
+import {
   callListTool,
   validateTestEnvironment,
-  getToolMigrationStats
+  getToolMigrationStats,
 } from '../utils/enhanced-tool-caller.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
 
 /**
  * Lists Management E2E Test Suite
- * 
+ *
  * Tests comprehensive list management functionality including:
  * - List discovery and details retrieval
  * - Entry management (add, remove, update)
@@ -64,40 +72,43 @@ function trackForCleanup(type: string, id: string, data?: any): void {
   E2ETestBase.trackForCleanup(type as any, id, data);
 }
 
-describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')('Lists Management E2E Tests', () => {
+describe.skipIf(
+  !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
+)('Lists Management E2E Tests', () => {
   // Test data storage
   const testCompanies: TestDataObject[] = [];
   const testPeople: TestDataObject[] = [];
   const testLists: TestDataObject[] = [];
   let listEntries: TestDataObject[] = [];
-  
-  beforeAll(async () => {
 
+  beforeAll(async () => {
     // Start comprehensive logging for this test suite
     startTestSuite('lists-management');
-    
+
     // Validate test environment and tool migration setup
     const envValidation = await validateTestEnvironment();
     if (!envValidation.valid) {
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     }
-    
+
     console.log('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
       requiresRealApi: false, // Use mock data instead of real API for reliable testing
       cleanupAfterTests: true,
-      timeout: 120000
+      timeout: 120000,
     });
-    
+
     console.log('🚀 Starting Lists Management E2E Tests with Universal Tools');
   }, 120000);
 
   afterAll(async () => {
     // End comprehensive logging for this test suite
     endTestSuite();
-    
-    console.log('✅ Lists Management E2E Tests completed with enhanced logging');
+
+    console.log(
+      '✅ Lists Management E2E Tests completed with enhanced logging'
+    );
   }, 30000);
 
   beforeEach(() => {
@@ -107,19 +118,24 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   describe('List Discovery', () => {
     it('should retrieve all available lists', async () => {
       const response = await callListTool('get-lists', {});
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const data = E2EAssertions.expectMcpData(response);
-      
+
       expect(data).toBeDefined();
-      expect(Array.isArray(data) || (data && Array.isArray((data as any).data))).toBe(true);
-      
-      console.log('📋 Found lists:', Array.isArray(data) ? data.length : (data as any)?.data?.length || 0);
+      expect(
+        Array.isArray(data) || (data && Array.isArray((data as any).data))
+      ).toBe(true);
+
+      console.log(
+        '📋 Found lists:',
+        Array.isArray(data) ? data.length : (data as any)?.data?.length || 0
+      );
     }, 30000);
 
     it('should handle empty lists response gracefully', async () => {
       const response = await callListTool('get-lists', {});
-      
+
       E2EAssertions.expectMcpSuccess(response);
       // Even if no lists exist, the response should be valid
       const data = E2EAssertions.expectMcpData(response);
@@ -134,13 +150,19 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Get a list to work with
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
-      
+
       if (Array.isArray(listsData) && listsData.length > 0) {
         availableListId = listsData[0].id?.list_id || listsData[0].id;
-      } else if (listsData && Array.isArray((listsData as any).data) && (listsData as any).data.length > 0) {
-        availableListId = (listsData as any).data[0].id?.list_id || (listsData as any).data[0].id;
+      } else if (
+        listsData &&
+        Array.isArray((listsData as any).data) &&
+        (listsData as any).data.length > 0
+      ) {
+        availableListId =
+          (listsData as any).data[0].id?.list_id ||
+          (listsData as any).data[0].id;
       }
-      
+
       if (!availableListId) {
         console.warn('⚠️ No existing lists found - some tests may be skipped');
       }
@@ -153,26 +175,34 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       }
 
       const response = await callListTool('get-list-details', {
-        listId: availableListId
+        listId: availableListId,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const listDetails = E2EAssertions.expectMcpData(response);
-      
+
       expect(listDetails).toBeDefined();
       expect(listDetails.id).toBeDefined();
       expect(listDetails.name || listDetails.title).toBeDefined();
-      expect(listDetails.object_slug || listDetails.parent_object).toBeDefined();
-      
-      console.log('📄 List details retrieved for:', listDetails.name || listDetails.title);
+      expect(
+        listDetails.object_slug || listDetails.parent_object
+      ).toBeDefined();
+
+      console.log(
+        '📄 List details retrieved for:',
+        listDetails.name || listDetails.title
+      );
     }, 30000);
 
     it('should handle invalid list ID gracefully', async () => {
       const response = await callListTool('get-list-details', {
-        listId: 'invalid-list-id-12345'
+        listId: 'invalid-list-id-12345',
       });
-      
-      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
+
+      E2EAssertions.expectMcpError(
+        response,
+        /not found|invalid|does not exist|missing required parameter/i
+      );
     }, 15000);
 
     it('should validate list structure', async () => {
@@ -182,9 +212,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       }
 
       const response = await callListTool('get-list-details', {
-        listId: availableListId
+        listId: availableListId,
       });
-      
+
       const listDetails = E2EAssertions.expectMcpData(response);
       E2EAssertions.expectListRecord(listDetails);
     }, 15000);
@@ -199,25 +229,30 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Get a list to work with
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
-      
+
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       // Find a company or people list
-      const companyList = lists.find(list => 
-        (list.object_slug === 'companies' || list.parent_object === 'companies')
+      const companyList = lists.find(
+        (list) =>
+          list.object_slug === 'companies' || list.parent_object === 'companies'
       );
-      const peopleList = lists.find(list => 
-        (list.object_slug === 'people' || list.parent_object === 'people')
+      const peopleList = lists.find(
+        (list) =>
+          list.object_slug === 'people' || list.parent_object === 'people'
       );
-      
-      workingListId = companyList?.id?.list_id || companyList?.id || 
-                     peopleList?.id?.list_id || peopleList?.id;
-      
+
+      workingListId =
+        companyList?.id?.list_id ||
+        companyList?.id ||
+        peopleList?.id?.list_id ||
+        peopleList?.id;
+
       if (!workingListId) {
         console.warn('⚠️ No suitable lists found - some tests may be skipped');
       }
@@ -225,7 +260,10 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Create test data
       if (workingListId) {
         const companyData = CompanyFactory.create();
-        const companyResponse = await callListTool('create-company', companyData);
+        const companyResponse = await callListTool(
+          'create-company',
+          companyData
+        );
         testCompany = E2EAssertions.expectMcpData(companyResponse);
         testCompanies.push(testCompany);
 
@@ -238,22 +276,29 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
     it('should retrieve list entries', async () => {
       if (!workingListId) {
-        console.log('⏭️ Skipping list entries test - no suitable list available');
+        console.log(
+          '⏭️ Skipping list entries test - no suitable list available'
+        );
         return;
       }
 
       const response = await callListTool('get-list-entries', {
         listId: workingListId,
-        limit: 10
+        limit: 10,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
-      
+
       expect(entries).toBeDefined();
-      expect(Array.isArray(entries) || (entries && Array.isArray((entries as any).data))).toBe(true);
-      
-      const entryList = Array.isArray(entries) ? entries : (entries as any)?.data || [];
+      expect(
+        Array.isArray(entries) ||
+          (entries && Array.isArray((entries as any).data))
+      ).toBe(true);
+
+      const entryList = Array.isArray(entries)
+        ? entries
+        : (entries as any)?.data || [];
       console.log('📝 List entries found:', entryList.length);
     }, 30000);
 
@@ -266,9 +311,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('get-list-entries', {
         listId: workingListId,
         limit: 5,
-        offset: 0
+        offset: 0,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
       expect(entries).toBeDefined();
@@ -276,7 +321,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
     it('should add a record to a list', async () => {
       if (!workingListId || !testCompany) {
-        console.log('⏭️ Skipping add record test - prerequisites not available');
+        console.log(
+          '⏭️ Skipping add record test - prerequisites not available'
+        );
         return;
       }
 
@@ -285,21 +332,26 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         recordId: testCompany.id.record_id,
         objectType: 'companies',
         initialValues: {
-          stage: 'Prospect'
-        }
+          stage: 'Prospect',
+        },
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const listEntry = E2EAssertions.expectMcpData(response);
-      
+
       expect(listEntry).toBeDefined();
       expect(listEntry.id?.entry_id || listEntry.entry_id).toBeDefined();
-      expect(listEntry.record_id || listEntry.parent_record_id).toBe(testCompany.id.record_id);
-      
+      expect(listEntry.record_id || listEntry.parent_record_id).toBe(
+        testCompany.id.record_id
+      );
+
       // Store for cleanup
       listEntries.push(listEntry);
-      
-      console.log('➕ Added record to list:', listEntry.id?.entry_id || listEntry.entry_id);
+
+      console.log(
+        '➕ Added record to list:',
+        listEntry.id?.entry_id || listEntry.entry_id
+      );
     }, 30000);
 
     it('should prevent duplicate records in lists', async () => {
@@ -311,13 +363,15 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('add-record-to-list', {
         listId: workingListId,
         recordId: testCompany.id.record_id,
-        objectType: 'companies'
+        objectType: 'companies',
       });
-      
+
       // This might succeed or fail depending on list configuration
       // We should handle both cases gracefully
       if (response.isError) {
-        expect(response.error).toMatch(/already exists|duplicate|already in list/i);
+        expect(response.error).toMatch(
+          /already exists|duplicate|already in list/i
+        );
       } else {
         // If it succeeds, it might return the existing entry
         const entry = E2EAssertions.expectMcpData(response);
@@ -338,16 +392,16 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         listId: workingListId,
         entryId: entryId,
         attributes: {
-          stage: 'Qualified'
-        }
+          stage: 'Qualified',
+        },
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const updatedEntry = E2EAssertions.expectMcpData(response);
-      
+
       expect(updatedEntry).toBeDefined();
       expect(updatedEntry.id?.entry_id || updatedEntry.entry_id).toBe(entryId);
-      
+
       console.log('✏️ Updated list entry:', entryId);
     }, 30000);
 
@@ -362,14 +416,16 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
       const response = await callListTool('remove-record-from-list', {
         listId: workingListId,
-        entryId: entryId
+        entryId: entryId,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
-      
+
       // Remove from our tracking
-      listEntries = listEntries.filter(e => (e.id?.entry_id || e.entry_id) !== entryId);
-      
+      listEntries = listEntries.filter(
+        (e) => (e.id?.entry_id || e.entry_id) !== entryId
+      );
+
       console.log('➖ Removed record from list:', entryId);
     }, 30000);
 
@@ -381,10 +437,13 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
       const response = await callListTool('remove-record-from-list', {
         listId: workingListId,
-        entryId: 'non-existent-entry-id-12345'
+        entryId: 'non-existent-entry-id-12345',
       });
-      
-      E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
+
+      E2EAssertions.expectMcpError(
+        response,
+        /not found|invalid|does not exist|missing required parameter/i
+      );
     }, 15000);
   });
 
@@ -395,14 +454,14 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       // Get a list for filtering tests
       const listsResponse = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(listsResponse);
-      
+
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
         lists = listsData;
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       filterListId = lists[0]?.id?.list_id || lists[0]?.id;
     });
 
@@ -417,16 +476,24 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         attributeSlug: 'stage',
         condition: 'is_not_empty',
         value: null,
-        limit: 10
+        limit: 10,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
-      
+
       expect(filteredEntries).toBeDefined();
-      expect(Array.isArray(filteredEntries) || (filteredEntries && Array.isArray((filteredEntries as any).data))).toBe(true);
-      
-      console.log('🔍 Filtered entries found:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
+      expect(
+        Array.isArray(filteredEntries) ||
+          (filteredEntries && Array.isArray((filteredEntries as any).data))
+      ).toBe(true);
+
+      console.log(
+        '🔍 Filtered entries found:',
+        Array.isArray(filteredEntries)
+          ? filteredEntries.length
+          : (filteredEntries as any)?.data?.length || 0
+      );
     }, 30000);
 
     it('should perform advanced filtering with multiple conditions', async () => {
@@ -442,19 +509,24 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
             {
               attribute: { slug: 'stage' },
               condition: 'is_not_empty',
-              value: null
-            }
+              value: null,
+            },
           ],
-          matchAny: false
+          matchAny: false,
         },
-        limit: 5
+        limit: 5,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
-      
+
       expect(filteredEntries).toBeDefined();
-      console.log('🔬 Advanced filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
+      console.log(
+        '🔬 Advanced filtered entries:',
+        Array.isArray(filteredEntries)
+          ? filteredEntries.length
+          : (filteredEntries as any)?.data?.length || 0
+      );
     }, 30000);
 
     it('should handle empty filter results', async () => {
@@ -468,15 +540,17 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         attributeSlug: 'stage',
         condition: 'equals',
         value: 'NonExistentStageValue12345',
-        limit: 10
+        limit: 10,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
-      
+
       // Empty results should still be valid
       expect(filteredEntries).toBeDefined();
-      const entryCount = Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0;
+      const entryCount = Array.isArray(filteredEntries)
+        ? filteredEntries.length
+        : (filteredEntries as any)?.data?.length || 0;
       expect(entryCount).toBe(0);
     }, 15000);
 
@@ -492,19 +566,26 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         parentAttributeSlug: 'name',
         condition: 'is_not_empty',
         value: null,
-        limit: 5
+        limit: 5,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
-      
+
       expect(filteredEntries).toBeDefined();
-      console.log('👨‍👩‍👧‍👦 Parent-filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
+      console.log(
+        '👨‍👩‍👧‍👦 Parent-filtered entries:',
+        Array.isArray(filteredEntries)
+          ? filteredEntries.length
+          : (filteredEntries as any)?.data?.length || 0
+      );
     }, 30000);
 
     it('should filter entries by specific parent record ID', async () => {
       if (!filterListId || testCompanies.length === 0) {
-        console.log('⏭️ Skipping parent ID filter test - prerequisites not available');
+        console.log(
+          '⏭️ Skipping parent ID filter test - prerequisites not available'
+        );
         return;
       }
 
@@ -512,21 +593,28 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('filter-list-entries-by-parent-id', {
         listId: filterListId,
         recordId: testCompany.id.record_id,
-        limit: 10
+        limit: 10,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
-      
+
       expect(filteredEntries).toBeDefined();
-      console.log('🎯 Parent ID filtered entries:', Array.isArray(filteredEntries) ? filteredEntries.length : (filteredEntries as any)?.data?.length || 0);
+      console.log(
+        '🎯 Parent ID filtered entries:',
+        Array.isArray(filteredEntries)
+          ? filteredEntries.length
+          : (filteredEntries as any)?.data?.length || 0
+      );
     }, 30000);
   });
 
   describe('Record List Memberships', () => {
     it('should find all lists containing a specific record', async () => {
       if (testCompanies.length === 0) {
-        console.log('⏭️ Skipping membership test - no test companies available');
+        console.log(
+          '⏭️ Skipping membership test - no test companies available'
+        );
         return;
       }
 
@@ -535,17 +623,17 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         recordId: testCompany.id.record_id,
         objectType: 'companies',
         includeEntryValues: true,
-        batchSize: 5
+        batchSize: 5,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
-      
+
       expect(memberships).toBeDefined();
       expect(Array.isArray(memberships)).toBe(true);
-      
+
       console.log('🏷️ List memberships found:', memberships.length);
-      
+
       // Validate membership structure
       if (memberships.length > 0) {
         const membership = memberships[0];
@@ -557,7 +645,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
     it('should handle record with no list memberships', async () => {
       if (testPeople.length === 0) {
-        console.log('⏭️ Skipping no membership test - no test people available');
+        console.log(
+          '⏭️ Skipping no membership test - no test people available'
+        );
         return;
       }
 
@@ -565,12 +655,12 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('get-record-list-memberships', {
         recordId: testPerson.id.record_id,
         objectType: 'people',
-        includeEntryValues: false
+        includeEntryValues: false,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
-      
+
       expect(memberships).toBeDefined();
       expect(Array.isArray(memberships)).toBe(true);
       // memberships might be empty, which is valid
@@ -578,7 +668,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
 
     it('should validate batch size parameter', async () => {
       if (testCompanies.length === 0) {
-        console.log('⏭️ Skipping batch size test - no test companies available');
+        console.log(
+          '⏭️ Skipping batch size test - no test companies available'
+        );
         return;
       }
 
@@ -586,9 +678,9 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('get-record-list-memberships', {
         recordId: testCompany.id.record_id,
         objectType: 'companies',
-        batchSize: 1
+        batchSize: 1,
       });
-      
+
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
       expect(memberships).toBeDefined();
@@ -598,34 +690,37 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
   describe('Error Handling and Edge Cases', () => {
     it('should handle invalid list ID in various operations', async () => {
       const invalidListId = 'invalid-list-id-12345';
-      
+
       // Test multiple operations with invalid list ID
       const operations = [
         { tool: 'get-list-details', params: { listId: invalidListId } },
         { tool: 'get-list-entries', params: { listId: invalidListId } },
-        { 
-          tool: 'filter-list-entries', 
-          params: { 
-            listId: invalidListId, 
-            attributeSlug: 'stage', 
-            condition: 'equals', 
-            value: 'test' 
-          } 
-        }
+        {
+          tool: 'filter-list-entries',
+          params: {
+            listId: invalidListId,
+            attributeSlug: 'stage',
+            condition: 'equals',
+            value: 'test',
+          },
+        },
       ];
 
       for (const op of operations) {
         const response = await callListTool(op.tool, op.params);
-        E2EAssertions.expectMcpError(response, /not found|invalid|does not exist|missing required parameter/i);
+        E2EAssertions.expectMcpError(
+          response,
+          /not found|invalid|does not exist|missing required parameter/i
+        );
       }
     }, 30000);
 
     it('should handle invalid record ID in membership operations', async () => {
       const response = await callListTool('get-record-list-memberships', {
         recordId: 'invalid-record-id-12345',
-        objectType: 'companies'
+        objectType: 'companies',
       });
-      
+
       // This might return empty results or an error depending on implementation
       if (response.isError) {
         E2EAssertions.expectMcpError(response, /not found|invalid/i);
@@ -647,21 +742,21 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
         } else if (listsData && Array.isArray((listsData as any).data)) {
           lists = (listsData as any).data;
         }
-        
+
         if (lists.length === 0) {
           console.log('⏭️ Skipping invalid filter test - no lists available');
           return;
         }
-        
+
         const listId = lists[0].id?.list_id || lists[0].id;
-        
+
         const response = await callListTool('filter-list-entries', {
           listId: listId,
           attributeSlug: 'nonexistent_attribute',
           condition: 'equals',
-          value: 'test'
+          value: 'test',
         });
-        
+
         // Should handle gracefully - might return empty results or error
         if (response.isError) {
           expect(response.error).toBeDefined();
@@ -681,26 +776,26 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       if (lists.length === 0) {
         console.log('⏭️ Skipping malformed filter test - no lists available');
         return;
       }
-      
+
       const listId = lists[0].id?.list_id || lists[0].id;
-      
+
       const response = await callListTool('advanced-filter-list-entries', {
         listId: listId,
         filters: {
           filters: [
             {
               // Missing required fields
-              condition: 'equals'
-            }
-          ]
-        }
+              condition: 'equals',
+            },
+          ],
+        },
       });
-      
+
       E2EAssertions.expectMcpError(response);
     }, 15000);
 
@@ -721,21 +816,21 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       if (lists.length === 0) {
         console.log('⏭️ Skipping pagination test - no lists available');
         return;
       }
-      
+
       const listId = lists[0].id?.list_id || lists[0].id;
-      
+
       // Test with small page size
       const paginatedResponse = await callListTool('get-list-entries', {
         listId: listId,
         limit: 2,
-        offset: 0
+        offset: 0,
       });
-      
+
       E2EAssertions.expectMcpSuccess(paginatedResponse);
       const entries = E2EAssertions.expectMcpData(paginatedResponse);
       expect(entries).toBeDefined();
@@ -745,15 +840,15 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const promises = [
         callListTool('get-lists', {}),
         callListTool('get-lists', {}),
-        callListTool('get-lists', {})
+        callListTool('get-lists', {}),
       ];
-      
+
       const responses = await Promise.all(promises);
-      
-      responses.forEach(response => {
+
+      responses.forEach((response) => {
         E2EAssertions.expectMcpSuccess(response);
       });
-      
+
       console.log('🚀 Concurrent operations completed successfully');
     }, 30000);
 
@@ -766,38 +861,43 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       if (lists.length === 0) {
-        console.log('⏭️ Skipping complex filter performance test - no lists available');
+        console.log(
+          '⏭️ Skipping complex filter performance test - no lists available'
+        );
         return;
       }
-      
+
       const listId = lists[0].id?.list_id || lists[0].id;
-      
+
       const startTime = Date.now();
-      
-      const complexFilterResponse = await callListTool('advanced-filter-list-entries', {
-        listId: listId,
-        filters: {
-          filters: [
-            {
-              attribute: { slug: 'stage' },
-              condition: 'is_not_empty',
-              value: null,
-              logicalOperator: 'and'
-            }
-          ],
-          matchAny: false
-        },
-        limit: 20
-      });
-      
+
+      const complexFilterResponse = await callListTool(
+        'advanced-filter-list-entries',
+        {
+          listId: listId,
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'stage' },
+                condition: 'is_not_empty',
+                value: null,
+                logicalOperator: 'and',
+              },
+            ],
+            matchAny: false,
+          },
+          limit: 20,
+        }
+      );
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       E2EAssertions.expectMcpSuccess(complexFilterResponse);
       expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
-      
+
       console.log(`⚡ Complex filter completed in ${executionTime}ms`);
     }, 15000);
   });
@@ -807,32 +907,38 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       const response = await callListTool('get-lists', {});
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
-      
+
       if (Array.isArray(listsData)) {
         lists = listsData;
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       if (lists.length === 0) {
         console.log('⏭️ Skipping consistency test - no lists available');
         return;
       }
-      
+
       const listId = lists[0].id?.list_id || lists[0].id;
-      
+
       const entriesResponse = await callListTool('get-list-entries', {
         listId: listId,
-        limit: 5
+        limit: 5,
       });
-      
+
       E2EAssertions.expectMcpSuccess(entriesResponse);
       const entries = E2EAssertions.expectMcpData(entriesResponse);
-      
+
       if (Array.isArray(entries) && entries.length > 0) {
         entries.forEach((entry, index) => {
-          expect(entry.id || entry.entry_id, `Entry ${index} should have ID`).toBeDefined();
-          expect(entry.record_id || entry.parent_record_id, `Entry ${index} should have record ID`).toBeDefined();
+          expect(
+            entry.id || entry.entry_id,
+            `Entry ${index} should have ID`
+          ).toBeDefined();
+          expect(
+            entry.record_id || entry.parent_record_id,
+            `Entry ${index} should have record ID`
+          ).toBeDefined();
         });
       }
     }, 20000);
@@ -846,22 +952,22 @@ describe.skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'tr
       } else if (listsData && Array.isArray((listsData as any).data)) {
         lists = (listsData as any).data;
       }
-      
+
       if (lists.length === 0) {
         console.log('⏭️ Skipping special characters test - no lists available');
         return;
       }
-      
+
       const listId = lists[0].id?.list_id || lists[0].id;
-      
+
       const specialValueResponse = await callListTool('filter-list-entries', {
         listId: listId,
         attributeSlug: 'stage',
         condition: 'contains',
         value: 'Test™ & Co. "Special" #1',
-        limit: 5
+        limit: 5,
       });
-      
+
       // Should handle gracefully even with special characters
       E2EAssertions.expectMcpSuccess(specialValueResponse);
       const results = E2EAssertions.expectMcpData(specialValueResponse);

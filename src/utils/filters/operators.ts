@@ -201,12 +201,12 @@ export function simplifyFilters(filters: ListEntryFilters): ListEntryFilters {
 
   // Group filters by attribute
   filters.filters?.forEach((filter) => {
-      const key = filter.attribute.slug;
-      if (!filterMap.has(key)) {
-        filterMap.set(key, []);
-      }
-      filterMap.get(key)!.push(filter);
-    });
+    const key = filter.attribute.slug;
+    if (!filterMap.has(key)) {
+      filterMap.set(key, []);
+    }
+    filterMap.get(key)!.push(filter);
+  });
 
   // Simplify each group
   filterMap.forEach((filterGroup) => {

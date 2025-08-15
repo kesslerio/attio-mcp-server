@@ -1,18 +1,18 @@
 /**
  * Custom E2E Test Assertions
- * 
+ *
  * Provides specialized assertions for E2E testing scenarios,
  * including MCP response validation and Attio API response checking.
  */
 import { expect } from 'vitest';
 import { configLoader } from './config-loader.js';
-import type { 
-  McpResponseData, 
-  ExpectedDataShape, 
+import type {
+  McpResponseData,
+  ExpectedDataShape,
   AttioRecordValues,
   TestDataObject,
   SearchResultItem,
-  BatchOperationResult
+  BatchOperationResult,
 } from '../types/index.js';
 
 /**
@@ -65,15 +65,25 @@ export class E2EAssertions {
   /**
    * Enhanced pagination validation for universal tools
    */
-  static expectValidPagination(response: McpToolResponse, expectedLimit?: number): void {
+  static expectValidPagination(
+    response: McpToolResponse,
+    expectedLimit?: number
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     if (expectedLimit && response.content) {
       const text = response.content[0]?.text || '';
       // Check if response mentions pagination limits
-      if (text.includes('limit') || text.includes('found') || text.includes('returned')) {
+      if (
+        text.includes('limit') ||
+        text.includes('found') ||
+        text.includes('returned')
+      ) {
         // Basic validation that limit was respected (if data was returned)
-        expect(text, 'Response should acknowledge limit parameter').toBeDefined();
+        expect(
+          text,
+          'Response should acknowledge limit parameter'
+        ).toBeDefined();
       }
     }
   }
@@ -81,19 +91,27 @@ export class E2EAssertions {
   /**
    * Field filtering validation for get-record-details and get-attributes
    */
-  static expectFieldFiltering(response: McpToolResponse, requestedFields?: string[]): void {
+  static expectFieldFiltering(
+    response: McpToolResponse,
+    requestedFields?: string[]
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     if (requestedFields && requestedFields.length > 0 && response.content) {
       const responseText = response.content[0]?.text || '';
-      
+
       // Verify that response contains some indication of field filtering
       if (requestedFields.length === 1) {
-        expect(responseText.toLowerCase(), `Response should contain requested field: ${requestedFields[0]}`)
-          .toContain(requestedFields[0].toLowerCase().replace('_', ' '));
+        expect(
+          responseText.toLowerCase(),
+          `Response should contain requested field: ${requestedFields[0]}`
+        ).toContain(requestedFields[0].toLowerCase().replace('_', ' '));
       } else {
         // For multiple fields, at least check that the response is structured
-        expect(responseText, 'Field-filtered response should contain structured data').toBeTruthy();
+        expect(
+          responseText,
+          'Field-filtered response should contain structured data'
+        ).toBeTruthy();
       }
     }
   }
@@ -101,23 +119,37 @@ export class E2EAssertions {
   /**
    * Tasks resource type validation
    */
-  static expectValidTasksIntegration(response: McpToolResponse, operation: string): void {
+  static expectValidTasksIntegration(
+    response: McpToolResponse,
+    operation: string
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     const responseText = response.content?.[0]?.text || '';
-    
+
     switch (operation) {
       case 'search':
-        expect(responseText, 'Tasks search should return valid response').toBeDefined();
+        expect(
+          responseText,
+          'Tasks search should return valid response'
+        ).toBeDefined();
         if (responseText.includes('task')) {
-          expect(responseText, 'Tasks response should mention task-related content').toContain('task');
+          expect(
+            responseText,
+            'Tasks response should mention task-related content'
+          ).toContain('task');
         }
         break;
       case 'create':
-        expect(responseText, 'Task creation should indicate success').toMatch(/(created|success|task)/i);
+        expect(responseText, 'Task creation should indicate success').toMatch(
+          /(created|success|task)/i
+        );
         break;
       case 'attributes':
-        expect(responseText, 'Task attributes should be returned').toBeDefined();
+        expect(
+          responseText,
+          'Task attributes should be returned'
+        ).toBeDefined();
         break;
     }
   }
@@ -125,28 +157,41 @@ export class E2EAssertions {
   /**
    * Enhanced error handling validation with specific error types
    */
-  static expectSpecificError(response: McpToolResponse, errorType: 'validation' | 'notFound' | 'unauthorized' | 'rateLimited'): void {
-    expect(response.isError || (response.content?.[0]?.text?.includes('error')), 
-      'Response should indicate error state').toBe(true);
-    
+  static expectSpecificError(
+    response: McpToolResponse,
+    errorType: 'validation' | 'notFound' | 'unauthorized' | 'rateLimited'
+  ): void {
+    expect(
+      response.isError || response.content?.[0]?.text?.includes('error'),
+      'Response should indicate error state'
+    ).toBe(true);
+
     const errorText = response.error || response.content?.[0]?.text || '';
-    
+
     switch (errorType) {
       case 'validation':
-        expect(errorText.toLowerCase(), 'Should indicate validation error')
-          .toMatch(/(validation|invalid|required|missing)/);
+        expect(
+          errorText.toLowerCase(),
+          'Should indicate validation error'
+        ).toMatch(/(validation|invalid|required|missing)/);
         break;
       case 'notFound':
-        expect(errorText.toLowerCase(), 'Should indicate not found error')
-          .toMatch(/(not found|does not exist|404)/);
+        expect(
+          errorText.toLowerCase(),
+          'Should indicate not found error'
+        ).toMatch(/(not found|does not exist|404)/);
         break;
       case 'unauthorized':
-        expect(errorText.toLowerCase(), 'Should indicate authorization error')
-          .toMatch(/(unauthorized|forbidden|401|403)/);
+        expect(
+          errorText.toLowerCase(),
+          'Should indicate authorization error'
+        ).toMatch(/(unauthorized|forbidden|401|403)/);
         break;
       case 'rateLimited':
-        expect(errorText.toLowerCase(), 'Should indicate rate limiting')
-          .toMatch(/(rate limit|too many|429)/);
+        expect(
+          errorText.toLowerCase(),
+          'Should indicate rate limiting'
+        ).toMatch(/(rate limit|too many|429)/);
         break;
     }
   }
@@ -154,60 +199,83 @@ export class E2EAssertions {
   /**
    * Comprehensive tool response validation with performance metrics
    */
-  static expectOptimalPerformance(response: McpToolResponse, maxExecutionTime?: number): void {
+  static expectOptimalPerformance(
+    response: McpToolResponse,
+    maxExecutionTime?: number
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     if (response._meta?.executionTime && maxExecutionTime) {
-      expect(response._meta.executionTime, `Tool execution should complete within ${maxExecutionTime}ms`)
-        .toBeLessThan(maxExecutionTime);
+      expect(
+        response._meta.executionTime,
+        `Tool execution should complete within ${maxExecutionTime}ms`
+      ).toBeLessThan(maxExecutionTime);
     }
-    
+
     // Validate response size is reasonable
     if (response.content) {
       const responseSize = JSON.stringify(response).length;
-      expect(responseSize, 'Response size should be reasonable (< 1MB)').toBeLessThan(1024 * 1024);
+      expect(
+        responseSize,
+        'Response size should be reasonable (< 1MB)'
+      ).toBeLessThan(1024 * 1024);
     }
   }
 
   /**
    * Universal tool parameter validation
    */
-  static expectValidUniversalToolParams(response: McpToolResponse, expectedParams: Record<string, any>): void {
+  static expectValidUniversalToolParams(
+    response: McpToolResponse,
+    expectedParams: Record<string, any>
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     // Basic validation that the tool accepted the parameters
     const responseText = response.content?.[0]?.text || '';
-    
+
     if (expectedParams.resource_type) {
       // Should not contain resource type errors
-      expect(responseText.toLowerCase(), 'Should not contain resource type validation errors')
-        .not.toMatch(/(invalid.*resource.*type|unsupported.*resource)/);
+      expect(
+        responseText.toLowerCase(),
+        'Should not contain resource type validation errors'
+      ).not.toMatch(/(invalid.*resource.*type|unsupported.*resource)/);
     }
-    
+
     if (expectedParams.limit) {
       // Should not contain limit validation errors
-      expect(responseText.toLowerCase(), 'Should not contain limit validation errors')
-        .not.toMatch(/(invalid.*limit|limit.*too.*large)/);
+      expect(
+        responseText.toLowerCase(),
+        'Should not contain limit validation errors'
+      ).not.toMatch(/(invalid.*limit|limit.*too.*large)/);
     }
-    
+
     if (expectedParams.offset) {
       // Should handle offset parameter
-      expect(responseText, 'Should handle offset parameter without error').toBeDefined();
+      expect(
+        responseText,
+        'Should handle offset parameter without error'
+      ).toBeDefined();
     }
   }
 
   /**
    * Batch operations validation
    */
-  static expectValidBatchOperation(response: McpToolResponse, batchSize: number): void {
+  static expectValidBatchOperation(
+    response: McpToolResponse,
+    batchSize: number
+  ): void {
     this.expectMcpSuccess(response);
-    
+
     const responseText = response.content?.[0]?.text || '';
-    
+
     // Should indicate batch processing
-    expect(responseText.toLowerCase(), 'Should indicate batch operation processing')
-      .toMatch(/(batch|multiple|operation)/);
-      
+    expect(
+      responseText.toLowerCase(),
+      'Should indicate batch operation processing'
+    ).toMatch(/(batch|multiple|operation)/);
+
     // Should not exceed reasonable batch limits
     expect(batchSize, 'Batch size should be reasonable').toBeLessThan(100);
   }
@@ -216,72 +284,105 @@ export class E2EAssertions {
    */
   static expectMcpSuccess(response: McpToolResponse, message?: string): void {
     const errorMsg = message || 'Expected MCP tool response to be successful';
-    
-    expect(response.isError, `${errorMsg} - Response has error flag`).toBe(false);
-    expect(response.error, `${errorMsg} - Response has error message: ${response.error}`).toBeUndefined();
-    expect(response.content, `${errorMsg} - Response missing content`).toBeDefined();
-    expect(Array.isArray(response.content), `${errorMsg} - Response content should be array`).toBe(true);
+
+    expect(response.isError, `${errorMsg} - Response has error flag`).toBe(
+      false
+    );
+    expect(
+      response.error,
+      `${errorMsg} - Response has error message: ${response.error}`
+    ).toBeUndefined();
+    expect(
+      response.content,
+      `${errorMsg} - Response missing content`
+    ).toBeDefined();
+    expect(
+      Array.isArray(response.content),
+      `${errorMsg} - Response content should be array`
+    ).toBe(true);
   }
 
   /**
    * Assert that MCP tool response contains expected data
    */
-  static expectMcpData(response: McpToolResponse, expectedDataShape?: ExpectedDataShape): McpResponseData | undefined {
+  static expectMcpData(
+    response: McpToolResponse,
+    expectedDataShape?: ExpectedDataShape
+  ): McpResponseData | undefined {
     this.expectMcpSuccess(response);
-    
+
     const content = response.content!;
-    expect(content.length, 'Response should have at least one content item').toBeGreaterThan(0);
-    
-    const dataContent = content.find(c => c.type === 'text' && c.text);
+    expect(
+      content.length,
+      'Response should have at least one content item'
+    ).toBeGreaterThan(0);
+
+    const dataContent = content.find((c) => c.type === 'text' && c.text);
     expect(dataContent, 'Response should contain text content').toBeDefined();
-    
+
     if (dataContent?.text) {
       try {
         const parsedData = JSON.parse(dataContent.text);
-        
+
         if (expectedDataShape) {
           this.expectObjectShape(parsedData, expectedDataShape);
         }
-        
+
         return parsedData;
       } catch (error: unknown) {
         // If not JSON, return text directly
         return dataContent.text;
       }
     }
-    
+
     return null;
   }
 
   /**
    * Assert that MCP tool response indicates an error
    */
-  static expectMcpError(response: McpToolResponse, expectedErrorPattern?: string | RegExp): void {
-    expect(response.isError, 'Expected MCP tool response to indicate error').toBe(true);
-    
+  static expectMcpError(
+    response: McpToolResponse,
+    expectedErrorPattern?: string | RegExp
+  ): void {
+    expect(
+      response.isError,
+      'Expected MCP tool response to indicate error'
+    ).toBe(true);
+
     if (expectedErrorPattern) {
-      expect(response.error, 'Response should have error message').toBeDefined();
-      
+      expect(
+        response.error,
+        'Response should have error message'
+      ).toBeDefined();
+
       // Extract error message from error object or use error directly if it's a string
       let errorMessage: string;
       if (typeof response.error === 'string') {
         errorMessage = response.error;
       } else if (response.error && typeof response.error === 'object') {
         // Try to extract message from error object
-        errorMessage = (response.error as any).message || 
-                      (response.error as any).error || 
-                      JSON.stringify(response.error);
+        errorMessage =
+          (response.error as any).message ||
+          (response.error as any).error ||
+          JSON.stringify(response.error);
       } else {
         errorMessage = String(response.error);
       }
-      
+
       // Handle both string and RegExp patterns correctly
       if (typeof expectedErrorPattern === 'string') {
-        expect(errorMessage, `Error message should contain "${expectedErrorPattern}"`).toContain(expectedErrorPattern);
+        expect(
+          errorMessage,
+          `Error message should contain "${expectedErrorPattern}"`
+        ).toContain(expectedErrorPattern);
       } else if (expectedErrorPattern instanceof RegExp) {
         // Convert error message to string before regex matching
         const messageString = String(errorMessage);
-        expect(messageString, `Error message should match pattern ${expectedErrorPattern}`).toMatch(expectedErrorPattern);
+        expect(
+          messageString,
+          `Error message should match pattern ${expectedErrorPattern}`
+        ).toMatch(expectedErrorPattern);
       }
     }
   }
@@ -289,11 +390,16 @@ export class E2EAssertions {
   /**
    * Assert that Attio record has required structure
    */
-  static expectAttioRecord(record: TestDataObject, resourceType?: string): void {
+  static expectAttioRecord(
+    record: TestDataObject,
+    resourceType?: string
+  ): void {
     expect(record, 'Record should be defined').toBeDefined();
     expect(record.id, 'Record should have id object').toBeDefined();
     expect(record.id.record_id, 'Record should have record_id').toBeDefined();
-    expect(typeof record.id.record_id, 'Record ID should be string').toBe('string');
+    expect(typeof record.id.record_id, 'Record ID should be string').toBe(
+      'string'
+    );
     expect(record.values, 'Record should have values object').toBeDefined();
     expect(typeof record.values, 'Values should be object').toBe('object');
 
@@ -321,11 +427,17 @@ export class E2EAssertions {
    */
   static expectCompanyRecord(company: TestDataObject): void {
     this.expectAttioRecord(company);
-    
+
     // Companies should typically have a name
     if (company.values.name) {
-      expect(Array.isArray(company.values.name), 'Company name should be array format').toBe(true);
-      expect(company.values.name[0]?.value, 'Company should have name value').toBeDefined();
+      expect(
+        Array.isArray(company.values.name),
+        'Company name should be array format'
+      ).toBe(true);
+      expect(
+        company.values.name[0]?.value,
+        'Company should have name value'
+      ).toBeDefined();
     }
   }
 
@@ -334,11 +446,17 @@ export class E2EAssertions {
    */
   static expectPersonRecord(person: TestDataObject): void {
     this.expectAttioRecord(person);
-    
+
     // People should typically have a name
     if (person.values.name) {
-      expect(Array.isArray(person.values.name), 'Person name should be array format').toBe(true);
-      expect(person.values.name[0]?.value, 'Person should have name value').toBeDefined();
+      expect(
+        Array.isArray(person.values.name),
+        'Person name should be array format'
+      ).toBe(true);
+      expect(
+        person.values.name[0]?.value,
+        'Person should have name value'
+      ).toBeDefined();
     }
   }
 
@@ -358,7 +476,7 @@ export class E2EAssertions {
    */
   static expectTaskRecord(task: TestDataObject): void {
     this.expectAttioRecord(task);
-    
+
     // Tasks should typically have a title
     if (task.values.title) {
       expect(task.values.title, 'Task should have title').toBeDefined();
@@ -368,17 +486,31 @@ export class E2EAssertions {
   /**
    * Assert that response is paginated list
    */
-  static expectPaginatedResponse(response: TestDataObject, minItems: number = 0): void {
+  static expectPaginatedResponse(
+    response: TestDataObject,
+    minItems: number = 0
+  ): void {
     expect(response, 'Response should be defined').toBeDefined();
     expect(response.data, 'Response should have data array').toBeDefined();
-    expect(Array.isArray(response.data), 'Response data should be array').toBe(true);
-    expect(response.data.length, `Response should have at least ${minItems} items`).toBeGreaterThanOrEqual(minItems);
-    
+    expect(Array.isArray(response.data), 'Response data should be array').toBe(
+      true
+    );
+    expect(
+      response.data.length,
+      `Response should have at least ${minItems} items`
+    ).toBeGreaterThanOrEqual(minItems);
+
     // Check pagination metadata if present
     if (response.pagination) {
-      expect(typeof response.pagination.has_more, 'Pagination has_more should be boolean').toBe('boolean');
+      expect(
+        typeof response.pagination.has_more,
+        'Pagination has_more should be boolean'
+      ).toBe('boolean');
       if (response.pagination.count !== undefined) {
-        expect(typeof response.pagination.count, 'Pagination count should be number').toBe('number');
+        expect(
+          typeof response.pagination.count,
+          'Pagination count should be number'
+        ).toBe('number');
       }
     }
   }
@@ -386,17 +518,28 @@ export class E2EAssertions {
   /**
    * Assert that object has expected shape/structure
    */
-  static expectObjectShape(obj: TestDataObject, expectedShape: ExpectedDataShape): void {
+  static expectObjectShape(
+    obj: TestDataObject,
+    expectedShape: ExpectedDataShape
+  ): void {
     expect(obj, 'Object should be defined').toBeDefined();
-    
+
     for (const [key, expectedType] of Object.entries(expectedShape)) {
       if (typeof expectedType === 'string') {
-        expect(typeof obj[key], `Property ${key} should be ${expectedType}`).toBe(expectedType);
-      } else if (typeof expectedType === 'object' && !Array.isArray(expectedType)) {
+        expect(
+          typeof obj[key],
+          `Property ${key} should be ${expectedType}`
+        ).toBe(expectedType);
+      } else if (
+        typeof expectedType === 'object' &&
+        !Array.isArray(expectedType)
+      ) {
         expect(obj[key], `Property ${key} should be object`).toBeDefined();
         this.expectObjectShape(obj[key], expectedType);
       } else if (Array.isArray(expectedType) && expectedType.length > 0) {
-        expect(Array.isArray(obj[key]), `Property ${key} should be array`).toBe(true);
+        expect(Array.isArray(obj[key]), `Property ${key} should be array`).toBe(
+          true
+        );
         if (obj[key].length > 0) {
           this.expectObjectShape(obj[key][0], expectedType[0]);
         }
@@ -412,7 +555,10 @@ export class E2EAssertions {
     const expectedPrefix = prefix || config.testData.testDataPrefix;
 
     const hasPrefix = this.hasTestPrefix(data, expectedPrefix);
-    expect(hasPrefix, `Data should contain test prefix "${expectedPrefix}"`).toBe(true);
+    expect(
+      hasPrefix,
+      `Data should contain test prefix "${expectedPrefix}"`
+    ).toBe(true);
   }
 
   /**
@@ -423,7 +569,10 @@ export class E2EAssertions {
     const testPrefix = config.testData.testDataPrefix;
 
     const hasPrefix = this.hasTestPrefix(data, testPrefix);
-    expect(hasPrefix, `Data should NOT contain test prefix "${testPrefix}"`).toBe(false);
+    expect(
+      hasPrefix,
+      `Data should NOT contain test prefix "${testPrefix}"`
+    ).toBe(false);
   }
 
   /**
@@ -435,11 +584,13 @@ export class E2EAssertions {
     }
 
     if (Array.isArray(data)) {
-      return data.some(item => this.hasTestPrefix(item, prefix));
+      return data.some((item) => this.hasTestPrefix(item, prefix));
     }
 
     if (data && typeof data === 'object') {
-      return Object.values(data).some(value => this.hasTestPrefix(value, prefix));
+      return Object.values(data).some((value) =>
+        this.hasTestPrefix(value, prefix)
+      );
     }
 
     return false;
@@ -451,8 +602,10 @@ export class E2EAssertions {
   static expectTestEmail(email: string): void {
     const config = configLoader.getConfig();
     expect(email, 'Email should be defined').toBeDefined();
-    expect(email.includes(config.testData.testEmailDomain), 
-      `Email "${email}" should contain test domain "${config.testData.testEmailDomain}"`).toBe(true);
+    expect(
+      email.includes(config.testData.testEmailDomain),
+      `Email "${email}" should contain test domain "${config.testData.testEmailDomain}"`
+    ).toBe(true);
   }
 
   /**
@@ -461,27 +614,38 @@ export class E2EAssertions {
   static expectTestDomain(domain: string): void {
     const config = configLoader.getConfig();
     expect(domain, 'Domain should be defined').toBeDefined();
-    expect(domain.includes(config.testData.testCompanyDomain), 
-      `Domain "${domain}" should contain test domain "${config.testData.testCompanyDomain}"`).toBe(true);
+    expect(
+      domain.includes(config.testData.testCompanyDomain),
+      `Domain "${domain}" should contain test domain "${config.testData.testCompanyDomain}"`
+    ).toBe(true);
   }
 
   /**
    * Assert execution time is within reasonable bounds
    */
-  static expectReasonableExecutionTime(response: McpToolResponse, maxMs: number = 30000): void {
+  static expectReasonableExecutionTime(
+    response: McpToolResponse,
+    maxMs: number = 30000
+  ): void {
     if (response._meta?.executionTime) {
-      expect(response._meta.executionTime, 
-        `Execution time ${response._meta.executionTime}ms should be under ${maxMs}ms`).toBeLessThan(maxMs);
+      expect(
+        response._meta.executionTime,
+        `Execution time ${response._meta.executionTime}ms should be under ${maxMs}ms`
+      ).toBeLessThan(maxMs);
     }
   }
 
   /**
    * Assert that search results are relevant to query
    */
-  static expectRelevantSearchResults(results: SearchResultItem[], query: string, minRelevance: number = 0.5): void {
+  static expectRelevantSearchResults(
+    results: SearchResultItem[],
+    query: string,
+    minRelevance: number = 0.5
+  ): void {
     expect(results, 'Search results should be defined').toBeDefined();
     expect(Array.isArray(results), 'Search results should be array').toBe(true);
-    
+
     if (results.length === 0) {
       console.warn(`No search results returned for query: "${query}"`);
       return;
@@ -489,41 +653,62 @@ export class E2EAssertions {
 
     // Basic relevance check - at least some results should contain query terms
     const queryTerms = query.toLowerCase().split(/\s+/);
-    const relevantResults = results.filter(result => {
+    const relevantResults = results.filter((result) => {
       const resultText = JSON.stringify(result).toLowerCase();
-      return queryTerms.some(term => resultText.includes(term));
+      return queryTerms.some((term) => resultText.includes(term));
     });
 
     const relevanceScore = relevantResults.length / results.length;
-    expect(relevanceScore, 
-      `Search relevance score ${relevanceScore} should be at least ${minRelevance}`).toBeGreaterThanOrEqual(minRelevance);
+    expect(
+      relevanceScore,
+      `Search relevance score ${relevanceScore} should be at least ${minRelevance}`
+    ).toBeGreaterThanOrEqual(minRelevance);
   }
 
   /**
    * Assert that operation was idempotent
    */
-  static expectIdempotentOperation(firstResult: TestDataObject, secondResult: TestDataObject): void {
-    expect(firstResult, 'First operation result should be defined').toBeDefined();
-    expect(secondResult, 'Second operation result should be defined').toBeDefined();
-    
+  static expectIdempotentOperation(
+    firstResult: TestDataObject,
+    secondResult: TestDataObject
+  ): void {
+    expect(
+      firstResult,
+      'First operation result should be defined'
+    ).toBeDefined();
+    expect(
+      secondResult,
+      'Second operation result should be defined'
+    ).toBeDefined();
+
     // For update operations, the results should be equivalent
-    expect(JSON.stringify(firstResult), 'Operations should be idempotent').toBe(JSON.stringify(secondResult));
+    expect(JSON.stringify(firstResult), 'Operations should be idempotent').toBe(
+      JSON.stringify(secondResult)
+    );
   }
 
   /**
    * Assert that batch operation results are consistent
    */
-  static expectConsistentBatchResults(results: BatchOperationResult[], expectedCount: number): void {
+  static expectConsistentBatchResults(
+    results: BatchOperationResult[],
+    expectedCount: number
+  ): void {
     expect(results, 'Batch results should be defined').toBeDefined();
     expect(Array.isArray(results), 'Batch results should be array').toBe(true);
-    expect(results.length, `Batch should have ${expectedCount} results`).toBe(expectedCount);
-    
+    expect(results.length, `Batch should have ${expectedCount} results`).toBe(
+      expectedCount
+    );
+
     // All results should have consistent structure
     if (results.length > 1) {
       const firstResultKeys = Object.keys(results[0] || {}).sort();
       results.forEach((result, index) => {
         const resultKeys = Object.keys(result || {}).sort();
-        expect(resultKeys.join(','), `Result ${index} should have consistent structure`).toBe(firstResultKeys.join(','));
+        expect(
+          resultKeys.join(','),
+          `Result ${index} should have consistent structure`
+        ).toBe(firstResultKeys.join(','));
       });
     }
   }
@@ -534,26 +719,34 @@ export class E2EAssertions {
   static expectValidNoteStructure(note: any): void {
     expect(note, 'Note should be defined').toBeDefined();
     expect(typeof note, 'Note should be object').toBe('object');
-    
+
     // Core note properties
     expect(note.id, 'Note should have id').toBeDefined();
     expect(note.title, 'Note should have title').toBeDefined();
     expect(note.content, 'Note should have content').toBeDefined();
     expect(typeof note.title, 'Note title should be string').toBe('string');
     expect(typeof note.content, 'Note content should be string').toBe('string');
-    
+
     // Note format validation
     if (note.format) {
-      expect(['plaintext', 'html', 'markdown'].includes(note.format), 
-        `Note format "${note.format}" should be valid`).toBe(true);
+      expect(
+        ['plaintext', 'html', 'markdown'].includes(note.format),
+        `Note format "${note.format}" should be valid`
+      ).toBe(true);
     }
-    
+
     // Timestamps
     if (note.created_at) {
-      expect(new Date(note.created_at).getTime(), 'Created date should be valid').not.toBeNaN();
+      expect(
+        new Date(note.created_at).getTime(),
+        'Created date should be valid'
+      ).not.toBeNaN();
     }
     if (note.updated_at) {
-      expect(new Date(note.updated_at).getTime(), 'Updated date should be valid').not.toBeNaN();
+      expect(
+        new Date(note.updated_at).getTime(),
+        'Updated date should be valid'
+      ).not.toBeNaN();
     }
   }
 
@@ -561,8 +754,11 @@ export class E2EAssertions {
    * Assert that note collection response is valid
    */
   static expectValidNoteCollection(response: any, minCount: number = 0): void {
-    expect(response, 'Note collection response should be defined').toBeDefined();
-    
+    expect(
+      response,
+      'Note collection response should be defined'
+    ).toBeDefined();
+
     let notes: any[];
     if (Array.isArray(response)) {
       notes = response;
@@ -571,11 +767,16 @@ export class E2EAssertions {
     } else if (response.content && Array.isArray(response.content)) {
       notes = response.content;
     } else {
-      throw new Error('Note collection should be array or have data/content array property');
+      throw new Error(
+        'Note collection should be array or have data/content array property'
+      );
     }
 
-    expect(notes.length, `Should have at least ${minCount} notes`).toBeGreaterThanOrEqual(minCount);
-    
+    expect(
+      notes.length,
+      `Should have at least ${minCount} notes`
+    ).toBeGreaterThanOrEqual(minCount);
+
     // Validate each note in collection
     notes.forEach((note, index) => {
       try {
@@ -589,26 +790,40 @@ export class E2EAssertions {
   /**
    * Assert that note content matches expected format
    */
-  static expectNoteContentFormat(note: any, expectedFormat: 'plaintext' | 'html' | 'markdown'): void {
+  static expectNoteContentFormat(
+    note: any,
+    expectedFormat: 'plaintext' | 'html' | 'markdown'
+  ): void {
     this.expectValidNoteStructure(note);
-    
+
     if (note.format) {
-      expect(note.format, `Note format should be ${expectedFormat}`).toBe(expectedFormat);
+      expect(note.format, `Note format should be ${expectedFormat}`).toBe(
+        expectedFormat
+      );
     }
-    
+
     // Content validation based on format
     switch (expectedFormat) {
       case 'html':
-        expect(note.content.includes('<') || note.content.includes('>'), 
-          'HTML note should contain HTML tags').toBe(true);
+        expect(
+          note.content.includes('<') || note.content.includes('>'),
+          'HTML note should contain HTML tags'
+        ).toBe(true);
         break;
       case 'markdown':
-        expect(note.content.includes('#') || note.content.includes('*') || note.content.includes('-'), 
-          'Markdown note should contain markdown syntax').toBe(true);
+        expect(
+          note.content.includes('#') ||
+            note.content.includes('*') ||
+            note.content.includes('-'),
+          'Markdown note should contain markdown syntax'
+        ).toBe(true);
         break;
       case 'plaintext':
         // Plaintext validation - no HTML tags
-        expect(note.content.includes('<'), 'Plaintext note should not contain HTML tags').toBe(false);
+        expect(
+          note.content.includes('<'),
+          'Plaintext note should not contain HTML tags'
+        ).toBe(false);
         break;
     }
   }
@@ -616,25 +831,39 @@ export class E2EAssertions {
   /**
    * Assert that note is properly linked to parent record
    */
-  static expectNoteLinkedToRecord(note: any, expectedParentType: string, expectedParentId?: string): void {
+  static expectNoteLinkedToRecord(
+    note: any,
+    expectedParentType: string,
+    expectedParentId?: string
+  ): void {
     this.expectValidNoteStructure(note);
-    
+
     // Check for parent object linkage (may vary by API implementation)
     if (note.parent_object) {
-      expect(note.parent_object, `Note should be linked to ${expectedParentType}`).toBe(expectedParentType);
+      expect(
+        note.parent_object,
+        `Note should be linked to ${expectedParentType}`
+      ).toBe(expectedParentType);
     }
-    
+
     if (expectedParentId && note.parent_record_id) {
-      expect(note.parent_record_id, `Note should be linked to record ${expectedParentId}`).toBe(expectedParentId);
+      expect(
+        note.parent_record_id,
+        `Note should be linked to record ${expectedParentId}`
+      ).toBe(expectedParentId);
     }
-    
+
     // Alternative structure checks for different API implementations
     if (note.linked_to && Array.isArray(note.linked_to)) {
-      const linkFound = note.linked_to.some((link: any) => 
-        link.target_object === expectedParentType || 
-        (expectedParentId && link.target_record_id === expectedParentId)
+      const linkFound = note.linked_to.some(
+        (link: any) =>
+          link.target_object === expectedParentType ||
+          (expectedParentId && link.target_record_id === expectedParentId)
       );
-      expect(linkFound, `Note should be linked to ${expectedParentType} record`).toBe(true);
+      expect(
+        linkFound,
+        `Note should be linked to ${expectedParentType} record`
+      ).toBe(true);
     }
   }
 
@@ -643,17 +872,21 @@ export class E2EAssertions {
    */
   static expectTestNote(note: any): void {
     this.expectValidNoteStructure(note);
-    
+
     const config = configLoader.getConfig();
     const testPrefix = config.testSettings?.testDataPrefix || 'E2E_TEST_';
-    
+
     // Check if note title indicates it's test data
-    expect(note.title.includes('E2E') || note.title.includes(testPrefix), 
-      'Test note should have E2E or test prefix in title').toBe(true);
-    
+    expect(
+      note.title.includes('E2E') || note.title.includes(testPrefix),
+      'Test note should have E2E or test prefix in title'
+    ).toBe(true);
+
     // Check content for test indicators
-    expect(note.content.includes('E2E') || note.content.includes('test'), 
-      'Test note content should indicate it\'s for testing').toBe(true);
+    expect(
+      note.content.includes('E2E') || note.content.includes('test'),
+      "Test note content should indicate it's for testing"
+    ).toBe(true);
   }
 }
 
@@ -663,14 +896,18 @@ export class E2EAssertions {
 export function expectE2E(actual: TestDataObject) {
   return {
     toBeValidMcpResponse: () => E2EAssertions.expectMcpSuccess(actual),
-    toBeValidAttioRecord: (resourceType?: string) => E2EAssertions.expectAttioRecord(actual, resourceType),
-    toHaveTestPrefix: (prefix?: string) => E2EAssertions.expectTestDataPrefix(actual, prefix),
+    toBeValidAttioRecord: (resourceType?: string) =>
+      E2EAssertions.expectAttioRecord(actual, resourceType),
+    toHaveTestPrefix: (prefix?: string) =>
+      E2EAssertions.expectTestDataPrefix(actual, prefix),
     toBeTestEmail: () => E2EAssertions.expectTestEmail(actual),
     toBeTestDomain: () => E2EAssertions.expectTestDomain(actual),
-    toBePaginatedResponse: (minItems?: number) => E2EAssertions.expectPaginatedResponse(actual, minItems),
-    toHaveShape: (expectedShape: ExpectedDataShape) => E2EAssertions.expectObjectShape(actual, expectedShape),
-    toBeRelevantSearchResults: (query: string, minRelevance?: number) => 
-      E2EAssertions.expectRelevantSearchResults(actual, query, minRelevance)
+    toBePaginatedResponse: (minItems?: number) =>
+      E2EAssertions.expectPaginatedResponse(actual, minItems),
+    toHaveShape: (expectedShape: ExpectedDataShape) =>
+      E2EAssertions.expectObjectShape(actual, expectedShape),
+    toBeRelevantSearchResults: (query: string, minRelevance?: number) =>
+      E2EAssertions.expectRelevantSearchResults(actual, query, minRelevance),
   };
 }
 
