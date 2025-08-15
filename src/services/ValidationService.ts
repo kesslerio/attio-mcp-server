@@ -37,7 +37,12 @@ export class ValidationService {
   static createValidationError(
     message: string,
     resourceType: string = 'resource'
-  ): any {
+  ): {
+    error: boolean;
+    message: string;
+    details: string;
+    timestamp: string;
+  } {
     return {
       error: true,
       message,
