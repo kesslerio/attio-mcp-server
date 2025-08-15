@@ -23,6 +23,10 @@ import {
   getFormatErrorHelp,
 } from '../../../utils/attribute-format-helpers.js';
 
+// Import extracted services from Issue #489 Phase 2
+import { CachingService } from '../../../services/CachingService.js';
+import { ValidationService } from '../../../services/ValidationService.js';
+
 // Import debug utilities
 import { debug, OperationType } from '../../../utils/logger.js';
 
@@ -123,17 +127,7 @@ function shouldUseMockData(): boolean {
   );
 }
 
-// Input validation helper functions for mock system
-// Note: isValidId is now imported from ../../../utils/validation.js for consistency
-
-function createValidationError(message: string, resourceType: string = 'resource'): any {
-  return {
-    error: true,
-    message,
-    details: `${resourceType} validation failed`,
-    timestamp: new Date().toISOString()
-  };
-}
+// Input validation functionality moved to ValidationService (Issue #489 Phase 2)
 
 /**
  * Company creation with mock support - uses production MockService
@@ -197,29 +191,12 @@ import {
   FIELD_MAPPINGS,
 } from './field-mapper.js';
 
-/**
- * Truncate suggestions to prevent buffer overflow in MCP protocol
- */
-function truncateSuggestions(
-  suggestions: string[],
-  maxCount: number = 3
-): string[] {
-  const limited = suggestions.slice(0, maxCount);
-  if (suggestions.length > maxCount) {
-    limited.push(`... and ${suggestions.length - maxCount} more suggestions`);
-  }
-  return limited;
-}
+// Truncation functionality moved to ValidationService (Issue #489 Phase 2)
 
 // Import enhanced validation utilities
 import { validateRecordFields } from '../../../utils/validation-utils.js';
 
-// Simple cache for tasks pagination performance optimization
-interface CacheEntry {
-  data: AttioRecord[];
-  timestamp: number;
-}
-const tasksCache = new Map<string, CacheEntry>();
+// Cache functionality moved to CachingService (Issue #489 Phase 2)
 
 /**
  * Query deal records using the proper Attio API endpoint
@@ -518,52 +495,8 @@ export async function handleUniversalSearch(
   // Track validation timing
   const validationStart = performance.now();
 
-  // Validate limit parameter to prevent abuse
-  if (limit !== undefined) {
-    if (!Number.isInteger(limit) || limit <= 0) {
-      enhancedPerformanceTracker.endOperation(
-        perfId,
-        false,
-        'Invalid limit parameter',
-        400
-      );
-      throw new Error('limit must be a positive integer greater than 0');
-    }
-
-    if (limit > 100) {
-      enhancedPerformanceTracker.endOperation(
-        perfId,
-        false,
-        'Limit exceeds maximum',
-        400
-      );
-      throw new Error('limit must not exceed 100');
-    }
-  }
-
-  // Validate offset parameter
-  if (offset !== undefined) {
-    if (!Number.isInteger(offset) || offset < 0) {
-      enhancedPerformanceTracker.endOperation(
-        perfId,
-        false,
-        'Invalid offset parameter',
-        400
-      );
-      throw new Error('offset must be a non-negative integer');
-    }
-
-    // Add reasonable maximum for offset to prevent performance issues
-    if (offset > 10000) {
-      enhancedPerformanceTracker.endOperation(
-        perfId,
-        false,
-        'Offset exceeds maximum',
-        400
-      );
-      throw new Error('offset must not exceed 10000');
-    }
-  }
+  // Validate pagination parameters using ValidationService
+  ValidationService.validatePaginationParameters({ limit, offset }, perfId);
 
   enhancedPerformanceTracker.markTiming(
     perfId,
@@ -720,26 +653,8 @@ export async function handleUniversalSearch(
          * - Memory usage monitoring and cleanup
          */
 
-        // Get cache key for tasks list
-        const tasksCacheKey = `tasks_list_all`;
-
-        // Simple in-memory cache for tasks (30 second TTL)
-        const now = Date.now();
-        let tasks: AttioRecord[] | undefined;
-        let fromCache = false;
-
-        // Check if we have cached tasks that are still valid
-        if (tasksCache.has(tasksCacheKey)) {
-          const cached = tasksCache.get(tasksCacheKey)!;
-          if (now - cached.timestamp < 30000) {
-            // 30 second TTL
-            tasks = cached.data;
-            fromCache = true;
-          }
-        }
-
-        if (!tasks) {
-          // Load all tasks from API (unavoidable due to API limitation)
+        // Use CachingService for tasks data management
+        const loadTasksData = async (): Promise<AttioRecord[]> => {
           try {
             const tasksList = await listTasks();
 
@@ -749,35 +664,35 @@ export async function handleUniversalSearch(
                 `⚠️  TASKS API WARNING: listTasks() returned non-array value:`,
                 typeof tasksList
               );
-              tasks = [];
+              return [];
             } else {
               // Convert AttioTask[] to AttioRecord[]
-              tasks = tasksList.map(convertTaskToRecord);
+              return tasksList.map(convertTaskToRecord);
             }
           } catch (error: unknown) {
             console.error(`Failed to load tasks from API:`, error);
-            tasks = []; // Fallback to empty array
+            return []; // Fallback to empty array
           }
+        };
 
-          // Cache for next request
-          tasksCache.set(tasksCacheKey, { data: tasks, timestamp: now });
+        const { data: tasks, fromCache } = await CachingService.getOrLoadTasks(loadTasksData);
 
-          // Performance warning for large datasets
-          if (tasks.length > 500) {
-            console.warn(
-              `⚠️  PERFORMANCE WARNING: Loading ${tasks.length} tasks. ` +
-                `Consider requesting Attio API pagination support for tasks endpoint.`
-            );
-          }
+        // Performance warning for large datasets
+        if (!fromCache && tasks.length > 500) {
+          console.warn(
+            `⚠️  PERFORMANCE WARNING: Loading ${tasks.length} tasks. ` +
+              `Consider requesting Attio API pagination support for tasks endpoint.`
+          );
+        }
 
-          // Log performance metrics
+        // Log performance metrics
+        if (!fromCache) {
           enhancedPerformanceTracker.markTiming(
             perfId,
             'attioApi',
             performance.now() - apiStart
           );
         } else {
-          fromCache = true;
           enhancedPerformanceTracker.markTiming(perfId, 'other', 1);
         }
 
@@ -989,28 +904,11 @@ export async function handleUniversalGetDetails(
     { resourceType: resource_type, recordId: record_id }
   );
 
-  // Enhanced UUID validation for Issue #416
+  // Enhanced UUID validation using ValidationService (Issue #416)
   const validationStart = performance.now();
 
-  // Use enhanced UUID validation with clear error distinction
-  // Skip UUID validation for tasks as they may use different ID formats
-  if (
-    resource_type !== UniversalResourceType.TASKS &&
-    !isValidUUID(record_id)
-  ) {
-    enhancedPerformanceTracker.markTiming(
-      perfId,
-      'validation',
-      performance.now() - validationStart
-    );
-    enhancedPerformanceTracker.endOperation(
-      perfId,
-      false,
-      'Invalid UUID format',
-      400
-    );
-    throw createInvalidUUIDError(record_id, resource_type, 'GET');
-  }
+  // Validate UUID format with clear error distinction
+  ValidationService.validateUUID(record_id, resource_type, 'GET', perfId);
 
   enhancedPerformanceTracker.markTiming(
     perfId,
@@ -1018,11 +916,8 @@ export async function handleUniversalGetDetails(
     performance.now() - validationStart
   );
 
-  // Check 404 cache for valid IDs too
-  const cacheKey = generateIdCacheKey(resource_type, record_id);
-  const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
-
-  if (cached404) {
+  // Check 404 cache using CachingService
+  if (CachingService.isCached404(resource_type, record_id)) {
     enhancedPerformanceTracker.endOperation(
       perfId,
       false,
@@ -1083,12 +978,8 @@ export async function handleUniversalGetDetails(
           // Convert AttioTask to AttioRecord using proper type conversion
           result = convertTaskToRecord(task);
         } catch (error: unknown) {
-          // Cache 404 for tasks
-          enhancedPerformanceTracker.cache404Response(
-            cacheKey,
-            { error: 'Task not found' },
-            60000
-          );
+          // Cache 404 for tasks using CachingService
+          CachingService.cache404Response(resource_type, record_id);
           throw createRecordNotFoundError(record_id, 'tasks');
         }
         break;
@@ -1130,12 +1021,8 @@ export async function handleUniversalGetDetails(
       statusCode === 404 ||
       (apiError instanceof Error && apiError.message.includes('not found'))
     ) {
-      // Cache 404 responses for 60 seconds
-      enhancedPerformanceTracker.cache404Response(
-        cacheKey,
-        { error: 'Not found' },
-        60000
-      );
+      // Cache 404 responses using CachingService
+      CachingService.cache404Response(resource_type, record_id);
 
       // Issue #416: Clear "not found" message for valid UUIDs
       const enhancedError = createRecordNotFoundError(record_id, resource_type);
@@ -1203,7 +1090,7 @@ export async function handleUniversalCreate(
     );
   }
   if (fieldValidation.suggestions.length > 0) {
-    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    const truncated = ValidationService.truncateSuggestions(fieldValidation.suggestions);
     console.log('Field suggestions:', truncated.join('\n'));
   }
   if (!fieldValidation.valid) {
@@ -1219,7 +1106,7 @@ export async function handleUniversalCreate(
 
     // Add suggestions if available (truncated to prevent buffer overflow)
     if (fieldValidation.suggestions.length > 0) {
-      const truncated = truncateSuggestions(fieldValidation.suggestions);
+      const truncated = ValidationService.truncateSuggestions(fieldValidation.suggestions);
       errorMessage += '\n\n💡 Suggestions:\n';
       errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
     }
@@ -1231,7 +1118,7 @@ export async function handleUniversalCreate(
     }
 
     throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
-      suggestion: truncateSuggestions(fieldValidation.suggestions).join('. '),
+      suggestion: ValidationService.truncateSuggestions(fieldValidation.suggestions).join('. '),
       field: 'record_data',
     });
   }
@@ -1397,7 +1284,7 @@ export async function handleUniversalCreate(
     case UniversalResourceType.PEOPLE: {
       try {
         // Validate email addresses first for consistent validation with updates
-        validateEmailAddresses(mappedData);
+        ValidationService.validateEmailAddresses(mappedData);
 
         // Normalize people data first (handle name string/object, email singular/array)
         const normalizedData =
@@ -1709,7 +1596,7 @@ export async function handleUniversalUpdate(
     );
   }
   if (fieldValidation.suggestions.length > 0) {
-    const truncated = truncateSuggestions(fieldValidation.suggestions);
+    const truncated = ValidationService.truncateSuggestions(fieldValidation.suggestions);
     console.log('Field suggestions:', truncated.join('\n'));
   }
 
@@ -1819,7 +1706,7 @@ export async function handleUniversalUpdate(
     case UniversalResourceType.PEOPLE:
       try {
         // Validate email addresses for consistency with create operations
-        validateEmailAddresses(mappedData);
+        ValidationService.validateEmailAddresses(mappedData);
 
         return await updatePerson(record_id, mappedData);
       } catch (error: unknown) {
@@ -2208,51 +2095,7 @@ export function isValidResourceType(
   );
 }
 
-/**
- * Validate email addresses in record data for consistent validation across create/update
- */
-function validateEmailAddresses(recordData: Record<string, unknown>): void {
-  if (!recordData || typeof recordData !== 'object') return;
-
-  // Handle various email field formats
-  const emailFields = ['email_addresses', 'email', 'emails', 'emailAddress'];
-
-  for (const field of emailFields) {
-    if (field in recordData && recordData[field]) {
-      const emails = Array.isArray(recordData[field])
-        ? recordData[field]
-        : [recordData[field]];
-
-      for (const emailItem of emails) {
-        let emailAddress: string;
-
-        // Handle different email formats
-        if (typeof emailItem === 'string') {
-          emailAddress = emailItem;
-        } else if (typeof emailItem === 'object' && emailItem.email_address) {
-          emailAddress = emailItem.email_address;
-        } else if (typeof emailItem === 'object' && emailItem.email) {
-          emailAddress = emailItem.email;
-        } else {
-          continue; // Skip invalid email formats
-        }
-
-        // Validate email format using the same function as PersonValidator
-        if (!isValidEmail(emailAddress)) {
-          throw new UniversalValidationError(
-            `Invalid email format: "${emailAddress}". Please provide a valid email address (e.g., user@example.com)`,
-            ErrorType.USER_ERROR,
-            {
-              field: field,
-              suggestion:
-                'Ensure email addresses are in the format: user@domain.com',
-            }
-          );
-        }
-      }
-    }
-  }
-}
+// Email validation functionality moved to ValidationService (Issue #489 Phase 2)
 
 /**
  * Enhanced error handling utility for universal operations
