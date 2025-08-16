@@ -131,6 +131,7 @@ jobs:
       - name: Install dependencies
         run: |
           # Fix for Rollup optional dependency issue in CI
+          # See: https://github.com/npm/cli/issues/4828
           if [ -f package-lock.json ]; then rm package-lock.json; fi
           if [ -d node_modules ]; then rm -rf node_modules; fi
           npm install
