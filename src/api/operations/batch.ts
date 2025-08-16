@@ -324,22 +324,29 @@ export interface UniversalBatchSearchResult {
 }
 
 /**
+ * Type guard to check if a universal resource type is supported by legacy API
+ */
+function isLegacyResourceType(universalType: UniversalResourceType): universalType is UniversalResourceType.COMPANIES | UniversalResourceType.PEOPLE {
+  return universalType === UniversalResourceType.COMPANIES || universalType === UniversalResourceType.PEOPLE;
+}
+
+/**
  * Convert UniversalResourceType to ResourceType for legacy API compatibility
+ * Uses explicit type guards to ensure type safety
  */
 function convertUniversalResourceType(universalType: UniversalResourceType): ResourceType {
+  // Use type guard for safe conversion
+  if (!isLegacyResourceType(universalType)) {
+    throw new Error(`Resource type ${universalType} is not supported by legacy batch API. Use UniversalSearchService path instead.`);
+  }
+
   switch (universalType) {
     case UniversalResourceType.COMPANIES:
       return ResourceType.COMPANIES;
     case UniversalResourceType.PEOPLE:
       return ResourceType.PEOPLE;
-    case UniversalResourceType.LISTS:
-    case UniversalResourceType.RECORDS:
-    case UniversalResourceType.TASKS:
-    case UniversalResourceType.DEALS:
-      // For resource types not supported by legacy ResourceType,
-      // we'll handle them specially in the batch search function
-      return universalType as unknown as ResourceType;
     default:
+      // This should never be reached due to type guard, but TypeScript requires it
       throw new Error(`Unsupported universal resource type: ${universalType}`);
   }
 }
@@ -365,33 +372,49 @@ export async function universalBatchSearch(
   },
   batchConfig?: Partial<BatchConfig>
 ): Promise<UniversalBatchSearchResult[]> {
+  // Performance timing start
+  const performanceStart = performance.now();
+  
   // Validate batch size for search operations
   const sizeValidation = validateBatchSize(queries, 'search', resourceType);
   if (!sizeValidation.isValid) {
-    throw new Error(sizeValidation.error);
+    // Get current batch size limit for enhanced error message
+    const maxSize = getBatchSizeLimit(resourceType) || 100;
+    const enhancedError = `${sizeValidation.error}. Attempted to search ${queries.length} queries, but maximum allowed for ${resourceType} is ${maxSize}. Consider breaking your search into smaller batches or using sequential search operations.`;
+    throw new Error(enhancedError);
   }
 
   const { limit, offset, filters } = searchParams || {};
-
-  // Handle resource types not supported by legacy batch API
-  if ([
-    UniversalResourceType.LISTS,
-    UniversalResourceType.RECORDS, 
-    UniversalResourceType.TASKS,
-    UniversalResourceType.DEALS
-  ].includes(resourceType)) {
-    // Use UniversalSearchService for these resource types
-    return await handleUniversalResourceTypeBatchSearch(
-      resourceType, 
-      queries, 
-      { limit, offset, filters }
-    );
-  }
-
-  // For companies and people, use the existing optimized batch API
-  const legacyResourceType = convertUniversalResourceType(resourceType);
   
-  try {
+  // Log batch search initiation
+  console.log(`[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`);
+  
+    // Handle resource types not supported by legacy batch API
+    if ([
+      UniversalResourceType.LISTS,
+      UniversalResourceType.RECORDS, 
+      UniversalResourceType.TASKS,
+      UniversalResourceType.DEALS
+    ].includes(resourceType)) {
+      // Use UniversalSearchService for these resource types
+      const result = await handleUniversalResourceTypeBatchSearch(
+        resourceType, 
+        queries, 
+        { limit, offset, filters }
+      );
+      
+      // Log performance metrics
+      const performanceEnd = performance.now();
+      const duration = performanceEnd - performanceStart;
+      const successCount = result.filter(r => r.success).length;
+      console.log(`[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`);
+      
+      return result;
+    }
+
+    // For companies and people, use the existing optimized batch API
+    const legacyResourceType = convertUniversalResourceType(resourceType);
+    
     const batchResponse = await batchSearchObjects<AttioRecord>(
       legacyResourceType,
       queries,
@@ -399,15 +422,28 @@ export async function universalBatchSearch(
     );
 
     // Convert BatchResponse format to UniversalBatchSearchResult format
-    return batchResponse.results.map((result, index) => ({
+    const result = batchResponse.results.map((result, index) => ({
       success: result.success,
       query: queries[index],
       result: result.success ? result.data : undefined,
       error: result.success ? undefined : 
         (result.error instanceof Error ? result.error.message : String(result.error))
     }));
+    
+    // Log performance metrics
+    const performanceEnd = performance.now();
+    const duration = performanceEnd - performanceStart;
+    const successCount = result.filter(r => r.success).length;
+    console.log(`[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`);
+    
+    return result;
 
   } catch (error: unknown) {
+    // Log performance metrics for failed operations
+    const performanceEnd = performance.now();
+    const duration = performanceEnd - performanceStart;
+    console.log(`[Performance] Batch search failed for ${resourceType}: ${duration.toFixed(2)}ms, error: ${error instanceof Error ? error.message : String(error)}`);
+    
     // If batch operation fails completely, return error for all queries
     const errorMessage = error instanceof Error ? error.message : String(error);
     return queries.map(query => ({
@@ -492,7 +528,10 @@ export async function universalBatchGetDetails(
   // Validate batch size
   const sizeValidation = validateBatchSize(recordIds, 'get', resourceType);
   if (!sizeValidation.isValid) {
-    throw new Error(sizeValidation.error);
+    // Get current batch size limit for enhanced error message
+    const maxSize = getBatchSizeLimit(resourceType) || 100;
+    const enhancedError = `${sizeValidation.error}. Attempted to get ${recordIds.length} records, but maximum allowed for ${resourceType} is ${maxSize}. Consider breaking your request into smaller batches.`;
+    throw new Error(enhancedError);
   }
 
   // For companies and people, use existing batch API
