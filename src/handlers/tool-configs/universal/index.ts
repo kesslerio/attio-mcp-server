@@ -18,6 +18,11 @@ import {
   advancedOperationsToolDefinitions,
 } from './advanced-operations.js';
 
+import {
+  batchSearchConfig,
+  batchSearchToolDefinition,
+} from './batch-search.js';
+
 // Re-export individual tool config objects for testing
 export {
   coreOperationsToolConfigs,
@@ -33,11 +38,12 @@ export * from './shared-handlers.js';
 
 /**
  * All universal tool configurations
- * These replace 40+ resource-specific tools with 13 universal operations
+ * These replace 40+ resource-specific tools with 14 universal operations
  */
 export const universalToolConfigs = {
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
+  'batch-search': batchSearchConfig,
 };
 
 /**
@@ -46,6 +52,7 @@ export const universalToolConfigs = {
 export const universalToolDefinitions = {
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
+  'batch-search': batchSearchToolDefinition,
 };
 
 /**
@@ -64,7 +71,7 @@ export const coreUniversalTools = [
 ];
 
 /**
- * Advanced universal operations (5 tools)
+ * Advanced universal operations (6 tools)
  * These provide sophisticated search and batch capabilities
  */
 export const advancedUniversalTools = [
@@ -73,6 +80,7 @@ export const advancedUniversalTools = [
   'search-by-content',
   'search-by-timeframe',
   'batch-operations',
+  'batch-search',
 ];
 
 /**

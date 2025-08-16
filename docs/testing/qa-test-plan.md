@@ -54,8 +54,8 @@ P2       | 4           | 0         | 0      | 0      | 0       | 0:00       | BL
 
 #### Priority 2 (P2) - ADVANCED FEATURES 🚀 OPTIONAL
 **Duration**: Maximum 2 hours  
-**Success Criteria**: Minimum 50% pass rate (2/4)  
-**Tools**: search-by-relationship, search-by-content, search-by-timeframe, batch-operations  
+**Success Criteria**: Minimum 50% pass rate (3/5)  
+**Tools**: search-by-relationship, search-by-content, search-by-timeframe, batch-operations, batch-search  
 **Decision Point**: Nice-to-have features, don't block release
 
 ### Testing Methodology
@@ -205,7 +205,7 @@ mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_2_ID"
 
 **P1 Quality Gate**: Minimum 3/4 tools must PASS (80% success rate). Consider production readiness.
 
-### Priority 2 (P2) - Advanced Features Tests 🚀 [Target: 2/4]
+### Priority 2 (P2) - Advanced Features Tests 🚀 [Target: 3/5]
 
 | Test ID | Tool Name | Test Cases | Dependencies | Time Est. | Status | Notes |
 |---------|-----------|------------|--------------|-----------|--------|-------|
@@ -213,8 +213,9 @@ mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_2_ID"
 | TC-011 | search-by-content | 6 test cases (HP: 3, EC: 2, ER: 2) | P0+P1 completion | 20 min | 🚫 BLOCKED | Content-based search |
 | TC-012 | search-by-timeframe | 6 test cases (HP: 3, EC: 2, ER: 2) | P0+P1 completion | 20 min | 🚫 BLOCKED | Time-based filtering |
 | TC-013 | batch-operations | 9 test cases (HP: 3, EC: 3, ER: 3) | P0+P1 completion | 30 min | 🚫 BLOCKED | Bulk operations |
+| TC-019 | batch-search | 9 test cases (HP: 3, EC: 3, ER: 3) | P0+P1 completion | 25 min | 🚫 BLOCKED | Multiple queries in parallel |
 
-**P2 Quality Gate**: Minimum 2/4 tools must PASS (50% success rate). Nice-to-have features.
+**P2 Quality Gate**: Minimum 3/5 tools must PASS (60% success rate). Nice-to-have features.
 
 ### Status Legend
 - ✅ **PASSED**: All test cases completed successfully
@@ -293,6 +294,11 @@ mcp__attio__search-by-timeframe resource_type="companies" timeframe_type="create
 
 # TC-013: Batch Operations
 mcp__attio__batch-operations resource_type="companies" operation_type="get" record_ids='["$QA_COMPANY_1_ID","$QA_COMPANY_2_ID"]'
+
+# TC-019: Batch Search (Issue #471)
+mcp__attio__batch-search resource_type="companies" queries='["technology","consulting","software"]' limit=10
+mcp__attio__batch-search resource_type="people" queries='["manager","engineer","director"]' limit=5 offset=0
+mcp__attio__batch-search resource_type="tasks" queries='["test","sample"]' limit=3
 ```
 
 ## Phase 1: Self-Testing Detailed Test Cases
@@ -1301,6 +1307,183 @@ Expected Result:
 - Proper error handling for non-existent IDs
 ```
 
+### TC-019: Batch Search (batch-search) - Issue #471
+
+#### TC-019-HP: Happy Path Tests
+
+```
+Test Case: TC-019-HP-01 - Batch Company Search with Multiple Queries
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "companies"
+- queries: ["technology", "consulting", "software"]
+- limit: 10
+
+Expected Result:
+- Returns search results for all 3 queries
+- Each query result contains query string and results array
+- Individual query failures don't affect other queries
+- Results maintain query order in response
+- Performance >30% faster than sequential searches
+
+Test Case: TC-019-HP-02 - Batch People Search with Pagination
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "people"
+- queries: ["manager", "engineer", "director"]
+- limit: 5
+- offset: 0
+
+Expected Result:
+- Returns up to 5 people per query
+- Proper pagination handling for each query
+- Search results include people-specific attributes
+- Batch processing completed within reasonable time (<10 seconds)
+
+Test Case: TC-019-HP-03 - Mixed Resource Type Batch Searches
+Tool: mcp__attio__batch-search
+Parameters:
+[Test with companies, people, tasks, records, deals individually]
+- resource_type: [EACH_TYPE]
+- queries: ["test", "sample", "demo"]
+- limit: 3
+
+Expected Result:
+- All resource types handle batch search correctly
+- Resource-specific field structures returned
+- Consistent error handling across resource types
+- Performance improvement validated for each type
+```
+
+#### TC-019-EC: Edge Cases
+
+```
+Test Case: TC-019-EC-01 - Large Batch Size
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "companies"
+- queries: [Array of 50 search terms]
+- limit: 2
+
+Expected Result:
+- Handles large query batch without errors
+- Respects rate limiting with appropriate delays
+- All queries processed within timeout limits (<60 seconds)
+- No memory issues or performance degradation
+
+Test Case: TC-019-EC-02 - Empty and Special Character Queries
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "people"
+- queries: ["", "special-chars-!@#$%", "unicode-测试", "very-long-query-".repeat(20)]
+- limit: 5
+
+Expected Result:
+- Handles empty queries gracefully
+- Special characters processed without syntax errors
+- Unicode queries handled correctly
+- Long queries either processed or fail with clear errors
+
+Test Case: TC-019-EC-03 - Single Query Batch
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "tasks"
+- queries: ["single-query"]
+- limit: 10
+
+Expected Result:
+- Single query processed correctly in batch format
+- Result format consistent with multi-query batches
+- No performance penalty for single query
+- Returns proper batch search result structure
+```
+
+#### TC-019-ER: Error Conditions
+
+```
+Test Case: TC-019-ER-01 - Empty Queries Array
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "companies"
+- queries: []
+- limit: 10
+
+Expected Result:
+- Returns validation error about empty queries array
+- Clear error message: "Queries array is required and must not be empty"
+- No system errors or crashes
+
+Test Case: TC-019-ER-02 - Invalid Resource Type
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "invalid_type"
+- queries: ["test1", "test2"]
+
+Expected Result:
+- Returns resource type validation error
+- Lists valid resource types in error message
+- Batch processing stops gracefully
+
+Test Case: TC-019-ER-03 - Partial Failure Scenarios
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "companies"
+- queries: ["valid-query", "", "another-valid", "invalid-special-#@$%^&*()"]
+- limit: 5
+
+Expected Result:
+- Valid queries return results successfully
+- Invalid queries fail individually with specific errors
+- Successful results not affected by failed queries
+- Error isolation properly implemented
+- Overall batch operation completes
+```
+
+#### TC-019-Performance: Performance Validation (Critical for Issue #471)
+
+```
+Test Case: TC-019-PERF-01 - Performance Improvement Validation
+Tool: Performance comparison test
+Method:
+1. Execute 5 sequential search-records calls
+2. Execute 1 batch-search call with same 5 queries
+3. Compare execution times
+
+Parameters:
+- resource_type: "companies"
+- queries: ["tech", "consulting", "software", "healthcare", "finance"]
+- limit: 10
+
+Expected Result:
+- Batch search >30% faster than sequential searches
+- Performance improvement documented in test results
+- Consistent performance across multiple test runs
+- No degradation in result quality
+
+Test Case: TC-019-PERF-02 - Large Batch Performance
+Tool: mcp__attio__batch-search
+Parameters:
+- resource_type: "people"
+- queries: [20 different search terms]
+- limit: 5
+
+Expected Result:
+- Completes within 30 seconds
+- Memory usage remains stable
+- No timeout errors
+- Performance scales reasonably with query count
+
+Test Case: TC-019-PERF-03 - Concurrent User Simulation
+Tool: Simulated concurrent batch searches
+Method: Multiple batch-search calls with slight delays
+
+Expected Result:
+- System handles concurrent batch searches
+- Individual batch performance not significantly degraded
+- Rate limiting prevents system overload
+- Error handling works under load
+```
+
 ### TC-014: Lists Resource Type Operations
 
 #### TC-014-HP-01: Get All Lists
@@ -2002,17 +2185,18 @@ Phase [1|2] - [Self-testing|Sub-agent testing]
 - ❌ **NOT READY**: If <60% pass rate → Delay production deployment
 
 ### Priority 2 (P2) - Advanced Features 🚀 ENHANCEMENT GATE
-**Success Requirements** (50% threshold):
-- [ ] **50% Tool Pass Rate**: Minimum 2/4 P2 tools should PASS
+**Success Requirements** (60% threshold):
+- [ ] **60% Tool Pass Rate**: Minimum 3/5 P2 tools should PASS
 - [ ] **Relationship Queries**: Basic relationship functionality
 - [ ] **Content Search**: Text-based search capabilities  
 - [ ] **Batch Processing**: Bulk operation capabilities
+- [ ] **Batch Search**: Multiple queries in parallel (Issue #471)
 - [ ] **Time-based Filtering**: Date range queries working
 
 **Quality Gate Decision**:
-- ✅ **ENHANCED**: If ≥50% pass rate → Full feature set available
-- ⚠️ **BASIC**: If 25-49% pass rate → Core features only
-- ❌ **MINIMAL**: If <25% pass rate → Advanced features unavailable
+- ✅ **ENHANCED**: If ≥60% pass rate → Full feature set available
+- ⚠️ **BASIC**: If 40-59% pass rate → Core features only
+- ❌ **MINIMAL**: If <40% pass rate → Advanced features unavailable
 
 ### Phase 2 Success Criteria (Usability Validation)
 - [ ] **Parameter Clarity**: Tool parameters are self-explanatory
@@ -2096,7 +2280,7 @@ P0_TOTAL=5
 P1_PASSED=0
 P1_TOTAL=4
 P2_PASSED=0
-P2_TOTAL=4
+P2_TOTAL=5
 
 START_TIME=$(date +%s)
 
@@ -2286,6 +2470,7 @@ After testing:
 | search-by-content | Search within content | resource_type, content_type, search_query |
 | search-by-timeframe | Search by dates | resource_type, timeframe_type, start_date, end_date |
 | batch-operations | Bulk operations | resource_type, operation_type, records/record_ids |
+| batch-search | Multiple queries in parallel | resource_type, queries, limit, offset |
 
 ### Appendix B: Resource Types Reference
 
