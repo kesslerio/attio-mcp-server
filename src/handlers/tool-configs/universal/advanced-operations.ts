@@ -37,6 +37,12 @@ import {
   formatResourceType,
 } from './shared-handlers.js';
 
+// Import enhanced batch API for optimized batch operations (Issue #471)
+import {
+  universalBatchSearch,
+  UniversalBatchSearchResult,
+} from '../../../api/operations/batch.js';
+
 // Import ErrorService for error handling
 import { ErrorService } from '../../../services/ErrorService.js';
 
@@ -695,22 +701,47 @@ export const batchOperationsConfig: UniversalToolConfig = {
         }
 
         case BatchOperationType.SEARCH: {
-          // Validate search query parameters
-          const searchValidation = validateSearchQuery(undefined, {
-            resource_type,
-            limit,
-            offset,
-          });
-          if (!searchValidation.isValid) {
-            throw new Error(searchValidation.error);
-          }
+          // Check if we have multiple queries for true batch search
+          const queries = sanitizedParams.queries;
+          
+          if (queries && Array.isArray(queries) && queries.length > 0) {
+            // True batch search with multiple queries using optimized API (Issue #471)
+            const searchValidation = validateBatchOperation({
+              items: queries,
+              operationType: 'search',
+              resourceType: resource_type,
+              checkPayload: false, // Queries don't need payload size check
+            });
+            if (!searchValidation.isValid) {
+              throw new Error(searchValidation.error);
+            }
 
-          // Batch search is essentially the same as regular search with pagination
-          return await handleUniversalSearch({
-            resource_type,
-            limit,
-            offset,
-          });
+            // Use optimized universal batch search API
+            return await universalBatchSearch(
+              resource_type,
+              queries,
+              {
+                limit: sanitizedParams.limit,
+                offset: sanitizedParams.offset,
+              }
+            );
+          } else {
+            // Fallback to single search with pagination (legacy behavior)
+            const searchValidation = validateSearchQuery(undefined, {
+              resource_type,
+              limit,
+              offset,
+            });
+            if (!searchValidation.isValid) {
+              throw new Error(searchValidation.error);
+            }
+
+            return await handleUniversalSearch({
+              resource_type,
+              limit,
+              offset,
+            });
+          }
         }
 
         default:
@@ -747,19 +778,66 @@ export const batchOperationsConfig: UniversalToolConfig = {
       let summary = `Batch ${operationName} completed: ${successCount} successful, ${failureCount} failed\n\n`;
 
       if (operationType === BatchOperationType.SEARCH) {
-        // Format as search results
-        return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
-          .map((record: Record<string, unknown>, index: number) => {
-            const values = record.values as Record<string, unknown>;
-            const recordId = record.id as Record<string, unknown>;
-            const name =
-              (values?.name as Record<string, unknown>[])?.[0]?.value ||
-              (values?.title as Record<string, unknown>[])?.[0]?.value ||
-              'Unnamed';
-            const id = recordId?.record_id || 'unknown';
-            return `${index + 1}. ${name} (ID: ${id})`;
-          })
-          .join('\n')}`;
+        // Handle batch search results with queries array (Issue #471)
+        if (results.length > 0 && 'query' in results[0]) {
+          // New format: UniversalBatchSearchResult[]
+          const batchResults = results as UniversalBatchSearchResult[];
+          const successCount = batchResults.filter((r) => r.success).length;
+          const failureCount = batchResults.length - successCount;
+
+          let summary = `Batch search completed: ${successCount} successful, ${failureCount} failed\n\n`;
+
+          // Show successful searches
+          const successful = batchResults.filter((r) => r.success);
+          if (successful.length > 0) {
+            summary += `Successful searches:\n`;
+            successful.forEach((searchResult, index) => {
+              const records = searchResult.result || [];
+              summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceTypeName}s\n`;
+              
+              if (records.length > 0) {
+                records.slice(0, 3).forEach((record, recordIndex) => {
+                  const values = record.values as Record<string, unknown>;
+                  const recordId = record.id as Record<string, unknown>;
+                  const name =
+                    (values?.name as Record<string, unknown>[])?.[0]?.value ||
+                    (values?.title as Record<string, unknown>[])?.[0]?.value ||
+                    'Unnamed';
+                  const id = recordId?.record_id || 'unknown';
+                  summary += `   ${recordIndex + 1}. ${name} (ID: ${id})\n`;
+                });
+                if (records.length > 3) {
+                  summary += `   ... and ${records.length - 3} more\n`;
+                }
+              }
+            });
+          }
+
+          // Show failed searches
+          const failed = batchResults.filter((r) => !r.success);
+          if (failed.length > 0) {
+            summary += `\nFailed searches:\n`;
+            failed.forEach((searchResult, index) => {
+              summary += `${index + 1}. Query: "${searchResult.query}" - Error: ${searchResult.error}\n`;
+            });
+          }
+
+          return summary;
+        } else {
+          // Legacy format: AttioRecord[] (single search)
+          return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
+            .map((record: Record<string, unknown>, index: number) => {
+              const values = record.values as Record<string, unknown>;
+              const recordId = record.id as Record<string, unknown>;
+              const name =
+                (values?.name as Record<string, unknown>[])?.[0]?.value ||
+                (values?.title as Record<string, unknown>[])?.[0]?.value ||
+                'Unnamed';
+              const id = recordId?.record_id || 'unknown';
+              return `${index + 1}. ${name} (ID: ${id})`;
+            })
+            .join('\n')}`;
+        }
       }
 
       // Show details for successful operations
