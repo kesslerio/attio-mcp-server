@@ -344,13 +344,13 @@ export async function updateListEntry(
         console.error(`- Attributes: ${JSON.stringify(attributes)}`);
       }
 
-      // Attio API expects updates to list entries in the 'data.values' structure
-      // This follows the same pattern as record updates in crud.ts
+      // Attio API expects updates to list entries in the 'data.entry_values' structure
+      // This is specific to list entries, different from record updates in crud.ts
       const response = await api.patch<AttioSingleResponse<AttioListEntry>>(
         path,
         {
           data: {
-            values: attributes,
+            entry_values: attributes,
           },
         }
       );

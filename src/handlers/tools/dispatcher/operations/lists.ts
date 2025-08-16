@@ -538,3 +538,49 @@ export async function handleAdvancedFilterListEntriesOperation(
     );
   }
 }
+
+/**
+ * Handle getRecordListMemberships operations
+ *
+ * This handler extracts the required parameters from the tool request and passes them
+ * to the handler function for finding all lists that contain a specific record.
+ */
+export async function handleGetRecordListMembershipsOperation(
+  request: CallToolRequest,
+  toolConfig: ToolConfig
+) {
+  const recordId = request.params.arguments?.recordId as string;
+  const objectType = request.params.arguments?.objectType as string;
+  const includeEntryValues = request.params.arguments?.includeEntryValues as boolean;
+  const batchSize = request.params.arguments?.batchSize as number;
+
+  if (!recordId) {
+    return createErrorResult(
+      new Error('recordId parameter is required'),
+      '/lists/memberships',
+      'GET',
+      { status: 400, message: 'Missing required parameter: recordId' }
+    );
+  }
+
+  try {
+    const result = await toolConfig.handler(
+      recordId,
+      objectType,
+      includeEntryValues,
+      batchSize
+    );
+    const formattedResult = toolConfig.formatResult
+      ? toolConfig.formatResult(result)
+      : result;
+
+    return formatResponse(formattedResult);
+  } catch (error: unknown) {
+    return createErrorResult(
+      error instanceof Error ? error : new Error('Unknown error'),
+      '/lists/memberships',
+      'GET',
+      hasResponseData(error) ? error.response.data : {}
+    );
+  }
+}
