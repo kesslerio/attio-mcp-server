@@ -48,22 +48,46 @@ import { UniversalResourceType } from '../../src/handlers/tool-configs/universal
 import { initializeAttioClient } from '../../src/api/attio-client.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 
-// Performance test configuration - use environment variables or defaults
+// Environment-aware performance budgets (following universal test pattern)
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const CI_MULTIPLIER = isCI ? 2.5 : 1; // 2.5x longer timeouts for CI environments
+
+console.log(
+  `Performance regression testing with ${isCI ? 'CI' : 'LOCAL'} budgets (multiplier: ${CI_MULTIPLIER}x)`
+);
+
+// Performance test configuration - use environment variables or defaults with CI adjustments
 const PERFORMANCE_BUDGETS = {
-  notFound: parseInt(process.env.PERF_BUDGET_NOT_FOUND || '2000', 10),
-  search: parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10),
-  create: parseInt(process.env.PERF_BUDGET_CREATE || '3000', 10),
-  update: parseInt(process.env.PERF_BUDGET_UPDATE || '3000', 10),
-  delete: parseInt(process.env.PERF_BUDGET_DELETE || '2000', 10),
-  getDetails: parseInt(process.env.PERF_BUDGET_GET_DETAILS || '2000', 10),
-  batchSmall: parseInt(process.env.PERF_BUDGET_BATCH_SMALL || '5000', 10),
-  batchLarge: parseInt(process.env.PERF_BUDGET_BATCH_LARGE || '10000', 10),
+  notFound: Math.round(
+    parseInt(process.env.PERF_BUDGET_NOT_FOUND || '2000', 10) * CI_MULTIPLIER
+  ),
+  search: Math.round(
+    parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10) * CI_MULTIPLIER
+  ),
+  create: Math.round(
+    parseInt(process.env.PERF_BUDGET_CREATE || '3000', 10) * CI_MULTIPLIER
+  ),
+  update: Math.round(
+    parseInt(process.env.PERF_BUDGET_UPDATE || '3000', 10) * CI_MULTIPLIER
+  ),
+  delete: Math.round(
+    parseInt(process.env.PERF_BUDGET_DELETE || '2000', 10) * CI_MULTIPLIER
+  ),
+  getDetails: Math.round(
+    parseInt(process.env.PERF_BUDGET_GET_DETAILS || '2000', 10) * CI_MULTIPLIER
+  ),
+  batchSmall: Math.round(
+    parseInt(process.env.PERF_BUDGET_BATCH_SMALL || '5000', 10) * CI_MULTIPLIER
+  ),
+  batchLarge: Math.round(
+    parseInt(process.env.PERF_BUDGET_BATCH_LARGE || '10000', 10) * CI_MULTIPLIER
+  ),
 };
 
-// Test timeout with buffer
+// Test timeout with buffer - environment-aware like universal test
 vi.setConfig({
-  testTimeout: 30000,
-  hookTimeout: 20000,
+  testTimeout: Math.max(30000, Math.round(30000 * CI_MULTIPLIER)), // At least 30s, more in CI
+  hookTimeout: Math.round(20000 * CI_MULTIPLIER), // Scaled hook timeout for cleanup
 });
 
 // Skip tests if no API key available

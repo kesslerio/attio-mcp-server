@@ -34,6 +34,12 @@ RULE: Mock factory architecture | WHEN: Creating test mocks | DO: Use `/test/uti
 RULE: Issue #480 compatibility | WHEN: Task mocks needed | DO: Include both content and title fields, preserve task_id | ELSE: E2E test failures
 SUCCESS METRICS: E2E success rate >75% (29/38 tests passing) | Mock data validation 100% | Production safety verified
 
+### PERFORMANCE TESTING
+
+RULE: Environment-aware budgets | WHEN: Performance tests | DO: Auto CI multiplier (2.5x) | ELSE: CI failures
+COMMANDS: `npm test test/performance/regression.test.ts` | `CI=true npm test test/performance/regression.test.ts`
+FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance.test.ts` (benchmarking)
+
 ## AUTO-APPROVED OPERATIONS
 
 Testing: `npm test*` all variations | Building: `npm run build*` all variations

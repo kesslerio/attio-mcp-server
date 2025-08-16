@@ -29,7 +29,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Fix for Rollup optional dependency issue in CI
+          # See: https://github.com/npm/cli/issues/4828
+          if [ -f package-lock.json ]; then rm package-lock.json; fi
+          if [ -d node_modules ]; then rm -rf node_modules; fi
+          npm install
 
       - name: Build project
         run: npm run build
@@ -50,7 +55,7 @@ jobs:
           PERF_BUDGET_BATCH_SMALL: 500
           PERF_BUDGET_BATCH_LARGE: 1000
           PERF_BUDGET_DEFAULT: 200
-        run: npm test test/handlers/tool-configs/universal/performance.test.ts
+        run: npm test test/performance/regression.test.ts
         continue-on-error: true
         id: perf-test
 
@@ -124,7 +129,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Fix for Rollup optional dependency issue in CI
+          # See: https://github.com/npm/cli/issues/4828
+          if [ -f package-lock.json ]; then rm package-lock.json; fi
+          if [ -d node_modules ]; then rm -rf node_modules; fi
+          npm install
 
       - name: Build project
         run: npm run build
