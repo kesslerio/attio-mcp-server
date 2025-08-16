@@ -53,6 +53,8 @@ export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY
   ? {
       // Universal tools for consolidated operations (Issue #352)
       UNIVERSAL: universalToolConfigs,
+      // Lists are relationship containers - always expose them (Issue #470)
+      [ResourceType.LISTS]: listsToolConfigs,
     }
   : {
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
@@ -72,6 +74,8 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
   ? {
       // Universal tools for consolidated operations (Issue #352)
       UNIVERSAL: universalToolDefinitions,
+      // Lists are relationship containers - always expose them (Issue #470)
+      [ResourceType.LISTS]: listsToolDefinitions,
     }
   : {
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
