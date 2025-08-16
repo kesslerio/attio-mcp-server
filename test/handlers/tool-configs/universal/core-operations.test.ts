@@ -761,4 +761,174 @@ describe('Universal Core Operations Tests', () => {
       expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledTimes(6);
     });
   });
+
+  describe('Task Display Formatting (Issue #472)', () => {
+    describe('search-records formatResult for tasks', () => {
+      it('should display task content when available', () => {
+        const mockResults = [
+          {
+            id: { record_id: 'task-1', task_id: 'task-1' },
+            values: {
+              content: [{ value: 'Follow up with client about proposal' }],
+              status: [{ value: 'pending' }],
+            },
+          },
+          {
+            id: { record_id: 'task-2', task_id: 'task-2' },
+            values: {
+              content: [{ value: 'Schedule team meeting for next week' }],
+              status: [{ value: 'completed' }],
+            },
+          },
+        ];
+
+        const formatted = searchRecordsConfig.formatResult(
+          mockResults,
+          UniversalResourceType.TASKS
+        );
+
+        expect(formatted).toContain('Found 2 tasks');
+        expect(formatted).toContain(
+          '1. Follow up with client about proposal (ID: task-1)'
+        );
+        expect(formatted).toContain(
+          '2. Schedule team meeting for next week (ID: task-2)'
+        );
+        expect(formatted).not.toContain('Unnamed');
+      });
+
+      it('should fallback to Unnamed for tasks without content', () => {
+        const mockResults = [
+          {
+            id: { record_id: 'task-1', task_id: 'task-1' },
+            values: {
+              status: [{ value: 'pending' }],
+            },
+          },
+        ];
+
+        const formatted = searchRecordsConfig.formatResult(
+          mockResults,
+          UniversalResourceType.TASKS
+        );
+
+        expect(formatted).toContain('Found 1 task');
+        expect(formatted).toContain('1. Unnamed (ID: task-1)');
+      });
+
+      it('should handle tasks with empty content values', () => {
+        const mockResults = [
+          {
+            id: { record_id: 'task-1', task_id: 'task-1' },
+            values: {
+              content: [],
+              status: [{ value: 'pending' }],
+            },
+          },
+        ];
+
+        const formatted = searchRecordsConfig.formatResult(
+          mockResults,
+          UniversalResourceType.TASKS
+        );
+
+        expect(formatted).toContain('Found 1 task');
+        expect(formatted).toContain('1. Unnamed (ID: task-1)');
+      });
+
+      it('should prioritize other fields over content for non-task records', () => {
+        const mockResults = [
+          {
+            id: { record_id: 'comp-1' },
+            values: {
+              name: [{ value: 'Test Company' }],
+              content: [{ value: 'Some content' }],
+            },
+          },
+        ];
+
+        const formatted = searchRecordsConfig.formatResult(
+          mockResults,
+          UniversalResourceType.COMPANIES
+        );
+
+        expect(formatted).toContain('1. Test Company (ID: comp-1)');
+        expect(formatted).not.toContain('Some content');
+      });
+    });
+
+    describe('get-record-details formatResult for tasks', () => {
+      it('should display task content when available', async () => {
+        const mockRecord = {
+          id: { record_id: 'task-1', task_id: 'task-1' },
+          values: {
+            content: [{ value: 'Review quarterly budget reports' }],
+            status: [{ value: 'in_progress' }],
+            assignee: [{ value: 'user-123', name: 'John Doe' }],
+            due_date: [{ value: '2025-08-20' }],
+          },
+        };
+
+        const { getSingularResourceType } = await import(
+          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
+        );
+        vi.mocked(getSingularResourceType).mockReturnValue('task');
+
+        const formatted = getRecordDetailsConfig.formatResult(
+          mockRecord,
+          UniversalResourceType.TASKS
+        );
+
+        expect(formatted).toContain('Task: Review quarterly budget reports');
+        expect(formatted).toContain('ID: task-1');
+        expect(formatted).not.toContain('Task: Unnamed');
+      });
+
+      it('should fallback to Unnamed for tasks without content', async () => {
+        const mockRecord = {
+          id: { record_id: 'task-1', task_id: 'task-1' },
+          values: {
+            status: [{ value: 'pending' }],
+          },
+        };
+
+        const { getSingularResourceType } = await import(
+          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
+        );
+        vi.mocked(getSingularResourceType).mockReturnValue('task');
+
+        const formatted = getRecordDetailsConfig.formatResult(
+          mockRecord,
+          UniversalResourceType.TASKS
+        );
+
+        expect(formatted).toContain('Task: Unnamed');
+        expect(formatted).toContain('ID: task-1');
+      });
+
+      it('should handle mixed field priority correctly', async () => {
+        const mockRecord = {
+          id: { record_id: 'record-1' },
+          values: {
+            title: [{ value: 'Important Title' }],
+            content: [{ value: 'Some content here' }],
+          },
+        };
+
+        const { getSingularResourceType } = await import(
+          '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
+        );
+        vi.mocked(getSingularResourceType).mockReturnValue('record');
+
+        const formatted = getRecordDetailsConfig.formatResult(
+          mockRecord,
+          UniversalResourceType.RECORDS
+        );
+
+        // Should prioritize title over content for non-task records
+        expect(formatted).toContain('Record: Important Title');
+        expect(formatted).not.toContain('Record: Some content here');
+      });
+    });
+  });
 });

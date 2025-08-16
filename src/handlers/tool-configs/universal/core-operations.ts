@@ -101,6 +101,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
           (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
           (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
           (values?.title as Record<string, unknown>[])?.[0]?.value ||
+          (values?.content as Record<string, unknown>[])?.[0]?.value ||
           'Unnamed';
         const id = recordId?.record_id || 'unknown';
         const website = (values?.website as Record<string, unknown>[])?.[0]
@@ -173,6 +174,9 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       (record.values?.title &&
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
+      (record.values?.content &&
+        Array.isArray(record.values.content) &&
+        record.values.content[0]?.value) ||
       'Unnamed';
     const id = record.id?.record_id || 'unknown';
 

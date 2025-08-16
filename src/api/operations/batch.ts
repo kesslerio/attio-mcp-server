@@ -389,6 +389,7 @@ export async function universalBatchSearch(
   // Log batch search initiation
   console.log(`[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`);
   
+  try {
     // Handle resource types not supported by legacy batch API
     if ([
       UniversalResourceType.LISTS,
