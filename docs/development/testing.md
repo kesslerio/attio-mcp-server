@@ -592,4 +592,174 @@ The E2E test infrastructure underwent major improvements to achieve production-r
 - CRUD Operations: < 1500ms (local) / < 4000ms (CI)
 - Batch Operations: < 3000ms for 10 records (local) / < 8000ms (CI)
 
+## 🚀 Performance Testing Strategy
+
+### Dual Performance Testing Architecture
+
+The Attio MCP Server implements a **dual performance testing strategy** to provide comprehensive performance validation across different environments and use cases.
+
+#### 🏃‍♂️ Regression Tests (`test/performance/regression.test.ts`)
+
+**Purpose**: Fast, reliable performance regression detection for daily CI validation
+
+**Key Characteristics**:
+- **Mock-Based**: Uses mock data for zero API dependencies
+- **Environment-Aware**: Automatic CI budget adjustment (2.5x multiplier)
+- **Fast Execution**: Sub-millisecond response times
+- **CI-Friendly**: Reliable in CI environments with varying resource constraints
+- **Regression Detection**: Catches performance degradations in code logic
+
+**Usage**:
+```bash
+# Local development (1x budgets)
+npm test test/performance/regression.test.ts
+
+# CI simulation (2.5x budgets)
+CI=true npm test test/performance/regression.test.ts
+
+# Custom budget testing
+PERF_BUDGET_SEARCH=500 npm test test/performance/regression.test.ts
+```
+
+**Performance Budgets (Regression)**:
+- **404 Responses**: 2000ms (local) / 5000ms (CI)
+- **Search Operations**: 3000ms (local) / 7500ms (CI)
+- **CRUD Operations**: 3000ms (local) / 7500ms (CI)
+- **Delete Operations**: 2000ms (local) / 5000ms (CI)
+- **Batch Operations**: 5000ms-10000ms (local) / 12500ms-25000ms (CI)
+
+#### ⚡ Universal Tests (`test/handlers/tool-configs/universal/performance.test.ts`)
+
+**Purpose**: Real-world API performance measurement under load for benchmarking
+
+**Key Characteristics**:
+- **Real API Calls**: Measures actual API performance with ATTIO_API_KEY
+- **Load Testing**: Tests with 1, 10, 25, and 50 record batches
+- **Concurrency Testing**: Validates rate limiting and concurrent request handling
+- **Memory Monitoring**: Tracks memory usage during large operations
+- **Environment-Aware**: Sophisticated CI multipliers for accurate benchmarking
+
+**Usage**:
+```bash
+# Requires API key and integration test config
+npm test --config vitest.config.integration.ts test/handlers/tool-configs/universal/performance.test.ts
+
+# Alternative: Direct execution with proper config
+ATTIO_API_KEY=your_key npx vitest --config vitest.config.integration.ts --run test/handlers/tool-configs/universal/performance.test.ts
+```
+
+**Performance Budgets (Universal)**:
+- **Single Record**: 5000ms (local) / 12500ms (CI)
+- **10 Records**: 15000ms (local) / 37500ms (CI)
+- **25 Records**: 30000ms (local) / 75000ms (CI)
+- **50 Records**: 60000ms (local) / 150000ms (CI)
+- **Search Operations**: 5000ms-10000ms (local) / 12500ms-25000ms (CI)
+
+### Environment Detection & Budget Calculation
+
+Both test suites automatically detect CI environments and apply appropriate budget adjustments:
+
+```typescript
+// Automatic environment detection
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const CI_MULTIPLIER = isCI ? 2.5 : 1;
+
+// Dynamic budget calculation
+const searchBudget = Math.round(parseInt(process.env.PERF_BUDGET_SEARCH || '3000', 10) * CI_MULTIPLIER);
+```
+
+**Environment Variables**:
+- `CI=true` or `GITHUB_ACTIONS=true`: Triggers CI mode
+- `PERF_BUDGET_*`: Override default budgets for specific operations
+- `ATTIO_API_KEY`: Required for universal tests (real API calls)
+
+### When to Use Each Test Type
+
+#### Use Regression Tests For:
+- ✅ Daily CI validation and continuous integration
+- ✅ Pull request validation and merge gates  
+- ✅ Rapid development feedback loops
+- ✅ Performance regression detection in business logic
+- ✅ Testing in environments without API access
+
+#### Use Universal Tests For:
+- ✅ Release validation and pre-deployment verification
+- ✅ API performance benchmarking and optimization
+- ✅ Load testing and scalability validation
+- ✅ Real-world performance measurement
+- ✅ Memory usage and resource consumption analysis
+
+### Performance Test Architecture
+
+```
+test/
+├── performance/
+│   └── regression.test.ts          # Fast mock-based regression detection
+└── handlers/tool-configs/universal/
+    └── performance.test.ts         # Real API performance benchmarking
+```
+
+**Regression Test Architecture**:
+- Mock-based API responses for consistent timing
+- Performance tracker integration for detailed metrics
+- Environment-aware budget configuration
+- Zero external dependencies
+
+**Universal Test Architecture**:
+- Real Attio API integration with authentication
+- Concurrent batch processing validation
+- Memory usage monitoring and leak detection
+- Rate limiting and error handling verification
+
+### Troubleshooting Performance Tests
+
+#### Common Issues & Solutions
+
+**Issue**: "Performance regression detected! One or more operations exceeded their performance budgets"
+```bash
+# Check if running in correct environment
+echo "CI Detection: $CI, GitHub Actions: $GITHUB_ACTIONS"
+
+# Verify budget calculations
+CI=true node -e "console.log('CI Budget Multiplier:', process.env.CI === 'true' ? 2.5 : 1)"
+
+# Run with verbose output to see actual timings
+npm test test/performance/regression.test.ts -- --reporter=verbose
+```
+
+**Issue**: Universal tests fail with "Cannot find module @rollup/rollup-linux-x64-gnu"
+```bash
+# Fix Rollup dependency issue (common in CI)
+rm -f package-lock.json
+rm -rf node_modules  
+npm install
+```
+
+**Issue**: Real API tests timeout or fail
+```bash
+# Verify API key setup
+echo "API Key Length: ${#ATTIO_API_KEY}"  # Should be 64 characters
+
+# Check test data configuration
+npm run test:integration -- test/setup/test-data-setup.test.ts
+
+# Run with extended timeout
+npm test test/handlers/tool-configs/universal/performance.test.ts -- --testTimeout=300000
+```
+
+### CI/CD Integration
+
+The dual strategy is integrated into CI/CD pipelines:
+
+**CI Workflow** (`.github/workflows/performance-tests.yml`):
+- Runs regression tests for all PRs and main branch pushes
+- Uses environment-aware budgets automatically
+- Includes Rollup dependency fix for CI environments
+- Generates performance reports as artifacts
+
+**Performance Comparison**:
+- PR branch vs base branch performance analysis
+- Automated regression detection and alerts
+- Performance trend tracking over time
+
 For more information, see the main [README](../README.md) and [Contributing Guide](../CONTRIBUTING.md).

@@ -152,7 +152,11 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Install dependencies (base)
-        run: npm ci
+        run: |
+          # Fix for Rollup optional dependency issue in CI
+          if [ -f package-lock.json ]; then rm package-lock.json; fi
+          if [ -d node_modules ]; then rm -rf node_modules; fi
+          npm install
 
       - name: Build project (base)
         run: npm run build
