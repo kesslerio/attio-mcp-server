@@ -1405,8 +1405,8 @@ Expected Result:
 Test Case: TC-014-HP-07 - Update List Entry Attributes
 Tool: update-list-entry
 Parameters:
-- list_id: "[VALID_LIST_ID]"
-- entry_id: "[ENTRY_ID]"
+- listId: "[VALID_LIST_ID]"
+- entryId: "[ENTRY_ID]"
 - attributes: {"stage": "closed_won", "close_date": "2024-01-15"}
 
 Expected Result:
@@ -1414,6 +1414,84 @@ Expected Result:
 - Changes reflected in subsequent queries
 - Update timestamp recorded
 - Proper validation of attribute values
+```
+
+#### TC-014-HP-08: Get Record List Memberships
+
+```
+Test Case: TC-014-HP-08 - Find All Lists Containing a Record
+Tool: get-record-list-memberships
+Parameters:
+- recordId: "[VALID_COMPANY_ID]"
+- objectType: "companies"
+- includeEntryValues: true
+- batchSize: 5
+
+Expected Result:
+- Returns all lists containing the specified record
+- Each membership includes list name, ID, and entry ID
+- Entry values included when requested
+- Batch processing works correctly
+```
+
+#### TC-014-HP-09: Advanced Filter List Entries
+
+```
+Test Case: TC-014-HP-09 - Complex Multi-Condition List Filtering
+Tool: advanced-filter-list-entries
+Parameters:
+- listId: "[VALID_LIST_ID]"
+- filters: {
+    "filters": [
+      {"attribute": {"slug": "stage"}, "condition": "equals", "value": "qualified"},
+      {"attribute": {"slug": "priority"}, "condition": "equals", "value": "high"}
+    ],
+    "matchAny": false
+  }
+- limit: 20
+
+Expected Result:
+- Returns entries matching all filter conditions
+- Complex filter logic processes correctly
+- Results properly limited
+- Performance acceptable for advanced filtering
+```
+
+#### TC-014-HP-10: Filter List Entries by Parent
+
+```
+Test Case: TC-014-HP-10 - Filter Entries by Parent Record Attributes
+Tool: filter-list-entries-by-parent
+Parameters:
+- listId: "[VALID_LIST_ID]"
+- parentObjectType: "companies"
+- parentAttributeSlug: "industry"
+- condition: "equals"
+- value: "Technology"
+- limit: 10
+
+Expected Result:
+- Returns list entries where parent company industry equals Technology
+- Parent attribute filtering works correctly
+- Proper relationship traversal
+- Results limited as specified
+```
+
+#### TC-014-HP-11: Filter List Entries by Parent ID
+
+```
+Test Case: TC-014-HP-11 - Filter Entries by Specific Parent Record
+Tool: filter-list-entries-by-parent-id
+Parameters:
+- listId: "[VALID_LIST_ID]"
+- recordId: "[VALID_COMPANY_ID]"
+- limit: 5
+
+Expected Result:
+- Returns all list entries for the specified parent record
+- Direct parent ID filtering works
+- Efficient query execution
+- Proper result limiting
 ```
 
 ### TC-015: Notes CRUD Operations

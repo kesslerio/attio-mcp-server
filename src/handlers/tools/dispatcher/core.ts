@@ -53,6 +53,7 @@ import {
   handleAdvancedFilterListEntriesOperation,
   handleFilterListEntriesByParentOperation,
   handleFilterListEntriesByParentIdOperation,
+  handleGetRecordListMembershipsOperation,
 } from './operations/lists.js';
 
 // Import Batch operation handlers
@@ -249,6 +250,8 @@ export async function executeToolRequest(request: CallToolRequest) {
         request,
         toolConfig
       );
+    } else if (toolType === 'getRecordListMemberships') {
+      result = await handleGetRecordListMembershipsOperation(request, toolConfig);
 
       // Handle Batch operations (from emergency fix)
     } else if (toolType === 'batchUpdate') {
