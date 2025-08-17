@@ -34,9 +34,9 @@ export interface ErrorDetails {
     method?: string;
     path?: string;
     detail?: string;
-    responseData?: Record<string, any>;
+    responseData?: Record<string, unknown>;
     originalError?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -295,7 +295,7 @@ export function formatErrorResponse(
   }
 
   // Create a safe copy of details to prevent circular reference issues during JSON serialization
-  let safeDetails: any = null;
+  let safeDetails: Record<string, unknown> | null = null;
 
   if (details) {
     try {
