@@ -38,6 +38,156 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
     initializeAttioClient: vi.fn(),
     isAttioClientInitialized: vi.fn(() => true),
   }));
+
+  // Mock UniversalSearchService to avoid import path issues
+  vi.mock('../../src/services/UniversalSearchService.js', () => ({
+    UniversalSearchService: {
+      searchRecords: vi.fn().mockResolvedValue([
+        {
+          id: { record_id: 'search_001' },
+          values: {
+            name: [{ value: 'Mock Search Result 1' }],
+            domain: [{ value: 'search1.com' }],
+          },
+        },
+        {
+          id: { record_id: 'search_002' },
+          values: {
+            name: [{ value: 'Mock Search Result 2' }],
+            domain: [{ value: 'search2.com' }],
+          },
+        },
+      ]),
+    },
+  }));
+
+  // Mock resource-specific search functions to prevent real API calls
+  vi.mock('../../src/objects/companies/index.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      advancedSearchCompanies: vi.fn().mockResolvedValue([
+        {
+          id: { record_id: 'comp_001' },
+          values: {
+            name: [{ value: 'Mock Company 1' }],
+            domain: [{ value: 'mock1.com' }],
+          },
+        },
+        {
+          id: { record_id: 'comp_002' },
+          values: {
+            name: [{ value: 'Mock Company 2' }],
+            domain: [{ value: 'mock2.com' }],
+          },
+        },
+      ]),
+      getCompanyDetails: vi.fn().mockResolvedValue({
+        id: { record_id: 'comp_001' },
+        values: {
+          name: [{ value: 'Mock Company Details' }],
+          domain: [{ value: 'mock.com' }],
+        },
+      }),
+      updateCompany: vi.fn().mockResolvedValue({
+        id: { record_id: 'comp_001' },
+        values: {
+          name: [{ value: 'Updated Mock Company' }],
+          domain: [{ value: 'updated-mock.com' }],
+        },
+      }),
+      deleteCompany: vi.fn().mockResolvedValue({ success: true }),
+      createCompany: vi.fn().mockResolvedValue({
+        id: { record_id: 'comp_new' },
+        values: {
+          name: [{ value: 'New Mock Company' }],
+          domain: [{ value: 'new-mock.com' }],
+        },
+      }),
+    };
+  });
+
+  vi.mock('../../src/objects/people/index.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      advancedSearchPeople: vi.fn().mockResolvedValue([
+        {
+          id: { record_id: 'person_001' },
+          values: {
+            name: [{ full_name: 'John Doe' }],
+            email: [{ value: 'john@mock1.com' }],
+          },
+        },
+      ]),
+      getPersonDetails: vi.fn().mockResolvedValue({
+        id: { record_id: 'person_001' },
+        values: {
+          name: [{ full_name: 'Mock Person Details' }],
+          email: [{ value: 'mock@person.com' }],
+        },
+      }),
+      updatePerson: vi.fn().mockResolvedValue({
+        id: { record_id: 'person_001' },
+        values: {
+          name: [{ full_name: 'Updated Mock Person' }],
+          email: [{ value: 'updated@person.com' }],
+        },
+      }),
+      deletePerson: vi.fn().mockResolvedValue({ success: true }),
+      createPerson: vi.fn().mockResolvedValue({
+        id: { record_id: 'person_new' },
+        values: {
+          name: [{ full_name: 'New Mock Person' }],
+          email: [{ value: 'new@person.com' }],
+        },
+      }),
+    };
+  });
+
+  vi.mock('../../src/objects/lists.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      searchLists: vi.fn().mockResolvedValue([
+        {
+          id: { record_id: 'list_001' },
+          values: {
+            name: [{ value: 'Mock List' }],
+          },
+        },
+      ]),
+    };
+  });
+
+  vi.mock('../../src/objects/records/index.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      listObjectRecords: vi.fn().mockResolvedValue([
+        {
+          id: { record_id: 'record_001' },
+          values: {
+            name: [{ value: 'Mock Record' }],
+          },
+        },
+      ]),
+    };
+  });
+
+  vi.mock('../../src/objects/tasks.js', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      listTasks: vi.fn().mockResolvedValue([
+        {
+          id: { task_id: 'task_001' },
+          content: 'Mock Task',
+          status: 'pending',
+        },
+      ]),
+    };
+  });
 }
 
 import {
