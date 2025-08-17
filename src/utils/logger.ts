@@ -4,6 +4,7 @@
 
 import { randomUUID } from 'crypto';
 import { safeJsonStringify } from './json-serializer.js';
+import { safeGet } from '../types/error-types.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -268,10 +269,11 @@ export function error(
                 : typeof errorObj === 'object' && errorObj !== null
                   ? {
                       message:
-                        (errorObj as any).message || JSON.stringify(errorObj),
-                      name: (errorObj as any).name || 'Unknown',
-                      stack: (errorObj as any).stack,
-                      code: (errorObj as any).code,
+                        safeGet(errorObj, 'message') ||
+                        JSON.stringify(errorObj),
+                      name: safeGet(errorObj, 'name') || 'Unknown',
+                      stack: safeGet(errorObj, 'stack'),
+                      code: safeGet(errorObj, 'code'),
                       ...(errorObj as object),
                     }
                   : { message: String(errorObj), name: 'Unknown' },
