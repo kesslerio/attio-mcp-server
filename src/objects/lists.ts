@@ -26,16 +26,16 @@ import {
   transformFiltersToApiFormat,
   createPathBasedFilter,
 } from '../utils/record-utils.js';
+import {
+  ListMembership,
+  ListEntryValues,
+  ListEndpointConfig,
+  extractListEntryValues,
+  hasErrorResponse,
+} from '../types/list-types.js';
 
-/**
- * Represents a list membership entry for a record
- */
-export interface ListMembership {
-  listId: string;
-  listName: string;
-  entryId: string;
-  entryValues?: Record<string, any>;
-}
+// Re-export for backward compatibility
+export type { ListMembership } from '../types/list-types.js';
 
 /**
  * Gets all lists in the workspace
@@ -51,11 +51,11 @@ export async function getLists(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericLists(objectSlug, limit);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `Generic getLists failed: ${error.message || 'Unknown error'}`
-      );
+      console.log(`Generic getLists failed: ${errorMessage}`);
     }
     // Fallback implementation
     const api = getAttioClient();
@@ -80,11 +80,11 @@ export async function getListDetails(listId: string): Promise<AttioList> {
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListDetails(listId);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `Generic getListDetails failed: ${error.message || 'Unknown error'}`
-      );
+      console.log(`Generic getListDetails failed: ${errorMessage}`);
     }
     // Fallback implementation
     const api = getAttioClient();
@@ -190,13 +190,16 @@ async function tryMultipleListEntryEndpoints(
 
       // Process entries to ensure record_id is properly set from the utils function
       return processListEntries(entries);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorName = error instanceof Error ? error.name : 'UnknownError';
       if (process.env.NODE_ENV === 'development') {
         console.log(
           `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${
             endpoint.path
           }:`,
-          error.message || 'Unknown error',
+          errorMessage,
           {
             listId,
             limit,
@@ -205,7 +208,7 @@ async function tryMultipleListEntryEndpoints(
               filters && filters.filters ? filters.filters.length > 0 : false,
             endpoint: endpoint.method.toUpperCase(),
             path: endpoint.path,
-            errorType: error.name || 'UnknownError',
+            errorType: errorName,
           }
         );
       }
@@ -238,12 +241,12 @@ export async function getListEntries(
   // Use the generic operation with fallback to direct implementation
   try {
     return await getGenericListEntries(listId, limit, offset, filters);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `[getListEntries] Generic list entries failed: ${
-          error.message || 'Unknown error'
-        }`,
+        `[getListEntries] Generic list entries failed: ${errorMessage}`,
         {
           method: 'getGenericListEntries',
           listId,
@@ -272,7 +275,7 @@ export async function addRecordToList(
   listId: string,
   recordId: string,
   objectType: string,
-  initialValues?: Record<string, any>
+  initialValues?: ListEntryValues
 ): Promise<AttioListEntry> {
   // Input validation to ensure required parameters
   if (!listId || typeof listId !== 'string') {
@@ -305,10 +308,10 @@ export async function addRecordToList(
       objectType,
       initialValues
     );
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `Generic addRecordToList failed: ${error.message || 'Unknown error'}`
+        `Generic addRecordToList failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       console.log(
         `Falling back to direct implementation for list ${listId} and record ${recordId}`
@@ -352,38 +355,44 @@ export async function addRecordToList(
       }
 
       return response.data.data || response.data;
-    } catch (error: any) {
+    } catch (error) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[addRecordToList] Error adding record ${recordId} to list ${listId}:`,
-          error.message || 'Unknown error'
-        );
-        console.error('Status:', error.response?.status);
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response?.data || {})
+          error instanceof Error ? error.message : 'Unknown error'
         );
 
-        // Add additional debug information for validation errors
-        if (error.response?.data?.validation_errors) {
+        if (hasErrorResponse(error)) {
+          console.error('Status:', error.response?.status);
           console.error(
-            'Validation errors:',
-            JSON.stringify(error.response.data.validation_errors)
+            'Response data:',
+            JSON.stringify(error.response?.data || {})
           );
+
+          // Add additional debug information for validation errors
+          if (error.response?.data?.validation_errors) {
+            console.error(
+              'Validation errors:',
+              JSON.stringify(error.response.data.validation_errors)
+            );
+          }
         }
       }
 
       // Add more context to the error message
-      if (error.response?.status === 400) {
+      if (hasErrorResponse(error) && error.response?.status === 400) {
         const validationErrors = error.response?.data?.validation_errors || [];
         const errorDetails = validationErrors
-          .map((e: any) => `${e.path.join('.')}: ${e.message}`)
+          .map((e) => {
+            return `${e.path?.join('.') || 'unknown'}: ${e.message || 'unknown'}`;
+          })
           .join('; ');
 
         throw new Error(
           `Validation error adding record to list: ${
-            errorDetails || error.message
+            errorDetails ||
+            (error instanceof Error ? error.message : 'Unknown error')
           }`
         );
       }
@@ -405,7 +414,7 @@ export async function addRecordToList(
 export async function updateListEntry(
   listId: string,
   entryId: string,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ): Promise<AttioListEntry> {
   // Input validation
   if (!listId || typeof listId !== 'string') {
@@ -427,10 +436,10 @@ export async function updateListEntry(
   // Use the generic operation with fallback to direct implementation
   try {
     return await updateGenericListEntry(listId, entryId, attributes);
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `Generic updateListEntry failed: ${error.message || 'Unknown error'}`
+        `Generic updateListEntry failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       console.log(
         `Falling back to direct implementation for list ${listId}, entry ${entryId}`
@@ -481,11 +490,11 @@ export async function removeRecordFromList(
   // Use the generic operation with fallback to direct implementation
   try {
     return await removeGenericRecordFromList(listId, entryId);
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
         `Generic removeRecordFromList failed: ${
-          error.message || 'Unknown error'
+          error instanceof Error ? error.message : 'Unknown error'
         }`
       );
     }
@@ -682,13 +691,13 @@ export async function getRecordListMemberships(
               );
             }
           }
-        } catch (error: any) {
+        } catch (error) {
           // Log error but continue with other lists
           if (process.env.NODE_ENV === 'development') {
             console.error(
               `[getRecordListMemberships] Error getting entries for list ${
                 listConfig.listId
-              }: ${error.message || 'Unknown error'}`
+              }: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
           }
         }
@@ -705,11 +714,11 @@ export async function getRecordListMemberships(
     }
 
     return allMemberships;
-  } catch (error: any) {
+  } catch (error) {
     // Log error for debugging
     if (process.env.NODE_ENV === 'development') {
       console.error(
-        `[getRecordListMemberships] Error: ${error.message || 'Unknown error'}`
+        `[getRecordListMemberships] Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
     throw error;
@@ -743,7 +752,7 @@ export async function filterListEntries(
   listId: string,
   attributeSlug: string,
   condition: string,
-  value: any,
+  value: unknown,
   limit: number = 20,
   offset: number = 0
 ): Promise<AttioListEntry[]> {
@@ -855,7 +864,7 @@ export async function filterListEntriesByParent(
   parentObjectType: string,
   parentAttributeSlug: string,
   condition: string,
-  value: any,
+  value: unknown,
   limit: number = 20,
   offset: number = 0
 ): Promise<AttioListEntry[]> {
@@ -928,30 +937,30 @@ export async function filterListEntriesByParent(
     }
 
     return entries;
-  } catch (error: any) {
+  } catch (error) {
     // Enhanced error logging
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[filterListEntriesByParent] Error filtering list entries: ${
-          error.message || 'Unknown error'
+          error instanceof Error ? error.message : 'Unknown error'
         }`
       );
 
-      if (error.response) {
-        console.error('Status:', error.response.status);
+      if (hasErrorResponse(error)) {
+        console.error('Status:', error.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response.data || {})
+          JSON.stringify(error.response?.data || {})
         );
       }
     }
 
     // Add context to error message
-    if (error.response?.status === 400) {
+    if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid filter parameters: ${error.message || 'Bad request'}`
+        `Invalid filter parameters: ${error instanceof Error ? error.message : 'Bad request'}`
       );
-    } else if (error.response?.status === 404) {
+    } else if (hasErrorResponse(error) && error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
     }
 
@@ -1032,7 +1041,7 @@ export async function createList(
     }
 
     return response.data.data || response.data;
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(`[createList] Error:`, error.message || 'Unknown error');
       if (error.response) {
@@ -1097,7 +1106,7 @@ export async function updateList(
     }
 
     return response.data.data || response.data;
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(`[updateList] Error:`, error.message || 'Unknown error');
       if (error.response) {
@@ -1151,7 +1160,7 @@ export async function deleteList(listId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(`[deleteList] Error:`, error.message || 'Unknown error');
       if (error.response) {
@@ -1212,7 +1221,7 @@ export async function getListAttributes(): Promise<Record<string, unknown>> {
   try {
     const response = await api.get(path);
     return response.data.data || response.data || [];
-  } catch (error: any) {
+  } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[getListAttributes] Error:`,
