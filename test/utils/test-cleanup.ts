@@ -6,6 +6,14 @@
 import { getAttioClient } from '../../src/api/attio-client.js';
 
 /**
+ * Interface for Attio API client
+ */
+interface AttioClient {
+  post(url: string, data: any): Promise<any>;
+  delete(url: string): Promise<any>;
+}
+
+/**
  * Validates that required environment variables are set
  * @throws Error if required environment variables are missing
  */
@@ -65,7 +73,7 @@ export async function cleanupTestData(
  * Clean up test people records
  */
 async function cleanupTestPeople(
-  client: any,
+  client: AttioClient,
   testPrefix: string
 ): Promise<void> {
   try {
@@ -86,7 +94,7 @@ async function cleanupTestPeople(
       },
     });
 
-    const records = response.data?.data || [];
+    const records = response.data?.data ?? [];
     for (const record of records) {
       await client.delete(
         `/api/v2/objects/people/records/${record.id.record_id}`
@@ -102,7 +110,7 @@ async function cleanupTestPeople(
  * Clean up test company records
  */
 async function cleanupTestCompanies(
-  client: any,
+  client: AttioClient,
   testPrefix: string
 ): Promise<void> {
   try {
@@ -117,7 +125,7 @@ async function cleanupTestCompanies(
       }
     );
 
-    const records = response.data?.data || [];
+    const records = response.data?.data ?? [];
     for (const record of records) {
       await client.delete(
         `/api/v2/objects/companies/records/${record.id.record_id}`
@@ -133,7 +141,7 @@ async function cleanupTestCompanies(
  * Clean up test tasks
  */
 async function cleanupTestTasks(
-  client: any,
+  client: AttioClient,
   testPrefix: string
 ): Promise<void> {
   try {
@@ -145,7 +153,7 @@ async function cleanupTestTasks(
       },
     });
 
-    const tasks = response.data?.data || [];
+    const tasks = response.data?.data ?? [];
     for (const task of tasks) {
       await client.delete(`/api/v2/tasks/${task.id.task_id}`);
       console.log(`Deleted test task: ${task.id.task_id}`);
