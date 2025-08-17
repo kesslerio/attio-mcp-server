@@ -12,7 +12,7 @@ export const notesToolConfigs = {
   notes: {
     name: 'get-company-notes',
     handler: getCompanyNotes,
-    formatResult: (notes: any) => {
+    formatResult: (notes) => {
       if (!notes || notes.length === 0) {
         return 'No notes found for this company.';
       }
@@ -83,7 +83,7 @@ export const notesToolConfigs = {
     name: 'create-company-note',
     handler: createCompanyNote,
     idParam: 'companyId',
-    formatResult: (note: any) => {
+    formatResult: (note) => {
       if (!note) {
         return 'Failed to create note.';
       }

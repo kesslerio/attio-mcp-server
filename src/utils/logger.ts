@@ -4,6 +4,7 @@
 
 import { randomUUID } from 'crypto';
 import { safeJsonStringify } from './json-serializer.js';
+import { safeGet } from '../types/error-types.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -268,10 +269,11 @@ export function error(
                 : typeof errorObj === 'object' && errorObj !== null
                   ? {
                       message:
-                        (errorObj as any).message || JSON.stringify(errorObj),
-                      name: (errorObj as any).name || 'Unknown',
-                      stack: (errorObj as any).stack,
-                      code: (errorObj as any).code,
+                        safeGet(errorObj, 'message') ||
+                        JSON.stringify(errorObj),
+                      name: safeGet(errorObj, 'name') || 'Unknown',
+                      stack: safeGet(errorObj, 'stack'),
+                      code: safeGet(errorObj, 'code'),
                       ...(errorObj as object),
                     }
                   : { message: String(errorObj), name: 'Unknown' },
@@ -436,15 +438,22 @@ export function createScopedLogger(
   operationType?: OperationType
 ) {
   return {
-    debug: (message: string, data?: any) =>
+    debug: (message: string, data?: Record<string, unknown>) =>
       debug(module, message, data, operation, operationType),
-    info: (message: string, data?: any) =>
+    info: (message: string, data?: Record<string, unknown>) =>
       info(module, message, data, operation, operationType),
-    warn: (message: string, data?: any) =>
+    warn: (message: string, data?: Record<string, unknown>) =>
       warn(module, message, data, operation, operationType),
-    error: (message: string, errorObj?: any, data?: any) =>
-      error(module, message, errorObj, data, operation, operationType),
-    operationStart: (op?: string, opType?: OperationType, params?: any) =>
+    error: (
+      message: string,
+      errorObj?: unknown,
+      data?: Record<string, unknown>
+    ) => error(module, message, errorObj, data, operation, operationType),
+    operationStart: (
+      op?: string,
+      opType?: OperationType,
+      params?: Record<string, unknown>
+    ) =>
       operationStart(
         module,
         op || operation || 'unknown',
@@ -467,7 +476,7 @@ export function createScopedLogger(
     operationFailure: (
       op?: string,
       errorObj?: unknown,
-      context?: any,
+      context?: Record<string, unknown>,
       opType?: OperationType,
       duration?: number
     ) =>
@@ -490,7 +499,7 @@ export async function withLogging<T>(
   operation: string,
   operationType: OperationType,
   fn: () => Promise<T>,
-  context?: any
+  context?: Record<string, unknown>
 ): Promise<T> {
   const timer = operationStart(module, operation, operationType, context);
   try {
@@ -525,7 +534,7 @@ export async function withLogging<T>(
  * @param message - Message to log
  * @param args - Additional arguments to log
  */
-export function safeMcpLog(message: string, ...args: any[]): void {
+export function safeMcpLog(message: string, ...args: unknown[]): void {
   // Always use console.error to avoid interfering with MCP protocol
   console.error(`[MCP_SAFE_LOG] ${message}`, ...args);
 }
