@@ -569,4 +569,192 @@ describe('UniversalUtilityService', () => {
       ).toBe('unknown records');
     });
   });
+
+  describe('extractDisplayName', () => {
+    describe('Field Priority (name → full_name → title → content)', () => {
+      it('should prioritize name field value over other fields', () => {
+        const values = {
+          name: [{ value: 'Company Name' }],
+          full_name: [{ value: 'Full Company Name' }],
+          title: [{ value: 'Company Title' }],
+          content: [{ value: 'Company Content' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Company Name');
+      });
+
+      it('should use name field full_name when value is missing', () => {
+        const values = {
+          name: [{ full_name: 'John Doe Full Name' }],
+          title: [{ value: 'Person Title' }],
+          content: [{ value: 'Person Content' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('John Doe Full Name');
+      });
+
+      it('should fallback to full_name field when name is unavailable', () => {
+        const values = {
+          full_name: [{ value: 'Full Name Value' }],
+          title: [{ value: 'Title Value' }],
+          content: [{ value: 'Content Value' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Full Name Value');
+      });
+
+      it('should fallback to title field when name and full_name are unavailable', () => {
+        const values = {
+          title: [{ value: 'Title Value' }],
+          content: [{ value: 'Content Value' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Title Value');
+      });
+
+      it('should fallback to content field when other fields are unavailable (Issue #472)', () => {
+        const values = {
+          content: [{ value: 'Follow up with client about proposal' }],
+          status: [{ value: 'pending' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Follow up with client about proposal');
+      });
+    });
+
+    describe('Edge Cases and Error Handling', () => {
+      it('should return "Unnamed" for empty object', () => {
+        expect(UniversalUtilityService.extractDisplayName({})).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" for null input', () => {
+        expect(UniversalUtilityService.extractDisplayName(null as any)).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" for undefined input', () => {
+        expect(UniversalUtilityService.extractDisplayName(undefined as any)).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" for non-object input', () => {
+        expect(UniversalUtilityService.extractDisplayName('string' as any)).toBe('Unnamed');
+        expect(UniversalUtilityService.extractDisplayName(123 as any)).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" when all fields are empty arrays', () => {
+        const values = {
+          name: [],
+          full_name: [],
+          title: [],
+          content: [],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" when all fields are null/undefined', () => {
+        const values = {
+          name: null,
+          full_name: undefined,
+          title: null,
+          content: undefined,
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+      });
+
+      it('should return "Unnamed" when field values are empty strings', () => {
+        const values = {
+          name: [{ value: '' }],
+          full_name: [{ value: '   ' }], // whitespace only
+          title: [{ value: null }],
+          content: [{ value: undefined }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+      });
+
+      it('should handle mixed data types gracefully', () => {
+        const values = {
+          name: 'not an array',
+          full_name: [{ value: 123 }], // number instead of string
+          title: [{ notValue: 'wrong property' }],
+          content: [{ value: 'Valid Content' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Valid Content');
+      });
+    });
+
+    describe('Real-world Data Patterns', () => {
+      it('should handle task records correctly (Issue #472 regression test)', () => {
+        const taskValues = {
+          content: [{ value: 'Schedule team standup meeting for next week' }],
+          status: [{ value: 'pending' }],
+          assignee: [{ value: 'user-123' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(taskValues)).toBe('Schedule team standup meeting for next week');
+      });
+
+      it('should handle company records correctly', () => {
+        const companyValues = {
+          name: [{ value: 'Acme Corporation' }],
+          website: [{ value: 'https://acme.com' }],
+          industry: [{ value: 'Technology' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(companyValues)).toBe('Acme Corporation');
+      });
+
+      it('should handle person records with full_name correctly', () => {
+        const personValues = {
+          name: [{ full_name: 'John Smith' }],
+          email: [{ value: 'john@example.com' }],
+          phone: [{ value: '+1234567890' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(personValues)).toBe('John Smith');
+      });
+
+      it('should handle records with only title (like documents)', () => {
+        const documentValues = {
+          title: [{ value: 'Q4 Budget Report' }],
+          created_at: [{ value: '2025-08-17' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(documentValues)).toBe('Q4 Budget Report');
+      });
+
+      it('should trim whitespace from extracted values', () => {
+        const values = {
+          name: [{ value: '  Test Company  ' }],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Test Company');
+      });
+    });
+
+    describe('Backward Compatibility', () => {
+      it('should work with Record<string, unknown> type (legacy usage)', () => {
+        const legacyValues: Record<string, unknown> = {
+          name: [{ value: 'Legacy Company' }],
+          someOtherField: 'other data',
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(legacyValues)).toBe('Legacy Company');
+      });
+
+      it('should handle arrays with multiple items (uses first item only)', () => {
+        const values = {
+          name: [
+            { value: 'First Name' },
+            { value: 'Second Name' },
+            { value: 'Third Name' },
+          ],
+        };
+        
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe('First Name');
+      });
+    });
+  });
 });
