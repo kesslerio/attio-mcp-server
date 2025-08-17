@@ -579,8 +579,10 @@ describe('UniversalUtilityService', () => {
           title: [{ value: 'Company Title' }],
           content: [{ value: 'Company Content' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Company Name');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Company Name'
+        );
       });
 
       it('should use name field full_name when value is missing', () => {
@@ -589,8 +591,10 @@ describe('UniversalUtilityService', () => {
           title: [{ value: 'Person Title' }],
           content: [{ value: 'Person Content' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('John Doe Full Name');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'John Doe Full Name'
+        );
       });
 
       it('should fallback to full_name field when name is unavailable', () => {
@@ -599,8 +603,10 @@ describe('UniversalUtilityService', () => {
           title: [{ value: 'Title Value' }],
           content: [{ value: 'Content Value' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Full Name Value');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Full Name Value'
+        );
       });
 
       it('should fallback to title field when name and full_name are unavailable', () => {
@@ -608,8 +614,10 @@ describe('UniversalUtilityService', () => {
           title: [{ value: 'Title Value' }],
           content: [{ value: 'Content Value' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Title Value');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Title Value'
+        );
       });
 
       it('should fallback to content field when other fields are unavailable (Issue #472)', () => {
@@ -617,8 +625,10 @@ describe('UniversalUtilityService', () => {
           content: [{ value: 'Follow up with client about proposal' }],
           status: [{ value: 'pending' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Follow up with client about proposal');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Follow up with client about proposal'
+        );
       });
     });
 
@@ -628,16 +638,24 @@ describe('UniversalUtilityService', () => {
       });
 
       it('should return "Unnamed" for null input', () => {
-        expect(UniversalUtilityService.extractDisplayName(null as any)).toBe('Unnamed');
+        expect(UniversalUtilityService.extractDisplayName(null as any)).toBe(
+          'Unnamed'
+        );
       });
 
       it('should return "Unnamed" for undefined input', () => {
-        expect(UniversalUtilityService.extractDisplayName(undefined as any)).toBe('Unnamed');
+        expect(
+          UniversalUtilityService.extractDisplayName(undefined as any)
+        ).toBe('Unnamed');
       });
 
       it('should return "Unnamed" for non-object input', () => {
-        expect(UniversalUtilityService.extractDisplayName('string' as any)).toBe('Unnamed');
-        expect(UniversalUtilityService.extractDisplayName(123 as any)).toBe('Unnamed');
+        expect(
+          UniversalUtilityService.extractDisplayName('string' as any)
+        ).toBe('Unnamed');
+        expect(UniversalUtilityService.extractDisplayName(123 as any)).toBe(
+          'Unnamed'
+        );
       });
 
       it('should return "Unnamed" when all fields are empty arrays', () => {
@@ -647,8 +665,10 @@ describe('UniversalUtilityService', () => {
           title: [],
           content: [],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Unnamed'
+        );
       });
 
       it('should return "Unnamed" when all fields are null/undefined', () => {
@@ -658,8 +678,10 @@ describe('UniversalUtilityService', () => {
           title: null,
           content: undefined,
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Unnamed'
+        );
       });
 
       it('should return "Unnamed" when field values are empty strings', () => {
@@ -669,8 +691,10 @@ describe('UniversalUtilityService', () => {
           title: [{ value: null }],
           content: [{ value: undefined }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Unnamed');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Unnamed'
+        );
       });
 
       it('should handle mixed data types gracefully', () => {
@@ -680,8 +704,10 @@ describe('UniversalUtilityService', () => {
           title: [{ notValue: 'wrong property' }],
           content: [{ value: 'Valid Content' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Valid Content');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Valid Content'
+        );
       });
     });
 
@@ -692,8 +718,10 @@ describe('UniversalUtilityService', () => {
           status: [{ value: 'pending' }],
           assignee: [{ value: 'user-123' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(taskValues)).toBe('Schedule team standup meeting for next week');
+
+        expect(UniversalUtilityService.extractDisplayName(taskValues)).toBe(
+          'Schedule team standup meeting for next week'
+        );
       });
 
       it('should handle company records correctly', () => {
@@ -702,8 +730,10 @@ describe('UniversalUtilityService', () => {
           website: [{ value: 'https://acme.com' }],
           industry: [{ value: 'Technology' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(companyValues)).toBe('Acme Corporation');
+
+        expect(UniversalUtilityService.extractDisplayName(companyValues)).toBe(
+          'Acme Corporation'
+        );
       });
 
       it('should handle person records with full_name correctly', () => {
@@ -712,8 +742,10 @@ describe('UniversalUtilityService', () => {
           email: [{ value: 'john@example.com' }],
           phone: [{ value: '+1234567890' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(personValues)).toBe('John Smith');
+
+        expect(UniversalUtilityService.extractDisplayName(personValues)).toBe(
+          'John Smith'
+        );
       });
 
       it('should handle records with only title (like documents)', () => {
@@ -721,16 +753,20 @@ describe('UniversalUtilityService', () => {
           title: [{ value: 'Q4 Budget Report' }],
           created_at: [{ value: '2025-08-17' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(documentValues)).toBe('Q4 Budget Report');
+
+        expect(UniversalUtilityService.extractDisplayName(documentValues)).toBe(
+          'Q4 Budget Report'
+        );
       });
 
       it('should trim whitespace from extracted values', () => {
         const values = {
           name: [{ value: '  Test Company  ' }],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('Test Company');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'Test Company'
+        );
       });
     });
 
@@ -740,8 +776,10 @@ describe('UniversalUtilityService', () => {
           name: [{ value: 'Legacy Company' }],
           someOtherField: 'other data',
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(legacyValues)).toBe('Legacy Company');
+
+        expect(UniversalUtilityService.extractDisplayName(legacyValues)).toBe(
+          'Legacy Company'
+        );
       });
 
       it('should handle arrays with multiple items (uses first item only)', () => {
@@ -752,8 +790,10 @@ describe('UniversalUtilityService', () => {
             { value: 'Third Name' },
           ],
         };
-        
-        expect(UniversalUtilityService.extractDisplayName(values)).toBe('First Name');
+
+        expect(UniversalUtilityService.extractDisplayName(values)).toBe(
+          'First Name'
+        );
       });
     });
   });

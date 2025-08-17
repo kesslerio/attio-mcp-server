@@ -6,7 +6,12 @@
  */
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord, AttioTask, AttioRecordValues, AttioFieldValue } from '../types/attio.js';
+import {
+  AttioRecord,
+  AttioTask,
+  AttioRecordValues,
+  AttioFieldValue,
+} from '../types/attio.js';
 
 /**
  * UniversalUtilityService provides centralized utility functions
@@ -160,21 +165,21 @@ export class UniversalUtilityService {
 
   /**
    * Extract display name from AttioRecord values with proper field priority
-   * 
+   *
    * Centralizes the logic for determining display names from record field values.
    * Handles both direct object access and array-wrapped values patterns used
    * throughout the codebase. Eliminates code duplication between formatResult functions.
-   * 
+   *
    * Field Priority Order:
    * 1. name (checks both 'value' and 'full_name' properties)
    * 2. full_name
-   * 3. title  
+   * 3. title
    * 4. content
    * 5. fallback to 'Unnamed'
-   * 
+   *
    * @param values - The record values object (can be from record.values or direct values)
    * @returns The extracted display name string or 'Unnamed' if no suitable field found
-   * 
+   *
    * @example
    * ```typescript
    * const displayName = UniversalUtilityService.extractDisplayName(record.values);
@@ -183,7 +188,9 @@ export class UniversalUtilityService {
    * // For empty record: "Unnamed"
    * ```
    */
-  static extractDisplayName(values: AttioRecordValues | Record<string, unknown>): string {
+  static extractDisplayName(
+    values: AttioRecordValues | Record<string, unknown>
+  ): string {
     if (!values || typeof values !== 'object') {
       return 'Unnamed';
     }
@@ -191,19 +198,19 @@ export class UniversalUtilityService {
     // Helper function to safely extract value from field
     const extractFieldValue = (field: unknown): string | null => {
       if (!field) return null;
-      
+
       if (Array.isArray(field) && field.length > 0) {
         const firstItem = field[0] as AttioFieldValue;
         // For name field, check both 'value' and 'full_name' properties
         return firstItem?.value || firstItem?.full_name || null;
       }
-      
+
       return null;
     };
 
     // Check fields in priority order
     const fieldPriority = ['name', 'full_name', 'title', 'content'] as const;
-    
+
     for (const fieldName of fieldPriority) {
       const fieldValue = extractFieldValue(values[fieldName]);
       if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim()) {

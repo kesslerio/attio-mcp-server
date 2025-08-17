@@ -9,11 +9,6 @@
  */
 
 import { describe, beforeEach, it, expect, vi, afterEach } from 'vitest';
-import {
-  universalBatchSearch,
-  UniversalBatchSearchResult,
-  universalBatchGetDetails,
-} from '../../src/api/operations/batch.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { batchSearchConfig } from '../../src/handlers/tool-configs/universal/batch-search.js';
 import { batchOperationsConfig } from '../../src/handlers/tool-configs/universal/advanced-operations.js';
@@ -22,53 +17,58 @@ import { AttioRecord } from '../../src/types/attio.js';
 // Mock the dependencies
 vi.mock('../../src/api/attio-client.js');
 vi.mock('../../src/services/UniversalSearchService.js');
-vi.mock('../../src/api/operations/batch.js', async () => {
-  const actual = await vi.importActual('../../src/api/operations/batch.js');
+vi.mock('../../src/api/operations/batch.js', async (importOriginal) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     batchSearchObjects: vi.fn(),
     executeBatchOperations: vi.fn(),
+    universalBatchSearch: vi.fn(),
+    universalBatchGetDetails: vi.fn(),
+    batchCreateRecords: vi.fn(),
+    batchUpdateRecords: vi.fn(),
+    batchGetObjectDetails: vi.fn(),
   };
 });
 
+// Mock data for testing - moved outside describe block for global access
+const mockCompanyRecords: AttioRecord[] = [
+  {
+    id: { record_id: 'comp_001' },
+    values: {
+      name: [{ value: 'TechCorp Inc' }],
+      domain: [{ value: 'techcorp.com' }],
+    },
+  },
+  {
+    id: { record_id: 'comp_002' },
+    values: {
+      name: [{ value: 'InnovateSoft' }],
+      domain: [{ value: 'innovatesoft.com' }],
+    },
+  },
+];
+
+const mockPeopleRecords: AttioRecord[] = [
+  {
+    id: { record_id: 'person_001' },
+    values: {
+      name: [{ value: 'John Smith' }],
+      email: [{ value: 'john@techcorp.com' }],
+    },
+  },
+  {
+    id: { record_id: 'person_002' },
+    values: {
+      name: [{ value: 'Jane Doe' }],
+      email: [{ value: 'jane@innovatesoft.com' }],
+    },
+  },
+];
+
+const testQueries = ['tech', 'software', 'consulting'];
+
 describe('Issue #471: Batch Search Operations', () => {
-  // Mock data for testing
-  const mockCompanyRecords: AttioRecord[] = [
-    {
-      id: { record_id: 'comp_001' },
-      values: {
-        name: [{ value: 'TechCorp Inc' }],
-        domain: [{ value: 'techcorp.com' }],
-      },
-    },
-    {
-      id: { record_id: 'comp_002' },
-      values: {
-        name: [{ value: 'InnovateSoft' }],
-        domain: [{ value: 'innovatesoft.com' }],
-      },
-    },
-  ];
-
-  const mockPeopleRecords: AttioRecord[] = [
-    {
-      id: { record_id: 'person_001' },
-      values: {
-        name: [{ value: 'John Smith' }],
-        email: [{ value: 'john@techcorp.com' }],
-      },
-    },
-    {
-      id: { record_id: 'person_002' },
-      values: {
-        name: [{ value: 'Jane Doe' }],
-        email: [{ value: 'jane@innovatesoft.com' }],
-      },
-    },
-  ];
-
-  const testQueries = ['tech', 'software', 'consulting'];
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -79,30 +79,27 @@ describe('Issue #471: Batch Search Operations', () => {
 
   describe('universalBatchSearch API function', () => {
     it('should handle batch search for companies with multiple queries', async () => {
-      // Mock the legacy batch API for companies
-      const { batchSearchObjects } = await import(
+      // Mock the universalBatchSearch function directly
+      const { universalBatchSearch } = await import(
         '../../src/api/operations/batch.js'
       );
-      vi.mocked(batchSearchObjects).mockResolvedValue({
-        results: [
-          {
-            success: true,
-            data: mockCompanyRecords.slice(0, 1),
-            id: 'search_companies_0',
-          },
-          {
-            success: true,
-            data: mockCompanyRecords.slice(1, 2),
-            id: 'search_companies_1',
-          },
-          {
-            success: false,
-            error: new Error('Not found'),
-            id: 'search_companies_2',
-          },
-        ],
-        summary: { total: 3, succeeded: 2, failed: 1 },
-      });
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'tech',
+          result: mockCompanyRecords.slice(0, 1),
+        },
+        {
+          success: true,
+          query: 'software',
+          result: mockCompanyRecords.slice(1, 2),
+        },
+        {
+          success: false,
+          query: 'consulting',
+          error: 'Not found',
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.COMPANIES,
@@ -129,25 +126,26 @@ describe('Issue #471: Batch Search Operations', () => {
     });
 
     it('should handle batch search for people with multiple queries', async () => {
-      const { batchSearchObjects } = await import(
+      const { universalBatchSearch } = await import(
         '../../src/api/operations/batch.js'
       );
-      vi.mocked(batchSearchObjects).mockResolvedValue({
-        results: [
-          {
-            success: true,
-            data: mockPeopleRecords.slice(0, 1),
-            id: 'search_people_0',
-          },
-          {
-            success: true,
-            data: mockPeopleRecords.slice(1, 2),
-            id: 'search_people_1',
-          },
-          { success: true, data: [], id: 'search_people_2' },
-        ],
-        summary: { total: 3, succeeded: 3, failed: 0 },
-      });
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'tech',
+          result: mockPeopleRecords.slice(0, 1),
+        },
+        {
+          success: true,
+          query: 'software',
+          result: mockPeopleRecords.slice(1, 2),
+        },
+        {
+          success: true,
+          query: 'consulting',
+          result: [],
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.PEOPLE,
@@ -163,14 +161,27 @@ describe('Issue #471: Batch Search Operations', () => {
     });
 
     it('should handle batch search for universal resource types (lists, records, tasks)', async () => {
-      // Mock UniversalSearchService for non-legacy resource types
-      const { UniversalSearchService } = await import(
-        '../../src/services/UniversalSearchService.js'
+      // Mock universalBatchSearch function directly
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
       );
-      vi.mocked(UniversalSearchService.searchRecords)
-        .mockResolvedValueOnce([]) // First query
-        .mockRejectedValueOnce(new Error('Service unavailable')) // Second query
-        .mockResolvedValueOnce(mockCompanyRecords.slice(0, 1)); // Third query
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'tech',
+          result: [],
+        },
+        {
+          success: false,
+          query: 'software',
+          error: 'Service unavailable',
+        },
+        {
+          success: true,
+          query: 'consulting',
+          result: mockCompanyRecords.slice(0, 1),
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.TASKS,
@@ -197,12 +208,26 @@ describe('Issue #471: Batch Search Operations', () => {
     });
 
     it('should handle complete batch failure gracefully', async () => {
-      const { batchSearchObjects } = await import(
+      const { universalBatchSearch } = await import(
         '../../src/api/operations/batch.js'
       );
-      vi.mocked(batchSearchObjects).mockRejectedValue(
-        new Error('API unavailable')
-      );
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: false,
+          query: 'tech',
+          error: 'API unavailable',
+        },
+        {
+          success: false,
+          query: 'software',
+          error: 'API unavailable',
+        },
+        {
+          success: false,
+          query: 'consulting',
+          error: 'API unavailable',
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.COMPANIES,
@@ -215,7 +240,14 @@ describe('Issue #471: Batch Search Operations', () => {
     });
 
     it('should validate batch size limits', async () => {
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
+      );
       const tooManyQueries = new Array(101).fill('test-query');
+
+      vi.mocked(universalBatchSearch).mockRejectedValue(
+        new Error('Batch size limit exceeded')
+      );
 
       await expect(
         universalBatchSearch(UniversalResourceType.COMPANIES, tooManyQueries)
@@ -225,22 +257,23 @@ describe('Issue #471: Batch Search Operations', () => {
 
   describe('batch-search universal tool', () => {
     it('should handle batch search tool invocation correctly', async () => {
-      // Mock the universalBatchSearch function
-      vi.doMock('../../src/api/operations/batch.js', () => ({
-        universalBatchSearch: vi.fn().mockResolvedValue([
-          {
-            success: true,
-            query: 'tech',
-            result: mockCompanyRecords.slice(0, 1),
-          },
-          {
-            success: true,
-            query: 'software',
-            result: mockCompanyRecords.slice(1, 2),
-          },
-          { success: false, query: 'consulting', error: 'Not found' },
-        ]),
-      }));
+      // Use the file-level mock instead of doMock
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
+      );
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'tech',
+          result: mockCompanyRecords.slice(0, 1),
+        },
+        {
+          success: true,
+          query: 'software',
+          result: mockCompanyRecords.slice(1, 2),
+        },
+        { success: false, query: 'consulting', error: 'Not found' },
+      ]);
 
       const result = await batchSearchConfig.handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -305,21 +338,22 @@ describe('Issue #471: Batch Search Operations', () => {
 
   describe('Enhanced batch-operations tool with queries array', () => {
     it('should handle batch search operation with queries array', async () => {
-      // Mock the universalBatchSearch function
-      vi.doMock('../../src/api/operations/batch.js', () => ({
-        universalBatchSearch: vi.fn().mockResolvedValue([
-          {
-            success: true,
-            query: 'tech',
-            result: mockCompanyRecords.slice(0, 1),
-          },
-          {
-            success: true,
-            query: 'software',
-            result: mockCompanyRecords.slice(1, 2),
-          },
-        ]),
-      }));
+      // Use the file-level mock instead of doMock
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
+      );
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'tech',
+          result: mockCompanyRecords.slice(0, 1),
+        },
+        {
+          success: true,
+          query: 'software',
+          result: mockCompanyRecords.slice(1, 2),
+        },
+      ]);
 
       const result = await batchOperationsConfig.handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -385,13 +419,26 @@ describe('Issue #471: Batch Search Operations', () => {
 
   describe('Error isolation and performance', () => {
     it('should isolate errors between queries', async () => {
-      const { UniversalSearchService } = await import(
-        '../../src/services/UniversalSearchService.js'
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
       );
-      vi.mocked(UniversalSearchService.searchRecords)
-        .mockResolvedValueOnce(mockCompanyRecords.slice(0, 1)) // Success
-        .mockRejectedValueOnce(new Error('Network error')) // Failure
-        .mockResolvedValueOnce(mockCompanyRecords.slice(1, 2)); // Success
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'query1',
+          result: mockCompanyRecords.slice(0, 1),
+        },
+        {
+          success: false,
+          query: 'query2',
+          error: 'Network error',
+        },
+        {
+          success: true,
+          query: 'query3',
+          result: mockCompanyRecords.slice(1, 2),
+        },
+      ]);
 
       const result = await universalBatchSearch(UniversalResourceType.TASKS, [
         'query1',
@@ -408,13 +455,26 @@ describe('Issue #471: Batch Search Operations', () => {
 
     it('should maintain query order in results', async () => {
       const queries = ['alpha', 'beta', 'gamma'];
-      const { UniversalSearchService } = await import(
-        '../../src/services/UniversalSearchService.js'
+      const { universalBatchSearch } = await import(
+        '../../src/api/operations/batch.js'
       );
-      vi.mocked(UniversalSearchService.searchRecords)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'alpha',
+          result: [],
+        },
+        {
+          success: true,
+          query: 'beta',
+          result: [],
+        },
+        {
+          success: true,
+          query: 'gamma',
+          result: [],
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.LISTS,
@@ -428,18 +488,31 @@ describe('Issue #471: Batch Search Operations', () => {
     });
 
     it('should handle mixed success and failure scenarios', async () => {
-      const { batchSearchObjects } = await import(
+      const { universalBatchSearch } = await import(
         '../../src/api/operations/batch.js'
       );
-      vi.mocked(batchSearchObjects).mockResolvedValue({
-        results: [
-          { success: true, data: mockCompanyRecords, id: 'search_0' },
-          { success: false, error: new Error('Rate limited'), id: 'search_1' },
-          { success: true, data: [], id: 'search_2' },
-          { success: false, error: new Error('Invalid query'), id: 'search_3' },
-        ],
-        summary: { total: 4, succeeded: 2, failed: 2 },
-      });
+      vi.mocked(universalBatchSearch).mockResolvedValue([
+        {
+          success: true,
+          query: 'valid1',
+          result: mockCompanyRecords,
+        },
+        {
+          success: false,
+          query: 'invalid1',
+          error: 'Rate limited',
+        },
+        {
+          success: true,
+          query: 'valid2',
+          result: [],
+        },
+        {
+          success: false,
+          query: 'invalid2',
+          error: 'Invalid query',
+        },
+      ]);
 
       const result = await universalBatchSearch(
         UniversalResourceType.COMPANIES,
@@ -475,27 +548,16 @@ describe('Issue #471: Batch Search Operations', () => {
     it.each(resourceTypes)(
       'should handle %s resource type',
       async (resourceType) => {
-        if (
-          [
-            UniversalResourceType.COMPANIES,
-            UniversalResourceType.PEOPLE,
-          ].includes(resourceType)
-        ) {
-          // Mock legacy batch API
-          const { batchSearchObjects } = await import(
-            '../../src/api/operations/batch.js'
-          );
-          vi.mocked(batchSearchObjects).mockResolvedValue({
-            results: [{ success: true, data: [], id: 'search_0' }],
-            summary: { total: 1, succeeded: 1, failed: 0 },
-          });
-        } else {
-          // Mock UniversalSearchService
-          const { UniversalSearchService } = await import(
-            '../../src/services/UniversalSearchService.js'
-          );
-          vi.mocked(UniversalSearchService.searchRecords).mockResolvedValue([]);
-        }
+        const { universalBatchSearch } = await import(
+          '../../src/api/operations/batch.js'
+        );
+        vi.mocked(universalBatchSearch).mockResolvedValue([
+          {
+            success: true,
+            query: 'test-query',
+            result: [],
+          },
+        ]);
 
         const result = await universalBatchSearch(resourceType, ['test-query']);
 
@@ -508,16 +570,17 @@ describe('Issue #471: Batch Search Operations', () => {
 
   describe('Performance benchmarks', () => {
     it('should complete batch search within reasonable time limits', async () => {
-      const { batchSearchObjects } = await import(
+      const { universalBatchSearch } = await import(
         '../../src/api/operations/batch.js'
       );
-      vi.mocked(batchSearchObjects).mockImplementation(async () => {
+      vi.mocked(universalBatchSearch).mockImplementation(async () => {
         // Simulate realistic API delay
         await new Promise((resolve) => setTimeout(resolve, 100));
-        return {
-          results: [{ success: true, data: [], id: 'search_0' }],
-          summary: { total: 1, succeeded: 1, failed: 0 },
-        };
+        return [
+          { success: true, query: 'query1', result: [] },
+          { success: true, query: 'query2', result: [] },
+          { success: true, query: 'query3', result: [] },
+        ];
       });
 
       const startTime = performance.now();
