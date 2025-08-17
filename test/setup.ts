@@ -4,6 +4,17 @@
  */
 import { vi, beforeEach } from 'vitest';
 import { createMockApiClient } from './types/test-types';
+import { validateTestEnvironment, getDetailedErrorMessage } from './utils/test-cleanup';
+
+// Validate environment for integration tests
+if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
+  try {
+    validateTestEnvironment();
+  } catch (error) {
+    console.error('Test environment validation failed:', getDetailedErrorMessage(error));
+    console.error('Integration tests will fail without proper environment setup.');
+  }
+}
 
 // Global mock for attio-client (skip for E2E tests)
 if (process.env.E2E_MODE !== 'true') {

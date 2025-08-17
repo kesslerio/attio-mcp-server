@@ -14,16 +14,18 @@ RULE: Documentation-first development | WHEN: Building any feature | DO: Check o
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp**clear-thought-server**mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-server**decisionframework → find alternative | ELSE: Wasted time on workarounds
 
-## BUILD & TEST COMMANDS [UPDATED CI/CD]
+## BUILD & TEST COMMANDS [UPDATED CI/CD - Issue #491]
 
 `npm run build` - TypeScript compilation | `npm run build:watch` - Watch mode
 `npm run typecheck` - Type checking only (fast) | `npm run typecheck:watch` - Watch mode
 `npm run check` - Validation suite (lint, format, typecheck) | `npm run clean` - Clean build artifacts
-`npm test` - Run all tests | `npm run test:offline` - Unit tests only (no API)
-`npm run test:integration` - Real API tests | `npm test -- -t "pattern"` - Single test
-`npm test <filepath>` - Specific file | `npm test -- --coverage` - With coverage
+`npm test` - Run all unit tests (globals enabled) | `npm run test:offline` - Unit tests only (no API)
+`npm run test:integration` - Real API tests | `npm run test:integration:only` - Integration tests in test/integration/ only
+`npm test -- -t "pattern"` - Single test pattern | `npm test <filepath>` - Specific file
+`npm test -- --coverage` - With coverage report
 
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
+⚠️ IMPORTANT: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
 

@@ -10,7 +10,7 @@ export default defineConfig({
       'test/handlers/tool-configs/universal/integration.test.ts',
       'test/handlers/tool-configs/universal/performance.test.ts',
     ],
-    globals: false,
+    globals: true,
     testTimeout: 30000,
     setupFiles: ['./test/setup.ts'],
     coverage: {
