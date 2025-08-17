@@ -15,6 +15,7 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
+import { FilterValue } from '../types/api-operations.js';
 import {
   AttioList,
   AttioListEntry,
@@ -769,13 +770,13 @@ export async function filterListEntries(
     throw new Error('Invalid condition: Must be a non-empty string');
   }
 
-  // Create filter structure
-  const filters = {
+  // Create filter structure with proper typing
+  const filters: ListEntryFilters = {
     filters: [
       {
         attribute: { slug: attributeSlug },
         condition,
-        value,
+        value: value as FilterValue, // Cast to FilterValue type
       },
     ],
     matchAny: false,
@@ -1043,22 +1044,25 @@ export async function createList(
     return response.data.data || response.data;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[createList] Error:`, error.message || 'Unknown error');
-      if (error.response) {
-        console.error('Status:', error.response.status);
+      console.error(
+        `[createList] Error:`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      if (hasErrorResponse(error)) {
+        console.error('Status:', error.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response.data || {})
+          JSON.stringify(error.response?.data || {})
         );
       }
     }
 
     // Add context to error message
-    if (error.response?.status === 400) {
+    if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid list attributes: ${error.message || 'Bad request'}`
+        `Invalid list attributes: ${error instanceof Error ? error.message : 'Bad request'}`
       );
-    } else if (error.response?.status === 403) {
+    } else if (hasErrorResponse(error) && error.response?.status === 403) {
       throw new Error('Insufficient permissions to create list');
     }
 
@@ -1108,24 +1112,27 @@ export async function updateList(
     return response.data.data || response.data;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[updateList] Error:`, error.message || 'Unknown error');
-      if (error.response) {
-        console.error('Status:', error.response.status);
+      console.error(
+        `[updateList] Error:`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      if (hasErrorResponse(error)) {
+        console.error('Status:', error.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response.data || {})
+          JSON.stringify(error.response?.data || {})
         );
       }
     }
 
     // Add context to error message
-    if (error.response?.status === 404) {
+    if (hasErrorResponse(error) && error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
-    } else if (error.response?.status === 400) {
+    } else if (hasErrorResponse(error) && error.response?.status === 400) {
       throw new Error(
-        `Invalid list attributes: ${error.message || 'Bad request'}`
+        `Invalid list attributes: ${error instanceof Error ? error.message : 'Bad request'}`
       );
-    } else if (error.response?.status === 403) {
+    } else if (hasErrorResponse(error) && error.response?.status === 403) {
       throw new Error(`Insufficient permissions to update list ${listId}`);
     }
 
@@ -1162,20 +1169,23 @@ export async function deleteList(listId: string): Promise<boolean> {
     return true;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[deleteList] Error:`, error.message || 'Unknown error');
-      if (error.response) {
-        console.error('Status:', error.response.status);
+      console.error(
+        `[deleteList] Error:`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      if (hasErrorResponse(error)) {
+        console.error('Status:', error.response?.status);
         console.error(
           'Response data:',
-          JSON.stringify(error.response.data || {})
+          JSON.stringify(error.response?.data || {})
         );
       }
     }
 
     // Add context to error message
-    if (error.response?.status === 404) {
+    if (hasErrorResponse(error) && error.response?.status === 404) {
       throw new Error(`List ${listId} not found`);
-    } else if (error.response?.status === 403) {
+    } else if (hasErrorResponse(error) && error.response?.status === 403) {
       throw new Error(`Insufficient permissions to delete list ${listId}`);
     }
 
@@ -1225,7 +1235,7 @@ export async function getListAttributes(): Promise<Record<string, unknown>> {
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[getListAttributes] Error:`,
-        error.message || 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
 
