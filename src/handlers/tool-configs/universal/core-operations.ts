@@ -45,6 +45,8 @@ import {
 
 // Import ErrorService for error handling
 import { ErrorService } from '../../../services/ErrorService.js';
+// Import UniversalUtilityService for shared utility functions
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -96,12 +98,8 @@ export const searchRecordsConfig: UniversalToolConfig = {
       .map((record: Record<string, unknown>, index: number) => {
         const values = record.values as Record<string, unknown>;
         const recordId = record.id as Record<string, unknown>;
-        const name =
-          (values?.name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
-          (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.title as Record<string, unknown>[])?.[0]?.value ||
-          'Unnamed';
+        // Use shared utility for display name extraction (eliminates code duplication)
+        const name = UniversalUtilityService.extractDisplayName(values);
         const id = recordId?.record_id || 'unknown';
         const website = (values?.website as Record<string, unknown>[])?.[0]
           ?.value;
@@ -159,21 +157,8 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
-    // Better name extraction for people and other records
-    const name =
-      (record.values?.name &&
-        Array.isArray(record.values.name) &&
-        record.values.name[0]?.value) ||
-      (record.values?.name &&
-        Array.isArray(record.values.name) &&
-        record.values.name[0]?.full_name) ||
-      (record.values?.full_name &&
-        Array.isArray(record.values.full_name) &&
-        record.values.full_name[0]?.value) ||
-      (record.values?.title &&
-        Array.isArray(record.values.title) &&
-        record.values.title[0]?.value) ||
-      'Unnamed';
+    // Use shared utility for display name extraction (eliminates code duplication)
+    const name = UniversalUtilityService.extractDisplayName(record.values || {});
     const id = record.id?.record_id || 'unknown';
 
     let details = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)}: ${name}\nID: ${id}\n\n`;

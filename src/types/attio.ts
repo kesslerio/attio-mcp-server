@@ -12,6 +12,38 @@ export interface AttioValue<T> {
 }
 
 /**
+ * Enhanced interface for field values that can contain display names
+ * Supports both direct value access and full_name for name fields
+ */
+export interface AttioFieldValue {
+  value?: string;
+  full_name?: string; // Used in name fields as alternative to value
+  [key: string]: unknown;
+}
+
+/**
+ * Interface for record values with specific display name fields
+ * Used by formatResult functions for consistent field access
+ */
+export interface AttioRecordValues {
+  name?: AttioFieldValue[];
+  full_name?: AttioFieldValue[];
+  title?: AttioFieldValue[];
+  content?: AttioFieldValue[];
+  email?: AttioFieldValue[];
+  website?: AttioFieldValue[];
+  phone?: AttioFieldValue[];
+  industry?: AttioFieldValue[];
+  [key: string]: unknown; // Other fields
+}
+
+/**
+ * Union type for fields that can be used as display names
+ * Ordered by priority: name → full_name → title → content
+ */
+export type DisplayNameField = 'name' | 'full_name' | 'title' | 'content';
+
+/**
  * Valid filter condition types for Attio API
  */
 export enum FilterConditionType {

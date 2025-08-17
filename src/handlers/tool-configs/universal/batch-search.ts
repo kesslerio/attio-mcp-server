@@ -108,6 +108,14 @@ export const batchSearchConfig: UniversalToolConfig = {
       ? formatResourceType(resourceType)
       : 'record';
     
+    // Handle proper pluralization (same logic as core-operations.ts)
+    const getPluralForm = (count: number, singular: string): string => {
+      if (count === 1) return singular;
+      if (singular === 'company') return 'companies';
+      if (singular === 'person') return 'people';
+      return `${singular}s`;
+    };
+    
     const successCount = batchResults.filter((r) => r.success).length;
     const failureCount = batchResults.length - successCount;
 
@@ -121,7 +129,7 @@ export const batchSearchConfig: UniversalToolConfig = {
         const query = searchResult.query;
         const records = searchResult.result || [];
         
-        summary += `\n${index + 1}. Query: "${query}" - Found ${records.length} ${resourceTypeName}s\n`;
+        summary += `\n${index + 1}. Query: "${query}" - Found ${records.length} ${getPluralForm(records.length, resourceTypeName)}\n`;
         
         if (Array.isArray(records) && records.length > 0) {
           // Show first few results for each query
