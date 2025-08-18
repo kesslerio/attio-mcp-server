@@ -5,7 +5,12 @@
  * Provides universal search functionality across all resource types with performance optimization.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+import {
+  UniversalResourceType,
+  SearchType,
+  MatchType,
+  SortType,
+} from '../handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
@@ -38,7 +43,17 @@ export class UniversalSearchService {
   static async searchRecords(
     params: UniversalSearchParams
   ): Promise<AttioRecord[]> {
-    const { resource_type, query, filters, limit, offset } = params;
+    const {
+      resource_type,
+      query,
+      filters,
+      limit,
+      offset,
+      search_type = SearchType.BASIC,
+      fields,
+      match_type = MatchType.PARTIAL,
+      sort = SortType.NAME,
+    } = params;
 
     // Start performance tracking
     const perfId = enhancedPerformanceTracker.startOperation(
@@ -50,6 +65,10 @@ export class UniversalSearchService {
         hasFilters: !!(filters && Object.keys(filters).length > 0),
         limit,
         offset,
+        searchType: search_type,
+        hasFields: !!(fields && fields.length > 0),
+        matchType: match_type,
+        sortType: sort,
       }
     );
 
@@ -72,7 +91,16 @@ export class UniversalSearchService {
     try {
       results = await this.performSearchByResourceType(
         resource_type,
-        { query, filters, limit, offset },
+        {
+          query,
+          filters,
+          limit,
+          offset,
+          search_type,
+          fields,
+          match_type,
+          sort,
+        },
         perfId,
         apiStart
       );
@@ -113,18 +141,49 @@ export class UniversalSearchService {
       filters?: Record<string, unknown>;
       limit?: number;
       offset?: number;
+      search_type?: SearchType;
+      fields?: string[];
+      match_type?: MatchType;
+      sort?: SortType;
     },
     perfId: string,
     apiStart: number
   ): Promise<AttioRecord[]> {
-    const { query, filters, limit, offset } = params;
+    const {
+      query,
+      filters,
+      limit,
+      offset,
+      search_type,
+      fields,
+      match_type,
+      sort,
+    } = params;
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        return this.searchCompanies(query, filters, limit, offset);
+        return this.searchCompanies(
+          query,
+          filters,
+          limit,
+          offset,
+          search_type,
+          fields,
+          match_type,
+          sort
+        );
 
       case UniversalResourceType.PEOPLE:
-        return this.searchPeople(query, filters, limit, offset);
+        return this.searchPeople(
+          query,
+          filters,
+          limit,
+          offset,
+          search_type,
+          fields,
+          match_type,
+          sort
+        );
 
       case UniversalResourceType.LISTS:
         return this.searchLists(query, limit, offset);
@@ -146,28 +205,63 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search companies with advanced filtering
+   * Search companies with advanced filtering and content search
    */
   private static async searchCompanies(
     query?: string,
     filters?: Record<string, unknown>,
     limit?: number,
-    offset?: number
+    offset?: number,
+    search_type: SearchType = SearchType.BASIC,
+    fields?: string[],
+    match_type: MatchType = MatchType.PARTIAL,
+    sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters && Object.keys(filters).length > 0) {
       return await advancedSearchCompanies(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
-      // Convert simple query search to advanced search with pagination
-      const nameFilters = {
-        filters: [
-          {
-            attribute: { slug: 'name' },
-            condition: 'contains',
+      // Handle content search vs basic search
+      if (search_type === SearchType.CONTENT) {
+        // Content search - search across multiple text fields
+        const searchFields =
+          fields && fields.length > 0
+            ? fields
+            : ['name', 'description', 'notes']; // Default content fields for companies
+
+        const contentFilters = {
+          filters: searchFields.map((field) => ({
+            attribute: { slug: field },
+            condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
             value: query,
-          },
-        ],
-      };
-      return await advancedSearchCompanies(nameFilters, limit, offset);
+          })),
+          matchAny: true, // Use OR logic to match any field
+        };
+
+        const results = await advancedSearchCompanies(
+          contentFilters,
+          limit,
+          offset
+        );
+
+        // Apply relevance ranking if requested
+        if (sort === SortType.RELEVANCE) {
+          return this.rankByRelevance(results, query, searchFields);
+        }
+
+        return results;
+      } else {
+        // Basic search - search name field only
+        const nameFilters = {
+          filters: [
+            {
+              attribute: { slug: 'name' },
+              condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
+              value: query,
+            },
+          ],
+        };
+        return await advancedSearchCompanies(nameFilters, limit, offset);
+      }
     } else {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
@@ -187,13 +281,17 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search people with advanced filtering and name/email search
+   * Search people with advanced filtering, name/email search, and content search
    */
   private static async searchPeople(
     query?: string,
     filters?: Record<string, unknown>,
     limit?: number,
-    offset?: number
+    offset?: number,
+    search_type: SearchType = SearchType.BASIC,
+    fields?: string[],
+    match_type: MatchType = MatchType.PARTIAL,
+    sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters && Object.keys(filters).length > 0) {
       const paginatedResult = await advancedSearchPeople(filters, {
@@ -202,27 +300,61 @@ export class UniversalSearchService {
       });
       return paginatedResult.results;
     } else if (query && query.trim().length > 0) {
-      // Convert simple query search to advanced search with pagination
-      const nameEmailFilters = {
-        filters: [
-          {
-            attribute: { slug: 'name' },
-            condition: 'contains',
+      // Handle content search vs basic search
+      if (search_type === SearchType.CONTENT) {
+        // Content search - search across multiple text fields
+        const searchFields =
+          fields && fields.length > 0
+            ? fields
+            : ['name', 'bio', 'notes', 'email_addresses']; // Default content fields for people
+
+        const contentFilters = {
+          filters: searchFields.map((field) => ({
+            attribute: { slug: field },
+            condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
             value: query,
-          },
-          {
-            attribute: { slug: 'email_addresses' },
-            condition: 'contains',
-            value: query,
-          },
-        ],
-        matchAny: true, // Use OR logic to match either name or email
-      };
-      const paginatedResult = await advancedSearchPeople(nameEmailFilters, {
-        limit,
-        offset,
-      });
-      return paginatedResult.results;
+          })),
+          matchAny: true, // Use OR logic to match any field
+        };
+
+        const paginatedResult = await advancedSearchPeople(contentFilters, {
+          limit,
+          offset,
+        });
+
+        // Apply relevance ranking if requested
+        if (sort === SortType.RELEVANCE) {
+          return this.rankByRelevance(
+            paginatedResult.results,
+            query,
+            searchFields
+          );
+        }
+
+        return paginatedResult.results;
+      } else {
+        // Basic search - search name and email fields only
+        const nameEmailFilters = {
+          filters: [
+            {
+              attribute: { slug: 'name' },
+              condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
+              value: query,
+            },
+            {
+              attribute: { slug: 'email_addresses' },
+              condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
+              value: query,
+            },
+          ],
+          matchAny: true, // Use OR logic to match either name or email
+        };
+        const paginatedResult = await advancedSearchPeople(nameEmailFilters, {
+          limit,
+          offset,
+        });
+        return paginatedResult.results;
+      }
     } else {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
@@ -506,5 +638,104 @@ export class UniversalSearchService {
       default:
         return false;
     }
+  }
+
+  /**
+   * Rank search results by relevance based on query match frequency
+   * This provides client-side relevance scoring since Attio API doesn't have native relevance ranking
+   */
+  private static rankByRelevance(
+    results: AttioRecord[],
+    query: string,
+    searchFields: string[]
+  ): AttioRecord[] {
+    // Calculate relevance score for each result
+    const scoredResults = results.map((record) => {
+      let score = 0;
+      const queryLower = query.toLowerCase();
+
+      // Check each search field for matches
+      searchFields.forEach((field) => {
+        const fieldValue = this.getFieldValue(record, field);
+        if (fieldValue) {
+          const valueLower = fieldValue.toLowerCase();
+
+          // Exact match gets highest score
+          if (valueLower === queryLower) {
+            score += 100;
+          }
+          // Starts with query gets high score
+          else if (valueLower.startsWith(queryLower)) {
+            score += 50;
+          }
+          // Contains query gets moderate score
+          else if (valueLower.includes(queryLower)) {
+            score += 25;
+            // Additional score for more occurrences
+            const matches = valueLower.split(queryLower).length - 1;
+            score += matches * 10;
+          }
+          // Partial word match gets lower score
+          else {
+            const queryWords = queryLower.split(/\s+/);
+            queryWords.forEach((word) => {
+              if (valueLower.includes(word)) {
+                score += 5;
+              }
+            });
+          }
+        }
+      });
+
+      return { record, score };
+    });
+
+    // Sort by score (descending) then by name
+    scoredResults.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // Secondary sort by name if scores are equal
+      const nameA = this.getFieldValue(a.record, 'name') || '';
+      const nameB = this.getFieldValue(b.record, 'name') || '';
+      return nameA.localeCompare(nameB);
+    });
+
+    return scoredResults.map((item) => item.record);
+  }
+
+  /**
+   * Helper method to extract field value from a record
+   */
+  private static getFieldValue(record: AttioRecord, field: string): string {
+    const values = record.values as Record<string, unknown>;
+    if (!values) return '';
+
+    const fieldValue = values[field];
+
+    // Handle different field value structures
+    if (typeof fieldValue === 'string') {
+      return fieldValue;
+    } else if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+      // For array fields like email_addresses, get the first value
+      const firstItem = fieldValue[0];
+      if (typeof firstItem === 'string') {
+        return firstItem;
+      } else if (
+        firstItem &&
+        typeof firstItem === 'object' &&
+        'value' in firstItem
+      ) {
+        return String(firstItem.value || '');
+      }
+    } else if (
+      fieldValue &&
+      typeof fieldValue === 'object' &&
+      'value' in fieldValue
+    ) {
+      return String((fieldValue as { value: unknown }).value || '');
+    }
+
+    return '';
   }
 }

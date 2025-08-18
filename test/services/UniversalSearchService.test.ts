@@ -7,7 +7,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import {
+  UniversalResourceType,
+  SearchType,
+  MatchType,
+  SortType,
+} from '../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../src/types/attio.js';
 
 // Mock the dependencies
@@ -458,6 +463,10 @@ describe('UniversalSearchService', () => {
           hasFilters: false,
           limit: 10,
           offset: 0,
+          searchType: SearchType.BASIC,
+          hasFields: false,
+          matchType: MatchType.PARTIAL,
+          sortType: SortType.NAME,
         }
       );
       expect(

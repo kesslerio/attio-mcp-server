@@ -256,6 +256,28 @@ export const searchRecordsSchema = {
       description: 'Advanced filter conditions',
       additionalProperties: true,
     },
+    search_type: {
+      type: 'string' as const,
+      enum: ['basic', 'content'] as const,
+      description: 'Type of search - basic field matching or content search',
+    },
+    fields: {
+      type: 'array' as const,
+      items: {
+        type: 'string' as const,
+      },
+      description: 'Specific fields to search within (for content search)',
+    },
+    match_type: {
+      type: 'string' as const,
+      enum: ['exact', 'partial', 'fuzzy'] as const,
+      description: 'Type of string matching to use',
+    },
+    sort: {
+      type: 'string' as const,
+      enum: ['relevance', 'created', 'modified', 'name'] as const,
+      description: 'How to sort search results',
+    },
     ...paginationProperties,
   },
   required: ['resource_type' as const],

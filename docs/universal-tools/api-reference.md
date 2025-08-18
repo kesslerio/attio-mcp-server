@@ -49,6 +49,10 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
   query?: string,                    // Search query string
   filters?: object,                  // Advanced filter conditions
+  search_type?: 'basic' | 'content', // Search type (default: 'basic')
+  fields?: string[],                 // Fields to search (content search only)
+  match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
+  sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
   limit?: number,                    // Max results (1-100, default: 10)
   offset?: number                    // Pagination offset (default: 0)
 }
@@ -56,11 +60,19 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
 
 **Examples**:
 ```typescript
-// Search companies
+// Basic search for companies
 await client.callTool('search-records', {
   resource_type: 'companies',
   query: 'tech startup',
   limit: 20
+});
+
+// Content search across multiple fields
+await client.callTool('search-records', {
+  resource_type: 'companies',
+  query: 'artificial intelligence',
+  search_type: 'content',
+  sort: 'relevance'
 });
 
 // Search people with filters
@@ -72,6 +84,14 @@ await client.callTool('search-records', {
       { attribute: 'industry', condition: 'equals', value: 'Technology' }
     ]
   }
+});
+
+// Partial match content search
+await client.callTool('search-records', {
+  resource_type: 'companies',
+  query: 'automat',
+  search_type: 'content',
+  match_type: 'partial'
 });
 ```
 
