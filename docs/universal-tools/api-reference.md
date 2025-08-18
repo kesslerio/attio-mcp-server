@@ -2,6 +2,8 @@
 
 Complete reference for all 13 universal tools that consolidate 40+ resource-specific operations. Each tool works across multiple resource types using parameter-based routing.
 
+> **📝 Field Mapping Update**: Enhanced with Issue #473 improvements including corrected field mappings, category validation, special character preservation, and response normalization. See [Field Mapping Guide](../api/field-mapping-improvements.md) for details.
+
 ## Resource Types
 
 All universal tools use the `resource_type` parameter to specify the target resource:

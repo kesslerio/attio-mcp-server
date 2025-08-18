@@ -2,6 +2,8 @@
 
 This document describes the field validation rules applied to Attio operations, including required fields, field types, and validation constraints.
 
+> **🔄 Recent Updates**: Enhanced with Issue #473 improvements including category validation, field mapping corrections, and special character handling. See [Field Mapping Improvements](./field-mapping-improvements.md) for comprehensive details.
+
 ## Table of Contents
 - [Overview](#overview)
 - [Required vs Optional Fields](#required-vs-optional-fields)
