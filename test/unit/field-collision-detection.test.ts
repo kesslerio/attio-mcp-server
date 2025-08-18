@@ -276,7 +276,8 @@ describe('Field Collision Detection', () => {
         // Description collision
         description: 'Company desc',
         notes: 'Company notes',
-        // Size collision
+        // No longer a collision after Issue #473 fix:
+        // employee_count maps to itself, size maps to estimated_arr
         employee_count: 100,
         size: 'Large',
       };
@@ -287,12 +288,13 @@ describe('Field Collision Detection', () => {
       );
 
       expect(result.hasCollisions).toBe(true);
-      expect(result.errors).toHaveLength(3); // Three separate collisions
+      expect(result.errors).toHaveLength(2); // Two collisions (fixed from 3 after Issue #473)
 
-      // Check all collisions are detected
+      // Check the actual collisions detected
       expect(result.collisions).toHaveProperty('domains');
       expect(result.collisions).toHaveProperty('notes');
-      expect(result.collisions).toHaveProperty('estimated_arr');
+      // No longer expect estimated_arr collision after Issue #473 fix
+      expect(result.collisions).not.toHaveProperty('estimated_arr');
     });
   });
 });

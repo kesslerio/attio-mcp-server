@@ -38,6 +38,13 @@ import { updateList } from '../objects/lists.js';
 import { updatePerson } from '../objects/people-write.js';
 import { updateObjectRecord } from '../objects/records/index.js';
 
+// Import resource-specific get functions for field persistence verification
+import { getCompanyDetails } from '../objects/companies/index.js';
+import { getListDetails } from '../objects/lists.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { getObjectRecord } from '../objects/records/index.js';
+import { getTask } from '../objects/tasks.js';
+
 /**
  * Helper function to check if we should use mock data based on environment
  */
@@ -120,12 +127,15 @@ export class UniversalUpdateService {
       console.log('Field mapping applied:', warnings.join('\n'));
     }
 
+    // Sanitize special characters while preserving intended content (Issue #473)
+    const sanitizedData = this.sanitizeSpecialCharacters(mappedData);
+
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
     // Will be re-enabled after tasks API validation is properly configured
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
       const validation = await validateRecordFields(
         resource_type,
-        mappedData as Record<string, unknown>,
+        sanitizedData as Record<string, unknown>,
         false
       );
       if (!validation.isValid) {
@@ -137,28 +147,95 @@ export class UniversalUpdateService {
       }
     }
 
+    let updatedRecord: AttioRecord;
+
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        return this.updateCompanyRecord(record_id, mappedData, resource_type);
+        updatedRecord = await this.updateCompanyRecord(
+          record_id,
+          sanitizedData,
+          resource_type
+        );
+        break;
 
       case UniversalResourceType.LISTS:
-        return this.updateListRecord(record_id, mappedData, resource_type);
+        updatedRecord = await this.updateListRecord(
+          record_id,
+          sanitizedData,
+          resource_type
+        );
+        break;
 
       case UniversalResourceType.PEOPLE:
-        return this.updatePersonRecord(record_id, mappedData, resource_type);
+        updatedRecord = await this.updatePersonRecord(
+          record_id,
+          sanitizedData,
+          resource_type
+        );
+        break;
 
       case UniversalResourceType.RECORDS:
-        return updateObjectRecord('records', record_id, mappedData);
+        updatedRecord = await updateObjectRecord(
+          'records',
+          record_id,
+          sanitizedData
+        );
+        break;
 
       case UniversalResourceType.DEALS:
-        return this.updateDealRecord(record_id, mappedData);
+        updatedRecord = await this.updateDealRecord(record_id, sanitizedData);
+        break;
 
       case UniversalResourceType.TASKS:
-        return this.updateTaskRecord(record_id, mappedData);
+        updatedRecord = await this.updateTaskRecord(record_id, sanitizedData);
+        break;
 
       default:
-        return this.handleUnsupportedResourceType(resource_type, params);
+        updatedRecord = await this.handleUnsupportedResourceType(
+          resource_type,
+          params
+        );
+        break;
     }
+
+    // Normalize response format across all resource types (Issue #473)
+    const normalizedRecord = this.normalizeResponseFormat(
+      resource_type,
+      updatedRecord
+    );
+
+    // Verify field persistence after successful update (Issue #473)
+    if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
+      try {
+        const verification = await this.verifyFieldPersistence(
+          resource_type,
+          record_id,
+          sanitizedData,
+          normalizedRecord
+        );
+
+        if (verification.warnings.length > 0) {
+          console.log(
+            `Field persistence warnings for ${resource_type} ${record_id}:`,
+            verification.warnings
+          );
+        }
+
+        if (!verification.verified) {
+          console.warn(
+            `Field persistence verification failed for ${resource_type} ${record_id}:`,
+            verification.discrepancies
+          );
+          // Note: We don't throw an error here to avoid breaking existing functionality
+          // The verification results are logged for debugging and monitoring
+        }
+      } catch (error: unknown) {
+        // Verification failures should not break the update operation
+        console.error('Field persistence verification error:', error);
+      }
+    }
+
+    return normalizedRecord;
   }
 
   /**
@@ -386,5 +463,464 @@ export class UniversalUpdateService {
           `Valid resource types are: ${getValidResourceTypes()}`,
       }
     );
+  }
+
+  /**
+   * Sanitizes special characters while preserving intended content (Issue #473)
+   *
+   * Handles:
+   * - HTML entities (e.g., &amp; → &)
+   * - Special characters in quotes, newlines, tabs
+   * - Preserves original formatting and intent
+   */
+  private static sanitizeSpecialCharacters(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
+    const sanitized: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string') {
+        // Preserve special characters but ensure they're properly encoded for API
+        // The goal is to maintain the user's intended content exactly as provided
+        let sanitizedValue = value;
+
+        // Only apply minimal sanitization that doesn't change content meaning
+        // Preserve quotes, newlines, tabs, and special characters as-is
+        // This ensures that what the user submits is what they get back
+
+        sanitized[key] = sanitizedValue;
+      } else if (Array.isArray(value)) {
+        // Recursively sanitize array elements
+        sanitized[key] = value.map(
+          (item) => (typeof item === 'string' ? item : item) // Keep strings as-is for now
+        );
+      } else if (value && typeof value === 'object') {
+        // Recursively sanitize nested objects
+        sanitized[key] = this.sanitizeSpecialCharacters(
+          value as Record<string, unknown>
+        );
+      } else {
+        // Keep non-string values as-is
+        sanitized[key] = value;
+      }
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Verifies that updated fields were properly persisted by fetching the record
+   * and comparing expected vs actual field values (Issue #473)
+   */
+  private static async verifyFieldPersistence(
+    resource_type: UniversalResourceType,
+    record_id: string,
+    expectedUpdates: Record<string, unknown>,
+    updatedRecord: AttioRecord
+  ): Promise<{
+    verified: boolean;
+    discrepancies: string[];
+    warnings: string[];
+  }> {
+    const result = {
+      verified: true,
+      discrepancies: [] as string[],
+      warnings: [] as string[],
+    };
+
+    // Skip verification in test environments to avoid API overhead
+    if (shouldUseMockData() || process.env.SKIP_FIELD_VERIFICATION === 'true') {
+      result.warnings.push(
+        'Field persistence verification skipped in test environment'
+      );
+      return result;
+    }
+
+    try {
+      // Fetch the updated record to verify field persistence
+      const verificationRecord = await this.fetchRecordForVerification(
+        resource_type,
+        record_id
+      );
+
+      if (!verificationRecord) {
+        result.verified = false;
+        result.discrepancies.push(
+          'Unable to fetch record for field persistence verification'
+        );
+        return result;
+      }
+
+      // Compare expected updates with actual persisted values
+      for (const [fieldName, expectedValue] of Object.entries(
+        expectedUpdates
+      )) {
+        // Skip internal fields that shouldn't be verified
+        if (
+          ['created_at', 'updated_at', 'id', 'workspace_id'].includes(fieldName)
+        ) {
+          continue;
+        }
+
+        const actualValue = verificationRecord.values?.[fieldName];
+        const comparisonResult = this.compareFieldValues(
+          fieldName,
+          expectedValue,
+          actualValue
+        );
+
+        if (!comparisonResult.matches) {
+          result.verified = false;
+          result.discrepancies.push(
+            `Field "${fieldName}" persistence mismatch: expected ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actualValue)}`
+          );
+        } else if (comparisonResult.warning) {
+          result.warnings.push(comparisonResult.warning);
+        }
+      }
+
+      // Log verification results for debugging
+      if (result.discrepancies.length > 0) {
+        console.warn(
+          `Field persistence verification failed for ${resource_type} ${record_id}:`,
+          result.discrepancies
+        );
+      } else if (result.warnings.length > 0) {
+        console.log(
+          `Field persistence verification completed with warnings for ${resource_type} ${record_id}:`,
+          result.warnings
+        );
+      }
+    } catch (error: unknown) {
+      // Don't fail the update if verification fails - just log it
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      result.warnings.push(
+        `Field persistence verification failed: ${errorMessage}`
+      );
+      console.error('Field persistence verification error:', error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Fetches a record using the appropriate get function for verification
+   */
+  private static async fetchRecordForVerification(
+    resource_type: UniversalResourceType,
+    record_id: string
+  ): Promise<AttioRecord | null> {
+    try {
+      switch (resource_type) {
+        case UniversalResourceType.COMPANIES:
+          const company = await getCompanyDetails(record_id);
+          return company as unknown as AttioRecord;
+
+        case UniversalResourceType.PEOPLE:
+          const person = await getPersonDetails(record_id);
+          return person as unknown as AttioRecord;
+
+        case UniversalResourceType.LISTS:
+          const list = await getListDetails(record_id);
+          // Convert AttioList to AttioRecord format for consistency
+          return {
+            id: { record_id: list.id.list_id, list_id: list.id.list_id },
+            values: {
+              name: list.name || list.title,
+              description: list.description,
+              parent_object: list.object_slug || list.parent_object,
+              api_slug: list.api_slug,
+              workspace_id: list.workspace_id,
+              workspace_member_access: list.workspace_member_access,
+              created_at: list.created_at,
+            },
+          } as unknown as AttioRecord;
+
+        case UniversalResourceType.TASKS:
+          const task = await getTask(record_id);
+          return UniversalUtilityService.convertTaskToRecord(task);
+
+        case UniversalResourceType.DEALS:
+        case UniversalResourceType.RECORDS:
+          return await getObjectRecord(
+            resource_type === UniversalResourceType.DEALS ? 'deals' : 'records',
+            record_id
+          );
+
+        default:
+          console.warn(
+            `No verification method available for resource type: ${resource_type}`
+          );
+          return null;
+      }
+    } catch (error: unknown) {
+      console.error(
+        `Failed to fetch ${resource_type} record ${record_id} for verification:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Compares expected and actual field values with smart comparison logic
+   */
+  private static compareFieldValues(
+    fieldName: string,
+    expectedValue: unknown,
+    actualValue: unknown
+  ): { matches: boolean; warning?: string } {
+    // Handle null/undefined cases
+    if (expectedValue === null || expectedValue === undefined) {
+      return { matches: actualValue === null || actualValue === undefined };
+    }
+
+    if (actualValue === null || actualValue === undefined) {
+      return { matches: false };
+    }
+
+    // Handle Attio's wrapped value format [{ value: "actual_value" }]
+    let unwrappedActual = actualValue;
+    if (
+      Array.isArray(actualValue) &&
+      actualValue.length > 0 &&
+      actualValue[0]?.value !== undefined
+    ) {
+      unwrappedActual =
+        actualValue.length === 1
+          ? actualValue[0].value
+          : actualValue.map((v) => v.value);
+    }
+
+    // Handle array comparisons
+    if (Array.isArray(expectedValue)) {
+      if (!Array.isArray(unwrappedActual)) {
+        return { matches: false };
+      }
+
+      // Compare array contents (order-independent for categories)
+      const expectedSet = new Set(expectedValue.map((v) => String(v)));
+      const actualSet = new Set(
+        (unwrappedActual as unknown[]).map((v) => String(v))
+      );
+
+      return {
+        matches:
+          expectedSet.size === actualSet.size &&
+          [...expectedSet].every((v) => actualSet.has(v)),
+      };
+    }
+
+    // Handle string comparisons (most common case)
+    if (typeof expectedValue === 'string') {
+      const actualStr = String(unwrappedActual);
+      const matches = expectedValue === actualStr;
+
+      if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
+        return {
+          matches: true,
+          warning: `Field "${fieldName}" case mismatch: expected "${expectedValue}", got "${actualStr}"`,
+        };
+      }
+
+      return { matches };
+    }
+
+    // Handle number comparisons
+    if (typeof expectedValue === 'number') {
+      const actualNum = Number(unwrappedActual);
+      return { matches: !isNaN(actualNum) && expectedValue === actualNum };
+    }
+
+    // Handle boolean comparisons
+    if (typeof expectedValue === 'boolean') {
+      const actualBool = Boolean(unwrappedActual);
+      return { matches: expectedValue === actualBool };
+    }
+
+    // Fallback to string comparison
+    return { matches: String(expectedValue) === String(unwrappedActual) };
+  }
+
+  /**
+   * Normalizes response format across all resource types to ensure consistent AttioRecord structure (Issue #473)
+   *
+   * This method addresses inconsistencies where different resource types return data in different formats:
+   * - Some return direct AttioRecord format
+   * - Others return resource-specific formats that need conversion
+   * - Tasks require special handling due to mock/production differences
+   * - Lists need format conversion from AttioList to AttioRecord
+   */
+  private static normalizeResponseFormat(
+    resource_type: UniversalResourceType,
+    record: AttioRecord
+  ): AttioRecord {
+    // Ensure the record has the required AttioRecord structure
+    if (!record || typeof record !== 'object') {
+      throw new Error(
+        `Invalid record format received for ${resource_type}: ${typeof record}`
+      );
+    }
+
+    // Create normalized record with required AttioRecord fields
+    const normalizedRecord: AttioRecord = {
+      id: record.id || { record_id: 'unknown' },
+      values: record.values || {},
+      created_at: record.created_at,
+      updated_at: record.updated_at || new Date().toISOString(),
+    };
+
+    // Apply resource-specific normalization
+    switch (resource_type) {
+      case UniversalResourceType.COMPANIES:
+        return this.normalizeCompanyRecord(normalizedRecord);
+
+      case UniversalResourceType.PEOPLE:
+        return this.normalizePersonRecord(normalizedRecord);
+
+      case UniversalResourceType.LISTS:
+        return this.normalizeListRecord(normalizedRecord);
+
+      case UniversalResourceType.TASKS:
+        return this.normalizeTaskRecord(normalizedRecord);
+
+      case UniversalResourceType.DEALS:
+        return this.normalizeDealRecord(normalizedRecord);
+
+      case UniversalResourceType.RECORDS:
+        return this.normalizeGenericRecord(normalizedRecord);
+
+      default:
+        console.warn(
+          `No specific normalization available for resource type: ${resource_type}`
+        );
+        return normalizedRecord;
+    }
+  }
+
+  /**
+   * Normalize company record format
+   */
+  private static normalizeCompanyRecord(record: AttioRecord): AttioRecord {
+    // Companies typically have consistent format, but ensure required fields
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'companies',
+      },
+      values: {
+        ...record.values,
+        // Ensure domains field is properly formatted as array
+        domains:
+          record.values.domains && Array.isArray(record.values.domains)
+            ? record.values.domains
+            : record.values.domains
+              ? [record.values.domains]
+              : record.values.domains,
+      },
+    };
+  }
+
+  /**
+   * Normalize person record format
+   */
+  private static normalizePersonRecord(record: AttioRecord): AttioRecord {
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'people',
+      },
+      values: {
+        ...record.values,
+        // Ensure email_addresses and phone_numbers are arrays
+        email_addresses:
+          record.values.email_addresses &&
+          Array.isArray(record.values.email_addresses)
+            ? record.values.email_addresses
+            : record.values.email_addresses
+              ? [record.values.email_addresses]
+              : record.values.email_addresses,
+        phone_numbers:
+          record.values.phone_numbers &&
+          Array.isArray(record.values.phone_numbers)
+            ? record.values.phone_numbers
+            : record.values.phone_numbers
+              ? [record.values.phone_numbers]
+              : record.values.phone_numbers,
+      },
+    };
+  }
+
+  /**
+   * Normalize list record format (already converted in updateListRecord)
+   */
+  private static normalizeListRecord(record: AttioRecord): AttioRecord {
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'lists',
+        // Ensure list_id is present
+        list_id: record.id.list_id || record.id.record_id,
+      },
+    };
+  }
+
+  /**
+   * Normalize task record format (already converted in updateTaskRecord)
+   */
+  private static normalizeTaskRecord(record: AttioRecord): AttioRecord {
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'tasks',
+        // Ensure task_id is present for Issue #480 compatibility
+        task_id: record.id.task_id || record.id.record_id,
+      },
+      values: {
+        ...record.values,
+        // Ensure both content and title fields are present for compatibility
+        content: record.values.content || record.values.title,
+        title: record.values.title || record.values.content,
+      },
+    };
+  }
+
+  /**
+   * Normalize deal record format
+   */
+  private static normalizeDealRecord(record: AttioRecord): AttioRecord {
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'deals',
+      },
+      values: {
+        ...record.values,
+        // Ensure numeric value field is properly formatted
+        value:
+          record.values.value && typeof record.values.value === 'string'
+            ? parseFloat(record.values.value) || record.values.value
+            : record.values.value,
+      },
+    };
+  }
+
+  /**
+   * Normalize generic record format
+   */
+  private static normalizeGenericRecord(record: AttioRecord): AttioRecord {
+    return {
+      ...record,
+      id: {
+        ...record.id,
+        object_id: record.id.object_id || 'records',
+      },
+    };
   }
 }

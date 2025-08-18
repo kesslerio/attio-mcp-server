@@ -66,7 +66,6 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       primary_domain: 'domains',
       description: 'notes',
       note: 'notes',
-      employee_count: 'estimated_arr',
       size: 'estimated_arr',
       revenue: 'estimated_arr',
       typpe: 'type', // Common typo
@@ -80,9 +79,11 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       'domains',
       'type',
       'industry',
+      'categories',
       'description',
       'founded',
       'estimated_arr',
+      'employee_count',
       'location',
       'notes',
       'primary_domain',
@@ -95,8 +96,6 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
         'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
       website: 'Use "domains" field with an array of domain names',
       description: 'Use "notes" field for company descriptions',
-      employee_count:
-        'Employee count is not a standard field, consider using custom fields',
       revenue: 'Use "estimated_arr" for revenue/ARR data',
     },
     requiredFields: ['name'],
@@ -535,8 +534,25 @@ export function mapRecordFields(
         warnings.push(`Combined first_name and last_name into "name" field`);
       }
     } else {
-      // Safe to assign since collision detection passed
-      mapped[mappedKey] = value;
+      // Process categories field with validation and auto-conversion (Issues #220/#218)
+      if (key.toLowerCase() === 'categories' || mappedKey.toLowerCase() === 'categories') {
+        const categoryResult = processCategories(resourceType, key, value);
+        
+        if (categoryResult.errors.length > 0) {
+          warnings.push(...categoryResult.errors);
+          // Don't assign invalid categories, but continue processing other fields
+          continue;
+        }
+        
+        if (categoryResult.warnings.length > 0) {
+          warnings.push(...categoryResult.warnings);
+        }
+        
+        mapped[mappedKey] = categoryResult.processedValue;
+      } else {
+        // Safe to assign since collision detection passed
+        mapped[mappedKey] = value;
+      }
     }
   }
 
@@ -838,4 +854,192 @@ export function getValidResourceTypes(): string {
  */
 export function getValidFields(resourceType: UniversalResourceType): string[] {
   return FIELD_MAPPINGS[resourceType]?.validFields || [];
+}
+
+/**
+ * Valid category options for companies (from Issues #220/#218)
+ */
+const VALID_COMPANY_CATEGORIES = [
+  'Health Care',
+  'Technology',
+  'Software',
+  'SaaS',
+  'B2B',
+  'B2C', 
+  'E-commerce',
+  'Financial Services',
+  'Banking',
+  'Finance',
+  'Insurance',
+  'Manufacturing',
+  'Retail',
+  'Education',
+  'Consulting',
+  'Real Estate',
+  'Media & Entertainment',
+  'Transportation',
+  'Energy',
+  'Food & Beverage',
+  'Construction',
+  'Telecommunications',
+  'Automotive',
+  'Aerospace',
+  'Pharmaceuticals',
+  'Biotechnology',
+  'Non-profit',
+  'Government',
+  'Agriculture',
+  'Mining',
+  'Utilities',
+  'Hospitality',
+  'Travel',
+  'Sports',
+  'Fashion',
+  'Beauty'
+];
+
+/**
+ * Validates category values and provides suggestions (Issues #220/#218)
+ */
+export function validateCategories(
+  input: string | string[]
+): {
+  isValid: boolean;
+  validatedCategories: string[];
+  suggestions: string[];
+  errors: string[];
+  autoConverted: boolean;
+} {
+  const result = {
+    isValid: true,
+    validatedCategories: [] as string[],
+    suggestions: [] as string[],
+    errors: [] as string[],
+    autoConverted: false,
+  };
+
+  // Handle string-to-array auto-conversion (Issue #218)
+  let categories: string[];
+  if (typeof input === 'string') {
+    categories = [input];
+    result.autoConverted = true;
+  } else if (Array.isArray(input)) {
+    categories = input;
+  } else {
+    result.isValid = false;
+    result.errors.push(
+      'Categories must be a string or array of strings. Use ["category"] format for arrays.'
+    );
+    return result;
+  }
+
+  // Validate each category and deduplicate
+  const processedCategories = new Set<string>();
+  
+  for (const category of categories) {
+    if (typeof category !== 'string') {
+      result.isValid = false;
+      result.errors.push(`Invalid category type: ${typeof category}. All categories must be strings.`);
+      continue;
+    }
+
+    // Skip empty categories
+    if (!category.trim()) {
+      result.isValid = false;
+      result.errors.push('Empty category is not allowed.');
+      continue;
+    }
+
+    // Check if category is valid (case-insensitive)
+    const exactMatch = VALID_COMPANY_CATEGORIES.find(
+      (valid) => valid.toLowerCase() === category.toLowerCase()
+    );
+
+    if (exactMatch) {
+      processedCategories.add(exactMatch); // Use canonical casing and deduplicate
+    } else {
+      // Find similar categories using fuzzy matching (Issue #220)
+      // Use lower threshold for shorter words
+      const threshold = category.length <= 4 ? 0.3 : 0.5;
+      const suggestions = findSimilarStrings(category, VALID_COMPANY_CATEGORIES, threshold);
+      
+      result.isValid = false;
+      result.errors.push(
+        `Invalid category "${category}". ${
+          suggestions.length > 0 
+            ? `Did you mean: ${suggestions.slice(0, 3).join(', ')}?`
+            : 'Please use a valid category.'
+        }`
+      );
+      
+      if (suggestions.length > 0) {
+        result.suggestions.push(...suggestions.slice(0, 5)); // Top 5 suggestions
+      }
+    }
+  }
+
+  // Convert set back to array and remove duplicates from suggestions
+  result.validatedCategories = Array.from(processedCategories);
+  result.suggestions = [...new Set(result.suggestions)];
+
+  return result;
+}
+
+/**
+ * Auto-converts and validates categories field for companies (Issues #220/#218)
+ */
+export function processCategories(
+  resourceType: UniversalResourceType,
+  fieldName: string,
+  value: any
+): {
+  processedValue: any;
+  warnings: string[];
+  errors: string[];
+} {
+  const result = {
+    processedValue: value,
+    warnings: [] as string[],
+    errors: [] as string[],
+  };
+
+  // Only process categories for companies
+  if (resourceType !== UniversalResourceType.COMPANIES || fieldName.toLowerCase() !== 'categories') {
+    return result;
+  }
+
+  // Validate categories
+  const validation = validateCategories(value);
+
+  if (validation.autoConverted) {
+    result.warnings.push(
+      `Categories field auto-converted from string to array format: ["${value}"]`
+    );
+  }
+
+  if (!validation.isValid) {
+    result.errors.push(...validation.errors);
+    
+    // Always show valid options when there are errors
+    result.warnings.push(
+      `Valid category options (first 10): ${VALID_COMPANY_CATEGORIES.slice(0, 10).join(', ')}`
+    );
+  } else {
+    result.processedValue = validation.validatedCategories;
+    
+    if (validation.autoConverted) {
+      result.warnings.push(
+        `Category value successfully validated and converted to: ${JSON.stringify(validation.validatedCategories)}`
+      );
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Get list of valid categories for companies
+ */
+export function getValidCategories(): string[] {
+  return [...VALID_COMPANY_CATEGORIES];
 }
