@@ -31,18 +31,18 @@
       },
       "objects": {
         "companies": {
-          "Name": "name_companies",
+          "Name": "name",
           "B2B Segment": "type_persona",
           "Type Persona": "type_persona",
-          "Company Name": "name_companies",
+          "Company Name": "name",
           "Company Website": "website",
           "Company Type": "company_type"
         },
         "people": {
-          "Name": "name_people",
+          "Name": "name",
           "First Name": "first_name",
           "Last Name": "last_name",
-          "Full Name": "name_people",
+          "Full Name": "name",
           "Phone": "phone_number",
           "Title": "title",
           "Job Title": "title",
