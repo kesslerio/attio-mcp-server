@@ -72,6 +72,33 @@ export enum RelationshipType {
 }
 
 /**
+ * Search type options for content search
+ */
+export enum SearchType {
+  BASIC = 'basic',
+  CONTENT = 'content',
+}
+
+/**
+ * Match type options for search matching
+ */
+export enum MatchType {
+  EXACT = 'exact',
+  PARTIAL = 'partial',
+  FUZZY = 'fuzzy',
+}
+
+/**
+ * Sort options for search results
+ */
+export enum SortType {
+  RELEVANCE = 'relevance',
+  CREATED = 'created',
+  MODIFIED = 'modified',
+  NAME = 'name',
+}
+
+/**
  * Universal search parameters
  */
 export interface UniversalSearchParams {
@@ -80,6 +107,10 @@ export interface UniversalSearchParams {
   filters?: ListEntryFilters;
   limit?: number;
   offset?: number;
+  search_type?: SearchType;
+  fields?: string[];
+  match_type?: MatchType;
+  sort?: SortType;
 }
 
 /**
