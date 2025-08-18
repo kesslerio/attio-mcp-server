@@ -33,6 +33,7 @@
     "test:debug": "vitest --reporter=verbose --no-coverage",
     "test:ci": "vitest --run --reporter=verbose",
     "test:integration": "vitest --config vitest.config.integration.ts --run",
+    "test:integration:only": "vitest --config vitest.config.integration.ts --run test/integration/",
     "test:integration:watch": "vitest --config vitest.config.integration.ts --watch",
     "test:integration:real-api": "vitest --config vitest.config.integration.ts --run test/integration/real-api-integration.test.ts",
     "test:unit": "vitest --run test/handlers/ test/objects/ test/utils/ test/validators/",
