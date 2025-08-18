@@ -17,6 +17,7 @@ A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.co
 - **Advanced Filtering**: Complex multi-condition searches with relationship-based queries
 - **Batch Operations**: Process hundreds of records efficiently with optimized formatResult architecture
 - **Full CRUD**: Complete create, read, update, delete capabilities for all record types
+- **Field Mapping Excellence**: Corrected field mappings with category validation and special character preservation
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
 
@@ -73,6 +74,7 @@ Show me all overdue tasks assigned to the sales team
 - **[Getting Started](docs/getting-started.md)** - Detailed setup and installation
 - **[User Guide](docs/user-guide.md)** - Common workflows and examples  
 - **[API Reference](docs/universal-tools/api-reference.md)** - Complete tool documentation
+- **[Field Mapping Guide](docs/api/field-mapping-improvements.md)** - Field validation, categories, and special characters
 - **[Deployment](docs/deployment/README.md)** - Docker and production deployment
 - **[Development](docs/development/README.md)** - Contributing and extending
 
