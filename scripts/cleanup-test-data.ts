@@ -218,8 +218,69 @@ class TestDataCleanup {
 
     if (this.options.dryRun) {
       people.forEach((person, index) => {
-        const name = `${person.values?.first_name?.[0]?.value || ''} ${person.values?.last_name?.[0]?.value || ''}`.trim();
-        console.log(`    ${index + 1}. ${name || 'Unknown'} (${person.id.record_id})`);
+        // Try multiple ways to extract person information
+        let displayName = 'Unknown';
+        let emailInfo = '';
+        
+        // Try different name field structures
+        if (person.values) {
+          // Helper to extract value from Attio field structure
+          const extractValue = (field: any): string => {
+            if (!field) return '';
+            if (typeof field === 'string') return field;
+            if (Array.isArray(field) && field.length > 0) {
+              const firstItem = field[0];
+              if (typeof firstItem === 'string') return firstItem;
+              if (firstItem && typeof firstItem === 'object') {
+                return firstItem.value || firstItem.name || firstItem.display_value || '';
+              }
+            }
+            if (typeof field === 'object') {
+              return field.value || field.name || field.display_value || '';
+            }
+            return '';
+          };
+          
+          // Try first_name/last_name structure
+          const firstName = extractValue(person.values.first_name);
+          const lastName = extractValue(person.values.last_name);
+          const fullName = `${firstName} ${lastName}`.trim();
+          
+          // Try name field directly
+          const nameField = extractValue(person.values.name);
+          
+          // Use whichever is available
+          displayName = fullName || nameField || 'Unknown';
+          
+          // Try to get email information
+          if (person.values.email_addresses) {
+            const emails = Array.isArray(person.values.email_addresses) 
+              ? person.values.email_addresses 
+              : [person.values.email_addresses];
+            
+            const emailList = emails
+              .map(email => {
+                if (typeof email === 'string') return email;
+                if (email?.email_address) return email.email_address;
+                if (email?.value) return email.value;
+                return extractValue(email);
+              })
+              .filter(Boolean)
+              .slice(0, 2); // Show max 2 emails
+            
+            if (emailList.length > 0) {
+              emailInfo = ` | ${emailList.join(', ')}`;
+              if (emailList.length > 2) emailInfo += '...';
+            }
+          }
+        }
+        
+        console.log(`    ${index + 1}. ${displayName}${emailInfo} (${person.id.record_id})`);
+        
+        // Debug: Show raw structure if verbose mode
+        if (this.options.verbose) {
+          console.log(`       Raw: ${JSON.stringify(person.values, null, 2).substring(0, 200)}...`);
+        }
       });
       return;
     }
@@ -237,8 +298,16 @@ class TestDataCleanup {
             
             this.stats.people.deleted++;
             if (this.options.verbose) {
-              const name = `${person.values?.first_name?.[0]?.value || ''} ${person.values?.last_name?.[0]?.value || ''}`.trim();
-              console.log(`    ✅ Deleted: ${name || person.id.record_id}`);
+              // Use same logic as dry-run display
+              let displayName = 'Unknown';
+              if (person.values) {
+                const firstName = person.values.first_name?.[0]?.value || person.values.first_name || '';
+                const lastName = person.values.last_name?.[0]?.value || person.values.last_name || '';
+                const fullName = `${firstName} ${lastName}`.trim();
+                const nameField = person.values.name?.[0]?.value || person.values.name || '';
+                displayName = fullName || nameField || person.id.record_id;
+              }
+              console.log(`    ✅ Deleted: ${displayName}`);
             }
           } catch (error) {
             this.stats.people.errors++;
