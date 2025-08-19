@@ -93,9 +93,9 @@ const results = await mcp.callTool('search-records', {
 
 ### People
 - `name` - Person's full name
-- `bio` - Biography or description
-- `notes` - Additional notes
+- `notes` - Additional notes and biography
 - `email_addresses` - Email addresses
+- `job_title` - Job title or position
 
 ## Parameters
 
@@ -143,7 +143,7 @@ const experts = await mcp.callTool('search-records', {
   resource_type: 'people',
   query: 'neural networks',
   search_type: 'content',
-  fields: ['bio', 'notes']
+  fields: ['notes', 'job_title']
 });
 ```
 

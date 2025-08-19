@@ -226,7 +226,7 @@ describe('Content Search Functionality', () => {
             id: { record_id: '1' },
             values: {
               name: 'Alice Smith',
-              bio: 'Expert in machine learning',
+              notes: 'Expert in machine learning',
             },
           } as AttioRecord,
         ],
@@ -249,7 +249,7 @@ describe('Content Search Functionality', () => {
               value: 'machine learning',
             }),
             expect.objectContaining({
-              attribute: { slug: 'bio' },
+              attribute: { slug: 'job_title' },
               condition: 'contains',
               value: 'machine learning',
             }),
@@ -282,7 +282,7 @@ describe('Content Search Functionality', () => {
         resource_type: UniversalResourceType.PEOPLE,
         query: 'test',
         search_type: SearchType.CONTENT,
-        fields: ['name', 'bio'],
+        fields: ['name', 'notes'],
       });
 
       expect(advancedSearchPeople).toHaveBeenCalledWith(
@@ -294,7 +294,7 @@ describe('Content Search Functionality', () => {
               value: 'test',
             }),
             expect.objectContaining({
-              attribute: { slug: 'bio' },
+              attribute: { slug: 'notes' },
               condition: 'contains',
               value: 'test',
             }),

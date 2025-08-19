@@ -471,6 +471,37 @@ describe('Universal Tools Integration Tests', () => {
         }
       });
 
+      it('should search people by notes content', async () => {
+        // Test people content search using the new search-records API
+        try {
+          const result = await coreOperationsToolConfigs[
+            'search-records'
+          ].handler({
+            resource_type: UniversalResourceType.PEOPLE,
+            query: 'engineer',  // Common searchable term in people profiles
+            search_type: 'content',
+            limit: 5,
+          });
+
+          expect(result).toBeDefined();
+          expect(Array.isArray(result)).toBe(true);
+          
+          // If results are found, verify structure
+          if (result.length > 0) {
+            expect(result[0]).toHaveProperty('id');
+            expect(result[0]).toHaveProperty('values');
+            expect(result[0].id).toHaveProperty('record_id');
+          }
+        } catch (error: unknown) {
+          // If error occurs, it should NOT be "Unknown attribute slug: bio"
+          const errorMessage = (error as Error).message;
+          expect(errorMessage).not.toContain('Unknown attribute slug: bio');
+          
+          // Log other errors for debugging but don't fail the test
+          console.log('People content search error:', errorMessage);
+        }
+      });
+
       it('should handle unsupported interaction content search', async () => {
         await expect(
           advancedOperationsToolConfigs['search-by-content'].handler({

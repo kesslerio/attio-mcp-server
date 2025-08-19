@@ -306,7 +306,7 @@ export class UniversalSearchService {
         const searchFields =
           fields && fields.length > 0
             ? fields
-            : ['name', 'bio', 'notes', 'email_addresses']; // Default content fields for people
+            : ['name', 'notes', 'email_addresses', 'job_title']; // Default content fields for people
 
         const contentFilters = {
           filters: searchFields.map((field) => ({
