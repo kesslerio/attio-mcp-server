@@ -9,6 +9,11 @@ import {
   SanitizedObject,
   InputSanitizer,
 } from '../../handlers/tool-configs/universal/schemas.js';
+import { isValidEmail } from '../validation/email-validation.js';
+import { 
+  UniversalValidationError,
+  ErrorType,
+} from '../../handlers/tool-configs/universal/schemas.js';
 
 /**
  * People name input formats
@@ -162,7 +167,17 @@ export class PeopleDataNormalizer {
     // Handle string input
     if (typeof input === 'string') {
       const normalized = InputSanitizer.normalizeEmail(input);
-      if (normalized && this.isValidEmail(normalized)) {
+      if (normalized) {
+        if (!isValidEmail(normalized)) {
+          throw new UniversalValidationError(
+            `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+            ErrorType.USER_ERROR,
+            {
+              field: 'email_addresses',
+              suggestion: 'Ensure email addresses are in the format: user@domain.com',
+            }
+          );
+        }
         emails.push({ email_address: normalized });
       }
     }
@@ -171,12 +186,33 @@ export class PeopleDataNormalizer {
       for (const item of input) {
         if (typeof item === 'string') {
           const normalized = InputSanitizer.normalizeEmail(item);
-          if (normalized && this.isValidEmail(normalized)) {
+          if (normalized) {
+            if (!isValidEmail(normalized)) {
+              throw new UniversalValidationError(
+                `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+                ErrorType.USER_ERROR,
+                {
+                  field: 'email_addresses',
+                  suggestion: 'Ensure email addresses are in the format: user@domain.com',
+                }
+              );
+            }
             emails.push({ email_address: normalized });
           }
         } else if (typeof item === 'object' && item.email_address) {
-          const normalized = InputSanitizer.normalizeEmail(item.email_address);
-          if (normalized && this.isValidEmail(normalized)) {
+          const emailValue = String(item.email_address);
+          const normalized = InputSanitizer.normalizeEmail(emailValue);
+          if (normalized) {
+            if (!isValidEmail(normalized)) {
+              throw new UniversalValidationError(
+                `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+                ErrorType.USER_ERROR,
+                {
+                  field: 'email_addresses',
+                  suggestion: 'Ensure email addresses are in the format: user@domain.com',
+                }
+              );
+            }
             emails.push({
               email_address: normalized,
               email_type: item.email_type || item.type,
@@ -189,8 +225,19 @@ export class PeopleDataNormalizer {
     else if (typeof input === 'object') {
       // Check for email_address field
       if (input.email_address) {
-        const normalized = InputSanitizer.normalizeEmail(input.email_address);
-        if (normalized && this.isValidEmail(normalized)) {
+        const emailValue = String(input.email_address);
+        const normalized = InputSanitizer.normalizeEmail(emailValue);
+        if (normalized) {
+          if (!isValidEmail(normalized)) {
+            throw new UniversalValidationError(
+              `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+              ErrorType.USER_ERROR,
+              {
+                field: 'email_addresses',
+                suggestion: 'Ensure email addresses are in the format: user@domain.com',
+              }
+            );
+          }
           emails.push({
             email_address: normalized,
             email_type: input.email_type || input.type,
@@ -206,8 +253,19 @@ export class PeopleDataNormalizer {
       }
       // Check for email field (singular)
       else if (input.email) {
-        const normalized = InputSanitizer.normalizeEmail(input.email);
-        if (normalized && this.isValidEmail(normalized)) {
+        const emailValue = String(input.email);
+        const normalized = InputSanitizer.normalizeEmail(emailValue);
+        if (normalized) {
+          if (!isValidEmail(normalized)) {
+            throw new UniversalValidationError(
+              `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+              ErrorType.USER_ERROR,
+              {
+                field: 'email_addresses',
+                suggestion: 'Ensure email addresses are in the format: user@domain.com',
+              }
+            );
+          }
           emails.push({ email_address: normalized });
         }
       }
@@ -223,39 +281,6 @@ export class PeopleDataNormalizer {
     return emails.length > 0 ? emails : undefined;
   }
 
-  /**
-   * Validate email format
-   */
-  private static isValidEmail(email: string): boolean {
-    // More comprehensive email validation regex that handles:
-    // - International domains
-    // - Plus addressing (user+tag@domain.com)
-    // - Multiple subdomains
-    // - TLDs from 2 to 63 characters
-    // Based on RFC 5322 with practical limitations
-    const emailRegex =
-      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-
-    // Additional validation for edge cases
-    if (!emailRegex.test(email)) {
-      return false;
-    }
-
-    // Check for reasonable length limits
-    if (email.length > 254) {
-      // RFC 5321 limit
-      return false;
-    }
-
-    // Check local part length (before @)
-    const [localPart] = email.split('@');
-    if (localPart.length > 64) {
-      // RFC 5321 limit
-      return false;
-    }
-
-    return true;
-  }
 
   /**
    * Normalize phone number input
