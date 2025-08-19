@@ -232,25 +232,37 @@ class TestDataCleanup {
               const firstItem = field[0];
               if (typeof firstItem === 'string') return firstItem;
               if (firstItem && typeof firstItem === 'object') {
+                // For name fields, try full_name first, then construct from parts
+                if (firstItem.full_name) return firstItem.full_name;
+                if (firstItem.first_name && firstItem.last_name) {
+                  return `${firstItem.first_name} ${firstItem.last_name}`.trim();
+                }
+                if (firstItem.first_name) return firstItem.first_name;
+                // Fallback to other common fields
                 return firstItem.value || firstItem.name || firstItem.display_value || '';
               }
             }
             if (typeof field === 'object') {
+              if (field.full_name) return field.full_name;
+              if (field.first_name && field.last_name) {
+                return `${field.first_name} ${field.last_name}`.trim();
+              }
+              if (field.first_name) return field.first_name;
               return field.value || field.name || field.display_value || '';
             }
             return '';
           };
           
-          // Try first_name/last_name structure
+          // Try name field first (has full_name, first_name, last_name)
+          const nameField = extractValue(person.values.name);
+          
+          // Try first_name/last_name structure as fallback
           const firstName = extractValue(person.values.first_name);
           const lastName = extractValue(person.values.last_name);
           const fullName = `${firstName} ${lastName}`.trim();
           
-          // Try name field directly
-          const nameField = extractValue(person.values.name);
-          
           // Use whichever is available
-          displayName = fullName || nameField || 'Unknown';
+          displayName = nameField || fullName || 'Unknown';
           
           // Try to get email information
           if (person.values.email_addresses) {
@@ -279,7 +291,7 @@ class TestDataCleanup {
         
         // Debug: Show raw structure if verbose mode
         if (this.options.verbose) {
-          console.log(`       Raw: ${JSON.stringify(person.values, null, 2).substring(0, 200)}...`);
+          console.log(`       Raw: ${JSON.stringify(person.values, null, 2)}`);
         }
       });
       return;
@@ -301,11 +313,38 @@ class TestDataCleanup {
               // Use same logic as dry-run display
               let displayName = 'Unknown';
               if (person.values) {
-                const firstName = person.values.first_name?.[0]?.value || person.values.first_name || '';
-                const lastName = person.values.last_name?.[0]?.value || person.values.last_name || '';
+                // Use same helper function logic
+                const extractValue = (field: any): string => {
+                  if (!field) return '';
+                  if (typeof field === 'string') return field;
+                  if (Array.isArray(field) && field.length > 0) {
+                    const firstItem = field[0];
+                    if (typeof firstItem === 'string') return firstItem;
+                    if (firstItem && typeof firstItem === 'object') {
+                      if (firstItem.full_name) return firstItem.full_name;
+                      if (firstItem.first_name && firstItem.last_name) {
+                        return `${firstItem.first_name} ${firstItem.last_name}`.trim();
+                      }
+                      if (firstItem.first_name) return firstItem.first_name;
+                      return firstItem.value || firstItem.name || firstItem.display_value || '';
+                    }
+                  }
+                  if (typeof field === 'object') {
+                    if (field.full_name) return field.full_name;
+                    if (field.first_name && field.last_name) {
+                      return `${field.first_name} ${field.last_name}`.trim();
+                    }
+                    if (field.first_name) return field.first_name;
+                    return field.value || field.name || field.display_value || '';
+                  }
+                  return '';
+                };
+                
+                const nameField = extractValue(person.values.name);
+                const firstName = extractValue(person.values.first_name);
+                const lastName = extractValue(person.values.last_name);
                 const fullName = `${firstName} ${lastName}`.trim();
-                const nameField = person.values.name?.[0]?.value || person.values.name || '';
-                displayName = fullName || nameField || person.id.record_id;
+                displayName = nameField || fullName || person.id.record_id;
               }
               console.log(`    ✅ Deleted: ${displayName}`);
             }
