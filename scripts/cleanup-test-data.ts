@@ -356,11 +356,12 @@ class TestDataCleanup {
   }
 
   /**
-   * Find test companies using configured prefixes
+   * Find test companies using configured prefixes and common test patterns
    */
   private async findTestCompanies(): Promise<any[]> {
     const allCompanies: any[] = [];
     
+    // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
         const response = await retryWithBackoff(async () => {
@@ -379,15 +380,44 @@ class TestDataCleanup {
       }
     }
     
-    return allCompanies;
+    // Common test patterns (case-insensitive)
+    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example'];
+    for (const pattern of testPatterns) {
+      try {
+        // Try both exact prefix and case variations
+        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+          const response = await retryWithBackoff(async () => {
+            return this.client.post('/objects/companies/records/query', {
+              filter: {
+                name: { $starts_with: variant },
+              },
+              limit: 500
+            });
+          });
+          
+          const companies = response.data?.data ?? [];
+          allCompanies.push(...companies);
+        }
+      } catch (error) {
+        console.error(`    ❌ Error querying companies with pattern ${pattern}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Remove duplicates by record_id
+    const uniqueCompanies = allCompanies.filter((company, index, self) => 
+      index === self.findIndex(c => c.id.record_id === company.id.record_id)
+    );
+    
+    return uniqueCompanies;
   }
 
   /**
-   * Find test people using configured prefixes
+   * Find test people using configured prefixes, common test patterns, and test email domains
    */
   private async findTestPeople(): Promise<any[]> {
     const allPeople: any[] = [];
     
+    // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
         // Search by name
@@ -418,6 +448,63 @@ class TestDataCleanup {
         
       } catch (error) {
         console.error(`    ❌ Error querying people with prefix ${prefix}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Common test patterns for names (case-insensitive)
+    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example', 'Universal Test'];
+    for (const pattern of testPatterns) {
+      try {
+        // Try both exact prefix and case variations
+        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+          const response = await retryWithBackoff(async () => {
+            return this.client.post('/objects/people/records/query', {
+              filter: {
+                name: { $starts_with: variant },
+              },
+              limit: 500
+            });
+          });
+          
+          const people = response.data?.data ?? [];
+          allPeople.push(...people);
+        }
+      } catch (error) {
+        console.error(`    ❌ Error querying people with pattern ${pattern}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Common test email domains and patterns
+    const testEmailPatterns = [
+      '@example.com',
+      '@test.com',
+      '@demo.com',
+      '@sample.com',
+      'test@',
+      'demo@',
+      'mock@',
+      'example@',
+      'universal-test-',
+      'test414@',
+      'valid@example',
+      'updated-valid@'
+    ];
+    
+    for (const emailPattern of testEmailPatterns) {
+      try {
+        const response = await retryWithBackoff(async () => {
+          return this.client.post('/objects/people/records/query', {
+            filter: {
+              email_addresses: { $contains: emailPattern },
+            },
+            limit: 500
+          });
+        });
+        
+        const people = response.data?.data ?? [];
+        allPeople.push(...people);
+      } catch (error) {
+        console.error(`    ❌ Error querying people with email pattern ${emailPattern}:`, getDetailedErrorMessage(error));
       }
     }
     
