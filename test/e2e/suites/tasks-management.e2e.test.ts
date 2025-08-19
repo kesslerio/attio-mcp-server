@@ -434,7 +434,6 @@ describe.skipIf(
 
       const response = await callTasksTool('update-task', {
         taskId: taskId,
-        content: 'Multi-field updated task content',
         status: 'in_progress',
         due_date: newDueDate.toISOString().split('T')[0],
       });
@@ -541,7 +540,6 @@ describe.skipIf(
       const progressResponse = await callTasksTool('update-task', {
         taskId: taskId,
         status: 'in_progress',
-        content: 'E2E Workflow Task - Now In Progress',
       });
 
       E2EAssertions.expectMcpSuccess(progressResponse);
@@ -550,7 +548,6 @@ describe.skipIf(
       const completeResponse = await callTasksTool('update-task', {
         taskId: taskId,
         status: 'completed',
-        content: 'E2E Workflow Task - Completed Successfully',
       });
 
       E2EAssertions.expectMcpSuccess(completeResponse);
@@ -601,7 +598,6 @@ describe.skipIf(
       const assignResponse = await callTasksTool('update-task', {
         taskId: taskId,
         assigneeId: testPeople[0].id.record_id,
-        content: 'E2E Assignment Task - Now Assigned',
       });
 
       E2EAssertions.expectMcpSuccess(assignResponse);
@@ -615,13 +611,37 @@ describe.skipIf(
     it('should handle invalid task ID in updates', async () => {
       const response = await callTasksTool('update-task', {
         taskId: 'invalid-task-id-12345',
-        content: 'This should fail',
+        status: 'completed',
       });
 
       E2EAssertions.expectMcpError(
         response,
         /not found|invalid|does not exist|missing required parameter/i
       );
+    }, 15000);
+
+    it('should reject task content updates with proper error message', async () => {
+      if (createdTasks.length === 0) {
+        console.log(
+          '⏭️ Skipping content update test - no created tasks available'
+        );
+        return;
+      }
+
+      const task = createdTasks[0];
+      const taskId = task.id.task_id || task.id;
+
+      const response = await callTasksTool('update-task', {
+        taskId: taskId,
+        content: 'This should fail - content is immutable',
+      });
+
+      E2EAssertions.expectMcpError(
+        response,
+        /content cannot be updated|immutable/i
+      );
+
+      console.log('✅ Content update properly rejected:', taskId);
     }, 15000);
 
     it('should handle invalid task ID in deletion', async () => {

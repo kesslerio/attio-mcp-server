@@ -71,8 +71,9 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
 
     const mockUpdatedTask = {
       ...mockTask,
-      content: 'Updated: Q4 Follow-up Task',
       status: 'completed',
+      assignee: { id: 'user-456', type: 'workspace-member', name: 'Updated User' },
+      due_date: '2025-03-01',
       updated_at: '2024-01-02T00:00:00Z',
     };
 
@@ -120,10 +121,11 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     );
     expect(getTask).toHaveBeenCalledWith('task-123');
 
-    // 3. Test task update with field mapping
+    // 3. Test task update with field mapping (excluding immutable content field)
     const updateData = {
-      name: 'Updated: Q4 Follow-up Task', // Should map to 'content'
       status: 'completed',
+      assignee: 'user-456', // Test updating assignee
+      due_date: '2025-03-01', // Test updating due date
     };
 
     const updatedRecord = await handleUniversalUpdate({
@@ -132,15 +134,13 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
       record_data: updateData,
     });
 
-    expect(updatedRecord.values.content[0].value).toBe(
-      'Updated: Q4 Follow-up Task'
-    );
     expect(updatedRecord.values.status[0].value).toBe('completed');
     expect(updateTask).toHaveBeenCalledWith(
       'task-123',
       expect.objectContaining({
-        content: 'Updated: Q4 Follow-up Task',
         status: 'completed',
+        assigneeId: 'user-456',
+        dueDate: '2025-03-01',
       })
     );
 
