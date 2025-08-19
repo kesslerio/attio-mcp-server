@@ -381,8 +381,15 @@ describe('Issue #414: Email Validation Security Tests', () => {
       it('should handle null/undefined inputs safely', () => {
         expect(PeopleDataNormalizer.normalizeEmails(null)).toBeUndefined();
         expect(PeopleDataNormalizer.normalizeEmails(undefined)).toBeUndefined();
-        expect(PeopleDataNormalizer.normalizeEmails('')).toBeUndefined();
-        expect(PeopleDataNormalizer.normalizeEmails('   ')).toBeUndefined();
+
+        // Empty string and whitespace should throw in strict mode (default)
+        expect(() => {
+          PeopleDataNormalizer.normalizeEmails('');
+        }).toThrow(UniversalValidationError);
+
+        expect(() => {
+          PeopleDataNormalizer.normalizeEmails('   ');
+        }).toThrow(UniversalValidationError);
       });
     });
 

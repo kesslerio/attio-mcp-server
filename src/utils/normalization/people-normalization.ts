@@ -163,13 +163,28 @@ export class PeopleDataNormalizer {
   /**
    * Extract email value from various input formats
    */
-  private static extractEmailValue(emailField: unknown): string {
+  private static extractEmailValue(emailField: unknown): string | null {
     if (typeof emailField === 'string') {
       return emailField;
     }
     if (typeof emailField === 'object' && emailField && 'value' in emailField) {
-      return String((emailField as any).value);
+      const value = (emailField as any).value;
+      if (typeof value === 'string') {
+        return value;
+      }
     }
+    
+    // Handle malformed inputs - don't try to convert objects, arrays, etc. to strings
+    if (emailField === null || emailField === undefined) {
+      return null;
+    }
+    if (typeof emailField === 'object' || Array.isArray(emailField)) {
+      return null; // Don't convert objects/arrays to "[object object]" strings
+    }
+    if (typeof emailField === 'number' || typeof emailField === 'boolean') {
+      return null; // Don't convert numbers/booleans to strings for email validation
+    }
+    
     return String(emailField);
   }
 
@@ -244,7 +259,7 @@ export class PeopleDataNormalizer {
     input: any,
     config: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): Array<{ email_address: string; email_type?: string }> | undefined {
-    if (!input) return undefined;
+    if (input === null || input === undefined) return undefined;
 
     const emails: Array<{ email_address: string; email_type?: string }> = [];
 
@@ -263,17 +278,19 @@ export class PeopleDataNormalizer {
           if (validatedEmail) {
             emails.push({ email_address: validatedEmail });
           }
-        } else if (typeof item === 'object' && item.email_address) {
+        } else if (typeof item === 'object' && item && item.email_address) {
           const emailValue = this.extractEmailValue(item.email_address);
-          const validatedEmail = this.validateAndProcessEmail(
-            emailValue,
-            config
-          );
-          if (validatedEmail) {
-            emails.push({
-              email_address: validatedEmail,
-              email_type: item.email_type || item.type,
-            });
+          if (emailValue) {
+            const validatedEmail = this.validateAndProcessEmail(
+              emailValue,
+              config
+            );
+            if (validatedEmail) {
+              emails.push({
+                email_address: validatedEmail,
+                email_type: item.email_type || item.type,
+              });
+            }
           }
         }
       }
@@ -283,16 +300,18 @@ export class PeopleDataNormalizer {
       // Check for email_address field
       if (input.email_address) {
         const emailValue = this.extractEmailValue(input.email_address);
-        const validatedEmail = this.validateAndProcessEmail(emailValue, config);
-        if (validatedEmail) {
-          emails.push({
-            email_address: validatedEmail,
-            email_type: input.email_type || input.type,
-          });
+        if (emailValue) {
+          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          if (validatedEmail) {
+            emails.push({
+              email_address: validatedEmail,
+              email_type: input.email_type || input.type,
+            });
+          }
         }
       }
       // Check for email_addresses field
-      else if (input.email_addresses) {
+      else if (input.email_addresses && Array.isArray(input.email_addresses)) {
         const normalized = this.normalizeEmails(input.email_addresses, config);
         if (normalized) {
           emails.push(...normalized);
@@ -301,13 +320,15 @@ export class PeopleDataNormalizer {
       // Check for email field (singular)
       else if (input.email) {
         const emailValue = this.extractEmailValue(input.email);
-        const validatedEmail = this.validateAndProcessEmail(emailValue, config);
-        if (validatedEmail) {
-          emails.push({ email_address: validatedEmail });
+        if (emailValue) {
+          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          if (validatedEmail) {
+            emails.push({ email_address: validatedEmail });
+          }
         }
       }
       // Check for emails field (plural)
-      else if (input.emails) {
+      else if (input.emails && Array.isArray(input.emails)) {
         const normalized = this.normalizeEmails(input.emails, config);
         if (normalized) {
           emails.push(...normalized);

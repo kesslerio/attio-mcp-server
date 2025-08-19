@@ -54,6 +54,16 @@ export function isValidEmail(email: string): boolean {
     return false;
   }
 
+  // Check for consecutive dots in local part (not allowed per RFC 5322)
+  if (localPart.includes('..')) {
+    return false;
+  }
+
+  // Local part cannot start or end with dot
+  if (localPart.startsWith('.') || localPart.endsWith('.')) {
+    return false;
+  }
+
   // Check domain has at least one dot
   if (!domain.includes('.')) {
     return false;

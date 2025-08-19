@@ -16,6 +16,7 @@ import { UniversalValidationError } from '../../src/handlers/tool-configs/univer
 import {
   EmailValidationMode,
   DEFAULT_EMAIL_VALIDATION_CONFIG,
+  LEGACY_EMAIL_VALIDATION_CONFIG,
 } from '../../src/utils/normalization/email-validation-config.js';
 
 describe('Issue #414: Breaking Changes and Security Fixes', () => {
@@ -642,7 +643,19 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
       it('should handle undefined/null inputs gracefully', () => {
         expect(PeopleDataNormalizer.normalizeEmails(null)).toBeUndefined();
         expect(PeopleDataNormalizer.normalizeEmails(undefined)).toBeUndefined();
-        expect(PeopleDataNormalizer.normalizeEmails('')).toBeUndefined();
+
+        // Empty string now throws in strict mode (default) - this is the security fix
+        expect(() => {
+          PeopleDataNormalizer.normalizeEmails('');
+        }).toThrow(UniversalValidationError);
+
+        // But returns undefined in legacy mode for backward compatibility
+        expect(
+          PeopleDataNormalizer.normalizeEmails(
+            '',
+            LEGACY_EMAIL_VALIDATION_CONFIG
+          )
+        ).toBeUndefined();
       });
 
       it('should maintain normalization behavior for valid inputs', () => {
