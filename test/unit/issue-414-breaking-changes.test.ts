@@ -13,9 +13,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PeopleDataNormalizer } from '../../src/utils/normalization/people-normalization.js';
 import { UniversalValidationError } from '../../src/handlers/tool-configs/universal/schemas.js';
-import { 
-  EmailValidationMode, 
-  DEFAULT_EMAIL_VALIDATION_CONFIG 
+import {
+  EmailValidationMode,
+  DEFAULT_EMAIL_VALIDATION_CONFIG,
 } from '../../src/utils/normalization/email-validation-config.js';
 
 describe('Issue #414: Breaking Changes and Security Fixes', () => {
@@ -34,7 +34,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
         expect(() => {
           PeopleDataNormalizer.normalizeEmails('plainaddress', {
             ...DEFAULT_EMAIL_VALIDATION_CONFIG,
-            mode: EmailValidationMode.STRICT
+            mode: EmailValidationMode.STRICT,
           });
         }).toThrow(UniversalValidationError);
       });
@@ -60,7 +60,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
           try {
             PeopleDataNormalizer.normalizeEmails(email, {
               ...DEFAULT_EMAIL_VALIDATION_CONFIG,
-              mode: EmailValidationMode.STRICT
+              mode: EmailValidationMode.STRICT,
             });
             expect.fail(`Expected email "${email}" to throw but it didn't`);
           } catch (error) {
@@ -479,7 +479,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
           try {
             PeopleDataNormalizer.normalizeEmails(email, {
               ...DEFAULT_EMAIL_VALIDATION_CONFIG,
-              mode: EmailValidationMode.STRICT
+              mode: EmailValidationMode.STRICT,
             });
           } catch (error) {
             if (error instanceof UniversalValidationError) {
@@ -504,7 +504,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
         try {
           PeopleDataNormalizer.normalizeEmails(testEmail, {
             ...DEFAULT_EMAIL_VALIDATION_CONFIG,
-            mode: EmailValidationMode.STRICT
+            mode: EmailValidationMode.STRICT,
           });
           expect.fail('Should have thrown an error');
         } catch (error) {
@@ -525,7 +525,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
           try {
             PeopleDataNormalizer.normalizeEmails(email, {
               ...DEFAULT_EMAIL_VALIDATION_CONFIG,
-              mode: EmailValidationMode.STRICT
+              mode: EmailValidationMode.STRICT,
             });
           } catch (error) {
             expect(error instanceof UniversalValidationError).toBe(true);
@@ -680,10 +680,7 @@ describe('Issue #414: Breaking Changes and Security Fixes', () => {
           impact:
             'Code that relied on silent failure will now receive exceptions',
           migration: 'Add try-catch blocks around email validation calls',
-          affectedMethods: [
-            'normalizeEmails',
-            'normalizePeopleData',
-          ],
+          affectedMethods: ['normalizeEmails', 'normalizePeopleData'],
         };
 
         expect(breakingChange.change).toContain('throws instead of');
