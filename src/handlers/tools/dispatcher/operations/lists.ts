@@ -551,7 +551,8 @@ export async function handleGetRecordListMembershipsOperation(
 ) {
   const recordId = request.params.arguments?.recordId as string;
   const objectType = request.params.arguments?.objectType as string;
-  const includeEntryValues = request.params.arguments?.includeEntryValues as boolean;
+  const includeEntryValues = request.params.arguments
+    ?.includeEntryValues as boolean;
   const batchSize = request.params.arguments?.batchSize as number;
 
   if (!recordId) {

@@ -158,7 +158,9 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
     // Use shared utility for display name extraction (eliminates code duplication)
-    const name = UniversalUtilityService.extractDisplayName(record.values || {});
+    const name = UniversalUtilityService.extractDisplayName(
+      record.values || {}
+    );
     const id = record.id?.record_id || 'unknown';
 
     let details = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)}: ${name}\nID: ${id}\n\n`;
@@ -478,6 +480,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
   name: 'discover-attributes',
   handler: async (params: {
     resource_type: UniversalResourceType;
+    categories?: string[]; // NEW: Category filtering support
   }): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
@@ -485,7 +488,10 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         params
       );
       return await handleUniversalDiscoverAttributes(
-        sanitizedParams.resource_type
+        sanitizedParams.resource_type,
+        {
+          categories: sanitizedParams.categories, // NEW: Pass categories parameter
+        }
       );
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(

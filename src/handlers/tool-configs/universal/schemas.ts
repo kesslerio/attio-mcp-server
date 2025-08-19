@@ -408,6 +408,12 @@ export const discoverAttributesSchema = {
   type: 'object' as const,
   properties: {
     resource_type: resourceTypeProperty,
+    categories: {
+      type: 'array' as const,
+      items: { type: 'string' as const },
+      description:
+        'Categories of attributes to retrieve (basic, business, contact, social, custom)',
+    },
   },
   required: ['resource_type' as const],
   additionalProperties: false,

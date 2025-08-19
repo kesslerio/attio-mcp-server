@@ -22,8 +22,10 @@ export const activitySearchToolConfigs = {
             `- ${getPersonName(person)} (ID: ${
               person.id?.record_id || 'unknown'
             }, Last Interaction: ${
-              ((person.values as Record<string, unknown>)?.last_interaction as Record<string, unknown>)?.interacted_at ||
-              'unknown'
+              (
+                (person.values as Record<string, unknown>)
+                  ?.last_interaction as Record<string, unknown>
+              )?.interacted_at || 'unknown'
             })`
         )
         .join('\n')}`,
@@ -39,8 +41,10 @@ export const activitySearchToolConfigs = {
             `- ${getPersonName(person)} (ID: ${
               person.id?.record_id || 'unknown'
             }, Last Interaction: ${
-              ((person.values as Record<string, unknown>)?.last_interaction as Record<string, unknown>)?.interacted_at ||
-              'unknown'
+              (
+                (person.values as Record<string, unknown>)
+                  ?.last_interaction as Record<string, unknown>
+              )?.interacted_at || 'unknown'
             })`
         )
         .join('\n')}`,

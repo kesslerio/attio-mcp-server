@@ -703,7 +703,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
         case BatchOperationType.SEARCH: {
           // Check if we have multiple queries for true batch search
           const queries = sanitizedParams.queries;
-          
+
           if (queries && Array.isArray(queries) && queries.length > 0) {
             // True batch search with multiple queries using optimized API (Issue #471)
             const searchValidation = validateBatchOperation({
@@ -717,14 +717,10 @@ export const batchOperationsConfig: UniversalToolConfig = {
             }
 
             // Use optimized universal batch search API
-            return await universalBatchSearch(
-              resource_type,
-              queries,
-              {
-                limit: sanitizedParams.limit,
-                offset: sanitizedParams.offset,
-              }
-            );
+            return await universalBatchSearch(resource_type, queries, {
+              limit: sanitizedParams.limit,
+              offset: sanitizedParams.offset,
+            });
           } else {
             // Fallback to single search with pagination (legacy behavior)
             const searchValidation = validateSearchQuery(undefined, {
@@ -794,7 +790,7 @@ export const batchOperationsConfig: UniversalToolConfig = {
             successful.forEach((searchResult, index) => {
               const records = searchResult.result || [];
               summary += `\n${index + 1}. Query: "${searchResult.query}" - Found ${records.length} ${resourceTypeName}s\n`;
-              
+
               if (records.length > 0) {
                 records.slice(0, 3).forEach((record, recordIndex) => {
                   const values = record.values as Record<string, unknown>;

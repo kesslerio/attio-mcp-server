@@ -13,6 +13,7 @@ import {
   RecordUpdateParams,
   RecordListParams,
 } from '../../types/attio.js';
+import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 
 /**
@@ -29,21 +30,39 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
  *
  * @param objectType - The type of object to get (people or companies)
  * @param recordId - ID of the record
- * @param retryConfig - Optional retry configuration
+ * @param options - Optional configuration including field filtering and retry config
  * @returns Record details
  */
 export async function getObjectDetails<T extends AttioRecord>(
   objectType: ResourceType,
   recordId: string,
-  retryConfig?: Partial<RetryConfig>
+  options?: {
+    fields?: string[]; // NEW: Field filtering support
+    retryConfig?: Partial<RetryConfig>;
+  }
 ): Promise<T> {
   const api = getAttioClient();
-  const path = `/objects/${objectType}/records/${recordId}`;
+  let path = `/objects/${objectType}/records/${recordId}`;
+
+  // NEW: Add field filtering to query parameters with security validation
+  if (options?.fields && options.fields.length > 0) {
+    // Validate and sanitize field names to prevent injection attacks
+    const validatedFields = secureValidateFields(
+      options.fields,
+      objectType,
+      'field filtering in get-record-details'
+    );
+
+    if (validatedFields.length > 0) {
+      const fieldsParam = validatedFields.join(',');
+      path += `?fields=${encodeURIComponent(fieldsParam)}`;
+    }
+  }
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<T>>(path);
     return response?.data?.data || response?.data;
-  }, retryConfig);
+  }, options?.retryConfig);
 }
 
 /**

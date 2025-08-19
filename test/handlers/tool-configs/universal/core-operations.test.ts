@@ -575,7 +575,8 @@ describe('Universal Core Operations Tests', () => {
       const result = await discoverAttributesConfig.handler(params);
       expect(result).toEqual(mockSchema);
       expect(vi.mocked(handleUniversalDiscoverAttributes)).toHaveBeenCalledWith(
-        UniversalResourceType.COMPANIES
+        UniversalResourceType.COMPANIES,
+        { categories: undefined }
       );
     });
 
