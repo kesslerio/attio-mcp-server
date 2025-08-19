@@ -6,6 +6,7 @@ export {
   companyToolDefinitions,
 } from './companies/index.js';
 export { peopleToolConfigs, peopleToolDefinitions } from './people/index.js';
+export { dealToolConfigs, dealToolDefinitions } from './deals/index.js';
 export { listsToolConfigs, listsToolDefinitions } from './lists.js';
 export { promptsToolConfigs, promptsToolDefinitions } from './prompts.js';
 export { recordToolConfigs, recordToolDefinitions } from './records/index.js';

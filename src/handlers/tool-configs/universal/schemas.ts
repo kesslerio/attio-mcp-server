@@ -423,25 +423,160 @@ export const discoverAttributesSchema = {
  * Universal get detailed info schema
  */
 export const getDetailedInfoSchema = {
-  type: 'object' as const,
+  type: 'object',
   properties: {
-    resource_type: resourceTypeProperty,
+    resource_type: {
+      type: 'string',
+      enum: Object.values(UniversalResourceType),
+      description: 'Type of resource to operate on',
+    },
     record_id: {
-      type: 'string' as const,
+      type: 'string',
       description: 'Unique identifier of the record',
     },
     info_type: {
-      type: 'string' as const,
+      type: 'string',
       enum: Object.values(DetailedInfoType),
       description:
         'Type of detailed information to retrieve (contact, business, social, basic, custom)',
     },
   },
-  required: [
-    'resource_type' as const,
-    'record_id' as const,
-    'info_type' as const,
-  ],
+  required: ['resource_type', 'record_id', 'info_type'],
+  additionalProperties: false,
+};
+
+/**
+ * Schema for universal note creation
+ */
+export const createNoteSchema = {
+  type: 'object',
+  properties: {
+    resource_type: {
+      type: 'string',
+      enum: Object.values(UniversalResourceType),
+      description:
+        'Type of resource to create note for (companies, people, deals)',
+    },
+    record_id: {
+      type: 'string',
+      description: 'ID of the record to attach the note to',
+    },
+    title: {
+      type: 'string',
+      description: 'Title of the note',
+    },
+    content: {
+      type: 'string',
+      description: 'Content of the note',
+    },
+  },
+  required: ['resource_type', 'record_id', 'title', 'content'],
+  additionalProperties: false,
+};
+
+/**
+ * Schema for universal get notes
+ */
+export const getNotesSchema = {
+  type: 'object',
+  properties: {
+    resource_type: {
+      type: 'string',
+      enum: Object.values(UniversalResourceType),
+      description: 'Type of resource to get notes for (optional)',
+    },
+    record_id: {
+      type: 'string',
+      description: 'ID of the record to get notes for (optional)',
+    },
+    limit: {
+      type: 'number',
+      description: 'Maximum number of notes to return',
+      minimum: 1,
+      maximum: 100,
+    },
+    offset: {
+      type: 'number',
+      description: 'Number of notes to skip',
+      minimum: 0,
+    },
+  },
+  additionalProperties: false,
+};
+
+/**
+ * Schema for universal update note
+ */
+export const updateNoteSchema = {
+  type: 'object',
+  properties: {
+    note_id: {
+      type: 'string',
+      description: 'ID of the note to update',
+    },
+    title: {
+      type: 'string',
+      description: 'New title for the note',
+    },
+    content: {
+      type: 'string',
+      description: 'New content for the note',
+    },
+    is_archived: {
+      type: 'boolean',
+      description: 'Whether to archive the note',
+    },
+  },
+  required: ['note_id'],
+  additionalProperties: false,
+};
+
+/**
+ * Schema for universal search notes
+ */
+export const searchNotesSchema = {
+  type: 'object',
+  properties: {
+    resource_type: {
+      type: 'string',
+      enum: Object.values(UniversalResourceType),
+      description: 'Type of resource to search notes for (optional)',
+    },
+    record_id: {
+      type: 'string',
+      description: 'ID of the record to search notes for (optional)',
+    },
+    query: {
+      type: 'string',
+      description: 'Search query for note content or title',
+    },
+    limit: {
+      type: 'number',
+      description: 'Maximum number of notes to return',
+      minimum: 1,
+      maximum: 100,
+    },
+    offset: {
+      type: 'number',
+      description: 'Number of notes to skip',
+      minimum: 0,
+    },
+  },
+  additionalProperties: false,
+};
+
+/**
+ * Schema for universal delete note
+ */
+export const deleteNoteSchema = {
+  type: 'object',
+  properties: {
+    note_id: {
+      type: 'string',
+      description: 'ID of the note to delete',
+    },
+  },
+  required: ['note_id'],
   additionalProperties: false,
 };
 
@@ -1117,6 +1252,85 @@ export function validateUniversalToolParams(
             field: 'record_id',
             suggestion: 'Provide the ID of the record to delete',
             example: `record_id: 'comp_abc123'`,
+          }
+        );
+      }
+      break;
+
+    case 'create-note':
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'deals'` }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_id',
+            suggestion: 'Provide the ID of the record to attach the note to',
+            example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
+          }
+        );
+      }
+      if (!sanitizedParams.title) {
+        throw new UniversalValidationError(
+          'Missing required parameter: title',
+          ErrorType.USER_ERROR,
+          {
+            field: 'title',
+            suggestion: 'Provide a title for the note',
+            example: `title: 'Meeting notes'`,
+          }
+        );
+      }
+      if (!sanitizedParams.content) {
+        throw new UniversalValidationError(
+          'Missing required parameter: content',
+          ErrorType.USER_ERROR,
+          {
+            field: 'content',
+            suggestion: 'Provide content for the note',
+            example: `content: 'Discussion about project timeline'`,
+          }
+        );
+      }
+      break;
+
+    case 'get-notes':
+      // All parameters are optional for get-notes
+      break;
+
+    case 'update-note':
+      if (!sanitizedParams.note_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: note_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'note_id',
+            suggestion: 'Provide the ID of the note to update',
+            example: `note_id: 'note_abc123'`,
+          }
+        );
+      }
+      break;
+
+    case 'search-notes':
+      // All parameters are optional for search-notes
+      break;
+
+    case 'delete-note':
+      if (!sanitizedParams.note_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: note_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'note_id',
+            suggestion: 'Provide the ID of the note to delete',
+            example: `note_id: 'note_abc123'`,
           }
         );
       }

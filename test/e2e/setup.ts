@@ -86,12 +86,12 @@ export class E2ETestBase {
    * Global setup before all tests
    */
   private static async beforeAllSetup(): Promise<void> {
-    console.log('🚀 Starting E2E test setup...');
+    console.error('🚀 Starting E2E test setup...');
 
     // Load and validate configuration
     try {
       this.config = await loadE2EConfig();
-      console.log('✅ E2E configuration loaded successfully');
+      console.error('✅ E2E configuration loaded successfully');
     } catch (error: unknown) {
       console.error('❌ Failed to load E2E configuration:', error);
       throw error;
@@ -99,7 +99,7 @@ export class E2ETestBase {
 
     // Skip API setup if requested or no API key
     if (this.shouldSkipApiSetup()) {
-      console.log('⚠️  Skipping API setup - no API key or skip flag set');
+      console.error('⚠️  Skipping API setup - no API key or skip flag set');
       return;
     }
 
@@ -111,7 +111,7 @@ export class E2ETestBase {
       }
       initializeAttioClient(apiKey);
       this.apiClient = getAttioClient();
-      console.log('✅ Attio API client initialized');
+      console.error('✅ Attio API client initialized');
     } catch (error: unknown) {
       console.error('❌ Failed to initialize API client:', error);
       throw error;
@@ -120,7 +120,7 @@ export class E2ETestBase {
     // Validate API connectivity
     try {
       await this.validateApiConnectivity();
-      console.log('✅ API connectivity validated');
+      console.error('✅ API connectivity validated');
     } catch (error: unknown) {
       console.error('❌ API connectivity validation failed:', error);
       throw error;
@@ -135,16 +135,18 @@ export class E2ETestBase {
       !this.setupOptions.cleanupAfterTests ||
       !this.config?.testSettings.cleanupAfterTests
     ) {
-      console.log('⚠️  Skipping cleanup - disabled in configuration');
+      console.error('⚠️  Skipping cleanup - disabled in configuration');
       return;
     }
 
     if (this.createdObjects.length === 0) {
-      console.log('✅ No test objects to clean up');
+      console.error('✅ No test objects to clean up');
       return;
     }
 
-    console.log(`🧹 Cleaning up ${this.createdObjects.length} test objects...`);
+    console.error(
+      `🧹 Cleaning up ${this.createdObjects.length} test objects...`
+    );
 
     const cleanupResults = await Promise.allSettled(
       this.createdObjects.map((obj) => this.cleanupObject(obj))
@@ -155,7 +157,7 @@ export class E2ETestBase {
     ).length;
     const failed = cleanupResults.filter((r) => r.status === 'rejected').length;
 
-    console.log(
+    console.error(
       `✅ Cleanup completed: ${successful} successful, ${failed} failed`
     );
 
@@ -175,7 +177,7 @@ export class E2ETestBase {
   private static async beforeEachSetup(): Promise<void> {
     // Reset any per-test state if needed
     if (this.config?.testSettings.verboseLogging) {
-      console.log('🧪 Starting test case...');
+      console.error('🧪 Starting test case...');
     }
   }
 
@@ -185,7 +187,7 @@ export class E2ETestBase {
   private static async afterEachCleanup(): Promise<void> {
     // Optional per-test cleanup
     if (this.config?.testSettings.verboseLogging) {
-      console.log('✅ Test case completed');
+      console.error('✅ Test case completed');
     }
   }
 
@@ -213,7 +215,7 @@ export class E2ETestBase {
         throw new Error('Invalid API response structure');
       }
 
-      console.log(
+      console.error(
         `📊 API validation: Found ${response.data.data.length} objects`
       );
     } catch (error: unknown) {
@@ -237,7 +239,7 @@ export class E2ETestBase {
     });
 
     if (this.config?.testSettings.verboseLogging) {
-      console.log(`📝 Tracking ${type}:${id} for cleanup`);
+      console.error(`📝 Tracking ${type}:${id} for cleanup`);
     }
   }
 
@@ -267,7 +269,7 @@ export class E2ETestBase {
       }
 
       if (this.config?.testSettings.verboseLogging) {
-        console.log(`🗑️  Cleaned up ${obj.type}:${obj.id}`);
+        console.error(`🗑️  Cleaned up ${obj.type}:${obj.id}`);
       }
     } catch (error: unknown) {
       // Log warning but don't fail - object might already be deleted
@@ -301,7 +303,7 @@ export class E2ETestBase {
         }
 
         const backoffDelay = delay * Math.pow(2, attempt - 1);
-        console.log(
+        console.error(
           `⏳ Attempt ${attempt} failed, retrying in ${backoffDelay}ms...`
         );
         await this.sleep(backoffDelay);
@@ -370,7 +372,7 @@ export class E2ETestBase {
    */
   static skipIfFeatureDisabled(feature: keyof E2EConfig['features']): boolean {
     if (this.config?.features[feature]) {
-      console.log(`⏭️  Skipping test - ${feature} is disabled`);
+      console.error(`⏭️  Skipping test - ${feature} is disabled`);
       return true;
     }
     return false;
@@ -381,7 +383,7 @@ export class E2ETestBase {
    */
   static skipIfNoApiKey(): boolean {
     if (!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true') {
-      console.log(
+      console.error(
         '⏭️  Skipping test - no API key provided or E2E tests disabled'
       );
       return true;
@@ -470,7 +472,7 @@ export class E2ESetupUtils {
    */
   static async setupConfigurationInteractively(): Promise<void> {
     // This would be implemented for CLI setup
-    console.log('Interactive configuration setup would be implemented here');
+    console.error('Interactive configuration setup would be implemented here');
     throw new Error('Interactive setup not yet implemented');
   }
 

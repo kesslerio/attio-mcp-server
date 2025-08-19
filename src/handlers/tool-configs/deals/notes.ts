@@ -1,26 +1,23 @@
 /**
- * Note operations for people
+ * Note operations for deals
  */
-import {
-  getPersonNotes,
-  createPersonNote,
-} from '../../../objects/people/index.js';
+import { getDealNotes, createDealNote } from '../../../objects/deals/notes.js';
 import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
 
 export const notesToolConfigs = {
   notes: {
-    name: 'get-person-notes',
-    handler: getPersonNotes,
+    name: 'get-deal-notes',
+    handler: getDealNotes,
     formatResult: (notes: NoteDisplay[]) => {
       if (!notes || notes.length === 0) {
-        return 'No notes found for this person.';
+        return 'No notes found for this deal.';
       }
 
       // Debug logging in development to help identify API response structure (Issue #365)
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
         console.error(
-          '[get-person-notes] Debug - Raw notes response:',
+          '[get-deal-notes] Debug - Raw notes response:',
           JSON.stringify(notes.slice(0, 1), null, 2)
         );
       }
@@ -30,13 +27,10 @@ export const notesToolConfigs = {
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
           // 1. note.title/content - Standard API response fields (most common)
-          // 2. note.timestamp - Person-specific timestamp field (checked first for person notes)
-          // 3. note.created_at - Standard creation timestamp (fallback)
-          // 4. note.data?.* - Nested data structure (seen in some API versions)
-          // 5. note.values?.* - Attio-style custom field responses
-          // 6. note.text/body - Alternative content field names (legacy/third-party support)
-          // Note: Person notes include note.timestamp check that company notes don't have
-          // This is intentional as person notes may use different timestamp field naming
+          // 2. note.created_at - Standard creation timestamp
+          // 3. note.data?.* - Nested data structure (seen in some API versions)
+          // 4. note.values?.* - Attio-style custom field responses
+          // 5. note.text/body - Alternative content field names (legacy/third-party support)
           const title =
             note.title || note.data?.title || note.values?.title || 'Untitled';
           const content =
@@ -47,7 +41,6 @@ export const notesToolConfigs = {
             note.body ||
             '';
           const timestamp =
-            note.timestamp ||
             note.created_at ||
             note.data?.created_at ||
             note.values?.created_at ||
@@ -56,23 +49,24 @@ export const notesToolConfigs = {
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
             console.error(
-              `[get-person-notes] Note fields available:`,
+              `[get-deal-notes] Note fields available:`,
               Object.keys(note)
             );
             console.error(
-              `[get-person-notes] Content found:`,
+              `[get-deal-notes] Content found:`,
               !!content,
               content ? `(${content.length} chars)` : '(none)'
             );
           }
 
-          // Truncate at 100 chars for person notes (shorter for readability in lists)
-          // This is intentionally shorter than company notes (200 chars) as person notes
-          // are often briefer and displayed in longer lists where conciseness is valued
+          // Truncate at 150 chars for deal notes (between person notes at 100 and company at 200)
+          // This provides sufficient context for deal-related notes which often contain
+          // important deal progress information that benefits from more detail than person notes
+          // but doesn't need as much context as comprehensive company business notes
           return `- ${title} (Created: ${timestamp})\n  ${
             content
-              ? content.length > 100
-                ? content.substring(0, 100) + '...'
+              ? content.length > 150
+                ? content.substring(0, 150) + '...'
                 : content
               : 'No content'
           }`;
@@ -82,36 +76,59 @@ export const notesToolConfigs = {
   } as NotesToolConfig,
 
   createNote: {
-    name: 'create-person-note',
-    handler: createPersonNote,
-    idParam: 'personId',
+    name: 'create-deal-note',
+    handler: createDealNote,
+    idParam: 'dealId',
+    formatResult: (note) => {
+      if (!note) {
+        return 'Failed to create note.';
+      }
+      // Truncate content at 100 chars for readability in console output
+      return `Successfully created note: ${
+        note.title || 'Untitled'
+      }\nContent: ${
+        note.content
+          ? note.content.length > 100
+            ? note.content.substring(0, 100) + '...'
+            : note.content
+          : 'No content'
+      }\nCreated at: ${note.created_at || 'unknown'}`;
+    },
   } as CreateNoteToolConfig,
 };
 
 export const notesToolDefinitions = [
   {
-    name: 'get-person-notes',
-    description: 'Get notes for a person',
+    name: 'get-deal-notes',
+    description: 'Get notes for a deal',
     inputSchema: {
       type: 'object',
       properties: {
-        personId: {
+        dealId: {
           type: 'string',
-          description: 'ID of the person to get notes for',
+          description: 'ID of the deal to get notes for',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of notes to fetch (default: 10)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of notes to skip for pagination (default: 0)',
         },
       },
-      required: ['personId'],
+      required: ['dealId'],
     },
   },
   {
-    name: 'create-person-note',
-    description: 'Create a note for a specific person',
+    name: 'create-deal-note',
+    description: 'Create a note for a specific deal',
     inputSchema: {
       type: 'object',
       properties: {
-        personId: {
+        dealId: {
           type: 'string',
-          description: 'ID of the person to create a note for',
+          description: 'ID of the deal to create a note for',
         },
         title: {
           type: 'string',
@@ -119,7 +136,7 @@ export const notesToolDefinitions = [
         },
         content: { type: 'string', description: 'Content of the note' },
       },
-      required: ['personId', 'title', 'content'],
+      required: ['dealId', 'title', 'content'],
     },
   },
 ];

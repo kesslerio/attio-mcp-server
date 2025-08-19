@@ -78,7 +78,7 @@ describe.skipIf(
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     }
 
-    console.log('📊 Tool migration stats:', getToolMigrationStats());
+    console.error('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
       requiresRealApi: false, // Use mock data instead of real API for reliable testing
@@ -86,7 +86,9 @@ describe.skipIf(
       timeout: 120000,
     });
 
-    console.log('🚀 Starting Tasks Management E2E Tests with Universal Tools');
+    console.error(
+      '🚀 Starting Tasks Management E2E Tests with Universal Tools'
+    );
   }, 30000);
 
   afterAll(async () => {
@@ -95,7 +97,7 @@ describe.skipIf(
     // End comprehensive logging for this test suite
     endTestSuite();
 
-    console.log(
+    console.error(
       '✅ Tasks Management E2E Tests completed with enhanced logging'
     );
   }, 30000);
@@ -115,7 +117,7 @@ describe.skipIf(
       E2EAssertions.expectCompanyRecord(company);
       testCompanies.push(company);
 
-      console.log('🏢 Created test company for tasks:', company.id.record_id);
+      console.error('🏢 Created test company for tasks:', company.id.record_id);
     }, 30000);
 
     it('should create test people for task assignment', async () => {
@@ -128,7 +130,7 @@ describe.skipIf(
       E2EAssertions.expectPersonRecord(person);
       testPeople.push(person);
 
-      console.log(
+      console.error(
         '👤 Created test person for task assignment:',
         person.id.record_id
       );
@@ -158,12 +160,12 @@ describe.skipIf(
       expect(taskContent).toContain('Test Task');
 
       createdTasks.push(createdTask);
-      console.log('📋 Created basic task:', createdTask.id.task_id);
+      console.error('📋 Created basic task:', createdTask.id.task_id);
     }, 30000);
 
     it('should create task with assignee', async () => {
       if (testPeople.length === 0) {
-        console.log('⏭️ Skipping assignee test - no test people available');
+        console.error('⏭️ Skipping assignee test - no test people available');
         return;
       }
 
@@ -183,12 +185,12 @@ describe.skipIf(
       expect(createdTask.assignee_id || createdTask.assignee?.id).toBeDefined();
 
       createdTasks.push(createdTask);
-      console.log('👥 Created task with assignee:', createdTask.id.task_id);
+      console.error('👥 Created task with assignee:', createdTask.id.task_id);
     }, 30000);
 
     it('should create task linked to record', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping record link test - no test companies available'
         );
         return;
@@ -209,7 +211,10 @@ describe.skipIf(
       E2EAssertions.expectTaskRecord(createdTask);
 
       createdTasks.push(createdTask);
-      console.log('🔗 Created task linked to record:', createdTask.id.task_id);
+      console.error(
+        '🔗 Created task linked to record:',
+        createdTask.id.task_id
+      );
     }, 30000);
 
     it('should create high priority task', async () => {
@@ -227,7 +232,7 @@ describe.skipIf(
       expect(createdTask.content || createdTask.title).toContain('Test Task');
 
       createdTasks.push(createdTask);
-      console.log('⚡ Created high priority task:', createdTask.id.task_id);
+      console.error('⚡ Created high priority task:', createdTask.id.task_id);
     }, 30000);
 
     it('should create multiple tasks for testing', async () => {
@@ -247,7 +252,7 @@ describe.skipIf(
         }
       }
 
-      console.log('📦 Created batch of tasks for testing');
+      console.error('📦 Created batch of tasks for testing');
     }, 45000);
   });
 
@@ -268,7 +273,7 @@ describe.skipIf(
       }
 
       expect(taskArray).toBeDefined();
-      console.log('📋 Listed tasks:', taskArray.length);
+      console.error('📋 Listed tasks:', taskArray.length);
 
       // Validate task structure if tasks exist
       if (taskArray.length > 0) {
@@ -294,12 +299,12 @@ describe.skipIf(
       const tasks = E2EAssertions.expectMcpData(response);
 
       expect(tasks).toBeDefined();
-      console.log('🔍 Filtered tasks by status');
+      console.error('🔍 Filtered tasks by status');
     }, 15000);
 
     it('should filter tasks by assignee', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping assignee filter test - no test people available'
         );
         return;
@@ -314,7 +319,7 @@ describe.skipIf(
       const tasks = E2EAssertions.expectMcpData(response);
 
       expect(tasks).toBeDefined();
-      console.log('👥 Filtered tasks by assignee');
+      console.error('👥 Filtered tasks by assignee');
     }, 15000);
 
     it('should handle pagination for task listing', async () => {
@@ -327,7 +332,7 @@ describe.skipIf(
       const tasks = E2EAssertions.expectMcpData(response);
 
       expect(tasks).toBeDefined();
-      console.log('📄 Tested task pagination');
+      console.error('📄 Tested task pagination');
     }, 15000);
 
     it('should handle empty task list gracefully', async () => {
@@ -349,7 +354,7 @@ describe.skipIf(
 
     it('should update task status', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping status update test - no created tasks available'
         );
         return;
@@ -367,12 +372,12 @@ describe.skipIf(
       const updatedTask = E2EAssertions.expectMcpData(response);
 
       expect(updatedTask.id.task_id || updatedTask.id).toBe(taskId);
-      console.log('✅ Updated task status:', taskId);
+      console.error('✅ Updated task status:', taskId);
     }, 30000);
 
     it('should update task assignee', async () => {
       if (createdTasks.length === 0 || testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping assignee update test - insufficient test data'
         );
         return;
@@ -391,12 +396,12 @@ describe.skipIf(
       const updatedTask = E2EAssertions.expectMcpData(response);
 
       expect(updatedTask.id.task_id || updatedTask.id).toBe(taskId);
-      console.log('👤 Updated task assignee:', taskId);
+      console.error('👤 Updated task assignee:', taskId);
     }, 30000);
 
     it('should update task due date', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping due date update test - no created tasks available'
         );
         return;
@@ -416,12 +421,12 @@ describe.skipIf(
       const updatedTask = E2EAssertions.expectMcpData(response);
 
       expect(updatedTask.id.task_id || updatedTask.id).toBe(taskId);
-      console.log('📅 Updated task due date:', taskId);
+      console.error('📅 Updated task due date:', taskId);
     }, 30000);
 
     it('should update multiple task fields simultaneously', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping multi-field update test - no created tasks available'
         );
         return;
@@ -443,14 +448,14 @@ describe.skipIf(
       const updatedTask = E2EAssertions.expectMcpData(response);
 
       expect(updatedTask.id.task_id || updatedTask.id).toBe(taskId);
-      console.log('🔄 Updated multiple task fields:', taskId);
+      console.error('🔄 Updated multiple task fields:', taskId);
     }, 30000);
   });
 
   describe('Task Record Linking', () => {
     it('should link task to company record', async () => {
       if (createdTasks.length === 0 || testCompanies.length === 0) {
-        console.log('⏭️ Skipping company link test - insufficient test data');
+        console.error('⏭️ Skipping company link test - insufficient test data');
         return;
       }
 
@@ -464,12 +469,12 @@ describe.skipIf(
       });
 
       E2EAssertions.expectMcpSuccess(response);
-      console.log('🏢 Linked task to company record:', taskId);
+      console.error('🏢 Linked task to company record:', taskId);
     }, 30000);
 
     it('should link task to person record', async () => {
       if (createdTasks.length < 2 || testPeople.length === 0) {
-        console.log('⏭️ Skipping person link test - insufficient test data');
+        console.error('⏭️ Skipping person link test - insufficient test data');
         return;
       }
 
@@ -483,7 +488,7 @@ describe.skipIf(
       });
 
       E2EAssertions.expectMcpSuccess(response);
-      console.log('👤 Linked task to person record:', taskId);
+      console.error('👤 Linked task to person record:', taskId);
     }, 30000);
 
     it('should handle linking to multiple records', async () => {
@@ -492,7 +497,9 @@ describe.skipIf(
         testCompanies.length === 0 ||
         testPeople.length === 0
       ) {
-        console.log('⏭️ Skipping multiple link test - insufficient test data');
+        console.error(
+          '⏭️ Skipping multiple link test - insufficient test data'
+        );
         return;
       }
 
@@ -515,10 +522,10 @@ describe.skipIf(
 
       // This might succeed or fail depending on API limitations
       if (personLinkResponse.isError) {
-        console.log('ℹ️ Multiple record links not supported');
+        console.error('ℹ️ Multiple record links not supported');
       } else {
         E2EAssertions.expectMcpSuccess(personLinkResponse);
-        console.log('🔗 Linked task to multiple records:', taskId);
+        console.error('🔗 Linked task to multiple records:', taskId);
       }
     }, 45000);
   });
@@ -556,7 +563,7 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(completeResponse);
 
       createdTasks.push(workflowTask);
-      console.log('🔄 Completed full task lifecycle:', taskId);
+      console.error('🔄 Completed full task lifecycle:', taskId);
     }, 60000);
 
     it('should handle task priority changes throughout lifecycle', async () => {
@@ -573,13 +580,13 @@ describe.skipIf(
       const taskId = priorityTask.id.task_id || priorityTask.id;
 
       // Note: Priority updates depend on API field availability
-      console.log('📊 Task priority lifecycle tested:', taskId);
+      console.error('📊 Task priority lifecycle tested:', taskId);
       createdTasks.push(priorityTask);
     }, 30000);
 
     it('should manage task with changing assignments', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping assignment change test - no test people available'
         );
         return;
@@ -607,7 +614,7 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(assignResponse);
 
       createdTasks.push(assignmentTask);
-      console.log('👥 Completed assignment change workflow:', taskId);
+      console.error('👥 Completed assignment change workflow:', taskId);
     }, 45000);
   });
 
@@ -637,7 +644,7 @@ describe.skipIf(
 
     it('should handle invalid assignee ID', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping invalid assignee test - no created tasks available'
         );
         return;
@@ -675,13 +682,13 @@ describe.skipIf(
       } else {
         const task = E2EAssertions.expectMcpData(response);
         createdTasks.push(task);
-        console.log('ℹ️ API accepts flexible date formats');
+        console.error('ℹ️ API accepts flexible date formats');
       }
     }, 15000);
 
     it('should handle invalid record ID in linking', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping invalid record link test - no created tasks available'
         );
         return;
@@ -700,7 +707,7 @@ describe.skipIf(
 
     it('should handle invalid task ID in linking', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping invalid task link test - no test companies available'
         );
         return;
@@ -747,7 +754,7 @@ describe.skipIf(
         createdTasks.push(task);
       });
 
-      console.log('🚀 Concurrent task operations completed successfully');
+      console.error('🚀 Concurrent task operations completed successfully');
     }, 60000);
 
     it('should validate task operation execution times', async () => {
@@ -763,12 +770,12 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(response);
       expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
 
-      console.log(`⚡ Task listing completed in ${executionTime}ms`);
+      console.error(`⚡ Task listing completed in ${executionTime}ms`);
     }, 15000);
 
     it('should handle batch task updates efficiently', async () => {
       if (createdTasks.length < 3) {
-        console.log(
+        console.error(
           '⏭️ Skipping batch update test - insufficient created tasks'
         );
         return;
@@ -803,7 +810,7 @@ describe.skipIf(
       });
 
       const avgTime = totalTime / updatePromises.length;
-      console.log(
+      console.error(
         `📊 Batch updates: ${updatePromises.length} tasks in ${totalTime}ms (avg: ${avgTime}ms per update)`
       );
       expect(avgTime).toBeLessThan(5000); // Average should be under 5 seconds per update
@@ -813,7 +820,7 @@ describe.skipIf(
   describe('Task Deletion and Cleanup', () => {
     it('should delete individual tasks', async () => {
       if (createdTasks.length === 0) {
-        console.log('⏭️ Skipping deletion test - no created tasks available');
+        console.error('⏭️ Skipping deletion test - no created tasks available');
         return;
       }
 
@@ -832,7 +839,7 @@ describe.skipIf(
         (t) => (t.id.task_id || t.id) !== taskId
       );
 
-      console.log('🗑️ Deleted task:', taskId);
+      console.error('🗑️ Deleted task:', taskId);
     }, 30000);
 
     it('should handle deletion of non-existent task gracefully', async () => {
@@ -872,7 +879,7 @@ describe.skipIf(
         ).toBe(true);
       });
 
-      console.log(
+      console.error(
         '🧹 Validated cleanup tracking for',
         createdTasks.length,
         'tasks'
@@ -883,7 +890,7 @@ describe.skipIf(
   describe('Data Consistency and Integration', () => {
     it('should maintain task structure consistency', async () => {
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping consistency test - no created tasks available'
         );
         return;
@@ -911,7 +918,7 @@ describe.skipIf(
         ).toBeGreaterThan(0);
       });
 
-      console.log(
+      console.error(
         '🧪 Validated task structure consistency across',
         createdTasks.length,
         'tasks'
@@ -924,13 +931,13 @@ describe.skipIf(
       // and that task relationships are maintained properly
 
       if (createdTasks.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping relationship integrity test - no created tasks available'
         );
         return;
       }
 
-      console.log(
+      console.error(
         '🔗 Task relationship integrity validated for',
         createdTasks.length,
         'tasks'

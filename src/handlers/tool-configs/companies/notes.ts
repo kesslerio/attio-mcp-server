@@ -19,7 +19,7 @@ export const notesToolConfigs = {
 
       // Debug logging in development to help identify API response structure
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-        console.log(
+        console.error(
           '[get-company-notes] Debug - Raw notes response:',
           JSON.stringify(notes.slice(0, 1), null, 2)
         );
@@ -53,11 +53,11 @@ export const notesToolConfigs = {
 
           // Additional debug logging for each note
           if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-            console.log(
+            console.error(
               `[get-company-notes] Note fields available:`,
               Object.keys(note)
             );
-            console.log(
+            console.error(
               `[get-company-notes] Content found:`,
               !!content,
               content ? `(${content.length} chars)` : '(none)'

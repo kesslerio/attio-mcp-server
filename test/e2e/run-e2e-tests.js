@@ -49,7 +49,7 @@ function colorize(text, color) {
 }
 
 function checkEnvironment() {
-  console.log(colorize('\n🔍 Checking E2E Test Environment...', 'cyan'));
+  console.error(colorize('\n🔍 Checking E2E Test Environment...', 'cyan'));
   
   const issues = [];
   const warnings = [];
@@ -96,26 +96,26 @@ function checkEnvironment() {
 function printEnvironmentStatus(status) {
   // Print info
   if (status.info.length > 0) {
-    console.log(colorize('\n📋 Environment Status:', 'green'));
-    status.info.forEach(item => console.log(`  ${item}`));
+    console.error(colorize('\n📋 Environment Status:', 'green'));
+    status.info.forEach(item => console.error(`  ${item}`));
   }
 
   // Print warnings
   if (status.warnings.length > 0) {
-    console.log(colorize('\n⚠️  Warnings:', 'yellow'));
-    status.warnings.forEach(warning => console.log(`  • ${warning}`));
+    console.error(colorize('\n⚠️  Warnings:', 'yellow'));
+    status.warnings.forEach(warning => console.error(`  • ${warning}`));
   }
 
   // Print issues
   if (status.issues.length > 0) {
-    console.log(colorize('\n❌ Issues:', 'red'));
-    status.issues.forEach(issue => console.log(`  • ${issue}`));
+    console.error(colorize('\n❌ Issues:', 'red'));
+    status.issues.forEach(issue => console.error(`  • ${issue}`));
   }
 }
 
 function printUsageHelp() {
-  console.log(colorize('\n📖 E2E Test Runner Usage:', 'cyan'));
-  console.log(`
+  console.error(colorize('\n📖 E2E Test Runner Usage:', 'cyan'));
+  console.error(`
 Available commands:
   ${colorize('npm run test:e2e', 'white')}              - Run all E2E tests
   ${colorize('npm run test:e2e -- --help', 'white')}   - Show this help
@@ -144,10 +144,10 @@ Example:
 function printSolutionGuidance(status) {
   if (status.issues.length === 0) return;
 
-  console.log(colorize('\n🔧 How to Fix These Issues:', 'cyan'));
+  console.error(colorize('\n🔧 How to Fix These Issues:', 'cyan'));
   
   if (status.issues.some(issue => issue.includes('ATTIO_API_KEY'))) {
-    console.log(`
+    console.error(`
 ${colorize('1. Get an Attio API Key:', 'white')}
    • Log into your Attio workspace
    • Go to Settings > API & Integrations > API Keys
@@ -162,7 +162,7 @@ ${colorize('2. Set the API Key:', 'white')}
   }
 
   if (status.issues.some(issue => issue.includes('configuration file'))) {
-    console.log(`
+    console.error(`
 ${colorize('3. Create Configuration File:', 'white')}
    • Copy the template: ${colorize('cp test/e2e/config.template.json test/e2e/config.local.json', 'yellow')}
    • Edit test/e2e/config.local.json with your test settings
@@ -170,7 +170,7 @@ ${colorize('3. Create Configuration File:', 'white')}
 `);
   }
 
-  console.log(`
+  console.error(`
 ${colorize('4. Alternative - Run Limited Tests:', 'white')}
    If you cannot get an API key immediately, you can run:
    ${colorize('npm run test:e2e -- --limited', 'yellow')}
@@ -194,7 +194,7 @@ async function runVitest(pattern = 'all', options = {}) {
   if (options.limited) {
     // Add environment variable to skip API tests
     process.env.SKIP_E2E_TESTS = 'true';
-    console.log(colorize('🚫 Running in limited mode - API tests will be skipped', 'yellow'));
+    console.error(colorize('🚫 Running in limited mode - API tests will be skipped', 'yellow'));
   }
 
   if (options.reporter) {
@@ -205,14 +205,14 @@ async function runVitest(pattern = 'all', options = {}) {
     vitestArgs.push('--reporter', 'verbose');
   }
 
-  console.log(colorize(`\n🧪 Running E2E tests: ${testPattern}`, 'cyan'));
-  console.log(colorize(`Command: npx vitest ${vitestArgs.join(' ')}`, 'blue'));
+  console.error(colorize(`\n🧪 Running E2E tests: ${testPattern}`, 'cyan'));
+  console.error(colorize(`Command: npx vitest ${vitestArgs.join(' ')}`, 'blue'));
   
   // Debug: Verify API key is loaded
   if (process.env.ATTIO_API_KEY) {
-    console.log(colorize(`✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`, 'green'));
+    console.error(colorize(`✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`, 'green'));
   } else {
-    console.log(colorize('⚠️  API key not found in environment!', 'yellow'));
+    console.error(colorize('⚠️  API key not found in environment!', 'yellow'));
   }
 
   return new Promise((resolve, reject) => {
@@ -225,10 +225,10 @@ async function runVitest(pattern = 'all', options = {}) {
 
     vitest.on('close', (code) => {
       if (code === 0) {
-        console.log(colorize('\n✅ E2E tests completed successfully', 'green'));
+        console.error(colorize('\n✅ E2E tests completed successfully', 'green'));
         resolve(code);
       } else {
-        console.log(colorize(`\n❌ E2E tests failed with exit code ${code}`, 'red'));
+        console.error(colorize(`\n❌ E2E tests failed with exit code ${code}`, 'red'));
         resolve(code); // Don't reject, let caller handle the exit code
       }
     });
@@ -253,7 +253,7 @@ async function main() {
     pattern: args.includes('--pattern') ? args[args.indexOf('--pattern') + 1] : 'all'
   };
 
-  console.log(colorize('🎯 Attio MCP Server - E2E Test Runner', 'cyan'));
+  console.error(colorize('🎯 Attio MCP Server - E2E Test Runner', 'cyan'));
   
   if (options.help) {
     printUsageHelp();
@@ -265,7 +265,7 @@ async function main() {
   printEnvironmentStatus(envStatus);
 
   if (options.check) {
-    console.log(colorize('\n✅ Environment check completed', 'green'));
+    console.error(colorize('\n✅ Environment check completed', 'green'));
     process.exit(envStatus.issues.length > 0 ? 1 : 0);
   }
 
@@ -274,17 +274,17 @@ async function main() {
   const hasConfig = !envStatus.issues.some(issue => issue.includes('configuration file'));
 
   if (!hasConfig) {
-    console.log(colorize('\n❌ Cannot run tests without configuration file', 'red'));
+    console.error(colorize('\n❌ Cannot run tests without configuration file', 'red'));
     printSolutionGuidance(envStatus);
     process.exit(1);
   }
 
   if (!hasApiKey && !options.limited) {
-    console.log(colorize('\n⚠️  No API key detected', 'yellow'));
-    console.log('You can either:');
-    console.log(`  1. Set ATTIO_API_KEY and run: ${colorize('npm run test:e2e', 'white')}`);
-    console.log(`  2. Run limited tests: ${colorize('npm run test:e2e -- --limited', 'white')}`);
-    console.log(`  3. Check environment only: ${colorize('npm run test:e2e -- --check', 'white')}`);
+    console.error(colorize('\n⚠️  No API key detected', 'yellow'));
+    console.error('You can either:');
+    console.error(`  1. Set ATTIO_API_KEY and run: ${colorize('npm run test:e2e', 'white')}`);
+    console.error(`  2. Run limited tests: ${colorize('npm run test:e2e -- --limited', 'white')}`);
+    console.error(`  3. Check environment only: ${colorize('npm run test:e2e -- --check', 'white')}`);
     
     printSolutionGuidance(envStatus);
     process.exit(1);
@@ -296,12 +296,12 @@ async function main() {
     
     // Print summary
     if (exitCode === 0) {
-      console.log(colorize('\n🎉 All E2E tests passed!', 'green'));
+      console.error(colorize('\n🎉 All E2E tests passed!', 'green'));
     } else {
-      console.log(colorize('\n⚠️  Some E2E tests failed. Check the output above for details.', 'yellow'));
+      console.error(colorize('\n⚠️  Some E2E tests failed. Check the output above for details.', 'yellow'));
       
       if (!hasApiKey) {
-        console.log(colorize('Note: Some failures might be due to missing API key.', 'yellow'));
+        console.error(colorize('Note: Some failures might be due to missing API key.', 'yellow'));
       }
     }
     

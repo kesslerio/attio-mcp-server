@@ -177,7 +177,7 @@ export async function updatePersonAttribute(
  * @example
  * const wasDeleted = await deletePerson("person_12345");
  * if (wasDeleted) {
- *   console.log("Person deleted successfully");
+ *   console.error("Person deleted successfully");
  * }
  */
 export async function deletePerson(personId: string): Promise<boolean> {
@@ -207,7 +207,7 @@ export async function deletePerson(personId: string): Promise<boolean> {
  * @throws {Error} When person ID is invalid or person not found
  * @example
  * const person = await getPersonDetails("person_12345");
- * console.log(person.values.name[0].value); // Person's name
+ * console.error(person.values.name[0].value); // Person's name
  */
 export async function getPersonDetails(personId: string): Promise<Person> {
   try {

@@ -56,7 +56,7 @@ export async function getLists(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Generic getLists failed: ${errorMessage}`);
+      console.error(`Generic getLists failed: ${errorMessage}`);
     }
     // Fallback implementation
     const api = getAttioClient();
@@ -85,7 +85,7 @@ export async function getListDetails(listId: string): Promise<AttioList> {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Generic getListDetails failed: ${errorMessage}`);
+      console.error(`Generic getListDetails failed: ${errorMessage}`);
     }
     // Fallback implementation
     const api = getAttioClient();
@@ -156,7 +156,7 @@ async function tryMultipleListEntryEndpoints(
   for (const endpoint of endpoints) {
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `Trying ${endpoint.method.toUpperCase()} ${endpoint.path}`,
           endpoint.data ? JSON.stringify(endpoint.data) : ''
         );
@@ -173,7 +173,7 @@ async function tryMultipleListEntryEndpoints(
       // Check if entries were found and log for debugging
       if (process.env.NODE_ENV === 'development') {
         const messageType = entries.length > 0 ? 'SUCCESS' : 'WARNING';
-        console.log(
+        console.error(
           `[tryMultipleListEntryEndpoints] [${messageType}] Found ${
             entries.length
           } entries via ${endpoint.method.toUpperCase()} ${endpoint.path}`,
@@ -196,7 +196,7 @@ async function tryMultipleListEntryEndpoints(
         error instanceof Error ? error.message : 'Unknown error';
       const errorName = error instanceof Error ? error.name : 'UnknownError';
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${
             endpoint.path
           }:`,
@@ -246,7 +246,7 @@ export async function getListEntries(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getListEntries] Generic list entries failed: ${errorMessage}`,
         {
           method: 'getGenericListEntries',
@@ -311,10 +311,10 @@ export async function addRecordToList(
     );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `Generic addRecordToList failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      console.log(
+      console.error(
         `Falling back to direct implementation for list ${listId} and record ${recordId}`
       );
     }
@@ -335,13 +335,13 @@ export async function addRecordToList(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[addRecordToList:fallback] Request to ${path} with payload:`,
         JSON.stringify(payload)
       );
-      console.log(`Object Type: ${objectType}`);
+      console.error(`Object Type: ${objectType}`);
       if (initialValues) {
-        console.log(`Initial Values: ${JSON.stringify(initialValues)}`);
+        console.error(`Initial Values: ${JSON.stringify(initialValues)}`);
       }
     }
 
@@ -349,7 +349,7 @@ export async function addRecordToList(
       const response = await api.post(path, payload);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[addRecordToList:fallback] Success response:`,
           JSON.stringify(response.data || {})
         );
@@ -439,10 +439,10 @@ export async function updateListEntry(
     return await updateGenericListEntry(listId, entryId, attributes);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `Generic updateListEntry failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      console.log(
+      console.error(
         `Falling back to direct implementation for list ${listId}, entry ${entryId}`
       );
     }
@@ -452,7 +452,7 @@ export async function updateListEntry(
     const path = `/lists/${listId}/entries/${entryId}`;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[updateListEntry:fallback] Request to ${path} with attributes:`,
         JSON.stringify(attributes)
       );
@@ -467,7 +467,7 @@ export async function updateListEntry(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[updateListEntry:fallback] Success response:`,
         JSON.stringify(response.data || {})
       );
@@ -493,7 +493,7 @@ export async function removeRecordFromList(
     return await removeGenericRecordFromList(listId, entryId);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `Generic removeRecordFromList failed: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
@@ -624,7 +624,7 @@ export async function getRecordListMemberships(
     const lists = await getLists(objectType);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getRecordListMemberships] Found ${lists.length} ${
           objectType || ''
         } lists to check`
@@ -651,7 +651,7 @@ export async function getRecordListMemberships(
       const batchLists = listConfigs.slice(i, i + batchSize);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getRecordListMemberships] Processing batch ${
             Math.floor(i / batchSize) + 1
           } (${batchLists.length} lists)`
@@ -687,7 +687,7 @@ export async function getRecordListMemberships(
             });
 
             if (process.env.NODE_ENV === 'development') {
-              console.log(
+              console.error(
                 `[getRecordListMemberships] Found ${matchingEntries.length} membership(s) in list "${listConfig.listName}"`
               );
             }
@@ -709,7 +709,7 @@ export async function getRecordListMemberships(
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getRecordListMemberships] Total memberships found: ${allMemberships.length}`
       );
     }
@@ -912,14 +912,14 @@ export async function filterListEntriesByParent(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[filterListEntriesByParent] Filtering list ${listId} with path-based filter:`
       );
-      console.log(`- Parent Object Type: ${parentObjectType}`);
-      console.log(`- Parent Attribute: ${parentAttributeSlug}`);
-      console.log(`- Condition: ${condition}`);
-      console.log(`- Value: ${JSON.stringify(value)}`);
-      console.log(`- Request payload: ${JSON.stringify(payload)}`);
+      console.error(`- Parent Object Type: ${parentObjectType}`);
+      console.error(`- Parent Attribute: ${parentAttributeSlug}`);
+      console.error(`- Condition: ${condition}`);
+      console.error(`- Value: ${JSON.stringify(value)}`);
+      console.error(`- Request payload: ${JSON.stringify(payload)}`);
     }
 
     // Create API URL endpoint
@@ -932,7 +932,7 @@ export async function filterListEntriesByParent(
     const entries = processListEntries(response.data.data || []);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[filterListEntriesByParent] Found ${entries.length} matching entries`
       );
     }
@@ -1027,7 +1027,7 @@ export async function createList(
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[createList] Creating list with attributes:`,
         JSON.stringify(attributes)
       );
@@ -1038,7 +1038,7 @@ export async function createList(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[createList] Success:`, JSON.stringify(response.data));
+      console.error(`[createList] Success:`, JSON.stringify(response.data));
     }
 
     return response.data.data || response.data;
@@ -1095,7 +1095,7 @@ export async function updateList(
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[updateList] Updating list ${listId} with attributes:`,
         JSON.stringify(attributes)
       );
@@ -1106,7 +1106,7 @@ export async function updateList(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[updateList] Success:`, JSON.stringify(response.data));
+      console.error(`[updateList] Success:`, JSON.stringify(response.data));
     }
 
     return response.data.data || response.data;
@@ -1157,13 +1157,13 @@ export async function deleteList(listId: string): Promise<boolean> {
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[deleteList] Deleting list ${listId}`);
+      console.error(`[deleteList] Deleting list ${listId}`);
     }
 
     await api.delete(path);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[deleteList] Success: List ${listId} deleted`);
+      console.error(`[deleteList] Success: List ${listId} deleted`);
     }
 
     return true;

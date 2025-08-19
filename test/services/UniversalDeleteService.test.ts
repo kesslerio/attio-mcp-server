@@ -211,7 +211,7 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_dev',
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         '[MockInjection] Using mock data for task deletion'
       );
 
@@ -230,7 +230,7 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_verbose',
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         '[MockInjection] Using mock data for task deletion'
       );
 

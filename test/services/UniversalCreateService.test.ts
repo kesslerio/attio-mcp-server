@@ -606,7 +606,7 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test Company' } },
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         'Field validation warnings:',
         'Field warning 1\nField warning 2'
       );

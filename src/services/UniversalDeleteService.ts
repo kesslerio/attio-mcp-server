@@ -79,7 +79,7 @@ export class UniversalDeleteService {
             process.env.NODE_ENV === 'development' ||
             process.env.VERBOSE_TESTS === 'true'
           ) {
-            console.log('[MockInjection] Using mock data for task deletion');
+            console.error('[MockInjection] Using mock data for task deletion');
           }
 
           // Return mock success response

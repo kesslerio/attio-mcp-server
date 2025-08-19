@@ -72,7 +72,7 @@ export class CompanyValidator {
         const normalizedDomain = normalizeDomain(extractedDomain);
 
         if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-          console.log(
+          console.error(
             `[CompanyValidator] Auto-extracted domain "${normalizedDomain}" from website "${attributes.website}"`
           );
         }

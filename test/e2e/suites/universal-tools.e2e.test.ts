@@ -159,7 +159,9 @@ describe.skipIf(
   afterAll(async () => {
     // Additional cleanup for any records we created
     if (createdRecords.length > 0) {
-      console.log(`🧹 Cleaning up ${createdRecords.length} created records...`);
+      console.error(
+        `🧹 Cleaning up ${createdRecords.length} created records...`
+      );
 
       for (const record of createdRecords) {
         try {
@@ -232,7 +234,7 @@ describe.skipIf(
     describe('get-record-details tool', () => {
       it('should get existing company details', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -250,7 +252,7 @@ describe.skipIf(
 
       it('should get existing person details', async () => {
         if (!config.testData.existingPersonId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing person ID provided in config'
           );
           return;
@@ -349,7 +351,7 @@ describe.skipIf(
     describe('update-record tool', () => {
       it('should update existing company record', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -406,7 +408,7 @@ describe.skipIf(
           );
         } catch (error: unknown) {
           // If record creation fails due to ID extraction issues, skip this test
-          console.log(
+          console.error(
             '⏭️ Skipping delete test - record creation failed:',
             error
           );
@@ -448,7 +450,7 @@ describe.skipIf(
 
       it('should get attributes for specific record', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -488,7 +490,7 @@ describe.skipIf(
     describe('get-detailed-info tool', () => {
       it('should get basic company info', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -506,7 +508,7 @@ describe.skipIf(
 
       it('should get business company info', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -524,7 +526,7 @@ describe.skipIf(
 
       it('should get contact company info', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -580,7 +582,7 @@ describe.skipIf(
     describe('search-by-relationship tool', () => {
       it('should search people by company relationship', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -599,7 +601,7 @@ describe.skipIf(
 
       it('should search companies by people relationship', async () => {
         if (!config.testData.existingPersonId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing person ID provided in config'
           );
           return;
@@ -692,7 +694,7 @@ describe.skipIf(
 
       it('should perform batch get operation', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -785,7 +787,7 @@ describe.skipIf(
     describe('Field Filtering (fields parameter)', () => {
       it('should filter fields in get-record-details', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -807,7 +809,7 @@ describe.skipIf(
 
       it('should filter fields in get-attributes', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -826,7 +828,7 @@ describe.skipIf(
 
       it('should handle invalid field names gracefully', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -844,7 +846,7 @@ describe.skipIf(
 
       it('should handle empty fields array', async () => {
         if (!config.testData.existingCompanyId) {
-          console.log(
+          console.error(
             '⏭️ Skipping test - no existing company ID provided in config'
           );
           return;
@@ -865,7 +867,7 @@ describe.skipIf(
   describe('Tasks Universal Tools Integration', () => {
     it('should handle tasks resource type in search-records', async () => {
       if (config.features.skipTaskTests) {
-        console.log('⏭️ Skipping task test due to configuration');
+        console.error('⏭️ Skipping task test due to configuration');
         return;
       }
 
@@ -884,7 +886,7 @@ describe.skipIf(
 
     it('should handle tasks resource type in get-attributes', async () => {
       if (config.features.skipTaskTests) {
-        console.log('⏭️ Skipping task test due to configuration');
+        console.error('⏭️ Skipping task test due to configuration');
         return;
       }
 
@@ -898,7 +900,7 @@ describe.skipIf(
 
     it('should handle tasks resource type in discover-attributes', async () => {
       if (config.features.skipTaskTests) {
-        console.log('⏭️ Skipping task test due to configuration');
+        console.error('⏭️ Skipping task test due to configuration');
         return;
       }
 
@@ -912,12 +914,12 @@ describe.skipIf(
 
     it('should create and manage task records', async () => {
       if (config.features.skipTaskTests) {
-        console.log('⏭️ Skipping task test due to configuration');
+        console.error('⏭️ Skipping task test due to configuration');
         return;
       }
 
       if (!config.testData.existingPersonId) {
-        console.log(
+        console.error(
           '⏭️ Skipping test - no existing person ID provided in config'
         );
         return;
@@ -948,7 +950,7 @@ describe.skipIf(
 
     it('should handle pagination for tasks', async () => {
       if (config.features.skipTaskTests) {
-        console.log('⏭️ Skipping task test due to configuration');
+        console.error('⏭️ Skipping task test due to configuration');
         return;
       }
 

@@ -14,6 +14,11 @@ import {
   UniversalDeleteParams,
   UniversalAttributesParams,
   UniversalDetailedInfoParams,
+  UniversalCreateNoteParams,
+  UniversalGetNotesParams,
+  UniversalUpdateNoteParams,
+  UniversalSearchNotesParams,
+  UniversalDeleteNoteParams,
   DetailedInfoType,
 } from './types.js';
 
@@ -42,6 +47,20 @@ import { getObjectRecord } from '../../../objects/records/index.js';
 
 import { getTask } from '../../../objects/tasks.js';
 
+// Import note CRUD functions
+import {
+  createCompanyNote,
+  getCompanyNotes,
+} from '../../../objects/companies/notes.js';
+import {
+  createPersonNote,
+  getPersonNotes,
+} from '../../../objects/people/notes.js';
+import { createDealNote, getDealNotes } from '../../../objects/deals/notes.js';
+
+// Import Attio API client for direct note operations
+import { getAttioClient } from '../../../api/attio-client.js';
+
 import { AttioRecord } from '../../../types/attio.js';
 
 /**
@@ -65,6 +84,143 @@ export async function handleUniversalGetDetails(
 /**
  * Universal create record handler with enhanced field validation
  */
+
+/**
+ * Universal note creation handler - routes to resource-specific note creation
+ */
+export async function handleUniversalCreateNote(
+  params: UniversalCreateNoteParams
+): Promise<any> {
+  const { resource_type, record_id, title, content } = params;
+
+  switch (resource_type) {
+    case UniversalResourceType.COMPANIES:
+      return createCompanyNote(record_id, title, content);
+
+    case UniversalResourceType.PEOPLE:
+      return createPersonNote(record_id, title, content);
+
+    case UniversalResourceType.DEALS:
+      return createDealNote(record_id, title, content);
+
+    default:
+      throw new Error(
+        `Note creation not supported for resource type: ${resource_type}`
+      );
+  }
+}
+
+/**
+ * Universal get notes handler - retrieves notes for records
+ */
+export async function handleUniversalGetNotes(
+  params: UniversalGetNotesParams
+): Promise<any[]> {
+  const { resource_type, record_id, limit = 20, offset = 0 } = params;
+
+  if (record_id && resource_type) {
+    // Get notes for specific record
+    switch (resource_type) {
+      case UniversalResourceType.COMPANIES:
+        return getCompanyNotes(record_id, limit, offset);
+
+      case UniversalResourceType.PEOPLE:
+        return getPersonNotes(record_id, limit, offset);
+
+      case UniversalResourceType.DEALS:
+        return getDealNotes(record_id, limit, offset);
+
+      default:
+        throw new Error(
+          `Get notes not supported for resource type: ${resource_type}`
+        );
+    }
+  } else {
+    // Get all notes using direct API
+    const client = getAttioClient();
+    const params_obj: Record<string, string> = {
+      limit: limit.toString(),
+      offset: offset.toString(),
+    };
+
+    if (record_id) {
+      params_obj.record_id = record_id;
+    }
+
+    const queryParams = new URLSearchParams(params_obj);
+    const response = await client.get(`/notes?${queryParams}`);
+    return response.data.data || [];
+  }
+}
+
+/**
+ * Universal update note handler - updates existing notes
+ */
+export async function handleUniversalUpdateNote(
+  params: UniversalUpdateNoteParams
+): Promise<any> {
+  const { note_id, title, content, is_archived } = params;
+  const client = getAttioClient();
+
+  const updateData: Record<string, any> = {};
+  if (title !== undefined) updateData.title = title;
+  if (content !== undefined) updateData.content = content;
+  if (is_archived !== undefined) updateData.is_archived = is_archived;
+
+  const response = await client.patch(`/notes/${note_id}`, updateData);
+  return response.data;
+}
+
+/**
+ * Universal search notes handler - searches notes by content/title
+ */
+export async function handleUniversalSearchNotes(
+  params: UniversalSearchNotesParams
+): Promise<any[]> {
+  const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
+  const client = getAttioClient();
+
+  const searchParams: Record<string, string> = {
+    limit: limit.toString(),
+    offset: offset.toString(),
+  };
+
+  if (record_id) searchParams.record_id = record_id;
+  if (query) searchParams.q = query;
+
+  const queryParams = new URLSearchParams(searchParams);
+  const response = await client.get(`/notes?${queryParams}`);
+  let notes = response.data.data || [];
+
+  // Filter by resource type if specified
+  if (resource_type) {
+    const resourceTypeMap: Record<string, string> = {
+      [UniversalResourceType.COMPANIES]: 'companies',
+      [UniversalResourceType.PEOPLE]: 'people',
+      [UniversalResourceType.DEALS]: 'deals',
+    };
+    const parentObject = resourceTypeMap[resource_type];
+    if (parentObject) {
+      notes = notes.filter((note: any) => note.parent_object === parentObject);
+    }
+  }
+
+  return notes;
+}
+
+/**
+ * Universal delete note handler - deletes notes
+ */
+export async function handleUniversalDeleteNote(
+  params: UniversalDeleteNoteParams
+): Promise<{ success: boolean; note_id: string }> {
+  const { note_id } = params;
+  const client = getAttioClient();
+
+  await client.delete(`/notes/${note_id}`);
+  return { success: true, note_id };
+}
+
 /**
  * Universal create record handler - delegates to UniversalCreateService
  */

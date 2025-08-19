@@ -12,7 +12,7 @@ const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 // Enable logging temporarily
-console.log = (...args: unknown[]) => {
+console.error = (...args: unknown[]) => {
   const firstArg = args[0];
   if (
     typeof firstArg === 'string' &&
@@ -52,23 +52,23 @@ async function debugB2BSegmentMapping() {
       ],
     };
 
-    console.log('[TEST] Original filters:', JSON.stringify(filters, null, 2));
+    console.error('[TEST] Original filters:', JSON.stringify(filters, null, 2));
 
     // Test translation directly
     const translatedFilters = translateAttributeNamesInFilters(
       filters,
       ResourceType.COMPANIES
     );
-    console.log(
+    console.error(
       '[TEST] Translated filters:',
       JSON.stringify(translatedFilters, null, 2)
     );
 
     // Test the search
-    console.log('[TEST] Calling advancedSearchCompanies...');
+    console.error('[TEST] Calling advancedSearchCompanies...');
     try {
       const results = await advancedSearchCompanies(translatedFilters);
-      console.log('[TEST] Search succeeded! Results:', results.length);
+      console.error('[TEST] Search succeeded! Results:', results.length);
     } catch (error: unknown) {
       console.error('[TEST] Search failed:', (error as any).message);
       console.error('[TEST] Full error:', error);
@@ -77,7 +77,7 @@ async function debugB2BSegmentMapping() {
     console.error('[TEST] Debug script error:', error);
   } finally {
     // Restore original console
-    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
     console.error = originalConsoleError;
   }
 }

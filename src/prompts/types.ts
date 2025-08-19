@@ -21,7 +21,7 @@ export interface PromptTemplate {
   id: string;
   title: string;
   description: string;
-  category: 'people' | 'companies' | 'lists' | 'notes' | 'general';
+  category: 'people' | 'companies' | 'deals' | 'lists' | 'notes' | 'general';
   parameters: PromptParameter[];
   template: string;
 }

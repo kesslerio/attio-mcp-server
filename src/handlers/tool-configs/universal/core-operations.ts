@@ -16,6 +16,11 @@ import {
   UniversalDetailedInfoParams,
   UniversalResourceType,
   DetailedInfoType,
+  UniversalCreateNoteParams,
+  UniversalGetNotesParams,
+  UniversalUpdateNoteParams,
+  UniversalSearchNotesParams,
+  UniversalDeleteNoteParams,
 } from './types.js';
 
 import {
@@ -27,6 +32,11 @@ import {
   getAttributesSchema,
   discoverAttributesSchema,
   getDetailedInfoSchema,
+  createNoteSchema,
+  getNotesSchema,
+  updateNoteSchema,
+  searchNotesSchema,
+  deleteNoteSchema,
   validateUniversalToolParams,
 } from './schemas.js';
 
@@ -39,6 +49,11 @@ import {
   handleUniversalGetAttributes,
   handleUniversalDiscoverAttributes,
   handleUniversalGetDetailedInfo,
+  handleUniversalCreateNote,
+  handleUniversalGetNotes,
+  handleUniversalUpdateNote,
+  handleUniversalSearchNotes,
+  handleUniversalDeleteNote,
   formatResourceType,
   getSingularResourceType,
 } from './shared-handlers.js';
@@ -47,6 +62,9 @@ import {
 import { ErrorService } from '../../../services/ErrorService.js';
 // Import UniversalUtilityService for shared utility functions
 import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
+
+import { CallToolRequest, Tool } from '@modelcontextprotocol/sdk/types.js';
+import { ToolConfig } from '../../tool-types.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -526,28 +544,20 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 };
 
 /**
- * Universal get detailed info tool
- * Consolidates: get-company-basic-info, get-company-contact-info, get-company-business-info, get-company-social-info
+ * Get detailed info tool configuration
  */
-export const getDetailedInfoConfig: UniversalToolConfig = {
+const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
-  handler: async (params: UniversalDetailedInfoParams): Promise<any> => {
+  handler: async (params: UniversalDetailedInfoParams) => {
     try {
-      const sanitizedParams = validateUniversalToolParams(
-        'get-detailed-info',
-        params
-      );
-      return await handleUniversalGetDetailedInfo(sanitizedParams);
+      validateUniversalToolParams('get-detailed-info', params);
+      return await handleUniversalGetDetailedInfo(params);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'get detailed info',
-        params.resource_type,
-        error
-      );
+      throw error;
     }
   },
   formatResult: (
-    info: any,
+    info: Record<string, unknown>,
     resourceType?: UniversalResourceType,
     infoType?: DetailedInfoType
   ): string => {
@@ -562,17 +572,20 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
 
     let result = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} ${infoTypeName} information:\n\n`;
 
-    if (typeof info === 'object' && info.values) {
+    if (typeof info === 'object' && (info as any).values) {
       // Format as Attio record values
-      Object.entries(info.values).forEach(([field, values]: [string, any]) => {
-        if (Array.isArray(values) && values.length > 0) {
-          const value = values[0].value;
-          if (value) {
-            const displayField = field.charAt(0).toUpperCase() + field.slice(1);
-            result += `${displayField}: ${value}\n`;
+      Object.entries((info as any).values).forEach(
+        ([field, values]: [string, any]) => {
+          if (Array.isArray(values) && values.length > 0) {
+            const value = values[0].value;
+            if (value) {
+              const displayField =
+                field.charAt(0).toUpperCase() + field.slice(1);
+              result += `${displayField}: ${value}\n`;
+            }
           }
         }
-      });
+      );
     } else if (typeof info === 'object') {
       // Format as regular object
       Object.entries(info).forEach(([key, value]) => {
@@ -585,7 +598,124 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
       result += JSON.stringify(info, null, 2);
     }
 
-    return result.trim();
+    return result;
+  },
+};
+
+/**
+ * Universal create note tool configuration
+ */
+const createNoteConfig: UniversalToolConfig = {
+  name: 'create-note',
+  handler: async (params: UniversalCreateNoteParams): Promise<any> => {
+    try {
+      const sanitizedParams = validateUniversalToolParams(
+        'create-note',
+        params
+      );
+      return await handleUniversalCreateNote(sanitizedParams);
+    } catch (error: unknown) {
+      throw error;
+    }
+  },
+  formatResult: (note: any): string => {
+    if (!note) {
+      return 'Failed to create note';
+    }
+    return `✅ Successfully created note: "${note.title || 'Untitled'}" for ${note.parent_object || 'record'} (ID: ${note.parent_record_id || 'unknown'})`;
+  },
+};
+
+/**
+ * Universal get notes tool configuration
+ */
+const getNotesConfig: UniversalToolConfig = {
+  name: 'get-notes',
+  handler: async (params: UniversalGetNotesParams): Promise<any[]> => {
+    try {
+      const sanitizedParams = validateUniversalToolParams('get-notes', params);
+      return await handleUniversalGetNotes(sanitizedParams);
+    } catch (error: unknown) {
+      throw error;
+    }
+  },
+  formatResult: (notes: any[]): string => {
+    if (!notes || notes.length === 0) {
+      return 'No notes found';
+    }
+    return `Found ${notes.length} note(s):\n${notes.map((note) => `• ${note.title}: ${note.content?.substring(0, 100) || 'No content'}...`).join('\n')}`;
+  },
+};
+
+/**
+ * Universal update note tool configuration
+ */
+const updateNoteConfig: UniversalToolConfig = {
+  name: 'update-note',
+  handler: async (params: UniversalUpdateNoteParams): Promise<any> => {
+    try {
+      const sanitizedParams = validateUniversalToolParams(
+        'update-note',
+        params
+      );
+      return await handleUniversalUpdateNote(sanitizedParams);
+    } catch (error: unknown) {
+      throw error;
+    }
+  },
+  formatResult: (note: any): string => {
+    if (!note) {
+      return 'Failed to update note';
+    }
+    return `✅ Successfully updated note: "${note.title || 'Untitled'}"`;
+  },
+};
+
+/**
+ * Universal search notes tool configuration
+ */
+const searchNotesConfig: UniversalToolConfig = {
+  name: 'search-notes',
+  handler: async (params: UniversalSearchNotesParams): Promise<any[]> => {
+    try {
+      const sanitizedParams = validateUniversalToolParams(
+        'search-notes',
+        params
+      );
+      return await handleUniversalSearchNotes(sanitizedParams);
+    } catch (error: unknown) {
+      throw error;
+    }
+  },
+  formatResult: (notes: any[]): string => {
+    if (!notes || notes.length === 0) {
+      return 'No notes found matching search criteria';
+    }
+    return `Found ${notes.length} matching note(s):\n${notes.map((note) => `• ${note.title}: ${note.content?.substring(0, 100) || 'No content'}...`).join('\n')}`;
+  },
+};
+
+/**
+ * Universal delete note tool configuration
+ */
+const deleteNoteConfig: UniversalToolConfig = {
+  name: 'delete-note',
+  handler: async (params: UniversalDeleteNoteParams): Promise<any> => {
+    try {
+      const sanitizedParams = validateUniversalToolParams(
+        'delete-note',
+        params
+      );
+      return await handleUniversalDeleteNote(sanitizedParams);
+    } catch (error: unknown) {
+      throw error;
+    }
+  },
+  formatResult: (result: any): string => {
+    if (!result || !result.success) {
+      return 'Failed to delete note';
+    }
+    return `✅ Successfully deleted note (ID: ${result.note_id})`;
   },
 };
 
@@ -635,6 +765,31 @@ export const coreOperationsToolDefinitions = {
       'Get specific types of detailed information (contact, business, social)',
     inputSchema: getDetailedInfoSchema,
   },
+  'create-note': {
+    name: 'create-note',
+    description: 'Create a note for any record type (companies, people, deals)',
+    inputSchema: createNoteSchema,
+  },
+  'get-notes': {
+    name: 'get-notes',
+    description: 'Get notes for any record type (companies, people, deals)',
+    inputSchema: getNotesSchema,
+  },
+  'update-note': {
+    name: 'update-note',
+    description: 'Update a note (title, content, or archive status)',
+    inputSchema: updateNoteSchema,
+  },
+  'search-notes': {
+    name: 'search-notes',
+    description: 'Search notes by content, title, or record',
+    inputSchema: searchNotesSchema,
+  },
+  'delete-note': {
+    name: 'delete-note',
+    description: 'Delete a note by note ID',
+    inputSchema: deleteNoteSchema,
+  },
 };
 
 /**
@@ -649,4 +804,9 @@ export const coreOperationsToolConfigs = {
   'get-attributes': getAttributesConfig,
   'discover-attributes': discoverAttributesConfig,
   'get-detailed-info': getDetailedInfoConfig,
+  'create-note': createNoteConfig,
+  'get-notes': getNotesConfig,
+  'update-note': updateNoteConfig,
+  'search-notes': searchNotesConfig,
+  'delete-note': deleteNoteConfig,
 };

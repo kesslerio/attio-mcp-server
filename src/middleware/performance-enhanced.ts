@@ -495,7 +495,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
           ? '🟡'
           : '🟢';
 
-    console.log(
+    console.error(
       `${icon} ${metrics.toolName} (${metrics.operationType}): ${timeIcon} ${metrics.duration.toFixed(0)}ms ` +
         `[API: ${metrics.timingSplit.attioApi.toFixed(0)}ms, MCP: ${metrics.timingSplit.mcpOverhead.toFixed(0)}ms]` +
         (metrics.cached ? ' 📦 CACHED' : '') +

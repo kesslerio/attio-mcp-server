@@ -173,7 +173,7 @@ export class PeopleDataNormalizer {
         return value;
       }
     }
-    
+
     // Handle malformed inputs - don't try to convert objects, arrays, etc. to strings
     if (emailField === null || emailField === undefined) {
       return null;
@@ -184,7 +184,7 @@ export class PeopleDataNormalizer {
     if (typeof emailField === 'number' || typeof emailField === 'boolean') {
       return null; // Don't convert numbers/booleans to strings for email validation
     }
-    
+
     return String(emailField);
   }
 
@@ -196,7 +196,7 @@ export class PeopleDataNormalizer {
     config: EmailValidationConfig
   ): string | null {
     const normalized = InputSanitizer.normalizeEmail(emailValue);
-    
+
     // Check if the normalized email is empty or invalid
     if (!normalized || !normalized.trim()) {
       if (config.mode === EmailValidationMode.STRICT) {
@@ -205,7 +205,8 @@ export class PeopleDataNormalizer {
           ErrorType.USER_ERROR,
           {
             field: 'email_addresses',
-            suggestion: 'Ensure email addresses are in the format: user@domain.com',
+            suggestion:
+              'Ensure email addresses are in the format: user@domain.com',
           }
         );
       }
@@ -301,7 +302,10 @@ export class PeopleDataNormalizer {
       if (input.email_address) {
         const emailValue = this.extractEmailValue(input.email_address);
         if (emailValue) {
-          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          const validatedEmail = this.validateAndProcessEmail(
+            emailValue,
+            config
+          );
           if (validatedEmail) {
             emails.push({
               email_address: validatedEmail,
@@ -321,7 +325,10 @@ export class PeopleDataNormalizer {
       else if (input.email) {
         const emailValue = this.extractEmailValue(input.email);
         if (emailValue) {
-          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          const validatedEmail = this.validateAndProcessEmail(
+            emailValue,
+            config
+          );
           if (validatedEmail) {
             emails.push({ email_address: validatedEmail });
           }

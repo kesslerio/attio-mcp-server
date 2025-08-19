@@ -216,7 +216,7 @@ export function validateTestEnvironment(): PreflightResult {
  * Run preflight checks and fail fast if critical issues found
  */
 export function runPreflightChecks(): void {
-  console.log('🚀 Running E2E test preflight checks...\n');
+  console.error('🚀 Running E2E test preflight checks...\n');
 
   // Validate API key
   const apiKeyResult = validateApiKey();
@@ -230,10 +230,10 @@ export function runPreflightChecks(): void {
 
   // Display warnings
   if (allWarnings.length > 0) {
-    console.log('⚠️  Warnings:\n');
+    console.error('⚠️  Warnings:\n');
     for (const warning of allWarnings) {
-      console.log(`  [${warning.code}] ${warning.message}`);
-      console.log(`  💡 ${warning.suggestion}\n`);
+      console.error(`  [${warning.code}] ${warning.message}`);
+      console.error(`  💡 ${warning.suggestion}\n`);
     }
   }
 
@@ -260,10 +260,10 @@ export function runPreflightChecks(): void {
   }
 
   // Display success message
-  console.log('✅ Preflight checks passed\n');
+  console.error('✅ Preflight checks passed\n');
 
   if (allWarnings.length > 0) {
-    console.log(
+    console.error(
       `  ℹ️  ${allWarnings.length} warning(s) - tests will continue\n`
     );
   }

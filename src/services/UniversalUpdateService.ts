@@ -93,7 +93,7 @@ export class UniversalUpdateService {
       record_data.values || record_data
     );
     if (fieldValidation.warnings.length > 0) {
-      console.log(
+      console.error(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
       );
@@ -102,7 +102,7 @@ export class UniversalUpdateService {
       const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
-      console.log('Field suggestions:', truncated.join('\n'));
+      console.error('Field suggestions:', truncated.join('\n'));
     }
 
     // Map field names to correct ones with collision detection
@@ -124,7 +124,7 @@ export class UniversalUpdateService {
 
     const { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
-      console.log('Field mapping applied:', warnings.join('\n'));
+      console.error('Field mapping applied:', warnings.join('\n'));
     }
 
     // Sanitize special characters while preserving intended content (Issue #473)
@@ -215,7 +215,7 @@ export class UniversalUpdateService {
         );
 
         if (verification.warnings.length > 0) {
-          console.log(
+          console.error(
             `Field persistence warnings for ${resource_type} ${record_id}:`,
             verification.warnings
           );
@@ -446,7 +446,7 @@ export class UniversalUpdateService {
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
-      console.log(
+      console.error(
         `Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`
       );
       return this.updateRecord({
@@ -586,7 +586,7 @@ export class UniversalUpdateService {
           result.discrepancies
         );
       } else if (result.warnings.length > 0) {
-        console.log(
+        console.error(
           `Field persistence verification completed with warnings for ${resource_type} ${record_id}:`,
           result.warnings
         );

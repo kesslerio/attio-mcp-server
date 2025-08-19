@@ -362,7 +362,7 @@ class E2ELogger {
 
     // Also log to console in development for immediate feedback
     if (process.env.NODE_ENV === 'development' || process.env.E2E_DEBUG_LOGS) {
-      console.log(
+      console.error(
         `[E2E-LOG] ${entry.operation.toUpperCase()}: ${entry.toolName || entry.metadata?.message || 'info'}`
       );
       if (entry.error) {

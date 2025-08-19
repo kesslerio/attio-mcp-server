@@ -106,7 +106,7 @@ export function isInDateRange(dateStr: string, range: DateRange): boolean {
  */
 export function debugFilterLog(operation: string, details: any): void {
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Filter ${operation}]`, details);
+    console.error(`[Filter ${operation}]`, details);
   }
 }
 

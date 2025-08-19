@@ -4,6 +4,7 @@
 import { PromptTemplate } from '../types.js';
 import peoplePrompts from './people.js';
 import companiesPrompts from './companies.js';
+import dealsPrompts from './deals.js';
 import listsPrompts from './lists.js';
 import notesPrompts from './notes.js';
 
@@ -13,6 +14,7 @@ import notesPrompts from './notes.js';
 export const allPrompts: PromptTemplate[] = [
   ...peoplePrompts,
   ...companiesPrompts,
+  ...dealsPrompts,
   ...listsPrompts,
   ...notesPrompts,
 ];

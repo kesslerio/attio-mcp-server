@@ -65,7 +65,7 @@ const CONFIG_PATHS = {
  * ```typescript
  * const detection = detectMigrationNeeds();
  * if (detection.needsMigration) {
- *   console.log('Found outdated mappings:', detection.outdatedMappings);
+ *   console.error('Found outdated mappings:', detection.outdatedMappings);
  * }
  * ```
  */
@@ -131,7 +131,7 @@ export function detectMigrationNeeds(): MigrationDetection {
  * ```typescript
  * const backup = createBackup();
  * if (backup.success) {
- *   console.log('Backup created at:', backup.backupPath);
+ *   console.error('Backup created at:', backup.backupPath);
  * } else {
  *   console.error('Backup failed:', backup.error);
  * }
@@ -185,8 +185,8 @@ export function createBackup(): {
  * ```typescript
  * const result = applyMigration();
  * if (result.success) {
- *   console.log('Migration completed:', result.message);
- *   console.log('Changes:', result.changesApplied);
+ *   console.error('Migration completed:', result.message);
+ *   console.error('Changes:', result.changesApplied);
  * } else {
  *   console.error('Migration failed:', result.message);
  * }
@@ -325,12 +325,12 @@ export function validateMigration(): { valid: boolean; issues: string[] } {
  * ```typescript
  * // Preview changes without applying
  * const preview = migrateUserConfig({ dryRun: true });
- * console.log('Would apply:', preview.changesApplied);
+ * console.error('Would apply:', preview.changesApplied);
  *
  * // Apply the migration
  * const result = migrateUserConfig();
  * if (result.success) {
- *   console.log('Migration completed successfully');
+ *   console.error('Migration completed successfully');
  * }
  * ```
  */

@@ -39,7 +39,9 @@ describe.skipIf(
 
   beforeAll(async () => {
     config = loadE2EConfig();
-    console.log('🔧 Error Handling E2E Suite - Setting up test environment...');
+    console.error(
+      '🔧 Error Handling E2E Suite - Setting up test environment...'
+    );
 
     // Validate test environment is ready
     const validation = await validateTestEnvironment();
@@ -49,7 +51,7 @@ describe.skipIf(
 
     // Create minimal test data for error scenarios
     try {
-      console.log('📝 Creating test data for error scenarios...');
+      console.error('📝 Creating test data for error scenarios...');
 
       // Create test company for error scenarios
       const companyData = testDataGenerator.companies.basicCompany();
@@ -63,7 +65,7 @@ describe.skipIf(
         companyResult.content?.[0]?.data?.id?.record_id
       ) {
         testCompanyId = companyResult.content[0].data.id.record_id;
-        console.log(`✅ Created test company: ${testCompanyId}`);
+        console.error(`✅ Created test company: ${testCompanyId}`);
       } else {
         console.warn('⚠️  Could not create test company for error tests');
       }
@@ -80,17 +82,17 @@ describe.skipIf(
         personResult.content?.[0]?.data?.id?.record_id
       ) {
         testPersonId = personResult.content[0].data.id.record_id;
-        console.log(`✅ Created test person: ${testPersonId}`);
+        console.error(`✅ Created test person: ${testPersonId}`);
       }
     } catch (error: unknown) {
       console.warn('⚠️  Test data setup had issues:', error);
     }
 
-    console.log('✅ Error handling test environment ready');
+    console.error('✅ Error handling test environment ready');
   });
 
   afterAll(async () => {
-    console.log('🧹 Cleaning up error handling test data...');
+    console.error('🧹 Cleaning up error handling test data...');
 
     // Clean up test data (best effort - errors expected in error handling tests)
     const cleanupPromises: Promise<any>[] = [];
@@ -122,7 +124,7 @@ describe.skipIf(
     }
 
     await Promise.allSettled(cleanupPromises);
-    console.log('✅ Error handling cleanup completed');
+    console.error('✅ Error handling cleanup completed');
   });
 
   describe('Invalid Parameters and Validation Errors', () => {
@@ -155,7 +157,7 @@ describe.skipIf(
       });
 
       // Debug logging to understand what response we're getting
-      console.log('DEBUG: Test response:', {
+      console.error('DEBUG: Test response:', {
         isError: response.isError,
         error: response.error,
         contentType: response.content?.[0]?.type,
@@ -439,7 +441,7 @@ describe.skipIf(
       expect(response).toBeDefined();
 
       if (!response.isError && response.content) {
-        console.log(
+        console.error(
           `📊 Large result set test returned: ${response.content.length} items`
         );
       }
@@ -462,7 +464,7 @@ describe.skipIf(
       const successful = responses.filter(
         (r) => r.status === 'fulfilled'
       ).length;
-      console.log(`📊 Rapid requests: ${successful}/5 succeeded`);
+      console.error(`📊 Rapid requests: ${successful}/5 succeeded`);
 
       // At least some should succeed (rate limiting is acceptable)
       expect(successful).toBeGreaterThanOrEqual(1);
@@ -490,7 +492,7 @@ describe.skipIf(
   describe('Edge Case Error Scenarios', () => {
     it('should handle concurrent modifications', async () => {
       if (!testCompanyId) {
-        console.log(
+        console.error(
           '⏭️  Skipping concurrent modification test - no test company'
         );
         return;
@@ -522,7 +524,7 @@ describe.skipIf(
 
     it('should handle circular relationship scenarios', async () => {
       if (!testCompanyId || !testPersonId) {
-        console.log(
+        console.error(
           '⏭️  Skipping circular relationship test - missing test data'
         );
         return;
@@ -630,7 +632,7 @@ describe.skipIf(
       }
 
       expect(lastResponse).toBeDefined();
-      console.log(`📊 Recovery test took ${attemptCount} attempts`);
+      console.error(`📊 Recovery test took ${attemptCount} attempts`);
     });
 
     it('should maintain data consistency after errors', async () => {
