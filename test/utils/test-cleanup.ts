@@ -11,6 +11,7 @@ import { getAttioClient } from '../../src/api/attio-client.js';
 interface AttioClient {
   post(url: string, data: any): Promise<any>;
   delete(url: string): Promise<any>;
+  get(url: string): Promise<any>;
 }
 
 /**
@@ -46,21 +47,74 @@ export function validateTestEnvironment(): void {
 /**
  * Cleanup test data created during integration tests
  * @param testPrefix - Prefix used for test data (e.g., "TEST_", "E2E_")
+ * @param options - Optional cleanup configuration
  */
 export async function cleanupTestData(
-  testPrefix: string = 'TEST_'
+  testPrefix: string = 'TEST_',
+  options: {
+    includeCompanies?: boolean;
+    includePeople?: boolean;
+    includeTasks?: boolean;
+    includeLists?: boolean;
+    includeNotes?: boolean;
+    parallel?: boolean;
+    maxRetries?: number;
+  } = {}
 ): Promise<void> {
+  const {
+    includeCompanies = true,
+    includePeople = true,
+    includeTasks = true,
+    includeLists = true,
+    includeNotes = true,
+    parallel = false,
+    maxRetries = 3,
+  } = options;
+
   try {
     const client = getAttioClient();
 
-    // Clean up test people
-    await cleanupTestPeople(client, testPrefix);
+    if (parallel) {
+      // Run cleanup operations in parallel for faster execution
+      const cleanupPromises: Promise<void>[] = [];
 
-    // Clean up test companies
-    await cleanupTestCompanies(client, testPrefix);
+      if (includeCompanies) {
+        cleanupPromises.push(
+          cleanupTestCompanies(client, testPrefix, maxRetries)
+        );
+      }
+      if (includePeople) {
+        cleanupPromises.push(cleanupTestPeople(client, testPrefix, maxRetries));
+      }
+      if (includeTasks) {
+        cleanupPromises.push(cleanupTestTasks(client, testPrefix, maxRetries));
+      }
+      if (includeLists) {
+        cleanupPromises.push(cleanupTestLists(client, testPrefix, maxRetries));
+      }
+      if (includeNotes) {
+        cleanupPromises.push(cleanupTestNotes(client, testPrefix, maxRetries));
+      }
 
-    // Clean up test tasks
-    await cleanupTestTasks(client, testPrefix);
+      await Promise.allSettled(cleanupPromises);
+    } else {
+      // Run cleanup operations sequentially
+      if (includeCompanies) {
+        await cleanupTestCompanies(client, testPrefix, maxRetries);
+      }
+      if (includePeople) {
+        await cleanupTestPeople(client, testPrefix, maxRetries);
+      }
+      if (includeTasks) {
+        await cleanupTestTasks(client, testPrefix, maxRetries);
+      }
+      if (includeLists) {
+        await cleanupTestLists(client, testPrefix, maxRetries);
+      }
+      if (includeNotes) {
+        await cleanupTestNotes(client, testPrefix, maxRetries);
+      }
+    }
 
     console.log(`Test data cleanup completed for prefix: ${testPrefix}`);
   } catch (error) {
@@ -74,31 +128,22 @@ export async function cleanupTestData(
  */
 async function cleanupTestPeople(
   client: AttioClient,
-  testPrefix: string
+  testPrefix: string,
+  maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await client.post('/api/v2/objects/people/records/query', {
+    const response = await client.post('/objects/people/records/query', {
       filter: {
-        any_of: [
-          {
-            attribute: 'name',
-            operator: 'starts_with',
-            value: testPrefix,
-          },
-          {
-            attribute: 'email_addresses',
-            operator: 'contains',
-            value: `${testPrefix.toLowerCase()}`,
-          },
+        $or: [
+          { name: { $starts_with: testPrefix } },
+          { email_addresses: { $contains: testPrefix.toLowerCase() } },
         ],
       },
     });
 
     const records = response.data?.data ?? [];
     for (const record of records) {
-      await client.delete(
-        `/api/v2/objects/people/records/${record.id.record_id}`
-      );
+      await client.delete(`/objects/people/records/${record.id.record_id}`);
       console.log(`Deleted test person: ${record.id.record_id}`);
     }
   } catch (error) {
@@ -111,25 +156,19 @@ async function cleanupTestPeople(
  */
 async function cleanupTestCompanies(
   client: AttioClient,
-  testPrefix: string
+  testPrefix: string,
+  maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await client.post(
-      '/api/v2/objects/companies/records/query',
-      {
-        filter: {
-          attribute: 'name',
-          operator: 'starts_with',
-          value: testPrefix,
-        },
-      }
-    );
+    const response = await client.post('/objects/companies/records/query', {
+      filter: {
+        name: { $starts_with: testPrefix },
+      },
+    });
 
     const records = response.data?.data ?? [];
     for (const record of records) {
-      await client.delete(
-        `/api/v2/objects/companies/records/${record.id.record_id}`
-      );
+      await client.delete(`/objects/companies/records/${record.id.record_id}`);
       console.log(`Deleted test company: ${record.id.record_id}`);
     }
   } catch (error) {
@@ -142,20 +181,22 @@ async function cleanupTestCompanies(
  */
 async function cleanupTestTasks(
   client: AttioClient,
-  testPrefix: string
+  testPrefix: string,
+  maxRetries: number = 3
 ): Promise<void> {
   try {
-    const response = await client.post('/api/v2/tasks/query', {
-      filter: {
-        attribute: 'content',
-        operator: 'starts_with',
-        value: testPrefix,
-      },
-    });
+    // Get all tasks and filter client-side since tasks API doesn't support POST query
+    const response = await client.get('/tasks?pageSize=500');
 
     const tasks = response.data?.data ?? [];
-    for (const task of tasks) {
-      await client.delete(`/api/v2/tasks/${task.id.task_id}`);
+    const filteredTasks = tasks.filter((task: any) => {
+      const content = task.content || task.content_plaintext || '';
+      const title = task.title || '';
+      return content.startsWith(testPrefix) || title.startsWith(testPrefix);
+    });
+
+    for (const task of filteredTasks) {
+      await client.delete(`/tasks/${task.id.task_id}`);
       console.log(`Deleted test task: ${task.id.task_id}`);
     }
   } catch (error) {
@@ -237,4 +278,118 @@ export function getDetailedErrorMessage(error: any): string {
   }
 
   return error?.message || 'Unknown error occurred';
+}
+
+/**
+ * Clean up test lists
+ */
+async function cleanupTestLists(
+  client: AttioClient,
+  testPrefix: string,
+  maxRetries: number = 3
+): Promise<void> {
+  try {
+    const response = await retryWithBackoff(async () => {
+      return client.get('/lists?limit=500');
+    }, maxRetries);
+
+    const allLists = response.data?.data ?? [];
+
+    // Filter lists by name prefix
+    const testLists = allLists.filter(
+      (list: any) => list.name && list.name.startsWith(testPrefix)
+    );
+
+    for (const list of testLists) {
+      try {
+        await retryWithBackoff(async () => {
+          await client.delete(`/lists/${list.id.list_id}`);
+        }, maxRetries);
+
+        console.log(`Deleted test list: ${list.id.list_id}`);
+
+        // Small delay between deletions to avoid overwhelming the API
+        await waitForRateLimit(200);
+      } catch (error) {
+        console.error(
+          `Failed to delete list ${list.id.list_id}:`,
+          getDetailedErrorMessage(error)
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up test lists:', error);
+  }
+}
+
+/**
+ * Clean up test notes
+ * Note: This is a placeholder implementation as the notes API endpoints
+ * need to be researched and confirmed.
+ */
+async function cleanupTestNotes(
+  client: AttioClient,
+  testPrefix: string,
+  maxRetries: number = 3
+): Promise<void> {
+  try {
+    // TODO: Research and implement notes cleanup once API endpoints are confirmed
+    // Possible endpoints might be:
+    // - /api/v2/notes/query
+    // - /api/v2/objects/notes/records/query
+    // - Notes might be attached to other records as relationships
+
+    console.log(
+      'Notes cleanup not yet implemented - API endpoints need research'
+    );
+
+    // Placeholder logic if notes have a direct API:
+    // const response = await retryWithBackoff(async () => {
+    //   return client.post('/api/v2/notes/query', {
+    //     filter: {
+    //       attribute: 'content',
+    //       operator: 'starts_with',
+    //       value: testPrefix,
+    //     },
+    //   });
+    // }, maxRetries);
+
+    // const notes = response.data?.data ?? [];
+    // for (const note of notes) {
+    //   await retryWithBackoff(async () => {
+    //     await client.delete(`/api/v2/notes/${note.id.note_id}`);
+    //   }, maxRetries);
+    //   console.log(`Deleted test note: ${note.id.note_id}`);
+    // }
+  } catch (error) {
+    console.error('Error cleaning up test notes:', error);
+  }
+}
+
+/**
+ * Enhanced cleanup function that supports multiple prefixes
+ * @param prefixes - Array of prefixes to clean up
+ * @param options - Cleanup options
+ */
+export async function cleanupMultiplePrefixes(
+  prefixes: string[],
+  options: {
+    includeCompanies?: boolean;
+    includePeople?: boolean;
+    includeTasks?: boolean;
+    includeLists?: boolean;
+    includeNotes?: boolean;
+    parallel?: boolean;
+    maxRetries?: number;
+  } = {}
+): Promise<void> {
+  console.log(`Cleaning up test data for prefixes: ${prefixes.join(', ')}`);
+
+  for (const prefix of prefixes) {
+    await cleanupTestData(prefix, options);
+    // Small delay between prefix cleanups to avoid rate limiting
+    await waitForRateLimit(500);
+  }
+
+  console.log('Multi-prefix cleanup completed');
 }

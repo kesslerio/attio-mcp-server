@@ -27,6 +27,16 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
 ⚠️ IMPORTANT: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 
+## TEST DATA CLEANUP [COMPREHENSIVE UTILITIES]
+
+RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
+`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
+`./cleanup-test-data.sh --dry-run` - Shell wrapper with validation | `./cleanup-test-data.sh --live` - Live cleanup
+`npm run cleanup:test-data:companies -- --live` - Companies only | `npm run cleanup:test-data:people -- --live` - People only
+`npm run cleanup:test-data:tasks -- --live` - Tasks only | `npm run cleanup:test-data:lists -- --live` - Lists only
+FEATURES: Parallel processing | Rate limiting | Error handling | Prefix-based filtering | Progress tracking
+⚠️ CRITICAL: Use `--dry-run` first to preview deletions | Supports custom prefixes: `--prefix=TEST_,QA_,E2E_,DEMO_`
+
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
 
 RULE: Integration tests required | WHEN: API changes, universal tools, CRUD ops, error handling, new features | DO: `npm run test:integration` | ELSE: PR blocked

@@ -108,16 +108,43 @@ QA_DEAL_2_ID="[TO_BE_CREATED]"     # Name: "QA Test Deal Beta"
 ```
 
 #### Test Data Creation Commands
-```bash
-# 1. Create Test Companies
-mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Alpha", "domain": "qa-alpha.test", "industry": "Technology"}'
-mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Beta", "domain": "qa-beta.test", "industry": "Finance"}'
-mcp__attio__create-record resource_type="companies" record_data='{"name": "QA Test Company Gamma", "domain": "qa-gamma.test", "industry": "Healthcare"}'
 
-# 2. Create Test People  
-mcp__attio__create-record resource_type="people" record_data='{"name": "Alice QA Tester", "email": "alice@qa-testing.com", "title": "QA Manager"}'
-mcp__attio__create-record resource_type="people" record_data='{"name": "Bob QA Validator", "email": "bob@qa-validation.com", "title": "QA Engineer"}'
-mcp__attio__create-record resource_type="people" record_data='{"name": "Carol QA Analyst", "email": "carol@qa-analysis.com", "title": "QA Analyst"}'
+**⚠️ CRITICAL**: Always run `get-attributes` first to discover actual field names before creating records.
+
+**🔧 UNIQUENESS STRATEGY**: Use timestamp-based identifiers to prevent conflicts on repeated test runs.
+
+```bash
+# 0. MANDATORY: Set unique timestamp for this test run
+TEST_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+echo "Test run timestamp: $TEST_TIMESTAMP"
+
+# 0.1. MANDATORY: Discover Available Fields First  
+mcp__attio__get-attributes resource_type="companies"
+mcp__attio__get-attributes resource_type="people"
+
+# 0.2. PRE-TEST CLEANUP: Remove any existing test data
+echo "Cleaning up any existing QA test records..."
+mcp__attio__search-records resource_type="companies" query="QA Test Company" limit=100 | \
+  grep -o '"id":\s*"[^"]*"' | cut -d'"' -f4 | \
+  xargs -I {} mcp__attio__delete-record resource_type="companies" record_id="{}" || true
+
+mcp__attio__search-records resource_type="people" query="QA Tester" limit=100 | \
+  grep -o '"id":\s*"[^"]*"' | cut -d'"' -f4 | \
+  xargs -I {} mcp__attio__delete-record resource_type="people" record_id="{}" || true
+
+# 1. Create Test Companies (Updated with unique domains and required fields)
+mcp__attio__create-record resource_type="companies" record_data="{\"name\": \"QA Test Company Alpha ${TEST_TIMESTAMP}\", \"domains\": [\"qa-alpha-${TEST_TIMESTAMP}.test\"], \"description\": \"Technology company for QA testing\"}"
+
+mcp__attio__create-record resource_type="companies" record_data="{\"name\": \"QA Test Company Beta ${TEST_TIMESTAMP}\", \"domains\": [\"qa-beta-${TEST_TIMESTAMP}.test\"], \"description\": \"Finance company for QA testing\"}"
+
+mcp__attio__create-record resource_type="companies" record_data="{\"name\": \"QA Test Company Gamma ${TEST_TIMESTAMP}\", \"domains\": [\"qa-gamma-${TEST_TIMESTAMP}.test\"], \"description\": \"Healthcare company for QA testing\"}"
+
+# 2. Create Test People (Updated with unique emails and proper field names)
+mcp__attio__create-record resource_type="people" record_data="{\"name\": \"Alice QA Tester ${TEST_TIMESTAMP}\", \"email_addresses\": [\"alice.qa.${TEST_TIMESTAMP}@qa-testing.com\"], \"job_title\": \"QA Manager\"}"
+
+mcp__attio__create-record resource_type="people" record_data="{\"name\": \"Bob QA Validator ${TEST_TIMESTAMP}\", \"email_addresses\": [\"bob.qa.${TEST_TIMESTAMP}@qa-testing.com\"], \"job_title\": \"QA Engineer\"}"
+
+mcp__attio__create-record resource_type="people" record_data="{\"name\": \"Carol QA Analyst ${TEST_TIMESTAMP}\", \"email_addresses\": [\"carol.qa.${TEST_TIMESTAMP}@qa-testing.com\"], \"job_title\": \"QA Analyst\"}"
 
 # 3. Create Test Tasks
 mcp__attio__create-record resource_type="tasks" record_data='{"title": "QA Test Task Alpha", "description": "Primary QA validation task", "status": "open", "priority": "high"}'
@@ -161,10 +188,43 @@ After creating test data, fill in this manifest:
 
 ### Test Data Cleanup Protocol
 
-**CRITICAL**: Always clean up test data after completion:
+**CRITICAL**: Always clean up test data after completion to prevent Attio workspace pollution.
+
+#### Option 1: Automated Cleanup (Recommended)
+
+Use the comprehensive cleanup utility for efficient batch cleanup:
 
 ```bash
-# After testing is complete, remove all test records
+# 🚀 RECOMMENDED: Use automated cleanup utility
+# Preview what would be deleted (safe dry-run)
+./cleanup-test-data.sh --dry-run
+
+# Perform actual cleanup of all test data
+./cleanup-test-data.sh --live
+
+# Alternative: Use npm scripts
+npm run cleanup:test-data:dry    # Preview only
+npm run cleanup:test-data:live   # Live deletion
+
+# Clean specific resource types only
+npm run cleanup:test-data:companies -- --live
+npm run cleanup:test-data:people -- --live
+npm run cleanup:test-data:tasks -- --live
+npm run cleanup:test-data:lists -- --live
+
+# Custom prefixes (default: TEST_, QA_, E2E_)
+./cleanup-test-data.sh --prefix=DEMO_,TEMP_ --live
+
+# Parallel processing for faster cleanup
+./cleanup-test-data.sh --parallel=10 --live
+```
+
+#### Option 2: Manual Cleanup (Legacy)
+
+For individual record cleanup when IDs are known:
+
+```bash
+# Manual deletion of specific test records
 mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_1_ID"
 mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_2_ID" 
 mcp__attio__delete-record resource_type="companies" record_id="$QA_COMPANY_3_ID"
@@ -179,6 +239,65 @@ mcp__attio__delete-record resource_type="tasks" record_id="$QA_TASK_2_ID"
 mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_1_ID"
 mcp__attio__delete-record resource_type="deals" record_id="$QA_DEAL_2_ID"
 ```
+
+#### Cleanup Features
+
+- ✅ **Safe by Default**: Dry-run mode prevents accidental deletions
+- ✅ **Comprehensive**: Covers all resource types (companies, people, tasks, lists, notes)
+- ✅ **Efficient**: Parallel processing with rate limiting
+- ✅ **Prefix-Based**: Uses test prefixes to avoid production data
+- ✅ **Error Handling**: Retry logic with exponential backoff
+- ✅ **Progress Tracking**: Detailed progress and summary reporting
+
+#### Usage Guidelines
+
+1. **Always run dry-run first**: `./cleanup-test-data.sh --dry-run`
+2. **Use meaningful prefixes**: Ensure test data has consistent prefixes
+3. **Monitor output**: Check for errors and confirmation of deletions
+4. **Run after test completion**: Don't let test data accumulate in workspace
+
+#### Integration with Test Execution
+
+The cleanup utilities are integrated into the QA test plan execution workflow:
+
+1. **Pre-Test Phase**: Run cleanup to ensure clean workspace
+   ```bash
+   # Clean existing test data before starting QA tests
+   ./cleanup-test-data.sh --dry-run
+   ./cleanup-test-data.sh --live
+   ```
+
+2. **During Test Execution**: Track test data creation for cleanup
+   - All test data uses standardized prefixes (TEST_, QA_, E2E_)
+   - Timestamp-based naming prevents conflicts on repeated runs
+   - Test data manifest tracks created records for verification
+
+3. **Post-Test Phase**: Comprehensive cleanup of all test data
+   ```bash
+   # Clean up all test data after QA test completion
+   npm run cleanup:test-data:live
+   
+   # Or use shell wrapper with confirmation
+   ./cleanup-test-data.sh --live
+   ```
+
+4. **CI/CD Integration**: Automated cleanup in continuous integration
+   ```bash
+   # Cleanup command in CI pipelines
+   npm run cleanup:test-data:live --prefix=CI_,BUILD_
+   ```
+
+#### Cleanup Command Reference
+
+| Command | Purpose | Safety Level |
+|---------|---------|--------------|
+| `npm run cleanup:test-data` | Dry-run preview | ✅ Safe (no deletions) |
+| `npm run cleanup:test-data:live` | Live cleanup all types | ⚠️ Destructive |
+| `./cleanup-test-data.sh --dry-run` | Shell wrapper preview | ✅ Safe (no deletions) |
+| `./cleanup-test-data.sh --live` | Shell wrapper live cleanup | ⚠️ Destructive |
+| `npm run cleanup:test-data:companies -- --live` | Companies only | ⚠️ Destructive |
+| `npm run cleanup:test-data:people -- --live` | People only | ⚠️ Destructive |
+| `npm run cleanup:test-data:tasks -- --live` | Tasks only | ⚠️ Destructive |
 
 ## Test Execution Tracking Matrix
 
@@ -2490,8 +2609,15 @@ fi
 # Generate final report using template
 ./generate-test-results-report.sh > /tmp/qa-test-results-$(date +%Y%m%d).md
 
-# Clean up all test data
-./cleanup-test-data.sh
+# Clean up all test data using comprehensive cleanup utility
+./cleanup-test-data.sh --live
+
+# Alternative: Use npm script for cleanup
+npm run cleanup:test-data:live
+
+# For specific resource types only
+npm run cleanup:test-data:companies -- --live
+npm run cleanup:test-data:people -- --live
 
 # Archive test artifacts
 tar -czf /tmp/qa-test-artifacts-$(date +%Y%m%d).tar.gz /tmp/test-*.log /tmp/*qa*.md
@@ -2567,9 +2693,18 @@ After testing:
 |------------|---------------|------------------|
 | Parameter Validation | Missing required params | "Missing required parameter: resource_type" |
 | Resource Not Found | Invalid IDs | "Record not found with ID: xyz123" |
+| Field Mapping Errors | Using incorrect field names | "Cannot find attribute with slug/ID 'employee_count'" |
+| Data Type Validation | Wrong data type for field | "Field 'employee_count' must be of type string, but got number" |
+| Field Format Errors | Invalid field value format | "An invalid value was passed to attribute with slug 'domains'" |
 | Permission Errors | Access restrictions | "Access denied for resource type: companies" |
 | Rate Limiting | Too many requests | "Rate limit exceeded, try again in 60 seconds" |
 | Data Validation | Invalid field values | "Invalid email format: not-an-email" |
+
+**🔧 Field Mapping Resolution Tips:**
+- Always run `get-attributes` first to discover valid field names
+- Use string values for numeric fields when unsure: `"150"` not `150`  
+- Check field mappings: `website` → `domains`, `title` → `job_title` (people)
+- Verify data types match API requirements before operations
 
 ### Appendix D: Performance Benchmarks
 
@@ -2582,6 +2717,57 @@ After testing:
 | Record Deletion | < 1 second | < 3 seconds |
 | Complex Search | < 5 seconds | < 15 seconds |
 | Batch Operations | < 10 seconds | < 30 seconds |
+
+### Appendix E: Test Data Cleanup Utilities
+
+#### Comprehensive Cleanup Tools
+
+The project provides automated cleanup utilities to prevent Attio workspace pollution:
+
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| `cleanup-test-data.sh` | Shell wrapper with environment validation | `./cleanup-test-data.sh --dry-run` |
+| `scripts/cleanup-test-data.ts` | TypeScript utility with parallel processing | `tsx scripts/cleanup-test-data.ts --live` |
+| `test/utils/test-cleanup.ts` | In-test cleanup for integration tests | `import { cleanupTestData } from './test/utils/test-cleanup.js'` |
+
+#### NPM Scripts Quick Reference
+
+| Script | Description | Example |
+|--------|-------------|---------|
+| `cleanup:test-data` | Dry run preview (safe) | `npm run cleanup:test-data` |
+| `cleanup:test-data:dry` | Explicit dry run | `npm run cleanup:test-data:dry` |
+| `cleanup:test-data:live` | Live deletion | `npm run cleanup:test-data:live` |
+| `cleanup:test-data:companies` | Companies only | `npm run cleanup:test-data:companies -- --live` |
+| `cleanup:test-data:people` | People only | `npm run cleanup:test-data:people -- --live` |
+| `cleanup:test-data:tasks` | Tasks only | `npm run cleanup:test-data:tasks -- --live` |
+| `cleanup:test-data:lists` | Lists only | `npm run cleanup:test-data:lists -- --live` |
+| `cleanup:test-data:all` | All prefixes | `npm run cleanup:test-data:all` |
+
+#### Command Line Options
+
+| Option | Description | Default | Example |
+|--------|-------------|---------|---------|
+| `--dry-run` | Preview mode (safe) | `true` | `--dry-run` |
+| `--live` | Perform actual deletion | `false` | `--live` |
+| `--prefix=X,Y` | Custom test prefixes | `TEST_,QA_,E2E_` | `--prefix=DEMO_,TEMP_` |
+| `--resource-type=TYPE` | Specific resource types | `all` | `--resource-type=companies` |
+| `--parallel=N` | Concurrent operations | `5` | `--parallel=10` |
+| `--verbose` | Detailed output | `false` | `--verbose` |
+
+#### Best Practices
+
+1. **Always dry-run first**: Never run live deletion without previewing
+2. **Use consistent prefixes**: Ensure all test data follows naming conventions
+3. **Monitor workspace usage**: Regular cleanup prevents data accumulation
+4. **Integration test cleanup**: Use `test/utils/test-cleanup.ts` in afterAll hooks
+5. **CI/CD integration**: Automate cleanup in deployment pipelines
+
+#### Error Handling
+
+- **Rate limiting**: Built-in exponential backoff for API limits
+- **Partial failures**: Continues processing other records if some fail
+- **Error reporting**: Detailed error messages and recovery suggestions
+- **Safe defaults**: Dry-run mode prevents accidental data loss
 
 ---
 
