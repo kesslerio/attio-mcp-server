@@ -65,22 +65,29 @@ vi.mock('../../../../src/objects/people/index.js', async (importOriginal) => {
 });
 
 // Mock validation and date utils
-vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-      // Just return the params as-is (simulating successful validation)
-      // This matches the expected behavior in tests
-      return params || {};
-    }),
-    advancedSearchSchema: { type: 'object', properties: {}, required: [] },
-    searchByRelationshipSchema: { type: 'object', properties: {}, required: [] },
-    searchByContentSchema: { type: 'object', properties: {}, required: [] },
-    searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
-    batchOperationsSchema: { type: 'object', properties: {}, required: [] },
-  };
-});
+vi.mock(
+  '../../../../src/handlers/tool-configs/universal/schemas.js',
+  async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+        // Just return the params as-is (simulating successful validation)
+        // This matches the expected behavior in tests
+        return params || {};
+      }),
+      advancedSearchSchema: { type: 'object', properties: {}, required: [] },
+      searchByRelationshipSchema: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+      searchByContentSchema: { type: 'object', properties: {}, required: [] },
+      searchByTimeframeSchema: { type: 'object', properties: {}, required: [] },
+      batchOperationsSchema: { type: 'object', properties: {}, required: [] },
+    };
+  }
+);
 
 vi.mock('../../../../src/utils/date-utils.js', async (importOriginal) => {
   const actual = await importOriginal();

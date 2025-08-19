@@ -8,6 +8,7 @@
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalAttributesParams } from '../handlers/tool-configs/universal/types.js';
 import { getAttioClient } from '../api/attio-client.js';
+import { secureValidateCategories } from '../utils/validation/field-validation.js';
 
 // Import resource-specific attribute functions
 import {
@@ -25,17 +26,36 @@ export class UniversalMetadataService {
    * Special handling for tasks which use /tasks API instead of /objects/tasks
    */
   static async discoverAttributesForResourceType(
-    resourceType: UniversalResourceType
+    resourceType: UniversalResourceType,
+    options?: {
+      categories?: string[]; // NEW: Category filtering support
+    }
   ): Promise<Record<string, unknown>> {
     // Handle tasks as special case - they don't use /objects/{type}/attributes
     if (resourceType === UniversalResourceType.TASKS) {
-      return this.discoverTaskAttributes();
+      return this.discoverTaskAttributes(options);
     }
 
     const client = getAttioClient();
 
     try {
-      const response = await client.get(`/objects/${resourceType}/attributes`);
+      let path = `/objects/${resourceType}/attributes`;
+
+      // NEW: Add category filtering to query parameters with security validation
+      if (options?.categories && options.categories.length > 0) {
+        // Validate and sanitize category names to prevent injection attacks
+        const validatedCategories = secureValidateCategories(
+          options.categories,
+          'category filtering in get-attributes'
+        );
+
+        if (validatedCategories.length > 0) {
+          const categoriesParam = validatedCategories.join(',');
+          path += `?categories=${encodeURIComponent(categoriesParam)}`;
+        }
+      }
+
+      const response = await client.get(path);
       const attributes = response.data.data || [];
 
       // Create mapping from title to api_slug for compatibility
@@ -73,7 +93,9 @@ export class UniversalMetadataService {
    * Since tasks don't use the standard /objects/{type}/attributes endpoint,
    * we return the known task attributes based on the task API structure.
    */
-  static async discoverTaskAttributes(): Promise<Record<string, unknown>> {
+  static async discoverTaskAttributes(options?: {
+    categories?: string[]; // NEW: Category filtering support
+  }): Promise<Record<string, unknown>> {
     // Define task attributes based on the actual task API structure
     // From /src/api/operations/tasks.ts and field mappings
     const attributes = [
@@ -82,6 +104,7 @@ export class UniversalMetadataService {
         api_slug: 'content',
         title: 'Content',
         type: 'text',
+        category: 'basic', // NEW: Add category for filtering
         description: 'The main text/description of the task',
         required: true,
       },
@@ -90,6 +113,7 @@ export class UniversalMetadataService {
         api_slug: 'status',
         title: 'Status',
         type: 'text',
+        category: 'basic', // NEW: Add category for filtering
         description: 'Task completion status (e.g., pending, completed)',
         required: false,
       },
@@ -98,6 +122,7 @@ export class UniversalMetadataService {
         api_slug: 'assignee',
         title: 'Assignee',
         type: 'person-reference',
+        category: 'business', // NEW: Add category for filtering
         description: 'Person assigned to this task',
         required: false,
       },
@@ -106,6 +131,7 @@ export class UniversalMetadataService {
         api_slug: 'assignee_id',
         title: 'Assignee ID',
         type: 'text',
+        category: 'business', // NEW: Add category for filtering
         description: 'ID of the workspace member assigned to this task',
         required: false,
       },
@@ -114,6 +140,7 @@ export class UniversalMetadataService {
         api_slug: 'due_date',
         title: 'Due Date',
         type: 'date',
+        category: 'basic', // NEW: Add category for filtering
         description: 'When the task is due (ISO date format)',
         required: false,
       },
@@ -122,6 +149,7 @@ export class UniversalMetadataService {
         api_slug: 'linked_records',
         title: 'Linked Records',
         type: 'record-reference',
+        category: 'business', // NEW: Add category for filtering
         description: 'Records this task is associated with',
         required: false,
       },
@@ -141,10 +169,18 @@ export class UniversalMetadataService {
     mappings['due'] = 'due_date';
     mappings['record'] = 'record_id';
 
+    // NEW: Apply category filtering if categories parameter was provided
+    let filteredAttributes = attributes;
+    if (options?.categories && options.categories.length > 0) {
+      filteredAttributes = attributes.filter((attr: any) =>
+        options.categories!.includes(attr.category)
+      );
+    }
+
     return {
-      attributes: attributes,
+      attributes: filteredAttributes,
       mappings: mappings,
-      count: attributes.length,
+      count: filteredAttributes.length, // NEW: Use filtered count
       resource_type: UniversalResourceType.TASKS,
       // Task-specific metadata
       api_endpoint: '/tasks',
@@ -248,7 +284,9 @@ export class UniversalMetadataService {
           result = await this.getAttributesForRecord(resource_type, record_id);
         } else {
           // Return schema-level attributes if no record_id provided
-          result = await this.discoverAttributesForResourceType(resource_type);
+          result = await this.discoverAttributesForResourceType(resource_type, {
+            categories,
+          });
         }
         break;
 
@@ -260,7 +298,9 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await this.getAttributesForRecord(resource_type, record_id);
         } else {
-          result = await this.discoverAttributesForResourceType(resource_type);
+          result = await this.discoverAttributesForResourceType(resource_type, {
+            categories,
+          });
         }
         break;
 
@@ -268,7 +308,9 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await this.getAttributesForRecord(resource_type, record_id);
         } else {
-          result = await this.discoverAttributesForResourceType(resource_type);
+          result = await this.discoverAttributesForResourceType(resource_type, {
+            categories,
+          });
         }
         break;
 
@@ -276,7 +318,9 @@ export class UniversalMetadataService {
         if (record_id) {
           result = await this.getAttributesForRecord(resource_type, record_id);
         } else {
-          result = await this.discoverAttributesForResourceType(resource_type);
+          result = await this.discoverAttributesForResourceType(resource_type, {
+            categories,
+          });
         }
         break;
 
@@ -295,26 +339,29 @@ export class UniversalMetadataService {
    * Universal discover attributes handler
    */
   static async discoverAttributes(
-    resource_type: UniversalResourceType
+    resource_type: UniversalResourceType,
+    options?: {
+      categories?: string[]; // NEW: Category filtering support
+    }
   ): Promise<Record<string, unknown>> {
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
         return discoverCompanyAttributes();
 
       case UniversalResourceType.PEOPLE:
-        return this.discoverAttributesForResourceType(resource_type);
+        return this.discoverAttributesForResourceType(resource_type, options);
 
       case UniversalResourceType.LISTS:
         return getListAttributes();
 
       case UniversalResourceType.RECORDS:
-        return this.discoverAttributesForResourceType(resource_type);
+        return this.discoverAttributesForResourceType(resource_type, options);
 
       case UniversalResourceType.DEALS:
-        return this.discoverAttributesForResourceType(resource_type);
+        return this.discoverAttributesForResourceType(resource_type, options);
 
       case UniversalResourceType.TASKS:
-        return this.discoverAttributesForResourceType(resource_type);
+        return this.discoverAttributesForResourceType(resource_type, options);
 
       default:
         throw new Error(

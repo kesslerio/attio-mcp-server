@@ -218,8 +218,81 @@ class TestDataCleanup {
 
     if (this.options.dryRun) {
       people.forEach((person, index) => {
-        const name = `${person.values?.first_name?.[0]?.value || ''} ${person.values?.last_name?.[0]?.value || ''}`.trim();
-        console.log(`    ${index + 1}. ${name || 'Unknown'} (${person.id.record_id})`);
+        // Try multiple ways to extract person information
+        let displayName = 'Unknown';
+        let emailInfo = '';
+        
+        // Try different name field structures
+        if (person.values) {
+          // Helper to extract value from Attio field structure
+          const extractValue = (field: any): string => {
+            if (!field) return '';
+            if (typeof field === 'string') return field;
+            if (Array.isArray(field) && field.length > 0) {
+              const firstItem = field[0];
+              if (typeof firstItem === 'string') return firstItem;
+              if (firstItem && typeof firstItem === 'object') {
+                // For name fields, try full_name first, then construct from parts
+                if (firstItem.full_name) return firstItem.full_name;
+                if (firstItem.first_name && firstItem.last_name) {
+                  return `${firstItem.first_name} ${firstItem.last_name}`.trim();
+                }
+                if (firstItem.first_name) return firstItem.first_name;
+                // Fallback to other common fields
+                return firstItem.value || firstItem.name || firstItem.display_value || '';
+              }
+            }
+            if (typeof field === 'object') {
+              if (field.full_name) return field.full_name;
+              if (field.first_name && field.last_name) {
+                return `${field.first_name} ${field.last_name}`.trim();
+              }
+              if (field.first_name) return field.first_name;
+              return field.value || field.name || field.display_value || '';
+            }
+            return '';
+          };
+          
+          // Try name field first (has full_name, first_name, last_name)
+          const nameField = extractValue(person.values.name);
+          
+          // Try first_name/last_name structure as fallback
+          const firstName = extractValue(person.values.first_name);
+          const lastName = extractValue(person.values.last_name);
+          const fullName = `${firstName} ${lastName}`.trim();
+          
+          // Use whichever is available
+          displayName = nameField || fullName || 'Unknown';
+          
+          // Try to get email information
+          if (person.values.email_addresses) {
+            const emails = Array.isArray(person.values.email_addresses) 
+              ? person.values.email_addresses 
+              : [person.values.email_addresses];
+            
+            const emailList = emails
+              .map(email => {
+                if (typeof email === 'string') return email;
+                if (email?.email_address) return email.email_address;
+                if (email?.value) return email.value;
+                return extractValue(email);
+              })
+              .filter(Boolean)
+              .slice(0, 2); // Show max 2 emails
+            
+            if (emailList.length > 0) {
+              emailInfo = ` | ${emailList.join(', ')}`;
+              if (emailList.length > 2) emailInfo += '...';
+            }
+          }
+        }
+        
+        console.log(`    ${index + 1}. ${displayName}${emailInfo} (${person.id.record_id})`);
+        
+        // Debug: Show raw structure if verbose mode
+        if (this.options.verbose) {
+          console.log(`       Raw: ${JSON.stringify(person.values, null, 2)}`);
+        }
       });
       return;
     }
@@ -237,8 +310,43 @@ class TestDataCleanup {
             
             this.stats.people.deleted++;
             if (this.options.verbose) {
-              const name = `${person.values?.first_name?.[0]?.value || ''} ${person.values?.last_name?.[0]?.value || ''}`.trim();
-              console.log(`    ✅ Deleted: ${name || person.id.record_id}`);
+              // Use same logic as dry-run display
+              let displayName = 'Unknown';
+              if (person.values) {
+                // Use same helper function logic
+                const extractValue = (field: any): string => {
+                  if (!field) return '';
+                  if (typeof field === 'string') return field;
+                  if (Array.isArray(field) && field.length > 0) {
+                    const firstItem = field[0];
+                    if (typeof firstItem === 'string') return firstItem;
+                    if (firstItem && typeof firstItem === 'object') {
+                      if (firstItem.full_name) return firstItem.full_name;
+                      if (firstItem.first_name && firstItem.last_name) {
+                        return `${firstItem.first_name} ${firstItem.last_name}`.trim();
+                      }
+                      if (firstItem.first_name) return firstItem.first_name;
+                      return firstItem.value || firstItem.name || firstItem.display_value || '';
+                    }
+                  }
+                  if (typeof field === 'object') {
+                    if (field.full_name) return field.full_name;
+                    if (field.first_name && field.last_name) {
+                      return `${field.first_name} ${field.last_name}`.trim();
+                    }
+                    if (field.first_name) return field.first_name;
+                    return field.value || field.name || field.display_value || '';
+                  }
+                  return '';
+                };
+                
+                const nameField = extractValue(person.values.name);
+                const firstName = extractValue(person.values.first_name);
+                const lastName = extractValue(person.values.last_name);
+                const fullName = `${firstName} ${lastName}`.trim();
+                displayName = nameField || fullName || person.id.record_id;
+              }
+              console.log(`    ✅ Deleted: ${displayName}`);
             }
           } catch (error) {
             this.stats.people.errors++;
@@ -356,11 +464,12 @@ class TestDataCleanup {
   }
 
   /**
-   * Find test companies using configured prefixes
+   * Find test companies using configured prefixes and common test patterns
    */
   private async findTestCompanies(): Promise<any[]> {
     const allCompanies: any[] = [];
     
+    // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
         const response = await retryWithBackoff(async () => {
@@ -379,15 +488,44 @@ class TestDataCleanup {
       }
     }
     
-    return allCompanies;
+    // Common test patterns (case-insensitive)
+    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example'];
+    for (const pattern of testPatterns) {
+      try {
+        // Try both exact prefix and case variations
+        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+          const response = await retryWithBackoff(async () => {
+            return this.client.post('/objects/companies/records/query', {
+              filter: {
+                name: { $starts_with: variant },
+              },
+              limit: 500
+            });
+          });
+          
+          const companies = response.data?.data ?? [];
+          allCompanies.push(...companies);
+        }
+      } catch (error) {
+        console.error(`    ❌ Error querying companies with pattern ${pattern}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Remove duplicates by record_id
+    const uniqueCompanies = allCompanies.filter((company, index, self) => 
+      index === self.findIndex(c => c.id.record_id === company.id.record_id)
+    );
+    
+    return uniqueCompanies;
   }
 
   /**
-   * Find test people using configured prefixes
+   * Find test people using configured prefixes, common test patterns, and test email domains
    */
   private async findTestPeople(): Promise<any[]> {
     const allPeople: any[] = [];
     
+    // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
         // Search by name
@@ -418,6 +556,63 @@ class TestDataCleanup {
         
       } catch (error) {
         console.error(`    ❌ Error querying people with prefix ${prefix}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Common test patterns for names (case-insensitive)
+    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example', 'Universal Test'];
+    for (const pattern of testPatterns) {
+      try {
+        // Try both exact prefix and case variations
+        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+          const response = await retryWithBackoff(async () => {
+            return this.client.post('/objects/people/records/query', {
+              filter: {
+                name: { $starts_with: variant },
+              },
+              limit: 500
+            });
+          });
+          
+          const people = response.data?.data ?? [];
+          allPeople.push(...people);
+        }
+      } catch (error) {
+        console.error(`    ❌ Error querying people with pattern ${pattern}:`, getDetailedErrorMessage(error));
+      }
+    }
+    
+    // Common test email domains and patterns
+    const testEmailPatterns = [
+      '@example.com',
+      '@test.com',
+      '@demo.com',
+      '@sample.com',
+      'test@',
+      'demo@',
+      'mock@',
+      'example@',
+      'universal-test-',
+      'test414@',
+      'valid@example',
+      'updated-valid@'
+    ];
+    
+    for (const emailPattern of testEmailPatterns) {
+      try {
+        const response = await retryWithBackoff(async () => {
+          return this.client.post('/objects/people/records/query', {
+            filter: {
+              email_addresses: { $contains: emailPattern },
+            },
+            limit: 500
+          });
+        });
+        
+        const people = response.data?.data ?? [];
+        allPeople.push(...people);
+      } catch (error) {
+        console.error(`    ❌ Error querying people with email pattern ${emailPattern}:`, getDetailedErrorMessage(error));
       }
     }
     

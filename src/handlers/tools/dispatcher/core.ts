@@ -251,7 +251,10 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolConfig
       );
     } else if (toolType === 'getRecordListMemberships') {
-      result = await handleGetRecordListMembershipsOperation(request, toolConfig);
+      result = await handleGetRecordListMembershipsOperation(
+        request,
+        toolConfig
+      );
 
       // Handle Batch operations (from emergency fix)
     } else if (toolType === 'batchUpdate') {

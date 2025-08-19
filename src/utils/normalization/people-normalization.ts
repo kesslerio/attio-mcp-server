@@ -9,6 +9,17 @@ import {
   SanitizedObject,
   InputSanitizer,
 } from '../../handlers/tool-configs/universal/schemas.js';
+import { isValidEmail } from '../validation/email-validation.js';
+import {
+  UniversalValidationError,
+  ErrorType,
+} from '../../handlers/tool-configs/universal/schemas.js';
+import {
+  EmailValidationConfig,
+  EmailValidationMode,
+  getEmailValidationConfig,
+  DEFAULT_EMAIL_VALIDATION_CONFIG,
+} from './email-validation-config.js';
 
 /**
  * People name input formats
@@ -150,37 +161,136 @@ export class PeopleDataNormalizer {
   }
 
   /**
+   * Extract email value from various input formats
+   */
+  private static extractEmailValue(emailField: unknown): string | null {
+    if (typeof emailField === 'string') {
+      return emailField;
+    }
+    if (typeof emailField === 'object' && emailField && 'value' in emailField) {
+      const value = (emailField as any).value;
+      if (typeof value === 'string') {
+        return value;
+      }
+    }
+    
+    // Handle malformed inputs - don't try to convert objects, arrays, etc. to strings
+    if (emailField === null || emailField === undefined) {
+      return null;
+    }
+    if (typeof emailField === 'object' || Array.isArray(emailField)) {
+      return null; // Don't convert objects/arrays to "[object object]" strings
+    }
+    if (typeof emailField === 'number' || typeof emailField === 'boolean') {
+      return null; // Don't convert numbers/booleans to strings for email validation
+    }
+    
+    return String(emailField);
+  }
+
+  /**
+   * Validate and process a single email based on configuration
+   */
+  private static validateAndProcessEmail(
+    emailValue: string,
+    config: EmailValidationConfig
+  ): string | null {
+    const normalized = InputSanitizer.normalizeEmail(emailValue);
+    
+    // Check if the normalized email is empty or invalid
+    if (!normalized || !normalized.trim()) {
+      if (config.mode === EmailValidationMode.STRICT) {
+        throw new UniversalValidationError(
+          `Invalid email format: "${emailValue}". Please provide a valid email address (e.g., user@example.com)`,
+          ErrorType.USER_ERROR,
+          {
+            field: 'email_addresses',
+            suggestion: 'Ensure email addresses are in the format: user@domain.com',
+          }
+        );
+      }
+      return null;
+    }
+
+    if (!isValidEmail(normalized)) {
+      switch (config.mode) {
+        case EmailValidationMode.STRICT:
+          throw new UniversalValidationError(
+            `Invalid email format: "${normalized}". Please provide a valid email address (e.g., user@example.com)`,
+            ErrorType.USER_ERROR,
+            {
+              field: 'email_addresses',
+              suggestion:
+                'Ensure email addresses are in the format: user@domain.com',
+            }
+          );
+
+        case EmailValidationMode.WARN:
+          config.logger?.(
+            `WARNING: Invalid email format "${normalized}" was skipped. Consider updating to a valid format.`,
+            'warn'
+          );
+          return null;
+
+        case EmailValidationMode.LEGACY:
+          if (config.logDeprecationWarnings) {
+            config.logger?.(
+              'DEPRECATION WARNING: Invalid emails are being silently ignored. This behavior will change in a future version. Use EMAIL_VALIDATION_MODE=strict for new behavior.',
+              'warn'
+            );
+          }
+          return null;
+
+        default:
+          return null;
+      }
+    }
+
+    return normalized;
+  }
+
+  /**
    * Normalize email input to standard format
+   *
+   * @param input - Email input in various formats
+   * @param config - Email validation configuration (optional)
    */
   static normalizeEmails(
-    input: any
+    input: any,
+    config: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): Array<{ email_address: string; email_type?: string }> | undefined {
-    if (!input) return undefined;
+    if (input === null || input === undefined) return undefined;
 
     const emails: Array<{ email_address: string; email_type?: string }> = [];
 
     // Handle string input
     if (typeof input === 'string') {
-      const normalized = InputSanitizer.normalizeEmail(input);
-      if (normalized && this.isValidEmail(normalized)) {
-        emails.push({ email_address: normalized });
+      const validatedEmail = this.validateAndProcessEmail(input, config);
+      if (validatedEmail) {
+        emails.push({ email_address: validatedEmail });
       }
     }
     // Handle array input
     else if (Array.isArray(input)) {
       for (const item of input) {
         if (typeof item === 'string') {
-          const normalized = InputSanitizer.normalizeEmail(item);
-          if (normalized && this.isValidEmail(normalized)) {
-            emails.push({ email_address: normalized });
+          const validatedEmail = this.validateAndProcessEmail(item, config);
+          if (validatedEmail) {
+            emails.push({ email_address: validatedEmail });
           }
-        } else if (typeof item === 'object' && item.email_address) {
-          const normalized = InputSanitizer.normalizeEmail(item.email_address);
-          if (normalized && this.isValidEmail(normalized)) {
-            emails.push({
-              email_address: normalized,
-              email_type: item.email_type || item.type,
-            });
+        } else if (typeof item === 'object' && item && item.email_address) {
+          const emailValue = this.extractEmailValue(item.email_address);
+          if (emailValue) {
+            const validatedEmail = this.validateAndProcessEmail(
+              emailValue,
+              config
+            );
+            if (validatedEmail) {
+              emails.push({
+                email_address: validatedEmail,
+                email_type: item.email_type || item.type,
+              });
+            }
           }
         }
       }
@@ -189,31 +299,37 @@ export class PeopleDataNormalizer {
     else if (typeof input === 'object') {
       // Check for email_address field
       if (input.email_address) {
-        const normalized = InputSanitizer.normalizeEmail(input.email_address);
-        if (normalized && this.isValidEmail(normalized)) {
-          emails.push({
-            email_address: normalized,
-            email_type: input.email_type || input.type,
-          });
+        const emailValue = this.extractEmailValue(input.email_address);
+        if (emailValue) {
+          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          if (validatedEmail) {
+            emails.push({
+              email_address: validatedEmail,
+              email_type: input.email_type || input.type,
+            });
+          }
         }
       }
       // Check for email_addresses field
-      else if (input.email_addresses) {
-        const normalized = this.normalizeEmails(input.email_addresses);
+      else if (input.email_addresses && Array.isArray(input.email_addresses)) {
+        const normalized = this.normalizeEmails(input.email_addresses, config);
         if (normalized) {
           emails.push(...normalized);
         }
       }
       // Check for email field (singular)
       else if (input.email) {
-        const normalized = InputSanitizer.normalizeEmail(input.email);
-        if (normalized && this.isValidEmail(normalized)) {
-          emails.push({ email_address: normalized });
+        const emailValue = this.extractEmailValue(input.email);
+        if (emailValue) {
+          const validatedEmail = this.validateAndProcessEmail(emailValue, config);
+          if (validatedEmail) {
+            emails.push({ email_address: validatedEmail });
+          }
         }
       }
       // Check for emails field (plural)
-      else if (input.emails) {
-        const normalized = this.normalizeEmails(input.emails);
+      else if (input.emails && Array.isArray(input.emails)) {
+        const normalized = this.normalizeEmails(input.emails, config);
         if (normalized) {
           emails.push(...normalized);
         }
@@ -221,40 +337,6 @@ export class PeopleDataNormalizer {
     }
 
     return emails.length > 0 ? emails : undefined;
-  }
-
-  /**
-   * Validate email format
-   */
-  private static isValidEmail(email: string): boolean {
-    // More comprehensive email validation regex that handles:
-    // - International domains
-    // - Plus addressing (user+tag@domain.com)
-    // - Multiple subdomains
-    // - TLDs from 2 to 63 characters
-    // Based on RFC 5322 with practical limitations
-    const emailRegex =
-      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-
-    // Additional validation for edge cases
-    if (!emailRegex.test(email)) {
-      return false;
-    }
-
-    // Check for reasonable length limits
-    if (email.length > 254) {
-      // RFC 5321 limit
-      return false;
-    }
-
-    // Check local part length (before @)
-    const [localPart] = email.split('@');
-    if (localPart.length > 64) {
-      // RFC 5321 limit
-      return false;
-    }
-
-    return true;
   }
 
   /**
@@ -362,8 +444,14 @@ export class PeopleDataNormalizer {
 
   /**
    * Normalize complete people record data
+   *
+   * @param data - People data to normalize
+   * @param emailConfig - Email validation configuration (optional)
    */
-  static normalizePeopleData(data: any): NormalizedPeopleData {
+  static normalizePeopleData(
+    data: any,
+    emailConfig: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
+  ): NormalizedPeopleData {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return {};
     }
@@ -400,7 +488,7 @@ export class PeopleDataNormalizer {
     const hasEmailField = emailFields.some((field) => field in sanitized);
 
     if (hasEmailField) {
-      const emailData = this.normalizeEmails(sanitized);
+      const emailData = this.normalizeEmails(sanitized, emailConfig);
       if (emailData) {
         normalized.email_addresses = emailData;
       }

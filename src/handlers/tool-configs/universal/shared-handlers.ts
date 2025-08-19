@@ -34,21 +34,13 @@ import {
   getCompanySocialInfo,
 } from '../../../objects/companies/index.js';
 
-import {
-  getListDetails,
-} from '../../../objects/lists.js';
+import { getListDetails } from '../../../objects/lists.js';
 
-import {
-  getPersonDetails,
-} from '../../../objects/people/index.js';
+import { getPersonDetails } from '../../../objects/people/index.js';
 
-import {
-  getObjectRecord,
-} from '../../../objects/records/index.js';
+import { getObjectRecord } from '../../../objects/records/index.js';
 
-import {
-  getTask,
-} from '../../../objects/tasks.js';
+import { getTask } from '../../../objects/tasks.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -113,9 +105,12 @@ export async function handleUniversalGetAttributes(
  * Universal discover attributes handler
  */
 export async function handleUniversalDiscoverAttributes(
-  resource_type: UniversalResourceType
+  resource_type: UniversalResourceType,
+  options?: {
+    categories?: string[]; // NEW: Category filtering support
+  }
 ): Promise<Record<string, unknown>> {
-  return UniversalMetadataService.discoverAttributes(resource_type);
+  return UniversalMetadataService.discoverAttributes(resource_type, options);
 }
 
 /**

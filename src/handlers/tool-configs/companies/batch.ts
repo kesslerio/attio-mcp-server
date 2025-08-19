@@ -9,11 +9,11 @@ import {
   batchGetCompanyDetails,
 } from '../../../objects/batch-companies.js';
 import { ToolConfig } from '../../tool-types.js';
-import { 
-  BatchResponse, 
-  BatchItemResult, 
-  extractBatchSummary, 
-  extractBatchResults 
+import {
+  BatchResponse,
+  BatchItemResult,
+  extractBatchSummary,
+  extractBatchResults,
 } from '../../../types/batch-types.js';
 import { AttioRecord } from '../../../types/attio.js';
 

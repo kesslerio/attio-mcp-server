@@ -29,9 +29,9 @@ import {
 import { getBatchSizeLimit } from '../../config/security-limits.js';
 
 // Import universal types for enhanced batch search support
-import { 
-  UniversalResourceType, 
-  UniversalSearchParams 
+import {
+  UniversalResourceType,
+  UniversalSearchParams,
 } from '../../handlers/tool-configs/universal/types.js';
 
 // Import UniversalSearchService for resource type conversions
@@ -326,18 +326,29 @@ export interface UniversalBatchSearchResult {
 /**
  * Type guard to check if a universal resource type is supported by legacy API
  */
-function isLegacyResourceType(universalType: UniversalResourceType): universalType is UniversalResourceType.COMPANIES | UniversalResourceType.PEOPLE {
-  return universalType === UniversalResourceType.COMPANIES || universalType === UniversalResourceType.PEOPLE;
+function isLegacyResourceType(
+  universalType: UniversalResourceType
+): universalType is
+  | UniversalResourceType.COMPANIES
+  | UniversalResourceType.PEOPLE {
+  return (
+    universalType === UniversalResourceType.COMPANIES ||
+    universalType === UniversalResourceType.PEOPLE
+  );
 }
 
 /**
  * Convert UniversalResourceType to ResourceType for legacy API compatibility
  * Uses explicit type guards to ensure type safety
  */
-function convertUniversalResourceType(universalType: UniversalResourceType): ResourceType {
+function convertUniversalResourceType(
+  universalType: UniversalResourceType
+): ResourceType {
   // Use type guard for safe conversion
   if (!isLegacyResourceType(universalType)) {
-    throw new Error(`Resource type ${universalType} is not supported by legacy batch API. Use UniversalSearchService path instead.`);
+    throw new Error(
+      `Resource type ${universalType} is not supported by legacy batch API. Use UniversalSearchService path instead.`
+    );
   }
 
   switch (universalType) {
@@ -354,7 +365,7 @@ function convertUniversalResourceType(universalType: UniversalResourceType): Res
 /**
  * Enhanced batch search for universal tools with error isolation
  * Supports all universal resource types and returns formatted results
- * 
+ *
  * @param resourceType - Universal resource type to search
  * @param queries - Array of search query strings
  * @param searchParams - Additional search parameters (limit, offset, filters)
@@ -374,7 +385,7 @@ export async function universalBatchSearch(
 ): Promise<UniversalBatchSearchResult[]> {
   // Performance timing start
   const performanceStart = performance.now();
-  
+
   // Validate batch size for search operations
   const sizeValidation = validateBatchSize(queries, 'search', resourceType);
   if (!sizeValidation.isValid) {
@@ -385,37 +396,43 @@ export async function universalBatchSearch(
   }
 
   const { limit, offset, filters } = searchParams || {};
-  
+
   // Log batch search initiation
-  console.log(`[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`);
-  
+  console.log(
+    `[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`
+  );
+
   try {
     // Handle resource types not supported by legacy batch API
-    if ([
-      UniversalResourceType.LISTS,
-      UniversalResourceType.RECORDS, 
-      UniversalResourceType.TASKS,
-      UniversalResourceType.DEALS
-    ].includes(resourceType)) {
+    if (
+      [
+        UniversalResourceType.LISTS,
+        UniversalResourceType.RECORDS,
+        UniversalResourceType.TASKS,
+        UniversalResourceType.DEALS,
+      ].includes(resourceType)
+    ) {
       // Use UniversalSearchService for these resource types
       const result = await handleUniversalResourceTypeBatchSearch(
-        resourceType, 
-        queries, 
+        resourceType,
+        queries,
         { limit, offset, filters }
       );
-      
+
       // Log performance metrics
       const performanceEnd = performance.now();
       const duration = performanceEnd - performanceStart;
-      const successCount = result.filter(r => r.success).length;
-      console.log(`[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`);
-      
+      const successCount = result.filter((r) => r.success).length;
+      console.log(
+        `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
+      );
+
       return result;
     }
 
     // For companies and people, use the existing optimized batch API
     const legacyResourceType = convertUniversalResourceType(resourceType);
-    
+
     const batchResponse = await batchSearchObjects<AttioRecord>(
       legacyResourceType,
       queries,
@@ -427,30 +444,36 @@ export async function universalBatchSearch(
       success: result.success,
       query: queries[index],
       result: result.success ? result.data : undefined,
-      error: result.success ? undefined : 
-        (result.error instanceof Error ? result.error.message : String(result.error))
+      error: result.success
+        ? undefined
+        : result.error instanceof Error
+          ? result.error.message
+          : String(result.error),
     }));
-    
+
     // Log performance metrics
     const performanceEnd = performance.now();
     const duration = performanceEnd - performanceStart;
-    const successCount = result.filter(r => r.success).length;
-    console.log(`[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`);
-    
-    return result;
+    const successCount = result.filter((r) => r.success).length;
+    console.log(
+      `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
+    );
 
+    return result;
   } catch (error: unknown) {
     // Log performance metrics for failed operations
     const performanceEnd = performance.now();
     const duration = performanceEnd - performanceStart;
-    console.log(`[Performance] Batch search failed for ${resourceType}: ${duration.toFixed(2)}ms, error: ${error instanceof Error ? error.message : String(error)}`);
-    
+    console.log(
+      `[Performance] Batch search failed for ${resourceType}: ${duration.toFixed(2)}ms, error: ${error instanceof Error ? error.message : String(error)}`
+    );
+
     // If batch operation fails completely, return error for all queries
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return queries.map(query => ({
+    return queries.map((query) => ({
       success: false,
       query,
-      error: errorMessage
+      error: errorMessage,
     }));
   }
 }
@@ -479,53 +502,56 @@ async function handleUniversalResourceTypeBatchSearch(
           query,
           filters: searchParams.filters,
           limit: searchParams.limit,
-          offset: searchParams.offset
+          offset: searchParams.offset,
         } as UniversalSearchParams);
 
         results.push({
           success: true,
           query,
-          result: searchResult
+          result: searchResult,
         });
       } catch (error: unknown) {
         results.push({
           success: false,
           query,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     })
   );
 
   // Ensure results are in the same order as queries
-  return queries.map(query => 
-    results.find(r => r.query === query) || {
-      success: false,
-      query,
-      error: 'Query processing failed'
-    }
+  return queries.map(
+    (query) =>
+      results.find((r) => r.query === query) || {
+        success: false,
+        query,
+        error: 'Query processing failed',
+      }
   );
 }
 
 /**
  * Enhanced batch get details for universal tools
  * Supports all universal resource types with error isolation
- * 
+ *
  * @param resourceType - Universal resource type
  * @param recordIds - Array of record IDs to fetch
- * @param batchConfig - Optional batch configuration  
+ * @param batchConfig - Optional batch configuration
  * @returns Array of get results with error isolation
  */
 export async function universalBatchGetDetails(
   resourceType: UniversalResourceType,
   recordIds: string[],
   batchConfig?: Partial<BatchConfig>
-): Promise<Array<{
-  success: boolean;
-  recordId: string;
-  result?: AttioRecord;
-  error?: string;
-}>> {
+): Promise<
+  Array<{
+    success: boolean;
+    recordId: string;
+    result?: AttioRecord;
+    error?: string;
+  }>
+> {
   // Validate batch size
   const sizeValidation = validateBatchSize(recordIds, 'get', resourceType);
   if (!sizeValidation.isValid) {
@@ -536,9 +562,13 @@ export async function universalBatchGetDetails(
   }
 
   // For companies and people, use existing batch API
-  if ([UniversalResourceType.COMPANIES, UniversalResourceType.PEOPLE].includes(resourceType)) {
+  if (
+    [UniversalResourceType.COMPANIES, UniversalResourceType.PEOPLE].includes(
+      resourceType
+    )
+  ) {
     const legacyResourceType = convertUniversalResourceType(resourceType);
-    
+
     try {
       const batchResponse = await batchGetObjectDetails<AttioRecord>(
         legacyResourceType,
@@ -550,25 +580,28 @@ export async function universalBatchGetDetails(
         success: result.success,
         recordId: recordIds[index],
         result: result.success ? result.data : undefined,
-        error: result.success ? undefined : 
-          (result.error instanceof Error ? result.error.message : String(result.error))
+        error: result.success
+          ? undefined
+          : result.error instanceof Error
+            ? result.error.message
+            : String(result.error),
       }));
-
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return recordIds.map(recordId => ({
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return recordIds.map((recordId) => ({
         success: false,
         recordId,
-        error: errorMessage
+        error: errorMessage,
       }));
     }
   }
 
   // For other resource types, handle individually with error isolation
   // This would use the appropriate universal service methods
-  return recordIds.map(recordId => ({
+  return recordIds.map((recordId) => ({
     success: false,
     recordId,
-    error: `Batch get details not yet implemented for resource type: ${resourceType}`
+    error: `Batch get details not yet implemented for resource type: ${resourceType}`,
   }));
 }
