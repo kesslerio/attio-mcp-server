@@ -250,20 +250,19 @@ describe('UniversalUpdateService', () => {
       expect(result.updated_at).toBeDefined();
     });
 
-    it('should update a task record with field transformation', async () => {
+    it('should update a task record with field transformation (excluding immutable content)', async () => {
       // Set E2E mode to get mock data directly without conversion
       process.env.E2E_MODE = 'true';
 
       const mockTaskRecord: AttioRecord = {
         id: { record_id: 'task_ghi', task_id: 'task_ghi' },
-        values: { content: 'Updated Task' },
+        values: { title: 'Updated Task Status' },
       };
       vi.mocked(MockService.updateTask).mockResolvedValue(mockTaskRecord);
 
-      // Mock field mapping for tasks
+      // Mock field mapping for tasks (without content)
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: {
-          content: 'Updated Task',
           status: 'completed',
           assignee_id: 'user_123',
           due_date: '2024-02-01',
@@ -278,7 +277,6 @@ describe('UniversalUpdateService', () => {
         record_id: 'task_ghi',
         record_data: {
           values: {
-            content: 'Updated Task',
             status: 'completed',
             assignee_id: 'user_123',
             due_date: '2024-02-01',
@@ -288,7 +286,6 @@ describe('UniversalUpdateService', () => {
       });
 
       expect(MockService.updateTask).toHaveBeenCalledWith('task_ghi', {
-        content: 'Updated Task',
         status: 'completed',
         assigneeId: 'user_123',
         dueDate: '2024-02-01',
@@ -299,9 +296,37 @@ describe('UniversalUpdateService', () => {
       expect(result.id.record_id).toBe('task_ghi');
       expect(result.id.task_id).toBe('task_ghi');
       expect(result.id.object_id).toBe('tasks');
-      expect(result.values.content).toBe('Updated Task');
-      expect(result.values.title).toBe('Updated Task'); // Issue #480 compatibility
       expect(result.updated_at).toBeDefined();
+    });
+
+    it('should reject task content updates with helpful error message', async () => {
+      // Mock field mapping that includes content (which should trigger validation error)
+      vi.mocked(mapRecordFields).mockReturnValue({
+        mapped: {
+          content: 'This should fail',
+          status: 'completed',
+        },
+        warnings: [],
+        errors: [],
+      });
+
+      await expect(
+        UniversalUpdateService.updateRecord({
+          resource_type: UniversalResourceType.TASKS,
+          record_id: 'task_123',
+          record_data: {
+            values: {
+              content: 'This should fail',
+              status: 'completed',
+            },
+          },
+        })
+      ).rejects.toThrow(
+        'Task content cannot be updated after creation. Content is immutable in the Attio API.'
+      );
+
+      // Ensure MockService.updateTask was never called since validation failed
+      expect(MockService.updateTask).not.toHaveBeenCalled();
     });
 
     it('should handle field validation warnings and suggestions', async () => {
@@ -529,7 +554,7 @@ describe('UniversalUpdateService', () => {
         suggestions: [],
       });
       vi.mocked(mapRecordFields).mockReturnValue({
-        mapped: { content: 'Test Task' },
+        mapped: { status: 'completed' },
         warnings: [],
         errors: [],
       });
@@ -540,21 +565,20 @@ describe('UniversalUpdateService', () => {
 
       const mockTaskRecord: AttioRecord = {
         id: { record_id: 'task_123', task_id: 'task_123' },
-        values: { content: 'Mock Task' },
+        values: { title: 'Mock Task', status: 'completed' },
       };
       vi.mocked(MockService.updateTask).mockResolvedValue(mockTaskRecord);
 
       const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_123',
-        record_data: { values: { content: 'Test Task' } },
+        record_data: { values: { status: 'completed' } },
       });
 
       // Expect normalized response format with additional fields for E2E mode tasks
       expect(result.id.record_id).toBe('task_123');
       expect(result.id.task_id).toBe('task_123');
       expect(result.id.object_id).toBe('tasks');
-      expect(result.values.content).toBe('Mock Task');
       expect(result.values.title).toBe('Mock Task'); // Issue #480 compatibility
       expect(result.updated_at).toBeDefined();
     });
@@ -563,7 +587,7 @@ describe('UniversalUpdateService', () => {
       const mockTask = {
         id: { task_id: 'task_123' },
         content: 'Real Task',
-        status: 'pending',
+        status: 'completed',
         assignee: null,
         due_date: null,
         linked_records: null,
@@ -575,7 +599,7 @@ describe('UniversalUpdateService', () => {
       const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_123',
-        record_data: { values: { content: 'Test Task' } },
+        record_data: { values: { status: 'completed' } },
       });
 
       // Should convert using UniversalUtilityService.convertTaskToRecord and then normalize

@@ -377,9 +377,17 @@ export class UniversalUpdateService {
     // Now we need to adapt them for the updateTask function
     const taskUpdateData: Record<string, unknown> = {};
 
-    // Handle content field if present
+    // Validate immutable fields - task content cannot be updated after creation
     if (mappedData.content !== undefined) {
-      taskUpdateData.content = mappedData.content;
+      throw new UniversalValidationError(
+        'Task content cannot be updated after creation. Content is immutable in the Attio API.',
+        ErrorType.USER_ERROR,
+        {
+          field: 'content',
+          suggestion:
+            'You can update other task fields like status, assignee, due_date, or linked_records, but content cannot be modified.',
+        }
+      );
     }
 
     // Handle status field
