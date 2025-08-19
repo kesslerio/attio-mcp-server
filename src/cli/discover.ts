@@ -7,8 +7,8 @@ import { hideBin } from 'yargs/helpers';
 import { discoverAttributes } from './commands/attributes.js';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-dotenv.config();
+// Load environment variables from .env file (silent mode)
+dotenv.config({ debug: false });
 
 /**
  * Main CLI entrypoint

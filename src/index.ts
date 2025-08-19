@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// Load environment variables from .env file
+// Load environment variables from .env file (silent mode to prevent stdout contamination)
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ debug: false });
 
 import fs from 'fs'; // Added for PID file
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

@@ -34,4 +34,4 @@ check_api_key
 
 # Default to 4GB heap size
 echo "Running with increased memory allocation (4GB)..."
-NODE_OPTIONS="--max-old-space-size=4096" node -r dotenv/config dist/cli/discover.js "$@"
+NODE_OPTIONS="--max-old-space-size=4096" node dist/cli/discover.js "$@"

@@ -398,7 +398,7 @@ export async function universalBatchSearch(
   const { limit, offset, filters } = searchParams || {};
 
   // Log batch search initiation
-  console.log(
+  console.error(
     `[Performance] Starting batch search for ${resourceType}: ${queries.length} queries`
   );
 
@@ -423,7 +423,7 @@ export async function universalBatchSearch(
       const performanceEnd = performance.now();
       const duration = performanceEnd - performanceStart;
       const successCount = result.filter((r) => r.success).length;
-      console.log(
+      console.error(
         `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
       );
 

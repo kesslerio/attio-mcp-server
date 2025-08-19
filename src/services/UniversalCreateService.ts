@@ -156,17 +156,20 @@ export class UniversalCreateService {
   ): Promise<AttioRecord> {
     const { resource_type, record_data } = params;
 
-    console.log('[UniversalCreateService.createRecord] DEBUG - Entry point:', {
-      resource_type,
-      record_data: JSON.stringify(record_data, null, 2),
-    });
+    console.error(
+      '[UniversalCreateService.createRecord] DEBUG - Entry point:',
+      {
+        resource_type,
+        record_data: JSON.stringify(record_data, null, 2),
+      }
+    );
 
     // Pre-validate fields and provide helpful suggestions
     const fieldValidation = validateFields(
       resource_type,
       record_data.values || record_data
     );
-    console.log(
+    console.error(
       '[UniversalCreateService.createRecord] DEBUG - Field validation result:',
       {
         valid: fieldValidation.valid,
@@ -177,7 +180,7 @@ export class UniversalCreateService {
     );
 
     if (fieldValidation.warnings.length > 0) {
-      console.log(
+      console.error(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
       );
@@ -186,7 +189,7 @@ export class UniversalCreateService {
       const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
-      console.log('Field suggestions:', truncated.join('\n'));
+      console.error('Field suggestions:', truncated.join('\n'));
     }
     if (!fieldValidation.valid) {
       // Build a clear, helpful error message
@@ -241,7 +244,7 @@ export class UniversalCreateService {
 
     const { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
-      console.log('Field mapping applied:', warnings.join('\n'));
+      console.error('Field mapping applied:', warnings.join('\n'));
     }
 
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
@@ -733,7 +736,7 @@ export class UniversalCreateService {
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
-      console.log(
+      console.error(
         `Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`
       );
       return this.createRecord({

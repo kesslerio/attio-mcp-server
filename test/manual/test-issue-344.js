@@ -7,7 +7,7 @@
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-require('dotenv').config();
+require('dotenv').config({ debug: false });
 
 // Set debug mode for detailed logging
 process.env.MCP_DEBUG_REQUESTS = 'true';

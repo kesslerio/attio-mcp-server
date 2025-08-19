@@ -366,7 +366,7 @@ export class FilterValidationError extends Error {
  * } catch (error: unknown) {
  *   if (error instanceof RelationshipFilterError) {
  *     // Handle relationship filter error
- *     console.log(`Relationship error between ${error.sourceType} and ${error.targetType}`);
+ *     console.error(`Relationship error between ${error.sourceType} and ${error.targetType}`);
  *   }
  * }
  * ```
