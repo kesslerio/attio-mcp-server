@@ -332,7 +332,8 @@ describe('Issue #414: Security Validation Tests', () => {
 
         expect(result.valid).toBe(true);
         expect(result.sanitized!.length).toBeLessThanOrEqual(50);
-        expect(endTime - startTime).toBeLessThan(10); // Should handle quickly
+        // Allow more time for older Node.js versions (Node 20.x ~13ms, Node 22.x ~<10ms)
+        expect(endTime - startTime).toBeLessThan(50); // Should handle quickly across Node versions
       });
     });
   });
