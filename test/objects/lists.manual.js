@@ -4,9 +4,9 @@
  * Simple test script for Lists API functionality
  */
 
-// Load environment variables from .env file
+// Load environment variables from .env file with debug disabled to prevent banner output
 const dotenv = require('dotenv');
-dotenv.config();
+dotenv.config({ debug: false });
 
 const {
   getLists,

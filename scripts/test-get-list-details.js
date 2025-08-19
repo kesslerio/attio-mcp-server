@@ -7,8 +7,8 @@ const registry = require('../build/handlers/tools/registry.js');
 const attioClient = require('../build/api/attio-client.js');
 const dotenv = require('dotenv');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables with debug disabled to prevent banner output
+dotenv.config({ debug: false });
 
 // Initialize the Attio client with the API key from environment variables
 const apiKey = process.env.ATTIO_API_KEY;

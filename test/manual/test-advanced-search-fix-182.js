@@ -6,7 +6,10 @@
  * 1. Ensure you have a valid ATTIO_API_KEY environment variable set
  * 2. Run with: node test/manual/test-advanced-search-fix-182.js
  */
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+
+// Load environment variables with debug disabled to prevent banner output
+dotenv.config({ debug: false });
 import { advancedSearchCompanies } from '../../dist/objects/companies/index.js';
 import { initializeAttioClient } from '../../dist/api/attio-client.js';
 
