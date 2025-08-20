@@ -157,7 +157,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email_address;
+          const emailValue = (emailItem as Record<string, unknown>)
+            .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -293,7 +294,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email_address;
+          const emailValue = (emailItem as Record<string, unknown>)
+            .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {

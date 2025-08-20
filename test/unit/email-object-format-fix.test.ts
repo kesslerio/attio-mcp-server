@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Email Object Format Fix
- * 
+ *
  * Verifies the fix for "[object object]" email validation errors
  * Issue #518: Resolve dotenv banner contamination for MCP protocol compliance
  */
@@ -15,16 +15,16 @@ describe('Email Object Format Fix - Issue #518', () => {
     it('should not convert email_addresses arrays to "[object object]" strings', () => {
       const input = {
         name: 'Test User',
-        email_addresses: [{ email_address: 'test@example.com' }]
+        email_addresses: [{ email_address: 'test@example.com' }],
       };
 
       const sanitized = InputSanitizer.sanitizeObject(input);
-      
+
       expect(sanitized).toEqual({
         name: 'Test User',
-        email_addresses: [{ email_address: 'test@example.com' }]
+        email_addresses: [{ email_address: 'test@example.com' }],
       });
-      
+
       // Verify it's NOT the buggy "[object object]" string
       expect(sanitized.email_addresses).not.toBe('[object object]');
       expect(Array.isArray(sanitized.email_addresses)).toBe(true);
@@ -33,14 +33,14 @@ describe('Email Object Format Fix - Issue #518', () => {
     it('should still normalize string email fields', () => {
       const input = {
         name: 'Test User',
-        email: 'TEST@EXAMPLE.COM'  // String field should still be normalized
+        email: 'TEST@EXAMPLE.COM', // String field should still be normalized
       };
 
       const sanitized = InputSanitizer.sanitizeObject(input);
-      
+
       expect(sanitized).toEqual({
         name: 'Test User',
-        email: 'test@example.com'  // Should be lowercased
+        email: 'test@example.com', // Should be lowercased
       });
     });
   });
@@ -49,39 +49,39 @@ describe('Email Object Format Fix - Issue #518', () => {
     it('should handle {email_address: "..."} format in arrays', () => {
       const input = {
         name: 'Test User',
-        email_addresses: [{ email_address: 'test@example.com' }]
+        email_addresses: [{ email_address: 'test@example.com' }],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
-        { email_address: 'test@example.com' }
+        { email_address: 'test@example.com' },
       ]);
     });
 
     it('should handle {value: "..."} format in arrays', () => {
       const input = {
-        name: 'Test User', 
-        email_addresses: [{ value: 'test@example.com' }]
+        name: 'Test User',
+        email_addresses: [{ value: 'test@example.com' }],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
-        { email_address: 'test@example.com' }
+        { email_address: 'test@example.com' },
       ]);
     });
 
     it('should handle {email: "..."} format in arrays', () => {
       const input = {
         name: 'Test User',
-        email_addresses: [{ email: 'test@example.com' }]
+        email_addresses: [{ email: 'test@example.com' }],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
-        { email_address: 'test@example.com' }
+        { email_address: 'test@example.com' },
       ]);
     });
 
@@ -90,15 +90,15 @@ describe('Email Object Format Fix - Issue #518', () => {
         name: 'Test User',
         email_addresses: [
           { email_address: 'work@example.com', email_type: 'work' },
-          { value: 'personal@example.com', type: 'personal' }
-        ]
+          { value: 'personal@example.com', type: 'personal' },
+        ],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
         { email_address: 'work@example.com', email_type: 'work' },
-        { email_address: 'personal@example.com', email_type: 'personal' }
+        { email_address: 'personal@example.com', email_type: 'personal' },
       ]);
     });
   });
@@ -109,7 +109,7 @@ describe('Email Object Format Fix - Issue #518', () => {
         { email_addresses: ['test@example.com'] },
         { email_addresses: [{ email_address: 'test@example.com' }] },
         { email_addresses: [{ value: 'test@example.com' }] },
-        { email_addresses: [{ email: 'test@example.com' }] }
+        { email_addresses: [{ email: 'test@example.com' }] },
       ];
 
       for (const testCase of testCases) {
@@ -123,7 +123,7 @@ describe('Email Object Format Fix - Issue #518', () => {
     it('should still validate and reject invalid emails properly', () => {
       const input = {
         name: 'Test User',
-        email_addresses: [{ email_address: 'invalid-email' }]
+        email_addresses: [{ email_address: 'invalid-email' }],
       };
 
       expect(() => {
@@ -137,14 +137,14 @@ describe('Email Object Format Fix - Issue #518', () => {
     it('should maintain backward compatibility with string arrays', () => {
       const input = {
         name: 'Test User',
-        email_addresses: ['test@example.com', 'work@example.com']
+        email_addresses: ['test@example.com', 'work@example.com'],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
         { email_address: 'test@example.com' },
-        { email_address: 'work@example.com' }
+        { email_address: 'work@example.com' },
       ]);
 
       expect(() => {
@@ -158,16 +158,16 @@ describe('Email Object Format Fix - Issue #518', () => {
         email_addresses: [
           'string@example.com',
           { email_address: 'object@example.com' },
-          { value: 'value@example.com' }
-        ]
+          { value: 'value@example.com' },
+        ],
       };
 
       const normalized = PeopleDataNormalizer.normalizePeopleData(input);
-      
+
       expect(normalized.email_addresses).toEqual([
         { email_address: 'string@example.com' },
         { email_address: 'object@example.com' },
-        { email_address: 'value@example.com' }
+        { email_address: 'value@example.com' },
       ]);
 
       expect(() => {

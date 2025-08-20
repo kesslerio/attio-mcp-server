@@ -312,7 +312,8 @@ export class ValidationService {
             emailItem &&
             'email_address' in emailItem
           ) {
-            const emailValue = (emailItem as Record<string, unknown>).email_address;
+            const emailValue = (emailItem as Record<string, unknown>)
+              .email_address;
             if (typeof emailValue === 'string') {
               emailAddress = emailValue;
             } else {
@@ -321,7 +322,8 @@ export class ValidationService {
                 ErrorType.USER_ERROR,
                 {
                   field: field,
-                  suggestion: 'Ensure email_address field contains a string value',
+                  suggestion:
+                    'Ensure email_address field contains a string value',
                 }
               );
             }

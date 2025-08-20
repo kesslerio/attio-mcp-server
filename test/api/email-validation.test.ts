@@ -148,7 +148,7 @@ describe('Email Validation', () => {
             'email_addresses',
             [email]
           )
-        ).rejects.toThrow(`Invalid email format: ${email}`);
+        ).rejects.toThrow(`Invalid email format: "${email}"`);
       }
     });
 
