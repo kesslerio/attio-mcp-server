@@ -84,7 +84,7 @@ export async function linkRecordToTask(
       process.env.NODE_ENV === 'development' ||
       process.env.VERBOSE_TESTS === 'true'
     ) {
-      console.log('[MockInjection] Using mock data for task-record linking');
+      console.error('[MockInjection] Using mock data for task-record linking');
     }
 
     // Return mock success response

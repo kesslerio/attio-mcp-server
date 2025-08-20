@@ -264,7 +264,7 @@ export async function getAttributeTypeInfo(
   const attrMetadata = metadata.get(attributeSlug);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(
+    console.error(
       `[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}:`,
       {
         metadataSize: metadata.size,
@@ -281,7 +281,7 @@ export async function getAttributeTypeInfo(
 
   if (!attrMetadata) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`
       );
     }
@@ -469,7 +469,7 @@ export async function formatAttributeValue(
           attributeSlug === 'last_name')
       ) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[formatAttributeValue] Text field (people) direct:`, {
+          console.error(`[formatAttributeValue] Text field (people) direct:`, {
             input: value,
             output: value,
             objectSlug,
@@ -483,7 +483,7 @@ export async function formatAttributeValue(
         const arrayValue = Array.isArray(value) ? value : [value];
         const result = arrayValue.map((v) => ({ value: v }));
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[formatAttributeValue] Text field array wrapped:`, {
+          console.error(`[formatAttributeValue] Text field array wrapped:`, {
             input: value,
             output: result,
             objectSlug,
@@ -494,7 +494,7 @@ export async function formatAttributeValue(
       } else {
         const result = { value };
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[formatAttributeValue] Text field wrapped:`, {
+          console.error(`[formatAttributeValue] Text field wrapped:`, {
             input: value,
             output: result,
             objectSlug,
@@ -509,7 +509,7 @@ export async function formatAttributeValue(
       // Use the dedicated parser utility
       const parsedName = parsePersonalName(value);
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[formatAttributeValue] Personal name parsing:`, {
+        console.error(`[formatAttributeValue] Personal name parsing:`, {
           input: value,
           output: parsedName,
           objectSlug,
@@ -541,7 +541,7 @@ export async function formatAttributeValue(
       // Email is an array field but doesn't need value wrapping
       const emails = Array.isArray(value) ? value : [value];
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[formatAttributeValue] Email formatting:`, {
+        console.error(`[formatAttributeValue] Email formatting:`, {
           input: value,
           output: emails,
           objectSlug,

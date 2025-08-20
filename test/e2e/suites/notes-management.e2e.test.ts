@@ -79,7 +79,7 @@ describe.skipIf(
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     }
 
-    console.log('📊 Tool migration stats:', getToolMigrationStats());
+    console.error('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
       requiresRealApi: false, // Use mock data instead of real API for reliable testing
@@ -87,7 +87,9 @@ describe.skipIf(
       timeout: 120000,
     });
 
-    console.log('🚀 Starting Notes Management E2E Tests with Universal Tools');
+    console.error(
+      '🚀 Starting Notes Management E2E Tests with Universal Tools'
+    );
   }, 30000);
 
   afterAll(async () => {
@@ -96,7 +98,7 @@ describe.skipIf(
     // End comprehensive logging for this test suite
     endTestSuite();
 
-    console.log(
+    console.error(
       '✅ Notes Management E2E Tests completed with enhanced logging'
     );
   }, 30000);
@@ -116,7 +118,7 @@ describe.skipIf(
       E2EAssertions.expectCompanyRecord(company);
       testCompanies.push(company);
 
-      console.log('🏢 Created test company:', company.id.record_id);
+      console.error('🏢 Created test company:', company.id.record_id);
     }, 30000);
 
     it('should create test people for note testing', async () => {
@@ -129,14 +131,14 @@ describe.skipIf(
       E2EAssertions.expectPersonRecord(person);
       testPeople.push(person);
 
-      console.log('👤 Created test person:', person.id.record_id);
+      console.error('👤 Created test person:', person.id.record_id);
     }, 30000);
   });
 
   describe('Company Notes Management', () => {
     it('should create a company note with basic content', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping company note test - no test companies available'
         );
         return;
@@ -160,12 +162,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('📝 Created company note:', createdNote.title);
+      console.error('📝 Created company note:', createdNote.title);
     }, 30000);
 
     it('should retrieve company notes', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping get company notes test - no test companies available'
         );
         return;
@@ -193,15 +195,15 @@ describe.skipIf(
 
       if (noteArray.length > 0) {
         E2EAssertions.expectValidNoteCollection(noteArray);
-        console.log('📋 Retrieved company notes:', noteArray.length);
+        console.error('📋 Retrieved company notes:', noteArray.length);
       } else {
-        console.log('📋 No company notes found (expected for new test data)');
+        console.error('📋 No company notes found (expected for new test data)');
       }
     }, 30000);
 
     it('should create company note with markdown content', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping markdown note test - no test companies available'
         );
         return;
@@ -227,12 +229,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('📋 Created markdown company note:', createdNote.title);
+      console.error('📋 Created markdown company note:', createdNote.title);
     }, 30000);
 
     it('should handle company note creation with URI format', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping URI format test - no test companies available'
         );
         return;
@@ -256,12 +258,12 @@ describe.skipIf(
       E2EAssertions.expectValidNoteStructure(createdNote);
       createdNotes.push(createdNote);
 
-      console.log('🔗 Created company note via URI:', createdNote.title);
+      console.error('🔗 Created company note via URI:', createdNote.title);
     }, 30000);
 
     it('should handle pagination for company notes', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping pagination test - no test companies available'
         );
         return;
@@ -280,14 +282,16 @@ describe.skipIf(
       const notes = E2EAssertions.expectMcpData(response);
       expect(notes).toBeDefined();
 
-      console.log('📄 Pagination test completed for company notes');
+      console.error('📄 Pagination test completed for company notes');
     }, 15000);
   });
 
   describe('Person Notes Management', () => {
     it('should create a person note with basic content', async () => {
       if (testPeople.length === 0) {
-        console.log('⏭️ Skipping person note test - no test people available');
+        console.error(
+          '⏭️ Skipping person note test - no test people available'
+        );
         return;
       }
 
@@ -311,12 +315,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('👤 Created person note:', createdNote.title);
+      console.error('👤 Created person note:', createdNote.title);
     }, 30000);
 
     it('should retrieve person notes', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping get person notes test - no test people available'
         );
         return;
@@ -342,15 +346,15 @@ describe.skipIf(
 
       if (noteArray.length > 0) {
         E2EAssertions.expectValidNoteCollection(noteArray);
-        console.log('👥 Retrieved person notes:', noteArray.length);
+        console.error('👥 Retrieved person notes:', noteArray.length);
       } else {
-        console.log('👥 No person notes found (expected for new test data)');
+        console.error('👥 No person notes found (expected for new test data)');
       }
     }, 30000);
 
     it('should create person note with technical content', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping technical note test - no test people available'
         );
         return;
@@ -373,12 +377,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('🔧 Created technical person note:', createdNote.title);
+      console.error('🔧 Created technical person note:', createdNote.title);
     }, 30000);
 
     it('should create person note with markdown formatting', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping markdown person note test - no test people available'
         );
         return;
@@ -406,14 +410,14 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('📋 Created markdown person note:', createdNote.title);
+      console.error('📋 Created markdown person note:', createdNote.title);
     }, 30000);
   });
 
   describe('Note Content and Format Validation', () => {
     it('should handle notes with special characters', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping special characters test - no test companies available'
         );
         return;
@@ -439,12 +443,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('🔣 Created note with special characters');
+      console.error('🔣 Created note with special characters');
     }, 30000);
 
     it('should handle notes with Unicode and emoji', async () => {
       if (testPeople.length === 0) {
-        console.log('⏭️ Skipping Unicode test - no test people available');
+        console.error('⏭️ Skipping Unicode test - no test people available');
         return;
       }
 
@@ -466,12 +470,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('🌍 Created Unicode note with emoji');
+      console.error('🌍 Created Unicode note with emoji');
     }, 30000);
 
     it('should handle long content notes', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping long content test - no test companies available'
         );
         return;
@@ -495,7 +499,7 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log(
+      console.error(
         '📄 Created long content note:',
         createdNote.content.length,
         'characters'
@@ -504,7 +508,7 @@ describe.skipIf(
 
     it('should handle HTML formatted content', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping HTML content test - no test companies available'
         );
         return;
@@ -528,12 +532,12 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('🏷️ Created HTML formatted note');
+      console.error('🏷️ Created HTML formatted note');
     }, 30000);
 
     it('should handle minimal content notes', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping minimal content test - no test people available'
         );
         return;
@@ -557,14 +561,16 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.log('📌 Created minimal note');
+      console.error('📌 Created minimal note');
     }, 30000);
   });
 
   describe('Complex Note Scenarios', () => {
     it('should create a complete sales process note set', async () => {
       if (testCompanies.length === 0 || testPeople.length === 0) {
-        console.log('⏭️ Skipping sales process test - insufficient test data');
+        console.error(
+          '⏭️ Skipping sales process test - insufficient test data'
+        );
         return;
       }
 
@@ -597,12 +603,12 @@ describe.skipIf(
       const personNote = E2EAssertions.expectMcpData(personNoteResponse);
       createdNotes.push(personNote);
 
-      console.log('💼 Created sales process note set');
+      console.error('💼 Created sales process note set');
     }, 45000);
 
     it('should create customer success journey notes', async () => {
       if (testCompanies.length === 0 || testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping customer success test - insufficient test data'
         );
         return;
@@ -637,12 +643,12 @@ describe.skipIf(
       const feedbackNote = E2EAssertions.expectMcpData(feedbackResponse);
       createdNotes.push(feedbackNote);
 
-      console.log('🎯 Created customer success journey notes');
+      console.error('🎯 Created customer success journey notes');
     }, 45000);
 
     it('should create project management notes with markdown', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping project management test - no test companies available'
         );
         return;
@@ -672,7 +678,7 @@ describe.skipIf(
 
       createdNotes.push(statusNote);
 
-      console.log('📊 Created project management notes');
+      console.error('📊 Created project management notes');
     }, 30000);
   });
 
@@ -705,7 +711,7 @@ describe.skipIf(
 
     it('should validate required fields for company notes', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping validation test - no test companies available'
         );
         return;
@@ -760,7 +766,7 @@ describe.skipIf(
 
     it('should handle empty content gracefully', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping empty content test - no test companies available'
         );
         return;
@@ -789,7 +795,7 @@ describe.skipIf(
   describe('Performance and Scalability', () => {
     it('should handle concurrent note creation', async () => {
       if (testCompanies.length === 0 || testPeople.length === 0) {
-        console.log('⏭️ Skipping concurrent test - insufficient test data');
+        console.error('⏭️ Skipping concurrent test - insufficient test data');
         return;
       }
 
@@ -825,12 +831,12 @@ describe.skipIf(
         createdNotes.push(note);
       });
 
-      console.log('🚀 Concurrent note creation completed successfully');
+      console.error('🚀 Concurrent note creation completed successfully');
     }, 45000);
 
     it('should validate execution times', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping execution time test - no test companies available'
         );
         return;
@@ -850,12 +856,12 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(response);
       expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
 
-      console.log(`⚡ Note retrieval completed in ${executionTime}ms`);
+      console.error(`⚡ Note retrieval completed in ${executionTime}ms`);
     }, 15000);
 
     it('should handle batch note creation for performance testing', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping batch creation test - no test companies available'
         );
         return;
@@ -889,7 +895,7 @@ describe.skipIf(
       const totalTime = endTime - startTime;
       const avgTime = totalTime / batchNotes.length;
 
-      console.log(
+      console.error(
         `📊 Batch creation: ${batchNotes.length} notes in ${totalTime}ms (avg: ${avgTime}ms per note)`
       );
       expect(avgTime).toBeLessThan(5000); // Average should be under 5 seconds per note
@@ -899,7 +905,7 @@ describe.skipIf(
   describe('Data Consistency and Integration', () => {
     it('should maintain note structure consistency across different record types', async () => {
       if (testCompanies.length === 0 || testPeople.length === 0) {
-        console.log('⏭️ Skipping consistency test - insufficient test data');
+        console.error('⏭️ Skipping consistency test - insufficient test data');
         return;
       }
 
@@ -937,7 +943,7 @@ describe.skipIf(
 
       createdNotes.push(companyNote, personNote);
 
-      console.log('🧪 Validated note structure consistency');
+      console.error('🧪 Validated note structure consistency');
     }, 30000);
 
     it('should validate test data cleanup tracking', async () => {
@@ -961,7 +967,7 @@ describe.skipIf(
         ).toBe(true);
       });
 
-      console.log(
+      console.error(
         '🧹 Validated cleanup tracking for',
         createdNotes.length,
         'notes'

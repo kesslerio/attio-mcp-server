@@ -108,7 +108,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
       // If filters is undefined, return body without filter
       if (!filters) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(
+          console.error(
             '[advancedSearchObject] No filters provided, using default parameters only'
           );
         }
@@ -143,7 +143,7 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
         // Log filter transformation for debugging in development
         if (process.env.NODE_ENV === 'development') {
-          console.log('[advancedSearchObject] Transformed filters:', {
+          console.error('[advancedSearchObject] Transformed filters:', {
             originalFilters: JSON.stringify(filters),
             transformedFilters: JSON.stringify(filterObject.filter),
             useOrLogic: filters?.matchAny === true,

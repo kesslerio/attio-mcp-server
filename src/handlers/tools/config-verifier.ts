@@ -23,7 +23,7 @@ export function verifyToolConfigsWithRequiredTools(
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
 
-  console.log(
+  console.error(
     `[${resourceName}ToolConfigs] Verifying tool configs during initialization`
   );
 
@@ -76,7 +76,7 @@ export function verifyToolConfigsWithRequiredTools(
   for (const toolType of requiredToolTypes) {
     if (toolType in combinedConfigs) {
       const config = combinedConfigs[toolType];
-      console.log(
+      console.error(
         `[${resourceName}ToolConfigs] Found ${toolType} with name: ${config.name}`
       );
 
@@ -107,7 +107,7 @@ export function verifyToolConfigsWithRequiredTools(
 
   // Log all available tool types for debugging
   if (debugMode) {
-    console.log(
+    console.error(
       `[${resourceName}ToolConfigs] All registered tool types:`,
       Object.keys(combinedConfigs)
     );
@@ -136,7 +136,7 @@ export function verifySpecificTool(
   if (!debugMode) return true;
 
   if (subConfigs && toolType in subConfigs) {
-    console.log(
+    console.error(
       `[${resourceName}ToolConfigs] Found ${toolType} in sub-configs`
     );
 

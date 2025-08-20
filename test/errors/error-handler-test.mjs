@@ -49,7 +49,7 @@ async function testErrorHandler() {
       }
     });
     
-    console.log('Result:', JSON.stringify(result, null, 2));
+    console.error('Result:', JSON.stringify(result, null, 2));
   } catch (error) {
     console.error('Error:', error);
   } finally {

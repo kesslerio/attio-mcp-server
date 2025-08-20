@@ -172,7 +172,7 @@ export class PerformanceTracker {
             ? '🟡'
             : '🟢';
 
-      console.log(
+      console.error(
         `${statusIcon} ${toolName}: ${timeColor} ${duration.toFixed(2)}ms` +
           (error ? ` (Error: ${error})` : '')
       );

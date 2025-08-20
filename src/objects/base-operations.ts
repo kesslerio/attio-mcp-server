@@ -29,7 +29,7 @@ function translateAttributeNames(
 
     // Log the translation in development mode
     if (process.env.NODE_ENV === 'development' && userKey !== apiKey) {
-      console.log(
+      console.error(
         `[translateAttributeNames:${objectType}] Mapped "${userKey}" -> "${apiKey}"`
       );
     }
@@ -72,15 +72,15 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
 
   // Debug log to help diagnose issues
   if (process.env.NODE_ENV === 'development') {
-    console.log(
+    console.error(
       `[createObjectWithDynamicFields:${objectType}] Original attributes:`,
       JSON.stringify(validatedAttributes, null, 2)
     );
-    console.log(
+    console.error(
       `[createObjectWithDynamicFields:${objectType}] Mapped attributes:`,
       JSON.stringify(mappedAttributes, null, 2)
     );
-    console.log(
+    console.error(
       `[createObjectWithDynamicFields:${objectType}] Final transformed attributes:`,
       JSON.stringify(transformedAttributes, null, 2)
     );
@@ -94,7 +94,7 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     );
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[createObjectWithDynamicFields:${objectType}] Result from createObjectRecord:`,
         {
           result,
@@ -149,15 +149,15 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   );
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(
+    console.error(
       `[updateObjectWithDynamicFields:${objectType}] Original attributes:`,
       JSON.stringify(validatedAttributes, null, 2)
     );
-    console.log(
+    console.error(
       `[updateObjectWithDynamicFields:${objectType}] Mapped attributes:`,
       JSON.stringify(mappedAttributes, null, 2)
     );
-    console.log(
+    console.error(
       `[updateObjectWithDynamicFields:${objectType}] Final transformed attributes:`,
       JSON.stringify(transformedAttributes, null, 2)
     );

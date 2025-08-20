@@ -42,20 +42,20 @@ function convertCompanyAttributes(attributes: any): any {
       ? corrected.domain
       : [corrected.domain];
     delete corrected.domain;
-    console.log(`[Format Helper] Converted 'domain' to 'domains' array`);
+    console.error(`[Format Helper] Converted 'domain' to 'domains' array`);
   }
 
   // Ensure domains is always an array
   if (corrected.domains && !Array.isArray(corrected.domains)) {
     corrected.domains = [corrected.domains];
-    console.log(`[Format Helper] Converted domains to array format`);
+    console.error(`[Format Helper] Converted domains to array format`);
   }
 
   // Handle common typos
   if ('typpe' in corrected && !('type' in corrected)) {
     corrected.type = corrected.typpe;
     delete corrected.typpe;
-    console.log(`[Format Helper] Fixed typo: 'typpe' -> 'type'`);
+    console.error(`[Format Helper] Fixed typo: 'typpe' -> 'type'`);
   }
 
   return corrected;
@@ -91,7 +91,7 @@ function convertPeopleAttributes(attributes: any): any {
     }
 
     corrected.name = fullName.trim() || 'Unknown';
-    console.log(
+    console.error(
       `[Format Helper] Converted name object to string: "${corrected.name}"`
     );
   }
@@ -100,7 +100,9 @@ function convertPeopleAttributes(attributes: any): any {
   if (corrected.email_addresses && Array.isArray(corrected.email_addresses)) {
     const converted = corrected.email_addresses.map((item: any) => {
       if (typeof item === 'object' && item.email_address) {
-        console.log(`[Format Helper] Converting email object format to string`);
+        console.error(
+          `[Format Helper] Converting email object format to string`
+        );
         return item.email_address;
       }
       return item;
@@ -111,14 +113,16 @@ function convertPeopleAttributes(attributes: any): any {
   // Ensure email_addresses is always an array
   if (corrected.email_addresses && !Array.isArray(corrected.email_addresses)) {
     corrected.email_addresses = [corrected.email_addresses];
-    console.log(`[Format Helper] Converted email_addresses to array format`);
+    console.error(`[Format Helper] Converted email_addresses to array format`);
   }
 
   // Convert phone_numbers from object format to string array
   if (corrected.phone_numbers && Array.isArray(corrected.phone_numbers)) {
     const converted = corrected.phone_numbers.map((item: any) => {
       if (typeof item === 'object' && (item.phone_number || item.number)) {
-        console.log(`[Format Helper] Converting phone object format to string`);
+        console.error(
+          `[Format Helper] Converting phone object format to string`
+        );
         return item.phone_number || item.number;
       }
       return item;

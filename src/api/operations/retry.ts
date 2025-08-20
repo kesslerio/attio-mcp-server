@@ -129,7 +129,7 @@ export async function callWithRetry<T>(
 
       // Log retry attempt if in development
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `Retrying API call (attempt ${attempt}/${retryConfig.maxRetries}) after ${delay}ms delay`
         );
       }

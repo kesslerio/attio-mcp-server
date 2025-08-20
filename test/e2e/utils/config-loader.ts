@@ -101,7 +101,7 @@ export class ConfigLoader {
       try {
         const configContent = readFileSync(localConfigPath, 'utf8');
         config = JSON.parse(configContent);
-        console.log('Loaded E2E configuration from config.local.json');
+        console.error('Loaded E2E configuration from config.local.json');
       } catch (error: unknown) {
         throw new Error(`Failed to parse config.local.json: ${error}`);
       }
@@ -110,7 +110,7 @@ export class ConfigLoader {
       if (existsSync(templateConfigPath)) {
         const templateContent = readFileSync(templateConfigPath, 'utf8');
         config = JSON.parse(templateContent);
-        console.log('Loaded E2E configuration from template (CI/CD mode)');
+        console.error('Loaded E2E configuration from template (CI/CD mode)');
       } else {
         throw new Error(
           'No configuration file found. Please create config.local.json from config.template.json'
@@ -403,7 +403,7 @@ export function shouldSkipApiTests(): boolean {
  */
 export function skipIfNoApiKey(testContext: any, testName: string): boolean {
   if (shouldSkipApiTests()) {
-    console.log(`⏭️  Skipping ${testName} - ATTIO_API_KEY not available`);
+    console.error(`⏭️  Skipping ${testName} - ATTIO_API_KEY not available`);
     testContext.skip();
     return true;
   }

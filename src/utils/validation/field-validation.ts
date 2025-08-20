@@ -125,6 +125,19 @@ const RESOURCE_SPECIFIC_FIELDS: Record<ResourceType, string[]> = {
     'ticker_symbol',
   ],
 
+  [ResourceType.DEALS]: [
+    ...COMMON_SAFE_FIELDS,
+    'value',
+    'stage',
+    'probability',
+    'close_date',
+    'source',
+    'owner',
+    'product',
+    'deal_type',
+    'priority',
+  ],
+
   [ResourceType.TASKS]: [
     ...COMMON_SAFE_FIELDS,
     'content',
@@ -167,19 +180,19 @@ const DANGEROUS_PATTERNS = [
   // SQL injection attempts - comprehensive patterns
   /['";]/,
   /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)\b/i,
-  /--/,                              // SQL comments
-  /\/\*/,                            // Multi-line SQL comments
-  /\bOR\s+1\s*=\s*1\b/i,            // Common injection pattern
-  /\bAND\s+1\s*=\s*1\b/i,           // Common injection pattern
-  /SLEEP\s*\(/i,                     // Time-based injection
-  /WAITFOR\s+DELAY/i,                // SQL Server delay
-  /BENCHMARK\s*\(/i,                 // MySQL benchmark
+  /--/, // SQL comments
+  /\/\*/, // Multi-line SQL comments
+  /\bOR\s+1\s*=\s*1\b/i, // Common injection pattern
+  /\bAND\s+1\s*=\s*1\b/i, // Common injection pattern
+  /SLEEP\s*\(/i, // Time-based injection
+  /WAITFOR\s+DELAY/i, // SQL Server delay
+  /BENCHMARK\s*\(/i, // MySQL benchmark
 
   // Script injection attempts - comprehensive patterns
   /<script\b/i,
   /<\/script>/i,
   /javascript:/i,
-  /on\w+\s*=/i,                      // Event handlers (onclick, onload, etc.)
+  /on\w+\s*=/i, // Event handlers (onclick, onload, etc.)
   /<iframe\b/i,
   /<object\b/i,
   /<embed\b/i,
@@ -188,43 +201,43 @@ const DANGEROUS_PATTERNS = [
   /<img\b.*onerror/i,
   /<svg\b.*onload/i,
 
-  // Path traversal attempts - enhanced patterns  
-  /\.\./,                            // Basic directory traversal
-  /\/\.\./,                          // Unix path traversal
-  /\\\.\./,                          // Windows path traversal
-  /\.\.[\\/]/,                       // Any directory traversal
-  /\/etc\/passwd/i,                  // Unix passwd file
-  /\/etc\/shadow/i,                  // Unix shadow file
-  /\/proc\//i,                       // Unix proc filesystem
-  /\\windows\\system32/i,            // Windows system directory
-  /\\admin\\config/i,                // Windows admin config
-  /boot\.ini/i,                      // Windows boot file
-  /database\/.*\.db/i,               // Database files
-  /secrets\//i,                      // Secrets directory
-  /api_keys\.txt/i,                  // API keys file
-  /\/proc\/self\/environ/i,          // Process environment
+  // Path traversal attempts - enhanced patterns
+  /\.\./, // Basic directory traversal
+  /\/\.\./, // Unix path traversal
+  /\\\.\./, // Windows path traversal
+  /\.\.[\\/]/, // Any directory traversal
+  /\/etc\/passwd/i, // Unix passwd file
+  /\/etc\/shadow/i, // Unix shadow file
+  /\/proc\//i, // Unix proc filesystem
+  /\\windows\\system32/i, // Windows system directory
+  /\\admin\\config/i, // Windows admin config
+  /boot\.ini/i, // Windows boot file
+  /database\/.*\.db/i, // Database files
+  /secrets\//i, // Secrets directory
+  /api_keys\.txt/i, // API keys file
+  /\/proc\/self\/environ/i, // Process environment
 
   // Command injection attempts - comprehensive patterns
   /[;&|`$()]/,
-  /\|\s*nc\b/i,                      // Netcat
-  /\|\s*curl\b/i,                    // Curl command
-  /\|\s*wget\b/i,                    // Wget command
-  /\bwhoami\b/i,                     // System info commands
-  /\bid\b/i,                         // Unix ID command
-  /rm\s+-rf/i,                       // Destructive remove
-  /&&\s*cat\b/i,                     // Command chaining with cat
-  /\$\(.*\)/,                        // Command substitution
+  /\|\s*nc\b/i, // Netcat
+  /\|\s*curl\b/i, // Curl command
+  /\|\s*wget\b/i, // Wget command
+  /\bwhoami\b/i, // System info commands
+  /\bid\b/i, // Unix ID command
+  /rm\s+-rf/i, // Destructive remove
+  /&&\s*cat\b/i, // Command chaining with cat
+  /\$\(.*\)/, // Command substitution
 
   // URL manipulation and injection attempts
   /[?&#]/,
-  /%[0-9a-f]{2}/i,                   // URL encoding attempts
-  /\\u[0-9a-f]{4}/i,                 // Unicode escapes
-  /\\x[0-9a-f]{2}/i,                 // Hex escapes
+  /%[0-9a-f]{2}/i, // URL encoding attempts
+  /\\u[0-9a-f]{4}/i, // Unicode escapes
+  /\\x[0-9a-f]{2}/i, // Hex escapes
 
   // Control characters - enhanced detection
   // eslint-disable-next-line no-control-regex
-  /[\x00-\x1f\x7f]/,                 // Control characters including null bytes
-  /\r\n|\n\r|\r|\n/,                 // Line breaks (header injection)
+  /[\x00-\x1f\x7f]/, // Control characters including null bytes
+  /\r\n|\n\r|\r|\n/, // Line breaks (header injection)
 ];
 
 /**
@@ -285,29 +298,31 @@ export function sanitizeFieldName(
 
   // Enhanced sanitization for security patterns from tests
   // Handle specific patterns the tests expect exactly
-  
+
   // Handle specific test patterns before general character replacement
-  
+
   // First remove quotes and comments completely (they shouldn't become underscores)
   sanitized = sanitized
     .replace(/['"]/g, '') // Remove quotes completely - no underscores
     .replace(/--/g, '') // Remove SQL comments completely
     .replace(/\/\*.*?\*\//g, ''); // Remove multi-line comments completely
-  
+
   // Then handle SQL injection pattern with double underscores - handle after quote removal
   if (sanitized.includes('; SELECT *')) {
     sanitized = sanitized.replace(/;\s*SELECT\s*\*/gi, '__SELECT_');
   }
-  
+
   // Script injection patterns
   if (sanitized.includes('<script>') && sanitized.includes('</script>')) {
-    sanitized = sanitized.replace(/<script[^>]*>/gi, '_script').replace(/<\/script>/gi, '_script');
+    sanitized = sanitized
+      .replace(/<script[^>]*>/gi, '_script')
+      .replace(/<\/script>/gi, '_script');
   }
-  
+
   if (sanitized.includes('javascript:')) {
     sanitized = sanitized.replace(/javascript:/gi, '_javascript');
   }
-  
+
   if (sanitized.includes('onclick=')) {
     sanitized = sanitized.replace(/onclick=/gi, '_onclick');
   }
@@ -391,9 +406,8 @@ export function validateFieldName(
 
   // Check if sanitization changed the field significantly
   if (sanitized !== fieldName.trim()) {
-    const displayFieldName = fieldName.length > 100 ? 
-      fieldName.substring(0, 100) + '...' : 
-      fieldName;
+    const displayFieldName =
+      fieldName.length > 100 ? fieldName.substring(0, 100) + '...' : fieldName;
     warnings.push(
       `Field name was sanitized from "${displayFieldName}" to "${sanitized}"`
     );
@@ -416,7 +430,6 @@ export function validateFieldName(
       );
     }
   }
-
 
   return {
     valid: true,

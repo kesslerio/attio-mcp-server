@@ -23,12 +23,18 @@ export async function handleNotesOperation(
   const directId =
     resourceType === ResourceType.COMPANIES
       ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
+      : resourceType === ResourceType.DEALS
+        ? (request.params.arguments?.dealId as string)
+        : (request.params.arguments?.personId as string);
   const uri = request.params.arguments?.uri as string;
 
   if (!directId && !uri) {
     const idParamName =
-      resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      resourceType === ResourceType.COMPANIES
+        ? 'companyId'
+        : resourceType === ResourceType.DEALS
+          ? 'dealId'
+          : 'personId';
     return createErrorResult(
       new Error(`Either ${idParamName} or uri parameter is required`),
       `/${resourceType}/notes`,
@@ -82,7 +88,9 @@ export async function handleCreateNoteOperation(
   const directId =
     resourceType === ResourceType.COMPANIES
       ? (request.params.arguments?.companyId as string)
-      : (request.params.arguments?.personId as string);
+      : resourceType === ResourceType.DEALS
+        ? (request.params.arguments?.dealId as string)
+        : (request.params.arguments?.personId as string);
   const uri = request.params.arguments?.uri as string;
 
   /**
@@ -115,7 +123,11 @@ export async function handleCreateNoteOperation(
 
   if (!directId && !uri) {
     const idParamName =
-      resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
+      resourceType === ResourceType.COMPANIES
+        ? 'companyId'
+        : resourceType === ResourceType.DEALS
+          ? 'dealId'
+          : 'personId';
     return createErrorResult(
       new Error(`Either ${idParamName} or uri parameter is required`),
       `/${resourceType}/notes`,

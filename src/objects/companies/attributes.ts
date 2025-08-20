@@ -55,7 +55,7 @@ export async function getCompanyFields(
     companyId = extractCompanyId(companyIdOrUri);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getCompanyFields] Fetching fields for company ${companyId}:`,
         fields
       );
@@ -85,7 +85,7 @@ export async function getCompanyFields(
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[getCompanyFields] Filtered to ${
           Object.keys(filteredValues).length
         } fields`
@@ -313,7 +313,9 @@ export async function discoverCompanyAttributes(): Promise<{
   // For now, we'll fetch a sample company and examine its fields
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('[discoverCompanyAttributes] Starting attribute discovery...');
+    console.error(
+      '[discoverCompanyAttributes] Starting attribute discovery...'
+    );
   }
 
   try {
@@ -345,7 +347,7 @@ export async function discoverCompanyAttributes(): Promise<{
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[discoverCompanyAttributes] Using sample company ID: ${sampleCompanyId}`
       );
     }
@@ -354,7 +356,7 @@ export async function discoverCompanyAttributes(): Promise<{
     const values = sampleCompany.values || {};
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[discoverCompanyAttributes] Retrieved ${
           Object.keys(values).length
         } fields from sample company`
@@ -439,7 +441,7 @@ export async function discoverCompanyAttributes(): Promise<{
     };
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         `[discoverCompanyAttributes] Discovery complete. Found ${standard.length} standard fields and ${custom.length} custom fields.`
       );
     }

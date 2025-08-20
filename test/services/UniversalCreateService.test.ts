@@ -587,6 +587,9 @@ describe('UniversalCreateService', () => {
 
     it('should handle field validation warnings and suggestions logging', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       vi.mocked(validateFields).mockReturnValue({
         valid: true,
@@ -606,16 +609,17 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test Company' } },
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(console.error).toHaveBeenCalledWith(
         'Field validation warnings:',
         'Field warning 1\nField warning 2'
       );
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Field suggestions:',
         'Suggestion 1\nSuggestion 2'
       );
 
       consoleSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
   });
 });

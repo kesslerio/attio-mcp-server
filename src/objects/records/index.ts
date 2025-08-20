@@ -46,10 +46,10 @@ export async function createObjectRecord<T extends AttioRecord>(
 
   // Add debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log(
+    console.error(
       `[createObjectRecord] Creating record for object type: ${normalizedSlug}`
     );
-    console.log(
+    console.error(
       `[createObjectRecord] Attributes:`,
       JSON.stringify(attributes, null, 2)
     );
@@ -58,7 +58,7 @@ export async function createObjectRecord<T extends AttioRecord>(
   try {
     // Use the core API function
     if (process.env.NODE_ENV === 'development') {
-      console.log('[createObjectRecord] Calling createRecord with:', {
+      console.error('[createObjectRecord] Calling createRecord with:', {
         objectSlug: normalizedSlug,
         objectId,
         attributes,
@@ -72,7 +72,7 @@ export async function createObjectRecord<T extends AttioRecord>(
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[createObjectRecord] createRecord returned:', {
+      console.error('[createObjectRecord] createRecord returned:', {
         result,
         hasId: !!result?.id,
         hasValues: !!result?.values,
@@ -83,7 +83,7 @@ export async function createObjectRecord<T extends AttioRecord>(
     return result;
   } catch (error: unknown) {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         '[createObjectRecord] Primary createRecord failed, trying fallback:',
         error
       );
@@ -102,8 +102,8 @@ export async function createObjectRecord<T extends AttioRecord>(
       const path = `/objects/${objectId || objectSlug}/records`;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[createObjectRecord:fallback] API path: ${path}`);
-        console.log(`[createObjectRecord:fallback] Sending payload:`, {
+        console.error(`[createObjectRecord:fallback] API path: ${path}`);
+        console.error(`[createObjectRecord:fallback] Sending payload:`, {
           data: {
             values: attributes,
           },
@@ -118,7 +118,7 @@ export async function createObjectRecord<T extends AttioRecord>(
       });
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[createObjectRecord:fallback] API response structure:', {
+        console.error('[createObjectRecord:fallback] API response structure:', {
           hasData: !!response?.data,
           hasNestedData: !!response?.data?.data,
           dataKeys: response?.data ? Object.keys(response.data) : [],

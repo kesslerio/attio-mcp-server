@@ -275,7 +275,7 @@ export async function createTask(
           hasResponse: err && typeof err === 'object' && 'response' in err,
           responseStatus:
             err && typeof err === 'object' && 'response' in err
-              ? (err as any).response?.status
+              ? (err as { response?: { status?: unknown } }).response?.status
               : null,
         },
         'createTask',

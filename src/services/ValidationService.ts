@@ -233,7 +233,7 @@ export class ValidationService {
     );
 
     if (fieldValidation.warnings.length > 0) {
-      console.log(
+      console.error(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
       );
@@ -241,7 +241,7 @@ export class ValidationService {
 
     if (fieldValidation.suggestions.length > 0) {
       const truncated = this.truncateSuggestions(fieldValidation.suggestions);
-      console.log('Field suggestions:', truncated.join('\n'));
+      console.error('Field suggestions:', truncated.join('\n'));
     }
 
     if (!fieldValidation.valid) {

@@ -47,7 +47,7 @@ export async function getCompanyNotes(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getCompanyNotes] Extracted company ID ${companyId} from URI ${companyIdOrUri}`
         );
       }
@@ -56,7 +56,9 @@ export async function getCompanyNotes(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[getCompanyNotes] Using direct company ID: ${companyId}`);
+        console.error(
+          `[getCompanyNotes] Using direct company ID: ${companyId}`
+        );
       }
     }
 
@@ -75,16 +77,11 @@ export async function getCompanyNotes(
       );
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getCompanyNotes] Unified operation failed: ${
             error.message || 'Unknown error'
           }`,
-          {
-            method: 'getObjectNotes',
-            companyId,
-            limit,
-            offset,
-          }
+          error
         );
       }
 
@@ -94,7 +91,7 @@ export async function getCompanyNotes(
         const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[getCompanyNotes] Trying direct API call: ${path}`);
+          console.error(`[getCompanyNotes] Trying direct API call: ${path}`);
         }
 
         const response = await api.get(path);
@@ -179,7 +176,7 @@ export async function createCompanyNote(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[createCompanyNote] Extracted company ID ${companyId} from URI ${companyIdOrUri}`
         );
       }
@@ -188,7 +185,7 @@ export async function createCompanyNote(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[createCompanyNote] Using direct company ID: ${companyId}`
         );
       }
@@ -209,14 +206,11 @@ export async function createCompanyNote(
       );
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[createCompanyNote] Unified operation failed: ${
             error.message || 'Unknown error'
           }`,
-          {
-            method: 'createObjectNote',
-            companyId,
-          }
+          error
         );
       }
 
@@ -226,7 +220,7 @@ export async function createCompanyNote(
         const path = 'notes';
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[createCompanyNote] Trying direct API call: ${path}`);
+          console.error(`[createCompanyNote] Trying direct API call: ${path}`);
         }
 
         const response = await api.post(path, {

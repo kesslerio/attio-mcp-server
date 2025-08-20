@@ -127,7 +127,7 @@ export function transformFiltersToApiFormat(
     // Check if filters array exists and handle undefined case
     if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           '[transformFiltersToApiFormat] Empty or undefined filters array provided, returning empty result'
         );
       }
@@ -147,7 +147,7 @@ export function transformFiltersToApiFormat(
 
       // For structure errors (missing properties), return empty result instead of throwing
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           '[transformFiltersToApiFormat] Validation failed, returning empty result:',
           error
         );
@@ -167,12 +167,12 @@ export function transformFiltersToApiFormat(
   const useOrLogic = validatedFilters.matchAny === true;
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(
+    console.error(
       `[transformFiltersToApiFormat] Using ${
         useOrLogic ? 'OR' : 'AND'
       } logic for filters`
     );
-    console.log(
+    console.error(
       `[transformFiltersToApiFormat] Processing ${validatedFilters.filters.length} filter conditions`
     );
   }
@@ -244,7 +244,7 @@ function createOrFilterStructure(
 
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[createOrFilterStructure] Processing filter ${index}:`, {
+      console.error(`[createOrFilterStructure] Processing filter ${index}:`, {
         attribute: filter.attribute,
         condition: filter.condition,
         value: filter.value,
@@ -261,7 +261,7 @@ function createOrFilterStructure(
       // For list-specific attributes, we don't need any path prefix
       // The API expects these attributes directly at the entry level
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[OR Logic] Using list-specific attribute format for field ${slug}`
         );
       }
@@ -277,7 +277,7 @@ function createOrFilterStructure(
     ) {
       // For special fields that need shorthand format
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[OR Logic] Using shorthand filter format for field ${slug}`
         );
       }
@@ -369,7 +369,7 @@ function createAndFilterStructure(
 
     // Debug log each filter
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[createAndFilterStructure] Processing filter ${index}:`, {
+      console.error(`[createAndFilterStructure] Processing filter ${index}:`, {
         attribute: filter.attribute,
         condition: filter.condition,
         value: filter.value,
@@ -382,7 +382,7 @@ function createAndFilterStructure(
     if (isListEntryContext && isListSpecificAttribute(slug)) {
       // For list-specific attributes, we don't need any path prefix
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[AND Logic] Using list-specific attribute format for field ${slug}`
         );
       }
@@ -403,7 +403,7 @@ function createAndFilterStructure(
     ) {
       // For special fields that need shorthand format
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[AND Logic] Using shorthand filter format for field ${slug}`
         );
       }

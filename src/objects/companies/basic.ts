@@ -83,7 +83,7 @@ export async function getCompanyDetails(
       }
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getCompanyDetails] Extracted company ID ${companyId} from URI ${companyIdOrUri}`
         );
       }
@@ -92,7 +92,7 @@ export async function getCompanyDetails(
       companyId = companyIdOrUri;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getCompanyDetails] Using direct company ID: ${companyId}`
         );
       }
@@ -109,7 +109,7 @@ export async function getCompanyDetails(
     } catch (error: unknown) {
       const firstError = error;
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[getCompanyDetails] First attempt failed: ${
             firstError instanceof Error ? firstError.message : 'Unknown error'
           }`,
@@ -126,7 +126,7 @@ export async function getCompanyDetails(
         const path = `/objects/companies/records/${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[getCompanyDetails] Trying fallback path: ${path}`, {
+          console.error(`[getCompanyDetails] Trying fallback path: ${path}`, {
             method: 'direct API call',
             companyId,
           });
@@ -137,7 +137,7 @@ export async function getCompanyDetails(
       } catch (error: unknown) {
         const secondError = error;
         if (process.env.NODE_ENV === 'development') {
-          console.log(
+          console.error(
             `[getCompanyDetails] Second attempt failed: ${
               secondError instanceof Error
                 ? secondError.message
@@ -157,7 +157,7 @@ export async function getCompanyDetails(
           const alternatePath = `/companies/${companyId}`;
 
           if (process.env.NODE_ENV === 'development') {
-            console.log(
+            console.error(
               `[getCompanyDetails] Trying alternate path: ${alternatePath}`,
               {
                 method: 'alternate API path',
@@ -242,11 +242,11 @@ export async function createCompany(
   attributes: CompanyAttributes
 ): Promise<Company> {
   if (process.env.NODE_ENV === 'development') {
-    console.log('[createCompany] Input attributes:', attributes);
+    console.error('[createCompany] Input attributes:', attributes);
   }
 
   try {
-    console.log(
+    console.error(
       '[createCompany] DEBUG - Input attributes:',
       JSON.stringify(attributes, null, 2)
     );
@@ -258,13 +258,13 @@ export async function createCompany(
       // CompanyValidator.validateCreate  // Temporarily disabled
     );
 
-    console.log(
+    console.error(
       '[createCompany] DEBUG - Result from createObjectWithDynamicFields:',
       JSON.stringify(result, null, 2)
     );
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
+      console.error(
         '[createCompany] Result from createObjectWithDynamicFields:',
         {
           result,
@@ -474,7 +474,7 @@ export async function updateCompanyAttribute(
  * ```typescript
  * const success = await deleteCompany("comp_123");
  * if (success) {
- *   console.log("Company deleted successfully");
+ *   console.error("Company deleted successfully");
  * }
  * ```
  */

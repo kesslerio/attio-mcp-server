@@ -703,7 +703,7 @@ export function registerToolHandlers(server: Server): void {
         
         try {
           if (process.env.NODE_ENV === 'development') {
-            console.log(`[tools.notes] Calling notes handler for ${resourceType} with: `, {
+            console.error(`[tools.notes] Calling notes handler for ${resourceType} with: `, {
               id,
               limit,
               offset
@@ -783,7 +783,7 @@ export function registerToolHandlers(server: Server): void {
         
         try {
           if (process.env.NODE_ENV === 'development') {
-            console.log(`[tools.createNote] Creating note for ${resourceType} with: `, {
+            console.error(`[tools.createNote] Creating note for ${resourceType} with: `, {
               id,
               title: noteTitle,
               textLength: typeof noteText === 'string' ? noteText.length : 0
@@ -889,7 +889,7 @@ export function registerToolHandlers(server: Server): void {
         }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('[getListEntries Tool] Processing request with parameters:', {
+          console.error('[getListEntries Tool] Processing request with parameters:', {
             listId,
             limit,
             offset,
@@ -951,7 +951,7 @@ export function registerToolHandlers(server: Server): void {
         }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('[filterListEntries Tool] Processing request with parameters:', {
+          console.error('[filterListEntries Tool] Processing request with parameters:', {
             listId,
             attributeSlug,
             condition,
@@ -1005,7 +1005,7 @@ export function registerToolHandlers(server: Server): void {
         }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('[advancedFilterListEntries] Processing request with parameters:', {
+          console.error('[advancedFilterListEntries] Processing request with parameters:', {
             listId,
             filters: JSON.stringify(filters),
             limit,
@@ -1605,7 +1605,7 @@ export function registerToolHandlers(server: Server): void {
         const translatedFilters = translateAttributeNamesInFilters(filters, resourceType);
         
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
+          console.error(`[advancedSearch ${resourceType}] Processing request with parameters:`, {
             originalFilters: JSON.stringify(filters),
             translatedFilters: JSON.stringify(translatedFilters),
             limit,

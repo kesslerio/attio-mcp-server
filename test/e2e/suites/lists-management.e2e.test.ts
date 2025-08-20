@@ -91,7 +91,7 @@ describe.skipIf(
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     }
 
-    console.log('📊 Tool migration stats:', getToolMigrationStats());
+    console.error('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
       requiresRealApi: false, // Use mock data instead of real API for reliable testing
@@ -99,14 +99,16 @@ describe.skipIf(
       timeout: 120000,
     });
 
-    console.log('🚀 Starting Lists Management E2E Tests with Universal Tools');
+    console.error(
+      '🚀 Starting Lists Management E2E Tests with Universal Tools'
+    );
   }, 120000);
 
   afterAll(async () => {
     // End comprehensive logging for this test suite
     endTestSuite();
 
-    console.log(
+    console.error(
       '✅ Lists Management E2E Tests completed with enhanced logging'
     );
   }, 30000);
@@ -127,7 +129,7 @@ describe.skipIf(
         Array.isArray(data) || (data && Array.isArray((data as any).data))
       ).toBe(true);
 
-      console.log(
+      console.error(
         '📋 Found lists:',
         Array.isArray(data) ? data.length : (data as any)?.data?.length || 0
       );
@@ -170,7 +172,7 @@ describe.skipIf(
 
     it('should retrieve detailed information for a specific list', async () => {
       if (!availableListId) {
-        console.log('⏭️ Skipping list details test - no lists available');
+        console.error('⏭️ Skipping list details test - no lists available');
         return;
       }
 
@@ -188,7 +190,7 @@ describe.skipIf(
         listDetails.object_slug || listDetails.parent_object
       ).toBeDefined();
 
-      console.log(
+      console.error(
         '📄 List details retrieved for:',
         listDetails.name || listDetails.title
       );
@@ -207,7 +209,7 @@ describe.skipIf(
 
     it('should validate list structure', async () => {
       if (!availableListId) {
-        console.log('⏭️ Skipping list validation test - no lists available');
+        console.error('⏭️ Skipping list validation test - no lists available');
         return;
       }
 
@@ -276,7 +278,7 @@ describe.skipIf(
 
     it('should retrieve list entries', async () => {
       if (!workingListId) {
-        console.log(
+        console.error(
           '⏭️ Skipping list entries test - no suitable list available'
         );
         return;
@@ -299,12 +301,14 @@ describe.skipIf(
       const entryList = Array.isArray(entries)
         ? entries
         : (entries as any)?.data || [];
-      console.log('📝 List entries found:', entryList.length);
+      console.error('📝 List entries found:', entryList.length);
     }, 30000);
 
     it('should handle pagination for list entries', async () => {
       if (!workingListId) {
-        console.log('⏭️ Skipping pagination test - no suitable list available');
+        console.error(
+          '⏭️ Skipping pagination test - no suitable list available'
+        );
         return;
       }
 
@@ -321,7 +325,7 @@ describe.skipIf(
 
     it('should add a record to a list', async () => {
       if (!workingListId || !testCompany) {
-        console.log(
+        console.error(
           '⏭️ Skipping add record test - prerequisites not available'
         );
         return;
@@ -348,7 +352,7 @@ describe.skipIf(
       // Store for cleanup
       listEntries.push(listEntry);
 
-      console.log(
+      console.error(
         '➕ Added record to list:',
         listEntry.id?.entry_id || listEntry.entry_id
       );
@@ -356,7 +360,9 @@ describe.skipIf(
 
     it('should prevent duplicate records in lists', async () => {
       if (!workingListId || !testCompany || listEntries.length === 0) {
-        console.log('⏭️ Skipping duplicate test - prerequisites not available');
+        console.error(
+          '⏭️ Skipping duplicate test - prerequisites not available'
+        );
         return;
       }
 
@@ -381,7 +387,7 @@ describe.skipIf(
 
     it('should update a list entry', async () => {
       if (listEntries.length === 0) {
-        console.log('⏭️ Skipping update test - no list entries available');
+        console.error('⏭️ Skipping update test - no list entries available');
         return;
       }
 
@@ -402,12 +408,12 @@ describe.skipIf(
       expect(updatedEntry).toBeDefined();
       expect(updatedEntry.id?.entry_id || updatedEntry.entry_id).toBe(entryId);
 
-      console.log('✏️ Updated list entry:', entryId);
+      console.error('✏️ Updated list entry:', entryId);
     }, 30000);
 
     it('should remove a record from a list', async () => {
       if (listEntries.length === 0) {
-        console.log('⏭️ Skipping remove test - no list entries available');
+        console.error('⏭️ Skipping remove test - no list entries available');
         return;
       }
 
@@ -426,12 +432,14 @@ describe.skipIf(
         (e) => (e.id?.entry_id || e.entry_id) !== entryId
       );
 
-      console.log('➖ Removed record from list:', entryId);
+      console.error('➖ Removed record from list:', entryId);
     }, 30000);
 
     it('should handle removing non-existent entry gracefully', async () => {
       if (!workingListId) {
-        console.log('⏭️ Skipping remove non-existent test - no list available');
+        console.error(
+          '⏭️ Skipping remove non-existent test - no list available'
+        );
         return;
       }
 
@@ -467,7 +475,7 @@ describe.skipIf(
 
     it('should filter list entries by attribute', async () => {
       if (!filterListId) {
-        console.log('⏭️ Skipping basic filter test - no list available');
+        console.error('⏭️ Skipping basic filter test - no list available');
         return;
       }
 
@@ -488,7 +496,7 @@ describe.skipIf(
           (filteredEntries && Array.isArray((filteredEntries as any).data))
       ).toBe(true);
 
-      console.log(
+      console.error(
         '🔍 Filtered entries found:',
         Array.isArray(filteredEntries)
           ? filteredEntries.length
@@ -498,7 +506,7 @@ describe.skipIf(
 
     it('should perform advanced filtering with multiple conditions', async () => {
       if (!filterListId) {
-        console.log('⏭️ Skipping advanced filter test - no list available');
+        console.error('⏭️ Skipping advanced filter test - no list available');
         return;
       }
 
@@ -521,7 +529,7 @@ describe.skipIf(
       const filteredEntries = E2EAssertions.expectMcpData(response);
 
       expect(filteredEntries).toBeDefined();
-      console.log(
+      console.error(
         '🔬 Advanced filtered entries:',
         Array.isArray(filteredEntries)
           ? filteredEntries.length
@@ -531,7 +539,7 @@ describe.skipIf(
 
     it('should handle empty filter results', async () => {
       if (!filterListId) {
-        console.log('⏭️ Skipping empty filter test - no list available');
+        console.error('⏭️ Skipping empty filter test - no list available');
         return;
       }
 
@@ -556,7 +564,7 @@ describe.skipIf(
 
     it('should filter entries by parent record properties', async () => {
       if (!filterListId) {
-        console.log('⏭️ Skipping parent filter test - no list available');
+        console.error('⏭️ Skipping parent filter test - no list available');
         return;
       }
 
@@ -573,7 +581,7 @@ describe.skipIf(
       const filteredEntries = E2EAssertions.expectMcpData(response);
 
       expect(filteredEntries).toBeDefined();
-      console.log(
+      console.error(
         '👨‍👩‍👧‍👦 Parent-filtered entries:',
         Array.isArray(filteredEntries)
           ? filteredEntries.length
@@ -583,7 +591,7 @@ describe.skipIf(
 
     it('should filter entries by specific parent record ID', async () => {
       if (!filterListId || testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping parent ID filter test - prerequisites not available'
         );
         return;
@@ -600,7 +608,7 @@ describe.skipIf(
       const filteredEntries = E2EAssertions.expectMcpData(response);
 
       expect(filteredEntries).toBeDefined();
-      console.log(
+      console.error(
         '🎯 Parent ID filtered entries:',
         Array.isArray(filteredEntries)
           ? filteredEntries.length
@@ -612,7 +620,7 @@ describe.skipIf(
   describe('Record List Memberships', () => {
     it('should find all lists containing a specific record', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping membership test - no test companies available'
         );
         return;
@@ -632,7 +640,7 @@ describe.skipIf(
       expect(memberships).toBeDefined();
       expect(Array.isArray(memberships)).toBe(true);
 
-      console.log('🏷️ List memberships found:', memberships.length);
+      console.error('🏷️ List memberships found:', memberships.length);
 
       // Validate membership structure
       if (memberships.length > 0) {
@@ -645,7 +653,7 @@ describe.skipIf(
 
     it('should handle record with no list memberships', async () => {
       if (testPeople.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping no membership test - no test people available'
         );
         return;
@@ -668,7 +676,7 @@ describe.skipIf(
 
     it('should validate batch size parameter', async () => {
       if (testCompanies.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping batch size test - no test companies available'
         );
         return;
@@ -744,7 +752,7 @@ describe.skipIf(
         }
 
         if (lists.length === 0) {
-          console.log('⏭️ Skipping invalid filter test - no lists available');
+          console.error('⏭️ Skipping invalid filter test - no lists available');
           return;
         }
 
@@ -778,7 +786,7 @@ describe.skipIf(
       }
 
       if (lists.length === 0) {
-        console.log('⏭️ Skipping malformed filter test - no lists available');
+        console.error('⏭️ Skipping malformed filter test - no lists available');
         return;
       }
 
@@ -818,7 +826,7 @@ describe.skipIf(
       }
 
       if (lists.length === 0) {
-        console.log('⏭️ Skipping pagination test - no lists available');
+        console.error('⏭️ Skipping pagination test - no lists available');
         return;
       }
 
@@ -849,7 +857,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
       });
 
-      console.log('🚀 Concurrent operations completed successfully');
+      console.error('🚀 Concurrent operations completed successfully');
     }, 30000);
 
     it('should maintain performance with complex filters', async () => {
@@ -863,7 +871,7 @@ describe.skipIf(
       }
 
       if (lists.length === 0) {
-        console.log(
+        console.error(
           '⏭️ Skipping complex filter performance test - no lists available'
         );
         return;
@@ -898,7 +906,7 @@ describe.skipIf(
       E2EAssertions.expectMcpSuccess(complexFilterResponse);
       expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
 
-      console.log(`⚡ Complex filter completed in ${executionTime}ms`);
+      console.error(`⚡ Complex filter completed in ${executionTime}ms`);
     }, 15000);
   });
 
@@ -915,7 +923,7 @@ describe.skipIf(
       }
 
       if (lists.length === 0) {
-        console.log('⏭️ Skipping consistency test - no lists available');
+        console.error('⏭️ Skipping consistency test - no lists available');
         return;
       }
 
@@ -954,7 +962,9 @@ describe.skipIf(
       }
 
       if (lists.length === 0) {
-        console.log('⏭️ Skipping special characters test - no lists available');
+        console.error(
+          '⏭️ Skipping special characters test - no lists available'
+        );
         return;
       }
 

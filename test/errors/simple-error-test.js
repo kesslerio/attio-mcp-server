@@ -22,26 +22,29 @@ const mockError = {
   },
 };
 
-console.log('Testing with mock error:', mockError.message);
-console.log('Response data:', JSON.stringify(mockError.response.data, null, 2));
+console.error('Testing with mock error:', mockError.message);
+console.error(
+  'Response data:',
+  JSON.stringify(mockError.response.data, null, 2)
+);
 
 // Test if it's recognized as a value mismatch error
-console.log('\n=== isValueMismatchError test ===');
+console.error('\n=== isValueMismatchError test ===');
 const isMatch = isValueMismatchError(mockError);
-console.log('Is value mismatch error?', isMatch);
+console.error('Is value mismatch error?', isMatch);
 
 // Test error enhancement directly
-console.log('\n=== enhanceApiError test ===');
+console.error('\n=== enhanceApiError test ===');
 const enhancedError = enhanceApiError(mockError);
-console.log('Enhanced error type:', enhancedError.constructor.name);
-console.log('Enhanced error message:', enhancedError.message);
+console.error('Enhanced error type:', enhancedError.constructor.name);
+console.error('Enhanced error message:', enhancedError.message);
 
 // Test full error interception
-console.log('\n=== interceptAndEnhanceError test ===');
+console.error('\n=== interceptAndEnhanceError test ===');
 const enhancedResult = interceptAndEnhanceError(
   mockError,
   '/objects/people/records/query',
   'POST'
 );
 
-console.log('Enhanced result:', JSON.stringify(enhancedResult, null, 2));
+console.error('Enhanced result:', JSON.stringify(enhancedResult, null, 2));

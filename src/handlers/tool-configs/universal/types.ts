@@ -33,6 +33,54 @@ export enum DetailedInfoType {
 }
 
 /**
+ * Universal note creation parameters
+ */
+export interface UniversalCreateNoteParams {
+  resource_type: UniversalResourceType;
+  record_id: string;
+  title: string;
+  content: string;
+}
+
+/**
+ * Universal get notes parameters
+ */
+export interface UniversalGetNotesParams {
+  resource_type?: UniversalResourceType;
+  record_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Universal update note parameters
+ */
+export interface UniversalUpdateNoteParams {
+  note_id: string;
+  title?: string;
+  content?: string;
+  is_archived?: boolean;
+}
+
+/**
+ * Universal search notes parameters
+ */
+export interface UniversalSearchNotesParams {
+  resource_type?: UniversalResourceType;
+  record_id?: string;
+  query?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Universal delete note parameters
+ */
+export interface UniversalDeleteNoteParams {
+  note_id: string;
+}
+
+/**
  * Operation types for batch operations
  */
 export enum BatchOperationType {

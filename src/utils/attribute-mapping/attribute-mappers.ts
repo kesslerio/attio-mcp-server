@@ -233,7 +233,7 @@ export function getAttributeSlug(
     const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Special case match: "${attributeName}" -> "${specialCaseResult}"`
         );
       }
@@ -279,7 +279,7 @@ export function getAttributeSlug(
         result = lookupCaseInsensitive(objectSpecificCache, attributeName);
         if (result) {
           if (process.env.NODE_ENV === 'development') {
-            console.log(
+            console.error(
               `[attribute-mappers] Object-specific case-insensitive match for ${objectType}: "${attributeName}" -> "${result}"`
             );
           }
@@ -292,7 +292,7 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.custom, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Custom case-insensitive match: "${attributeName}" -> "${result}"`
         );
       }
@@ -302,7 +302,7 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.common, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Common case-insensitive match: "${attributeName}" -> "${result}"`
         );
       }
@@ -313,7 +313,7 @@ export function getAttributeSlug(
     result = lookupCaseInsensitive(caseInsensitiveCaches.legacy, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Legacy case-insensitive match: "${attributeName}" -> "${result}"`
         );
       }
@@ -339,7 +339,7 @@ export function getAttributeSlug(
         result = lookupNormalized(normalizedObjectSpecificCache, attributeName);
         if (result) {
           if (process.env.NODE_ENV === 'development') {
-            console.log(
+            console.error(
               `[attribute-mappers] Object-specific normalized match for ${objectType}: "${attributeName}" -> "${result}"`
             );
           }
@@ -364,7 +364,7 @@ export function getAttributeSlug(
     result = lookupNormalized(normalizedCaches.custom, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Custom normalized match: "${attributeName}" -> "${result}"`
         );
       }
@@ -374,7 +374,7 @@ export function getAttributeSlug(
     result = lookupNormalized(normalizedCaches.common, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Common normalized match: "${attributeName}" -> "${result}"`
         );
       }
@@ -389,7 +389,7 @@ export function getAttributeSlug(
     result = lookupNormalized(normalizedCaches.legacy, attributeName);
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Legacy normalized match: "${attributeName}" -> "${result}"`
         );
       }
@@ -403,7 +403,7 @@ export function getAttributeSlug(
     );
     if (result) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Aggressive normalized match: "${attributeName}" -> "${result}"`
         );
       }
@@ -414,7 +414,7 @@ export function getAttributeSlug(
     result = trySnakeCaseConversion(attributeName);
     if (result && result !== attributeName) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[attribute-mappers] Snake case conversion match: "${attributeName}" -> "${result}"`
         );
       }
@@ -435,7 +435,7 @@ export function getAttributeSlug(
     // Try special cases as a last resort, even if there was an error earlier
     const specialCaseResult = handleSpecialCases(attributeName);
     if (specialCaseResult) {
-      console.log(
+      console.error(
         `[attribute-mappers] Special case match after error: "${attributeName}" -> "${specialCaseResult}"`
       );
       return specialCaseResult;

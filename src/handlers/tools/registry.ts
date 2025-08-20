@@ -14,6 +14,10 @@ import {
   peopleToolDefinitions,
 } from '../tool-configs/people/index.js';
 import {
+  dealToolConfigs,
+  dealToolDefinitions,
+} from '../tool-configs/deals/index.js';
+import {
   listsToolConfigs,
   listsToolDefinitions,
 } from '../tool-configs/lists.js';
@@ -60,6 +64,7 @@ export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
       [ResourceType.COMPANIES]: companyToolConfigs,
       [ResourceType.PEOPLE]: peopleToolConfigs,
+      [ResourceType.DEALS]: dealToolConfigs,
       [ResourceType.LISTS]: listsToolConfigs,
       [ResourceType.TASKS]: tasksToolConfigs,
       [ResourceType.RECORDS]: recordToolConfigs,
@@ -81,6 +86,7 @@ export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
       // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
       [ResourceType.COMPANIES]: companyToolDefinitions,
       [ResourceType.PEOPLE]: peopleToolDefinitions,
+      [ResourceType.DEALS]: dealToolDefinitions,
       [ResourceType.LISTS]: listsToolDefinitions,
       [ResourceType.TASKS]: tasksToolDefinitions,
       [ResourceType.RECORDS]: recordToolDefinitions,

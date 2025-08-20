@@ -87,7 +87,7 @@ function createErrorResult(error, url, method, responseData = {}) {
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown error');
 
-  console.log(
+  console.error(
     `[Test] Processing error for ${method} ${url}:`,
     normalizedError.message
   );
@@ -125,7 +125,7 @@ function createErrorResult(error, url, method, responseData = {}) {
 
 // Test case 1: Handle undefined error
 function testUndefinedError() {
-  console.log('\n=== Test Case 1: Undefined Error ===');
+  console.error('\n=== Test Case 1: Undefined Error ===');
 
   const error = undefined;
   const url = '/api/companies';
@@ -133,12 +133,12 @@ function testUndefinedError() {
 
   try {
     const result = createErrorResult(error, url, method);
-    console.log('Result:', JSON.stringify(result, null, 2));
+    console.error('Result:', JSON.stringify(result, null, 2));
 
     if (result.error.message === 'Unknown error') {
-      console.log('✅ Success: Properly handled undefined error');
+      console.error('✅ Success: Properly handled undefined error');
     } else {
-      console.log('❌ Failed: Did not properly handle undefined error');
+      console.error('❌ Failed: Did not properly handle undefined error');
     }
   } catch (e) {
     console.error('❌ Test failed with exception:', e);
@@ -147,7 +147,7 @@ function testUndefinedError() {
 
 // Test case 2: Handle error with no message
 function testErrorWithNoMessage() {
-  console.log('\n=== Test Case 2: Error With No Message ===');
+  console.error('\n=== Test Case 2: Error With No Message ===');
 
   const error = new Error();
   error.message = undefined;
@@ -156,12 +156,12 @@ function testErrorWithNoMessage() {
 
   try {
     const result = createErrorResult(error, url, method);
-    console.log('Result:', JSON.stringify(result, null, 2));
+    console.error('Result:', JSON.stringify(result, null, 2));
 
     if (result.error.message && result.error.message !== 'undefined') {
-      console.log('✅ Success: Properly handled error with no message');
+      console.error('✅ Success: Properly handled error with no message');
     } else {
-      console.log('❌ Failed: Did not properly handle error with no message');
+      console.error('❌ Failed: Did not properly handle error with no message');
     }
   } catch (e) {
     console.error('❌ Test failed with exception:', e);
@@ -170,7 +170,7 @@ function testErrorWithNoMessage() {
 
 // Test case 3: Handle non-Error object
 function testNonErrorObject() {
-  console.log('\n=== Test Case 3: Non-Error Object ===');
+  console.error('\n=== Test Case 3: Non-Error Object ===');
 
   const error = { someProperty: 'someValue' };
   const url = '/api/companies';
@@ -178,12 +178,12 @@ function testNonErrorObject() {
 
   try {
     const result = createErrorResult(error, url, method);
-    console.log('Result:', JSON.stringify(result, null, 2));
+    console.error('Result:', JSON.stringify(result, null, 2));
 
     if (result.error.message && result.error.message !== 'undefined') {
-      console.log('✅ Success: Properly handled non-Error object');
+      console.error('✅ Success: Properly handled non-Error object');
     } else {
-      console.log('❌ Failed: Did not properly handle non-Error object');
+      console.error('❌ Failed: Did not properly handle non-Error object');
     }
   } catch (e) {
     console.error('❌ Test failed with exception:', e);
@@ -192,7 +192,7 @@ function testNonErrorObject() {
 
 // Test case 4: Handle circular references in error objects
 function testCircularReferenceError() {
-  console.log('\n=== Test Case 4: Circular Reference in Error ===');
+  console.error('\n=== Test Case 4: Circular Reference in Error ===');
 
   const circularObj = {};
   circularObj.self = circularObj;
@@ -205,14 +205,14 @@ function testCircularReferenceError() {
 
   try {
     const result = createErrorResult(error, url, method);
-    console.log('Result:', JSON.stringify(result, null, 2));
+    console.error('Result:', JSON.stringify(result, null, 2));
 
     if (result.error.message) {
-      console.log('✅ Success: Properly handled error with circular reference');
+      console.error('✅ Success: Properly handled error with circular reference');
 
       // The error message should contain the original message
       if (result.error.message.includes('Error with circular reference')) {
-        console.log('  - Original error message was preserved');
+        console.error('  - Original error message was preserved');
       }
 
       // The details should indicate there was a circular reference
@@ -220,10 +220,10 @@ function testCircularReferenceError() {
         result.error.details &&
         result.error.details.rawError.includes('Circular')
       ) {
-        console.log('  - Circular reference was properly handled in details');
+        console.error('  - Circular reference was properly handled in details');
       }
     } else {
-      console.log(
+      console.error(
         '❌ Failed: Did not properly handle error with circular reference'
       );
     }
@@ -234,14 +234,14 @@ function testCircularReferenceError() {
 
 // Run all tests
 async function runTests() {
-  console.log('Starting error handler tests...');
+  console.error('Starting error handler tests...');
 
   testUndefinedError();
   testErrorWithNoMessage();
   testNonErrorObject();
   testCircularReferenceError();
 
-  console.log('\nAll tests completed.');
+  console.error('\nAll tests completed.');
 }
 
 runTests();

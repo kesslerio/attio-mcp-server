@@ -1,34 +1,28 @@
 /**
- * Notes-related tool configurations for companies
+ * Note operations for deals
  */
-import {
-  getCompanyNotes,
-  createCompanyNote,
-} from '../../../objects/companies/index.js';
+import { getDealNotes, createDealNote } from '../../../objects/deals/notes.js';
 import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
 
-// Company notes tool configurations
 export const notesToolConfigs = {
   notes: {
-    name: 'get-company-notes',
-    handler: getCompanyNotes,
+    name: 'get-deal-notes',
+    handler: getDealNotes,
     formatResult: (notes: NoteDisplay[]): string => {
       if (!notes || notes.length === 0) {
-        return 'No notes found for this company.';
+        return 'No notes found for this deal.';
       }
 
       return `Found ${notes.length} notes:\n${notes
         .map((note: NoteDisplay) => {
-          // The AttioNote interface shows these are direct properties
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
-          // 1. note.title/content/created_at - Standard API response fields (most common)
-          // 2. note.data?.* - Nested data structure (seen in some API versions)
-          // 3. note.values?.* - Attio-style custom field responses
-          // 4. note.text - Alternative content field name (legacy support)
-          // 5. note.body - Another alternative content field (third-party integrations)
-          // This order ensures backward compatibility while supporting API variations
+          // 1. note.title/content - Standard API response fields (most common)
+          // 2. note.created_at - Standard creation timestamp
+          // 3. note.data?.* - Nested data structure (seen in some API versions)
+          // 4. note.values?.* - Attio-style custom field responses
+          // 5. note.text/body - Alternative content field names (legacy/third-party support)
           const title =
             note.title || note.data?.title || note.values?.title || 'Untitled';
           const content =
@@ -44,13 +38,14 @@ export const notesToolConfigs = {
             note.values?.created_at ||
             'unknown';
 
-          // Truncate at 200 chars for company notes (more detail for business context)
-          // This is intentionally longer than person notes (100 chars) as company notes
-          // often contain more detailed business information that benefits from extra context
+          // Truncate at 150 chars for deal notes (between person notes at 100 and company at 200)
+          // This provides sufficient context for deal-related notes which often contain
+          // important deal progress information that benefits from more detail than person notes
+          // but doesn't need as much context as comprehensive company business notes
           return `- ${title} (Created: ${timestamp})\n  ${
             content
-              ? content.length > 200
-                ? content.substring(0, 200) + '...'
+              ? content.length > 150
+                ? content.substring(0, 150) + '...'
                 : content
               : 'No content'
           }`;
@@ -60,9 +55,9 @@ export const notesToolConfigs = {
   } as NotesToolConfig,
 
   createNote: {
-    name: 'create-company-note',
-    handler: createCompanyNote,
-    idParam: 'companyId',
+    name: 'create-deal-note',
+    handler: createDealNote,
+    idParam: 'dealId',
     formatResult: (note: NoteDisplay | null): string => {
       if (!note) {
         return 'Failed to create note.';
@@ -81,23 +76,16 @@ export const notesToolConfigs = {
   } as CreateNoteToolConfig,
 };
 
-// Notes tool definitions
 export const notesToolDefinitions = [
   {
-    name: 'get-company-notes',
-    description: 'Get notes for a company',
+    name: 'get-deal-notes',
+    description: 'Get notes for a deal',
     inputSchema: {
       type: 'object',
       properties: {
-        companyId: {
+        dealId: {
           type: 'string',
-          description:
-            'ID of the company to get notes for (provide either this or uri)',
-        },
-        uri: {
-          type: 'string',
-          description:
-            "URI of the company in the format 'attio://companies/{id}' (provide either this or companyId)",
+          description: 'ID of the deal to get notes for',
         },
         limit: {
           type: 'number',
@@ -108,34 +96,26 @@ export const notesToolDefinitions = [
           description: 'Number of notes to skip for pagination (default: 0)',
         },
       },
+      required: ['dealId'],
     },
   },
   {
-    name: 'create-company-note',
-    description: 'Create a note for a specific company',
+    name: 'create-deal-note',
+    description: 'Create a note for a specific deal',
     inputSchema: {
       type: 'object',
       properties: {
-        companyId: {
+        dealId: {
           type: 'string',
-          description:
-            'ID of the company to create a note for (provide either this or uri)',
-        },
-        uri: {
-          type: 'string',
-          description:
-            "URI of the company in the format 'attio://companies/{id}' (provide either this or companyId)",
+          description: 'ID of the deal to create a note for',
         },
         title: {
           type: 'string',
           description: 'Title of the note (required)',
         },
-        content: {
-          type: 'string',
-          description: 'Content of the note',
-        },
+        content: { type: 'string', description: 'Content of the note' },
       },
-      required: ['title', 'content'],
+      required: ['dealId', 'title', 'content'],
     },
   },
 ];

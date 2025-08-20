@@ -50,7 +50,7 @@ export function processListEntries(
   return entries.map((entry) => {
     // Debug logging in development mode
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[processListEntries] Processing entry:`, {
+      console.error(`[processListEntries] Processing entry:`, {
         entryId: entry.id?.entry_id || 'unknown',
         hasRecordId: !!entry.record_id,
         hasRecord: !!entry.record,
@@ -160,7 +160,7 @@ export function processListEntries(
     // If a record_id was found, return updated entry
     if (recordId) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(
+        console.error(
           `[processListEntries] Found record_id: ${recordId} for entry ${
             entry.id?.entry_id || 'unknown'
           }`
@@ -179,7 +179,7 @@ export function processListEntries(
         recordId = uriParts[uriParts.length - 1];
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(
+          console.error(
             `[processListEntries] Extracted record_id ${recordId} from URI: ${entry.record.uri}`
           );
         }

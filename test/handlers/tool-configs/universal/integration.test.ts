@@ -478,14 +478,14 @@ describe('Universal Tools Integration Tests', () => {
             'search-records'
           ].handler({
             resource_type: UniversalResourceType.PEOPLE,
-            query: 'engineer',  // Common searchable term in people profiles
+            query: 'engineer', // Common searchable term in people profiles
             search_type: 'content',
             limit: 5,
           });
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
-          
+
           // If results are found, verify structure
           if (result.length > 0) {
             expect(result[0]).toHaveProperty('id');
@@ -496,7 +496,7 @@ describe('Universal Tools Integration Tests', () => {
           // If error occurs, it should NOT be "Unknown attribute slug: bio"
           const errorMessage = (error as Error).message;
           expect(errorMessage).not.toContain('Unknown attribute slug: bio');
-          
+
           // Log other errors for debugging but don't fail the test
           console.log('People content search error:', errorMessage);
         }

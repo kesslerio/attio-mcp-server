@@ -27,20 +27,20 @@ async function testError() {
       offset: 0,
     });
   } catch (error) {
-    console.log('===== Error caught =====');
-    console.log('Original error message:', error.message);
-    console.log('Error response data:', error.response?.data);
+    console.error('===== Error caught =====');
+    console.error('Original error message:', error.message);
+    console.error('Error response data:', error.response?.data);
 
     // Try to enhance the error
-    console.log('\n===== Attempting to enhance error =====');
+    console.error('\n===== Attempting to enhance error =====');
     const enhancedResult = interceptAndEnhanceError(
       error,
       '/objects/people/records/query',
       'POST'
     );
 
-    console.log('\n===== Enhanced result =====');
-    console.log(JSON.stringify(enhancedResult, null, 2));
+    console.error('\n===== Enhanced result =====');
+    console.error(JSON.stringify(enhancedResult, null, 2));
   }
 }
 

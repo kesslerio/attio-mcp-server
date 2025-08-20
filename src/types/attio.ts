@@ -344,6 +344,7 @@ export interface AttioTask {
 export enum ResourceType {
   PEOPLE = 'people',
   COMPANIES = 'companies',
+  DEALS = 'deals',
   LISTS = 'lists',
   RECORDS = 'records',
   TASKS = 'tasks',

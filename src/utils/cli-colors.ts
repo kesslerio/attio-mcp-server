@@ -23,8 +23,8 @@ const colors = {
  *
  * @example
  * ```typescript
- * console.log(colorize('Success!', 'green'));
- * console.log(colorize('Warning', 'yellow'));
+ * console.error(colorize('Success!', 'green'));
+ * console.error(colorize('Warning', 'yellow'));
  * ```
  */
 export function colorize(text: string, color: keyof typeof colors): string {

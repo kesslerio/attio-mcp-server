@@ -433,7 +433,7 @@ export class E2ECleanup {
    */
   private log(message: string): void {
     if (this.options.verbose) {
-      console.log(message);
+      console.error(message);
     }
   }
 
@@ -446,22 +446,24 @@ export class E2ECleanup {
     const totalFailed = results.reduce((sum, r) => sum + r.failed, 0);
     const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0);
 
-    console.log('\n📊 Cleanup Summary:');
-    console.log(`   Total objects processed: ${totalAttempted}`);
-    console.log(`   Successfully cleaned: ${totalSuccessful}`);
-    console.log(`   Failed: ${totalFailed}`);
+    console.error('\n📊 Cleanup Summary:');
+    console.error(`   Total objects processed: ${totalAttempted}`);
+    console.error(`   Successfully cleaned: ${totalSuccessful}`);
+    console.error(`   Failed: ${totalFailed}`);
 
     if (totalErrors > 0) {
-      console.log(`   Errors: ${totalErrors}`);
+      console.error(`   Errors: ${totalErrors}`);
       results.forEach((result) => {
         if (result.errors.length > 0) {
-          console.log(`   ${result.type} errors:`, result.errors);
+          console.error(`   ${result.type} errors:`, result.errors);
         }
       });
     }
 
     if (this.options.dryRun) {
-      console.log('\n🔍 This was a DRY RUN - no objects were actually deleted');
+      console.error(
+        '\n🔍 This was a DRY RUN - no objects were actually deleted'
+      );
     }
   }
 }

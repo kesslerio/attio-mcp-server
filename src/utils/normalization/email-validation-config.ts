@@ -52,7 +52,7 @@ export const DEFAULT_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
           console.info(message);
           break;
         default:
-          console.log(message);
+          console.error(message);
       }
     }
   },
@@ -77,7 +77,7 @@ export const LEGACY_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
           console.info(message);
           break;
         default:
-          console.log(message);
+          console.error(message);
       }
     }
   },
@@ -102,7 +102,7 @@ export const WARN_EMAIL_VALIDATION_CONFIG: EmailValidationConfig = {
           console.info(message);
           break;
         default:
-          console.log(message);
+          console.error(message);
       }
     }
   },
