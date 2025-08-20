@@ -204,7 +204,7 @@ describe('UniversalDeleteService', () => {
       process.env.NODE_ENV = 'development';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
@@ -223,7 +223,7 @@ describe('UniversalDeleteService', () => {
       process.env.VERBOSE_TESTS = 'true';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
