@@ -279,18 +279,55 @@ export class PeopleDataNormalizer {
           if (validatedEmail) {
             emails.push({ email_address: validatedEmail });
           }
-        } else if (typeof item === 'object' && item && item.email_address) {
-          const emailValue = this.extractEmailValue(item.email_address);
-          if (emailValue) {
-            const validatedEmail = this.validateAndProcessEmail(
-              emailValue,
-              config
-            );
-            if (validatedEmail) {
-              emails.push({
-                email_address: validatedEmail,
-                email_type: item.email_type || item.type,
-              });
+        } else if (typeof item === 'object' && item) {
+          // ISSUE #518 FIX: Enhanced object email format support
+          // Added support for multiple object formats: {email_address: "..."}, {value: "..."}, {email: "..."}
+          // Handle objects with email_address field (official Attio API format)
+          if (item.email_address) {
+            const emailValue = this.extractEmailValue(item.email_address);
+            if (emailValue) {
+              const validatedEmail = this.validateAndProcessEmail(
+                emailValue,
+                config
+              );
+              if (validatedEmail) {
+                emails.push({
+                  email_address: validatedEmail,
+                  email_type: item.email_type || item.type,
+                });
+              }
+            }
+          }
+          // Handle objects with value field (alternative format)
+          else if (item.value) {
+            const emailValue = this.extractEmailValue(item.value);
+            if (emailValue) {
+              const validatedEmail = this.validateAndProcessEmail(
+                emailValue,
+                config
+              );
+              if (validatedEmail) {
+                emails.push({
+                  email_address: validatedEmail,
+                  email_type: item.email_type || item.type,
+                });
+              }
+            }
+          }
+          // Handle objects with email field (alternative format)
+          else if (item.email) {
+            const emailValue = this.extractEmailValue(item.email);
+            if (emailValue) {
+              const validatedEmail = this.validateAndProcessEmail(
+                emailValue,
+                config
+              );
+              if (validatedEmail) {
+                emails.push({
+                  email_address: validatedEmail,
+                  email_type: item.email_type || item.type,
+                });
+              }
             }
           }
         }
