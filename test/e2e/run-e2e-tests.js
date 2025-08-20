@@ -2,7 +2,7 @@
 
 /**
  * E2E Test Runner with Environment Validation
- * 
+ *
  * This script provides a comprehensive E2E test runner that:
  * - Validates the test environment before running tests
  * - Provides clear guidance for missing configuration
@@ -16,12 +16,16 @@ import { join } from 'path';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ debug: false });
 
 // Configuration
 const CONFIG = {
   requiredEnvVars: ['ATTIO_API_KEY'],
-  optionalEnvVars: ['E2E_TEST_PREFIX', 'E2E_TEST_EMAIL_DOMAIN', 'E2E_TEST_COMPANY_DOMAIN'],
+  optionalEnvVars: [
+    'E2E_TEST_PREFIX',
+    'E2E_TEST_EMAIL_DOMAIN',
+    'E2E_TEST_COMPANY_DOMAIN',
+  ],
   configFiles: ['test/e2e/config.local.json', 'test/e2e/config.template.json'],
   testPatterns: {
     all: 'test/e2e/suites/**/*.e2e.test.ts',
@@ -29,8 +33,8 @@ const CONFIG = {
     universal: 'test/e2e/suites/universal-*.e2e.test.ts',
     notes: 'test/e2e/suites/notes-*.e2e.test.ts',
     tasks: 'test/e2e/suites/tasks-*.e2e.test.ts',
-    lists: 'test/e2e/suites/lists-*.e2e.test.ts'
-  }
+    lists: 'test/e2e/suites/lists-*.e2e.test.ts',
+  },
 };
 
 // Colors for console output
@@ -41,7 +45,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
-  white: '\x1b[37m'
+  white: '\x1b[37m',
 };
 
 function colorize(text, color) {
@@ -50,13 +54,13 @@ function colorize(text, color) {
 
 function checkEnvironment() {
   console.error(colorize('\n🔍 Checking E2E Test Environment...', 'cyan'));
-  
+
   const issues = [];
   const warnings = [];
   const info = [];
 
   // Check required environment variables
-  CONFIG.requiredEnvVars.forEach(envVar => {
+  CONFIG.requiredEnvVars.forEach((envVar) => {
     if (!process.env[envVar]) {
       issues.push(`Missing required environment variable: ${envVar}`);
     } else {
@@ -65,18 +69,22 @@ function checkEnvironment() {
   });
 
   // Check optional environment variables
-  CONFIG.optionalEnvVars.forEach(envVar => {
+  CONFIG.optionalEnvVars.forEach((envVar) => {
     if (!process.env[envVar]) {
-      warnings.push(`Optional environment variable not set: ${envVar} (will use defaults)`);
+      warnings.push(
+        `Optional environment variable not set: ${envVar} (will use defaults)`
+      );
     } else {
       info.push(`✓ ${envVar} is set`);
     }
   });
 
   // Check configuration files
-  const configFile = CONFIG.configFiles.find(file => existsSync(file));
+  const configFile = CONFIG.configFiles.find((file) => existsSync(file));
   if (!configFile) {
-    issues.push(`No configuration file found. Create test/e2e/config.local.json from test/e2e/config.template.json`);
+    issues.push(
+      `No configuration file found. Create test/e2e/config.local.json from test/e2e/config.template.json`
+    );
   } else {
     info.push(`✓ Configuration file found: ${configFile}`);
   }
@@ -85,7 +93,9 @@ function checkEnvironment() {
   const nodeVersion = process.version;
   const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
   if (majorVersion < 18) {
-    warnings.push(`Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`);
+    warnings.push(
+      `Node.js version ${nodeVersion} detected. Recommended: Node.js 18+`
+    );
   } else {
     info.push(`✓ Node.js version: ${nodeVersion}`);
   }
@@ -97,19 +107,19 @@ function printEnvironmentStatus(status) {
   // Print info
   if (status.info.length > 0) {
     console.error(colorize('\n📋 Environment Status:', 'green'));
-    status.info.forEach(item => console.error(`  ${item}`));
+    status.info.forEach((item) => console.error(`  ${item}`));
   }
 
   // Print warnings
   if (status.warnings.length > 0) {
     console.error(colorize('\n⚠️  Warnings:', 'yellow'));
-    status.warnings.forEach(warning => console.error(`  • ${warning}`));
+    status.warnings.forEach((warning) => console.error(`  • ${warning}`));
   }
 
   // Print issues
   if (status.issues.length > 0) {
     console.error(colorize('\n❌ Issues:', 'red'));
-    status.issues.forEach(issue => console.error(`  • ${issue}`));
+    status.issues.forEach((issue) => console.error(`  • ${issue}`));
   }
 }
 
@@ -145,8 +155,8 @@ function printSolutionGuidance(status) {
   if (status.issues.length === 0) return;
 
   console.error(colorize('\n🔧 How to Fix These Issues:', 'cyan'));
-  
-  if (status.issues.some(issue => issue.includes('ATTIO_API_KEY'))) {
+
+  if (status.issues.some((issue) => issue.includes('ATTIO_API_KEY'))) {
     console.error(`
 ${colorize('1. Get an Attio API Key:', 'white')}
    • Log into your Attio workspace
@@ -161,7 +171,7 @@ ${colorize('2. Set the API Key:', 'white')}
 `);
   }
 
-  if (status.issues.some(issue => issue.includes('configuration file'))) {
+  if (status.issues.some((issue) => issue.includes('configuration file'))) {
     console.error(`
 ${colorize('3. Create Configuration File:', 'white')}
    • Copy the template: ${colorize('cp test/e2e/config.template.json test/e2e/config.local.json', 'yellow')}
@@ -180,12 +190,9 @@ ${colorize('4. Alternative - Run Limited Tests:', 'white')}
 
 async function runVitest(pattern = 'all', options = {}) {
   const testPattern = CONFIG.testPatterns[pattern] || pattern;
-  
-  const vitestArgs = [
-    'run',
-    '--config', 'vitest.config.e2e.ts'
-  ];
-  
+
+  const vitestArgs = ['run', '--config', 'vitest.config.e2e.ts'];
+
   // Only add pattern if it's not 'all' (let vitest config handle default includes)
   if (pattern !== 'all') {
     vitestArgs.push(testPattern);
@@ -194,7 +201,12 @@ async function runVitest(pattern = 'all', options = {}) {
   if (options.limited) {
     // Add environment variable to skip API tests
     process.env.SKIP_E2E_TESTS = 'true';
-    console.error(colorize('🚫 Running in limited mode - API tests will be skipped', 'yellow'));
+    console.error(
+      colorize(
+        '🚫 Running in limited mode - API tests will be skipped',
+        'yellow'
+      )
+    );
   }
 
   if (options.reporter) {
@@ -206,11 +218,18 @@ async function runVitest(pattern = 'all', options = {}) {
   }
 
   console.error(colorize(`\n🧪 Running E2E tests: ${testPattern}`, 'cyan'));
-  console.error(colorize(`Command: npx vitest ${vitestArgs.join(' ')}`, 'blue'));
-  
+  console.error(
+    colorize(`Command: npx vitest ${vitestArgs.join(' ')}`, 'blue')
+  );
+
   // Debug: Verify API key is loaded
   if (process.env.ATTIO_API_KEY) {
-    console.error(colorize(`✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`, 'green'));
+    console.error(
+      colorize(
+        `✓ API key loaded (${process.env.ATTIO_API_KEY.slice(0, 10)}...)`,
+        'green'
+      )
+    );
   } else {
     console.error(colorize('⚠️  API key not found in environment!', 'yellow'));
   }
@@ -220,21 +239,27 @@ async function runVitest(pattern = 'all', options = {}) {
     // Using spread operator to create a new object with all current env vars
     const vitest = spawn('npx', ['vitest', ...vitestArgs], {
       stdio: 'inherit',
-      env: { ...process.env }
+      env: { ...process.env },
     });
 
     vitest.on('close', (code) => {
       if (code === 0) {
-        console.error(colorize('\n✅ E2E tests completed successfully', 'green'));
+        console.error(
+          colorize('\n✅ E2E tests completed successfully', 'green')
+        );
         resolve(code);
       } else {
-        console.error(colorize(`\n❌ E2E tests failed with exit code ${code}`, 'red'));
+        console.error(
+          colorize(`\n❌ E2E tests failed with exit code ${code}`, 'red')
+        );
         resolve(code); // Don't reject, let caller handle the exit code
       }
     });
 
     vitest.on('error', (error) => {
-      console.error(colorize(`\n💥 Failed to start E2E tests: ${error.message}`, 'red'));
+      console.error(
+        colorize(`\n💥 Failed to start E2E tests: ${error.message}`, 'red')
+      );
       reject(error);
     });
   });
@@ -242,19 +267,23 @@ async function runVitest(pattern = 'all', options = {}) {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   // Parse command line arguments
   const options = {
     help: args.includes('--help') || args.includes('-h'),
     check: args.includes('--check'),
     limited: args.includes('--limited'),
     verbose: args.includes('--verbose') || args.includes('-v'),
-    reporter: args.includes('--reporter') ? args[args.indexOf('--reporter') + 1] : null,
-    pattern: args.includes('--pattern') ? args[args.indexOf('--pattern') + 1] : 'all'
+    reporter: args.includes('--reporter')
+      ? args[args.indexOf('--reporter') + 1]
+      : null,
+    pattern: args.includes('--pattern')
+      ? args[args.indexOf('--pattern') + 1]
+      : 'all',
   };
 
   console.error(colorize('🎯 Attio MCP Server - E2E Test Runner', 'cyan'));
-  
+
   if (options.help) {
     printUsageHelp();
     process.exit(0);
@@ -270,11 +299,17 @@ async function main() {
   }
 
   // Determine if we can run tests
-  const hasApiKey = !envStatus.issues.some(issue => issue.includes('ATTIO_API_KEY'));
-  const hasConfig = !envStatus.issues.some(issue => issue.includes('configuration file'));
+  const hasApiKey = !envStatus.issues.some((issue) =>
+    issue.includes('ATTIO_API_KEY')
+  );
+  const hasConfig = !envStatus.issues.some((issue) =>
+    issue.includes('configuration file')
+  );
 
   if (!hasConfig) {
-    console.error(colorize('\n❌ Cannot run tests without configuration file', 'red'));
+    console.error(
+      colorize('\n❌ Cannot run tests without configuration file', 'red')
+    );
     printSolutionGuidance(envStatus);
     process.exit(1);
   }
@@ -282,10 +317,16 @@ async function main() {
   if (!hasApiKey && !options.limited) {
     console.error(colorize('\n⚠️  No API key detected', 'yellow'));
     console.error('You can either:');
-    console.error(`  1. Set ATTIO_API_KEY and run: ${colorize('npm run test:e2e', 'white')}`);
-    console.error(`  2. Run limited tests: ${colorize('npm run test:e2e -- --limited', 'white')}`);
-    console.error(`  3. Check environment only: ${colorize('npm run test:e2e -- --check', 'white')}`);
-    
+    console.error(
+      `  1. Set ATTIO_API_KEY and run: ${colorize('npm run test:e2e', 'white')}`
+    );
+    console.error(
+      `  2. Run limited tests: ${colorize('npm run test:e2e -- --limited', 'white')}`
+    );
+    console.error(
+      `  3. Check environment only: ${colorize('npm run test:e2e -- --check', 'white')}`
+    );
+
     printSolutionGuidance(envStatus);
     process.exit(1);
   }
@@ -293,28 +334,45 @@ async function main() {
   // Run the tests
   try {
     const exitCode = await runVitest(options.pattern, options);
-    
+
     // Print summary
     if (exitCode === 0) {
       console.error(colorize('\n🎉 All E2E tests passed!', 'green'));
     } else {
-      console.error(colorize('\n⚠️  Some E2E tests failed. Check the output above for details.', 'yellow'));
-      
+      console.error(
+        colorize(
+          '\n⚠️  Some E2E tests failed. Check the output above for details.',
+          'yellow'
+        )
+      );
+
       if (!hasApiKey) {
-        console.error(colorize('Note: Some failures might be due to missing API key.', 'yellow'));
+        console.error(
+          colorize(
+            'Note: Some failures might be due to missing API key.',
+            'yellow'
+          )
+        );
       }
     }
-    
+
     process.exit(exitCode);
   } catch (error) {
-    console.error(colorize(`\n💥 E2E test execution failed: ${error.message}`, 'red'));
+    console.error(
+      colorize(`\n💥 E2E test execution failed: ${error.message}`, 'red')
+    );
     process.exit(1);
   }
 }
 
 // Handle unhandled errors
 process.on('unhandledRejection', (reason, promise) => {
-  console.error(colorize('💥 Unhandled Rejection at:', 'red'), promise, colorize('reason:', 'red'), reason);
+  console.error(
+    colorize('💥 Unhandled Rejection at:', 'red'),
+    promise,
+    colorize('reason:', 'red'),
+    reason
+  );
   process.exit(1);
 });
 
@@ -324,7 +382,9 @@ process.on('uncaughtException', (error) => {
 });
 
 // Run the main function
-main().catch(error => {
-  console.error(colorize(`💥 Script execution failed: ${error.message}`, 'red'));
+main().catch((error) => {
+  console.error(
+    colorize(`💥 Script execution failed: ${error.message}`, 'red')
+  );
   process.exit(1);
 });

@@ -21,6 +21,14 @@ import {
   InvalidPersonDataError,
 } from './people/errors.js';
 
+// Type definition for email input formats
+type EmailInput = string | {
+  value?: string;
+  email?: string;
+  email_address?: string;
+  [key: string]: any;
+};
+
 // Re-export error classes for backward compatibility
 export {
   PersonOperationError,
@@ -134,16 +142,45 @@ export class PersonValidator {
 
     // Validate email format BEFORE checking for duplicates
     if (attributes.email_addresses) {
-      for (const email of attributes.email_addresses) {
-        if (!isValidEmail(email)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+      const extractedEmails: string[] = [];
+      
+      for (const emailItem of attributes.email_addresses) {
+        let emailAddress: string;
+        
+        // Handle different email formats (same logic as ValidationService)
+        if (typeof emailItem === 'string') {
+          emailAddress = emailItem;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email_address' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).email as string;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'value' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).value as string;
+        } else {
+          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
         }
+        
+        if (!isValidEmail(emailAddress)) {
+          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
+        }
+        
+        extractedEmails.push(emailAddress);
       }
 
       // Check for duplicate emails using batch validation for better performance
-      const emailResults = await searchPeopleByEmails(
-        attributes.email_addresses
-      );
+      const emailResults = await searchPeopleByEmails(extractedEmails);
       const duplicateEmails = emailResults.filter((result) => result.exists);
 
       if (duplicateEmails.length > 0) {
@@ -218,13 +255,36 @@ export class PersonValidator {
         ? attributeValue
         : [attributeValue];
 
-      for (const email of emails) {
-        if (typeof email === 'string' && !isValidEmail(email)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
-        } else if (typeof email !== 'string') {
-          throw new InvalidPersonDataError(
-            `Email must be a string, got: ${typeof email}`
-          );
+      for (const emailItem of emails) {
+        let emailAddress: string;
+        
+        // Handle different email formats (same logic as ValidationService)
+        if (typeof emailItem === 'string') {
+          emailAddress = emailItem;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email_address' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).email as string;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'value' in emailItem
+        ) {
+          emailAddress = (emailItem as Record<string, unknown>).value as string;
+        } else {
+          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
+        }
+        
+        if (!isValidEmail(emailAddress)) {
+          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
         }
       }
     }

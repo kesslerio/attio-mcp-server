@@ -8,7 +8,7 @@ import { discoverAttributes } from './commands/attributes.js';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ debug: false });
 
 /**
  * Main CLI entrypoint

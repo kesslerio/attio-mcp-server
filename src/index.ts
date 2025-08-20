@@ -1,10 +1,37 @@
 #!/usr/bin/env node
 
-// Load environment variables from .env file
-import dotenv from 'dotenv';
-dotenv.config();
+// Load environment variables from .env file manually to avoid dotenv banner output
+// This ensures MCP JSON-RPC protocol compliance by preventing stdout contamination
+import fs from 'fs';
+import path from 'path';
 
-import fs from 'fs'; // Added for PID file
+function loadEnvFile() {
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const lines = envContent.split('\n');
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith('#')) {
+          const [key, ...valueParts] = trimmedLine.split('=');
+          if (key && valueParts.length > 0) {
+            const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+            if (!process.env[key.trim()]) {
+              process.env[key.trim()] = value;
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // Silent failure to avoid stdout contamination
+    // Environment variables will need to be set manually if .env loading fails
+  }
+}
+
+loadEnvFile();
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { startHealthServer } from './health/http-server.js';
