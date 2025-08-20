@@ -321,6 +321,13 @@ export class ValidationService {
           ) {
             emailAddress = (emailItem as Record<string, unknown>)
               .email as string;
+          } else if (
+            typeof emailItem === 'object' &&
+            emailItem &&
+            'value' in emailItem
+          ) {
+            emailAddress = (emailItem as Record<string, unknown>)
+              .value as string;
           } else {
             continue; // Skip invalid email formats
           }

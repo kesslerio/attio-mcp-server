@@ -449,4 +449,205 @@ describe('Person Creation Integration', () => {
       expect.any(Object)
     );
   });
+
+  it('should create person with email objects using value property (Issue #511)', async () => {
+    // Mock the email validation query response (first call)
+    const mockEmailValidationResponse = {
+      data: {
+        data: [], // No existing people with this email
+      },
+    };
+
+    // Mock the create person response (second call)
+    const mockCreateResponse = {
+      data: {
+        data: {
+          id: {
+            workspace_id: 'test-workspace',
+            object_id: 'people-object',
+            record_id: 'new-person-id',
+          },
+          values: {
+            name: [
+              {
+                first_name: 'QA',
+                last_name: 'TESTER_ALPHA_20250819',
+                full_name: 'QA TESTER_ALPHA_20250819',
+                attribute_type: 'personal-name',
+              },
+            ],
+            email_addresses: [
+              {
+                email_address: 'qa-tester-alpha@example.com',
+                attribute_type: 'email-address',
+              },
+            ],
+            title: [
+              {
+                value: 'Quality Assurance Tester',
+                attribute_type: 'text',
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    // Setup mock responses in order
+    mockAxiosInstance.post
+      .mockResolvedValueOnce(mockEmailValidationResponse) // Email validation
+      .mockResolvedValueOnce(mockCreateResponse); // Person creation
+
+    // Test the exact failing case from Issue #511
+    const result = await createPerson({
+      first_name: 'QA',
+      last_name: 'TESTER_ALPHA_20250819',
+      email_addresses: [
+        {
+          value: 'qa-tester-alpha@example.com',
+          type: 'work',
+        },
+      ],
+      job_title: 'Quality Assurance Tester',
+    });
+
+    // Verify the email validation API call was made with correct email
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      1,
+      '/objects/people/records/query',
+      {
+        filter: {
+          $or: [
+            {
+              email_addresses: { $contains: 'qa-tester-alpha@example.com' },
+            },
+          ],
+        },
+        limit: 2,
+      }
+    );
+
+    // Verify the person creation API call was made with correct structure
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      2,
+      '/objects/people/records',
+      {
+        data: {
+          values: {
+            name: {
+              first_name: 'QA',
+              last_name: 'TESTER_ALPHA_20250819',
+              full_name: 'QA TESTER_ALPHA_20250819',
+            },
+            email_addresses: ['qa-tester-alpha@example.com'], // Should extract email value
+            title: 'Quality Assurance Tester',
+          },
+        },
+      }
+    );
+
+    // Verify the result
+    expect(result).toEqual(mockCreateResponse.data.data);
+  });
+
+  it('should handle mixed email formats including value objects (Issue #511)', async () => {
+    // Mock the email validation query response (first call)
+    const mockEmailValidationResponse = {
+      data: {
+        data: [], // No existing people with these emails
+      },
+    };
+
+    // Mock the create person response (second call)
+    const mockCreateResponse = {
+      data: {
+        data: {
+          id: {
+            workspace_id: 'test-workspace',
+            object_id: 'people-object',
+            record_id: 'new-person-id',
+          },
+          values: {
+            name: [
+              {
+                first_name: 'Test',
+                last_name: 'User',
+                full_name: 'Test User',
+                attribute_type: 'personal-name',
+              },
+            ],
+            email_addresses: [
+              {
+                email_address: 'simple@example.com',
+                attribute_type: 'email-address',
+              },
+              {
+                email_address: 'work@example.com',
+                attribute_type: 'email-address',
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    // Setup mock responses in order
+    mockAxiosInstance.post
+      .mockResolvedValueOnce(mockEmailValidationResponse) // Email validation
+      .mockResolvedValueOnce(mockCreateResponse); // Person creation
+
+    // Test mixed email formats: string + object with value property
+    const result = await createPerson({
+      first_name: 'Test',
+      last_name: 'User',
+      email_addresses: [
+        'simple@example.com',
+        {
+          value: 'work@example.com',
+          type: 'work',
+          primary: true,
+        },
+      ],
+    });
+
+    // Verify the email validation query included both emails
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      1,
+      '/objects/people/records/query',
+      {
+        filter: {
+          $or: [
+            {
+              email_addresses: { $contains: 'simple@example.com' },
+            },
+            {
+              email_addresses: { $contains: 'work@example.com' },
+            },
+          ],
+        },
+        limit: 2,
+      }
+    );
+
+    // Verify the person creation API call extracted both email values
+    expect(mockAxiosInstance.post).toHaveBeenNthCalledWith(
+      2,
+      '/objects/people/records',
+      {
+        data: {
+          values: {
+            name: {
+              first_name: 'Test',
+              last_name: 'User',
+              full_name: 'Test User',
+            },
+            email_addresses: ['simple@example.com', 'work@example.com'],
+          },
+        },
+      }
+    );
+
+    // Verify the result
+    expect(result).toEqual(mockCreateResponse.data.data);
+  });
 });
