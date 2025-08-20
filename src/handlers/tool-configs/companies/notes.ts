@@ -6,27 +6,20 @@ import {
   createCompanyNote,
 } from '../../../objects/companies/index.js';
 import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
+import { NoteDisplay } from '../../../types/tool-types.js';
 
 // Company notes tool configurations
 export const notesToolConfigs = {
   notes: {
     name: 'get-company-notes',
     handler: getCompanyNotes,
-    formatResult: (notes) => {
+    formatResult: (notes: NoteDisplay[]): string => {
       if (!notes || notes.length === 0) {
         return 'No notes found for this company.';
       }
 
-      // Debug logging in development to help identify API response structure
-      if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-        console.error(
-          '[get-company-notes] Debug - Raw notes response:',
-          JSON.stringify(notes.slice(0, 1), null, 2)
-        );
-      }
-
       return `Found ${notes.length} notes:\n${notes
-        .map((note: any) => {
+        .map((note: NoteDisplay) => {
           // The AttioNote interface shows these are direct properties
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
@@ -51,19 +44,6 @@ export const notesToolConfigs = {
             note.values?.created_at ||
             'unknown';
 
-          // Additional debug logging for each note
-          if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-            console.error(
-              `[get-company-notes] Note fields available:`,
-              Object.keys(note)
-            );
-            console.error(
-              `[get-company-notes] Content found:`,
-              !!content,
-              content ? `(${content.length} chars)` : '(none)'
-            );
-          }
-
           // Truncate at 200 chars for company notes (more detail for business context)
           // This is intentionally longer than person notes (100 chars) as company notes
           // often contain more detailed business information that benefits from extra context
@@ -83,7 +63,7 @@ export const notesToolConfigs = {
     name: 'create-company-note',
     handler: createCompanyNote,
     idParam: 'companyId',
-    formatResult: (note) => {
+    formatResult: (note: NoteDisplay | null): string => {
       if (!note) {
         return 'Failed to create note.';
       }

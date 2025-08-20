@@ -546,7 +546,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
 /**
  * Get detailed info tool configuration
  */
-const getDetailedInfoConfig: UniversalToolConfig = {
+export const getDetailedInfoConfig: UniversalToolConfig = {
   name: 'get-detailed-info',
   handler: async (params: UniversalDetailedInfoParams) => {
     try {

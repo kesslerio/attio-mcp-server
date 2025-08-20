@@ -9,21 +9,13 @@ export const notesToolConfigs = {
   notes: {
     name: 'get-deal-notes',
     handler: getDealNotes,
-    formatResult: (notes: NoteDisplay[]) => {
+    formatResult: (notes: NoteDisplay[]): string => {
       if (!notes || notes.length === 0) {
         return 'No notes found for this deal.';
       }
 
-      // Debug logging in development to help identify API response structure (Issue #365)
-      if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-        console.error(
-          '[get-deal-notes] Debug - Raw notes response:',
-          JSON.stringify(notes.slice(0, 1), null, 2)
-        );
-      }
-
       return `Found ${notes.length} notes:\n${notes
-        .map((note: any) => {
+        .map((note: NoteDisplay) => {
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
           // 1. note.title/content - Standard API response fields (most common)
@@ -46,19 +38,6 @@ export const notesToolConfigs = {
             note.values?.created_at ||
             'unknown';
 
-          // Additional debug logging for each note
-          if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-            console.error(
-              `[get-deal-notes] Note fields available:`,
-              Object.keys(note)
-            );
-            console.error(
-              `[get-deal-notes] Content found:`,
-              !!content,
-              content ? `(${content.length} chars)` : '(none)'
-            );
-          }
-
           // Truncate at 150 chars for deal notes (between person notes at 100 and company at 200)
           // This provides sufficient context for deal-related notes which often contain
           // important deal progress information that benefits from more detail than person notes
@@ -79,7 +58,7 @@ export const notesToolConfigs = {
     name: 'create-deal-note',
     handler: createDealNote,
     idParam: 'dealId',
-    formatResult: (note) => {
+    formatResult: (note: NoteDisplay | null): string => {
       if (!note) {
         return 'Failed to create note.';
       }

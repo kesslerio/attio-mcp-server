@@ -43,10 +43,8 @@ export function clearDealCaches(): void {
 export async function prewarmStageCache(): Promise<void> {
   try {
     await getAvailableDealStages();
-  } catch (error: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Failed to pre-warm stage cache:', error);
-    }
+  } catch {
+    // Cache pre-warming is optional - silently continue if it fails
   }
 }
 
@@ -141,14 +139,6 @@ export function applyDealDefaults(
 
   // === VALUE/CURRENCY HANDLING ===
 
-  // Debug logging for value field (development only)
-  if (process.env.NODE_ENV === 'development' && dealData.value !== undefined) {
-    console.error(
-      'Deal value before conversion:',
-      JSON.stringify(dealData.value)
-    );
-  }
-
   // Handle various value formats - Attio accepts simple numbers for currency fields
   if (dealData.value && typeof dealData.value === 'number') {
     // Simple number format: value: 9780 - Attio accepts this directly
@@ -187,14 +177,6 @@ export function applyDealDefaults(
     delete dealData.deal_value;
   }
 
-  // Debug logging for value field after conversion (development only)
-  if (process.env.NODE_ENV === 'development' && dealData.value !== undefined) {
-    console.error(
-      'Deal value after conversion:',
-      JSON.stringify(dealData.value)
-    );
-  }
-
   return dealData;
 }
 
@@ -202,7 +184,7 @@ export function applyDealDefaults(
  * Input validation helper for deal data
  * Provides immediate feedback on common mistakes before API calls
  */
-export function validateDealInput(recordData: Record<string, any>): {
+export function validateDealInput(recordData: Record<string, unknown>): {
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -301,9 +283,6 @@ async function getAvailableDealStages(): Promise<string[]> {
 
   // Check error cache to prevent repeated failed requests
   if (errorCache && now - errorCache.timestamp < ERROR_CACHE_TTL) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Returning empty stages due to recent API error (cached)');
-    }
     return [];
   }
 
@@ -322,9 +301,6 @@ async function getAvailableDealStages(): Promise<string[]> {
     );
 
     if (!stageAttribute) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('No stage attribute found for deals');
-      }
       return [];
     }
 
@@ -335,11 +311,6 @@ async function getAvailableDealStages(): Promise<string[]> {
     const stages: string[] = [];
 
     // TODO: Investigate the correct way to fetch status options from Attio API
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        'Status options endpoint not implemented - using fallback stage validation'
-      );
-    }
 
     // Update cache and clear error cache on success
     stageCache = stages;
@@ -348,10 +319,6 @@ async function getAvailableDealStages(): Promise<string[]> {
 
     return stages;
   } catch (error: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Failed to fetch available deal stages:', error);
-    }
-
     // Cache the error to prevent cascading failures
     errorCache = { timestamp: now, error };
 

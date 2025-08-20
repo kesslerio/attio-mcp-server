@@ -305,10 +305,29 @@ export interface ContactValue {
 
 /**
  * Note interface for displaying notes
+ * Handles multiple API response formats for backward compatibility
  */
 export interface NoteDisplay {
   title?: string;
   content?: string;
+  created_at?: string;
   timestamp?: string;
+  // Alternative content field names for legacy/third-party support
+  text?: string;
+  body?: string;
+  // Nested data structures (some API versions)
+  data?: {
+    title?: string;
+    content?: string;
+    created_at?: string;
+    [key: string]: unknown;
+  };
+  // Attio-style custom field responses
+  values?: {
+    title?: string;
+    content?: string;
+    created_at?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
