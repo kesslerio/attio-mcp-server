@@ -22,12 +22,14 @@ import {
 } from './people/errors.js';
 
 // Type definition for email input formats
-type EmailInput = string | {
-  value?: string;
-  email?: string;
-  email_address?: string;
-  [key: string]: any;
-};
+type EmailInput =
+  | string
+  | {
+      value?: string;
+      email?: string;
+      email_address?: string;
+      [key: string]: any;
+    };
 
 // Re-export error classes for backward compatibility
 export {
@@ -143,10 +145,10 @@ export class PersonValidator {
     // Validate email format BEFORE checking for duplicates
     if (attributes.email_addresses) {
       const extractedEmails: string[] = [];
-      
+
       for (const emailItem of attributes.email_addresses) {
         let emailAddress: string;
-        
+
         // Handle different email formats (same logic as ValidationService)
         if (typeof emailItem === 'string') {
           emailAddress = emailItem;
@@ -155,7 +157,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+          emailAddress = (emailItem as Record<string, unknown>)
+            .email_address as string;
         } else if (
           typeof emailItem === 'object' &&
           emailItem &&
@@ -169,13 +172,17 @@ export class PersonValidator {
         ) {
           emailAddress = (emailItem as Record<string, unknown>).value as string;
         } else {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
         }
-        
+
         if (!isValidEmail(emailAddress)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: ${emailAddress}`
+          );
         }
-        
+
         extractedEmails.push(emailAddress);
       }
 
@@ -257,7 +264,7 @@ export class PersonValidator {
 
       for (const emailItem of emails) {
         let emailAddress: string;
-        
+
         // Handle different email formats (same logic as ValidationService)
         if (typeof emailItem === 'string') {
           emailAddress = emailItem;
@@ -266,7 +273,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+          emailAddress = (emailItem as Record<string, unknown>)
+            .email_address as string;
         } else if (
           typeof emailItem === 'object' &&
           emailItem &&
@@ -280,11 +288,15 @@ export class PersonValidator {
         ) {
           emailAddress = (emailItem as Record<string, unknown>).value as string;
         } else {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
         }
-        
+
         if (!isValidEmail(emailAddress)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: ${emailAddress}`
+          );
         }
       }
     }

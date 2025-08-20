@@ -60,7 +60,7 @@ export class PersonValidator {
     if (attributes.email_addresses) {
       for (const emailItem of attributes.email_addresses) {
         let emailAddress: string;
-        
+
         // Handle different email formats (same logic as ValidationService)
         if (typeof emailItem === 'string') {
           emailAddress = emailItem;
@@ -69,7 +69,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+          emailAddress = (emailItem as Record<string, unknown>)
+            .email_address as string;
         } else if (
           typeof emailItem === 'object' &&
           emailItem &&
@@ -83,11 +84,15 @@ export class PersonValidator {
         ) {
           emailAddress = (emailItem as Record<string, unknown>).value as string;
         } else {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
         }
-        
+
         if (!isValidEmail(emailAddress)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: ${emailAddress}`
+          );
         }
       }
     }
@@ -136,7 +141,7 @@ export class PersonValidator {
 
       for (const emailItem of emails) {
         let emailAddress: string;
-        
+
         // Handle different email formats (same logic as ValidationService)
         if (typeof emailItem === 'string') {
           emailAddress = emailItem;
@@ -145,7 +150,8 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          emailAddress = (emailItem as Record<string, unknown>).email_address as string;
+          emailAddress = (emailItem as Record<string, unknown>)
+            .email_address as string;
         } else if (
           typeof emailItem === 'object' &&
           emailItem &&
@@ -159,11 +165,15 @@ export class PersonValidator {
         ) {
           emailAddress = (emailItem as Record<string, unknown>).value as string;
         } else {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailItem}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
         }
-        
+
         if (!isValidEmail(emailAddress)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${emailAddress}`);
+          throw new InvalidPersonDataError(
+            `Invalid email format: ${emailAddress}`
+          );
         }
       }
     }
