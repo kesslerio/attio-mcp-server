@@ -349,7 +349,7 @@ The cleanup utilities are integrated into the QA test plan execution workflow:
 | Test ID | Tool Name | Resource Types | Priority | Dependencies | Status |
 |---------|-----------|----------------|----------|--------------|--------|
 | TC-014 | Lists Operations | Lists only | P0 | Test data setup | ⏳ PENDING |
-| TC-015 | Notes CRUD Operations | All resource types | P0 | P0 completion | 🚫 BLOCKED |
+| TC-015 | Notes CRUD Operations | All resource types | P0 | P0 completion | ⏳ PENDING |
 | TC-016 | Advanced Universal Operations | All resource types | P1 | P0 completion | 🚫 BLOCKED |
 | TC-017 | Tasks Resource Operations | Tasks only | P1 | P0 completion | 🚫 BLOCKED |
 | TC-018 | Data Validation Checks | All resource types | P2 | P0+P1 completion | 🚫 BLOCKED |
@@ -1880,6 +1880,62 @@ Expected Result:
 - Update timestamp recorded
 - Original creation date preserved
 - Change history maintained if applicable
+```
+
+#### TC-015-HP-06: Create Deal Note
+
+```
+Test Case: TC-015-HP-06 - Create Note for Deal
+Tool: create-deal-note
+Parameters:
+- dealId: "[DEAL_ID]"
+- title: "Deal Progress Update"
+- content: "Client meeting completed - discussed proposal details and next steps. Deal value confirmed at $75k, moving to final negotiation stage."
+
+Expected Result:
+- Note created successfully for deal
+- Returns note ID and creation timestamp
+- Note associated with correct deal record
+- Note content preserved exactly
+- Deal note appears in deal activity timeline
+```
+
+#### TC-015-HP-07: Get Deal Notes
+
+```
+Test Case: TC-015-HP-07 - Retrieve Deal Notes with Pagination
+Tool: get-deal-notes
+Parameters:
+- dealId: "[DEAL_ID]"
+- limit: 5
+- offset: 0
+
+Expected Result:
+- Returns up to 5 notes for the deal
+- Notes sorted by creation date (newest first)
+- Each note includes title, content, timestamps
+- Pagination info provided if applicable
+- Notes display with 150-char content truncation for readability
+```
+
+#### TC-015-HP-08: Universal Note Operations for Deals
+
+```
+Test Case: TC-015-HP-08 - Universal Note CRUD for Deal Records
+Tools: create-note, get-notes, update-note, search-notes, delete-note
+Parameters (create-note):
+- resource_type: "deals"
+- parent_record_id: "[DEAL_ID]"
+- title: "Universal Deal Note Test"
+- content: "Testing universal note creation for deal records via universal tools"
+
+Expected Result:
+- Universal create-note works with deals resource type
+- Universal get-notes retrieves deal notes correctly
+- Universal update-note modifies deal note content
+- Universal search-notes finds deal notes by content
+- Universal delete-note removes deal notes properly
+- All universal tools maintain consistency with specific deal note tools
 ```
 
 ### TC-016: Advanced Universal Operations
