@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  * Comprehensive Test Data Cleanup Utility
- * 
+ *
  * This script provides comprehensive cleanup of test data across all Attio resource types.
  * Uses direct API calls for efficiency and supports parallel processing with rate limiting.
- * 
+ *
  * Usage:
  *   npm run cleanup:test-data
  *   npm run cleanup:test-data -- --dry-run
  *   npm run cleanup:test-data -- --prefix=TEST_,QA_,E2E_ --parallel=3
  *   npm run cleanup:test-data -- --resource-type=companies --dry-run=false
- * 
+ *
  * Features:
  * - Direct API calls (not MCP) for performance
  * - Parallel processing with configurable concurrency
@@ -23,10 +23,14 @@
 
 import dotenv from 'dotenv';
 import { getAttioClient } from '../src/api/attio-client.js';
-import { retryWithBackoff, waitForRateLimit, getDetailedErrorMessage } from '../test/utils/test-cleanup.js';
+import {
+  retryWithBackoff,
+  waitForRateLimit,
+  getDetailedErrorMessage,
+} from '../test/utils/test-cleanup.js';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ debug: false });
 
 interface CleanupOptions {
   dryRun: boolean;
@@ -36,7 +40,13 @@ interface CleanupOptions {
   verbose: boolean;
 }
 
-type ResourceType = 'companies' | 'people' | 'tasks' | 'lists' | 'notes' | 'all';
+type ResourceType =
+  | 'companies'
+  | 'people'
+  | 'tasks'
+  | 'lists'
+  | 'notes'
+  | 'all';
 
 interface CleanupStats {
   [key: string]: {
@@ -59,7 +69,7 @@ class TestDataCleanup {
 
   constructor(options: CleanupOptions) {
     this.options = options;
-    
+
     // Validate API key
     const apiKey = process.env.ATTIO_API_KEY;
     if (!apiKey) {
@@ -67,13 +77,13 @@ class TestDataCleanup {
     }
 
     this.client = getAttioClient();
-    
+
     // Initialize stats
-    const resourceTypes = options.resourceTypes.includes('all' as ResourceType) 
-      ? ['companies', 'people', 'tasks', 'lists', 'notes'] 
+    const resourceTypes = options.resourceTypes.includes('all' as ResourceType)
+      ? ['companies', 'people', 'tasks', 'lists', 'notes']
       : options.resourceTypes;
-      
-    resourceTypes.forEach(type => {
+
+    resourceTypes.forEach((type) => {
       if (type !== 'all') {
         this.stats[type] = { found: 0, deleted: 0, errors: 0 };
       }
@@ -85,7 +95,9 @@ class TestDataCleanup {
    */
   async execute(): Promise<void> {
     console.log('🧹 Attio Test Data Cleanup Utility\n');
-    console.log(`Mode: ${this.options.dryRun ? '🔍 DRY RUN' : '💥 LIVE DELETION'}`);
+    console.log(
+      `Mode: ${this.options.dryRun ? '🔍 DRY RUN' : '💥 LIVE DELETION'}`
+    );
     console.log(`Prefixes: ${this.options.prefixes.join(', ')}`);
     console.log(`Parallel operations: ${this.options.parallel}`);
     console.log(`Resource types: ${this.options.resourceTypes.join(', ')}\n`);
@@ -93,21 +105,21 @@ class TestDataCleanup {
     if (!this.options.dryRun) {
       console.log('⚠️  WARNING: This will permanently delete test data!');
       console.log('💡 Use --dry-run to preview what would be deleted.\n');
-      
+
       // Simple confirmation for non-dry-run mode
       if (process.stdout.isTTY) {
         const readline = await import('readline');
         const rl = readline.createInterface({
           input: process.stdin,
-          output: process.stdout
+          output: process.stdout,
         });
-        
+
         const answer = await new Promise<string>((resolve) => {
           rl.question('Continue? (yes/no): ', resolve);
         });
-        
+
         rl.close();
-        
+
         if (answer.toLowerCase() !== 'yes') {
           console.log('Cleanup cancelled.');
           return;
@@ -115,16 +127,18 @@ class TestDataCleanup {
       }
     }
 
-    const resourceTypes = this.options.resourceTypes.includes('all' as ResourceType)
+    const resourceTypes = this.options.resourceTypes.includes(
+      'all' as ResourceType
+    )
       ? ['companies', 'people', 'tasks', 'lists', 'notes']
-      : this.options.resourceTypes.filter(t => t !== 'all');
+      : this.options.resourceTypes.filter((t) => t !== 'all');
 
     // Process each resource type
     for (const resourceType of resourceTypes) {
       if (resourceType === 'all') continue;
-      
+
       console.log(`\n📊 Processing ${resourceType}...`);
-      
+
       try {
         switch (resourceType) {
           case 'companies':
@@ -144,7 +158,10 @@ class TestDataCleanup {
             break;
         }
       } catch (error) {
-        console.error(`❌ Error processing ${resourceType}:`, getDetailedErrorMessage(error));
+        console.error(
+          `❌ Error processing ${resourceType}:`,
+          getDetailedErrorMessage(error)
+        );
         this.stats[resourceType].errors++;
       }
     }
@@ -168,33 +185,42 @@ class TestDataCleanup {
 
     if (this.options.dryRun) {
       companies.forEach((company, index) => {
-        console.log(`    ${index + 1}. ${company.values?.name?.[0]?.value || 'Unknown'} (${company.id.record_id})`);
+        console.log(
+          `    ${index + 1}. ${company.values?.name?.[0]?.value || 'Unknown'} (${company.id.record_id})`
+        );
       });
       return;
     }
 
     // Process in parallel chunks
     const chunks = this.chunkArray(companies, this.options.parallel);
-    
+
     for (const chunk of chunks) {
       await Promise.all(
         chunk.map(async (company) => {
           try {
             await retryWithBackoff(async () => {
-              await this.client.delete(`/objects/companies/records/${company.id.record_id}`);
+              await this.client.delete(
+                `/objects/companies/records/${company.id.record_id}`
+              );
             });
-            
+
             this.stats.companies.deleted++;
             if (this.options.verbose) {
-              console.log(`    ✅ Deleted: ${company.values?.name?.[0]?.value || company.id.record_id}`);
+              console.log(
+                `    ✅ Deleted: ${company.values?.name?.[0]?.value || company.id.record_id}`
+              );
             }
           } catch (error) {
             this.stats.companies.errors++;
-            console.error(`    ❌ Failed to delete company ${company.id.record_id}:`, getDetailedErrorMessage(error));
+            console.error(
+              `    ❌ Failed to delete company ${company.id.record_id}:`,
+              getDetailedErrorMessage(error)
+            );
           }
         })
       );
-      
+
       // Rate limiting between chunks
       if (chunks.indexOf(chunk) < chunks.length - 1) {
         await waitForRateLimit(200);
@@ -221,7 +247,7 @@ class TestDataCleanup {
         // Try multiple ways to extract person information
         let displayName = 'Unknown';
         let emailInfo = '';
-        
+
         // Try different name field structures
         if (person.values) {
           // Helper to extract value from Attio field structure
@@ -239,7 +265,12 @@ class TestDataCleanup {
                 }
                 if (firstItem.first_name) return firstItem.first_name;
                 // Fallback to other common fields
-                return firstItem.value || firstItem.name || firstItem.display_value || '';
+                return (
+                  firstItem.value ||
+                  firstItem.name ||
+                  firstItem.display_value ||
+                  ''
+                );
               }
             }
             if (typeof field === 'object') {
@@ -252,26 +283,26 @@ class TestDataCleanup {
             }
             return '';
           };
-          
+
           // Try name field first (has full_name, first_name, last_name)
           const nameField = extractValue(person.values.name);
-          
+
           // Try first_name/last_name structure as fallback
           const firstName = extractValue(person.values.first_name);
           const lastName = extractValue(person.values.last_name);
           const fullName = `${firstName} ${lastName}`.trim();
-          
+
           // Use whichever is available
           displayName = nameField || fullName || 'Unknown';
-          
+
           // Try to get email information
           if (person.values.email_addresses) {
-            const emails = Array.isArray(person.values.email_addresses) 
-              ? person.values.email_addresses 
+            const emails = Array.isArray(person.values.email_addresses)
+              ? person.values.email_addresses
               : [person.values.email_addresses];
-            
+
             const emailList = emails
-              .map(email => {
+              .map((email) => {
                 if (typeof email === 'string') return email;
                 if (email?.email_address) return email.email_address;
                 if (email?.value) return email.value;
@@ -279,16 +310,18 @@ class TestDataCleanup {
               })
               .filter(Boolean)
               .slice(0, 2); // Show max 2 emails
-            
+
             if (emailList.length > 0) {
               emailInfo = ` | ${emailList.join(', ')}`;
               if (emailList.length > 2) emailInfo += '...';
             }
           }
         }
-        
-        console.log(`    ${index + 1}. ${displayName}${emailInfo} (${person.id.record_id})`);
-        
+
+        console.log(
+          `    ${index + 1}. ${displayName}${emailInfo} (${person.id.record_id})`
+        );
+
         // Debug: Show raw structure if verbose mode
         if (this.options.verbose) {
           console.log(`       Raw: ${JSON.stringify(person.values, null, 2)}`);
@@ -299,15 +332,17 @@ class TestDataCleanup {
 
     // Process in parallel chunks
     const chunks = this.chunkArray(people, this.options.parallel);
-    
+
     for (const chunk of chunks) {
       await Promise.all(
         chunk.map(async (person) => {
           try {
             await retryWithBackoff(async () => {
-              await this.client.delete(`/objects/people/records/${person.id.record_id}`);
+              await this.client.delete(
+                `/objects/people/records/${person.id.record_id}`
+              );
             });
-            
+
             this.stats.people.deleted++;
             if (this.options.verbose) {
               // Use same logic as dry-run display
@@ -326,7 +361,12 @@ class TestDataCleanup {
                         return `${firstItem.first_name} ${firstItem.last_name}`.trim();
                       }
                       if (firstItem.first_name) return firstItem.first_name;
-                      return firstItem.value || firstItem.name || firstItem.display_value || '';
+                      return (
+                        firstItem.value ||
+                        firstItem.name ||
+                        firstItem.display_value ||
+                        ''
+                      );
                     }
                   }
                   if (typeof field === 'object') {
@@ -335,11 +375,13 @@ class TestDataCleanup {
                       return `${field.first_name} ${field.last_name}`.trim();
                     }
                     if (field.first_name) return field.first_name;
-                    return field.value || field.name || field.display_value || '';
+                    return (
+                      field.value || field.name || field.display_value || ''
+                    );
                   }
                   return '';
                 };
-                
+
                 const nameField = extractValue(person.values.name);
                 const firstName = extractValue(person.values.first_name);
                 const lastName = extractValue(person.values.last_name);
@@ -350,11 +392,14 @@ class TestDataCleanup {
             }
           } catch (error) {
             this.stats.people.errors++;
-            console.error(`    ❌ Failed to delete person ${person.id.record_id}:`, getDetailedErrorMessage(error));
+            console.error(
+              `    ❌ Failed to delete person ${person.id.record_id}:`,
+              getDetailedErrorMessage(error)
+            );
           }
         })
       );
-      
+
       // Rate limiting between chunks
       if (chunks.indexOf(chunk) < chunks.length - 1) {
         await waitForRateLimit(200);
@@ -378,14 +423,16 @@ class TestDataCleanup {
 
     if (this.options.dryRun) {
       tasks.forEach((task, index) => {
-        console.log(`    ${index + 1}. ${task.content || task.title || 'Unknown'} (${task.id.task_id})`);
+        console.log(
+          `    ${index + 1}. ${task.content || task.title || 'Unknown'} (${task.id.task_id})`
+        );
       });
       return;
     }
 
     // Process in parallel chunks
     const chunks = this.chunkArray(tasks, this.options.parallel);
-    
+
     for (const chunk of chunks) {
       await Promise.all(
         chunk.map(async (task) => {
@@ -393,18 +440,23 @@ class TestDataCleanup {
             await retryWithBackoff(async () => {
               await this.client.delete(`/tasks/${task.id.task_id}`);
             });
-            
+
             this.stats.tasks.deleted++;
             if (this.options.verbose) {
-              console.log(`    ✅ Deleted: ${task.content || task.title || task.id.task_id}`);
+              console.log(
+                `    ✅ Deleted: ${task.content || task.title || task.id.task_id}`
+              );
             }
           } catch (error) {
             this.stats.tasks.errors++;
-            console.error(`    ❌ Failed to delete task ${task.id.task_id}:`, getDetailedErrorMessage(error));
+            console.error(
+              `    ❌ Failed to delete task ${task.id.task_id}:`,
+              getDetailedErrorMessage(error)
+            );
           }
         })
       );
-      
+
       // Rate limiting between chunks
       if (chunks.indexOf(chunk) < chunks.length - 1) {
         await waitForRateLimit(200);
@@ -428,7 +480,9 @@ class TestDataCleanup {
 
     if (this.options.dryRun) {
       lists.forEach((list, index) => {
-        console.log(`    ${index + 1}. ${list.name || 'Unknown'} (${list.id.list_id})`);
+        console.log(
+          `    ${index + 1}. ${list.name || 'Unknown'} (${list.id.list_id})`
+        );
       });
       return;
     }
@@ -439,17 +493,20 @@ class TestDataCleanup {
         await retryWithBackoff(async () => {
           await this.client.delete(`/lists/${list.id.list_id}`);
         });
-        
+
         this.stats.lists.deleted++;
         if (this.options.verbose) {
           console.log(`    ✅ Deleted: ${list.name || list.id.list_id}`);
         }
-        
+
         // Small delay between list deletions
         await waitForRateLimit(500);
       } catch (error) {
         this.stats.lists.errors++;
-        console.error(`    ❌ Failed to delete list ${list.id.list_id}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Failed to delete list ${list.id.list_id}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
   }
@@ -458,7 +515,9 @@ class TestDataCleanup {
    * Clean up test notes (if API available)
    */
   private async cleanupNotes(): Promise<void> {
-    console.log('  ⚠️  Notes cleanup not yet implemented (API endpoint research needed)');
+    console.log(
+      '  ⚠️  Notes cleanup not yet implemented (API endpoint research needed)'
+    );
     // TODO: Research notes API endpoints and implement cleanup
     this.stats.notes = { found: 0, deleted: 0, errors: 0 };
   }
@@ -468,7 +527,7 @@ class TestDataCleanup {
    */
   private async findTestCompanies(): Promise<any[]> {
     const allCompanies: any[] = [];
-    
+
     // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
@@ -477,45 +536,56 @@ class TestDataCleanup {
             filter: {
               name: { $starts_with: prefix },
             },
-            limit: 500 // Batch size
+            limit: 500, // Batch size
           });
         });
-        
+
         const companies = response.data?.data ?? [];
         allCompanies.push(...companies);
       } catch (error) {
-        console.error(`    ❌ Error querying companies with prefix ${prefix}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Error querying companies with prefix ${prefix}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
-    
+
     // Common test patterns (case-insensitive)
     const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example'];
     for (const pattern of testPatterns) {
       try {
         // Try both exact prefix and case variations
-        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+        for (const variant of [
+          pattern,
+          pattern.toUpperCase(),
+          pattern.toLowerCase(),
+        ]) {
           const response = await retryWithBackoff(async () => {
             return this.client.post('/objects/companies/records/query', {
               filter: {
                 name: { $starts_with: variant },
               },
-              limit: 500
+              limit: 500,
             });
           });
-          
+
           const companies = response.data?.data ?? [];
           allCompanies.push(...companies);
         }
       } catch (error) {
-        console.error(`    ❌ Error querying companies with pattern ${pattern}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Error querying companies with pattern ${pattern}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
-    
+
     // Remove duplicates by record_id
-    const uniqueCompanies = allCompanies.filter((company, index, self) => 
-      index === self.findIndex(c => c.id.record_id === company.id.record_id)
+    const uniqueCompanies = allCompanies.filter(
+      (company, index, self) =>
+        index === self.findIndex((c) => c.id.record_id === company.id.record_id)
     );
-    
+
     return uniqueCompanies;
   }
 
@@ -524,7 +594,7 @@ class TestDataCleanup {
    */
   private async findTestPeople(): Promise<any[]> {
     const allPeople: any[] = [];
-    
+
     // Standard prefixes from options
     for (const prefix of this.options.prefixes) {
       try {
@@ -534,54 +604,70 @@ class TestDataCleanup {
             filter: {
               name: { $starts_with: prefix },
             },
-            limit: 500
+            limit: 500,
           });
         });
-        
+
         const people = nameResponse.data?.data ?? [];
         allPeople.push(...people);
-        
+
         // Search by email (prefix in lowercase for email domains)
         const emailResponse = await retryWithBackoff(async () => {
           return this.client.post('/objects/people/records/query', {
             filter: {
               email_addresses: { $contains: prefix.toLowerCase() },
             },
-            limit: 500
+            limit: 500,
           });
         });
-        
+
         const emailPeople = emailResponse.data?.data ?? [];
         allPeople.push(...emailPeople);
-        
       } catch (error) {
-        console.error(`    ❌ Error querying people with prefix ${prefix}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Error querying people with prefix ${prefix}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
-    
+
     // Common test patterns for names (case-insensitive)
-    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example', 'Universal Test'];
+    const testPatterns = [
+      'Test',
+      'Mock',
+      'Demo',
+      'Sample',
+      'Example',
+      'Universal Test',
+    ];
     for (const pattern of testPatterns) {
       try {
         // Try both exact prefix and case variations
-        for (const variant of [pattern, pattern.toUpperCase(), pattern.toLowerCase()]) {
+        for (const variant of [
+          pattern,
+          pattern.toUpperCase(),
+          pattern.toLowerCase(),
+        ]) {
           const response = await retryWithBackoff(async () => {
             return this.client.post('/objects/people/records/query', {
               filter: {
                 name: { $starts_with: variant },
               },
-              limit: 500
+              limit: 500,
             });
           });
-          
+
           const people = response.data?.data ?? [];
           allPeople.push(...people);
         }
       } catch (error) {
-        console.error(`    ❌ Error querying people with pattern ${pattern}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Error querying people with pattern ${pattern}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
-    
+
     // Common test email domains and patterns
     const testEmailPatterns = [
       '@example.com',
@@ -595,9 +681,9 @@ class TestDataCleanup {
       'universal-test-',
       'test414@',
       'valid@example',
-      'updated-valid@'
+      'updated-valid@',
     ];
-    
+
     for (const emailPattern of testEmailPatterns) {
       try {
         const response = await retryWithBackoff(async () => {
@@ -605,22 +691,26 @@ class TestDataCleanup {
             filter: {
               email_addresses: { $contains: emailPattern },
             },
-            limit: 500
+            limit: 500,
           });
         });
-        
+
         const people = response.data?.data ?? [];
         allPeople.push(...people);
       } catch (error) {
-        console.error(`    ❌ Error querying people with email pattern ${emailPattern}:`, getDetailedErrorMessage(error));
+        console.error(
+          `    ❌ Error querying people with email pattern ${emailPattern}:`,
+          getDetailedErrorMessage(error)
+        );
       }
     }
-    
+
     // Remove duplicates by record_id
-    const uniquePeople = allPeople.filter((person, index, self) => 
-      index === self.findIndex(p => p.id.record_id === person.id.record_id)
+    const uniquePeople = allPeople.filter(
+      (person, index, self) =>
+        index === self.findIndex((p) => p.id.record_id === person.id.record_id)
     );
-    
+
     return uniquePeople;
   }
 
@@ -629,16 +719,16 @@ class TestDataCleanup {
    */
   private async findTestTasks(): Promise<any[]> {
     const allTasks: any[] = [];
-    
+
     try {
       // Get all tasks and filter client-side by prefix
       // Note: Attio tasks API uses GET with query parameters, not POST with filters
       const response = await retryWithBackoff(async () => {
         return this.client.get('/tasks?pageSize=500');
       });
-      
+
       const tasks = response.data?.data ?? [];
-      
+
       // Filter tasks by prefix in content or title
       for (const prefix of this.options.prefixes) {
         const prefixTasks = tasks.filter((task: any) => {
@@ -648,16 +738,19 @@ class TestDataCleanup {
         });
         allTasks.push(...prefixTasks);
       }
-      
     } catch (error) {
-      console.error(`    ❌ Error querying tasks:`, getDetailedErrorMessage(error));
+      console.error(
+        `    ❌ Error querying tasks:`,
+        getDetailedErrorMessage(error)
+      );
     }
-    
+
     // Remove duplicates by task_id
-    const uniqueTasks = allTasks.filter((task, index, self) => 
-      index === self.findIndex(t => t.id?.task_id === task.id?.task_id)
+    const uniqueTasks = allTasks.filter(
+      (task, index, self) =>
+        index === self.findIndex((t) => t.id?.task_id === task.id?.task_id)
     );
-    
+
     return uniqueTasks;
   }
 
@@ -666,25 +759,28 @@ class TestDataCleanup {
    */
   private async findTestLists(): Promise<any[]> {
     const allLists: any[] = [];
-    
+
     try {
       const response = await retryWithBackoff(async () => {
         return this.client.get('/lists?limit=500');
       });
-      
+
       const lists = response.data?.data ?? [];
-      
+
       // Filter lists by name prefix
       for (const prefix of this.options.prefixes) {
-        const prefixLists = lists.filter((list: any) => 
-          list.name && list.name.startsWith(prefix)
+        const prefixLists = lists.filter(
+          (list: any) => list.name && list.name.startsWith(prefix)
         );
         allLists.push(...prefixLists);
       }
     } catch (error) {
-      console.error('    ❌ Error querying lists:', getDetailedErrorMessage(error));
+      console.error(
+        '    ❌ Error querying lists:',
+        getDetailedErrorMessage(error)
+      );
     }
-    
+
     return allLists;
   }
 
@@ -705,30 +801,36 @@ class TestDataCleanup {
   private printSummary(): void {
     console.log('\n📋 Cleanup Summary');
     console.log('='.repeat(50));
-    
+
     let totalFound = 0;
     let totalDeleted = 0;
     let totalErrors = 0;
-    
+
     Object.entries(this.stats).forEach(([resourceType, stats]) => {
-      console.log(`${resourceType.padEnd(12)} | Found: ${stats.found.toString().padStart(3)} | Deleted: ${stats.deleted.toString().padStart(3)} | Errors: ${stats.errors.toString().padStart(3)}`);
+      console.log(
+        `${resourceType.padEnd(12)} | Found: ${stats.found.toString().padStart(3)} | Deleted: ${stats.deleted.toString().padStart(3)} | Errors: ${stats.errors.toString().padStart(3)}`
+      );
       totalFound += stats.found;
       totalDeleted += stats.deleted;
       totalErrors += stats.errors;
     });
-    
+
     console.log('-'.repeat(50));
-    console.log(`${'TOTAL'.padEnd(12)} | Found: ${totalFound.toString().padStart(3)} | Deleted: ${totalDeleted.toString().padStart(3)} | Errors: ${totalErrors.toString().padStart(3)}`);
-    
+    console.log(
+      `${'TOTAL'.padEnd(12)} | Found: ${totalFound.toString().padStart(3)} | Deleted: ${totalDeleted.toString().padStart(3)} | Errors: ${totalErrors.toString().padStart(3)}`
+    );
+
     if (this.options.dryRun) {
       console.log('\n💡 This was a dry run. No data was actually deleted.');
       console.log('   Run without --dry-run to perform actual cleanup.');
     } else {
       console.log('\n✅ Cleanup completed successfully!');
     }
-    
+
     if (totalErrors > 0) {
-      console.log(`\n⚠️  ${totalErrors} errors occurred during cleanup. Check the logs above for details.`);
+      console.log(
+        `\n⚠️  ${totalErrors} errors occurred during cleanup. Check the logs above for details.`
+      );
     }
   }
 }
@@ -738,15 +840,15 @@ class TestDataCleanup {
  */
 function parseArgs(): CleanupOptions {
   const args = process.argv.slice(2);
-  
+
   const options: CleanupOptions = {
     dryRun: true, // Default to dry run for safety
     prefixes: ['TEST_', 'QA_', 'E2E_'],
     resourceTypes: ['all'],
     parallel: 5,
-    verbose: false
+    verbose: false,
   };
-  
+
   for (const arg of args) {
     if (arg.startsWith('--dry-run=')) {
       options.dryRun = arg.split('=')[1] === 'true';
@@ -755,9 +857,15 @@ function parseArgs(): CleanupOptions {
     } else if (arg === '--live') {
       options.dryRun = false;
     } else if (arg.startsWith('--prefix=')) {
-      options.prefixes = arg.split('=')[1].split(',').map(p => p.trim());
+      options.prefixes = arg
+        .split('=')[1]
+        .split(',')
+        .map((p) => p.trim());
     } else if (arg.startsWith('--resource-type=')) {
-      options.resourceTypes = arg.split('=')[1].split(',').map(r => r.trim()) as ResourceType[];
+      options.resourceTypes = arg
+        .split('=')[1]
+        .split(',')
+        .map((r) => r.trim()) as ResourceType[];
     } else if (arg.startsWith('--parallel=')) {
       options.parallel = parseInt(arg.split('=')[1]) || 5;
     } else if (arg === '--verbose' || arg === '-v') {
@@ -767,7 +875,7 @@ function parseArgs(): CleanupOptions {
       process.exit(0);
     }
   }
-  
+
   return options;
 }
 

@@ -11,7 +11,7 @@ import { handleUniversalGetDetails } from '../../src/handlers/tool-configs/unive
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ debug: false });
 
 // Skip tests if no API key is available
 const SKIP_INTEGRATION =

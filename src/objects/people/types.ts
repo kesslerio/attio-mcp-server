@@ -58,9 +58,61 @@ export class PersonValidator {
 
     // Validate email format
     if (attributes.email_addresses) {
-      for (const email of attributes.email_addresses) {
-        if (!isValidEmail(email)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
+      for (const emailItem of attributes.email_addresses) {
+        let emailAddress: string;
+
+        // Handle different email formats (same logic as ValidationService)
+        if (typeof emailItem === 'string') {
+          emailAddress = emailItem;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email_address' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).email_address;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: email_address must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).email;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: email must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'value' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).value;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: value must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else {
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
+        }
+
+        if (!isValidEmail(emailAddress)) {
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${emailAddress}". Please provide a valid email address (e.g., user@example.com)`
+          );
         }
       }
     }
@@ -107,12 +159,60 @@ export class PersonValidator {
         ? attributeValue
         : [attributeValue];
 
-      for (const email of emails) {
-        if (typeof email === 'string' && !isValidEmail(email)) {
-          throw new InvalidPersonDataError(`Invalid email format: ${email}`);
-        } else if (typeof email !== 'string') {
+      for (const emailItem of emails) {
+        let emailAddress: string;
+
+        // Handle different email formats (same logic as ValidationService)
+        if (typeof emailItem === 'string') {
+          emailAddress = emailItem;
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email_address' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).email_address;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: email_address must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'email' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).email;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: email must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else if (
+          typeof emailItem === 'object' &&
+          emailItem &&
+          'value' in emailItem
+        ) {
+          const emailValue = (emailItem as Record<string, unknown>).value;
+          if (typeof emailValue === 'string') {
+            emailAddress = emailValue;
+          } else {
+            throw new InvalidPersonDataError(
+              `Invalid email format: value must be a string, got ${typeof emailValue}. Please provide a valid email address (e.g., user@example.com)`
+            );
+          }
+        } else {
           throw new InvalidPersonDataError(
-            `Email must be a string, got: ${typeof email}`
+            `Invalid email format: "${JSON.stringify(emailItem)}". Please provide a valid email address (e.g., user@example.com)`
+          );
+        }
+
+        if (!isValidEmail(emailAddress)) {
+          throw new InvalidPersonDataError(
+            `Invalid email format: "${emailAddress}". Please provide a valid email address (e.g., user@example.com)`
           );
         }
       }

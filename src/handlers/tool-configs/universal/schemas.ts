@@ -192,11 +192,15 @@ export class InputSanitizer {
     if (typeof obj === 'object') {
       const sanitized: SanitizedObject = {};
       for (const [key, value] of Object.entries(obj)) {
-        // Sanitize email fields specifically
+        // ISSUE #518 FIX: Sanitize email fields specifically - but only if the value is a string
+        // Previous bug: email_addresses arrays like [{email_address: "x"}] were converted to "[object object]"
+        // Root cause: normalizeEmail() was called on non-string values, causing String(object) conversion
+        // Solution: Only apply email normalization to string values; process arrays/objects recursively
         if (
           key.toLowerCase().includes('email') &&
           value !== null &&
-          value !== undefined
+          value !== undefined &&
+          typeof value === 'string'
         ) {
           sanitized[key] = this.normalizeEmail(value);
         } else {

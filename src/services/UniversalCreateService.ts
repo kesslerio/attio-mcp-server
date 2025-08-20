@@ -423,12 +423,12 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      // Validate email addresses first for consistent validation with updates
-      ValidationService.validateEmailAddresses(mappedData);
-
       // Normalize people data first (handle name string/object, email singular/array)
       const normalizedData =
         PeopleDataNormalizer.normalizePeopleData(mappedData);
+
+      // Validate email addresses after normalization for consistent validation
+      ValidationService.validateEmailAddresses(normalizedData);
 
       // Apply format conversions for common mistakes
       const correctedData = convertAttributeFormats('people', normalizedData);

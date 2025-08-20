@@ -7,7 +7,7 @@
 
 // Load environment variables from .env file BEFORE any other imports
 import * as dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ debug: false });
 
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import {
