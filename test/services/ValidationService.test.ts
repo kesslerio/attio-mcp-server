@@ -394,6 +394,85 @@ describe('ValidationService', () => {
       expect(isValidEmail).toHaveBeenCalledWith('user@domain.com');
     });
 
+    it('should handle email objects with value field (Issue #511)', () => {
+      vi.mocked(isValidEmail).mockReturnValue(true);
+
+      const recordData = {
+        email_addresses: [{ value: 'user@domain.com', type: 'work' }],
+      };
+
+      expect(() => {
+        ValidationService.validateEmailAddresses(recordData);
+      }).not.toThrow();
+
+      expect(isValidEmail).toHaveBeenCalledWith('user@domain.com');
+    });
+
+    it('should handle mixed email formats including value objects (Issue #511)', () => {
+      vi.mocked(isValidEmail).mockReturnValue(true);
+
+      const recordData = {
+        email_addresses: [
+          'simple@example.com',
+          { value: 'work@example.com', type: 'work', primary: true },
+          { email: 'alternate@example.com' },
+          { email_address: 'legacy@example.com' },
+        ],
+      };
+
+      expect(() => {
+        ValidationService.validateEmailAddresses(recordData);
+      }).not.toThrow();
+
+      expect(isValidEmail).toHaveBeenCalledTimes(4);
+      expect(isValidEmail).toHaveBeenCalledWith('simple@example.com');
+      expect(isValidEmail).toHaveBeenCalledWith('work@example.com');
+      expect(isValidEmail).toHaveBeenCalledWith('alternate@example.com');
+      expect(isValidEmail).toHaveBeenCalledWith('legacy@example.com');
+    });
+
+    it('should validate rich email metadata objects with value field (Issue #511)', () => {
+      vi.mocked(isValidEmail).mockReturnValue(true);
+
+      const recordData = {
+        email_addresses: [
+          {
+            value: 'primary@example.com',
+            type: 'work',
+            primary: true,
+            label: 'Work Email',
+          },
+          {
+            value: 'secondary@example.com',
+            type: 'personal',
+            primary: false,
+          },
+        ],
+      };
+
+      expect(() => {
+        ValidationService.validateEmailAddresses(recordData);
+      }).not.toThrow();
+
+      expect(isValidEmail).toHaveBeenCalledTimes(2);
+      expect(isValidEmail).toHaveBeenCalledWith('primary@example.com');
+      expect(isValidEmail).toHaveBeenCalledWith('secondary@example.com');
+    });
+
+    it('should throw for invalid emails in value objects (Issue #511)', () => {
+      vi.mocked(isValidEmail).mockReturnValue(false);
+
+      const recordData = {
+        email_addresses: [{ value: 'invalid-email', type: 'work' }],
+      };
+
+      expect(() => {
+        ValidationService.validateEmailAddresses(recordData);
+      }).toThrow(UniversalValidationError);
+
+      expect(isValidEmail).toHaveBeenCalledWith('invalid-email');
+    });
+
     it('should throw UniversalValidationError for invalid emails', () => {
       vi.mocked(isValidEmail).mockReturnValue(false);
 
