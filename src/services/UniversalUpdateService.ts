@@ -390,10 +390,12 @@ export class UniversalUpdateService {
       );
     }
 
-    // Handle status field
+    // Handle status field - updateTask function expects 'status' field, not 'is_completed'
     if (mappedData.is_completed !== undefined) {
+      // Convert boolean back to status string for updateTask function
       taskUpdateData.status = mappedData.is_completed ? 'completed' : 'pending';
     } else if (mappedData.status !== undefined) {
+      // Pass status string directly to updateTask function
       taskUpdateData.status = mappedData.status;
     }
 

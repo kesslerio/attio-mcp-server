@@ -30,6 +30,64 @@ import { searchLists } from '../objects/lists.js';
 import { listObjectRecords } from '../objects/records/index.js';
 import { listTasks } from '../objects/tasks.js';
 
+// Import validation for debugging circular dependencies (can be removed in production)
+// console.log('UniversalSearchService: Import check');
+// console.log('advancedSearchCompanies type:', typeof advancedSearchCompanies);
+// console.log('advancedSearchPeople type:', typeof advancedSearchPeople);
+// console.log('searchLists type:', typeof searchLists);
+// console.log('listObjectRecords type:', typeof listObjectRecords);
+// console.log('listTasks type:', typeof listTasks);
+
+// Dynamic imports for better error handling in environments where functions might not be available
+const ensureAdvancedSearchCompanies = async () => {
+  try {
+    // Log more details about what's happening
+    console.log(
+      'Checking advancedSearchCompanies availability:',
+      typeof advancedSearchCompanies
+    );
+    if (typeof advancedSearchCompanies !== 'function') {
+      console.error(
+        'advancedSearchCompanies is not a function:',
+        advancedSearchCompanies
+      );
+      return null;
+    }
+    return advancedSearchCompanies;
+  } catch (error) {
+    console.error('Error accessing advancedSearchCompanies:', error);
+    console.error(
+      'Error stack:',
+      error instanceof Error ? error.stack : 'No stack'
+    );
+    return null;
+  }
+};
+
+const ensureAdvancedSearchPeople = async () => {
+  try {
+    console.log(
+      'Checking advancedSearchPeople availability:',
+      typeof advancedSearchPeople
+    );
+    if (typeof advancedSearchPeople !== 'function') {
+      console.error(
+        'advancedSearchPeople is not a function:',
+        advancedSearchPeople
+      );
+      return null;
+    }
+    return advancedSearchPeople;
+  } catch (error) {
+    console.error('Error accessing advancedSearchPeople:', error);
+    console.error(
+      'Error stack:',
+      error instanceof Error ? error.stack : 'No stack'
+    );
+    return null;
+  }
+};
+
 // Import Attio client for deal queries
 import { getAttioClient } from '../api/attio-client.js';
 
@@ -218,7 +276,11 @@ export class UniversalSearchService {
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters && Object.keys(filters).length > 0) {
-      return await advancedSearchCompanies(filters, limit, offset);
+      const searchFn = await ensureAdvancedSearchCompanies();
+      if (!searchFn) {
+        throw new Error('Companies search function not available');
+      }
+      return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Handle content search vs basic search
       if (search_type === SearchType.CONTENT) {
@@ -237,11 +299,11 @@ export class UniversalSearchService {
           matchAny: true, // Use OR logic to match any field
         };
 
-        const results = await advancedSearchCompanies(
-          contentFilters,
-          limit,
-          offset
-        );
+        const searchFn = await ensureAdvancedSearchCompanies();
+        if (!searchFn) {
+          throw new Error('Companies search function not available');
+        }
+        const results = await searchFn(contentFilters, limit, offset);
 
         // Apply relevance ranking if requested
         if (sort === SortType.RELEVANCE) {
@@ -260,13 +322,21 @@ export class UniversalSearchService {
             },
           ],
         };
-        return await advancedSearchCompanies(nameFilters, limit, offset);
+        const searchFn = await ensureAdvancedSearchCompanies();
+        if (!searchFn) {
+          throw new Error('Companies search function not available');
+        }
+        return await searchFn(nameFilters, limit, offset);
       }
     } else {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
       try {
-        return await advancedSearchCompanies({ filters: [] }, limit, offset);
+        const searchFn = await ensureAdvancedSearchCompanies();
+        if (!searchFn) {
+          throw new Error('Companies search function not available');
+        }
+        return await searchFn({ filters: [] }, limit, offset);
       } catch (error: unknown) {
         // If empty filters aren't supported, return empty array rather than failing
         const errorMessage =
@@ -294,7 +364,11 @@ export class UniversalSearchService {
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters && Object.keys(filters).length > 0) {
-      const paginatedResult = await advancedSearchPeople(filters, {
+      const searchFn = await ensureAdvancedSearchPeople();
+      if (!searchFn) {
+        throw new Error('People search function not available');
+      }
+      const paginatedResult = await searchFn(filters, {
         limit,
         offset,
       });
@@ -317,7 +391,11 @@ export class UniversalSearchService {
           matchAny: true, // Use OR logic to match any field
         };
 
-        const paginatedResult = await advancedSearchPeople(contentFilters, {
+        const searchFn = await ensureAdvancedSearchPeople();
+        if (!searchFn) {
+          throw new Error('People search function not available');
+        }
+        const paginatedResult = await searchFn(contentFilters, {
           limit,
           offset,
         });
@@ -349,7 +427,11 @@ export class UniversalSearchService {
           ],
           matchAny: true, // Use OR logic to match either name or email
         };
-        const paginatedResult = await advancedSearchPeople(nameEmailFilters, {
+        const searchFn = await ensureAdvancedSearchPeople();
+        if (!searchFn) {
+          throw new Error('People search function not available');
+        }
+        const paginatedResult = await searchFn(nameEmailFilters, {
           limit,
           offset,
         });
@@ -359,7 +441,11 @@ export class UniversalSearchService {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
       try {
-        const paginatedResult = await advancedSearchPeople(
+        const searchFn = await ensureAdvancedSearchPeople();
+        if (!searchFn) {
+          throw new Error('People search function not available');
+        }
+        const paginatedResult = await searchFn(
           { filters: [] },
           { limit, offset }
         );

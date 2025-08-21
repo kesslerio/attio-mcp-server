@@ -329,11 +329,15 @@ export async function executeToolRequest(request: CallToolRequest) {
         (toolName === 'create-record' || toolName === 'update-record')
       ) {
         // Return raw JSON for record operations in E2E mode
-        // Defensive check: Ensure rawResult is valid before stringifying
+        // Handle null/undefined results gracefully instead of throwing
         if (!rawResult) {
-          throw new Error(`Tool ${toolName} returned null/undefined result`);
+          formattedResult = JSON.stringify({ 
+            error: `Tool ${toolName} returned null/undefined result`,
+            success: false 
+          }, null, 2);
+        } else {
+          formattedResult = JSON.stringify(rawResult, null, 2);
         }
-        formattedResult = JSON.stringify(rawResult, null, 2);
       } else if (toolConfig.formatResult) {
         try {
           // Try with all possible parameters (result, resourceType, infoType)
@@ -342,17 +346,47 @@ export async function executeToolRequest(request: CallToolRequest) {
             args?.resource_type,
             args?.info_type
           );
+          
+          // Ensure consistent array formatting for list operations
+          if (toolName.includes('search-records') || toolName.includes('get-lists')) {
+            // If formatResult returns false or null for list operations, provide empty array
+            if (formattedResult === 'false' || formattedResult === 'null' || !formattedResult) {
+              formattedResult = JSON.stringify([], null, 2);
+            }
+          }
         } catch {
           // Fallback to just result if signature mismatch
           formattedResult = (toolConfig.formatResult as any)(rawResult);
+          
+          // Apply same array consistency check to fallback
+          if (toolName.includes('search-records') || toolName.includes('get-lists')) {
+            if (formattedResult === 'false' || formattedResult === 'null' || !formattedResult) {
+              formattedResult = JSON.stringify([], null, 2);
+            }
+          }
         }
       } else {
-        formattedResult = JSON.stringify(rawResult, null, 2);
+        // For raw result formatting, ensure array consistency
+        if (toolName.includes('search-records') || toolName.includes('get-lists')) {
+          if (!rawResult || rawResult === false) {
+            formattedResult = JSON.stringify([], null, 2);
+          } else {
+            formattedResult = JSON.stringify(rawResult, null, 2);
+          }
+        } else {
+          formattedResult = JSON.stringify(rawResult, null, 2);
+        }
       }
+
+      // Check if the formatted result indicates an error for E2E tests
+      const resultContainsError = formattedResult && (
+        formattedResult.includes('"success": false') || 
+        formattedResult.includes('"error":')
+      );
 
       result = {
         content: [{ type: 'text', text: formattedResult }],
-        isError: false,
+        isError: resultContainsError,
       };
 
       // Handle General tools (relationship helpers, etc.)

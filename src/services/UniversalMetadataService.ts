@@ -110,7 +110,7 @@ export class UniversalMetadataService {
       },
       {
         id: 'status',
-        api_slug: 'status',
+        api_slug: 'is_completed', // Correct Attio API field name
         title: 'Status',
         type: 'text',
         category: 'basic', // NEW: Add category for filtering
