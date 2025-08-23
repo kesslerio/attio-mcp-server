@@ -117,8 +117,9 @@ describe.skipIf(
 
     if (testTaskId) {
       cleanupPromises.push(
-        callTasksTool('delete-task', {
-          task_id: testTaskId,
+        callUniversalTool('delete-record', {
+          resource_type: 'tasks',
+          record_id: testTaskId,
         }).catch(() => {}) // Ignore cleanup errors
       );
     }
@@ -224,9 +225,12 @@ describe.skipIf(
     it('should handle task not found errors', async () => {
       // Note: update-task actually calls update-record internally with resource_type: 'tasks'
       // The error message might be different than expected
-      const response = await callTasksTool('update-task', {
-        task_id: '33333333-3333-3333-3333-333333333333', // Valid UUID format, but doesn't exist
-        title: 'Updated Title',
+      const response = await callUniversalTool('update-record', {
+        resource_type: 'tasks',
+        record_id: '33333333-3333-3333-3333-333333333333', // Valid UUID format, but doesn't exist
+        record_data: {
+          title: 'Updated Title',
+        }
       });
 
       E2EAssertions.expectMcpError(response);
@@ -283,7 +287,10 @@ describe.skipIf(
         content: 'Test task with extremely long title',
       };
 
-      const response = await callTasksTool('create-task', taskData);
+      const response = await callUniversalTool('create-record', {
+        resource_type: 'tasks',
+        record_data: taskData
+      });
 
       // May either truncate, reject, or accept long text
       expect(response).toBeDefined();
@@ -335,7 +342,10 @@ describe.skipIf(
         due_date: 'not_a_valid_date_format_12345',
       };
 
-      const response = await callTasksTool('create-task', taskData);
+      const response = await callUniversalTool('create-record', {
+        resource_type: 'tasks',
+        record_data: taskData
+      });
 
       // May either validate date format or ignore invalid dates
       expect(response).toBeDefined();
@@ -346,7 +356,10 @@ describe.skipIf(
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
       const taskData = testDataGenerator.tasks.basicTask();
-      const taskResponse = await callTasksTool('create-task', taskData);
+      const taskResponse = await callUniversalTool('create-record', {
+        resource_type: 'tasks',
+        record_data: taskData
+      });
 
       if (
         !taskResponse.isError &&
@@ -365,7 +378,10 @@ describe.skipIf(
         expect(linkResponse).toBeDefined();
 
         // Clean up
-        await callTasksTool('delete-task', { task_id: taskId }).catch(() => {});
+        await callUniversalTool('delete-record', {
+          resource_type: 'tasks',
+          record_id: taskId
+        }).catch(() => {});
       }
     });
 
@@ -536,7 +552,10 @@ describe.skipIf(
         content: 'Testing circular relationships',
       };
 
-      const taskResponse = await callTasksTool('create-task', taskData);
+      const taskResponse = await callUniversalTool('create-record', {
+        resource_type: 'tasks',
+        record_data: taskData
+      });
 
       if (
         !taskResponse.isError &&
@@ -561,7 +580,10 @@ describe.skipIf(
         expect(taskResponse).toBeDefined();
 
         // Clean up
-        await callTasksTool('delete-task', { task_id: taskId }).catch(() => {});
+        await callUniversalTool('delete-record', {
+          resource_type: 'tasks',
+          record_id: taskId
+        }).catch(() => {});
       }
     });
 

@@ -237,6 +237,7 @@ export interface RelationshipSearchParams {
   relationship_type: RelationshipType;
   source_id: string;
   target_resource_type?: UniversalResourceType;
+  listId?: string;
   limit?: number;
   offset?: number;
 }

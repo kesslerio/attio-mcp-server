@@ -346,7 +346,12 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
 
       // Universal tools have their own parameter validation and handling
-      const rawResult = await toolConfig.handler(args);
+      let rawResult = await toolConfig.handler(args);
+
+      // Special handling for lists resource type to return API-consistent shape
+      if (toolName === 'search-records' && args?.resource_type === 'lists' && Array.isArray(rawResult)) {
+        rawResult = { data: rawResult };
+      }
 
       // Universal tools may have different formatResult signatures - handle flexibly
       let formattedResult: string;

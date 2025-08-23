@@ -48,16 +48,8 @@ export default defineConfig({
       clean: true,
     },
     silent: false,
-    reporter: 'verbose',
-    watchExclude: [
-      'node_modules/**',
-      'dist/**',
-      '.git/**',
-      'coverage/**',
-      '**/*.d.ts',
-      'test/integration/real-api/**',
-      'test/manual/**',
-    ],
+    reporters: ['verbose'],
+    // Note: File watching exclusions not available in this config
   },
   resolve: {
     alias: {

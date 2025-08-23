@@ -129,3 +129,30 @@ export interface ToolCallResult<T = unknown> {
     duration: number;
   };
 }
+
+// Missing exports that are used in test files
+export type TestDataObject = any; // Flexible type for test data objects
+
+// Re-export McpToolResponse from assertions.ts to avoid duplication
+export type { McpToolResponse } from '../utils/assertions.js';
+
+// Additional type exports
+export interface McpResponseData {
+  [key: string]: unknown;
+}
+
+export interface ExpectedDataShape {
+  [key: string]: unknown;
+}
+
+export interface AttioRecordValues {
+  [key: string]: unknown;
+}
+
+export interface SearchResultItem {
+  [key: string]: unknown;
+}
+
+export interface BatchOperationResult {
+  [key: string]: unknown;
+}

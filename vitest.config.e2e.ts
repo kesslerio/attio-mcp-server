@@ -84,7 +84,7 @@ export default defineConfig({
 
     // Reporting configuration
     silent: false,
-    reporter: ['verbose', 'json'],
+    reporters: ['verbose', 'json'],
     outputFile: {
       json: './test-results/e2e-results.json',
     },
@@ -95,25 +95,7 @@ export default defineConfig({
     // Test name pattern matching
     testNamePattern: undefined, // Run all E2E tests by default
 
-    // File watching exclusions for performance
-    watchExclude: [
-      'node_modules/**',
-      'dist/**',
-      '.git/**',
-      'coverage/**',
-      'coverage-e2e/**',
-      'test-results/**',
-      '**/*.d.ts',
-      // Exclude non-E2E test directories from watch
-      'test/unit/**',
-      'test/integration/**',
-      'test/handlers/**',
-      'test/api/**',
-      'test/utils/**',
-      'test/validators/**',
-      'test/objects/**',
-      'test/manual/**',
-    ],
+    // Note: File watching is disabled for E2E tests (watch: false above)
 
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup

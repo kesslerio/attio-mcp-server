@@ -391,7 +391,7 @@ export class UniversalCreateService {
       if (!mappedData.name && !mappedData.company_name) {
         throw new UniversalValidationError('Required field "name" is missing');
       }
-      
+
       // Apply format conversions for common mistakes
       const correctedData = convertAttributeFormats('companies', mappedData);
 

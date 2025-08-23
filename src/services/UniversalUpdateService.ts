@@ -445,12 +445,16 @@ export class UniversalUpdateService {
   /**
    * Validate that task content fields are not being updated (immutable)
    */
-  private static assertNoTaskContentUpdate(record_data: Record<string, any>): void {
+  private static assertNoTaskContentUpdate(
+    record_data: Record<string, any>
+  ): void {
     const forbidden = ['content', 'content_markdown', 'content_plaintext'];
     if (record_data && typeof record_data === 'object') {
       for (const k of forbidden) {
         if (k in record_data) {
-          throw new UniversalValidationError('Task content is immutable and cannot be updated');
+          throw new UniversalValidationError(
+            'Task content is immutable and cannot be updated'
+          );
         }
       }
     }

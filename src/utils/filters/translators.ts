@@ -329,7 +329,8 @@ function createAndFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
-  const apiFilter: AttioApiFilter = {};
+  // Use Attio's verbose syntax with $and operator
+  const andConditions: any[] = [];
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
@@ -358,9 +359,7 @@ function createAndFilterStructure(
     );
   }
 
-  // Process valid filters
-  let hasValidFilters = false;
-
+  // Process valid filters using Attio's $and format
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
@@ -377,81 +376,50 @@ function createAndFilterStructure(
     }
 
     const { slug } = filter.attribute;
-
-    // Check if we're in list entry context and this is a list-specific attribute
+    const operator = filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+    
+    // Build condition object in Attio's expected format
+    let fieldPath: string;
+    
     if (isListEntryContext && isListSpecificAttribute(slug)) {
-      // For list-specific attributes, we don't need any path prefix
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[AND Logic] Using list-specific attribute format for field ${slug}`
-        );
-      }
-
       // List-specific attributes use direct field access
-      const operator = filter.condition;
-
-      // Initialize attribute entry if needed
-      if (!apiFilter[slug]) {
-        apiFilter[slug] = {};
-      }
-
-      // Add operator with $ prefix
-      apiFilter[slug][`$${operator}`] = filter.value;
-    } else if (
-      FIELD_SPECIAL_HANDLING[slug] &&
-      FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
-    ) {
-      // For special fields that need shorthand format
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[AND Logic] Using shorthand filter format for field ${slug}`
-        );
-      }
-
-      // Direct value assignment for shorthand format
-      if (filter.value !== undefined && filter.value !== null) {
-        if (!apiFilter[slug]) {
-          apiFilter[slug] = filter.value as { [condition: string]: any };
-        } else {
-          console.warn(
-            `Multiple filters for ${slug} using shorthand format will overwrite previous values`
-          );
-          apiFilter[slug] = filter.value as { [condition: string]: any };
-        }
-      }
+      fieldPath = slug;
+    } else if (isListEntryContext && !isListSpecificAttribute(slug)) {
+      // Parent record attributes in list context need record path
+      fieldPath = `record.values.${slug}`;
     } else {
-      // Standard operator handling for normal fields
-      const operator = filter.condition;
-
-      // For parent record attributes in list context, we need to use the record path
-      if (isListEntryContext && !isListSpecificAttribute(slug)) {
-        const fieldPath = `record.values.${slug}`;
-
-        // Initialize attribute entry if needed for operator-based filtering
-        if (!apiFilter[fieldPath]) {
-          apiFilter[fieldPath] = {};
-        }
-
-        // Add operator with $ prefix as required by Attio API
-        apiFilter[fieldPath][`$${operator}`] = filter.value;
-      } else {
-        // Standard field access for non-list contexts
-
-        // Initialize attribute entry if needed for operator-based filtering
-        if (!apiFilter[slug]) {
-          apiFilter[slug] = {};
-        }
-
-        // Add operator with $ prefix as required by Attio API
-        apiFilter[slug][`$${operator}`] = filter.value;
-      }
+      // Standard field access for non-list contexts
+      fieldPath = slug;
     }
 
-    hasValidFilters = true;
+    // Create condition in Attio format: { "field": { "$operator": "value" } }
+    const condition: any = {};
+    condition[fieldPath] = {};
+    condition[fieldPath][operator] = filter.value;
+    
+    andConditions.push(condition);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[createAndFilterStructure] Added condition:`, condition);
+    }
   });
 
-  // Return the filter object only if valid filters were found
-  return hasValidFilters ? { filter: apiFilter } : {};
+  // Return in Attio's $and format if we have conditions
+  if (andConditions.length === 0) {
+    return {};
+  }
+  
+  if (andConditions.length === 1) {
+    // Single condition doesn't need $and wrapper
+    return { filter: andConditions[0] };
+  }
+  
+  // Multiple conditions need $and wrapper
+  return { 
+    filter: { 
+      $and: andConditions 
+    } 
+  };
 }
 
 /**

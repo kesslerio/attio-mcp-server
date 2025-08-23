@@ -700,7 +700,7 @@ export class UniversalSearchService {
     if (tasks.length === 0) {
       return []; // No warning for empty datasets
     }
-    
+
     // Performance optimization: Don't process if offset exceeds dataset
     if (start >= tasks.length) {
       console.info(

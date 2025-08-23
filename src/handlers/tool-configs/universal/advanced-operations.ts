@@ -29,6 +29,7 @@ import {
 } from './schemas.js';
 
 import { ValidationService } from '../../../services/ValidationService.js';
+import { isValidUUID } from '../../../utils/validation/uuid-validation.js';
 
 import {
   handleUniversalSearch,
@@ -74,9 +75,20 @@ import {
 } from '../../../types/attio.js';
 import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
 import {
+  createCreatedDateFilter,
+  createModifiedDateFilter,
+  createLastInteractionFilter,
+} from '../../../utils/filters/index.js';
+import { ListEntryFilters } from '../../../api/operations/types.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import {
   validateBatchOperation,
   validateSearchQuery,
 } from '../../../utils/batch-validation.js';
+
+// Import for client-side note filtering implementation  
+import { getAttioClient } from '../../../api/attio-client.js';
+import { listNotes } from '../../../objects/notes.js';
 import { RATE_LIMITS } from '../../../config/security-limits.js';
 
 // Performance and safety constants from security configuration
@@ -162,6 +174,15 @@ export const advancedSearchConfig: UniversalToolConfig = {
       );
 
       const { resource_type, query, filters, limit, offset } = sanitizedParams;
+
+      // Validate list_membership filter if present
+      if (filters?.list_membership && !isValidUUID(filters.list_membership)) {
+        throw ErrorService.createUniversalError(
+          `Invalid list_id: must be a UUID. Got: ${filters.list_membership}`,
+          'advanced-search',
+          resource_type
+        );
+      }
 
       // Use the universal search handler with advanced filtering
       return await handleUniversalSearch({
@@ -259,6 +280,11 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
         params
       );
 
+      // Check for listId parameter first - if present and invalid, return error immediately
+      if (params.listId && !isValidUUID(params.listId)) {
+        throw new Error(`Invalid list_id: must be a UUID. Got: ${params.listId}`);
+      }
+
       const { relationship_type, source_id } = sanitizedParams;
 
       switch (relationship_type) {
@@ -283,8 +309,8 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
           // Special handling for list_entries relationship type
           const list_id = params.source_id;
           if (!list_id || !ValidationService.validateUUIDForSearch(String(list_id))) {
-            // Search-y context with no valid list id → return empty success
-            return [];
+            // Invalid listId should return error, not empty array
+            throw new Error(`Invalid list_id: must be a UUID. Got: ${list_id}`);
           } else {
             // Operation requiring valid list id → throw validation error
             throw new Error('invalid list id');
@@ -345,6 +371,73 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
  * Universal search by content tool
  * Searches within notes, activity, and interactions
  */
+/**
+ * Search records by notes content using client-side filtering
+ * Lists notes by parent, then filters on content_plaintext/markdown
+ */
+async function searchRecordsByNotesContent(
+  resource_type: UniversalResourceType,
+  search_query: string
+): Promise<AttioRecord[]> {
+  const client = getAttioClient();
+  
+  // Step 1: List all notes for the resource type
+  const resourceTypeMap: Record<string, string> = {
+    [UniversalResourceType.COMPANIES]: 'companies',
+    [UniversalResourceType.PEOPLE]: 'people',
+    [UniversalResourceType.DEALS]: 'deals',
+  };
+  
+  const parentObject = resourceTypeMap[resource_type];
+  if (!parentObject) {
+    throw new Error(`Notes search not supported for resource type: ${resource_type}`);
+  }
+
+  try {
+    // Get all notes for the resource type
+    const response = await client.get(`/notes?parent_object=${parentObject}&limit=100`);
+    const notes = response?.data?.data || [];
+    
+    // Step 2: Client-side filter on content_plaintext and markdown
+    const searchQueryLower = search_query.toLowerCase();
+    const matchingNotes = notes.filter((note: any) => {
+      const contentPlain = (note.content_plaintext || '').toLowerCase();
+      const contentMarkdown = (note.content || note.markdown || '').toLowerCase();
+      const title = (note.title || '').toLowerCase();
+      
+      return contentPlain.includes(searchQueryLower) || 
+             contentMarkdown.includes(searchQueryLower) ||
+             title.includes(searchQueryLower);
+    });
+    
+    // Step 3: Extract unique parent record IDs from matching notes
+    const parentRecordIds = new Set<string>();
+    matchingNotes.forEach((note: any) => {
+      if (note.parent_record_id) {
+        parentRecordIds.add(note.parent_record_id);
+      }
+    });
+    
+    // Step 4: Fetch the actual records for these IDs
+    const records: AttioRecord[] = [];
+    for (const recordId of parentRecordIds) {
+      try {
+        const recordResponse = await client.get(`/objects/${parentObject}/records/${recordId}`);
+        if (recordResponse?.data?.data) {
+          records.push(recordResponse.data.data);
+        }
+      } catch (error) {
+        // Skip records that can't be fetched (may be deleted)
+        console.warn(`Could not fetch ${parentObject} record ${recordId}:`, error);
+      }
+    }
+    
+    return records;
+  } catch (error) {
+    throw new Error(`Failed to search ${resource_type} by notes content: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 export const searchByContentConfig: UniversalToolConfig = {
   name: 'search-by-content',
   handler: async (params: ContentSearchParams): Promise<AttioRecord[]> => {
@@ -358,11 +451,8 @@ export const searchByContentConfig: UniversalToolConfig = {
 
       switch (content_type) {
         case ContentSearchType.NOTES:
-          if (resource_type === UniversalResourceType.COMPANIES) {
-            return await searchCompaniesByNotes(search_query);
-          } else if (resource_type === UniversalResourceType.PEOPLE) {
-            return await searchPeopleByNotes(search_query);
-          }
+          // Use client-side filtering as per Attio API requirements
+          return await searchRecordsByNotesContent(resource_type, search_query);
           break;
 
         case ContentSearchType.ACTIVITY:
@@ -481,23 +571,42 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             );
         }
       } else {
-        // For other resource types, use basic date filtering approach
-        // This is a simplified implementation that may need enhancement based on API capabilities
-        switch (resource_type) {
-          case UniversalResourceType.COMPANIES:
-          case UniversalResourceType.RECORDS:
-          case UniversalResourceType.TASKS:
-            throw new Error(
-              `Timeframe search is not currently optimized for ${resource_type}. ` +
-                `The Attio API does not provide native date filtering for this resource type. ` +
-                `As a workaround, you can use 'advanced-search' with custom filter conditions or retrieve all records and filter programmatically.`
-            );
+        // For other resource types, use date filtering with $gt/$lt operators
+        const dateRange = validateAndCreateDateRange(start_date, end_date);
+        if (!dateRange) {
+          throw new Error(
+            'At least one date (start or end) is required for timeframe search'
+          );
+        }
 
+        let filters: ListEntryFilters;
+        
+        switch (timeframe_type) {
+          case TimeframeType.CREATED:
+            filters = createCreatedDateFilter(dateRange);
+            break;
+          case TimeframeType.MODIFIED:
+            filters = createModifiedDateFilter(dateRange);
+            break;
+          case TimeframeType.LAST_INTERACTION:
+            filters = createLastInteractionFilter(dateRange);
+            break;
           default:
             throw new Error(
-              `Timeframe search not supported for resource type: ${resource_type}`
+              `Unsupported timeframe type for ${resource_type}: ${timeframe_type}`
             );
         }
+
+        // Use advanced search with the date filters
+        const results = await UniversalSearchService.searchRecords({
+          resource_type,
+          query: '',
+          filters: filters,
+          limit: 20,
+          offset: 0
+        });
+        
+        return results;
       }
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(

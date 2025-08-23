@@ -41,6 +41,7 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 // Import enhanced tool caller with logging and migration
 import {
   callListTool,
+  callUniversalTool,
   validateTestEnvironment,
   getToolMigrationStats,
 } from '../utils/enhanced-tool-caller.js';
@@ -119,7 +120,7 @@ describe.skipIf(
 
   describe('List Discovery', () => {
     it('should retrieve all available lists', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const data = E2EAssertions.expectMcpData(response);
@@ -136,7 +137,7 @@ describe.skipIf(
     }, 30000);
 
     it('should handle empty lists response gracefully', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       // Even if no lists exist, the response should be valid
@@ -150,7 +151,7 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list to work with
-      const listsResponse = await callListTool('get-lists', {});
+      const listsResponse = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       if (Array.isArray(listsData) && listsData.length > 0) {
@@ -178,28 +179,28 @@ describe.skipIf(
 
       const response = await callListTool('get-list-details', {
         listId: availableListId,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const listDetails = E2EAssertions.expectMcpData(response);
 
       expect(listDetails).toBeDefined();
-      expect(listDetails.id).toBeDefined();
-      expect(listDetails.name || listDetails.title).toBeDefined();
+      expect(listDetails!.id).toBeDefined();
+      expect(listDetails!.name || listDetails!.title).toBeDefined();
       expect(
-        listDetails.object_slug || listDetails.parent_object
+        listDetails!.object_slug || listDetails!.parent_object
       ).toBeDefined();
 
       console.error(
         '📄 List details retrieved for:',
-        listDetails.name || listDetails.title
+        listDetails!.name || listDetails!.title
       );
     }, 30000);
 
     it('should handle invalid list ID gracefully', async () => {
       const response = await callListTool('get-list-details', {
         listId: 'invalid-list-id-12345',
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -215,7 +216,7 @@ describe.skipIf(
 
       const response = await callListTool('get-list-details', {
         listId: availableListId,
-      });
+      }) as McpToolResponse;
 
       const listDetails = E2EAssertions.expectMcpData(response);
       E2EAssertions.expectListRecord(listDetails);
@@ -229,7 +230,7 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list to work with
-      const listsResponse = await callListTool('get-lists', {});
+      const listsResponse = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       let lists: any[] = [];
@@ -262,15 +263,18 @@ describe.skipIf(
       // Create test data
       if (workingListId) {
         const companyData = CompanyFactory.create();
-        const companyResponse = await callListTool(
-          'create-company',
-          companyData
-        );
+        const companyResponse = await callUniversalTool('create-record', {
+          resource_type: 'companies',
+          record_data: companyData
+        }) as McpToolResponse;
         testCompany = E2EAssertions.expectMcpData(companyResponse);
         testCompanies.push(testCompany);
 
         const personData = PersonFactory.create();
-        const personResponse = await callListTool('create-person', personData);
+        const personResponse = await callUniversalTool('create-record', {
+          resource_type: 'people',
+          record_data: personData
+        }) as McpToolResponse;
         testPerson = E2EAssertions.expectMcpData(personResponse);
         testPeople.push(testPerson);
       }
@@ -287,7 +291,7 @@ describe.skipIf(
       const response = await callListTool('get-list-entries', {
         listId: workingListId,
         limit: 10,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
@@ -316,7 +320,7 @@ describe.skipIf(
         listId: workingListId,
         limit: 5,
         offset: 0,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
@@ -338,14 +342,14 @@ describe.skipIf(
         initialValues: {
           stage: 'Prospect',
         },
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const listEntry = E2EAssertions.expectMcpData(response);
 
       expect(listEntry).toBeDefined();
-      expect(listEntry.id?.entry_id || listEntry.entry_id).toBeDefined();
-      expect(listEntry.record_id || listEntry.parent_record_id).toBe(
+      expect((listEntry as any)!.id?.entry_id || (listEntry as any)!.entry_id).toBeDefined();
+      expect((listEntry as any)!.record_id || (listEntry as any)!.parent_record_id).toBe(
         testCompany.id.record_id
       );
 
@@ -354,7 +358,7 @@ describe.skipIf(
 
       console.error(
         '➕ Added record to list:',
-        listEntry.id?.entry_id || listEntry.entry_id
+        (listEntry as any)!.id?.entry_id || (listEntry as any)!.entry_id
       );
     }, 30000);
 
@@ -370,7 +374,7 @@ describe.skipIf(
         listId: workingListId,
         recordId: testCompany.id.record_id,
         objectType: 'companies',
-      });
+      }) as McpToolResponse;
 
       // This might succeed or fail depending on list configuration
       // We should handle both cases gracefully
@@ -400,13 +404,13 @@ describe.skipIf(
         attributes: {
           stage: 'Qualified',
         },
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedEntry = E2EAssertions.expectMcpData(response);
 
       expect(updatedEntry).toBeDefined();
-      expect(updatedEntry.id?.entry_id || updatedEntry.entry_id).toBe(entryId);
+      expect((updatedEntry as any)!.id?.entry_id || (updatedEntry as any)!.entry_id).toBe(entryId);
 
       console.error('✏️ Updated list entry:', entryId);
     }, 30000);
@@ -423,7 +427,7 @@ describe.skipIf(
       const response = await callListTool('remove-record-from-list', {
         listId: workingListId,
         entryId: entryId,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
 
@@ -446,7 +450,7 @@ describe.skipIf(
       const response = await callListTool('remove-record-from-list', {
         listId: workingListId,
         entryId: 'non-existent-entry-id-12345',
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -460,7 +464,7 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list for filtering tests
-      const listsResponse = await callListTool('get-lists', {});
+      const listsResponse = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       let lists: any[] = [];
@@ -485,7 +489,7 @@ describe.skipIf(
         condition: 'is_not_empty',
         value: null,
         limit: 10,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -523,7 +527,7 @@ describe.skipIf(
           matchAny: false,
         },
         limit: 5,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -549,7 +553,7 @@ describe.skipIf(
         condition: 'equals',
         value: 'NonExistentStageValue12345',
         limit: 10,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -575,7 +579,7 @@ describe.skipIf(
         condition: 'is_not_empty',
         value: null,
         limit: 5,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -602,7 +606,7 @@ describe.skipIf(
         listId: filterListId,
         recordId: testCompany.id.record_id,
         limit: 10,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -632,7 +636,7 @@ describe.skipIf(
         objectType: 'companies',
         includeEntryValues: true,
         batchSize: 5,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -640,11 +644,11 @@ describe.skipIf(
       expect(memberships).toBeDefined();
       expect(Array.isArray(memberships)).toBe(true);
 
-      console.error('🏷️ List memberships found:', memberships.length);
+      console.error('🏷️ List memberships found:', memberships!.length);
 
       // Validate membership structure
-      if (memberships.length > 0) {
-        const membership = memberships[0];
+      if ((memberships as unknown as any[]).length > 0) {
+        const membership = (memberships as unknown as any[])[0];
         expect(membership.listId).toBeDefined();
         expect(membership.listName).toBeDefined();
         expect(membership.entryId).toBeDefined();
@@ -664,7 +668,7 @@ describe.skipIf(
         recordId: testPerson.id.record_id,
         objectType: 'people',
         includeEntryValues: false,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -687,7 +691,7 @@ describe.skipIf(
         recordId: testCompany.id.record_id,
         objectType: 'companies',
         batchSize: 1,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -715,7 +719,7 @@ describe.skipIf(
       ];
 
       for (const op of operations) {
-        const response = await callListTool(op.tool, op.params);
+        const response = await callListTool(op.tool, op.params) as McpToolResponse;
         E2EAssertions.expectMcpError(
           response,
           /not found|invalid|does not exist|missing required parameter/i
@@ -727,7 +731,7 @@ describe.skipIf(
       const response = await callListTool('get-record-list-memberships', {
         recordId: 'invalid-record-id-12345',
         objectType: 'companies',
-      });
+      }) as McpToolResponse;
 
       // This might return empty results or an error depending on implementation
       if (response.isError) {
@@ -735,14 +739,14 @@ describe.skipIf(
       } else {
         const memberships = E2EAssertions.expectMcpData(response);
         expect(Array.isArray(memberships)).toBe(true);
-        expect(memberships.length).toBe(0);
+        expect(memberships!.length).toBe(0);
       }
     }, 15000);
 
     it('should handle invalid filter conditions', async () => {
       if (!testLists.length) {
         // Get any available list
-        const listsResponse = await callListTool('get-lists', {});
+        const listsResponse = await callListTool('get-lists', {}) as McpToolResponse;
         const listsData = E2EAssertions.expectMcpData(listsResponse);
         let lists: any[] = [];
         if (Array.isArray(listsData)) {
@@ -763,7 +767,7 @@ describe.skipIf(
           attributeSlug: 'nonexistent_attribute',
           condition: 'equals',
           value: 'test',
-        });
+        }) as McpToolResponse;
 
         // Should handle gracefully - might return empty results or error
         if (response.isError) {
@@ -776,7 +780,7 @@ describe.skipIf(
     }, 15000);
 
     it('should handle malformed advanced filter configurations', async () => {
-      const listsResponse = await callListTool('get-lists', {});
+      const listsResponse = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -802,13 +806,13 @@ describe.skipIf(
             },
           ],
         },
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
     }, 15000);
 
     it('should validate execution time for list operations', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(response);
       E2EAssertions.expectReasonableExecutionTime(response, 15000);
     }, 20000);
@@ -816,7 +820,7 @@ describe.skipIf(
 
   describe('Performance and Scalability', () => {
     it('should handle large result sets with pagination', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -837,7 +841,7 @@ describe.skipIf(
         listId: listId,
         limit: 2,
         offset: 0,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(paginatedResponse);
       const entries = E2EAssertions.expectMcpData(paginatedResponse);
@@ -846,9 +850,9 @@ describe.skipIf(
 
     it('should handle concurrent list operations', async () => {
       const promises = [
-        callListTool('get-lists', {}),
-        callListTool('get-lists', {}),
-        callListTool('get-lists', {}),
+        callListTool('get-lists', {}) as Promise<McpToolResponse>,
+        callListTool('get-lists', {}) as Promise<McpToolResponse>,
+        callListTool('get-lists', {}) as Promise<McpToolResponse>,
       ];
 
       const responses = await Promise.all(promises);
@@ -861,7 +865,7 @@ describe.skipIf(
     }, 30000);
 
     it('should maintain performance with complex filters', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -898,7 +902,7 @@ describe.skipIf(
           },
           limit: 20,
         }
-      );
+      ) as McpToolResponse;
 
       const endTime = Date.now();
       const executionTime = endTime - startTime;
@@ -912,7 +916,7 @@ describe.skipIf(
 
   describe('Data Consistency and Validation', () => {
     it('should maintain consistent list entry structure', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
 
@@ -932,7 +936,7 @@ describe.skipIf(
       const entriesResponse = await callListTool('get-list-entries', {
         listId: listId,
         limit: 5,
-      });
+      }) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(entriesResponse);
       const entries = E2EAssertions.expectMcpData(entriesResponse);
@@ -952,7 +956,7 @@ describe.skipIf(
     }, 20000);
 
     it('should handle special characters in filter values', async () => {
-      const response = await callListTool('get-lists', {});
+      const response = await callListTool('get-lists', {}) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -976,7 +980,7 @@ describe.skipIf(
         condition: 'contains',
         value: 'Test™ & Co. "Special" #1',
         limit: 5,
-      });
+      }) as McpToolResponse;
 
       // Should handle gracefully even with special characters
       E2EAssertions.expectMcpSuccess(specialValueResponse);

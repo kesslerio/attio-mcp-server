@@ -21,6 +21,7 @@ NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separ
 ## TEST DATA CLEANUP
 
 RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
+`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
 ⚠️ CRITICAL: Use `--dry-run` first to preview deletions | Supports custom prefixes: `--prefix=TEST_,QA_,E2E_,DEMO_`
 
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
@@ -56,13 +57,69 @@ RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immedia
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
 IMPORTS: Order as node → external → internal | Remove unused immediately
 
-## AGENT AUTOMATION
+## AGENT AUTOMATION [Use `/agents` command]
 
-RULE: Files >500 lines trigger refactoring | WHEN: Large files found | DO: Break down systematically | ELSE: Maintenance debt
+**CORE RULE**: Use native Claude Code subagents for specialized tasks → Separate context windows → Parallel development
 
-## ARCHITECTURE PATTERNS [PR #483 SUCCESS]
+### SUBAGENT CREATION & USAGE
+
+COMMAND: `/agents` → Create New Agent → Define role, tools, system prompt
+INVOKE: "Use the [agent-name] subagent to [specific task]" or auto-delegation when appropriate
+CONTEXT: Each subagent operates in separate context window for focused expertise
+
+### RECOMMENDED AGENT PATTERNS
+
+| **Role Type** | **Purpose**                | **Tools**                 | **Use When**     |
+| ------------- | -------------------------- | ------------------------- | ---------------- |
+| Architect     | Research, planning, design | File ops, system commands | Complex features |
+| Builder       | Core implementation        | Full toolset              | Main development |
+| Validator     | Testing, quality assurance | Testing frameworks        | QA, debugging    |
+| Scribe        | Documentation, refinement  | Documentation tools       | Docs, examples   |
+
+### ORCHESTRATION PRINCIPLES
+
+RULE: Context separation | WHEN: Complex multi-file work | DO: Use separate subagents | ELSE: Context pollution
+RULE: Parallel development | WHEN: Independent tasks | DO: Multi-terminal coordination | ELSE: Sequential bottlenecks
+RULE: Shared coordination | WHEN: Multi-agent work | DO: Use planning documents | ELSE: Agent conflicts
+
+### MULTI-TERMINAL COORDINATION
+
+PATTERN: 4-agent parallel development (inspired by community best practices)
+SETUP: Open VSCode with 4 terminals → Launch agents with specific roles → Shared planning document
+COMMUNICATION: Agents coordinate via `MULTI_AGENT_PLAN.md` with task assignments and status updates
+BENEFITS: 4x faster development, built-in quality checks, clear separation of concerns
+
+**Best Practices**:
+
+- Regular sync points: Agents check planning document every 30 minutes
+- Clear boundaries: Define what each agent owns to avoid conflicts
+- Version control: Include `MULTI_AGENT_PLAN.md` in commits
+- Branch organization: Use agent-specific branches when appropriate
+
+### TASK PARALLELIZATION GUIDE
+
+**Safe to Parallelize**:
+
+- `eslint`/`prettier` checks, test shards (`vitest -t` patterns), docs generation, read-only analysis
+- Lint + type check: `npm run lint:check` and `npm run typecheck`
+- Matrix tests: split by directories (`vitest -t api`, `-t handlers`)
+
+**Never Parallelize**:
+
+- Two writers modifying same modules/files
+- Migrations changing shared configs/schemas/codegen
+
+**Concurrency Guidelines**:
+
+- Sweet spot: **4-6 concurrent tasks** for CI/laptop
+- Beyond 6: prefer queueing or branch isolation
+- Multiple writers: use short-lived feature branches per task
+- Approved PR, minor cleanup → **code-refactoring-architect** → **code-review-specialist** (optional)
+
+## ARCHITECTURE PATTERNS
 
 ### formatResult Pattern [MANDATORY]
+
 RULE: String return consistency | WHEN: Any format function | DO: Always return string, never conditional | ELSE: Type safety violations
 RULE: No environment coupling | WHEN: Production code | DO: Never check NODE_ENV for behavior | ELSE: Dual-mode anti-patterns
 RULE: Error handling | WHEN: Format functions | DO: Implement try-catch blocks | ELSE: Unhandled errors
@@ -152,69 +209,13 @@ PIPELINE STAGES:
 4. **Build Verification**: Ensure artifacts created correctly
 5. **Security Audit**: Dependency vulnerability scanning
 
-## ISSUE #480 ARCHITECTURAL COMPLIANCE [CRITICAL PATTERNS]
+## MOCK FACTORY PATTERN [MANDATORY]
 
-### Mock Factory Architecture Requirements
-
-RULE: Clean separation principle | WHEN: Creating test mocks | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Architectural violation
+RULE: Test data isolation | WHEN: Creating test data | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Production contamination
+RULE: Issue #480 compatibility | WHEN: Task mocks | DO: Include both content and title, preserve task_id | ELSE: E2E failures
 RULE: Production isolation | WHEN: Writing production code | DO: NEVER import from test directories | ELSE: Bundle contamination
-RULE: Interface compliance | WHEN: Creating mock factories | DO: Implement `MockFactory<T>` interface | ELSE: Inconsistent patterns
 
-### Issue #480 Compatibility Pattern
-
-PROBLEM: E2E tests expect different field structures than production API responses
-SOLUTION: Dual field support in mock factories for backward compatibility
-IMPLEMENTATION:
-
-```typescript
-// Issue #480 compatible task mock
-static create(overrides = {}) {
-  const content = overrides.content || overrides.title || 'Mock Task Content';
-  return {
-    id: {
-      record_id: this.generateMockId(),
-      task_id: this.generateMockId()     // Issue #480: Required field
-    },
-    content,                             // Primary API field
-    title: content                       // Issue #480: Compatibility field
-  };
-}
-```
-
-### Environment Detection Standards
-
-RULE: Multi-strategy detection | WHEN: Detecting test environment | DO: Use TestEnvironment.useMocks() | ELSE: Unreliable detection
-STRATEGIES: NODE_ENV check → VITEST flag → Global detection → Process args → Stack analysis
-FALLBACK: Graceful degradation to production behavior when detection fails
-VALIDATION: Pre-test health checks ensure proper environment setup
-
-### Production Safety Guidelines
-
-RULE: Dynamic imports only | WHEN: Production code needs test support | DO: Use dynamic import() for test utilities | ELSE: Production bundle pollution
-RULE: Error boundaries | WHEN: Mock injection fails | DO: Graceful fallback to real implementation | ELSE: Production system failure
-RULE: Zero runtime impact | WHEN: Test code integrated | DO: Ensure zero performance impact in production | ELSE: Performance degradation
-
-### Compatibility Field Implementation Rules
-
-WHEN: API field structure changes (similar to Issue #480)
-DO:
-
-1. Maintain backward compatibility with dual field support
-2. Document field mapping in mock factory comments
-3. Add validation tests for both field formats
-4. Implement gradual migration path
-   ELSE: Breaking changes cause widespread E2E test failures
-
-### Testing Infrastructure Extensions
-
-RULE: Consistent factory pattern | WHEN: Adding new resource mocks | DO: Follow TaskMockFactory pattern | ELSE: Inconsistent architecture
-TEMPLATE:
-
-1. Create factory class implementing MockFactory<T>
-2. Add to UniversalMockFactory switch statement
-3. Include specialized creation methods for common scenarios
-4. Add validation tests for mock data structure
-5. Document compatibility requirements
+See `/test/utils/mock-factories/` for implementation patterns and `TaskMockFactory` for Issue #480 compatibility example.
 
 ## RELEASE PROCESS
 
@@ -246,41 +247,36 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp**clear-thought-server**mentalmodel | ELSE: Incomplete analysis
 REFACTORING: Follow @docs/refactoring-guidelines.md template
 
-Required Labels:
+1. **Required Labels**:
+   - Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
+   - Type: bug, feature, enhancement, documentation, test
+   - Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
+   - Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
 
-- Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
-- Type: bug, feature, enhancement, documentation, test
-- Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
-- Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
+2. **Branch Strategy**
+   - NEVER work directly on main (except critical hotfixes).
+   - ALWAYS create a new branch before starting ANY work on GitHub issues.
+   - MANDATORY: Check current branch with `git branch --show-current` BEFORE starting work.
+   - If not on a clean feature branch, IMMEDIATELY create one: `git checkout -b feature/issue-{issue-number}-{short-description}` or `git checkout -b fix/issue-{issue-number}-{short-description}`.
+   - Branch naming convention: `feature/issue-319-test-cleanup`, `fix/issue-123-domain-utils`, `docs/issue-456-api-guide`.
+   - NEVER continue work on unrelated branches unless explicitly approved.
+   - Use Clear Thought tools for planning (e.g., `mcp__clear-thought-server__mentalmodel` for analysis, `mcp__clear-thought-server__decisionframework` for architectural choices).
 
-2. Branch Strategy
+3. **Commit Message Format**
+   - Prefixes: Feature:, Fix:, Docs:, Refactor:, Test:, Chore:
+   - Include issue references: #123. [HOTFIX] for hotfixes.
 
-- NEVER work directly on main (except critical hotfixes).
-- ALWAYS create a new branch before starting ANY work on GitHub issues.
-- MANDATORY: Check current branch with `git branch --show-current` BEFORE starting work.
-- If not on a clean feature branch, IMMEDIATELY create one: `git checkout -b feature/issue-{issue-number}-{short-description}` or `git checkout -b fix/issue-{issue-number}-{short-description}`.
-- Branch naming convention: `feature/issue-319-test-cleanup`, `fix/issue-123-domain-utils`, `docs/issue-456-api-guide`.
-- NEVER continue work on unrelated branches unless explicitly approved.
-- Use Clear Thought tools for planning (e.g., `mcp__clear-thought-server__mentalmodel` for analysis, `mcp__clear-thought-server__decisionframework` for architectural choices).
+4. **Pull Requests**
+   - Get approval before pushing to upstream.
+   - Reference issues: Closes #XX or Relates to #XX.
+   - Include testing details. Wait for review. Use squash merging.
 
-3. Commit Message Format
+5. **Issue Closure Requirements**
+   - Verify acceptance criteria.
+   - Add implementation comment (details, lessons, challenges, future considerations).
+   - Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
 
-- Prefixes: Feature:, Fix:, Docs:, Refactor:, Test:, Chore:
-- Include issue references: #123. [HOTFIX] for hotfixes.
-
-4. Pull Requests
-
-- Get approval before pushing to upstream.
-- Reference issues: Closes #XX or Relates to #XX.
-- Include testing details. Wait for review. Use squash merging.
-
-5. Issue Closure Requirements
-
-- Verify acceptance criteria.
-- Add implementation comment (details, lessons, challenges, future considerations).
-- Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
-
-DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
+## DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
 
 ⚠️ CRITICAL: Documentation Search Priority
 NEVER use web search as the first option. ALWAYS follow this sequence:

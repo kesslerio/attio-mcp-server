@@ -35,6 +35,7 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 // Import enhanced tool caller with logging and migration
 import {
   callTasksTool,
+  callUniversalTool,
   validateTestEnvironment,
   getToolMigrationStats,
 } from '../utils/enhanced-tool-caller.js';

@@ -243,9 +243,9 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-lists',
     universalToolName: 'search-records',
-    resourceType: 'records', // Lists are handled as records
+    resourceType: 'lists', // Lists are handled as lists resource type
     parameterTransform: (params: any) => ({
-      resource_type: 'records', // Lists are records
+      resource_type: 'lists', // Lists use lists resource type
       query: params.query || '',
       limit: params.limit || 50,
       filters: params.filters || {},
@@ -265,10 +265,10 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-list-details',
     universalToolName: 'get-record-details',
-    resourceType: 'records', // Lists are handled as records
+    resourceType: 'lists', // Lists resource type
     parameterTransform: (params: any) => ({
-      resource_type: 'records', // Lists are records
-      record_id: params.list_id || params.record_id,
+      resource_type: 'lists', // Lists resource type
+      record_id: params.listId || params.list_id || params.record_id,
     }),
     description: 'Legacy get-list-details → universal get-record-details',
   },
@@ -340,7 +340,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id,
+        list_membership: params.listId || params.list_id,
         ...params.filters,
       },
       limit: params.limit || 50,
@@ -356,7 +356,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id,
+        list_membership: params.listId || params.list_id,
         ...params.advanced_filters,
       },
       query: params.query || '',
@@ -374,7 +374,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id || params.listId,
+        list_membership: params.listId || params.list_id,
         parent_record_type: params.parent_record_type,
         parent_record_id: params.parent_record_id,
         ...params.filters,
@@ -391,7 +391,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id || params.listId,
+        list_membership: params.listId || params.list_id,
         parent_record_id: params.parent_id || params.parent_record_id,
         ...params.filters,
       },

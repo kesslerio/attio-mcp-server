@@ -36,6 +36,7 @@ import type { TestDataObject, McpToolResponse } from '../types/index.js';
 // Import enhanced tool caller with logging and migration
 import {
   callNotesTool,
+  callUniversalTool,
   validateTestEnvironment,
   getToolMigrationStats,
 } from '../utils/enhanced-tool-caller.js';
@@ -110,7 +111,10 @@ describe.skipIf(
   describe('Test Data Setup', () => {
     it('should create test companies for note testing', async () => {
       const companyData = CompanyFactory.create();
-      const response = await callNotesTool('create-company', companyData);
+      const response = await callUniversalTool('create-record', {
+        resource_type: 'companies',
+        record_data: companyData
+      });
 
       E2EAssertions.expectMcpSuccess(response);
       const company = E2EAssertions.expectMcpData(response);
@@ -123,7 +127,10 @@ describe.skipIf(
 
     it('should create test people for note testing', async () => {
       const personData = PersonFactory.create();
-      const response = await callNotesTool('create-person', personData);
+      const response = await callUniversalTool('create-record', {
+        resource_type: 'people',
+        record_data: personData
+      });
 
       E2EAssertions.expectMcpSuccess(response);
       const person = E2EAssertions.expectMcpData(response);
