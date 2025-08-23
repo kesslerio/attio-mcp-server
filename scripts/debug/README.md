@@ -99,6 +99,16 @@ node debug-formatresult.js
 **Purpose**: Tests tool discovery and lookup mechanisms
 **Usage**: `node debug-tool-lookup.js`
 
+### `debug-tool-names.js` ✨ **NEW**
+**Purpose**: Validates tool names across the entire codebase for legacy/incorrect usage
+**Usage**: `node debug-tool-names.js`
+**Key Features**: 
+- Scans source code, documentation, and tests for legacy tool names
+- Compares against actual universal tool definitions
+- Provides replacement suggestions for outdated tool references
+- Helps maintain consistency after tool consolidation (Issue #352)
+**Output**: Reports potential findings including legacy configs (many are intentionally kept for backward compatibility)
+
 ### `debug-imports.js`
 **Purpose**: Tests import resolution and module loading
 **Usage**: `node debug-imports.js`
@@ -145,6 +155,7 @@ Various test scripts for specific functionality:
 - `debug-email-validation.js` - Fully functional, tests email normalization
 - `test-import.js` - Functional, validates import resolution
 - `debug-tools.js` - Functional, tests MCP tool registration
+- `debug-tool-names.js` - ✨ **NEW** - Validates tool names across codebase for legacy/incorrect usage
 
 ### ⚠️ Requires API Key
 Scripts requiring `ATTIO_API_KEY` environment variable:

@@ -53,7 +53,7 @@ try {
 }
 
 console.log('\n3. Testing other universal tools:');
-const universalTools = ['search-records', 'get-record', 'delete-record', 'update-record'];
+const universalTools = ['search-records', 'get-record-details', 'delete-record', 'update-record', 'get-attributes', 'discover-attributes'];
 for (const toolName of universalTools) {
   try {
     const result = findToolConfig(toolName);

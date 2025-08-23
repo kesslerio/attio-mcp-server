@@ -273,9 +273,9 @@ describe.skipIf(
           record_id: '00000000-0000-4000-8000-000000000000', // Valid UUID format but non-existent
         });
 
-        // Attio API handles non-existent record gets gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 
@@ -383,9 +383,9 @@ describe.skipIf(
           },
         });
 
-        // Attio API handles non-existent record updates gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 
@@ -422,9 +422,9 @@ describe.skipIf(
           record_id: 'non-existent-id-12345',
         });
 
-        // Attio API handles non-existent record deletions gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 
