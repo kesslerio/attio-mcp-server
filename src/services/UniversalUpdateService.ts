@@ -193,6 +193,7 @@ export class UniversalUpdateService {
         break;
 
       case UniversalResourceType.TASKS:
+        this.assertNoTaskContentUpdate(sanitizedData);
         updatedRecord = await this.updateTaskRecord(record_id, sanitizedData);
         break;
 
@@ -439,6 +440,20 @@ export class UniversalUpdateService {
       : UniversalUtilityService.convertTaskToRecord(
           updatedTask as unknown as AttioTask
         );
+  }
+
+  /**
+   * Validate that task content fields are not being updated (immutable)
+   */
+  private static assertNoTaskContentUpdate(record_data: Record<string, any>): void {
+    const forbidden = ['content', 'content_markdown', 'content_plaintext'];
+    if (record_data && typeof record_data === 'object') {
+      for (const k of forbidden) {
+        if (k in record_data) {
+          throw new UniversalValidationError('Task content is immutable and cannot be updated');
+        }
+      }
+    }
   }
 
   /**

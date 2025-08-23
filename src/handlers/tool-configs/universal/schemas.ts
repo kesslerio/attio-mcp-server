@@ -637,6 +637,10 @@ export const searchByRelationshipSchema = {
       enum: Object.values(UniversalResourceType),
       description: 'Target resource type for the relationship',
     },
+    listId: {
+      type: 'string' as const,
+      description: '(Optional) List ID for validation - will return error if not a valid UUID',
+    },
     ...paginationProperties,
   },
   required: ['relationship_type' as const, 'source_id' as const],
@@ -1237,6 +1241,18 @@ export function validateUniversalToolParams(
             example: `record_data: { name: 'Updated Name' }`,
           }
         );
+      }
+      
+      // Task content immutability validation
+      if (sanitizedParams.resource_type === 'tasks') {
+        const forbidden = ['content', 'content_markdown', 'content_plaintext'];
+        if (sanitizedParams.record_data && typeof sanitizedParams.record_data === 'object') {
+          for (const k of forbidden) {
+            if (k in sanitizedParams.record_data) {
+              throw new UniversalValidationError('Task content is immutable and cannot be updated');
+            }
+          }
+        }
       }
       break;
 

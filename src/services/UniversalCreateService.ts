@@ -200,7 +200,7 @@ function pickAllowedPersonFields(input: any): any {
   if (Array.isArray(input.email_addresses) && input.email_addresses.length) {
     out.email_addresses = input.email_addresses;
   } else if (input.email) {
-    out.email_addresses = [{ email: String(input.email) }]; // normalize to array
+    out.email_addresses = [{ email_address: String(input.email) }]; // normalize to Attio API format
   }
 
   // Professional information (minimal set)
@@ -387,6 +387,11 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
+      // Validate required name field for companies
+      if (!mappedData.name && !mappedData.company_name) {
+        throw new UniversalValidationError('Required field "name" is missing');
+      }
+      
       // Apply format conversions for common mistakes
       const correctedData = convertAttributeFormats('companies', mappedData);
 

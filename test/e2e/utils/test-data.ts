@@ -132,7 +132,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
       domain,
-      website: `https://${domain}`, // Test-only field - stripped before API calls
+      // Removed website to avoid field collision with domain -> domains mapping
       industry: 'Technology',
       description: `E2E test company created for testing purposes - ${testId}`,
       annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
@@ -155,7 +155,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
         ...overrides,
         name: `Test Company ${testId}`,
         domain: `${testId}.${domain}`,
-        website: `https://${testId}.${domain}`, // Test-only field - stripped before API calls
+        // Removed website to avoid field collision with domain -> domains mapping
         description: `E2E test company ${i + 1} created for testing purposes - ${testId}`,
       });
     });
