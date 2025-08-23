@@ -286,11 +286,19 @@ export async function handleUniversalGetDetailedInfo(
         return getPersonDetails(record_id);
       case UniversalResourceType.LISTS: {
         const list = await getListDetails(record_id);
-        // Convert AttioList to AttioRecord format
+        // Convert AttioList to AttioRecord format with robust shape handling
+        // Handle all documented Attio API list response shapes
+        const raw = list;
+        const listId =
+          raw?.id?.list_id       // nested shape from some endpoints
+          ?? raw?.list_id        // flat shape from "Get a list" endpoint
+          ?? raw?.id             // some responses use a flat id
+          ?? record_id;          // final fallback when caller already knows it
+        
         return {
           id: {
-            record_id: list.id.list_id,
-            list_id: list.id.list_id,
+            record_id: listId,
+            list_id: listId,
           },
           values: {
             name: list.name || list.title,
