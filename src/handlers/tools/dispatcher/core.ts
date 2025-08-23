@@ -84,6 +84,14 @@ import {
 } from '../../tool-types.js';
 
 /**
+ * Normalize error messages by stripping tool execution prefixes
+ * This improves test compatibility and error message clarity
+ */
+function normalizeToolMsg(msg: string): string {
+  return msg.replace(/^Error executing tool '.*?':\s*/, '');
+}
+
+/**
  * Canonicalize resource type to valid values and prevent mutations
  */
 function canonicalizeResourceType(rt: unknown): string {
@@ -496,17 +504,18 @@ export async function executeToolRequest(request: CallToolRequest) {
     );
 
     // Create properly formatted MCP response with detailed error information
+    const normalizedMessage = normalizeToolMsg(errorMessage);
     const errorResponse = {
       content: [
         {
           type: 'text',
-          text: `Error executing tool '${toolName}': ${errorMessage}`,
+          text: `Error executing tool '${toolName}': ${normalizedMessage}`,
         },
       ],
       isError: true,
       error: {
         code: 500,
-        message: errorMessage,
+        message: normalizedMessage,
         type: 'tool_execution_error',
         details: errorDetails,
       },

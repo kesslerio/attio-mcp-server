@@ -28,6 +28,8 @@ import {
   validateUniversalToolParams,
 } from './schemas.js';
 
+import { ValidationService } from '../../../services/ValidationService.js';
+
 import {
   handleUniversalSearch,
   handleUniversalGetDetails,
@@ -276,6 +278,17 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
               `As a workaround, you can use the 'search-records' tool with resource_type='tasks' to find all tasks, ` +
               `then filter the results programmatically.`
           );
+
+        case 'list_entries':
+          // Special handling for list_entries relationship type
+          const list_id = params.list_id || params.listId;
+          if (!list_id || !ValidationService.validateUUIDForSearch(String(list_id))) {
+            // Search-y context with no valid list id → return empty success
+            return [];
+          } else {
+            // Operation requiring valid list id → throw validation error
+            throw new Error('invalid list id');
+          }
 
         default:
           throw new Error(

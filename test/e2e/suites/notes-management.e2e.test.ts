@@ -63,7 +63,7 @@ const createdRecords: Array<{ type: string; id: string; data?: any }> = [];
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
-)('Notes Management E2E Tests', { concurrent: false }, () => {
+).sequential('Notes Management E2E Tests', () => {
   // Test data storage
   const testCompanies: TestDataObject[] = [];
   const testPeople: TestDataObject[] = [];

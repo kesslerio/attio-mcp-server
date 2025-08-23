@@ -285,6 +285,16 @@ export class E2EAssertions {
   static expectMcpSuccess(response: McpToolResponse, message?: string): void {
     const errorMsg = message || 'Expected MCP tool response to be successful';
 
+    // Add debug logging for error analysis
+    if (response.isError) {
+      console.error('ERR', JSON.stringify({
+        code: response.error?.code,
+        type: response.error?.type,
+        message: response.error?.message,
+        details: response.error?.details,
+      }, null, 2));
+    }
+
     expect(response.isError, `${errorMsg} - Response has error flag`).toBe(
       false
     );

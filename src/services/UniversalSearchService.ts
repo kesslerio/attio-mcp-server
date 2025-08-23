@@ -487,13 +487,14 @@ export class UniversalSearchService {
       return [];
     }
 
-    const lists =
-      query && query.trim().length > 0
-        ? await searchLists(query, limit || 10, offset || 0)
-        : await searchLists('', limit || 10, offset || 0);
+    try {
+      const lists =
+        query && query.trim().length > 0
+          ? await searchLists(query, limit || 10, offset || 0)
+          : await searchLists('', limit || 10, offset || 0);
 
-    // Convert AttioList[] to AttioRecord[] format
-    return lists.map(
+      // Convert AttioList[] to AttioRecord[] format
+      return lists.map(
       (list) =>
         ({
           id: {
@@ -511,6 +512,27 @@ export class UniversalSearchService {
           },
         }) as unknown as AttioRecord
     );
+    } catch (error: unknown) {
+      // Handle benign status codes (404/204) by returning empty success
+      if (error && typeof error === 'object' && 'status' in error) {
+        const statusError = error as { status?: number };
+        if (statusError.status === 404 || statusError.status === 204) {
+          // Lists discovery should never fail - return empty array for benign errors
+          return [];
+        }
+      }
+      
+      // Check error message for common "not found" scenarios
+      if (error && typeof error === 'object' && 'message' in error) {
+        const message = String(error.message).toLowerCase();
+        if (message.includes('not found') || message.includes('no lists')) {
+          return [];
+        }
+      }
+      
+      // For other errors (network/transport), bubble them up
+      throw error;
+    }
   }
 
   /**

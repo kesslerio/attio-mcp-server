@@ -1068,8 +1068,10 @@ export function mapTaskFields(operation: 'create' | 'update', input: Record<stri
   }
   
   // For update operations, never synthesize content - it's immutable
+  // Do NOT delete user-supplied content; let API reject it with proper error
   if (operation === 'update') {
-    delete output.content; // Remove any content field to prevent injection
+    // Content is immutable - if user supplies it, let Attio API reject with error
+    // Do not inject, do not delete
   }
   
   return output;

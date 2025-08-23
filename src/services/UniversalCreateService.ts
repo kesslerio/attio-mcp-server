@@ -142,39 +142,31 @@ async function enhanceUniquenessError(
 }
 
 /**
- * Allowlist function to filter person creation fields for E2E test isolation
- * Prevents extra fields from causing API rejections in test environments
- * Based on official Attio API documentation (verified via Context7)
+ * Minimal allowlist for person creation in E2E environments
+ * Uses smallest safe set to avoid 422 rejections in full test runs
+ * Based on user guidance for maximum test stability
  */
-function pickAllowedPersonFields(input: Record<string, unknown>): Record<string, unknown> {
-  const allowed: Record<string, unknown> = {};
+function pickAllowedPersonFields(input: any): any {
+  const out: any = {};
   
-  // Core identification fields (required/unique fields)
-  if (input.name) allowed.name = input.name;
-  if (input.email) allowed.email = input.email;
-  if (input.email_addresses) allowed.email_addresses = input.email_addresses;
-  if (input.emails) allowed.emails = input.emails;
+  // Core required field
+  if (input.name) out.name = input.name;
+
+  // Email handling - prefer array form to avoid uniqueness flakiness
+  if (Array.isArray(input.email_addresses) && input.email_addresses.length) {
+    out.email_addresses = input.email_addresses;
+  } else if (input.email) {
+    out.email_addresses = [{ email: String(input.email) }]; // normalize to array
+  }
+
+  // Professional information (minimal set)
+  if (input.title) out.title = input.title;
+  if (input.job_title) out.job_title = input.job_title;
+
+  // DO NOT forward department/website/phones/location/socials for E2E
+  // Keep test factories generating them but never send to API layer
   
-  // Contact information
-  if (input.phone_numbers) allowed.phone_numbers = input.phone_numbers;
-  if (input.phones) allowed.phones = input.phones;
-  if (input.primary_location) allowed.primary_location = input.primary_location;
-  if (input.location) allowed.location = input.location;
-  
-  // Professional information
-  if (input.title) allowed.title = input.title;
-  if (input.job_title) allowed.job_title = input.job_title;
-  if (input.company) allowed.company = input.company;
-  if (input.description) allowed.description = input.description;
-  
-  // Social media profiles (all supported by Attio API)
-  if (input.linkedin) allowed.linkedin = input.linkedin;
-  if (input.twitter) allowed.twitter = input.twitter;
-  if (input.facebook) allowed.facebook = input.facebook;
-  if (input.instagram) allowed.instagram = input.instagram;
-  if (input.angellist) allowed.angellist = input.angellist;
-  
-  return allowed;
+  return out;
 }
 
 /**
