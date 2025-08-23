@@ -31,7 +31,7 @@ NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separ
 
 RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
 `npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
-`./cleanup-test-data.sh --dry-run` - Shell wrapper with validation | `./cleanup-test-data.sh --live` - Live cleanup
+`./scripts/cleanup-test-data.sh --dry-run` - Shell wrapper with validation | `./scripts/cleanup-test-data.sh --live` - Live cleanup
 `npm run cleanup:test-data:companies -- --live` - Companies only | `npm run cleanup:test-data:people -- --live` - People only
 `npm run cleanup:test-data:tasks -- --live` - Tasks only | `npm run cleanup:test-data:lists -- --live` - Lists only
 FEATURES: Parallel processing | Rate limiting | Error handling | Prefix-based filtering | Progress tracking
@@ -57,6 +57,12 @@ FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/
 Testing: `npm test*` all variations | Building: `npm run build*` all variations
 Inspection: `grep`, `find`, `sed`, `head`, `tail`, `cat` | Git read-only: `git status`, `git diff`, `git log`
 MCP tools: Read, Glob, Grep, LS | Scripts: `./scripts/review-pr.sh`
+
+## DEBUG UTILITIES
+
+RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: Check `scripts/debug/README.md` | ELSE: Slower debugging cycles
+KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
+USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
 ## CODE STANDARDS [PR #483 ENHANCED]
 

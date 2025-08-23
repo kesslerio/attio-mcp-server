@@ -28,6 +28,7 @@ import { getPersonDetails } from '../objects/people/index.js';
 import { getListDetails } from '../objects/lists.js';
 import { getObjectRecord } from '../objects/records/index.js';
 import { getTask } from '../objects/tasks.js';
+import { getNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
  * UniversalRetrievalService provides centralized record retrieval functionality
@@ -176,6 +177,9 @@ export class UniversalRetrievalService {
       case UniversalResourceType.TASKS:
         return this.retrieveTaskRecord(record_id, resource_type);
 
+      case UniversalResourceType.NOTES:
+        return this.retrieveNoteRecord(record_id);
+
       default:
         throw new Error(
           `Unsupported resource type for get details: ${resource_type}`
@@ -223,6 +227,26 @@ export class UniversalRetrievalService {
       // Cache 404 for tasks using CachingService
       CachingService.cache404Response(resource_type, record_id);
       throw createRecordNotFoundError(record_id, 'tasks');
+    }
+  }
+
+  /**
+   * Retrieve note record with normalization and error handling
+   */
+  private static async retrieveNoteRecord(
+    noteId: string
+  ): Promise<AttioRecord> {
+    try {
+      const response = await getNote(noteId);
+      const note = response.data;
+
+      // Normalize to universal record format
+      const normalizedRecord = normalizeNoteResponse(note);
+      return normalizedRecord as AttioRecord;
+    } catch (error: unknown) {
+      // Cache 404 for notes using CachingService
+      CachingService.cache404Response('notes', noteId);
+      throw createRecordNotFoundError(noteId, 'notes');
     }
   }
 

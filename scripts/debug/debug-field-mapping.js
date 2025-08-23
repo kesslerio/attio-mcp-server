@@ -12,7 +12,7 @@ import { UniversalResourceType } from '../../dist/handlers/tool-configs/universa
 async function debugFieldMapping() {
   console.log('⚠️  WARNING: This script creates test data in your Attio workspace');
   console.log('⚠️  Data will be prefixed with DEBUG_ for easy cleanup');
-  console.log('⚠️  Run "./cleanup-test-data.sh --prefix=DEBUG_ --live" to clean up afterwards');
+  console.log('⚠️  Run "./scripts/cleanup-test-data.sh --prefix=DEBUG_ --live" to clean up afterwards');
   console.log('');
   console.log('🔍 DEBUG: Field Mapping Investigation for Issue #473');
   console.log('=' .repeat(60));
@@ -61,7 +61,7 @@ async function debugFieldMapping() {
     console.log('\n✅ DEBUG COMPLETE');
     console.log('\n🧹 CLEANUP REMINDER:');
     console.log('   To clean up test data, run:');
-    console.log('   ./cleanup-test-data.sh --prefix=DEBUG_ --live');
+    console.log('   ./scripts/cleanup-test-data.sh --prefix=DEBUG_ --live');
     
   } catch (error) {
     console.error('\n❌ DEBUG FAILED:', error.message);
@@ -70,7 +70,7 @@ async function debugFieldMapping() {
     }
     console.log('\n🧹 CLEANUP REMINDER:');
     console.log('   To clean up any partial test data, run:');
-    console.log('   ./cleanup-test-data.sh --prefix=DEBUG_ --live');
+    console.log('   ./scripts/cleanup-test-data.sh --prefix=DEBUG_ --live');
   }
 }
 

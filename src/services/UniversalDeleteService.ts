@@ -15,6 +15,7 @@ import { deletePerson } from '../objects/people-write.js';
 import { deleteList } from '../objects/lists.js';
 import { deleteObjectRecord } from '../objects/records/index.js';
 import { deleteTask } from '../objects/tasks.js';
+import { deleteNote } from '../objects/notes.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -88,6 +89,10 @@ export class UniversalDeleteService {
 
         await deleteTask(record_id);
         return { success: true, record_id };
+
+      case UniversalResourceType.NOTES:
+        const result = await deleteNote(record_id);
+        return { success: result.success, record_id };
 
       default:
         throw new Error(

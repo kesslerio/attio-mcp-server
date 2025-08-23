@@ -60,6 +60,7 @@ import { createCompany } from '../objects/companies/index.js';
 import { createList } from '../objects/lists.js';
 import { createPerson } from '../objects/people/index.js';
 import { createObjectRecord } from '../objects/records/index.js';
+import { createNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -182,17 +183,21 @@ export class UniversalCreateService {
   static async createRecord(
     params: UniversalCreateParams
   ): Promise<AttioRecord> {
-    let { resource_type, record_data } = params;
-
     // CRITICAL FIX: Ensure record_data is always a plain object (not JSON string)
-    if (typeof record_data === 'string') {
+    // Must mutate the original params.record_data, not just local variable
+    if (typeof params.record_data === 'string') {
       try {
-        record_data = JSON.parse(record_data);
+        params.record_data = JSON.parse(params.record_data);
       } catch {
         throw new UniversalValidationError('record_data must be an object');
       }
     }
-    if (!record_data || typeof record_data !== 'object' || Array.isArray(record_data)) {
+    const { resource_type, record_data } = params;
+    if (
+      !record_data ||
+      typeof record_data !== 'object' ||
+      Array.isArray(record_data)
+    ) {
       throw new UniversalValidationError('record_data must be a JSON object');
     }
 
@@ -322,6 +327,9 @@ export class UniversalCreateService {
 
       case UniversalResourceType.TASKS:
         return this.createTaskRecord(mappedData);
+
+      case UniversalResourceType.NOTES:
+        return this.createNoteRecord(mappedData);
 
       default:
         return this.handleUnsupportedResourceType(resource_type, params);
@@ -762,6 +770,106 @@ export class UniversalCreateService {
       const enhancedError = ErrorEnhancer.autoEnhance(
         errorObj,
         'tasks',
+        'create-record'
+      );
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Create a note record with field transformation and validation
+   */
+  private static async createNoteRecord(
+    mappedData: Record<string, unknown>
+  ): Promise<AttioRecord> {
+    try {
+      // Validate required content field (trimmed)
+      let content: string;
+      if (typeof mappedData.content === 'string' && mappedData.content.trim()) {
+        content = mappedData.content.trim();
+      } else {
+        throw new UniversalValidationError(
+          'Content is required and must be a non-empty string',
+          ErrorType.USER_ERROR,
+          { field: 'content' }
+        );
+      }
+
+      // Validate parent_object (after field mapping)
+      const parentObject = mappedData.parent_object as string;
+      if (!parentObject || !['companies', 'people'].includes(parentObject)) {
+        throw new UniversalValidationError(
+          'parent_object must be "companies" or "people"',
+          ErrorType.USER_ERROR,
+          { field: 'parent_object' }
+        );
+      }
+
+      // Validate parent_record_id (after field mapping)
+      const parentRecordId = mappedData.parent_record_id as string;
+      if (!parentRecordId) {
+        throw new UniversalValidationError(
+          'parent_record_id is required',
+          ErrorType.USER_ERROR,
+          { field: 'parent_record_id' }
+        );
+      }
+
+      // Build create note body according to Attio API spec
+      const noteBody = {
+        parent_object: parentObject as 'companies' | 'people',
+        parent_record_id: parentRecordId,
+        content,
+        title: mappedData.title as string | undefined,
+        format: (mappedData.format as 'markdown' | 'plaintext') || 'plaintext',
+        created_at: mappedData.created_at as string | undefined,
+        meeting_id: mappedData.meeting_id as string | undefined,
+      };
+
+      debug(
+        'universal.createNote',
+        'Creating note with mapped data',
+        {
+          parent_object: noteBody.parent_object,
+          parent_record_id: noteBody.parent_record_id,
+          hasContent: !!noteBody.content,
+          hasTitle: !!noteBody.title,
+          format: noteBody.format,
+        },
+        'createNote',
+        OperationType.API_CALL
+      );
+
+      // Create note via notes API
+      const response = await createNote(noteBody);
+      const createdNote = response.data;
+
+      // Normalize to universal record format
+      const normalizedRecord = normalizeNoteResponse(createdNote);
+
+      debug(
+        'universal.createNote',
+        'Note created and normalized',
+        {
+          noteId: createdNote.id.note_id,
+          hasNormalizedId: !!normalizedRecord.id.record_id,
+          resourceType: normalizedRecord.resource_type,
+        },
+        'createNote',
+        OperationType.API_CALL
+      );
+
+      return normalizedRecord as AttioRecord;
+    } catch (error: unknown) {
+      // Log original error for debugging
+      console.error('[Notes] Original error:', error);
+
+      // Enhanced error handling for notes
+      const errorObj: Error =
+        error instanceof Error ? error : new Error(String(error));
+      const enhancedError = ErrorEnhancer.autoEnhance(
+        errorObj,
+        'notes',
         'create-record'
       );
       throw enhancedError;

@@ -29,6 +29,7 @@ import { advancedSearchPeople } from '../objects/people/index.js';
 import { searchLists } from '../objects/lists.js';
 import { listObjectRecords } from '../objects/records/index.js';
 import { listTasks } from '../objects/tasks.js';
+import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
 
 // Import validation for debugging circular dependencies (can be removed in production)
 // console.log('UniversalSearchService: Import check');
@@ -263,6 +264,16 @@ export class UniversalSearchService {
 
       case UniversalResourceType.TASKS:
         return this.searchTasks(perfId, apiStart, query, limit, offset);
+
+      case UniversalResourceType.NOTES:
+        return this.searchNotes(
+          perfId,
+          apiStart,
+          query,
+          filters,
+          limit,
+          offset
+        );
 
       default:
         throw new Error(
@@ -706,6 +717,96 @@ export class UniversalSearchService {
       );
 
       return results;
+    }
+  }
+
+  /**
+   * Search notes with filtering and pagination
+   */
+  private static async searchNotes(
+    perfId: string,
+    apiStart: number,
+    query?: string,
+    filters?: Record<string, unknown>,
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
+    try {
+      // Build query parameters for Attio Notes API
+      const queryParams: Record<string, any> = {};
+
+      // Apply filters (mapped from universal filter names)
+      if (filters) {
+        if (filters.parent_object || filters.linked_record_type) {
+          queryParams.parent_object =
+            filters.parent_object || filters.linked_record_type;
+        }
+        if (filters.parent_record_id || filters.linked_record_id) {
+          queryParams.parent_record_id =
+            filters.parent_record_id || filters.linked_record_id;
+        }
+      }
+
+      // Add pagination parameters
+      if (limit) queryParams.limit = limit;
+      if (offset) queryParams.offset = offset;
+
+      // Call Notes API
+      const response = await listNotes(queryParams);
+      const notes = response.data || [];
+
+      // Log performance metrics
+      enhancedPerformanceTracker.markTiming(
+        perfId,
+        'attioApi',
+        performance.now() - apiStart
+      );
+
+      // Normalize notes to AttioRecord format
+      const normalizedNotes = notes.map((note) =>
+        normalizeNoteResponse(note)
+      ) as AttioRecord[];
+
+      // Apply query-based filtering if query provided (client-side filtering)
+      let results = normalizedNotes;
+      if (query && query.trim()) {
+        const queryLower = query.toLowerCase().trim();
+        results = normalizedNotes.filter((record) => {
+          // Search in title and content fields
+          const title = record.values?.title?.toString()?.toLowerCase() || '';
+          const contentMarkdown =
+            record.values?.content_markdown?.toString()?.toLowerCase() || '';
+          const contentPlaintext =
+            record.values?.content_plaintext?.toString()?.toLowerCase() || '';
+
+          return (
+            title.includes(queryLower) ||
+            contentMarkdown.includes(queryLower) ||
+            contentPlaintext.includes(queryLower)
+          );
+        });
+      }
+
+      // Log serialization performance
+      enhancedPerformanceTracker.markTiming(
+        perfId,
+        'serialization',
+        performance.now() - apiStart
+      );
+
+      return results;
+    } catch (error: unknown) {
+      console.error('Failed to search notes:', error);
+
+      // Log error metrics
+      enhancedPerformanceTracker.markTiming(
+        perfId,
+        'other',
+        performance.now() - apiStart
+      );
+
+      // Return empty array on error to maintain consistent behavior
+      return [];
     }
   }
 

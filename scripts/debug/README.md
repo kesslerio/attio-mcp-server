@@ -6,7 +6,7 @@ This directory contains debugging and diagnostic scripts used during development
 
 Some debug scripts create test data in your Attio workspace. Always:
 1. **Check script documentation** before running API-dependent scripts  
-2. **Use cleanup tools** after testing: `./cleanup-test-data.sh --prefix=DEBUG_ --live`
+2. **Use cleanup tools** after testing: `./scripts/cleanup-test-data.sh --prefix=DEBUG_ --live`
 3. **Prefer dry-run mode** when available to preview actions
 
 Scripts that create data are clearly marked with ⚠️ in the documentation below.
@@ -157,10 +157,10 @@ Scripts requiring `ATTIO_API_KEY` environment variable:
 Scripts that create test data use `DEBUG_` prefixes for easy cleanup:
 ```bash
 # Clean up all debug test data
-./cleanup-test-data.sh --prefix=DEBUG_ --live
+./scripts/cleanup-test-data.sh --prefix=DEBUG_ --live
 
 # Preview what would be deleted (dry run)
-./cleanup-test-data.sh --prefix=DEBUG_ --dry-run
+./scripts/cleanup-test-data.sh --prefix=DEBUG_ --dry-run
 ```
 
 ### 🔧 Import Path Fixed (Ready for Testing)

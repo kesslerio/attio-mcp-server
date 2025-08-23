@@ -96,7 +96,7 @@ function normalizeToolMsg(msg: string): string {
  */
 function canonicalizeResourceType(rt: unknown): string {
   const value = String(rt ?? '').toLowerCase();
-  const validTypes = ['records','lists','people','companies','tasks','deals'];
+  const validTypes = ['records','lists','people','companies','tasks','deals','notes'];
   
   if (!validTypes.includes(value)) {
     throw new Error(`Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`);

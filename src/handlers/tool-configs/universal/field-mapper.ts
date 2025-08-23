@@ -40,6 +40,8 @@ const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
   deals: UniversalResourceType.DEALS,
   task: UniversalResourceType.TASKS,
   tasks: UniversalResourceType.TASKS,
+  note: UniversalResourceType.NOTES,
+  notes: UniversalResourceType.NOTES,
   // Common typos and variations
   comapny: UniversalResourceType.COMPANIES,
   compnay: UniversalResourceType.COMPANIES,
@@ -346,6 +348,36 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       description: 'Use "notes" for descriptions or additional text',
     },
     requiredFields: [],
+    uniqueFields: [],
+  },
+
+  [UniversalResourceType.NOTES]: {
+    fieldMappings: {
+      // Normalize universal/legacy field names to Attio Notes API fields
+      linked_record_type: 'parent_object',     // 'companies' | 'people'
+      linked_record_id: 'parent_record_id',    // UUID
+      note: 'content',
+      description: 'content',
+      // title and content pass through unchanged
+    },
+    validFields: [
+      'title', 
+      'content', 
+      'format', 
+      'linked_record_type', 
+      'linked_record_id', 
+      'parent_object', 
+      'parent_record_id',
+      'created_at',
+      'meeting_id'
+    ],
+    requiredFields: ['content', 'linked_record_type', 'linked_record_id'],
+    commonMistakes: {
+      parentId: 'Use "linked_record_id" or "parent_record_id" with UUID',
+      parentType: 'Use "linked_record_type" or "parent_object" with resource slug',
+      note: 'Use "content" for note body text',
+      description: 'Use "content" for note body text',
+    },
     uniqueFields: [],
   },
 };
