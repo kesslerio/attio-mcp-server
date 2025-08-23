@@ -55,6 +55,43 @@ import {
 // Import debug utilities
 import { debug, OperationType } from '../utils/logger.js';
 
+// Field filtering to prevent test-only fields from reaching API
+const COMPANY_ALLOWED_FIELDS = [
+  'name',
+  'domain',
+  'industry',
+  'description',
+  'annual_revenue',
+  'employee_count',
+  'categories',
+  'domains',
+  'employees',
+];
+
+const PERSON_ALLOWED_FIELDS = [
+  'name',
+  'email_addresses',
+  'phone_numbers',
+  'job_title',
+  'seniority',
+  'company',
+  'emails',
+  'title',
+];
+
+/**
+ * Filter object to only include allowed fields for API calls
+ * Prevents test-only fields like 'website' and 'department' from causing API errors
+ */
+function filterAllowedFields(
+  input: Record<string, unknown>,
+  allowedFields: string[]
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([key]) => allowedFields.includes(key))
+  );
+}
+
 // Import resource-specific create functions
 import { createCompany } from '../objects/companies/index.js';
 import { createList } from '../objects/lists.js';
@@ -83,9 +120,12 @@ function shouldUseMockData(): boolean {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
+  // Filter out test-only fields before API call (prevents website/domain collision)
+  const filteredData = filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS);
+
   // Delegate to production MockService to avoid TypeScript build errors
   const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(companyData);
+  return await MockService.createCompany(filteredData);
 }
 
 /**
@@ -95,9 +135,12 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
+  // Filter out test-only fields before API call (prevents department field errors)
+  const filteredData = filterAllowedFields(personData, PERSON_ALLOWED_FIELDS);
+
   // Delegate to production MockService to avoid TypeScript build errors
   const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(personData);
+  return await MockService.createPerson(filteredData);
 }
 
 /**

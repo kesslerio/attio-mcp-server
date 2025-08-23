@@ -17,8 +17,7 @@ describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('E2E Infrastructure', () => {
   beforeAll(async () => {
-    // Load configuration without requiring API key for infrastructure tests
-    process.env.SKIP_E2E_TESTS = 'true';
+    // Load configuration for infrastructure tests
     await loadE2EConfig();
   });
 
@@ -201,8 +200,8 @@ describe.skipIf(
     });
 
     it('should handle skip flags correctly', () => {
-      // This test runs because SKIP_E2E_TESTS is set to 'true'
-      expect(process.env.SKIP_E2E_TESTS).toBe('true');
+      // This test runs because SKIP_E2E_TESTS is no longer programmatically set
+      expect(process.env.SKIP_E2E_TESTS).toBeUndefined();
     });
   });
 

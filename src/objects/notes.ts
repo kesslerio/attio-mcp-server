@@ -96,7 +96,7 @@ export async function createNote(
   const api = getAttioClient();
 
   try {
-    const response = await api.post('/notes', body);
+    const response = await api.post('/notes', { data: body });
     return response.data;
   } catch (error: any) {
     debug('notes', 'Create note failed', { error: error.message });

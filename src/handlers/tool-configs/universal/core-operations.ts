@@ -143,7 +143,7 @@ export const searchRecordsConfig: UniversalToolConfig = {
 
 /**
  * Universal get record details tool
- * Consolidates: get-company-details, get-person-details, get-record, get-task-details
+ * Consolidates: get-company-details, get-person-details, get-record-details, get-task-details
  */
 export const getRecordDetailsConfig: UniversalToolConfig = {
   name: 'get-record-details',

@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cleanup-test-data.ts"
+CLEANUP_SCRIPT="$SCRIPT_DIR/cleanup-test-data.ts"
 
 # Print colored output
 print_color() {
