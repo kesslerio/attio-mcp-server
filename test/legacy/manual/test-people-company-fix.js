@@ -3,8 +3,8 @@
  * This test demonstrates how to properly find people by company affiliation
  */
 
-import { searchPeopleByCompany } from '../../dist/objects/people/index.js';
-import { searchCompanies } from '../../dist/objects/companies/index.js';
+import { searchPeopleByCompany } from '../../../dist/objects/people/index.js';
+import { searchCompanies } from '../../../dist/objects/companies/index.js';
 
 // Set up test environment
 process.env.ATTIO_API_KEY = process.env.ATTIO_API_KEY || '';

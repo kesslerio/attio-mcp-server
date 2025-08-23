@@ -1,9 +1,9 @@
-import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
+import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
 import {
   initializeAttioClient,
   getAttioClient,
-} from '../../dist/api/attio-client.js';
-import { searchPeopleByCompany } from '../../dist/objects/people/relationships.js';
+} from '../../../dist/api/attio-client.js';
+import { searchPeopleByCompany } from '../../../dist/objects/people/relationships.js';
 
 /**
  * Comprehensive test for search-people-by-company functionality

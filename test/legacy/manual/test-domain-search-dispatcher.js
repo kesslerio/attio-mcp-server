@@ -3,7 +3,7 @@
  * This simulates the MCP tool call to verify the fix works
  */
 
-import { executeToolRequest } from '../../dist/handlers/tools/dispatcher/core.js';
+import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher/core.js';
 
 async function testDomainSearchDispatcher() {
   console.log('=== Testing Domain Search Dispatcher Fix ===');

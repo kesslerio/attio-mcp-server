@@ -66,17 +66,25 @@ export abstract class E2ETestDataFactory {
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
-    // Generate truly unique email per call (not just per run)
     const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    
+    const testId = this.getTestId(prefix);
+    const defaultDomain = process.env.E2E_TEST_EMAIL_DOMAIN || 'e2e.test';
+
+    const build = (local: string, domain: string) =>
+      `${local}+${uniq}@${domain}`.toLowerCase();
+
     try {
-      const baseEmail = configLoader.getTestEmail(prefix);
-      // Insert unique identifier before @ symbol
-      return baseEmail.replace('@', `+${uniq}@`);
-    } catch (error) {
-      // Configuration not loaded - provide fallback with unique identifier
-      const testId = this.getTestId(prefix);
-      return `${testId}+${uniq}@test-domain.com`;
+      const baseEmail = (configLoader.getTestEmail(prefix) || '').trim();
+      if (baseEmail.includes('@')) {
+        const [local, domain] = baseEmail.split('@', 2);
+        const out = build(local || testId, domain || defaultDomain);
+        return out.includes('@') ? out : build(testId, defaultDomain);
+      }
+      // Misconfigured (no "@"): treat entire string as local part
+      return build(baseEmail || testId, defaultDomain);
+    } catch {
+      // No config loader: safe fallback
+      return build(testId, defaultDomain);
     }
   }
 

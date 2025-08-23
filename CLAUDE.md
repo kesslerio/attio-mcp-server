@@ -13,27 +13,14 @@ RULE: Documentation-first development | WHEN: Building any feature | DO: Check o
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp**clear-thought-server**mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-server**decisionframework → find alternative | ELSE: Wasted time on workarounds
 
-## BUILD & TEST COMMANDS
+## BUILD & TEST GOTCHAS
 
-`npm run build` - TypeScript compilation | `npm run build:watch` - Watch mode
-`npm run typecheck` - Type checking only (fast) | `npm run typecheck:watch` - Watch mode
-`npm run check` - Validation suite (lint, format, typecheck) | `npm run clean` - Clean build artifacts
-`npm test` - Run all unit tests (globals enabled) | `npm run test:offline` - Unit tests only (no API)
-`npm run test:integration` - Real API tests | `npm run test:integration:only` - Integration tests in test/integration/ only
-`npm test -- -t "pattern"` - Single test pattern | `npm test <filepath>` - Specific file
-`npm test -- --coverage` - With coverage report
-
+⚠️ CRITICAL: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
-⚠️ IMPORTANT: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 
-## TEST DATA CLEANUP [COMPREHENSIVE UTILITIES]
+## TEST DATA CLEANUP
 
 RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
-`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
-`./scripts/cleanup-test-data.sh --dry-run` - Shell wrapper with validation | `./scripts/cleanup-test-data.sh --live` - Live cleanup
-`npm run cleanup:test-data:companies -- --live` - Companies only | `npm run cleanup:test-data:people -- --live` - People only
-`npm run cleanup:test-data:tasks -- --live` - Tasks only | `npm run cleanup:test-data:lists -- --live` - Lists only
-FEATURES: Parallel processing | Rate limiting | Error handling | Prefix-based filtering | Progress tracking
 ⚠️ CRITICAL: Use `--dry-run` first to preview deletions | Supports custom prefixes: `--prefix=TEST_,QA_,E2E_,DEMO_`
 
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
@@ -69,165 +56,21 @@ RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immedia
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
 IMPORTS: Order as node → external → internal | Remove unused immediately
 
-## AGENT AUTOMATION [Use Task tool]
+## AGENT AUTOMATION
 
-**CORE RULE**: Auto-delegate work when user intent matches patterns → Launch specialist agent → Chain to completion
-
-### TRIGGER MATRIX [P0=Critical, P1=Required, P2=Recommended]
-
-| **Intent Pattern**      | **Primary Agent**              | **Chain**                        | **Priority** |
-| ----------------------- | ------------------------------ | -------------------------------- | ------------ |
-| implement/build/feature | project-delegator-orchestrator | → docs-architect                 | P0           |
-| fix/debug/error/crash   | debug-specialist               | → test-coverage-specialist       | P0           |
-| refactor/clean up       | code-refactoring-architect     | → code-review-specialist         | P0           |
-| review my code          | code-review-specialist         | → test-coverage-specialist       | P1           |
-| organize/plan tasks     | issue-plan-author              | → project-delegator-orchestrator | P2           |
-
-| **Auto-Trigger Condition**             | **Agent**                      | **Priority** |
-| -------------------------------------- | ------------------------------ | ------------ |
-| File >500 lines                        | code-refactoring-architect     | P0           |
-| Function >30 lines                     | code-refactoring-architect     | P1           |
-| Error/test failure                     | debug-specialist               | P0           |
-| Before commit/PR                       | code-review-specialist         | P1           |
-| Security keywords (auth/token/API-key) | security-vulnerability-scanner | P0           |
-| After code changes                     | docs-architect                 | P1           |
-| `any` types found                      | code-refactoring-architect     | P2           |
-| Performance degradation                | performance-engineer           | P1           |
-
-### AGENT ORCHESTRATION
-
-**Default Posture**: Single Claude Code session. Spawn sub-agents only when improving quality/speed.
-
-**Spawn Conditions** (any apply):
-
-- Cross-domain work in one PR (refactor + typing + tests)
-- Touches >3 files or >100 LOC
-- Long-running/shardable work (tests/linters/docs)
-- Strict context separation needed (implementer vs. reviewer)
-
-**Constraints**:
-
-- Max **2 active sub-agents** per PR (burst to 3-4 for independent work on disjoint files)
-- Preferred sequence: **code-refactoring-architect → test-coverage-specialist → code-review-specialist**
-- Call **debug-specialist** only on CI/test failures
-- **Never rename agent IDs** - use exact names from this file
-
-**Output Standards**:
-
-- Scope: current diff + nearest context (no repo-wide rewrites)
-- Deliver: concise notes + exact diffs + one commit message per agent
-
-### PARALLELIZATION GUIDE [Task Tool]
-
-**Safe to Parallelize**:
-
-- `eslint`/`prettier` checks, test shards (`vitest -t` patterns), docs generation, read-only analysis
-- Lint + type check: `npm run lint:check` and `npm run typecheck`
-- Matrix tests: split by directories (`vitest -t api`, `-t handlers`)
-
-**Never Parallelize**:
-
-- Two writers modifying same modules/files
-- Migrations changing shared configs/schemas/codegen
-
-**Concurrency Best Practices**:
-
-- Request explicitly: _"Use Task tool, run independent jobs in parallel (max 4 concurrent)"_
-- Sweet spot: **4-6 concurrent tasks** for CI/laptop
-- Beyond 6: prefer queueing or branch isolation
-- Multiple writers: use short-lived feature branches per task
-
-## AGENT CATALOG
-
-### Planning & Orchestration
-
-- **project-delegator-orchestrator** [P0] → Multi-step tasks, complex changes → All specialists → docs-architect
-- **issue-plan-author** [P2] → Feature specs, structured bug reports → project-delegator-orchestrator
-- **backlog-triage-specialist** [P2] → Raw reports, duplicates, priorities → issue-plan-author
-
-### Implementation & Refactoring
-
-- **code-refactoring-architect** [P0] → Files >500 lines, functions >30 lines, `any` types, SRP violations → code-review-specialist → test-coverage-specialist
-- **api-design-architect** [P1] → New endpoints, API changes, MCP tools, service boundaries → code-review-specialist → docs-architect
-- **ui-implementation-specialist** [P2] → UI components, responsive design, accessibility → code-review-specialist → test-coverage-specialist
-- **architecture-optimizer** [P2] → Build issues, duplication, tight coupling → code-refactoring-architect
-
-### Validation & Quality
-
-- **code-review-specialist** [P1] → Pre-commit, critical paths, API handlers → test-coverage-specialist → security-vulnerability-scanner
-- **test-coverage-specialist** [P1] → New features, <80% coverage, integration tests → debug-specialist (if failures)
-- **debug-specialist** [P0] → Errors, test failures, regressions → test-coverage-specialist → docs-architect
-- **security-vulnerability-scanner** [P0] → Pre-release, dependency updates, auth/token code → AUTO-INVOKE
-- **performance-engineer** [P1] → Hot paths, bottlenecks, optimization needs → code-review-specialist → test-coverage-specialist
-
-### Documentation
-
-- **docs-architect** [P1] → ALWAYS after code changes → None (final step)
-
-## WORKFLOW PATTERNS
-
-**Standard Chains**:
-
-1. **Feature**: project-delegator → implementation → review → test → docs
-2. **Debug**: debug-specialist → test-coverage → code-review → docs
-3. **Refactor**: code-refactoring → code-review → test-coverage → docs
-4. **TypeScript**: code-refactoring (any-types) → code-review → test → docs
-
-**Exit Criteria** (diff-scoped):
-
-- **code-refactoring-architect** → minimal diff, no behavior change, compiles
-- **test-coverage-specialist** → lints clean; tests pass or smallest viable test updates applied
-- **code-review-specialist** → checklist satisfied; zero new issues
-
-### DECISION CHEATSHEET (no renames)
-
-- Only constants/type hints/init → **code-refactoring-architect** → **test-coverage-specialist**
-- Tests fail → **debug-specialist** → **test-coverage-specialist**
-- Approved PR, minor cleanup → **code-refactoring-architect** → **code-review-specialist** (optional)
+RULE: Files >500 lines trigger refactoring | WHEN: Large files found | DO: Break down systematically | ELSE: Maintenance debt
 
 ## ARCHITECTURE PATTERNS [PR #483 SUCCESS]
 
 ### formatResult Pattern [MANDATORY]
-
 RULE: String return consistency | WHEN: Any format function | DO: Always return string, never conditional | ELSE: Type safety violations
 RULE: No environment coupling | WHEN: Production code | DO: Never check NODE_ENV for behavior | ELSE: Dual-mode anti-patterns
-TEMPLATE:
-
-```typescript
-// ✅ CORRECT: Consistent string return
-function formatSearchResults(records: AttioRecord[]): string {
-  return records
-    .map((r, i) => `${i + 1}. ${r.values?.name?.[0]?.value || 'Unknown'}`)
-    .join('\n');
-}
-
-// ❌ WRONG: Environment-dependent behavior
-function formatResult(data: any): string | object {
-  if (process.env.NODE_ENV === 'test') return data;
-  return formatString(data);
-}
-```
+RULE: Error handling | WHEN: Format functions | DO: Implement try-catch blocks | ELSE: Unhandled errors
 
 ### Mock Factory Pattern [MANDATORY]
 
-RULE: Test data isolation | WHEN: Creating test data | DO: Use mock factories only in test/ | ELSE: Production contamination
+RULE: Test data isolation | WHEN: Creating test data | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Production contamination
 RULE: Issue #480 compatibility | WHEN: Task mocks | DO: Include both content and title, preserve task_id | ELSE: E2E failures
-TEMPLATE:
-
-```typescript
-// test/utils/mock-factories/TaskMockFactory.ts
-export class TaskMockFactory {
-  static create(overrides = {}): AttioTask {
-    const content = overrides.content || overrides.title || 'Mock Task';
-    return {
-      id: { record_id: generateId(), task_id: generateId() },
-      content,
-      title: content, // Issue #480 compatibility
-      ...overrides,
-    };
-  }
-}
-```
 
 ## ANY TYPE REDUCTION STRATEGY [PR #483 PROGRESS]
 

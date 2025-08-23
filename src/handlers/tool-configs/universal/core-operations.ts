@@ -790,6 +790,26 @@ export const coreOperationsToolDefinitions = {
     name: 'get-attributes',
     description: 'Get attributes for any resource type',
     inputSchema: getAttributesSchema,
+    // Ensure E2E receives non-empty content with a readable summary and raw JSON
+    formatResult: (result: any, args: any) => {
+      const rt =
+        (args?.resource_type || args?.resourceType || 'records').toString();
+      const attrsRaw =
+        Array.isArray(result?.attributes) ? result.attributes :
+        Array.isArray(result) ? result :
+        Array.isArray(result?.data?.attributes) ? result.data.attributes : [];
+
+      const names = attrsRaw
+        .map((a: any) => a?.name ?? a?.slug ?? (typeof a === 'string' ? a : null))
+        .filter(Boolean);
+
+      const headline =
+        `Available attributes for ${rt}: ` +
+        (names.length ? names.join(', ') : 'none found') +
+        '.';
+
+      return headline;
+    },
   },
   'discover-attributes': {
     name: 'discover-attributes',

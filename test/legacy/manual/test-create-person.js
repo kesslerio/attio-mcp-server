@@ -10,7 +10,7 @@
  */
 
 // Import required modules
-import { executeToolRequest } from '../../dist/handlers/tools/dispatcher.js';
+import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
 
 // Configure test environment
 process.env.NODE_ENV = 'development'; // Enable debug logging
@@ -144,7 +144,7 @@ if (!process.env.ATTIO_API_KEY) {
 }
 
 // Initialize the API client
-import { initializeAttioClient } from '../../dist/api/attio-client.js';
+import { initializeAttioClient } from '../../../dist/api/attio-client.js';
 initializeAttioClient(process.env.ATTIO_API_KEY);
 
 // Run the tests
