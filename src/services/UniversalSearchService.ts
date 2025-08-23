@@ -483,7 +483,8 @@ export class UniversalSearchService {
     // Check for MockService usage in E2E mode and throw if forbidden
     if (MockService.isUsingMockData()) {
       assertNoMockInE2E();
-      return MockService.searchLists(query, limit || 10, offset || 0);
+      // Mock service doesn't support list search - return empty array
+      return [];
     }
 
     const lists =

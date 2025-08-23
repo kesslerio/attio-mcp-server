@@ -66,12 +66,17 @@ export abstract class E2ETestDataFactory {
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
+    // Generate truly unique email per call (not just per run)
+    const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    
     try {
-      return configLoader.getTestEmail(prefix);
+      const baseEmail = configLoader.getTestEmail(prefix);
+      // Insert unique identifier before @ symbol
+      return baseEmail.replace('@', `+${uniq}@`);
     } catch (error) {
-      // Configuration not loaded - provide fallback
+      // Configuration not loaded - provide fallback with unique identifier
       const testId = this.getTestId(prefix);
-      return `${testId}@test-domain.com`;
+      return `${testId}+${uniq}@test-domain.com`;
     }
   }
 
