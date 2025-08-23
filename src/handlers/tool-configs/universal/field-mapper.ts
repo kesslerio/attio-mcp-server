@@ -576,7 +576,7 @@ export function validateResourceType(resourceType: string): {
       resourceType as UniversalResourceType
     )
   ) {
-    return { valid: true, corrected: resourceType as UniversalResourceType };
+    return { valid: true }; // No corrected field when valid
   }
 
   // Try to map it
@@ -1052,4 +1052,25 @@ export function processCategories(
  */
 export function getValidCategories(): string[] {
   return [...VALID_COMPANY_CATEGORIES];
+}
+
+/**
+ * Task field mapping with operation-specific handling
+ * 
+ * Prevents content injection on update operations (Issue #480 compatibility)
+ */
+export function mapTaskFields(operation: 'create' | 'update', input: Record<string, unknown>): Record<string, unknown> {
+  const output = { ...input };
+  
+  // For create operations, synthesize content from title if missing
+  if (operation === 'create' && 'title' in output && !('content' in output)) {
+    output.content = output.title;
+  }
+  
+  // For update operations, never synthesize content - it's immutable
+  if (operation === 'update') {
+    delete output.content; // Remove any content field to prevent injection
+  }
+  
+  return output;
 }

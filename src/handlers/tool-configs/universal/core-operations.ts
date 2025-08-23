@@ -457,36 +457,54 @@ export const getAttributesConfig: UniversalToolConfig = {
   formatResult: (
     attributes: any,
     resourceType?: UniversalResourceType
-  ): string => {
+  ): any => {
     if (!attributes) {
-      return 'No attributes found';
+      return {
+        success: true,
+        content: [
+          { type: 'text', text: 'No attributes found' },
+          { type: 'json', json: { attributes: [] } }
+        ]
+      };
     }
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    let textSummary: string;
+    let jsonData: any;
+
     if (Array.isArray(attributes)) {
-      return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
+      textSummary = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
         .map((attr: Record<string, unknown>, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
           return `${index + 1}. ${name} (${type})`;
         })
         .join('\n')}`;
-    }
-
-    if (typeof attributes === 'object') {
+      jsonData = { attributes };
+    } else if (typeof attributes === 'object') {
       const keys = Object.keys(attributes);
-      return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${keys.length}):\n${keys
+      textSummary = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${keys.length}):\n${keys
         .map(
           (key, index) =>
             `${index + 1}. ${key}: ${JSON.stringify(attributes[key])}`
         )
         .join('\n')}`;
+      jsonData = { attributes };
+    } else {
+      textSummary = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes: ${JSON.stringify(attributes)}`;
+      jsonData = { attributes };
     }
 
-    return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes: ${JSON.stringify(attributes)}`;
+    return {
+      success: true,
+      content: [
+        { type: 'text', text: textSummary },
+        { type: 'json', json: jsonData }
+      ]
+    };
   },
 };
 
@@ -519,17 +537,26 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       );
     }
   },
-  formatResult: (schema: any, resourceType?: UniversalResourceType): string => {
+  formatResult: (schema: any, resourceType?: UniversalResourceType): any => {
     if (!schema) {
-      return 'No attribute schema found';
+      return {
+        success: true,
+        content: [
+          { type: 'text', text: 'No attribute schema found' },
+          { type: 'json', json: { attributes: [] } }
+        ]
+      };
     }
 
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
 
+    let textSummary: string;
+    let jsonData: any;
+
     if (Array.isArray(schema)) {
-      return `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
+      textSummary = `Available ${resourceTypeName} attributes (${schema.length}):\n${schema
         .map((attr: Record<string, unknown>, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
@@ -537,9 +564,19 @@ export const discoverAttributesConfig: UniversalToolConfig = {
           return `${index + 1}. ${name} (${type})${required}`;
         })
         .join('\n')}`;
+      jsonData = { attributes: schema };
+    } else {
+      textSummary = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attribute schema`;
+      jsonData = { attributes: schema };
     }
 
-    return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attribute schema: ${JSON.stringify(schema, null, 2)}`;
+    return {
+      success: true,
+      content: [
+        { type: 'text', text: textSummary },
+        { type: 'json', json: jsonData }
+      ]
+    };
   },
 };
 

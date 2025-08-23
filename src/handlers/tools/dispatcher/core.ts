@@ -17,6 +17,7 @@ import {
 import { findToolConfig } from '../registry.js';
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
+import { computeErrorWithContext } from '../../../utils/error-detection.js';
 
 // Import operation handlers
 import {
@@ -81,6 +82,20 @@ import {
   CreateNoteToolConfig,
   GetListsToolConfig,
 } from '../../tool-types.js';
+
+/**
+ * Canonicalize resource type to valid values and prevent mutations
+ */
+function canonicalizeResourceType(rt: unknown): string {
+  const value = String(rt ?? '').toLowerCase();
+  const validTypes = ['records','lists','people','companies','tasks','deals'];
+  
+  if (!validTypes.includes(value)) {
+    throw new Error(`Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`);
+  }
+  
+  return value;
+}
 
 /**
  * Execute a tool request and return formatted results
@@ -313,6 +328,15 @@ export async function executeToolRequest(request: CallToolRequest) {
       // For universal tools, use the tool's own handler directly
       const args = request.params.arguments;
 
+      // Canonicalize and freeze resource_type to prevent mutation
+      if (args && 'resource_type' in args) {
+        args.resource_type = canonicalizeResourceType(args.resource_type);
+        Object.defineProperty(args, 'resource_type', { 
+          value: args.resource_type, 
+          writable: false 
+        });
+      }
+
       // Universal tools have their own parameter validation and handling
       const rawResult = await toolConfig.handler(args);
 
@@ -378,15 +402,12 @@ export async function executeToolRequest(request: CallToolRequest) {
         }
       }
 
-      // Check if the formatted result indicates an error for E2E tests
-      const resultContainsError = formattedResult && (
-        formattedResult.includes('"success": false') || 
-        formattedResult.includes('"error":')
-      );
+      // Use explicit error detection instead of string matching
+      const errorAnalysis = computeErrorWithContext(rawResult);
 
       result = {
         content: [{ type: 'text', text: formattedResult }],
-        isError: resultContainsError,
+        isError: errorAnalysis.isError,
       };
 
       // Handle General tools (relationship helpers, etc.)

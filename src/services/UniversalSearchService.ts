@@ -38,6 +38,9 @@ import { listTasks } from '../objects/tasks.js';
 // console.log('listObjectRecords type:', typeof listObjectRecords);
 // console.log('listTasks type:', typeof listTasks);
 
+// Import guardrails
+import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
+
 // Dynamic imports for better error handling in environments where functions might not be available
 const ensureAdvancedSearchCompanies = async () => {
   try {
@@ -91,6 +94,9 @@ const ensureAdvancedSearchPeople = async () => {
 // Import Attio client for deal queries
 import { getAttioClient } from '../api/attio-client.js';
 
+// Import MockService for guard checks
+import { MockService } from './MockService.js';
+
 /**
  * UniversalSearchService provides centralized record search functionality
  */
@@ -135,6 +141,9 @@ export class UniversalSearchService {
 
     // Validate pagination parameters using ValidationService
     ValidationService.validatePaginationParameters({ limit, offset }, perfId);
+
+    // Validate filter schema for malformed advanced filters
+    ValidationService.validateFiltersSchema(filters);
 
     enhancedPerformanceTracker.markTiming(
       perfId,
@@ -247,7 +256,7 @@ export class UniversalSearchService {
         return this.searchLists(query, limit, offset);
 
       case UniversalResourceType.RECORDS:
-        return this.searchRecords_ObjectType(limit, offset);
+        return this.searchRecords_ObjectType(limit, offset, filters);
 
       case UniversalResourceType.DEALS:
         return this.searchDeals(limit, offset);
@@ -471,6 +480,12 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
+    // Check for MockService usage in E2E mode and throw if forbidden
+    if (MockService.isUsingMockData()) {
+      assertNoMockInE2E();
+      return MockService.searchLists(query, limit || 10, offset || 0);
+    }
+
     const lists =
       query && query.trim().length > 0
         ? await searchLists(query, limit || 10, offset || 0)
@@ -498,12 +513,26 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search records using object records API
+   * Search records using object records API with filter support
    */
   private static async searchRecords_ObjectType(
     limit?: number,
-    offset?: number
+    offset?: number,
+    filters?: Record<string, unknown>
   ): Promise<AttioRecord[]> {
+    // Handle list_membership filters - invalid UUID should return empty array
+    if (filters?.list_membership) {
+      const listId = String(filters.list_membership);
+      if (!ValidationService.validateUUIDForSearch(listId)) {
+        return []; // Return empty success for invalid UUID
+      }
+      // For valid UUID, we would normally pass this to the API
+      // but listObjectRecords doesn't support filters yet
+      console.warn(
+        'list_membership filter not yet supported in listObjectRecords'
+      );
+    }
+
     return await listObjectRecords('records', {
       pageSize: limit,
       page: Math.floor((offset || 0) / (limit || 10)) + 1,

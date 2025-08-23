@@ -364,6 +364,39 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     description:
       'Legacy advanced-filter-list-entries → universal advanced-search',
   },
+  {
+    legacyToolName: 'filter-list-entries-by-parent',
+    universalToolName: 'search-records',
+    resourceType: 'records',
+    parameterTransform: (params: any) => ({
+      resource_type: 'records',
+      filters: {
+        list_membership: params.list_id || params.listId,
+        parent_record_type: params.parent_record_type,
+        parent_record_id: params.parent_record_id,
+        ...params.filters,
+      },
+      limit: params.limit || 50,
+      offset: params.offset || 0,
+    }),
+    description: 'Legacy filter-list-entries-by-parent → universal search-records',
+  },
+  {
+    legacyToolName: 'filter-list-entries-by-parent-id',
+    universalToolName: 'search-records', 
+    resourceType: 'records',
+    parameterTransform: (params: any) => ({
+      resource_type: 'records',
+      filters: {
+        list_membership: params.list_id || params.listId,
+        parent_record_id: params.parent_id || params.parent_record_id,
+        ...params.filters,
+      },
+      limit: params.limit || 50,
+      offset: params.offset || 0,
+    }),
+    description: 'Legacy filter-list-entries-by-parent-id → universal search-records',
+  },
 
   // Record linking tools
   {
