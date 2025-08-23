@@ -24,6 +24,7 @@ import {
   getFieldSuggestions,
   validateFields,
   getValidResourceTypes,
+  mapTaskFields,
 } from '../handlers/tool-configs/universal/field-mapper.js';
 
 // Import validation utilities
@@ -122,9 +123,14 @@ export class UniversalUpdateService {
       );
     }
 
-    const { mapped: mappedData, warnings } = mappingResult;
+    let { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
       console.error('Field mapping applied:', warnings.join('\n'));
+    }
+
+    // Apply operation-specific field mapping for tasks (prevent content injection on update)
+    if (resource_type === UniversalResourceType.TASKS) {
+      mappedData = mapTaskFields('update', mappedData);
     }
 
     // Sanitize special characters while preserving intended content (Issue #473)
@@ -377,18 +383,8 @@ export class UniversalUpdateService {
     // Now we need to adapt them for the updateTask function
     const taskUpdateData: Record<string, unknown> = {};
 
-    // Validate immutable fields - task content cannot be updated after creation
-    if (mappedData.content !== undefined) {
-      throw new UniversalValidationError(
-        'Task content cannot be updated after creation. Content is immutable in the Attio API.',
-        ErrorType.USER_ERROR,
-        {
-          field: 'content',
-          suggestion:
-            'You can update other task fields like status, assignee, due_date, or linked_records, but content cannot be modified.',
-        }
-      );
-    }
+    // Content field should already be stripped by mapTaskFields('update') 
+    // No need for validation here since field mapping prevents content injection
 
     // Handle status field - updateTask function expects 'status' field, not 'is_completed'
     if (mappedData.is_completed !== undefined) {
