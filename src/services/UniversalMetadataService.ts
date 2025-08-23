@@ -39,7 +39,9 @@ export class UniversalMetadataService {
     const client = getAttioClient();
 
     try {
-      let path = `/objects/${resourceType}/attributes`;
+      // Convert resource type to API slug (e.g., UniversalResourceType.PEOPLE -> 'people')
+      const resourceSlug = resourceType.toLowerCase();
+      let path = `/objects/${resourceSlug}/attributes`;
 
       // NEW: Add category filtering to query parameters with security validation
       if (options?.categories && options.categories.length > 0) {
@@ -198,8 +200,10 @@ export class UniversalMetadataService {
     const client = getAttioClient();
 
     try {
+      // Convert resource type to API slug (e.g., UniversalResourceType.PEOPLE -> 'people')
+      const resourceSlug = resourceType.toLowerCase();
       const response = await client.get(
-        `/objects/${resourceType}/records/${recordId}`
+        `/objects/${resourceSlug}/records/${recordId}`
       );
       return response?.data?.data?.values || {};
     } catch (error: unknown) {

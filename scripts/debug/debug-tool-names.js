@@ -219,14 +219,18 @@ function searchInFile(filePath, content) {
       }
       
       // Look for quoted tool names and MCP tool calls
+      // Use word boundaries and negative lookahead to avoid matching substrings of valid tools
       const patterns = [
         `'${legacyTool}'`,
         `"${legacyTool}"`,
-        `mcp__attio__${legacyTool}`,
+        `mcp__attio__${legacyTool}\\b`, // Word boundary to avoid matching get-record within get-record-details
         `name: '${legacyTool}'`,
         `name: "${legacyTool}"`,
         // Handle cases where legacy tool might be in comments or documentation
-        new RegExp(`\\b${legacyTool}\\b`, 'g')
+        // Use negative lookahead to avoid matching get-record in get-record-details
+        legacyTool === 'get-record' 
+          ? new RegExp(`\\bget-record(?!-details)\\b`, 'g')
+          : new RegExp(`\\b${legacyTool}\\b`, 'g')
       ];
       
       patterns.forEach(pattern => {

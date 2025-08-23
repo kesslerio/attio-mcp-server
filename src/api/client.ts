@@ -75,14 +75,15 @@ export function createAttioApiClient(
           // Only retry network errors, 429 (throttling), and 5xx server errors
           // Never retry 4xx client errors (400, 401, 403, 404, etc.) except 429
           const shouldRetry = !status || status === 429 || status >= 500;
-          
+
           if (config.retryCount < MAX_RETRIES && shouldRetry) {
             config.retryCount++;
             console.warn(
               `[Interceptor] Retrying request (${config.retryCount}/${MAX_RETRIES}) for ${config.url} due to ${status}`
             );
             // Exponential backoff with jitter to prevent thundering herd
-            const baseDelay = RETRY_DELAY_MS * Math.pow(2, config.retryCount - 1);
+            const baseDelay =
+              RETRY_DELAY_MS * Math.pow(2, config.retryCount - 1);
             const jitter = Math.floor(Math.random() * 300); // 0-300ms jitter
             const totalDelay = Math.min(baseDelay + jitter, 5000); // Cap at 5s
             await new Promise((resolve) => setTimeout(resolve, totalDelay));
