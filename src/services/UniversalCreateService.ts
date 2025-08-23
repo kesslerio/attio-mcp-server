@@ -148,7 +148,7 @@ async function enhanceUniquenessError(
  */
 function pickAllowedPersonFields(input: any): any {
   const out: any = {};
-  
+
   // Core required field
   if (input.name) out.name = input.name;
 
@@ -165,7 +165,7 @@ function pickAllowedPersonFields(input: any): any {
 
   // DO NOT forward department/website/phones/location/socials for E2E
   // Keep test factories generating them but never send to API layer
-  
+
   return out;
 }
 
@@ -182,7 +182,19 @@ export class UniversalCreateService {
   static async createRecord(
     params: UniversalCreateParams
   ): Promise<AttioRecord> {
-    const { resource_type, record_data } = params;
+    let { resource_type, record_data } = params;
+
+    // CRITICAL FIX: Ensure record_data is always a plain object (not JSON string)
+    if (typeof record_data === 'string') {
+      try {
+        record_data = JSON.parse(record_data);
+      } catch {
+        throw new UniversalValidationError('record_data must be an object');
+      }
+    }
+    if (!record_data || typeof record_data !== 'object' || Array.isArray(record_data)) {
+      throw new UniversalValidationError('record_data must be a JSON object');
+    }
 
     console.error(
       '[UniversalCreateService.createRecord] DEBUG - Entry point:',
@@ -453,7 +465,7 @@ export class UniversalCreateService {
     try {
       // Apply field allowlist for E2E test isolation (prevent extra field rejections)
       const allowlistedData = pickAllowedPersonFields(mappedData);
-      
+
       // Normalize people data first (handle name string/object, email singular/array)
       const normalizedData =
         PeopleDataNormalizer.normalizePeopleData(allowlistedData);

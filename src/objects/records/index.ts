@@ -101,6 +101,11 @@ export async function createObjectRecord<T extends AttioRecord>(
       const api = getAttioClient();
       const path = `/objects/${objectId || objectSlug}/records`;
 
+      // ENHANCED DEBUG: Add path builder logging as requested by user
+      console.debug('[attio-client] POST', path, { 
+        sampleKeys: Object.keys(attributes || {}) 
+      });
+
       if (process.env.NODE_ENV === 'development') {
         console.error(`[createObjectRecord:fallback] API path: ${path}`);
         console.error(`[createObjectRecord:fallback] Sending payload:`, {

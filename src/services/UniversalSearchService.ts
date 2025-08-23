@@ -495,23 +495,23 @@ export class UniversalSearchService {
 
       // Convert AttioList[] to AttioRecord[] format
       return lists.map(
-      (list) =>
-        ({
-          id: {
-            record_id: list.id.list_id,
-            list_id: list.id.list_id,
-          },
-          values: {
-            name: list.name || list.title,
-            description: list.description,
-            parent_object: list.object_slug || list.parent_object,
-            api_slug: list.api_slug,
-            workspace_id: list.workspace_id,
-            workspace_member_access: list.workspace_member_access,
-            created_at: list.created_at,
-          },
-        }) as unknown as AttioRecord
-    );
+        (list) =>
+          ({
+            id: {
+              record_id: list.id.list_id,
+              list_id: list.id.list_id,
+            },
+            values: {
+              name: list.name || list.title,
+              description: list.description,
+              parent_object: list.object_slug || list.parent_object,
+              api_slug: list.api_slug,
+              workspace_id: list.workspace_id,
+              workspace_member_access: list.workspace_member_access,
+              created_at: list.created_at,
+            },
+          }) as unknown as AttioRecord
+      );
     } catch (error: unknown) {
       // Handle benign status codes (404/204) by returning empty success
       if (error && typeof error === 'object' && 'status' in error) {
@@ -521,7 +521,7 @@ export class UniversalSearchService {
           return [];
         }
       }
-      
+
       // Check error message for common "not found" scenarios
       if (error && typeof error === 'object' && 'message' in error) {
         const message = String(error.message).toLowerCase();
@@ -529,7 +529,7 @@ export class UniversalSearchService {
           return [];
         }
       }
-      
+
       // For other errors (network/transport), bubble them up
       throw error;
     }

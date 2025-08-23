@@ -383,7 +383,7 @@ export class UniversalUpdateService {
     // Now we need to adapt them for the updateTask function
     const taskUpdateData: Record<string, unknown> = {};
 
-    // Content field should already be stripped by mapTaskFields('update') 
+    // Content field should already be stripped by mapTaskFields('update')
     // No need for validation here since field mapping prevents content injection
 
     // Handle status field - updateTask function expects 'status' field, not 'is_completed'

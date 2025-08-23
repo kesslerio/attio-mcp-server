@@ -281,7 +281,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
         case 'list_entries':
           // Special handling for list_entries relationship type
-          const list_id = params.list_id || params.listId;
+          const list_id = params.source_id;
           if (!list_id || !ValidationService.validateUUIDForSearch(String(list_id))) {
             // Search-y context with no valid list id → return empty success
             return [];
