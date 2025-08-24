@@ -88,11 +88,12 @@ export class UniversalUpdateService {
   ): Promise<AttioRecord> {
     const { resource_type, record_id, record_data } = params;
 
+    // Guard against undefined values access
+    const rawValues =
+      (record_data && (record_data as any).values) ?? record_data ?? {};
+
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
-    const fieldValidation = validateFields(
-      resource_type,
-      record_data.values || record_data
-    );
+    const fieldValidation = validateFields(resource_type, rawValues);
     if (fieldValidation.warnings.length > 0) {
       console.error(
         'Field validation warnings:',
@@ -107,10 +108,7 @@ export class UniversalUpdateService {
     }
 
     // Map field names to correct ones with collision detection
-    const mappingResult = mapRecordFields(
-      resource_type,
-      record_data.values || record_data
-    );
+    const mappingResult = mapRecordFields(resource_type, rawValues);
     if (mappingResult.errors && mappingResult.errors.length > 0) {
       throw new UniversalValidationError(
         mappingResult.errors.join(' '),

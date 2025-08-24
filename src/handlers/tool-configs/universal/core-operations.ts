@@ -150,9 +150,13 @@ export const searchRecordsConfig: UniversalToolConfig = {
         // Safely extract values from arrays
         const values = record.values || {};
         const getFirstValue = (field: unknown): string | undefined => {
-          if (!field || !Array.isArray(field) || field.length === 0) return undefined;
+          if (!field || !Array.isArray(field) || field.length === 0)
+            return undefined;
           const firstItem = field[0];
-          return firstItem && typeof firstItem === 'object' && firstItem !== null && 'value' in firstItem
+          return firstItem &&
+            typeof firstItem === 'object' &&
+            firstItem !== null &&
+            'value' in firstItem
             ? String(firstItem.value)
             : undefined;
         };
@@ -162,15 +166,18 @@ export const searchRecordsConfig: UniversalToolConfig = {
           identifier = getFirstValue(values.content) || 'Unnamed';
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
-          // For people, prefer name
+          // For people, prefer name with optional email
           const nameValue = getFirstValue(values.name);
           const emailValue = getFirstValue(values.email);
-          identifier = nameValue || emailValue || 'Unnamed';
+          const name = nameValue || 'Unnamed';
+          identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
-          // For companies, prefer name with optional website
+          // For companies, prefer name with optional website or email
           const name = getFirstValue(values.name) || 'Unnamed';
           const website = getFirstValue(values.website);
-          identifier = website ? `${name} (${website})` : name;
+          const email = getFirstValue(values.email);
+          const contactInfo = website || email;
+          identifier = contactInfo ? `${name} (${contactInfo})` : name;
         } else {
           // For other types, try common identifier fields
           const nameValue = getFirstValue(values.name);
@@ -378,18 +385,20 @@ export const createRecordConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
     // Extract name from values (may be empty on create) or fall back to a generic name
-    const name =
+    const displayName =
       (record.values?.name &&
         Array.isArray(record.values.name) &&
         record.values.name[0]?.value) ||
       (record.values?.title &&
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
+      (record.values?.content &&
+        Array.isArray(record.values.content) &&
+        record.values.content[0]?.value) ||
       `New ${resourceTypeName}`;
     const id = String(record.id?.record_id || record.record_id || 'unknown');
 
-    // Ensure the ID is prominently displayed for test parsing
-    return `✅ ${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} created successfully. ID: ${id}`;
+    return `✅ Successfully created ${resourceTypeName}: ${displayName} (ID: ${id})`;
   },
 };
 
@@ -535,7 +544,7 @@ export const getAttributesConfig: UniversalToolConfig = {
 
     // Handle different attribute data structures
     if (Array.isArray(attributes)) {
-      return `Available ${resourceTypeName} attributes (${attributes.length}):\n${attributes
+      return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${attributes.length}):\n${attributes
         .map((attr: Record<string, unknown>, index: number) => {
           const name = attr.name || attr.slug || 'Unnamed';
           const type = attr.type || 'unknown';
@@ -569,8 +578,14 @@ export const getAttributesConfig: UniversalToolConfig = {
       // Handle direct object attributes
       const keys = Object.keys(attributes);
       if (keys.length > 0) {
-        return `Available ${resourceTypeName} attributes (${keys.length}):\n${keys
-          .map((key, index) => `${index + 1}. ${key}`)
+        return `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} attributes (${keys.length}):\n${keys
+          .map((key, index) => {
+            const value = attributes[key];
+            if (typeof value === 'string') {
+              return `${index + 1}. ${key}: "${value}"`;
+            }
+            return `${index + 1}. ${key}`;
+          })
           .join('\n')}`;
       }
     }

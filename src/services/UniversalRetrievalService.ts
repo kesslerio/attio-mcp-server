@@ -469,10 +469,19 @@ export class UniversalRetrievalService {
       await this.getRecordDetails({ resource_type, record_id });
       return true;
     } catch (error: unknown) {
-      // If it's a 404 error, record doesn't exist
+      // Check for structured HTTP response (404)
+      if (error && typeof error === 'object' && 'status' in error) {
+        const httpError = error as { status: number; body?: unknown };
+        if (httpError.status === 404) {
+          return false;
+        }
+      }
+
+      // If it's a 404 error message, record doesn't exist
       if (error instanceof Error && error.message.includes('not found')) {
         return false;
       }
+
       // For other errors, re-throw as they indicate real problems
       throw error;
     }

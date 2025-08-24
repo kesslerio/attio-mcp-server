@@ -33,26 +33,23 @@ function shouldUseMockData(): boolean {
     return true;
   }
 
-  // For unit tests and local development, use mocks
-  if (process.env.NODE_ENV === 'test') {
-    return true;
-  }
+  return false;
+}
 
-  // For vitest test runner without explicit flags, use mocks
+function shouldUseViMocks(): boolean {
+  // Check if we're in a unit test environment with vi.mock()
   try {
     const isVitest =
       typeof (globalThis as any).vi !== 'undefined' ||
       typeof (global as any).vi !== 'undefined';
-    const isTestProcess = process.env._ && process.env._.includes('vitest');
 
-    if (isVitest || isTestProcess) {
-      return true;
-    }
+    // Also check if NODE_ENV is test (unit tests)
+    const isUnitTest = process.env.NODE_ENV === 'test';
+
+    return isVitest && isUnitTest;
   } catch {
-    // Ignore errors in detection
+    return false;
   }
-
-  return false;
 }
 
 /**
@@ -303,14 +300,55 @@ export class MockService {
   static async createTask(
     taskData: Record<string, unknown>
   ): Promise<AttioRecord> {
-    if (!shouldUseMockData()) {
+    // Prefer vi.mock() in unit tests, then MockService, then real API
+    if (shouldUseViMocks() || !shouldUseMockData()) {
       try {
         const { createTask } = await import('../objects/tasks.js');
-        return (await createTask(taskData.content as string, {
+        const createdTask = await createTask(taskData.content as string, {
           assigneeId: taskData.assigneeId as string,
           dueDate: taskData.dueDate as string,
           recordId: taskData.recordId as string,
-        })) as unknown as AttioRecord;
+        });
+
+        // Convert task object to AttioRecord format if necessary
+        if (
+          createdTask &&
+          typeof createdTask === 'object' &&
+          'id' in createdTask
+        ) {
+          const task = createdTask as any;
+
+          // If it's already an AttioRecord with record_id, return as-is
+          if (task.values && task.id?.record_id) {
+            return task as AttioRecord;
+          }
+
+          // If it has task_id, convert to AttioRecord format
+          if (task.id?.task_id) {
+            return {
+              id: {
+                record_id: task.id.task_id, // Use task_id as record_id
+                task_id: task.id.task_id,
+                object_id: 'tasks',
+                workspace_id: task.id.workspace_id || 'test-workspace',
+              },
+              values: {
+                content: task.content ? [{ value: task.content }] : undefined,
+                status: task.status ? [{ value: task.status }] : undefined,
+                due_date: task.due_date
+                  ? [{ value: task.due_date }]
+                  : undefined,
+                assignee: task.assignee
+                  ? [{ value: task.assignee }]
+                  : undefined,
+              },
+              created_at: task.created_at,
+              updated_at: task.updated_at,
+            } as AttioRecord;
+          }
+        }
+
+        return createdTask as unknown as AttioRecord;
       } catch (error) {
         throw new Error(
           `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -318,8 +356,10 @@ export class MockService {
       }
     }
 
-    const timestamp = Date.now().toString().slice(-12);
-    const mockId = `12345678-1234-4000-a000-${timestamp}`;
+    // Use deterministic ID if record_id is provided (for test compatibility)
+    const mockId = taskData.record_id
+      ? (taskData.record_id as string)
+      : `12345678-1234-4000-a000-${Date.now().toString().slice(-12)}`;
     const taskContent =
       (taskData.content as string) ||
       (taskData.title as string) ||

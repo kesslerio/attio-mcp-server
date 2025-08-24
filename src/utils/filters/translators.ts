@@ -267,9 +267,10 @@ function createOrFilterStructure(
       }
 
       // List-specific attributes use direct field access
-      const operator = filter.condition;
+      const operator =
+        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
       condition[slug] = {
-        [`$${operator}`]: filter.value,
+        [operator]: filter.value,
       };
     } else if (
       FIELD_SPECIAL_HANDLING[slug] &&
@@ -286,17 +287,18 @@ function createOrFilterStructure(
       condition[slug] = filter.value;
     } else {
       // Standard operator handling for normal fields
-      const operator = filter.condition;
+      const operator =
+        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         condition[`record.values.${slug}`] = {
-          [`$${operator}`]: filter.value,
+          [operator]: filter.value,
         };
       } else {
         // Standard field access for non-list contexts
         condition[slug] = {
-          [`$${operator}`]: filter.value,
+          [operator]: filter.value,
         };
       }
     }
@@ -329,8 +331,8 @@ function createAndFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
-  // Use Attio's verbose syntax with $and operator
-  const andConditions: any[] = [];
+  // Use simple merged object for AND logic instead of $and wrapper
+  const mergedConditions: any = {};
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
@@ -359,7 +361,7 @@ function createAndFilterStructure(
     );
   }
 
-  // Process valid filters using Attio's $and format
+  // Process valid filters by merging into single object
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
@@ -377,7 +379,7 @@ function createAndFilterStructure(
 
     const { slug } = filter.attribute;
     const operator =
-      filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+      filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
     // Build condition object in Attio's expected format
     let fieldPath: string;
@@ -393,34 +395,25 @@ function createAndFilterStructure(
       fieldPath = slug;
     }
 
-    // Create condition in Attio format: { "field": { "$operator": "value" } }
-    const condition: any = {};
-    condition[fieldPath] = {};
-    condition[fieldPath][operator] = filter.value;
-
-    andConditions.push(condition);
+    // Merge condition directly into the main object (AND logic)
+    mergedConditions[fieldPath] = {
+      [operator]: filter.value,
+    };
 
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[createAndFilterStructure] Added condition:`, condition);
+      console.error(
+        `[createAndFilterStructure] Added condition for ${fieldPath}:`,
+        mergedConditions[fieldPath]
+      );
     }
   });
 
-  // Return in Attio's $and format if we have conditions
-  if (andConditions.length === 0) {
+  // Return merged conditions if we have any
+  if (Object.keys(mergedConditions).length === 0) {
     return {};
   }
 
-  if (andConditions.length === 1) {
-    // Single condition doesn't need $and wrapper
-    return { filter: andConditions[0] };
-  }
-
-  // Multiple conditions need $and wrapper
-  return {
-    filter: {
-      $and: andConditions,
-    },
-  };
+  return { filter: mergedConditions };
 }
 
 /**

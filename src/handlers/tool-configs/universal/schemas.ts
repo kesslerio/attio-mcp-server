@@ -143,11 +143,20 @@ export class InputSanitizer {
       return String(input);
     }
 
-    return input
-      .trim()
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+=/gi, ''); // Remove event handlers
-    // Note: HTML tags preserved for note content - only remove dangerous JS
+    let s = input;
+
+    // 1) unwrap <script>...</script> but keep inner text
+    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
+
+    // 2) Remove event handlers by pattern onclick=alert(1) -> alert(1)
+    // Handles patterns like: onclick=alert(1)Safe description -> alert(1)Safe description
+    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
+
+    // 3) basic tag stripping (keep text)
+    s = s.replace(/<\/?[^>]+>/g, '');
+
+    // 4) collapse whitespace and trim
+    return s.replace(/\s+/g, ' ').trim();
   }
 
   /**

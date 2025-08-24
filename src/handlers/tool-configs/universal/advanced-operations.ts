@@ -482,8 +482,17 @@ export const searchByContentConfig: UniversalToolConfig = {
 
       switch (content_type) {
         case ContentSearchType.NOTES:
-          // Use client-side filtering as per Attio API requirements
-          return await searchRecordsByNotesContent(resource_type, search_query);
+          // Use specialized functions for notes search
+          if (resource_type === UniversalResourceType.COMPANIES) {
+            return await searchCompaniesByNotes(search_query);
+          } else if (resource_type === UniversalResourceType.PEOPLE) {
+            return await searchPeopleByNotes(search_query);
+          } else {
+            // For other resource types, throw specific error
+            throw new Error(
+              `Content search not supported for resource type ${resource_type}`
+            );
+          }
 
         case ContentSearchType.ACTIVITY:
           if (resource_type === UniversalResourceType.PEOPLE) {
@@ -515,6 +524,15 @@ export const searchByContentConfig: UniversalToolConfig = {
         `Content search not supported for resource type ${resource_type} and content type ${content_type}`
       );
     } catch (error: unknown) {
+      // If the error is a direct message we want to preserve, don't wrap it
+      if (
+        error instanceof Error &&
+        (error.message.includes('Content search not supported') ||
+          error.message.includes('Timeframe search is not currently optimized'))
+      ) {
+        throw error;
+      }
+
       throw ErrorService.createUniversalError(
         'content search',
         `${params.resource_type}:${params.content_type}`,
@@ -569,6 +587,13 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
 
       const { resource_type, timeframe_type, start_date, end_date } =
         sanitizedParams;
+
+      // Check for unsupported resource types first
+      if (resource_type === UniversalResourceType.COMPANIES) {
+        throw new Error(
+          'Timeframe search is not currently optimized for companies'
+        );
+      }
 
       if (resource_type === UniversalResourceType.PEOPLE) {
         switch (timeframe_type) {
@@ -639,6 +664,14 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         return results;
       }
     } catch (error: unknown) {
+      // If the error is a direct message we want to preserve, don't wrap it
+      if (
+        error instanceof Error &&
+        error.message.includes('Timeframe search is not currently optimized')
+      ) {
+        throw error;
+      }
+
       throw ErrorService.createUniversalError(
         'timeframe search',
         `${params.resource_type}:${params.timeframe_type}`,
