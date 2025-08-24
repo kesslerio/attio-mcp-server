@@ -474,7 +474,7 @@ export class UniversalUpdateService {
    * Validate that task content fields are not being updated (immutable)
    */
   private static assertNoTaskContentUpdate(
-    record_data: Record<string, any>
+    record_data: Record<string, unknown>
   ): void {
     const forbidden = ['content', 'content_markdown', 'content_plaintext'];
     if (record_data && typeof record_data === 'object') {

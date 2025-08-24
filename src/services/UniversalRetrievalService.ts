@@ -264,15 +264,39 @@ export class UniversalRetrievalService {
         },
       } as unknown as AttioRecord;
     } catch (error: unknown) {
-      // Convert any error from getListDetails to structured HTTP response
-      throw {
-        status: 404,
-        body: {
-          code: 'not_found',
-          message: `List record with ID "${record_id}" not found.`,
-          type: 'invalid_request_error',
-        },
-      } as HttpResponse;
+      // Handle specific error types - don't mask auth/network issues as 404s
+      if (error && typeof error === 'object' && 'status' in error) {
+        const httpError = error as { status: number; body?: unknown };
+        if (httpError.status === 404) {
+          // Legitimate 404 from API
+          throw {
+            status: 404,
+            body: {
+              code: 'not_found',
+              message: `List record with ID "${record_id}" not found.`,
+              type: 'invalid_request_error',
+            },
+          } as HttpResponse;
+        }
+        // Re-throw other HTTP errors (auth, network, etc.) as-is
+        throw error;
+      }
+      
+      // For non-HTTP errors, treat as not found only if it's a typical not-found error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `List record with ID "${record_id}" not found.`,
+            type: 'invalid_request_error',
+          },
+        } as HttpResponse;
+      }
+      
+      // Re-throw other errors to avoid masking legitimate issues
+      throw error;
     }
   }
 
@@ -288,18 +312,41 @@ export class UniversalRetrievalService {
       // Convert AttioTask to AttioRecord using proper type conversion
       return UniversalUtilityService.convertTaskToRecord(task);
     } catch (error: unknown) {
-      // Cache 404 for tasks using CachingService
-      CachingService.cache404Response(resource_type, record_id);
-
-      // Return structured HTTP response for MCP error mapping
-      throw {
-        status: 404,
-        body: {
-          code: 'not_found',
-          message: `Task with ID "${record_id}" not found.`,
-          type: 'invalid_request_error',
-        },
-      } as HttpResponse;
+      // Handle specific error types - don't mask auth/network issues as 404s
+      if (error && typeof error === 'object' && 'status' in error) {
+        const httpError = error as { status: number; body?: unknown };
+        if (httpError.status === 404) {
+          // Cache legitimate 404s and re-throw as structured response
+          CachingService.cache404Response(resource_type, record_id);
+          throw {
+            status: 404,
+            body: {
+              code: 'not_found',
+              message: `Task with ID "${record_id}" not found.`,
+              type: 'invalid_request_error',
+            },
+          } as HttpResponse;
+        }
+        // Re-throw other HTTP errors (auth, network, etc.) as-is
+        throw error;
+      }
+      
+      // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+        CachingService.cache404Response(resource_type, record_id);
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `Task with ID "${record_id}" not found.`,
+            type: 'invalid_request_error',
+          },
+        } as HttpResponse;
+      }
+      
+      // Re-throw other errors to avoid masking legitimate issues
+      throw error;
     }
   }
 
@@ -317,18 +364,41 @@ export class UniversalRetrievalService {
       const normalizedRecord = normalizeNoteResponse(note);
       return normalizedRecord as AttioRecord;
     } catch (error: unknown) {
-      // Cache 404 for notes using CachingService
-      CachingService.cache404Response('notes', noteId);
-
-      // Return structured HTTP response for MCP error mapping
-      throw {
-        status: 404,
-        body: {
-          code: 'not_found',
-          message: `Note with ID "${noteId}" not found.`,
-          type: 'invalid_request_error',
-        },
-      } as HttpResponse;
+      // Handle specific error types - don't mask auth/network issues as 404s
+      if (error && typeof error === 'object' && 'status' in error) {
+        const httpError = error as { status: number; body?: unknown };
+        if (httpError.status === 404) {
+          // Cache legitimate 404s and re-throw as structured response
+          CachingService.cache404Response('notes', noteId);
+          throw {
+            status: 404,
+            body: {
+              code: 'not_found',
+              message: `Note with ID "${noteId}" not found.`,
+              type: 'invalid_request_error',
+            },
+          } as HttpResponse;
+        }
+        // Re-throw other HTTP errors (auth, network, etc.) as-is
+        throw error;
+      }
+      
+      // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+        CachingService.cache404Response('notes', noteId);
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `Note with ID "${noteId}" not found.`,
+            type: 'invalid_request_error',
+          },
+        } as HttpResponse;
+      }
+      
+      // Re-throw other errors to avoid masking legitimate issues
+      throw error;
     }
   }
 
