@@ -281,9 +281,10 @@ export class UniversalRetrievalService {
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
       }
-      
+
       // For non-HTTP errors, treat as not found only if it's a typical not-found error
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         throw {
           status: 404,
@@ -294,7 +295,7 @@ export class UniversalRetrievalService {
           },
         } as HttpResponse;
       }
-      
+
       // Re-throw other errors to avoid masking legitimate issues
       throw error;
     }
@@ -330,9 +331,10 @@ export class UniversalRetrievalService {
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
       }
-      
+
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
         throw {
@@ -344,7 +346,7 @@ export class UniversalRetrievalService {
           },
         } as HttpResponse;
       }
-      
+
       // Re-throw other errors to avoid masking legitimate issues
       throw error;
     }
@@ -382,9 +384,10 @@ export class UniversalRetrievalService {
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
       }
-      
+
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response('notes', noteId);
         throw {
@@ -396,7 +399,7 @@ export class UniversalRetrievalService {
           },
         } as HttpResponse;
       }
-      
+
       // Re-throw other errors to avoid masking legitimate issues
       throw error;
     }

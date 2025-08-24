@@ -113,9 +113,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
           record_id: TEST_RECORD_ID,
           record_data: {
             list_memberships: {
-              [TEST_LIST_ID]: {}
-            }
-          }
+              [TEST_LIST_ID]: {},
+            },
+          },
         },
       },
     };
@@ -130,7 +130,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(/Entry ID: ([a-zA-Z0-9_-]+)/);
+      const entryIdMatch = result.content[0].text.match(
+        /Entry ID: ([a-zA-Z0-9_-]+)/
+      );
       if (entryIdMatch && entryIdMatch[1]) {
         createdEntryId = entryIdMatch[1];
       }
@@ -149,10 +151,10 @@ describe('Add Record To List Integration (Universal Tools)', () => {
           record_data: {
             list_memberships: {
               [TEST_LIST_ID]: {
-                parent_object: 'companies'
-              }
-            }
-          }
+                parent_object: 'companies',
+              },
+            },
+          },
         },
       },
     };
@@ -181,7 +183,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(/Entry ID: ([a-zA-Z0-9_-]+)/);
+      const entryIdMatch = result.content[0].text.match(
+        /Entry ID: ([a-zA-Z0-9_-]+)/
+      );
       if (entryIdMatch && entryIdMatch[1]) {
         createdEntryId = entryIdMatch[1];
       }
@@ -206,10 +210,10 @@ describe('Add Record To List Integration (Universal Tools)', () => {
           record_data: {
             list_memberships: {
               [TEST_LIST_ID]: {
-                entry_values: initialValues
-              }
-            }
-          }
+                entry_values: initialValues,
+              },
+            },
+          },
         },
       },
     };
@@ -238,7 +242,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(/Entry ID: ([a-zA-Z0-9_-]+)/);
+      const entryIdMatch = result.content[0].text.match(
+        /Entry ID: ([a-zA-Z0-9_-]+)/
+      );
       if (entryIdMatch && entryIdMatch[1]) {
         createdEntryId = entryIdMatch[1];
       }
@@ -264,10 +270,10 @@ describe('Add Record To List Integration (Universal Tools)', () => {
             list_memberships: {
               [TEST_LIST_ID]: {
                 parent_object: 'companies',
-                entry_values: initialValues
-              }
-            }
-          }
+                entry_values: initialValues,
+              },
+            },
+          },
         },
       },
     };
@@ -296,7 +302,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     // Extract entry ID from response for cleanup
     if (Array.isArray(result.content) && result.content[0]?.text) {
-      const entryIdMatch = result.content[0].text.match(/Entry ID: ([a-zA-Z0-9_-]+)/);
+      const entryIdMatch = result.content[0].text.match(
+        /Entry ID: ([a-zA-Z0-9_-]+)/
+      );
       if (entryIdMatch && entryIdMatch[1]) {
         createdEntryId = entryIdMatch[1];
       }
@@ -315,9 +323,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
           // Missing record_id
           record_data: {
             list_memberships: {
-              [TEST_LIST_ID]: {}
-            }
-          }
+              [TEST_LIST_ID]: {},
+            },
+          },
         },
       },
     };
@@ -326,7 +334,9 @@ describe('Add Record To List Integration (Universal Tools)', () => {
 
     expect(resultNoRecordId).toBeDefined();
     expect(resultNoRecordId.isError).toBeTruthy();
-    expect(resultNoRecordId.content?.[0]?.text || '').toMatch(/record_id.*required|missing.*parameter/i);
+    expect(resultNoRecordId.content?.[0]?.text || '').toMatch(
+      /record_id.*required|missing.*parameter/i
+    );
 
     // Test missing resource_type
     const mockRequestNoResourceType: CallToolRequest = {
@@ -338,17 +348,21 @@ describe('Add Record To List Integration (Universal Tools)', () => {
           record_id: TEST_RECORD_ID,
           record_data: {
             list_memberships: {
-              [TEST_LIST_ID]: {}
-            }
-          }
+              [TEST_LIST_ID]: {},
+            },
+          },
         },
       },
     };
 
-    const resultNoResourceType = await executeToolRequest(mockRequestNoResourceType);
+    const resultNoResourceType = await executeToolRequest(
+      mockRequestNoResourceType
+    );
 
     expect(resultNoResourceType).toBeDefined();
     expect(resultNoResourceType.isError).toBeTruthy();
-    expect(resultNoResourceType.content?.[0]?.text || '').toMatch(/resource_type.*required|missing.*parameter/i);
+    expect(resultNoResourceType.content?.[0]?.text || '').toMatch(
+      /resource_type.*required|missing.*parameter/i
+    );
   });
 });

@@ -33,17 +33,17 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       // Mock an authentication error
       vi.mocked(companies.getCompanyDetails).mockRejectedValue({
         status: 401,
-        body: { code: 'unauthorized', message: 'Invalid API key' }
+        body: { code: 'unauthorized', message: 'Invalid API key' },
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: '12345678-1234-4000-a000-123456789012'
+          record_id: '12345678-1234-4000-a000-123456789012',
         })
       ).rejects.toMatchObject({
         status: 401,
-        body: { code: 'unauthorized' }
+        body: { code: 'unauthorized' },
       });
 
       // Verify 404 was not cached for auth errors
@@ -54,17 +54,20 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       // Mock a network error
       vi.mocked(lists.getListDetails).mockRejectedValue({
         status: 503,
-        body: { code: 'service_unavailable', message: 'Service temporarily unavailable' }
+        body: {
+          code: 'service_unavailable',
+          message: 'Service temporarily unavailable',
+        },
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: '87654321-4321-4000-b000-987654321098'
+          record_id: '87654321-4321-4000-b000-987654321098',
         })
       ).rejects.toMatchObject({
         status: 503,
-        body: { code: 'service_unavailable' }
+        body: { code: 'service_unavailable' },
       });
 
       expect(CachingService.cache404Response).not.toHaveBeenCalled();
@@ -75,17 +78,17 @@ describe('UniversalRetrievalService - Error Recovery', () => {
     it('should re-throw rate limit errors without caching', async () => {
       vi.mocked(tasks.getTask).mockRejectedValue({
         status: 429,
-        body: { code: 'rate_limited', message: 'Too many requests' }
+        body: { code: 'rate_limited', message: 'Too many requests' },
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.TASKS,
-          record_id: '11111111-1111-4000-a000-111111111111'
+          record_id: '11111111-1111-4000-a000-111111111111',
         })
       ).rejects.toMatchObject({
         status: 429,
-        body: { code: 'rate_limited' }
+        body: { code: 'rate_limited' },
       });
 
       expect(CachingService.cache404Response).not.toHaveBeenCalled();
@@ -96,23 +99,27 @@ describe('UniversalRetrievalService - Error Recovery', () => {
     it('should cache legitimate 404 errors and convert to structured response', async () => {
       vi.mocked(notes.getNote).mockRejectedValue({
         status: 404,
-        body: { code: 'not_found', message: 'Note not found' }
+        body: { code: 'not_found', message: 'Note not found' },
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.NOTES,
-          record_id: '22222222-2222-4000-a000-222222222222'
+          record_id: '22222222-2222-4000-a000-222222222222',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Note with ID "22222222-2222-4000-a000-222222222222" not found.'
-        }
+          message:
+            'Note with ID "22222222-2222-4000-a000-222222222222" not found.',
+        },
       });
 
-      expect(CachingService.cache404Response).toHaveBeenCalledWith('notes', '22222222-2222-4000-a000-222222222222');
+      expect(CachingService.cache404Response).toHaveBeenCalledWith(
+        'notes',
+        '22222222-2222-4000-a000-222222222222'
+      );
     });
   });
 
@@ -125,7 +132,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: '33333333-3333-4000-a000-333333333333'
+          record_id: '33333333-3333-4000-a000-333333333333',
         })
       ).rejects.toThrow('Cannot read properties of null');
 
@@ -140,7 +147,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: '44444444-4444-4000-a000-444444444444'
+          record_id: '44444444-4444-4000-a000-444444444444',
         })
       ).rejects.toThrow('ETIMEDOUT: Connection timeout');
 
@@ -149,23 +156,29 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
     it('should treat clear not-found error messages as 404s', async () => {
       vi.mocked(tasks.getTask).mockRejectedValue(
-        new Error('Task with ID "55555555-5555-4000-a000-555555555555" not found')
+        new Error(
+          'Task with ID "55555555-5555-4000-a000-555555555555" not found'
+        )
       );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.TASKS,
-          record_id: '55555555-5555-4000-a000-555555555555'
+          record_id: '55555555-5555-4000-a000-555555555555',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task with ID "55555555-5555-4000-a000-555555555555" not found.'
-        }
+          message:
+            'Task with ID "55555555-5555-4000-a000-555555555555" not found.',
+        },
       });
 
-      expect(CachingService.cache404Response).toHaveBeenCalledWith('tasks', '55555555-5555-4000-a000-555555555555');
+      expect(CachingService.cache404Response).toHaveBeenCalledWith(
+        'tasks',
+        '55555555-5555-4000-a000-555555555555'
+      );
     });
   });
 
@@ -177,14 +190,15 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: '66666666-6666-4000-a000-666666666666'
+          record_id: '66666666-6666-4000-a000-666666666666',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "66666666-6666-4000-a000-666666666666" not found.'
-        }
+          message:
+            'List record with ID "66666666-6666-4000-a000-666666666666" not found.',
+        },
       });
     });
 
@@ -193,20 +207,21 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       vi.mocked(lists.getListDetails).mockResolvedValue({
         // Missing required 'id' field
         name: 'Test List',
-        description: 'A test list'
+        description: 'A test list',
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: '77777777-7777-4000-a000-777777777777'
+          record_id: '77777777-7777-4000-a000-777777777777',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "77777777-7777-4000-a000-777777777777" not found.'
-        }
+          message:
+            'List record with ID "77777777-7777-4000-a000-777777777777" not found.',
+        },
       });
     });
 
@@ -215,20 +230,21 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       vi.mocked(lists.getListDetails).mockResolvedValue({
         id: { workspace_id: 'ws-123' }, // Missing list_id
         name: 'Test List',
-        description: 'A test list'
+        description: 'A test list',
       });
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: '88888888-8888-4000-a000-888888888888'
+          record_id: '88888888-8888-4000-a000-888888888888',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "88888888-8888-4000-a000-888888888888" not found.'
-        }
+          message:
+            'List record with ID "88888888-8888-4000-a000-888888888888" not found.',
+        },
       });
     });
   });
@@ -241,14 +257,15 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: '99999999-9999-4000-a000-999999999999'
+          record_id: '99999999-9999-4000-a000-999999999999',
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Record with ID "99999999-9999-4000-a000-999999999999" not found.'
-        }
+          message:
+            'Record with ID "99999999-9999-4000-a000-999999999999" not found.',
+        },
       });
 
       // Should not call the underlying API if cached
@@ -264,20 +281,24 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           id: { record_id: 'cccccccc-cccc-4000-a000-cccccccccccc' },
           values: { name: [{ value: 'Company 1' }] },
           created_at: '2024-01-01',
-          updated_at: '2024-01-01'
+          updated_at: '2024-01-01',
         })
         .mockRejectedValueOnce({
           status: 404,
-          body: { code: 'not_found', message: 'Company not found' }
+          body: { code: 'not_found', message: 'Company not found' },
         })
         .mockRejectedValueOnce({
           status: 401,
-          body: { code: 'unauthorized', message: 'Invalid API key' }
+          body: { code: 'unauthorized', message: 'Invalid API key' },
         });
 
       const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
-        ['cccccccc-cccc-4000-a000-cccccccccccc', 'dddddddd-dddd-4000-a000-dddddddddddd', 'eeeeeeee-eeee-4000-a000-eeeeeeeeeeee']
+        [
+          'cccccccc-cccc-4000-a000-cccccccccccc',
+          'dddddddd-dddd-4000-a000-dddddddddddd',
+          'eeeeeeee-eeee-4000-a000-eeeeeeeeeeee',
+        ]
       );
 
       expect(results).toHaveLength(3);
@@ -304,7 +325,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(tasks.getTask).mockRejectedValue({
         status: 503,
-        body: { code: 'service_unavailable', message: 'Service down' }
+        body: { code: 'service_unavailable', message: 'Service down' },
       });
 
       await expect(
@@ -314,7 +335,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
         )
       ).rejects.toMatchObject({
         status: 503,
-        body: { code: 'service_unavailable' }
+        body: { code: 'service_unavailable' },
       });
     });
   });

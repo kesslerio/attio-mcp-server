@@ -61,17 +61,24 @@ export const listsToolConfigs = {
       if (!isValidUUID(listId)) {
         return {
           isError: true,
-          content: [{ type: 'text', text: `Invalid list_id: must be a UUID. Got: ${listId}` }]
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
         };
       }
       return await getListEntries(listId, limit, offset);
     },
-    formatResult: (results: AttioListEntry[] | { isError: boolean; content: any[] }) => {
+    formatResult: (
+      results: AttioListEntry[] | { isError: boolean; content: any[] }
+    ) => {
       // Handle validation error response
       if (results && typeof results === 'object' && 'isError' in results) {
         return 'Error: Invalid list ID';
       }
-      
+
       // Return JSON string
       return JSON.stringify(Array.isArray(results) ? results : []);
     },
@@ -95,18 +102,30 @@ export const listsToolConfigs = {
   } as ToolConfig,
   addRecordToList: {
     name: 'add-record-to-list',
-    handler: async (listId: string, recordId: string, objectType: string, values?: any) => {
+    handler: async (
+      listId: string,
+      recordId: string,
+      objectType: string,
+      values?: any
+    ) => {
       // UUID validation - hard fail for invalid list IDs
       if (!isValidUUID(listId)) {
         return {
           isError: true,
-          content: [{ type: 'text', text: `Invalid list_id: must be a UUID. Got: ${listId}` }]
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
         };
       }
       return await addRecordToList(listId, recordId, objectType, values);
     },
     idParams: ['listId', 'recordId'],
-    formatResult: (result: AttioListEntry | { isError: boolean; content: any[] }) => {
+    formatResult: (
+      result: AttioListEntry | { isError: boolean; content: any[] }
+    ) => {
       // Handle validation error response
       if (result && typeof result === 'object' && 'isError' in result) {
         return 'Error: Invalid list ID';
@@ -122,7 +141,12 @@ export const listsToolConfigs = {
       if (!isValidUUID(listId)) {
         return {
           isError: true,
-          content: [{ type: 'text', text: `Invalid list_id: must be a UUID. Got: ${listId}` }]
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
         };
       }
       return await removeRecordFromList(listId, entryId);

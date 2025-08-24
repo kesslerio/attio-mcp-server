@@ -1,11 +1,14 @@
 /**
  * Resource Not Found Test Module
- * 
+ *
  * Tests for various resource not found scenarios
  */
 
 import { describe, it, expect } from 'vitest';
-import { callUniversalTool, callNotesTool } from '../../utils/enhanced-tool-caller.js';
+import {
+  callUniversalTool,
+  callNotesTool,
+} from '../../utils/enhanced-tool-caller.js';
 import { E2EAssertions, type McpToolResponse } from '../../utils/assertions.js';
 import { errorScenarios } from '../../fixtures/error-scenarios.js';
 
@@ -45,7 +48,7 @@ export function resourceNotFoundTests() {
         record_id: errorScenarios.invalidIds.task,
         record_data: {
           title: 'Updated Title',
-        }
+        },
       })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);

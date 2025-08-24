@@ -86,7 +86,7 @@ import {
   validateSearchQuery,
 } from '../../../utils/batch-validation.js';
 
-// Import for client-side note filtering implementation  
+// Import for client-side note filtering implementation
 import { getAttioClient } from '../../../api/attio-client.js';
 import { listNotes } from '../../../objects/notes.js';
 import { RATE_LIMITS } from '../../../config/security-limits.js';
@@ -291,7 +291,9 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
       // Check for listId parameter first - if present and invalid, return error immediately
       if (params.listId && !isValidUUID(params.listId)) {
-        throw new Error(`Invalid list_id: must be a UUID. Got: ${params.listId}`);
+        throw new Error(
+          `Invalid list_id: must be a UUID. Got: ${params.listId}`
+        );
       }
 
       const { relationship_type, source_id } = sanitizedParams;
@@ -317,7 +319,10 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
         case 'list_entries':
           // Special handling for list_entries relationship type
           const list_id = params.source_id;
-          if (!list_id || !ValidationService.validateUUIDForSearch(String(list_id))) {
+          if (
+            !list_id ||
+            !ValidationService.validateUUIDForSearch(String(list_id))
+          ) {
             // Invalid listId should return error, not empty array
             throw new Error(`Invalid list_id: must be a UUID. Got: ${list_id}`);
           } else {
@@ -389,36 +394,46 @@ async function searchRecordsByNotesContent(
   search_query: string
 ): Promise<AttioRecord[]> {
   const client = getAttioClient();
-  
+
   // Step 1: List all notes for the resource type
   const resourceTypeMap: Record<string, string> = {
     [UniversalResourceType.COMPANIES]: 'companies',
     [UniversalResourceType.PEOPLE]: 'people',
     [UniversalResourceType.DEALS]: 'deals',
   };
-  
+
   const parentObject = resourceTypeMap[resource_type];
   if (!parentObject) {
-    throw new Error(`Notes search not supported for resource type: ${resource_type}`);
+    throw new Error(
+      `Notes search not supported for resource type: ${resource_type}`
+    );
   }
 
   try {
     // Get all notes for the resource type
-    const response = await client.get(`/notes?parent_object=${parentObject}&limit=100`);
+    const response = await client.get(
+      `/notes?parent_object=${parentObject}&limit=100`
+    );
     const notes = response?.data?.data || [];
-    
+
     // Step 2: Client-side filter on content_plaintext and markdown
     const searchQueryLower = search_query.toLowerCase();
     const matchingNotes = notes.filter((note: any) => {
       const contentPlain = (note.content_plaintext || '').toLowerCase();
-      const contentMarkdown = (note.content || note.markdown || '').toLowerCase();
+      const contentMarkdown = (
+        note.content ||
+        note.markdown ||
+        ''
+      ).toLowerCase();
       const title = (note.title || '').toLowerCase();
-      
-      return contentPlain.includes(searchQueryLower) || 
-             contentMarkdown.includes(searchQueryLower) ||
-             title.includes(searchQueryLower);
+
+      return (
+        contentPlain.includes(searchQueryLower) ||
+        contentMarkdown.includes(searchQueryLower) ||
+        title.includes(searchQueryLower)
+      );
     });
-    
+
     // Step 3: Extract unique parent record IDs from matching notes
     const parentRecordIds = new Set<string>();
     matchingNotes.forEach((note: any) => {
@@ -426,24 +441,31 @@ async function searchRecordsByNotesContent(
         parentRecordIds.add(note.parent_record_id);
       }
     });
-    
+
     // Step 4: Fetch the actual records for these IDs
     const records: AttioRecord[] = [];
     for (const recordId of parentRecordIds) {
       try {
-        const recordResponse = await client.get(`/objects/${parentObject}/records/${recordId}`);
+        const recordResponse = await client.get(
+          `/objects/${parentObject}/records/${recordId}`
+        );
         if (recordResponse?.data?.data) {
           records.push(recordResponse.data.data);
         }
       } catch (error) {
         // Skip records that can't be fetched (may be deleted)
-        console.warn(`Could not fetch ${parentObject} record ${recordId}:`, error);
+        console.warn(
+          `Could not fetch ${parentObject} record ${recordId}:`,
+          error
+        );
       }
     }
-    
+
     return records;
   } catch (error) {
-    throw new Error(`Failed to search ${resource_type} by notes content: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to search ${resource_type} by notes content: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -588,7 +610,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         }
 
         let filters: ListEntryFilters;
-        
+
         switch (timeframe_type) {
           case TimeframeType.CREATED:
             filters = createCreatedDateFilter(dateRange);
@@ -611,9 +633,9 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           query: '',
           filters: filters,
           limit: 20,
-          offset: 0
+          offset: 0,
         });
-        
+
         return results;
       }
     } catch (error: unknown) {

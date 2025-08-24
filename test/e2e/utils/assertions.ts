@@ -287,9 +287,16 @@ export class E2EAssertions {
 
     // Add debug logging for error analysis
     if (response.isError) {
-      console.error('ERR', JSON.stringify({
-        error: response.error,
-      }, null, 2));
+      console.error(
+        'ERR',
+        JSON.stringify(
+          {
+            error: response.error,
+          },
+          null,
+          2
+        )
+      );
     }
 
     expect(response.isError, `${errorMsg} - Response has error flag`).toBe(
@@ -542,8 +549,16 @@ export class E2EAssertions {
         !Array.isArray(expectedType)
       ) {
         expect(obj[key], `Property ${key} should be object`).toBeDefined();
-        if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key]) && expectedType) {
-          this.expectObjectShape(obj[key] as TestDataObject, expectedType as ExpectedDataShape);
+        if (
+          obj[key] &&
+          typeof obj[key] === 'object' &&
+          !Array.isArray(obj[key]) &&
+          expectedType
+        ) {
+          this.expectObjectShape(
+            obj[key] as TestDataObject,
+            expectedType as ExpectedDataShape
+          );
         }
       } else if (Array.isArray(expectedType) && expectedType.length > 0) {
         expect(Array.isArray(obj[key]), `Property ${key} should be array`).toBe(
@@ -561,7 +576,8 @@ export class E2EAssertions {
    */
   static expectTestDataPrefix(data: TestDataObject, prefix?: string): void {
     const config = configLoader.getConfig();
-    const expectedPrefix = prefix || (config as any).testData?.testDataPrefix || 'E2E_TEST_';
+    const expectedPrefix =
+      prefix || (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
     const hasPrefix = this.hasTestPrefix(data, expectedPrefix);
     expect(
@@ -791,7 +807,9 @@ export class E2EAssertions {
       try {
         this.expectValidNoteStructure(note);
       } catch (error: unknown) {
-        throw new Error(`Note ${index} validation failed: ${(error as Error).message || String(error)}`);
+        throw new Error(
+          `Note ${index} validation failed: ${(error as Error).message || String(error)}`
+        );
       }
     });
   }
@@ -902,11 +920,13 @@ export class E2EAssertions {
     ).toBe(true);
 
     // Check content for test indicators - accept tags as alternative
-    const hasContentMarker = note.content.includes('E2E') || note.content.includes('test');
-    const hasTagMarker = note.tags && Array.isArray(note.tags) && note.tags.includes('e2e-test');
+    const hasContentMarker =
+      note.content.includes('E2E') || note.content.includes('test');
+    const hasTagMarker =
+      note.tags && Array.isArray(note.tags) && note.tags.includes('e2e-test');
     expect(
       hasContentMarker || hasTagMarker,
-      "Test note should have E2E markers in content or tags"
+      'Test note should have E2E markers in content or tags'
     ).toBe(true);
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Error Scenarios Test Data Fixtures
- * 
+ *
  * Test data specifically designed for error handling scenarios including:
  * - Invalid data formats
  * - Edge case values
@@ -21,11 +21,7 @@ export const errorScenarios = {
     list: createTestUuid('4'),
     note: createTestUuid('5'),
     generic: createTestUuid('0'),
-    batch: [
-      createTestUuid('6'),
-      createTestUuid('7'),
-      createTestUuid('8'),
-    ],
+    batch: [createTestUuid('6'), createTestUuid('7'), createTestUuid('8')],
   },
 
   /**
@@ -36,7 +32,8 @@ export const errorScenarios = {
   unicodeData: {
     company: {
       name: '🏢 Test Company™ ñoñó 中文 العربية',
-      description: 'Company with special chars: <script>alert("test")</script> & symbols',
+      description:
+        'Company with special chars: <script>alert("test")</script> & symbols',
     },
     person: {
       first_name: 'José María',
@@ -109,7 +106,10 @@ export const errorScenarios = {
             level3: {
               level4: {
                 data: 'deeply nested object structure',
-                array: Array.from({ length: 100 }, (_, i) => ({ id: i, value: `Item ${i}` })),
+                array: Array.from({ length: 100 }, (_, i) => ({
+                  id: i,
+                  value: `Item ${i}`,
+                })),
               },
             },
           },
@@ -148,7 +148,7 @@ export const errorScenarios = {
         record_id: createTestUuid('6'),
       },
       {
-        record_type: 'people', 
+        record_type: 'people',
         record_id: createTestUuid('7'),
       },
     ],

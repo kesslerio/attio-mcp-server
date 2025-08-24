@@ -24,11 +24,11 @@ import {
 } from '../utils/enhanced-tool-caller.js';
 import { type McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
-import { 
-  extractRecordId, 
-  hasValidContent, 
-  cleanupTestRecords, 
-  createTestRecord 
+import {
+  extractRecordId,
+  hasValidContent,
+  cleanupTestRecords,
+  createTestRecord,
 } from '../utils/error-handling-utils.js';
 
 // Import modularized test suites
@@ -65,10 +65,11 @@ describe.skipIf(
       // Create test company for error scenarios
       const companyData = testDataGenerator.companies.basicCompany();
       testCompanyId = await createTestRecord(
-        (resourceType, data) => callUniversalTool('create-record', {
-          resource_type: resourceType as any,
-          record_data: data,
-        }),
+        (resourceType, data) =>
+          callUniversalTool('create-record', {
+            resource_type: resourceType as any,
+            record_data: data,
+          }),
         'companies',
         companyData
       );
@@ -82,10 +83,11 @@ describe.skipIf(
       // Create test person for error scenarios
       const personData = testDataGenerator.people.basicPerson();
       testPersonId = await createTestRecord(
-        (resourceType, data) => callUniversalTool('create-record', {
-          resource_type: resourceType as any,
-          record_data: data,
-        }),
+        (resourceType, data) =>
+          callUniversalTool('create-record', {
+            resource_type: resourceType as any,
+            record_data: data,
+          }),
         'people',
         personData
       );
@@ -104,10 +106,14 @@ describe.skipIf(
     console.error('🧹 Cleaning up error handling test data...');
 
     // Clean up test data (best effort - errors expected in error handling tests)
-    const recordsToCleanup: Array<{ resourceType: string; recordId: string }> = [];
+    const recordsToCleanup: Array<{ resourceType: string; recordId: string }> =
+      [];
 
     if (testCompanyId) {
-      recordsToCleanup.push({ resourceType: 'companies', recordId: testCompanyId });
+      recordsToCleanup.push({
+        resourceType: 'companies',
+        recordId: testCompanyId,
+      });
     }
 
     if (testPersonId) {
@@ -119,10 +125,11 @@ describe.skipIf(
     }
 
     await cleanupTestRecords(
-      (resourceType, recordId) => callUniversalTool('delete-record', {
-        resource_type: resourceType as any,
-        record_id: recordId,
-      }),
+      (resourceType, recordId) =>
+        callUniversalTool('delete-record', {
+          resource_type: resourceType as any,
+          record_id: recordId,
+        }),
       recordsToCleanup
     );
 
@@ -134,5 +141,4 @@ describe.skipIf(
   resourceNotFoundTests();
   crossToolErrorsTests(testCompanyId, testPersonId);
   performanceErrorsTests();
-
 });

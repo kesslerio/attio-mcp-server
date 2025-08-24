@@ -376,11 +376,12 @@ function createAndFilterStructure(
     }
 
     const { slug } = filter.attribute;
-    const operator = filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
-    
+    const operator =
+      filter.condition === 'equals' ? '$eq' : `$${filter.condition}`;
+
     // Build condition object in Attio's expected format
     let fieldPath: string;
-    
+
     if (isListEntryContext && isListSpecificAttribute(slug)) {
       // List-specific attributes use direct field access
       fieldPath = slug;
@@ -396,9 +397,9 @@ function createAndFilterStructure(
     const condition: any = {};
     condition[fieldPath] = {};
     condition[fieldPath][operator] = filter.value;
-    
+
     andConditions.push(condition);
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.error(`[createAndFilterStructure] Added condition:`, condition);
     }
@@ -408,17 +409,17 @@ function createAndFilterStructure(
   if (andConditions.length === 0) {
     return {};
   }
-  
+
   if (andConditions.length === 1) {
     // Single condition doesn't need $and wrapper
     return { filter: andConditions[0] };
   }
-  
+
   // Multiple conditions need $and wrapper
-  return { 
-    filter: { 
-      $and: andConditions 
-    } 
+  return {
+    filter: {
+      $and: andConditions,
+    },
   };
 }
 

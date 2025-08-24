@@ -13,7 +13,6 @@
  * - Performance validation
  */
 
-
 import {
   describe,
   it,
@@ -87,9 +86,7 @@ async function createTestRecord(
     recordData = {
       values: {
         name: testData.name,
-        domains: testData.domain
-          ? [testData.domain]
-          : [uniqueDomain],
+        domains: testData.domain ? [testData.domain] : [uniqueDomain],
       },
     };
   } else if (resourceType === 'people') {
@@ -99,9 +96,10 @@ async function createTestRecord(
     recordData = {
       values: {
         name: testData.name,
-        email_addresses: testData.email_addresses?.length > 0 
-          ? testData.email_addresses
-          : [uniqueEmail], // Use strings, not objects
+        email_addresses:
+          testData.email_addresses?.length > 0
+            ? testData.email_addresses
+            : [uniqueEmail], // Use strings, not objects
       },
     };
   }
@@ -163,13 +161,12 @@ describe.skipIf(
 
   // Store the real API key before test setup can override it
   const realApiKey = process.env.ATTIO_API_KEY;
-  
+
   beforeEach(async () => {
     // Restore real API key for E2E tests (in case test setup stubbed it)
     if (process.env.E2E_MODE === 'true' && realApiKey) {
       process.env.ATTIO_API_KEY = realApiKey;
     }
-    
   });
 
   afterAll(async () => {
@@ -329,8 +326,8 @@ describe.skipIf(
             values: {
               name: {
                 first_name: 'Test',
-                last_name: 'Person', 
-                full_name: 'Test Person'
+                last_name: 'Person',
+                full_name: 'Test Person',
               },
               email_addresses: [`e2e-person-${Date.now()}@example.com`], // Array of strings
             },

@@ -120,9 +120,9 @@ describe.skipIf(
 
   describe('List Discovery', () => {
     it('should retrieve all available lists', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const data = E2EAssertions.expectMcpData(response);
@@ -139,9 +139,9 @@ describe.skipIf(
     }, 30000);
 
     it('should handle empty lists response gracefully', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       // Even if no lists exist, the response should be valid
@@ -155,9 +155,9 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list to work with
-      const listsResponse = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const listsResponse = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       if (Array.isArray(listsData) && listsData.length > 0) {
@@ -183,10 +183,10 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'lists',
         record_id: availableListId,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const listDetails = E2EAssertions.expectMcpData(response);
@@ -205,10 +205,10 @@ describe.skipIf(
     }, 30000);
 
     it('should handle invalid list ID gracefully', async () => {
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'lists',
         record_id: 'invalid-list-id-12345',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -222,10 +222,10 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'lists',
         record_id: availableListId,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       const listDetails = E2EAssertions.expectMcpData(response);
       E2EAssertions.expectListRecord(listDetails);
@@ -239,9 +239,9 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list to work with
-      const listsResponse = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const listsResponse = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       let lists: any[] = [];
@@ -274,18 +274,18 @@ describe.skipIf(
       // Create test data
       if (workingListId) {
         const companyData = CompanyFactory.create();
-        const companyResponse = await callUniversalTool('create-record', {
+        const companyResponse = (await callUniversalTool('create-record', {
           resource_type: 'companies',
-          record_data: companyData
-        }) as McpToolResponse;
+          record_data: companyData,
+        })) as McpToolResponse;
         testCompany = E2EAssertions.expectMcpData(companyResponse);
         testCompanies.push(testCompany);
 
         const personData = PersonFactory.create();
-        const personResponse = await callUniversalTool('create-record', {
+        const personResponse = (await callUniversalTool('create-record', {
           resource_type: 'people',
-          record_data: personData
-        }) as McpToolResponse;
+          record_data: personData,
+        })) as McpToolResponse;
         testPerson = E2EAssertions.expectMcpData(personResponse);
         testPeople.push(testPerson);
       }
@@ -299,11 +299,11 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'list_entries',
         list_id: workingListId,
         limit: 10,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
@@ -328,12 +328,12 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'list_entries',
         list_id: workingListId,
         limit: 5,
         offset: 0,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const entries = E2EAssertions.expectMcpData(response);
@@ -348,7 +348,7 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'records',
         record_id: testCompany.id.record_id,
         record_data: {
@@ -357,20 +357,22 @@ describe.skipIf(
               object_type: 'companies',
               entry_values: {
                 stage: 'Prospect',
-              }
-            }
-          }
-        }
-      }) as McpToolResponse;
+              },
+            },
+          },
+        },
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const listEntry = E2EAssertions.expectMcpData(response);
 
       expect(listEntry).toBeDefined();
-      expect((listEntry as any)!.id?.entry_id || (listEntry as any)!.entry_id).toBeDefined();
-      expect((listEntry as any)!.record_id || (listEntry as any)!.parent_record_id).toBe(
-        testCompany.id.record_id
-      );
+      expect(
+        (listEntry as any)!.id?.entry_id || (listEntry as any)!.entry_id
+      ).toBeDefined();
+      expect(
+        (listEntry as any)!.record_id || (listEntry as any)!.parent_record_id
+      ).toBe(testCompany.id.record_id);
 
       // Store for cleanup
       listEntries.push(listEntry);
@@ -389,17 +391,17 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'records',
         record_id: testCompany.id.record_id,
         record_data: {
           list_memberships: {
             [workingListId]: {
-              object_type: 'companies'
-            }
-          }
-        }
-      }) as McpToolResponse;
+              object_type: 'companies',
+            },
+          },
+        },
+      })) as McpToolResponse;
 
       // This might succeed or fail depending on list configuration
       // We should handle both cases gracefully
@@ -423,7 +425,7 @@ describe.skipIf(
       const listEntry = listEntries[0];
       const entryId = listEntry.id?.entry_id || listEntry.entry_id;
 
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'records',
         record_id: testCompany.id.record_id,
         record_data: {
@@ -431,17 +433,19 @@ describe.skipIf(
             [workingListId]: {
               entry_values: {
                 stage: 'Qualified',
-              }
-            }
-          }
-        }
-      }) as McpToolResponse;
+              },
+            },
+          },
+        },
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedEntry = E2EAssertions.expectMcpData(response);
 
       expect(updatedEntry).toBeDefined();
-      expect((updatedEntry as any)!.id?.entry_id || (updatedEntry as any)!.entry_id).toBe(entryId);
+      expect(
+        (updatedEntry as any)!.id?.entry_id || (updatedEntry as any)!.entry_id
+      ).toBe(entryId);
 
       console.error('✏️ Updated list entry:', entryId);
     }, 30000);
@@ -455,15 +459,15 @@ describe.skipIf(
       const listEntry = listEntries[0];
       const entryId = listEntry.id?.entry_id || listEntry.entry_id;
 
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'records',
         record_id: testCompany.id.record_id,
         record_data: {
           list_memberships: {
-            [workingListId]: null // Remove from list
-          }
-        }
-      }) as McpToolResponse;
+            [workingListId]: null, // Remove from list
+          },
+        },
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
 
@@ -483,15 +487,15 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'records',
         record_id: 'non-existent-record-id-12345',
         record_data: {
           list_memberships: {
-            [workingListId]: null // Remove from list
-          }
-        }
-      }) as McpToolResponse;
+            [workingListId]: null, // Remove from list
+          },
+        },
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -505,9 +509,9 @@ describe.skipIf(
 
     beforeAll(async () => {
       // Get a list for filtering tests
-      const listsResponse = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const listsResponse = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
 
       let lists: any[] = [];
@@ -526,7 +530,7 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'records',
         filters: {
           filters: [
@@ -534,12 +538,12 @@ describe.skipIf(
               attribute: { slug: 'stage' },
               condition: 'is_not_empty',
               value: null,
-            }
+            },
           ],
-          list_id: filterListId
+          list_id: filterListId,
         },
         limit: 10,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -564,7 +568,7 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'records',
         filters: {
           filters: [
@@ -575,10 +579,10 @@ describe.skipIf(
             },
           ],
           matchAny: false,
-          list_id: filterListId
+          list_id: filterListId,
         },
         limit: 5,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -598,7 +602,7 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'records',
         filters: {
           filters: [
@@ -606,12 +610,12 @@ describe.skipIf(
               attribute: { slug: 'stage' },
               condition: 'equals',
               value: 'NonExistentStageValue12345',
-            }
+            },
           ],
-          list_id: filterListId
+          list_id: filterListId,
         },
         limit: 10,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -630,7 +634,7 @@ describe.skipIf(
         return;
       }
 
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'parent_record',
         list_id: filterListId,
         parent_object_type: 'companies',
@@ -640,11 +644,11 @@ describe.skipIf(
               attribute: { slug: 'name' },
               condition: 'is_not_empty',
               value: null,
-            }
-          ]
+            },
+          ],
         },
         limit: 5,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -667,12 +671,12 @@ describe.skipIf(
       }
 
       const testCompany = testCompanies[0];
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'parent_record_id',
         list_id: filterListId,
         record_id: testCompany.id.record_id,
         limit: 10,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const filteredEntries = E2EAssertions.expectMcpData(response);
@@ -697,13 +701,13 @@ describe.skipIf(
       }
 
       const testCompany = testCompanies[0];
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'record_list_memberships',
         record_id: testCompany.id.record_id,
         resource_type: 'lists',
         include_entry_values: true,
         batch_size: 5,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -731,12 +735,12 @@ describe.skipIf(
       }
 
       const testPerson = testPeople[0];
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'record_list_memberships',
         record_id: testPerson.id.record_id,
         resource_type: 'lists',
         include_entry_values: false,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -755,12 +759,12 @@ describe.skipIf(
       }
 
       const testCompany = testCompanies[0];
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'record_list_memberships',
         record_id: testCompany.id.record_id,
         resource_type: 'lists',
         batch_size: 1,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const memberships = E2EAssertions.expectMcpData(response);
@@ -774,15 +778,15 @@ describe.skipIf(
 
       // Test multiple operations with invalid list ID using universal tools
       const operations = [
-        { 
-          tool: 'get-record-details', 
+        {
+          tool: 'get-record-details',
           params: { resource_type: 'lists', record_id: invalidListId },
-          isUniversal: true
+          isUniversal: true,
         },
-        { 
-          tool: 'search-by-relationship', 
+        {
+          tool: 'search-by-relationship',
           params: { relationship_type: 'list_entries', list_id: invalidListId },
-          isUniversal: true
+          isUniversal: true,
         },
         {
           tool: 'advanced-search',
@@ -794,19 +798,19 @@ describe.skipIf(
                   attribute: { slug: 'stage' },
                   condition: 'equals',
                   value: 'test',
-                }
+                },
               ],
-              list_id: invalidListId
-            }
+              list_id: invalidListId,
+            },
           },
-          isUniversal: true
+          isUniversal: true,
         },
       ];
 
       for (const op of operations) {
-        const response = op.isUniversal 
-          ? await callUniversalTool(op.tool, op.params) as McpToolResponse
-          : await callListTool(op.tool, op.params) as McpToolResponse;
+        const response = op.isUniversal
+          ? ((await callUniversalTool(op.tool, op.params)) as McpToolResponse)
+          : ((await callListTool(op.tool, op.params)) as McpToolResponse);
         E2EAssertions.expectMcpError(
           response,
           /not found|invalid|does not exist|missing required parameter/i
@@ -815,11 +819,11 @@ describe.skipIf(
     }, 30000);
 
     it('should handle invalid record ID in membership operations', async () => {
-      const response = await callUniversalTool('search-by-relationship', {
+      const response = (await callUniversalTool('search-by-relationship', {
         relationship_type: 'record_list_memberships',
         record_id: 'invalid-record-id-12345',
         resource_type: 'lists',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       // This might return empty results or an error depending on implementation
       if (response.isError) {
@@ -834,9 +838,9 @@ describe.skipIf(
     it('should handle invalid filter conditions', async () => {
       if (!testLists.length) {
         // Get any available list
-        const listsResponse = await callUniversalTool('search-records', {
-          resource_type: 'lists'
-        }) as McpToolResponse;
+        const listsResponse = (await callUniversalTool('search-records', {
+          resource_type: 'lists',
+        })) as McpToolResponse;
         const listsData = E2EAssertions.expectMcpData(listsResponse);
         let lists: any[] = [];
         if (Array.isArray(listsData)) {
@@ -852,7 +856,7 @@ describe.skipIf(
 
         const listId = lists[0].id?.list_id || lists[0].id;
 
-        const response = await callUniversalTool('advanced-search', {
+        const response = (await callUniversalTool('advanced-search', {
           resource_type: 'records',
           filters: {
             filters: [
@@ -860,11 +864,11 @@ describe.skipIf(
                 attribute: { slug: 'nonexistent_attribute' },
                 condition: 'equals',
                 value: 'test',
-              }
+              },
             ],
-            list_id: listId
+            list_id: listId,
           },
-        }) as McpToolResponse;
+        })) as McpToolResponse;
 
         // Should handle gracefully - might return empty results or error
         if (response.isError) {
@@ -877,9 +881,9 @@ describe.skipIf(
     }, 15000);
 
     it('should handle malformed advanced filter configurations', async () => {
-      const listsResponse = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const listsResponse = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(listsResponse);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -895,7 +899,7 @@ describe.skipIf(
 
       const listId = lists[0].id?.list_id || lists[0].id;
 
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'records',
         filters: {
           filters: [
@@ -904,17 +908,17 @@ describe.skipIf(
               condition: 'equals',
             },
           ],
-          list_id: listId
+          list_id: listId,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
     }, 15000);
 
     it('should validate execution time for list operations', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(response);
       E2EAssertions.expectReasonableExecutionTime(response, 15000);
     }, 20000);
@@ -922,9 +926,9 @@ describe.skipIf(
 
   describe('Performance and Scalability', () => {
     it('should handle large result sets with pagination', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -941,12 +945,15 @@ describe.skipIf(
       const listId = lists[0].id?.list_id || lists[0].id;
 
       // Test with small page size
-      const paginatedResponse = await callUniversalTool('search-by-relationship', {
-        relationship_type: 'list_entries',
-        list_id: listId,
-        limit: 2,
-        offset: 0,
-      }) as McpToolResponse;
+      const paginatedResponse = (await callUniversalTool(
+        'search-by-relationship',
+        {
+          relationship_type: 'list_entries',
+          list_id: listId,
+          limit: 2,
+          offset: 0,
+        }
+      )) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(paginatedResponse);
       const entries = E2EAssertions.expectMcpData(paginatedResponse);
@@ -955,9 +962,15 @@ describe.skipIf(
 
     it('should handle concurrent list operations', async () => {
       const promises = [
-        callUniversalTool('search-records', { resource_type: 'lists' }) as Promise<McpToolResponse>,
-        callUniversalTool('search-records', { resource_type: 'lists' }) as Promise<McpToolResponse>,
-        callUniversalTool('search-records', { resource_type: 'lists' }) as Promise<McpToolResponse>,
+        callUniversalTool('search-records', {
+          resource_type: 'lists',
+        }) as Promise<McpToolResponse>,
+        callUniversalTool('search-records', {
+          resource_type: 'lists',
+        }) as Promise<McpToolResponse>,
+        callUniversalTool('search-records', {
+          resource_type: 'lists',
+        }) as Promise<McpToolResponse>,
       ];
 
       const responses = await Promise.all(promises);
@@ -970,9 +983,9 @@ describe.skipIf(
     }, 30000);
 
     it('should maintain performance with complex filters', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -992,7 +1005,7 @@ describe.skipIf(
 
       const startTime = Date.now();
 
-      const complexFilterResponse = await callUniversalTool(
+      const complexFilterResponse = (await callUniversalTool(
         'advanced-search',
         {
           resource_type: 'records',
@@ -1006,11 +1019,11 @@ describe.skipIf(
               },
             ],
             matchAny: false,
-            list_id: listId
+            list_id: listId,
           },
           limit: 20,
         }
-      ) as McpToolResponse;
+      )) as McpToolResponse;
 
       const endTime = Date.now();
       const executionTime = endTime - startTime;
@@ -1024,9 +1037,9 @@ describe.skipIf(
 
   describe('Data Consistency and Validation', () => {
     it('should maintain consistent list entry structure', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
 
@@ -1043,11 +1056,14 @@ describe.skipIf(
 
       const listId = lists[0].id?.list_id || lists[0].id;
 
-      const entriesResponse = await callUniversalTool('search-by-relationship', {
-        relationship_type: 'list_entries',
-        list_id: listId,
-        limit: 5,
-      }) as McpToolResponse;
+      const entriesResponse = (await callUniversalTool(
+        'search-by-relationship',
+        {
+          relationship_type: 'list_entries',
+          list_id: listId,
+          limit: 5,
+        }
+      )) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(entriesResponse);
       const entries = E2EAssertions.expectMcpData(entriesResponse);
@@ -1067,9 +1083,9 @@ describe.skipIf(
     }, 20000);
 
     it('should handle special characters in filter values', async () => {
-      const response = await callUniversalTool('search-records', {
-        resource_type: 'lists'
-      }) as McpToolResponse;
+      const response = (await callUniversalTool('search-records', {
+        resource_type: 'lists',
+      })) as McpToolResponse;
       const listsData = E2EAssertions.expectMcpData(response);
       let lists: any[] = [];
       if (Array.isArray(listsData)) {
@@ -1087,7 +1103,7 @@ describe.skipIf(
 
       const listId = lists[0].id?.list_id || lists[0].id;
 
-      const specialValueResponse = await callUniversalTool('advanced-search', {
+      const specialValueResponse = (await callUniversalTool('advanced-search', {
         resource_type: 'records',
         filters: {
           filters: [
@@ -1095,12 +1111,12 @@ describe.skipIf(
               attribute: { slug: 'stage' },
               condition: 'contains',
               value: 'Test™ & Co. "Special" #1',
-            }
+            },
           ],
-          list_id: listId
+          list_id: listId,
         },
         limit: 5,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       // Should handle gracefully even with special characters
       E2EAssertions.expectMcpSuccess(specialValueResponse);

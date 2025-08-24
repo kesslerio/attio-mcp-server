@@ -7,7 +7,7 @@
  * Tools tested (now using universal tools):
  * - search-records (resource_type: 'tasks') [formerly list-tasks]
  * - create-record (resource_type: 'tasks') [formerly create-task]
- * - create-record (resource_type: 'companies') [formerly create-company] 
+ * - create-record (resource_type: 'companies') [formerly create-company]
  * - create-record (resource_type: 'people') [formerly create-person]
  * - update-record (resource_type: 'tasks') [formerly update-task]
  * - delete-record (resource_type: 'tasks') [formerly delete-task]
@@ -114,7 +114,7 @@ describe.skipIf(
       const companyData = CompanyFactory.create();
       const response = await callTasksTool('create-record', {
         resource_type: 'companies',
-        record_data: companyData
+        record_data: companyData,
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -130,7 +130,7 @@ describe.skipIf(
       const personData = PersonFactory.create();
       const response = await callTasksTool('create-record', {
         resource_type: 'people',
-        record_data: personData
+        record_data: personData,
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -155,7 +155,7 @@ describe.skipIf(
         record_data: {
           content: taskData.content,
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -190,7 +190,7 @@ describe.skipIf(
           content: taskData.content,
           assigneeId: assignee.id.record_id,
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -220,7 +220,7 @@ describe.skipIf(
           content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
           recordId: company.id.record_id,
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -243,7 +243,7 @@ describe.skipIf(
         record_data: {
           content: taskData.content,
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -265,7 +265,7 @@ describe.skipIf(
           record_data: {
             content: taskData.content,
             due_date: taskData.due_date,
-          }
+          },
         });
 
         if (response.isError) {
@@ -283,7 +283,7 @@ describe.skipIf(
   describe('Task Listing and Filtering', () => {
     it('should list all tasks', async () => {
       const response = await callTasksTool('search-records', {
-        resource_type: 'tasks'
+        resource_type: 'tasks',
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -398,7 +398,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           status: 'completed',
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -425,7 +425,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           assigneeId: newAssignee.id.record_id,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -453,7 +453,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           due_date: newDueDate.toISOString().split('T')[0],
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -482,7 +482,7 @@ describe.skipIf(
         record_data: {
           status: 'in_progress',
           due_date: newDueDate.toISOString().split('T')[0],
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -613,7 +613,7 @@ describe.skipIf(
         record_data: {
           content: 'E2E Workflow Task - Initial Creation',
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -626,7 +626,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           status: 'in_progress',
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(progressResponse);
@@ -637,7 +637,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           status: 'completed',
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(completeResponse);
@@ -655,7 +655,7 @@ describe.skipIf(
         record_data: {
           content: 'E2E Priority Task',
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -683,7 +683,7 @@ describe.skipIf(
         record_data: {
           content: 'E2E Assignment Task - Initially Unassigned',
           due_date: taskData.due_date,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -696,7 +696,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           assigneeId: testPeople[0].id.record_id,
-        }
+        },
       });
 
       E2EAssertions.expectMcpSuccess(assignResponse);
@@ -713,7 +713,7 @@ describe.skipIf(
         record_id: 'invalid-task-id-12345',
         record_data: {
           status: 'completed',
-        }
+        },
       });
 
       E2EAssertions.expectMcpError(
@@ -738,7 +738,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           content: 'This should fail - content is immutable',
-        }
+        },
       });
 
       E2EAssertions.expectMcpError(
@@ -777,7 +777,7 @@ describe.skipIf(
         record_id: taskId,
         record_data: {
           assigneeId: 'invalid-assignee-id-12345',
-        }
+        },
       });
 
       E2EAssertions.expectMcpError(response, /not found|invalid|assignee/i);
@@ -789,7 +789,7 @@ describe.skipIf(
         record_data: {
           // Missing required 'content' field
           due_date: '2024-12-31',
-        }
+        },
       });
 
       E2EAssertions.expectMcpError(response, /content|required/i);
@@ -801,7 +801,7 @@ describe.skipIf(
         record_data: {
           content: 'E2E Test Task with invalid date format for testing',
           due_date: 'invalid-date-format',
-        }
+        },
       });
 
       // This might succeed or fail depending on API validation
@@ -878,21 +878,21 @@ describe.skipIf(
           record_data: {
             content: taskData1.content,
             due_date: taskData1.due_date,
-          }
+          },
         }),
         callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {
             content: taskData2.content,
             due_date: taskData2.due_date,
-          }
+          },
         }),
         callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {
             content: taskData3.content,
             due_date: taskData3.due_date,
-          }
+          },
         }),
       ];
 
@@ -949,7 +949,7 @@ describe.skipIf(
             record_data: {
               content: `Batch updated task ${i + 1}`,
               status: 'in_progress',
-            }
+            },
           })
         );
       }

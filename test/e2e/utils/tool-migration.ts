@@ -373,11 +373,12 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
       limit: params.limit || 50,
       offset: params.offset || 0,
     }),
-    description: 'Legacy filter-list-entries-by-parent → universal search-records',
+    description:
+      'Legacy filter-list-entries-by-parent → universal search-records',
   },
   {
     legacyToolName: 'filter-list-entries-by-parent-id',
-    universalToolName: 'search-records', 
+    universalToolName: 'search-records',
     resourceType: 'records',
     parameterTransform: (params: any) => ({
       resource_type: 'records',
@@ -389,7 +390,8 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
       limit: params.limit || 50,
       offset: params.offset || 0,
     }),
-    description: 'Legacy filter-list-entries-by-parent-id → universal search-records',
+    description:
+      'Legacy filter-list-entries-by-parent-id → universal search-records',
   },
 
   // Record linking tools

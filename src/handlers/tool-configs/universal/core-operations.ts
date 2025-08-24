@@ -20,6 +20,28 @@ import {
   UniversalGetNotesParams,
 } from './types.js';
 
+// Helper function to get plural form of resource type
+function getPluralResourceType(resourceType: UniversalResourceType): string {
+  switch (resourceType) {
+    case UniversalResourceType.COMPANIES:
+      return 'companies';
+    case UniversalResourceType.PEOPLE:
+      return 'people';
+    case UniversalResourceType.LISTS:
+      return 'lists';
+    case UniversalResourceType.RECORDS:
+      return 'records';
+    case UniversalResourceType.DEALS:
+      return 'deals';
+    case UniversalResourceType.TASKS:
+      return 'tasks';
+    case UniversalResourceType.NOTES:
+      return 'notes';
+    default:
+      return 'records';
+  }
+}
+
 import {
   searchRecordsSchema,
   getRecordDetailsSchema,
@@ -55,7 +77,10 @@ import { UniversalUtilityService } from '../../../services/UniversalUtilityServi
 
 import { CallToolRequest, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ToolConfig } from '../../tool-types.js';
-import { toMcpResult, isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
+import {
+  toMcpResult,
+  isHttpResponseLike,
+} from '../../../lib/http/toMcpResult.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -84,9 +109,80 @@ export const searchRecordsConfig: UniversalToolConfig = {
     results: AttioRecord[] | { data: AttioRecord[] },
     resourceType?: UniversalResourceType
   ): string => {
-    // For test compatibility, return JSON strings instead of formatted text
-    // This allows expectMcpData to parse the response as structured data
-    return JSON.stringify(results ?? []);
+    // Handle null/undefined/invalid input
+    if (!results) {
+      const typeName = resourceType
+        ? getPluralResourceType(resourceType)
+        : 'records';
+      return `Found 0 ${typeName}`;
+    }
+
+    // Handle wrapped results format
+    const recordsArray = Array.isArray(results)
+      ? results
+      : (results?.data ?? []);
+
+    // Ensure recordsArray is actually an array
+    if (!Array.isArray(recordsArray)) {
+      const typeName = resourceType
+        ? getPluralResourceType(resourceType)
+        : 'records';
+      return `Found 0 ${typeName}`;
+    }
+
+    if (recordsArray.length === 0) {
+      const typeName = resourceType
+        ? getPluralResourceType(resourceType)
+        : 'records';
+      return `Found 0 ${typeName}`;
+    }
+
+    const typeName = resourceType
+      ? getPluralResourceType(resourceType)
+      : 'records';
+
+    const formattedResults = recordsArray
+      .map((record, index) => {
+        // Extract identifier based on resource type
+        let identifier = 'Unnamed';
+        let id = String(record.id?.record_id || 'unknown');
+
+        // Safely extract values from arrays
+        const values = record.values || {};
+        const getFirstValue = (field: unknown): string | undefined => {
+          if (!field || !Array.isArray(field) || field.length === 0) return undefined;
+          const firstItem = field[0];
+          return firstItem && typeof firstItem === 'object' && firstItem !== null && 'value' in firstItem
+            ? String(firstItem.value)
+            : undefined;
+        };
+
+        if (resourceType === UniversalResourceType.TASKS) {
+          // For tasks, prefer content field
+          identifier = getFirstValue(values.content) || 'Unnamed';
+          id = String(record.id?.task_id || record.id?.record_id || 'unknown');
+        } else if (resourceType === UniversalResourceType.PEOPLE) {
+          // For people, prefer name
+          const nameValue = getFirstValue(values.name);
+          const emailValue = getFirstValue(values.email);
+          identifier = nameValue || emailValue || 'Unnamed';
+        } else if (resourceType === UniversalResourceType.COMPANIES) {
+          // For companies, prefer name with optional website
+          const name = getFirstValue(values.name) || 'Unnamed';
+          const website = getFirstValue(values.website);
+          identifier = website ? `${name} (${website})` : name;
+        } else {
+          // For other types, try common identifier fields
+          const nameValue = getFirstValue(values.name);
+          const titleValue = getFirstValue(values.title);
+          identifier = nameValue || titleValue || 'Unnamed';
+        }
+
+        return `${index + 1}. ${identifier} (ID: ${id})`;
+      })
+      .join('\n');
+
+    return `Found ${recordsArray.length} ${typeName}:\n${formattedResults}`;
   },
 };
 
@@ -111,9 +207,13 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
         // Let the dispatcher handle HTTP → MCP mapping
         throw error;
       }
-      
+
       // For other errors, create a structured error response
-      throw ErrorService.createUniversalError('get details', params.resource_type, error);
+      throw ErrorService.createUniversalError(
+        'get details',
+        params.resource_type,
+        error
+      );
     }
   },
   formatResult: (
@@ -131,7 +231,7 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
     const name = UniversalUtilityService.extractDisplayName(
       record.values || {}
     );
-    const id = record.id?.record_id || 'unknown';
+    const id = String(record.id?.record_id || 'unknown');
 
     let details = `${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)}: ${name}\nID: ${id}\n\n`;
 
@@ -286,7 +386,7 @@ export const createRecordConfig: UniversalToolConfig = {
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
       `New ${resourceTypeName}`;
-    const id = record.id?.record_id || record.record_id || 'unknown';
+    const id = String(record.id?.record_id || record.record_id || 'unknown');
 
     // Ensure the ID is prominently displayed for test parsing
     return `✅ ${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} created successfully. ID: ${id}`;
@@ -320,9 +420,13 @@ export const updateRecordConfig: UniversalToolConfig = {
         // Let the dispatcher handle HTTP → MCP mapping
         throw error;
       }
-      
+
       // For other errors, create a structured error response
-      throw ErrorService.createUniversalError('update record', params.resource_type, error);
+      throw ErrorService.createUniversalError(
+        'update record',
+        params.resource_type,
+        error
+      );
     }
   },
   formatResult: (
@@ -344,7 +448,7 @@ export const updateRecordConfig: UniversalToolConfig = {
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
       'Unnamed';
-    const id = record.id?.record_id || 'unknown';
+    const id = String(record.id?.record_id || 'unknown');
 
     return `✅ Successfully updated ${resourceTypeName}: ${name} (ID: ${id})`;
   },
@@ -371,9 +475,13 @@ export const deleteRecordConfig: UniversalToolConfig = {
         // Let the dispatcher handle HTTP → MCP mapping
         throw error;
       }
-      
+
       // For other errors, create a structured error response
-      throw ErrorService.createUniversalError('delete record', params.resource_type, error);
+      throw ErrorService.createUniversalError(
+        'delete record',
+        params.resource_type,
+        error
+      );
     }
   },
   formatResult: (
@@ -408,7 +516,8 @@ export const getAttributesConfig: UniversalToolConfig = {
       return await handleUniversalGetAttributes(sanitizedParams);
     } catch (error: unknown) {
       // Return MCP-compliant error response instead of throwing
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return { error: errorMessage, success: false };
     }
   },
@@ -434,7 +543,7 @@ export const getAttributesConfig: UniversalToolConfig = {
         })
         .join('\n')}`;
     }
-    
+
     // Handle object with attributes property (from discoverCompanyAttributes)
     if (typeof attributes === 'object' && attributes !== null) {
       if (attributes.all && Array.isArray(attributes.all)) {
@@ -446,7 +555,7 @@ export const getAttributesConfig: UniversalToolConfig = {
           })
           .join('\n')}`;
       }
-      
+
       if (attributes.attributes && Array.isArray(attributes.attributes)) {
         return `Available ${resourceTypeName} attributes (${attributes.attributes.length}):\n${attributes.attributes
           .map((attr: Record<string, unknown>, index: number) => {
@@ -456,7 +565,7 @@ export const getAttributesConfig: UniversalToolConfig = {
           })
           .join('\n')}`;
       }
-      
+
       // Handle direct object attributes
       const keys = Object.keys(attributes);
       if (keys.length > 0) {
@@ -493,7 +602,8 @@ export const discoverAttributesConfig: UniversalToolConfig = {
       );
     } catch (error: unknown) {
       // Return MCP-compliant error response instead of throwing
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return { error: errorMessage, success: false };
     }
   },
@@ -517,7 +627,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         })
         .join('\n')}`;
     }
-    
+
     // Handle object with attributes property (from UniversalMetadataService)
     if (typeof schema === 'object' && schema !== null) {
       if (schema.all && Array.isArray(schema.all)) {
@@ -530,7 +640,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
           })
           .join('\n')}`;
       }
-      
+
       if (schema.attributes && Array.isArray(schema.attributes)) {
         return `Available ${resourceTypeName} attributes (${schema.attributes.length}):\n${schema.attributes
           .map((attr: Record<string, unknown>, index: number) => {
@@ -541,15 +651,15 @@ export const discoverAttributesConfig: UniversalToolConfig = {
           })
           .join('\n')}`;
       }
-      
+
       // Handle standard/custom attributes structure (from discoverCompanyAttributes)
       if (schema.standard || schema.custom) {
         const standard = schema.standard || [];
         const custom = schema.custom || [];
         const total = standard.length + custom.length;
-        
+
         let result = `Available ${resourceTypeName} attributes (${total} total):\n`;
-        
+
         if (standard.length > 0) {
           result += `\nStandard attributes (${standard.length}):\n${standard
             .map((attr: Record<string, unknown>, index: number) => {
@@ -559,7 +669,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
             })
             .join('\n')}`;
         }
-        
+
         if (custom.length > 0) {
           result += `\n\nCustom attributes (${custom.length}):\n${custom
             .map((attr: Record<string, unknown>, index: number) => {
@@ -569,7 +679,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
             })
             .join('\n')}`;
         }
-        
+
         return result;
       }
     }
@@ -637,7 +747,6 @@ export const getDetailedInfoConfig: UniversalToolConfig = {
   },
 };
 
-
 /**
  * Core operations tool definitions for MCP protocol
  */
@@ -696,33 +805,68 @@ export const coreOperationsToolDefinitions = {
  * Core operations tool configurations
  */
 export const coreOperationsToolConfigs = {
-  // ✨ Add notes tools (no feature flags in tests)  
+  // ✨ Add notes tools (no feature flags in tests)
   'create-note': {
     name: 'create-note',
     handler: async (params: any): Promise<any> => {
       try {
-        const sanitizedParams = validateUniversalToolParams('create-note', params);
+        const sanitizedParams = validateUniversalToolParams(
+          'create-note',
+          params
+        );
         return await handleUniversalCreateNote(sanitizedParams);
       } catch (error: unknown) {
         throw ErrorService.createUniversalError('create-note', 'notes', error);
       }
     },
     formatResult: (note: any): string => {
-      return JSON.stringify(note);
+      if (!note) {
+        return 'No note created';
+      }
+
+      const title = note.title || note.values?.title?.[0]?.value || 'Untitled';
+      const content = note.content || note.values?.content?.[0]?.value || '';
+      const id = note.id?.record_id || note.id || 'unknown';
+
+      return `✅ Note created successfully: ${title} (ID: ${id})${content ? `\n${content}` : ''}`;
     },
   },
   'list-notes': {
     name: 'list-notes',
     handler: async (params: any): Promise<any[]> => {
       try {
-        const sanitizedParams = validateUniversalToolParams('list-notes', params);
+        const sanitizedParams = validateUniversalToolParams(
+          'list-notes',
+          params
+        );
         return await handleUniversalGetNotes(sanitizedParams);
       } catch (error: unknown) {
         throw ErrorService.createUniversalError('list-notes', 'notes', error);
       }
     },
     formatResult: (notes: any[]): string => {
-      return JSON.stringify(notes || []);
+      const notesArray = notes || [];
+
+      if (notesArray.length === 0) {
+        return 'Found 0 notes';
+      }
+
+      const formattedNotes = notesArray
+        .map((note, index) => {
+          const title =
+            note.title || note.values?.title?.[0]?.value || 'Untitled';
+          const content =
+            note.content || note.values?.content?.[0]?.value || '';
+          const id = note.id?.record_id || note.id || 'unknown';
+          const timestamp = note.created_at || note.timestamp || 'unknown date';
+
+          const preview =
+            content.length > 50 ? content.substring(0, 50) + '...' : content;
+          return `${index + 1}. ${title} (${timestamp}) (ID: ${id})${preview ? `\n   ${preview}` : ''}`;
+        })
+        .join('\n\n');
+
+      return `Found ${notesArray.length} notes:\n${formattedNotes}`;
     },
   },
   'search-records': searchRecordsConfig,

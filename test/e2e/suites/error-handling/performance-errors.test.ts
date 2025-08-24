@@ -1,6 +1,6 @@
 /**
  * Performance and Rate Limit Error Test Module
- * 
+ *
  * Tests for API limits, rate limiting, and performance-related errors
  */
 
@@ -8,10 +8,10 @@ import { describe, it, expect } from 'vitest';
 import { callUniversalTool } from '../../utils/enhanced-tool-caller.js';
 import { type McpToolResponse } from '../../utils/assertions.js';
 import { errorScenarios } from '../../fixtures/error-scenarios.js';
-import { 
-  executeConcurrentOperations, 
-  analyzeBatchResults, 
-  retryOperation 
+import {
+  executeConcurrentOperations,
+  analyzeBatchResults,
+  retryOperation,
 } from '../../utils/error-handling-utils.js';
 
 export function performanceErrorsTests() {
@@ -34,13 +34,15 @@ export function performanceErrorsTests() {
     });
 
     it('should handle rapid successive requests', async () => {
-      const rapidOperations = errorScenarios.performanceTests.rapidTestQueries.map(query => 
-        () => callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query,
-          limit: 10,
-        })
-      );
+      const rapidOperations =
+        errorScenarios.performanceTests.rapidTestQueries.map(
+          (query) => () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query,
+              limit: 10,
+            })
+        );
 
       const responses = await executeConcurrentOperations(rapidOperations);
       const analysis = analyzeBatchResults(responses);
@@ -75,11 +77,12 @@ export function performanceErrorsTests() {
 
   describe('Error Recovery and Resilience', () => {
     it('should recover from temporary failures', async () => {
-      const operation = () => callUniversalTool('search-records', {
-        resource_type: 'companies',
-        query: 'recovery_test',
-        limit: 5,
-      });
+      const operation = () =>
+        callUniversalTool('search-records', {
+          resource_type: 'companies',
+          query: 'recovery_test',
+          limit: 5,
+        });
 
       const result = await retryOperation(operation, 3, 100);
 
@@ -93,28 +96,39 @@ export function performanceErrorsTests() {
         name: 'Error Recovery Test Company',
         description: 'Testing error recovery',
       };
-      
+
       const createResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
       })) as McpToolResponse;
 
-      if (!createResponse.isError && createResponse.content && createResponse.content[0]) {
-        const companyId = (createResponse.content[0].data as any)?.id?.record_id;
+      if (
+        !createResponse.isError &&
+        createResponse.content &&
+        createResponse.content[0]
+      ) {
+        const companyId = (createResponse.content[0].data as any)?.id
+          ?.record_id;
 
         if (companyId) {
           // Try an invalid update
-          const invalidUpdateResponse = (await callUniversalTool('update-record', {
-            resource_type: 'companies',
-            record_id: companyId,
-            record_data: { invalid_field_12345: 'should not work' },
-          })) as McpToolResponse;
+          const invalidUpdateResponse = (await callUniversalTool(
+            'update-record',
+            {
+              resource_type: 'companies',
+              record_id: companyId,
+              record_data: { invalid_field_12345: 'should not work' },
+            }
+          )) as McpToolResponse;
 
           // Verify the record still exists and is consistent
-          const verifyResponse = (await callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: companyId,
-          })) as McpToolResponse;
+          const verifyResponse = (await callUniversalTool(
+            'get-record-details',
+            {
+              resource_type: 'companies',
+              record_id: companyId,
+            }
+          )) as McpToolResponse;
 
           expect(verifyResponse).toBeDefined();
 

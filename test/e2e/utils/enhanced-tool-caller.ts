@@ -55,22 +55,30 @@ export interface ToolCallResult {
 /**
  * Preprocess parameters to handle special cases like URI-to-record_id extraction
  */
-function preprocessParameters(toolName: string, parameters: ToolParameters): ToolParameters {
+function preprocessParameters(
+  toolName: string,
+  parameters: ToolParameters
+): ToolParameters {
   // Handle URI parameter for note creation tools
-  if (toolName === 'create-note' && 'uri' in parameters && !('record_id' in parameters)) {
+  if (
+    toolName === 'create-note' &&
+    'uri' in parameters &&
+    !('record_id' in parameters)
+  ) {
     const uri = parameters.uri as string;
     const recordId = extractRecordId(uri);
-    
+
     if (recordId) {
       const { uri: _uri, ...otherParams } = parameters;
       return {
         ...otherParams,
         record_id: recordId,
-        resource_type: parameters.resource_type || inferResourceTypeFromUri(uri),
+        resource_type:
+          parameters.resource_type || inferResourceTypeFromUri(uri),
       };
     }
   }
-  
+
   return parameters;
 }
 
@@ -187,7 +195,10 @@ export async function callToolWithEnhancements(
     } else if (finalResponse?.error) {
       // Only consider it an error if there's an actual error object with meaningful content
       isErrorResponse = true;
-    } else if (Array.isArray(finalResponse?.content) && finalResponse.content[0]?.type === 'error') {
+    } else if (
+      Array.isArray(finalResponse?.content) &&
+      finalResponse.content[0]?.type === 'error'
+    ) {
       // Check if the response content type is explicitly 'error'
       isErrorResponse = true;
     }
@@ -311,13 +322,22 @@ export async function callTool(
   };
 
   // Special handling for list operations to ensure array returns
-  if (result.toolName.includes('search-records') || result.toolName.includes('get-lists')) {
+  if (
+    result.toolName.includes('search-records') ||
+    result.toolName.includes('get-lists')
+  ) {
     if (!response.isError && result.content?.[0]?.text) {
       try {
         const parsedContent = JSON.parse(result.content[0].text);
         // If content is parsed successfully but not an array, wrap in array or provide empty array
-        if (parsedContent === false || parsedContent === null || parsedContent === undefined) {
-          response.content = [{ type: 'text', text: JSON.stringify([], null, 2) }];
+        if (
+          parsedContent === false ||
+          parsedContent === null ||
+          parsedContent === undefined
+        ) {
+          response.content = [
+            { type: 'text', text: JSON.stringify([], null, 2) },
+          ];
         }
       } catch {
         // If parsing fails, keep original content

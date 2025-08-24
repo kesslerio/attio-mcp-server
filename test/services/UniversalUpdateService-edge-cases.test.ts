@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import * as tasks from '../../src/objects/tasks.js';
-import { UniversalValidationError } from '../../src/errors/validation-error.js';
+import { FilterValidationError } from '../../src/errors/api-errors.js';
 
 // Mock external dependencies
 vi.mock('../../src/objects/tasks.js');
@@ -26,21 +26,21 @@ describe('UniversalUpdateService - Edge Cases', () => {
       // Mock getTask to throw 404 error
       vi.mocked(tasks.getTask).mockRejectedValue({
         status: 404,
-        body: { code: 'not_found', message: 'Task not found' }
+        body: { code: 'not_found', message: 'Task not found' },
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'non-existent-task',
-          data: { content: 'New content' }
+          data: { content: 'New content' },
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "non-existent-task" not found.'
-        }
+          message: 'Task record with ID "non-existent-task" not found.',
+        },
       });
 
       // Verify existence check was performed
@@ -55,14 +55,14 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'network-error-task',
-          data: { content: 'New content' }
+          data: { content: 'New content' },
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "network-error-task" not found.'
-        }
+          message: 'Task record with ID "network-error-task" not found.',
+        },
       });
     });
 
@@ -71,16 +71,16 @@ describe('UniversalUpdateService - Edge Cases', () => {
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { content: 'Modified content' }
+          data: { content: 'Modified content' },
         })
-      ).rejects.toThrow(UniversalValidationError);
+      ).rejects.toThrow(FilterValidationError);
     });
 
     it('should handle multiple forbidden content fields', async () => {
@@ -88,7 +88,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       });
 
       await expect(
@@ -98,10 +98,10 @@ describe('UniversalUpdateService - Edge Cases', () => {
           data: {
             content: 'Modified content',
             content_markdown: '**Modified** content',
-            content_plaintext: 'Modified content'
-          }
+            content_plaintext: 'Modified content',
+          },
         })
-      ).rejects.toThrow(UniversalValidationError);
+      ).rejects.toThrow(FilterValidationError);
 
       // Should still perform existence check
       expect(tasks.getTask).toHaveBeenCalledWith('existing-task');
@@ -112,14 +112,14 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
-          data: null as any
+          data: null as any,
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "test-task" not found.'
-        }
+          message: 'Task record with ID "test-task" not found.',
+        },
       });
 
       // Should not call getTask for null data
@@ -131,14 +131,14 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
-          data: undefined as any
+          data: undefined as any,
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "test-task" not found.'
-        }
+          message: 'Task record with ID "test-task" not found.',
+        },
       });
 
       // Should not call getTask for undefined data
@@ -150,14 +150,14 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
-          data: 'string-data' as any
+          data: 'string-data' as any,
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "test-task" not found.'
-        }
+          message: 'Task record with ID "test-task" not found.',
+        },
       });
 
       // Should not call getTask for non-object data
@@ -168,12 +168,12 @@ describe('UniversalUpdateService - Edge Cases', () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       };
 
       const mockUpdatedTask = {
         ...mockTask,
-        status: [{ value: 'completed' }]
+        status: [{ value: 'completed' }],
       };
 
       // Mock successful existence check and update
@@ -183,7 +183,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
       const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'existing-task',
-        data: { status: 'completed' }
+        data: { status: 'completed' },
       });
 
       expect(result).toBeTruthy();
@@ -197,24 +197,24 @@ describe('UniversalUpdateService - Edge Cases', () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       };
 
       vi.mocked(tasks.getTask).mockResolvedValue(mockTask);
       vi.mocked(tasks.updateTask).mockRejectedValue({
         status: 400,
-        body: { code: 'validation_error', message: 'Invalid status value' }
+        body: { code: 'validation_error', message: 'Invalid status value' },
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'invalid-status' }
+          data: { status: 'invalid-status' },
         })
       ).rejects.toMatchObject({
         status: 400,
-        body: { code: 'validation_error' }
+        body: { code: 'validation_error' },
       });
     });
 
@@ -222,7 +222,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       };
 
       vi.mocked(tasks.getTask).mockResolvedValue(mockTask);
@@ -234,7 +234,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'completed' }
+          data: { status: 'completed' },
         })
       ).rejects.toThrow('ECONNRESET');
     });
@@ -248,15 +248,15 @@ describe('UniversalUpdateService - Edge Cases', () => {
       const error = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'non-existent-task',
-        data: { content: 'Should be blocked by immutability' }
-      }).catch(e => e);
+        data: { content: 'Should be blocked by immutability' },
+      }).catch((e) => e);
 
       expect(error).toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "non-existent-task" not found.'
-        }
+          message: 'Task record with ID "non-existent-task" not found.',
+        },
       });
 
       // The key assertion: we should NOT get an immutability error
@@ -268,42 +268,41 @@ describe('UniversalUpdateService - Edge Cases', () => {
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
         content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }]
+        status: [{ value: 'pending' }],
       });
 
       const error = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'existing-task',
-        data: { content: 'Modified content' }
-      }).catch(e => e);
+        data: { content: 'Modified content' },
+      }).catch((e) => e);
 
-      expect(error).toBeInstanceOf(UniversalValidationError);
+      expect(error).toBeInstanceOf(FilterValidationError);
       expect(error.message).toContain('immutable');
     });
 
     it('should handle race condition where task is deleted between checks', async () => {
       // Mock task exists during immutability check but is deleted before update
-      vi.mocked(tasks.getTask)
-        .mockResolvedValueOnce({
-          id: { task_id: 'existing-task' },
-          content: [{ value: 'Original content' }],
-          status: [{ value: 'pending' }]
-        });
+      vi.mocked(tasks.getTask).mockResolvedValueOnce({
+        id: { task_id: 'existing-task' },
+        content: [{ value: 'Original content' }],
+        status: [{ value: 'pending' }],
+      });
 
       vi.mocked(tasks.updateTask).mockRejectedValue({
         status: 404,
-        body: { code: 'not_found', message: 'Task was deleted' }
+        body: { code: 'not_found', message: 'Task was deleted' },
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'completed' }
+          data: { status: 'completed' },
         })
       ).rejects.toMatchObject({
         status: 404,
-        body: { code: 'not_found' }
+        body: { code: 'not_found' },
       });
     });
   });
@@ -316,16 +315,16 @@ describe('UniversalUpdateService - Edge Cases', () => {
           record_id: 'test-task',
           data: {
             nested: {
-              content: 'Hidden content update'
-            }
-          }
+              content: 'Hidden content update',
+            },
+          },
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "test-task" not found.'
-        }
+          message: 'Task record with ID "test-task" not found.',
+        },
       });
     });
 
@@ -335,15 +334,15 @@ describe('UniversalUpdateService - Edge Cases', () => {
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
           data: {
-            updates: ['content', 'content_markdown']
-          }
+            updates: ['content', 'content_markdown'],
+          },
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task record with ID "test-task" not found.'
-        }
+          message: 'Task record with ID "test-task" not found.',
+        },
       });
     });
   });

@@ -72,7 +72,11 @@ describe('Tasks Complete CRUD Simulation - Issue #417', () => {
     const mockUpdatedTask = {
       ...mockTask,
       status: 'completed',
-      assignee: { id: 'user-456', type: 'workspace-member', name: 'Updated User' },
+      assignee: {
+        id: 'user-456',
+        type: 'workspace-member',
+        name: 'Updated User',
+      },
       due_date: '2025-03-01',
       updated_at: '2024-01-02T00:00:00Z',
     };

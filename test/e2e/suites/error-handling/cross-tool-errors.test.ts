@@ -1,29 +1,36 @@
 /**
  * Cross-Tool Error Propagation Test Module
- * 
+ *
  * Tests for error propagation across different tools and complex operations
  */
 
 import { describe, it, expect } from 'vitest';
-import { callUniversalTool, callTasksTool, callNotesTool } from '../../utils/enhanced-tool-caller.js';
+import {
+  callUniversalTool,
+  callTasksTool,
+  callNotesTool,
+} from '../../utils/enhanced-tool-caller.js';
 import { type McpToolResponse } from '../../utils/assertions.js';
 import { testDataGenerator } from '../../fixtures/index.js';
 import { errorScenarios } from '../../fixtures/error-scenarios.js';
-import { 
-  extractRecordId, 
-  hasValidContent, 
+import {
+  extractRecordId,
+  hasValidContent,
   analyzeBatchResults,
-  executeConcurrentOperations 
+  executeConcurrentOperations,
 } from '../../utils/error-handling-utils.js';
 
-export function crossToolErrorsTests(testCompanyId: string | undefined, testPersonId: string | undefined) {
+export function crossToolErrorsTests(
+  testCompanyId: string | undefined,
+  testPersonId: string | undefined
+) {
   describe('Cross-Tool Error Propagation', () => {
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
       const taskData = testDataGenerator.tasks.basicTask();
       const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData
+        record_data: taskData,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
@@ -45,7 +52,7 @@ export function crossToolErrorsTests(testCompanyId: string | undefined, testPers
           // Clean up
           await callUniversalTool('delete-record', {
             resource_type: 'tasks',
-            record_id: taskId
+            record_id: taskId,
           }).catch(() => {});
         }
       }
@@ -87,18 +94,21 @@ export function crossToolErrorsTests(testCompanyId: string | undefined, testPers
     it('should handle batch operation partial failures', async () => {
       // Test updating multiple records where some might fail
       const operations = [
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: testCompanyId || 'valid_id',
-        }),
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: errorScenarios.invalidIds.batch[0],
-        }),
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'people',
-          record_id: testPersonId || 'valid_id',
-        }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: testCompanyId || 'valid_id',
+          }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: errorScenarios.invalidIds.batch[0],
+          }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'people',
+            record_id: testPersonId || 'valid_id',
+          }),
       ];
 
       const responses = await executeConcurrentOperations(operations);
@@ -120,16 +130,18 @@ export function crossToolErrorsTests(testCompanyId: string | undefined, testPers
 
       // Attempt concurrent updates to the same record
       const updateOperations = [
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: testCompanyId,
-          record_data: { description: 'Update 1' },
-        }),
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: testCompanyId,
-          record_data: { description: 'Update 2' },
-        }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: testCompanyId,
+            record_data: { description: 'Update 1' },
+          }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: testCompanyId,
+            record_data: { description: 'Update 2' },
+          }),
       ];
 
       const results = await executeConcurrentOperations(updateOperations, 2);
@@ -154,7 +166,7 @@ export function crossToolErrorsTests(testCompanyId: string | undefined, testPers
 
       const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData
+        record_data: taskData,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
@@ -194,7 +206,7 @@ export function crossToolErrorsTests(testCompanyId: string | undefined, testPers
           // Clean up
           await callUniversalTool('delete-record', {
             resource_type: 'tasks',
-            record_id: taskId
+            record_id: taskId,
           }).catch(() => {});
         }
       }

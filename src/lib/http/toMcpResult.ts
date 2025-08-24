@@ -19,22 +19,24 @@ export interface McpResult {
  */
 export function toMcpResult(resp: HttpResponse): McpResult {
   if (resp.status >= 200 && resp.status < 300) {
-    return { 
-      isError: false, 
-      content: [{ type: 'text', text: JSON.stringify(resp.body) }] 
+    return {
+      isError: false,
+      content: [{ type: 'text', text: JSON.stringify(resp.body) }],
     };
   }
-  
+
   const msg =
     resp.body?.message ||
     resp.body?.error?.message ||
-    (resp.status === 404 ? 'record not found' :
-     resp.status === 400 ? 'invalid record_id format' :
-     `HTTP ${resp.status}`);
-     
-  return { 
-    isError: true, 
-    content: [{ type: 'text', text: msg }] 
+    (resp.status === 404
+      ? 'record not found'
+      : resp.status === 400
+        ? 'invalid record_id format'
+        : `HTTP ${resp.status}`);
+
+  return {
+    isError: true,
+    content: [{ type: 'text', text: msg }],
   };
 }
 
@@ -42,8 +44,10 @@ export function toMcpResult(resp: HttpResponse): McpResult {
  * Check if a result looks like an HTTP response
  */
 export function isHttpResponseLike(result: any): result is HttpResponse {
-  return result && 
-         typeof result === 'object' && 
-         typeof result.status === 'number' && 
-         'body' in result;
+  return (
+    result &&
+    typeof result === 'object' &&
+    typeof result.status === 'number' &&
+    'body' in result
+  );
 }

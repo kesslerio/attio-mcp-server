@@ -18,7 +18,10 @@ import { findToolConfig } from '../registry.js';
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 import { computeErrorWithContext } from '../../../utils/error-detection.js';
-import { toMcpResult, isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
+import {
+  toMcpResult,
+  isHttpResponseLike,
+} from '../../../lib/http/toMcpResult.js';
 
 // Import operation handlers
 import {
@@ -97,12 +100,22 @@ function normalizeToolMsg(msg: string): string {
  */
 function canonicalizeResourceType(rt: unknown): string {
   const value = String(rt ?? '').toLowerCase();
-  const validTypes = ['records','lists','people','companies','tasks','deals','notes'];
-  
+  const validTypes = [
+    'records',
+    'lists',
+    'people',
+    'companies',
+    'tasks',
+    'deals',
+    'notes',
+  ];
+
   if (!validTypes.includes(value)) {
-    throw new Error(`Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`);
+    throw new Error(
+      `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`
+    );
   }
-  
+
   return value;
 }
 
@@ -340,9 +353,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Canonicalize and freeze resource_type to prevent mutation
       if (args && 'resource_type' in args) {
         args.resource_type = canonicalizeResourceType(args.resource_type);
-        Object.defineProperty(args, 'resource_type', { 
-          value: args.resource_type, 
-          writable: false 
+        Object.defineProperty(args, 'resource_type', {
+          value: args.resource_type,
+          writable: false,
         });
       }
 
@@ -350,7 +363,11 @@ export async function executeToolRequest(request: CallToolRequest) {
       let rawResult = await toolConfig.handler(args);
 
       // Special handling for lists resource type to return API-consistent shape
-      if (toolName === 'search-records' && args?.resource_type === 'lists' && Array.isArray(rawResult)) {
+      if (
+        toolName === 'search-records' &&
+        args?.resource_type === 'lists' &&
+        Array.isArray(rawResult)
+      ) {
         rawResult = { data: rawResult };
       }
 
@@ -369,21 +386,31 @@ export async function executeToolRequest(request: CallToolRequest) {
           E2E_MODE: process.env.E2E_MODE,
           NODE_ENV: process.env.NODE_ENV,
           isE2EMode,
-          willUseRawJSON: isE2EMode && (toolName === 'create-record' || toolName === 'update-record' || toolName === 'create-note')
+          willUseRawJSON:
+            isE2EMode &&
+            (toolName === 'create-record' ||
+              toolName === 'update-record' ||
+              toolName === 'create-note'),
         });
       }
 
       if (
         isE2EMode &&
-        (toolName === 'create-record' || toolName === 'update-record' || toolName === 'create-note')
+        (toolName === 'create-record' ||
+          toolName === 'update-record' ||
+          toolName === 'create-note')
       ) {
         // Return raw JSON for record operations in E2E mode
         // Handle null/undefined results gracefully instead of throwing
         if (!rawResult) {
-          formattedResult = JSON.stringify({ 
-            error: `Tool ${toolName} returned null/undefined result`,
-            success: false 
-          }, null, 2);
+          formattedResult = JSON.stringify(
+            {
+              error: `Tool ${toolName} returned null/undefined result`,
+              success: false,
+            },
+            null,
+            2
+          );
         } else {
           formattedResult = JSON.stringify(rawResult, null, 2);
         }
@@ -395,28 +422,45 @@ export async function executeToolRequest(request: CallToolRequest) {
             args?.resource_type,
             args?.info_type
           );
-          
+
           // Ensure consistent array formatting for list operations
-          if (toolName.includes('search-records') || toolName.includes('get-lists')) {
+          if (
+            toolName.includes('search-records') ||
+            toolName.includes('get-lists')
+          ) {
             // If formatResult returns false or null for list operations, provide empty array
-            if (formattedResult === 'false' || formattedResult === 'null' || !formattedResult) {
+            if (
+              formattedResult === 'false' ||
+              formattedResult === 'null' ||
+              !formattedResult
+            ) {
               formattedResult = JSON.stringify([], null, 2);
             }
           }
         } catch {
           // Fallback to just result if signature mismatch
           formattedResult = (toolConfig.formatResult as any)(rawResult);
-          
+
           // Apply same array consistency check to fallback
-          if (toolName.includes('search-records') || toolName.includes('get-lists')) {
-            if (formattedResult === 'false' || formattedResult === 'null' || !formattedResult) {
+          if (
+            toolName.includes('search-records') ||
+            toolName.includes('get-lists')
+          ) {
+            if (
+              formattedResult === 'false' ||
+              formattedResult === 'null' ||
+              !formattedResult
+            ) {
               formattedResult = JSON.stringify([], null, 2);
             }
           }
         }
       } else {
         // For raw result formatting, ensure array consistency
-        if (toolName.includes('search-records') || toolName.includes('get-lists')) {
+        if (
+          toolName.includes('search-records') ||
+          toolName.includes('get-lists')
+        ) {
           if (!rawResult || rawResult === false) {
             formattedResult = JSON.stringify([], null, 2);
           } else {
@@ -429,7 +473,6 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // Use explicit error detection instead of string matching
       const errorAnalysis = computeErrorWithContext(rawResult);
-
 
       // Override formatted result with appropriate error message for certain error types
       let finalFormattedResult = formattedResult;
@@ -445,7 +488,6 @@ export async function executeToolRequest(request: CallToolRequest) {
         content: [{ type: 'text', text: finalFormattedResult }],
         isError: errorAnalysis.isError,
       };
-
 
       // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === ('GENERAL' as any)) {
@@ -496,7 +538,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       const sanitizedResult = sanitizeMcpResponse(mcpResult);
       return sanitizedResult;
     }
-    
+
     // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error

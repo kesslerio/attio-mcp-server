@@ -5,7 +5,7 @@
  * valid and invalid filter structures properly, with clear error messages.
  */
 import { describe, test, expect, beforeAll } from 'vitest';
-import { advancedSearchCompanies } from '../../src/objects/companies/index';
+import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
 import { FilterValidationError } from '../../src/errors/api-errors';
 
 // Skip tests if no API key is provided

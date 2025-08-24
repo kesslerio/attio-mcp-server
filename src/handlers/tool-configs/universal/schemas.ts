@@ -147,7 +147,7 @@ export class InputSanitizer {
       .trim()
       .replace(/javascript:/gi, '') // Remove javascript: protocol
       .replace(/on\w+=/gi, ''); // Remove event handlers
-      // Note: HTML tags preserved for note content - only remove dangerous JS
+    // Note: HTML tags preserved for note content - only remove dangerous JS
   }
 
   /**
@@ -639,7 +639,8 @@ export const searchByRelationshipSchema = {
     },
     listId: {
       type: 'string' as const,
-      description: '(Optional) List ID for validation - will return error if not a valid UUID',
+      description:
+        '(Optional) List ID for validation - will return error if not a valid UUID',
     },
     ...paginationProperties,
   },
@@ -1242,14 +1243,19 @@ export function validateUniversalToolParams(
           }
         );
       }
-      
+
       // Task content immutability validation
       if (sanitizedParams.resource_type === 'tasks') {
         const forbidden = ['content', 'content_markdown', 'content_plaintext'];
-        if (sanitizedParams.record_data && typeof sanitizedParams.record_data === 'object') {
+        if (
+          sanitizedParams.record_data &&
+          typeof sanitizedParams.record_data === 'object'
+        ) {
           for (const k of forbidden) {
             if (k in sanitizedParams.record_data) {
-              throw new UniversalValidationError('Task content is immutable and cannot be updated');
+              throw new UniversalValidationError(
+                'Task content is immutable and cannot be updated'
+              );
             }
           }
         }

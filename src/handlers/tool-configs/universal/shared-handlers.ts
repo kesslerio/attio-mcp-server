@@ -50,8 +50,16 @@ import { getTask } from '../../../objects/tasks.js';
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import { getAttioClient, initializeAttioClient } from '../../../api/attio-client.js';
-import { unwrapAttio, normalizeNote, normalizeNotes, coerceNoteFormat } from '../../../utils/attio-response.js';
+import {
+  getAttioClient,
+  initializeAttioClient,
+} from '../../../api/attio-client.js';
+import {
+  unwrapAttio,
+  normalizeNote,
+  normalizeNotes,
+  coerceNoteFormat,
+} from '../../../utils/attio-response.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -83,8 +91,9 @@ export async function handleUniversalGetDetails(
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
 ): Promise<any> {
-  const { resource_type, record_id, title, content, format, created_at } = params;
-  
+  const { resource_type, record_id, title, content, format, created_at } =
+    params;
+
   try {
     // Use MockService for consistent error handling
     const { MockService } = await import('../../../services/MockService.js');
@@ -93,16 +102,15 @@ export async function handleUniversalCreateNote(
       record_id,
       title,
       content,
-      format
+      format,
     });
-    
-    
+
     return result;
   } catch (error: any) {
     // Return error object for computeErrorWithContext detection
-    return { 
+    return {
       error: error.message,
-      success: false 
+      success: false,
     };
   }
 }
@@ -125,7 +133,9 @@ export async function handleUniversalGetNotes(
     if (apiKey) {
       client = initializeAttioClient(apiKey);
     } else {
-      throw new Error('ATTIO_API_KEY not found in environment variables for list-notes');
+      throw new Error(
+        'ATTIO_API_KEY not found in environment variables for list-notes'
+      );
     }
   }
   const queryParams = new URLSearchParams({
@@ -144,23 +154,32 @@ export async function handleUniversalGetNotes(
   try {
     const response = await client.get(`/v2/notes?${queryParams}`);
     const rawList = unwrapAttio<any>(response);
-    
+
     // Handle both array responses and nested data arrays
     const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
     const notes = normalizeNotes(noteArray);
-    
+
     // Return raw notes array (same pattern as create-record)
     return notes;
   } catch (error: any) {
     const status = error?.response?.status;
-    const message = error?.response?.data?.error?.message || error?.message || 'Unknown error';
-    const semanticMessage = status === 404 ? 'record not found' : 
-                           status === 400 ? 'invalid request' :
-                           message.includes('not found') ? message :
-                           `invalid: ${message}`;
-    
+    const message =
+      error?.response?.data?.error?.message ||
+      error?.message ||
+      'Unknown error';
+    const semanticMessage =
+      status === 404
+        ? 'record not found'
+        : status === 400
+          ? 'invalid request'
+          : message.includes('not found')
+            ? message
+            : `invalid: ${message}`;
+
     // Throw error with semantic message (same pattern as create-record)
-    throw new Error(`Attio list-notes failed${status ? ` (${status})` : ''}: ${semanticMessage}`);
+    throw new Error(
+      `Attio list-notes failed${status ? ` (${status})` : ''}: ${semanticMessage}`
+    );
   }
 }
 
@@ -310,11 +329,11 @@ export async function handleUniversalGetDetailedInfo(
         // Handle all documented Attio API list response shapes
         const raw = list;
         const listId =
-          raw?.id?.list_id       // nested shape from some endpoints
-          ?? raw?.list_id        // flat shape from "Get a list" endpoint
-          ?? raw?.id             // some responses use a flat id
-          ?? record_id;          // final fallback when caller already knows it
-        
+          raw?.id?.list_id ?? // nested shape from some endpoints
+          raw?.list_id ?? // flat shape from "Get a list" endpoint
+          raw?.id ?? // some responses use a flat id
+          record_id; // final fallback when caller already knows it
+
         return {
           id: {
             record_id: listId,

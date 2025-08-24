@@ -1,14 +1,24 @@
 /**
  * Validation Errors Test Module
- * 
+ *
  * Tests for parameter validation and data format errors
  */
 
 import { describe, it, expect } from 'vitest';
-import { callUniversalTool, callNotesTool } from '../../utils/enhanced-tool-caller.js';
+import {
+  callUniversalTool,
+  callNotesTool,
+} from '../../utils/enhanced-tool-caller.js';
 import { E2EAssertions, type McpToolResponse } from '../../utils/assertions.js';
-import { errorScenarios, errorDataGenerators } from '../../fixtures/error-scenarios.js';
-import { extractRecordId, validateErrorResponse, hasValidContent } from '../../utils/error-handling-utils.js';
+import {
+  errorScenarios,
+  errorDataGenerators,
+} from '../../fixtures/error-scenarios.js';
+import {
+  extractRecordId,
+  validateErrorResponse,
+  hasValidContent,
+} from '../../utils/error-handling-utils.js';
 
 export function validationErrorsTests(testCompanyId?: string) {
   describe('Invalid Parameters and Validation Errors', () => {
@@ -95,7 +105,7 @@ export function validationErrorsTests(testCompanyId?: string) {
 
       const response = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData
+        record_data: taskData,
       })) as McpToolResponse;
 
       // May either truncate, reject, or accept long text
@@ -145,7 +155,7 @@ export function validationErrorsTests(testCompanyId?: string) {
 
       const response = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData
+        record_data: taskData,
       })) as McpToolResponse;
 
       // May either validate date format or ignore invalid dates
