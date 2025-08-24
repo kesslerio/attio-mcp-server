@@ -43,13 +43,15 @@ export class UniversalMetadataService {
       // Note: Attio's schema discovery uses /objects/{api_slug}/attributes where api_slug is plural
       const OBJECT_SLUG_MAP: Record<string, string> = {
         companies: 'companies',
-        people: 'people', 
+        people: 'people',
         deals: 'deals',
         tasks: 'tasks',
         records: 'records',
-        lists: 'lists'
+        lists: 'lists',
       };
-      const resourceSlug = OBJECT_SLUG_MAP[resourceType.toLowerCase()] || resourceType.toLowerCase();
+      const resourceSlug =
+        OBJECT_SLUG_MAP[resourceType.toLowerCase()] ||
+        resourceType.toLowerCase();
       let path = `/objects/${resourceSlug}/attributes`;
 
       // NEW: Add category filtering to query parameters with security validation
@@ -67,9 +69,9 @@ export class UniversalMetadataService {
       }
 
       const response = await client.get(path);
-      
+
       const attributes = response?.data?.data || [];
-      
+
       // Validate we got an array of attributes
       if (!Array.isArray(attributes)) {
         if (process.env.E2E_MODE === 'true') {
@@ -81,7 +83,10 @@ export class UniversalMetadataService {
         }
         throw {
           status: 500,
-          body: { code: 'invalid_schema', message: `Expected array of attributes for ${resourceType}, got ${typeof attributes}` }
+          body: {
+            code: 'invalid_schema',
+            message: `Expected array of attributes for ${resourceType}, got ${typeof attributes}`,
+          },
         };
       }
 
@@ -105,27 +110,30 @@ export class UniversalMetadataService {
         resource_type: resourceType,
       };
     } catch (error: unknown) {
-      
       console.error(
         `Failed to discover attributes for ${resourceType}:`,
         error
       );
-      
+
       // If it's a 404 or similar API error, convert to structured error for MCP error detection
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as any;
         const status = axiosError.response?.status || 500;
-        const message = axiosError.response?.data?.error?.message || 
-                       axiosError.response?.data?.message ||
-                       axiosError.message ||
-                       `API error: ${status}`;
-        
+        const message =
+          axiosError.response?.data?.error?.message ||
+          axiosError.response?.data?.message ||
+          axiosError.message ||
+          `API error: ${status}`;
+
         throw {
           status,
-          body: { code: 'api_error', message: `Failed to discover ${resourceType} attributes: ${message}` }
+          body: {
+            code: 'api_error',
+            message: `Failed to discover ${resourceType} attributes: ${message}`,
+          },
         };
       }
-      
+
       throw new Error(
         `Failed to discover ${resourceType} attributes: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -246,35 +254,46 @@ export class UniversalMetadataService {
       // Note: For record operations, Attio uses /objects/{plural_slug}/records/{record_id}
       const OBJECT_SLUG_MAP: Record<string, string> = {
         companies: 'companies',
-        people: 'people', 
+        people: 'people',
         deals: 'deals',
         tasks: 'tasks',
         records: 'records',
-        lists: 'lists'
+        lists: 'lists',
       };
-      const resourceSlug = OBJECT_SLUG_MAP[resourceType.toLowerCase()] || resourceType.toLowerCase();
+      const resourceSlug =
+        OBJECT_SLUG_MAP[resourceType.toLowerCase()] ||
+        resourceType.toLowerCase();
       const response = await client.get(
         `/objects/${resourceSlug}/records/${recordId}`
       );
-      
+
       // Add null guards to prevent undefined → {} conversion
       if (!response || !response.data) {
         throw {
           status: 500,
-          body: { code: 'invalid_response', message: `Invalid API response for ${resourceType} record: ${recordId}` }
+          body: {
+            code: 'invalid_response',
+            message: `Invalid API response for ${resourceType} record: ${recordId}`,
+          },
         };
       }
-      
+
       const result = response.data.data?.values;
-      
+
       // Check for empty or missing result
-      if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
+      if (
+        !result ||
+        (typeof result === 'object' && Object.keys(result).length === 0)
+      ) {
         throw {
           status: 404,
-          body: { code: 'not_found', message: `${resourceType} record with ID "${recordId}" not found.` }
+          body: {
+            code: 'not_found',
+            message: `${resourceType} record with ID "${recordId}" not found.`,
+          },
         };
       }
-      
+
       return result;
     } catch (error: unknown) {
       console.error(

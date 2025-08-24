@@ -193,7 +193,6 @@ export class UniversalUpdateService {
         break;
 
       case UniversalResourceType.TASKS:
-        this.assertNoTaskContentUpdate(sanitizedData);
         updatedRecord = await this.updateTaskRecord(record_id, sanitizedData);
         break;
 
@@ -379,13 +378,42 @@ export class UniversalUpdateService {
     record_id: string,
     mappedData: Record<string, unknown>
   ): Promise<AttioRecord> {
+    // 1) Only block content changes if we know the task exists.
+    try {
+      this.assertNoTaskContentUpdate(mappedData);
+    } catch (immutableErr) {
+      // Distinguish "not found" vs "immutable":
+      try {
+        await getTask(record_id); // calls GET /tasks/{id}
+        // It exists → keep the immutability semantics
+        throw immutableErr;
+      } catch {
+        // It doesn't exist → return a proper 404-like error object
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `Task record with ID "${record_id}" not found.`,
+          },
+        };
+      }
+    }
+
+    // 2) Proceed with normal update path (safe; no illegal content fields)
+    return this.doUpdateTask(record_id, mappedData);
+  }
+
+  /**
+   * Handle the actual task update after validation
+   */
+  private static async doUpdateTask(
+    record_id: string,
+    mappedData: Record<string, unknown>
+  ): Promise<AttioRecord> {
     // Transform mapped fields for task update
     // The field mapper has already transformed field names to API names
     // Now we need to adapt them for the updateTask function
     const taskUpdateData: Record<string, unknown> = {};
-
-    // Content field should already be stripped by mapTaskFields('update')
-    // No need for validation here since field mapping prevents content injection
 
     // Handle status field - updateTask function expects 'status' field, not 'is_completed'
     if (mappedData.is_completed !== undefined) {

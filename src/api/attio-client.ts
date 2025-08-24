@@ -19,15 +19,20 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   if (!apiKey || typeof apiKey !== 'string') {
     throw new Error('Invalid API key: API key must be a non-empty string');
   }
-  
+
   // Basic format validation - Attio API keys should be a reasonable length
   if (apiKey.length < 10) {
     throw new Error('Invalid API key: API key appears to be too short');
   }
-  
+
   // Log API key info for debugging (without exposing the actual key)
-  if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-    console.error(`[createAttioClient] Initializing with API key (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 4)}...)`);
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    console.error(
+      `[createAttioClient] Initializing with API key (length: ${apiKey.length}, starts with: ${apiKey.substring(0, 4)}...)`
+    );
   }
 
   const client = axios.create({
@@ -41,7 +46,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add response interceptor for error handling
   client.interceptors.response.use(
     (response) => {
-
       // Debug logging for ALL successful responses to understand what's happening
       debug(
         'attio-client',
@@ -89,7 +93,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         isTasksRequest: error.config?.url?.includes('/tasks'),
         responseData: error.response?.data,
       };
-      
+
       debug(
         'attio-client',
         'Error interceptor called',
@@ -97,21 +101,29 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         'api-request',
         OperationType.API_CALL
       );
-      
+
       // Special handling for authentication errors
       if (error.response?.status === 401) {
-        console.error('[attio-client] Authentication error - API key may be invalid or expired');
+        console.error(
+          '[attio-client] Authentication error - API key may be invalid or expired'
+        );
         console.error('[attio-client] Response:', error.response?.data);
       }
-      
+
       // Special handling for forbidden errors
       if (error.response?.status === 403) {
-        console.error('[attio-client] Forbidden error - API key may not have required permissions');
+        console.error(
+          '[attio-client] Forbidden error - API key may not have required permissions'
+        );
         console.error('[attio-client] Response:', error.response?.data);
       }
-      
+
       // Log create operation failures specifically
-      if (error.config?.method === 'post' && (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true')) {
+      if (
+        error.config?.method === 'post' &&
+        (process.env.NODE_ENV === 'development' ||
+          process.env.E2E_MODE === 'true')
+      ) {
         console.error('[attio-client] CREATE operation failed:', errorInfo);
       }
 

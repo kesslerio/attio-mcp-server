@@ -123,15 +123,15 @@ export class UniversalRetrievalService {
           'Record not found',
           404
         );
-        
+
         // Return structured HTTP response for MCP error mapping
         throw {
           status: 404,
           body: {
             code: 'not_found',
             message: `Record with ID "${record_id}" not found.`,
-            type: 'invalid_request_error'
-          }
+            type: 'invalid_request_error',
+          },
         } as HttpResponse;
       }
 
@@ -142,16 +142,33 @@ export class UniversalRetrievalService {
           'Invalid request',
           400
         );
-        
-        // Return structured HTTP response for MCP error mapping  
+
+        // Return structured HTTP response for MCP error mapping
         throw {
           status: 400,
           body: {
             code: 'validation_error',
             message: `Invalid record_id format: ${record_id}`,
-            type: 'invalid_request_error'
-          }
+            type: 'invalid_request_error',
+          },
         } as HttpResponse;
+      }
+
+      // Check if this is our structured HTTP response before enhancing
+      if (
+        apiError &&
+        typeof apiError === 'object' &&
+        'status' in apiError &&
+        'body' in apiError
+      ) {
+        // This is our structured HTTP response, re-throw as-is
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          false,
+          'Structured HTTP error response',
+          statusCode
+        );
+        throw apiError;
       }
 
       // Auto-enhance other errors with context
@@ -216,23 +233,47 @@ export class UniversalRetrievalService {
   private static async retrieveListRecord(
     record_id: string
   ): Promise<AttioRecord> {
-    const list = await getListDetails(record_id);
-    // Convert AttioList to AttioRecord format
-    return {
-      id: {
-        record_id: list.id.list_id,
-        list_id: list.id.list_id,
-      },
-      values: {
-        name: list.name || list.title,
-        description: list.description,
-        parent_object: list.object_slug || list.parent_object,
-        api_slug: list.api_slug,
-        workspace_id: list.workspace_id,
-        workspace_member_access: list.workspace_member_access,
-        created_at: list.created_at,
-      },
-    } as unknown as AttioRecord;
+    try {
+      const list = await getListDetails(record_id);
+
+      // NEW: robust null/shape guard
+      if (!list || !list.id || !('list_id' in list.id)) {
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `List record with ID "${record_id}" not found.`,
+          },
+        };
+      }
+
+      // proceed safely
+      return {
+        id: {
+          record_id: list.id.list_id,
+          list_id: list.id.list_id,
+        },
+        values: {
+          name: list.name || list.title,
+          description: list.description,
+          parent_object: list.object_slug || list.parent_object,
+          api_slug: list.api_slug,
+          workspace_id: list.workspace_id,
+          workspace_member_access: list.workspace_member_access,
+          created_at: list.created_at,
+        },
+      } as unknown as AttioRecord;
+    } catch (error: unknown) {
+      // Convert any error from getListDetails to structured HTTP response
+      throw {
+        status: 404,
+        body: {
+          code: 'not_found',
+          message: `List record with ID "${record_id}" not found.`,
+          type: 'invalid_request_error',
+        },
+      } as HttpResponse;
+    }
   }
 
   /**
@@ -249,15 +290,15 @@ export class UniversalRetrievalService {
     } catch (error: unknown) {
       // Cache 404 for tasks using CachingService
       CachingService.cache404Response(resource_type, record_id);
-      
+
       // Return structured HTTP response for MCP error mapping
       throw {
         status: 404,
         body: {
           code: 'not_found',
           message: `Task with ID "${record_id}" not found.`,
-          type: 'invalid_request_error'
-        }
+          type: 'invalid_request_error',
+        },
       } as HttpResponse;
     }
   }
@@ -278,15 +319,15 @@ export class UniversalRetrievalService {
     } catch (error: unknown) {
       // Cache 404 for notes using CachingService
       CachingService.cache404Response('notes', noteId);
-      
+
       // Return structured HTTP response for MCP error mapping
       throw {
         status: 404,
         body: {
           code: 'not_found',
           message: `Note with ID "${noteId}" not found.`,
-          type: 'invalid_request_error'
-        }
+          type: 'invalid_request_error',
+        },
       } as HttpResponse;
     }
   }

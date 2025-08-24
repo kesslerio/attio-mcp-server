@@ -31,23 +31,31 @@ export interface ErrorAnalysis {
  * @returns Error analysis with explicit reasoning
  */
 export function computeErrorWithContext(result: unknown): ErrorAnalysis {
-  
   // Null or undefined results are always errors
   if (!result) {
-      return { isError: true, reason: 'null_or_undefined_result' };
+    return { isError: true, reason: 'null_or_undefined_result' };
   }
 
   // Detect empty objects as errors (per Issue #517 analysis)
   // Empty objects {} often indicate failed API responses that should be errors
-  if (result && typeof result === 'object' && !Array.isArray(result) && Object.keys(result).length === 0) {
+  if (
+    result &&
+    typeof result === 'object' &&
+    !Array.isArray(result) &&
+    Object.keys(result).length === 0
+  ) {
     return { isError: true, reason: 'empty_response' as any };
   }
-  
+
   // Detect Attio API "unknown" record responses (indicates record not found)
   // Attio sometimes returns fake records with id.record_id: 'unknown' instead of 404s
   if (result && typeof result === 'object' && !Array.isArray(result)) {
     const record = result as Record<string, unknown>;
-    if (record.id && typeof record.id === 'object' && !Array.isArray(record.id)) {
+    if (
+      record.id &&
+      typeof record.id === 'object' &&
+      !Array.isArray(record.id)
+    ) {
       const id = record.id as Record<string, unknown>;
       if (id.record_id === 'unknown') {
         return { isError: true, reason: 'empty_response' as any };

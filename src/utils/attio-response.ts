@@ -41,8 +41,7 @@ export function normalizeNote(note: any) {
     meeting_id: note?.meeting_id,
     format: note?.format || 'markdown',
   };
-  
-  
+
   return normalized;
 }
 
