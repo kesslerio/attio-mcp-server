@@ -33,14 +33,14 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
                 {
                   attribute: { slug: 'name' },
                   condition: FilterConditionType.CONTAINS,
-                  value: 'Test'
-                }
-              ]
-            }
+                  value: 'Test',
+                },
+              ],
+            },
           },
         },
       };
-      
+
       const result = await executeToolRequest(mockRequest);
 
       // We don't care about the actual results, just that it doesn't throw
@@ -61,7 +61,7 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
           name: 'advanced-search',
           arguments: {
             resource_type: 'companies',
-            filters: {} as any // Missing filters property
+            filters: {} as any, // Missing filters property
           },
         },
       };
@@ -70,10 +70,12 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
 
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
-      
+
       // Should contain error information about invalid filter structure
       const errorText = result.content?.[0]?.text || '';
-      expect(errorText).toMatch(/filter.*invalid|missing.*filters|required.*filters/i);
+      expect(errorText).toMatch(
+        /filter.*invalid|missing.*filters|required.*filters/i
+      );
     }
   );
 
@@ -95,7 +97,7 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
                   value: 'test',
                 },
               ],
-            }
+            },
           },
         },
       };
@@ -104,7 +106,7 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
 
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
-      
+
       // Should contain error information about invalid condition
       const errorText = result.content?.[0]?.text || '';
       expect(errorText).toMatch(/invalid.*condition|condition.*invalid/i);
@@ -128,7 +130,7 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
                   value: 'test',
                 } as any, // Missing attribute
               ],
-            }
+            },
           },
         },
       };
@@ -137,10 +139,12 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
 
       expect(result).toBeDefined();
       expect(result.isError).toBeTruthy();
-      
+
       // Should contain error information about missing attribute
       const errorText = result.content?.[0]?.text || '';
-      expect(errorText).toMatch(/missing.*attribute|attribute.*missing|attribute.*required/i);
+      expect(errorText).toMatch(
+        /missing.*attribute|attribute.*missing|attribute.*required/i
+      );
     }
   );
 
@@ -168,13 +172,13 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
                 },
               ],
               matchAny: true,
-            }
+            },
           },
         },
       };
 
       const result = await executeToolRequest(mockRequest);
-      
+
       expect(result).toBeDefined();
       expect(result.isError).toBeFalsy();
       expect(result.content).toBeDefined();
@@ -194,13 +198,13 @@ describe('Companies Advanced Search Integration (Universal Tools)', () => {
             resource_type: 'companies',
             filters: {
               filters: [],
-            }
+            },
           },
         },
       };
 
       const result = await executeToolRequest(mockRequest);
-      
+
       expect(result).toBeDefined();
       expect(result.isError).toBeFalsy();
       expect(result.content).toBeDefined();

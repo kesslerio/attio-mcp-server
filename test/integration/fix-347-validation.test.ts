@@ -56,16 +56,20 @@ describe.skip('Issue #347 Fixes', () => {
       vi.doMock('../../src/services/UniversalUpdateService.js', () => ({
         UniversalUpdateService: {
           updateRecord: mockUpdateRecord,
-        }
+        },
       }));
 
       const result = await executeToolRequest(request);
 
       // The universal tool should accept the string value and handle conversion
       expect(result.isError).toBeFalsy();
-      expect(mockUpdateRecord).toHaveBeenCalledWith('companies', 'test-company-1', {
-        lead_score: '90', // Universal tools handle type conversion internally
-      });
+      expect(mockUpdateRecord).toHaveBeenCalledWith(
+        'companies',
+        'test-company-1',
+        {
+          lead_score: '90', // Universal tools handle type conversion internally
+        }
+      );
     });
   });
 
@@ -139,7 +143,7 @@ describe.skip('Issue #347 Fixes', () => {
         params: {
           name: 'advanced-search',
           arguments: {
-            resource_type: 'companies'
+            resource_type: 'companies',
             // Missing filters entirely
           },
         },
@@ -163,9 +167,9 @@ describe.skip('Issue #347 Fixes', () => {
             record_id: 'test-company-1',
             record_data: {
               team: {
-                add: ['test-person-1']
-              }
-            }
+                add: ['test-person-1'],
+              },
+            },
           },
         },
       };
@@ -177,15 +181,13 @@ describe.skip('Issue #347 Fixes', () => {
             id: { record_id: 'test-company-1' },
             values: { team: [{ target_record_id: 'test-person-1' }] },
           }),
-        }
+        },
       }));
 
       const result = await executeToolRequest(request);
 
       expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain(
-        'Successfully updated record'
-      );
+      expect(result.content[0].text).toContain('Successfully updated record');
     });
   });
 

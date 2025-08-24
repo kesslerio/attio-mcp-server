@@ -1,6 +1,6 @@
 /**
  * Utilities for handling Attio API responses
- * 
+ *
  * Handles both Axios (res.data) and fetch/mock response formats
  */
 
@@ -19,15 +19,15 @@ export function unwrapAttio<T>(res: any): T {
  */
 export function normalizeNote(note: any) {
   if (!note) return null;
-  
+
   const id = note?.id ?? {};
-  
+
   return {
     // Provide both flat ID and record-compatible structure
     id: {
       note_id: id?.note_id ?? id,
       workspace_id: id?.workspace_id,
-      record_id: id?.note_id ?? id,  // ← Alias for test compatibility
+      record_id: id?.note_id ?? id, // ← Alias for test compatibility
     },
     parent_object: note?.parent_object,
     parent_record_id: note?.parent_record_id,
@@ -54,12 +54,15 @@ export function normalizeNotes(notes: any[]): any[] {
 /**
  * Coerce format to Attio-accepted values and preserve content
  */
-export function coerceNoteFormat(format?: string, content?: string): { format: 'markdown' | 'plaintext'; content: string } {
+export function coerceNoteFormat(
+  format?: string,
+  content?: string
+): { format: 'markdown' | 'plaintext'; content: string } {
   const attioFormat = format === 'markdown' ? 'markdown' : 'plaintext';
-  
+
   // Preserve content as-is - tests expect HTML content to be unchanged
   const processedContent = content || '';
-  
+
   return {
     format: attioFormat,
     content: processedContent,

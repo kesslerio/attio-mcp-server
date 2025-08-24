@@ -31,11 +31,15 @@ function shouldUseMockData(): boolean {
  * Apply consistent E2E test markers to mock data
  */
 function applyE2EMarkers(data: any, meta?: { runId?: string }): any {
-  const baseTags = new Set([...(data.tags || []), 'e2e-test', 'e2e-suite:notes']);
+  const baseTags = new Set([
+    ...(data.tags || []),
+    'e2e-test',
+    'e2e-suite:notes',
+  ]);
   if (meta?.runId) {
     baseTags.add(`e2e-run:${meta.runId}`);
   }
-  
+
   return {
     ...data,
     tags: Array.from(baseTags),
@@ -310,43 +314,54 @@ export class MockService {
     format?: string;
   }): Promise<any> {
     // Validate required parameters
-    if (!noteData.resource_type || !noteData.record_id || !noteData.title || !noteData.content) {
+    if (
+      !noteData.resource_type ||
+      !noteData.record_id ||
+      !noteData.title ||
+      !noteData.content
+    ) {
       throw new Error('missing required parameter');
     }
-    
+
     // Extract UUID from record_id (handles URIs and raw UUIDs)
     const extractedRecordId = extractRecordId(noteData.record_id);
     if (!extractedRecordId) {
       throw new Error('record not found');
     }
-    
+
     // Check for invalid IDs following test patterns
-    if (extractedRecordId === '00000000-0000-0000-0000-000000000000' || 
-        extractedRecordId.includes('invalid') ||
-        extractedRecordId === 'invalid-company-id-12345' ||
-        extractedRecordId === 'invalid-person-id-54321') {
+    if (
+      extractedRecordId === '00000000-0000-0000-0000-000000000000' ||
+      extractedRecordId.includes('invalid') ||
+      extractedRecordId === 'invalid-company-id-12345' ||
+      extractedRecordId === 'invalid-person-id-54321'
+    ) {
       throw new Error('record not found');
     }
-    
+
     // Generate mock note response following Attio API format
     const timestamp = Date.now();
     const baseNote = {
-      id: { 
-        workspace_id: 'ws_mock', 
+      id: {
+        workspace_id: 'ws_mock',
         note_id: `note_${timestamp}`,
-        record_id: extractedRecordId
+        record_id: extractedRecordId,
       },
       parent_object: noteData.resource_type,
       parent_record_id: extractedRecordId,
       title: noteData.title,
       content: noteData.content,
-      content_markdown: (noteData.format === 'markdown' || noteData.format === 'html') ? noteData.content : null,
-      content_plaintext: noteData.format === 'plaintext' ? noteData.content : null,
+      content_markdown:
+        noteData.format === 'markdown' || noteData.format === 'html'
+          ? noteData.content
+          : null,
+      content_plaintext:
+        noteData.format === 'plaintext' ? noteData.content : null,
       format: noteData.format || 'plaintext',
       tags: [],
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    
+
     // Apply E2E markers for test data cleanup
     return applyE2EMarkers(baseNote);
   }
