@@ -249,7 +249,16 @@ export class UniversalRetrievalService {
     } catch (error: unknown) {
       // Cache 404 for tasks using CachingService
       CachingService.cache404Response(resource_type, record_id);
-      throw createRecordNotFoundError(record_id, 'tasks');
+      
+      // Return structured HTTP response for MCP error mapping
+      throw {
+        status: 404,
+        body: {
+          code: 'not_found',
+          message: `Task with ID "${record_id}" not found.`,
+          type: 'invalid_request_error'
+        }
+      } as HttpResponse;
     }
   }
 
@@ -269,7 +278,16 @@ export class UniversalRetrievalService {
     } catch (error: unknown) {
       // Cache 404 for notes using CachingService
       CachingService.cache404Response('notes', noteId);
-      throw createRecordNotFoundError(noteId, 'notes');
+      
+      // Return structured HTTP response for MCP error mapping
+      throw {
+        status: 404,
+        body: {
+          code: 'not_found',
+          message: `Note with ID "${noteId}" not found.`,
+          type: 'invalid_request_error'
+        }
+      } as HttpResponse;
     }
   }
 

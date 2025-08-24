@@ -81,22 +81,26 @@ async function createTestRecord(
 
   if (resourceType === 'companies') {
     testData = CompanyFactory.create();
+    // Generate unique domain per test run to avoid conflicts
+    const uniqueDomain = `e2e-${Date.now()}.example.com`;
     recordData = {
       values: {
         name: testData.name,
         domains: testData.domain
           ? [testData.domain]
-          : [config.testData.testCompanyDomain],
+          : [uniqueDomain],
       },
     };
   } else if (resourceType === 'people') {
     testData = PersonFactory.create();
+    // Generate unique email per test run to avoid conflicts
+    const uniqueEmail = `e2e.${Date.now()}@example.com`;
     recordData = {
       values: {
         name: testData.name,
-        email_addresses: testData.email_addresses.map((email) => ({
-          email_address: email,
-        })),
+        email_addresses: testData.email_addresses?.length > 0 
+          ? testData.email_addresses
+          : [uniqueEmail], // Use strings, not objects
       },
     };
   }
@@ -288,9 +292,7 @@ describe.skipIf(
           record_data: {
             values: {
               name: companyData.name,
-              domains: companyData.domain
-                ? [companyData.domain]
-                : [config.testData.testCompanyDomain],
+              domains: [`create-${Date.now()}.example.com`], // Unique domain per run
             },
           },
         });

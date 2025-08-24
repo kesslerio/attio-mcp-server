@@ -184,6 +184,15 @@ export const advancedSearchConfig: UniversalToolConfig = {
         );
       }
 
+      // Validate list_id filter if present (for list filtering)
+      if (filters?.list_id && !isValidUUID(filters.list_id)) {
+        throw ErrorService.createUniversalError(
+          `Invalid list_id: must be a UUID. Got: ${filters.list_id}`,
+          'advanced-search',
+          resource_type
+        );
+      }
+
       // Use the universal search handler with advanced filtering
       return await handleUniversalSearch({
         resource_type,
@@ -318,7 +327,7 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
         default:
           throw new Error(
-            `Unsupported relationship type: ${relationship_type}`
+            `Invalid relationship type: ${relationship_type} not found`
           );
       }
     } catch (error: unknown) {

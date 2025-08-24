@@ -99,19 +99,13 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<AttioRecord> => {
-    console.error('🧪 GET-RECORD-DETAILS HANDLER START', { record_id: params.record_id });
     try {
       const sanitizedParams = validateUniversalToolParams(
         'get-record-details',
         params
       );
-      console.error('🧪 CALLING handleUniversalGetDetails');
-      const result = await handleUniversalGetDetails(sanitizedParams);
-      console.error('🧪 handleUniversalGetDetails SUCCESS', { result });
-      return result;
+      return await handleUniversalGetDetails(sanitizedParams);
     } catch (error: unknown) {
-      console.error('🧪 GET-RECORD-DETAILS HANDLER CAUGHT ERROR', { error });
-      
       // Check if this is a structured HTTP response from our services
       if (isHttpResponseLike(error)) {
         // Let the dispatcher handle HTTP → MCP mapping
@@ -303,7 +297,7 @@ export const createRecordConfig: UniversalToolConfig = {
  */
 export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
-  handler: async (params: UniversalUpdateParams): Promise<AttioRecord | { error: string; success: boolean }> => {
+  handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'update-record',
@@ -319,26 +313,20 @@ export const updateRecordConfig: UniversalToolConfig = {
 
       return await handleUniversalUpdate(sanitizedParams);
     } catch (error: unknown) {
-      // Return MCP-compliant error response instead of throwing
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-        return { error: `record not found: ${params.record_id}`, success: false };
+      // Check if this is a structured HTTP response from our services
+      if (isHttpResponseLike(error)) {
+        // Let the dispatcher handle HTTP → MCP mapping
+        throw error;
       }
-      if (errorMessage.includes('validation') || errorMessage.includes('Invalid uuid')) {
-        return { error: `invalid record_id format: ${params.record_id}`, success: false };
-      }
-      return { error: errorMessage, success: false };
+      
+      // For other errors, create a structured error response
+      throw ErrorService.createUniversalError('update record', params.resource_type, error);
     }
   },
   formatResult: (
-    record: AttioRecord | { error: string; success: boolean },
+    record: AttioRecord,
     resourceType?: UniversalResourceType
   ): string => {
-    // Handle error responses
-    if (record && typeof record === 'object' && 'error' in record && 'success' in record) {
-      return JSON.stringify(record);
-    }
-    
     if (!record) {
       return 'Record update failed';
     }
@@ -368,7 +356,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
   name: 'delete-record',
   handler: async (
     params: UniversalDeleteParams
-  ): Promise<{ success: boolean; record_id: string } | { error: string; success: boolean }> => {
+  ): Promise<{ success: boolean; record_id: string }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'delete-record',
@@ -376,25 +364,20 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      // Return MCP-compliant error response instead of throwing
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-        return { error: `record not found: ${params.record_id}`, success: false };
+      // Check if this is a structured HTTP response from our services
+      if (isHttpResponseLike(error)) {
+        // Let the dispatcher handle HTTP → MCP mapping
+        throw error;
       }
-      if (errorMessage.includes('validation') || errorMessage.includes('Invalid uuid')) {
-        return { error: `invalid record_id format: ${params.record_id}`, success: false };
-      }
-      return { error: errorMessage, success: false };
+      
+      // For other errors, create a structured error response
+      throw ErrorService.createUniversalError('delete record', params.resource_type, error);
     }
   },
   formatResult: (
-    result: { success: boolean; record_id: string } | { error: string; success: boolean },
+    result: { success: boolean; record_id: string },
     resourceType?: UniversalResourceType
   ): string => {
-    // Handle error responses
-    if (result && typeof result === 'object' && 'error' in result && 'success' in result) {
-      return JSON.stringify(result);
-    }
     if (!result.success) {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }

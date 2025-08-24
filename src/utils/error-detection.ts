@@ -10,6 +10,7 @@ export interface ErrorAnalysis {
   isError: boolean;
   reason?:
     | 'null_or_undefined_result'
+    | 'empty_response'
     | 'explicit_success_false'
     | 'meaningful_error_object'
     | 'meaningful_error_string'
@@ -33,6 +34,12 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
   // Null or undefined results are always errors
   if (!result) {
     return { isError: true, reason: 'null_or_undefined_result' };
+  }
+
+  // Detect empty objects as errors (per Issue #517 analysis)
+  // Empty objects {} often indicate failed API responses that should be errors
+  if (result && typeof result === 'object' && !Array.isArray(result) && Object.keys(result).length === 0) {
+    return { isError: true, reason: 'empty_response' as any };
   }
 
   // Check for explicit success: false

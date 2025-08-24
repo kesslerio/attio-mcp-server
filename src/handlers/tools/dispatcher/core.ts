@@ -430,19 +430,19 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Use explicit error detection instead of string matching
       const errorAnalysis = computeErrorWithContext(rawResult);
 
-      // 🧪 DEBUG: Log error analysis for problematic tools
-      if (toolName === 'create-record' || toolName === 'create-note' || toolName === 'get-record-details' || toolName === 'update-record' || toolName === 'delete-record') {
-        console.error('🧪 ERROR ANALYSIS', {
-          toolName,
-          rawResultType: typeof rawResult,
-          rawResultKeys: rawResult ? Object.keys(rawResult) : null,
-          errorAnalysisResult: errorAnalysis,
-          formattedResultLength: formattedResult.length
-        });
+
+      // Override formatted result with appropriate error message for certain error types
+      let finalFormattedResult = formattedResult;
+      if (errorAnalysis.isError && errorAnalysis.reason === 'empty_response') {
+        // Provide a meaningful error message for empty responses (typically 404s)
+        const args = request.params.arguments as Record<string, unknown>;
+        const recordId = args?.record_id as string;
+        const resourceType = args?.resource_type as string;
+        finalFormattedResult = `Record not found: ${recordId || 'unknown ID'} (${resourceType || 'unknown type'})`;
       }
 
       result = {
-        content: [{ type: 'text', text: formattedResult }],
+        content: [{ type: 'text', text: finalFormattedResult }],
         isError: errorAnalysis.isError,
       };
 

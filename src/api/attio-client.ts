@@ -26,6 +26,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // Add response interceptor for error handling
   client.interceptors.response.use(
     (response) => {
+
       // Debug logging for ALL successful responses to understand what's happening
       debug(
         'attio-client',

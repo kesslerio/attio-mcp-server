@@ -40,7 +40,7 @@ function shouldUseMockData(): boolean {
 
   // For vitest test runner without explicit flags, use mocks
   try {
-    const isVitest = typeof globalThis.vi !== 'undefined' || typeof global.vi !== 'undefined';
+    const isVitest = typeof (globalThis as any).vi !== 'undefined' || typeof (global as any).vi !== 'undefined';
     const isTestProcess = process.env._ && process.env._.includes('vitest');
     
     if (isVitest || isTestProcess) {
