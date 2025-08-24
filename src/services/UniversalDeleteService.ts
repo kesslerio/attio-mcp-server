@@ -10,12 +10,13 @@ import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/t
 import { isValidId } from '../utils/validation.js';
 
 // Import delete functions for each resource type
-import { deleteCompany } from '../objects/companies/index.js';
+import { deleteCompany, getCompanyDetails } from '../objects/companies/index.js';
 import { deletePerson } from '../objects/people-write.js';
-import { deleteList } from '../objects/lists.js';
-import { deleteObjectRecord } from '../objects/records/index.js';
-import { deleteTask } from '../objects/tasks.js';
+import { deleteList, getListDetails } from '../objects/lists.js';
+import { deleteObjectRecord, getObjectRecord } from '../objects/records/index.js';
+import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
+import { getPersonDetails } from '../objects/people/basic.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -49,10 +50,43 @@ export class UniversalDeleteService {
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
+        // Check if record exists before deletion (to match test expectations)
+        try {
+          const existingRecord = await getCompanyDetails(record_id);
+          
+          
+          // Check if it's a fake "unknown" record or missing critical fields
+          if (existingRecord?.id?.record_id === 'unknown' || 
+              !existingRecord?.id?.record_id ||
+              (existingRecord && Object.keys(existingRecord).length === 0)) {
+            throw {
+              status: 404,
+              body: { code: 'not_found', message: `Company record with ID "${record_id}" not found.` }
+            };
+          }
+        } catch (error: unknown) {
+          // If record doesn't exist, throw error as expected by tests
+          throw {
+            status: 404,
+            body: { code: 'not_found', message: `Company record with ID "${record_id}" not found.` }
+          };
+        }
+        
         await deleteCompany(record_id);
         return { success: true, record_id };
 
       case UniversalResourceType.PEOPLE:
+        // Check if record exists before deletion (to match test expectations)
+        try {
+          await getPersonDetails(record_id);
+        } catch (error: unknown) {
+          // If record doesn't exist, throw error as expected by tests
+          throw {
+            status: 404,
+            body: { code: 'not_found', message: `Person record with ID "${record_id}" not found.` }
+          };
+        }
+        
         await deletePerson(record_id);
         return { success: true, record_id };
 
@@ -61,6 +95,17 @@ export class UniversalDeleteService {
         return { success: true, record_id };
 
       case UniversalResourceType.RECORDS:
+        // Check if record exists before deletion (to match test expectations)
+        try {
+          await getObjectRecord('records', record_id);
+        } catch (error: unknown) {
+          // If record doesn't exist, throw error as expected by tests
+          throw {
+            status: 404,
+            body: { code: 'not_found', message: `Record with ID "${record_id}" not found.` }
+          };
+        }
+        
         await deleteObjectRecord('records', record_id);
         return { success: true, record_id };
 

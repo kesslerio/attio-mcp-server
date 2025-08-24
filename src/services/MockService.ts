@@ -86,9 +86,68 @@ export class MockService {
   static async createCompany(
     companyData: Record<string, unknown>
   ): Promise<AttioRecord> {
-    if (!shouldUseMockData()) {
-      const { createCompany } = await import('../objects/companies/index.js');
-      return await createCompany(companyData as any);
+    const useMocks = shouldUseMockData();
+    console.error('[MockService.createCompany] Environment check:', {
+      E2E_MODE: process.env.E2E_MODE,
+      useMocks,
+      companyDataKeys: Object.keys(companyData || {}),
+      ATTIO_API_KEY: process.env.ATTIO_API_KEY ? `${process.env.ATTIO_API_KEY.slice(0, 8)}...` : 'MISSING',
+    });
+    
+    if (!useMocks) {
+      try {
+        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
+        console.error('[MockService.createCompany] Making raw axios API call...');
+        
+        // Create a completely fresh axios instance to bypass any mocking
+        const axios = (await import('axios')).default;
+        const api = axios.create({
+          baseURL: 'https://api.attio.com/v2',
+          headers: {
+            'Authorization': `Bearer ${process.env.ATTIO_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        });
+        
+        console.error('[MockService.createCompany] Raw axios instance created');
+        
+        const response = await api.post('/objects/companies/records', {
+          data: {
+            values: companyData,
+          },
+        });
+        
+        console.error('[MockService.createCompany] Raw API response:', {
+          status: response?.status,
+          statusText: response?.statusText,
+          hasData: !!response?.data,
+          hasNestedData: !!response?.data?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+          responseData: response?.data,
+        });
+        
+        // Extract result following same logic as createRecord
+        const result = response?.data?.data || response?.data;
+        
+        // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
+        const looksLikeCreatedRecord = result && typeof result === 'object' &&
+          (
+            ('id' in result && (result as any).id?.record_id) ||
+            'record_id' in result || 
+            'web_url' in result || 
+            'created_at' in result
+          );
+        
+        if (!result || (typeof result === 'object' && Object.keys(result).length === 0 && !looksLikeCreatedRecord)) {
+          throw new Error('Company creation failed: API returned empty response');
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('[MockService.createCompany] Direct API error:', error);
+        throw error; // Re-throw the error instead of swallowing it
+      }
     }
 
     // Generate valid UUID format for mock IDs (exactly 36 chars)
@@ -133,8 +192,58 @@ export class MockService {
     personData: Record<string, unknown>
   ): Promise<AttioRecord> {
     if (!shouldUseMockData()) {
-      const { createPerson } = await import('../objects/people/index.js');
-      return await createPerson(personData as any);
+      try {
+        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
+        console.error('[MockService.createPerson] Making raw axios API call...');
+        
+        // Create a completely fresh axios instance to bypass any mocking
+        const axios = (await import('axios')).default;
+        const api = axios.create({
+          baseURL: 'https://api.attio.com/v2',
+          headers: {
+            'Authorization': `Bearer ${process.env.ATTIO_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        });
+        
+        console.error('[MockService.createPerson] Raw axios instance created');
+        
+        const response = await api.post('/objects/people/records', {
+          data: {
+            values: personData,
+          },
+        });
+        
+        console.error('[MockService.createPerson] Raw API response:', {
+          status: response?.status,
+          statusText: response?.statusText,
+          hasData: !!response?.data,
+          hasNestedData: !!response?.data?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+        });
+        
+        // Extract result following same logic as createRecord
+        const result = response?.data?.data || response?.data;
+        
+        // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
+        const looksLikeCreatedRecord = result && typeof result === 'object' &&
+          (
+            ('id' in result && (result as any).id?.record_id) ||
+            'record_id' in result || 
+            'web_url' in result || 
+            'created_at' in result
+          );
+        
+        if (!result || (typeof result === 'object' && Object.keys(result).length === 0 && !looksLikeCreatedRecord)) {
+          throw new Error('Person creation failed: API returned empty response');
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('[MockService.createPerson] Direct API error:', error);
+        throw error; // Re-throw the error instead of swallowing it
+      }
     }
 
     // Generate valid UUID format for mock IDs (exactly 36 chars)

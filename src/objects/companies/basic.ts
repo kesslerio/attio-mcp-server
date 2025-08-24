@@ -241,15 +241,11 @@ export async function getCompanyDetails(
 export async function createCompany(
   attributes: CompanyAttributes
 ): Promise<Company> {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
     console.error('[createCompany] Input attributes:', attributes);
   }
 
   try {
-    console.error(
-      '[createCompany] DEBUG - Input attributes:',
-      JSON.stringify(attributes, null, 2)
-    );
 
     // Temporarily comment out validation to isolate the issue
     const result = await createObjectWithDynamicFields<Company>(
@@ -258,12 +254,8 @@ export async function createCompany(
       // CompanyValidator.validateCreate  // Temporarily disabled
     );
 
-    console.error(
-      '[createCompany] DEBUG - Result from createObjectWithDynamicFields:',
-      JSON.stringify(result, null, 2)
-    );
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
       console.error(
         '[createCompany] Result from createObjectWithDynamicFields:',
         {
@@ -303,8 +295,10 @@ export async function createCompany(
 
     return result;
   } catch (error: unknown) {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
       console.error('[createCompany] Error caught:', error);
+      console.error('[createCompany] Error type:', typeof error);
+      console.error('[createCompany] Error stack:', error instanceof Error ? error.stack : 'No stack');
     }
 
     if (error instanceof InvalidCompanyDataError) {

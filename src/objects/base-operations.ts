@@ -70,8 +70,8 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
     mappedAttributes
   );
 
-  // Debug log to help diagnose issues
-  if (process.env.NODE_ENV === 'development') {
+  // Debug log to help diagnose issues (includes E2E mode)
+  if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
     console.error(
       `[createObjectWithDynamicFields:${objectType}] Original attributes:`,
       JSON.stringify(validatedAttributes, null, 2)
@@ -93,7 +93,7 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
       transformedAttributes
     );
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
       console.error(
         `[createObjectWithDynamicFields:${objectType}] Result from createObjectRecord:`,
         {
@@ -106,6 +106,19 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
       );
     }
 
+    // Additional check for empty objects that might slip through, but allow legitimate create responses
+    const looksLikeCreatedRecord = result && typeof result === 'object' &&
+      (
+        ('id' in result && (result as any).id?.record_id) ||
+        'record_id' in result || 
+        'web_url' in result || 
+        'created_at' in result
+      );
+    
+    if (!result || (typeof result === 'object' && Object.keys(result).length === 0 && !looksLikeCreatedRecord)) {
+      throw new Error(`Create operation returned empty result for ${objectType}`);
+    }
+    
     return result;
   } catch (error: unknown) {
     console.error(
@@ -164,11 +177,19 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   }
 
   // Update the object
-  return await updateObjectRecord<T>(
+  const result = await updateObjectRecord<T>(
     objectType,
     recordId,
     transformedAttributes
   );
+  
+  
+  // Additional check for empty objects that might slip through
+  if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
+    throw new Error(`Update operation returned empty result for ${objectType} record: ${recordId}`);
+  }
+  
+  return result;
 }
 
 /**

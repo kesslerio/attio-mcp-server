@@ -157,14 +157,6 @@ describe.skipIf(
         record_id: '00000000-0000-0000-0000-000000000000', // Valid UUID format, but doesn't exist
       })) as McpToolResponse;
 
-      // Debug logging to understand what response we're getting
-      console.error('DEBUG: Test response:', {
-        isError: response.isError,
-        error: response.error,
-        contentType: response.content?.[0]?.type,
-        contentText: response.content?.[0]?.text,
-        responseKeys: Object.keys(response as object),
-      });
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(

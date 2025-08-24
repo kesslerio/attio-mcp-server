@@ -277,6 +277,7 @@ export const createRecordConfig: UniversalToolConfig = {
     const resourceTypeName = resourceType
       ? getSingularResourceType(resourceType)
       : 'record';
+    // Extract name from values (may be empty on create) or fall back to a generic name
     const name =
       (record.values?.name &&
         Array.isArray(record.values.name) &&
@@ -284,10 +285,11 @@ export const createRecordConfig: UniversalToolConfig = {
       (record.values?.title &&
         Array.isArray(record.values.title) &&
         record.values.title[0]?.value) ||
-      'Unnamed';
-    const id = record.id?.record_id || 'unknown';
+      `New ${resourceTypeName}`;
+    const id = record.id?.record_id || record.record_id || 'unknown';
 
-    return `✅ Successfully created ${resourceTypeName}: ${name} (ID: ${id})`;
+    // Ensure the ID is prominently displayed for test parsing
+    return `✅ ${resourceTypeName.charAt(0).toUpperCase() + resourceTypeName.slice(1)} created successfully. ID: ${id}`;
   },
 };
 

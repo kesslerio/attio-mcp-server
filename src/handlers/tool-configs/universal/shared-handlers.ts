@@ -123,7 +123,6 @@ export async function handleUniversalGetNotes(
     // Try to initialize from environment if not already done
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
-      console.error('🔍 DEBUG: Auto-initializing Attio client for list-notes');
       client = initializeAttioClient(apiKey);
     } else {
       throw new Error('ATTIO_API_KEY not found in environment variables for list-notes');
@@ -144,20 +143,15 @@ export async function handleUniversalGetNotes(
 
   try {
     const response = await client.get(`/v2/notes?${queryParams}`);
-    console.error('🔍 DEBUG: List notes raw response:', JSON.stringify(response?.data || response, null, 2));
-    
     const rawList = unwrapAttio<any>(response);
-    console.error('🔍 DEBUG: Unwrapped list:', JSON.stringify(rawList, null, 2));
     
     // Handle both array responses and nested data arrays
     const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
     const notes = normalizeNotes(noteArray);
-    console.error('🔍 DEBUG: Normalized notes:', notes.length, 'items');
     
     // Return raw notes array (same pattern as create-record)
     return notes;
   } catch (error: any) {
-    console.error('🔍 DEBUG: List notes error:', error);
     const status = error?.response?.status;
     const message = error?.response?.data?.error?.message || error?.message || 'Unknown error';
     const semanticMessage = status === 404 ? 'record not found' : 

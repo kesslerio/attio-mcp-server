@@ -13,6 +13,7 @@
  * - Performance validation
  */
 
+
 import {
   describe,
   it,
@@ -154,11 +155,22 @@ describe.skipIf(
 )('Universal Tools E2E Test Suite', () => {
   beforeAll(async () => {
     await E2ETestBase.setup({
-      requiresRealApi: false, // Use mock data instead of real API for reliable testing
+      requiresRealApi: process.env.E2E_MODE === 'true', // Use real API when E2E_MODE=true
       cleanupAfterTests: true,
       timeout: 120000,
     });
   }, 120000);
+
+  // Store the real API key before test setup can override it
+  const realApiKey = process.env.ATTIO_API_KEY;
+  
+  beforeEach(async () => {
+    // Restore real API key for E2E tests (in case test setup stubbed it)
+    if (process.env.E2E_MODE === 'true' && realApiKey) {
+      process.env.ATTIO_API_KEY = realApiKey;
+    }
+    
+  });
 
   afterAll(async () => {
     // Additional cleanup for any records we created
@@ -315,8 +327,12 @@ describe.skipIf(
           resource_type: 'people',
           record_data: {
             values: {
-              name: personData.name,
-              email_addresses: personData.email_addresses,
+              name: {
+                first_name: 'Test',
+                last_name: 'Person', 
+                full_name: 'Test Person'
+              },
+              email_addresses: [`e2e-person-${Date.now()}@example.com`], // Array of strings
             },
           },
         });

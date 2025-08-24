@@ -67,7 +67,23 @@ export class UniversalMetadataService {
       }
 
       const response = await client.get(path);
-      const attributes = response.data.data || [];
+      
+      const attributes = response?.data?.data || [];
+      
+      // Validate we got an array of attributes
+      if (!Array.isArray(attributes)) {
+        if (process.env.E2E_MODE === 'true') {
+          console.error(`[DEBUG] Expected array, got:`, {
+            attributes,
+            type: typeof attributes,
+            responseData: response?.data,
+          });
+        }
+        throw {
+          status: 500,
+          body: { code: 'invalid_schema', message: `Expected array of attributes for ${resourceType}, got ${typeof attributes}` }
+        };
+      }
 
       // Create mapping from title to api_slug for compatibility
       const mappings: Record<string, string> = {};
@@ -89,10 +105,27 @@ export class UniversalMetadataService {
         resource_type: resourceType,
       };
     } catch (error: unknown) {
+      
       console.error(
         `Failed to discover attributes for ${resourceType}:`,
         error
       );
+      
+      // If it's a 404 or similar API error, convert to structured error for MCP error detection
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        const status = axiosError.response?.status || 500;
+        const message = axiosError.response?.data?.error?.message || 
+                       axiosError.response?.data?.message ||
+                       axiosError.message ||
+                       `API error: ${status}`;
+        
+        throw {
+          status,
+          body: { code: 'api_error', message: `Failed to discover ${resourceType} attributes: ${message}` }
+        };
+      }
+      
       throw new Error(
         `Failed to discover ${resourceType} attributes: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -209,21 +242,40 @@ export class UniversalMetadataService {
     const client = getAttioClient();
 
     try {
-      // Convert resource type to API slug for record-level operations (uses singular object api_slugs)
-      // Note: For record operations, Attio uses /objects/{singular_slug}/records/{record_id}
+      // Convert resource type to API slug for record-level operations (uses plural object api_slugs)
+      // Note: For record operations, Attio uses /objects/{plural_slug}/records/{record_id}
       const OBJECT_SLUG_MAP: Record<string, string> = {
-        companies: 'company',
-        people: 'person', 
-        deals: 'deal',
-        tasks: 'task',
-        records: 'record',
-        lists: 'list'
+        companies: 'companies',
+        people: 'people', 
+        deals: 'deals',
+        tasks: 'tasks',
+        records: 'records',
+        lists: 'lists'
       };
       const resourceSlug = OBJECT_SLUG_MAP[resourceType.toLowerCase()] || resourceType.toLowerCase();
       const response = await client.get(
         `/objects/${resourceSlug}/records/${recordId}`
       );
-      return response?.data?.data?.values || {};
+      
+      // Add null guards to prevent undefined → {} conversion
+      if (!response || !response.data) {
+        throw {
+          status: 500,
+          body: { code: 'invalid_response', message: `Invalid API response for ${resourceType} record: ${recordId}` }
+        };
+      }
+      
+      const result = response.data.data?.values;
+      
+      // Check for empty or missing result
+      if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
+        throw {
+          status: 404,
+          body: { code: 'not_found', message: `${resourceType} record with ID "${recordId}" not found.` }
+        };
+      }
+      
+      return result;
     } catch (error: unknown) {
       console.error(
         `Failed to get attributes for ${resourceType} record ${recordId}:`,

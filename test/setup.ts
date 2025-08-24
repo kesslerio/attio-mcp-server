@@ -154,11 +154,13 @@ const originalConsole = {
   debug: console.debug,
 };
 
-// Set up environment variables for testing
+// Set up environment variables for testing (skip for E2E tests)
 beforeEach(() => {
-  // Mock environment variables for API initialization
-  vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
-  vi.stubEnv('ATTIO_WORKSPACE_ID', 'test-workspace-id');
+  // Mock environment variables for API initialization (skip for E2E tests)
+  if (process.env.E2E_MODE !== 'true') {
+    vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
+    vi.stubEnv('ATTIO_WORKSPACE_ID', 'test-workspace-id');
+  }
 
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
