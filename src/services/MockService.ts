@@ -19,12 +19,38 @@ import { extractRecordId } from '../utils/validation/uuid-validation.js';
  * Environment detection for mock injection
  */
 function shouldUseMockData(): boolean {
-  return (
-    process.env.E2E_MODE === 'true' ||
+  // When E2E_MODE=true, use REAL API calls (not mocks)
+  if (process.env.E2E_MODE === 'true') {
+    return false;
+  }
+
+  // For other test modes, use mock data
+  if (
     process.env.USE_MOCK_DATA === 'true' ||
     process.env.OFFLINE_MODE === 'true' ||
     process.env.PERFORMANCE_TEST === 'true'
-  );
+  ) {
+    return true;
+  }
+
+  // For unit tests and local development, use mocks
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+
+  // For vitest test runner without explicit flags, use mocks
+  try {
+    const isVitest = typeof globalThis.vi !== 'undefined' || typeof global.vi !== 'undefined';
+    const isTestProcess = process.env._ && process.env._.includes('vitest');
+    
+    if (isVitest || isTestProcess) {
+      return true;
+    }
+  } catch {
+    // Ignore errors in detection
+  }
+
+  return false;
 }
 
 /**

@@ -39,8 +39,17 @@ export class UniversalMetadataService {
     const client = getAttioClient();
 
     try {
-      // Convert resource type to API slug (e.g., UniversalResourceType.PEOPLE -> 'people')
-      const resourceSlug = resourceType.toLowerCase();
+      // Convert resource type to API slug for schema discovery (uses plural object api_slugs)
+      // Note: Attio's schema discovery uses /objects/{api_slug}/attributes where api_slug is plural
+      const OBJECT_SLUG_MAP: Record<string, string> = {
+        companies: 'companies',
+        people: 'people', 
+        deals: 'deals',
+        tasks: 'tasks',
+        records: 'records',
+        lists: 'lists'
+      };
+      const resourceSlug = OBJECT_SLUG_MAP[resourceType.toLowerCase()] || resourceType.toLowerCase();
       let path = `/objects/${resourceSlug}/attributes`;
 
       // NEW: Add category filtering to query parameters with security validation
@@ -200,8 +209,17 @@ export class UniversalMetadataService {
     const client = getAttioClient();
 
     try {
-      // Convert resource type to API slug (e.g., UniversalResourceType.PEOPLE -> 'people')
-      const resourceSlug = resourceType.toLowerCase();
+      // Convert resource type to API slug for record-level operations (uses singular object api_slugs)
+      // Note: For record operations, Attio uses /objects/{singular_slug}/records/{record_id}
+      const OBJECT_SLUG_MAP: Record<string, string> = {
+        companies: 'company',
+        people: 'person', 
+        deals: 'deal',
+        tasks: 'task',
+        records: 'record',
+        lists: 'list'
+      };
+      const resourceSlug = OBJECT_SLUG_MAP[resourceType.toLowerCase()] || resourceType.toLowerCase();
       const response = await client.get(
         `/objects/${resourceSlug}/records/${recordId}`
       );

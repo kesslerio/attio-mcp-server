@@ -18,6 +18,7 @@ import { findToolConfig } from '../registry.js';
 import { PerformanceTimer, OperationType } from '../../../utils/logger.js';
 import { sanitizeMcpResponse } from '../../../utils/json-serializer.js';
 import { computeErrorWithContext } from '../../../utils/error-detection.js';
+import { toMcpResult, isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
 
 // Import operation handlers
 import {
@@ -361,6 +362,17 @@ export async function executeToolRequest(request: CallToolRequest) {
       const isE2EMode =
         process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 
+      // 🧪 DEBUG: Log E2E mode detection
+      if (toolName === 'create-record') {
+        console.error('🧪 E2E MODE DETECTION', {
+          toolName,
+          E2E_MODE: process.env.E2E_MODE,
+          NODE_ENV: process.env.NODE_ENV,
+          isE2EMode,
+          willUseRawJSON: isE2EMode && (toolName === 'create-record' || toolName === 'update-record' || toolName === 'create-note')
+        });
+      }
+
       if (
         isE2EMode &&
         (toolName === 'create-record' || toolName === 'update-record' || toolName === 'create-note')
@@ -418,6 +430,17 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Use explicit error detection instead of string matching
       const errorAnalysis = computeErrorWithContext(rawResult);
 
+      // 🧪 DEBUG: Log error analysis for problematic tools
+      if (toolName === 'create-record' || toolName === 'create-note' || toolName === 'get-record-details' || toolName === 'update-record' || toolName === 'delete-record') {
+        console.error('🧪 ERROR ANALYSIS', {
+          toolName,
+          rawResultType: typeof rawResult,
+          rawResultKeys: rawResult ? Object.keys(rawResult) : null,
+          errorAnalysisResult: errorAnalysis,
+          formattedResultLength: formattedResult.length
+        });
+      }
+
       result = {
         content: [{ type: 'text', text: formattedResult }],
         isError: errorAnalysis.isError,
@@ -467,6 +490,13 @@ export async function executeToolRequest(request: CallToolRequest) {
     const sanitizedResult = sanitizeMcpResponse(result);
     return sanitizedResult;
   } catch (error: unknown) {
+    // Check if this is a structured HTTP response from our services
+    if (isHttpResponseLike(error)) {
+      const mcpResult = toMcpResult(error);
+      const sanitizedResult = sanitizeMcpResponse(mcpResult);
+      return sanitizedResult;
+    }
+    
     // Enhanced error handling with structured logging
     const errorMessage =
       error instanceof Error

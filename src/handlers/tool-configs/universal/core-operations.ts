@@ -55,6 +55,7 @@ import { UniversalUtilityService } from '../../../services/UniversalUtilityServi
 
 import { CallToolRequest, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ToolConfig } from '../../tool-types.js';
+import { toMcpResult, isHttpResponseLike } from '../../../lib/http/toMcpResult.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -98,18 +99,27 @@ export const getRecordDetailsConfig: UniversalToolConfig = {
   handler: async (
     params: UniversalRecordDetailsParams
   ): Promise<AttioRecord> => {
+    console.error('🧪 GET-RECORD-DETAILS HANDLER START', { record_id: params.record_id });
     try {
       const sanitizedParams = validateUniversalToolParams(
         'get-record-details',
         params
       );
-      return await handleUniversalGetDetails(sanitizedParams);
+      console.error('🧪 CALLING handleUniversalGetDetails');
+      const result = await handleUniversalGetDetails(sanitizedParams);
+      console.error('🧪 handleUniversalGetDetails SUCCESS', { result });
+      return result;
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'get details',
-        params.resource_type,
-        error
-      );
+      console.error('🧪 GET-RECORD-DETAILS HANDLER CAUGHT ERROR', { error });
+      
+      // Check if this is a structured HTTP response from our services
+      if (isHttpResponseLike(error)) {
+        // Let the dispatcher handle HTTP → MCP mapping
+        throw error;
+      }
+      
+      // For other errors, create a structured error response
+      throw ErrorService.createUniversalError('get details', params.resource_type, error);
     }
   },
   formatResult: (
@@ -293,7 +303,7 @@ export const createRecordConfig: UniversalToolConfig = {
  */
 export const updateRecordConfig: UniversalToolConfig = {
   name: 'update-record',
-  handler: async (params: UniversalUpdateParams): Promise<AttioRecord> => {
+  handler: async (params: UniversalUpdateParams): Promise<AttioRecord | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'update-record',
@@ -309,17 +319,26 @@ export const updateRecordConfig: UniversalToolConfig = {
 
       return await handleUniversalUpdate(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'update',
-        params.resource_type,
-        error
-      );
+      // Return MCP-compliant error response instead of throwing
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+        return { error: `record not found: ${params.record_id}`, success: false };
+      }
+      if (errorMessage.includes('validation') || errorMessage.includes('Invalid uuid')) {
+        return { error: `invalid record_id format: ${params.record_id}`, success: false };
+      }
+      return { error: errorMessage, success: false };
     }
   },
   formatResult: (
-    record: AttioRecord,
+    record: AttioRecord | { error: string; success: boolean },
     resourceType?: UniversalResourceType
   ): string => {
+    // Handle error responses
+    if (record && typeof record === 'object' && 'error' in record && 'success' in record) {
+      return JSON.stringify(record);
+    }
+    
     if (!record) {
       return 'Record update failed';
     }
@@ -349,7 +368,7 @@ export const deleteRecordConfig: UniversalToolConfig = {
   name: 'delete-record',
   handler: async (
     params: UniversalDeleteParams
-  ): Promise<{ success: boolean; record_id: string }> => {
+  ): Promise<{ success: boolean; record_id: string } | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'delete-record',
@@ -357,17 +376,25 @@ export const deleteRecordConfig: UniversalToolConfig = {
       );
       return await handleUniversalDelete(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'delete',
-        params.resource_type,
-        error
-      );
+      // Return MCP-compliant error response instead of throwing
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+        return { error: `record not found: ${params.record_id}`, success: false };
+      }
+      if (errorMessage.includes('validation') || errorMessage.includes('Invalid uuid')) {
+        return { error: `invalid record_id format: ${params.record_id}`, success: false };
+      }
+      return { error: errorMessage, success: false };
     }
   },
   formatResult: (
-    result: { success: boolean; record_id: string },
+    result: { success: boolean; record_id: string } | { error: string; success: boolean },
     resourceType?: UniversalResourceType
   ): string => {
+    // Handle error responses
+    if (result && typeof result === 'object' && 'error' in result && 'success' in result) {
+      return JSON.stringify(result);
+    }
     if (!result.success) {
       return `❌ Failed to delete ${resourceType ? getSingularResourceType(resourceType) : 'record'} with ID: ${result.record_id}`;
     }
@@ -387,7 +414,7 @@ export const getAttributesConfig: UniversalToolConfig = {
   name: 'get-attributes',
   handler: async (
     params: UniversalAttributesParams
-  ): Promise<Record<string, unknown>> => {
+  ): Promise<Record<string, unknown> | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'get-attributes',
@@ -395,11 +422,9 @@ export const getAttributesConfig: UniversalToolConfig = {
       );
       return await handleUniversalGetAttributes(sanitizedParams);
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'get attributes',
-        params.resource_type,
-        error
-      );
+      // Return MCP-compliant error response instead of throwing
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return { error: errorMessage, success: false };
     }
   },
   formatResult: (
@@ -469,7 +494,7 @@ export const discoverAttributesConfig: UniversalToolConfig = {
   handler: async (params: {
     resource_type: UniversalResourceType;
     categories?: string[]; // NEW: Category filtering support
-  }): Promise<any> => {
+  }): Promise<any | { error: string; success: boolean }> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'discover-attributes',
@@ -482,11 +507,9 @@ export const discoverAttributesConfig: UniversalToolConfig = {
         }
       );
     } catch (error: unknown) {
-      throw ErrorService.createUniversalError(
-        'discover attributes',
-        params.resource_type,
-        error
-      );
+      // Return MCP-compliant error response instead of throwing
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return { error: errorMessage, success: false };
     }
   },
   formatResult: (schema: any, resourceType?: UniversalResourceType): string => {

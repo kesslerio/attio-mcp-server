@@ -21,6 +21,7 @@ import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.j
 // Import error handling utilities
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
 import { ErrorEnhancer } from '../errors/enhanced-api-errors.js';
+import { toMcpResult, HttpResponse } from '../lib/http/toMcpResult.js';
 
 // Import resource-specific retrieval functions
 import { getCompanyDetails } from '../objects/companies/index.js';
@@ -116,19 +117,41 @@ export class UniversalRetrievalService {
         // Cache 404 responses using CachingService
         CachingService.cache404Response(resource_type, record_id);
 
-        // Issue #416: Clear "not found" message for valid UUIDs
-        const enhancedError = createRecordNotFoundError(
-          record_id,
-          resource_type
-        );
         enhancedPerformanceTracker.endOperation(
           perfId,
           false,
-          // Issue #425: Use safe error message extraction
-          ErrorEnhancer.getErrorMessage(enhancedError),
+          'Record not found',
           404
         );
-        throw enhancedError;
+        
+        // Return structured HTTP response for MCP error mapping
+        throw {
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: `Record with ID "${record_id}" not found.`,
+            type: 'invalid_request_error'
+          }
+        } as HttpResponse;
+      }
+
+      if (statusCode === 400) {
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          false,
+          'Invalid request',
+          400
+        );
+        
+        // Return structured HTTP response for MCP error mapping  
+        throw {
+          status: 400,
+          body: {
+            code: 'validation_error',
+            message: `Invalid record_id format: ${record_id}`,
+            type: 'invalid_request_error'
+          }
+        } as HttpResponse;
       }
 
       // Auto-enhance other errors with context
