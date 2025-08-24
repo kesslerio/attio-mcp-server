@@ -453,7 +453,6 @@ export const searchByContentConfig: UniversalToolConfig = {
         case ContentSearchType.NOTES:
           // Use client-side filtering as per Attio API requirements
           return await searchRecordsByNotesContent(resource_type, search_query);
-          break;
 
         case ContentSearchType.ACTIVITY:
           if (resource_type === UniversalResourceType.PEOPLE) {

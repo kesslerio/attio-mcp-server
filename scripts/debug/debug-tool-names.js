@@ -7,6 +7,7 @@
  */
 
 import { universalToolDefinitions } from '../../dist/handlers/tool-configs/universal/index.js';
+import { TOOL_MAPPING_RULES } from '../../dist/test/e2e/utils/tool-migration.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,10 +26,17 @@ const showLow = args.includes('--low');
 const showCritical = args.includes('--critical');
 
 if (args.includes('--help') || args.includes('-h')) {
-  console.log('🔍 Smart Tool Name Validation');
-  console.log('=============================\n');
-  console.log('Intelligently scans the codebase for legacy tool name usage,');
-  console.log('filtering out legitimate references to focus on actual problems.\n');
+  console.log('🔍 Comprehensive Legacy Tool Detection & Analysis');
+  console.log('==============================================\n');
+  console.log('Comprehensively discovers and analyzes legacy tool usage across the codebase.');
+  console.log('Combines authoritative mappings with dynamic discovery for complete coverage.\n');
+  console.log('Features:');
+  console.log('  ✅ Dynamic discovery from all handler configurations (86+ tools)');
+  console.log('  ✅ Authoritative mappings from tool-migration.ts (28+ tools)');
+  console.log('  ✅ Tool categorization (CRUD, Search, Info, Batch, Notes, etc.)');
+  console.log('  ✅ Intelligent universal tool suggestions');
+  console.log('  ✅ Source file tracking and resource type inference');
+  console.log('  ✅ Smart filtering of legitimate references\n');
   console.log('Usage:');
   console.log('  node scripts/debug/debug-tool-names.js [OPTIONS]\n');
   console.log('Options:');
@@ -45,12 +53,17 @@ if (args.includes('--help') || args.includes('-h')) {
   console.log('  node scripts/debug/debug-tool-names.js --high --medium');
   console.log('  node scripts/debug/debug-tool-names.js --critical');
   console.log('  node scripts/debug/debug-tool-names.js --low\n');
+  console.log('DISCOVERY SOURCES:');
+  console.log('  - src/handlers/tool-configs/ (all non-universal configs)');
+  console.log('  - test/e2e/utils/tool-migration.ts (authoritative mappings)');
+  console.log('  - Pattern-based detection for edge cases\n');
   console.log('EXCLUDED (automatically filtered out):');
   console.log('  - Tool config definitions in src/handlers/tool-configs/');
   console.log('  - Migration documentation in docs/migration/, docs/universal-tools/');
   console.log('  - Lines with migration indicators (→, ->, "Should be")');
   console.log('  - Test mapping files');
-  console.log('  - Archive files\n');
+  console.log('  - Archive files');
+  console.log('  - Legacy test directories (test/legacy/, test/debug/, test/manual/)\n');
   process.exit(0);
 }
 
@@ -67,29 +80,275 @@ console.log('✅ Current Universal Tools:', actualTools.length);
 actualTools.forEach(tool => console.log(`  - ${tool}`));
 console.log('');
 
-// Known legacy/incorrect tool mappings to check for
-const legacyTools = [
-  'get-record', // Should be get-record-details
-  'search-companies', // Should be search-records
-  'search-people', // Should be search-records
-  'list-records', // Should be search-records
-  'list-tasks', // Should be search-records
-  'create-company', // Should be create-record
-  'create-person', // Should be create-record
-  'create-task', // Should be create-record
-  'update-company', // Should be update-record
-  'update-person', // Should be update-record
-  'update-task', // Should be update-record
-  'delete-company', // Should be delete-record
-  'delete-person', // Should be delete-record
-  'delete-task', // Should be delete-record
-  'get-company-details', // Should be get-record-details
-  'get-person-details', // Should be get-record-details
-  'get-task-details', // Should be get-record-details
-];
+/**
+ * Dynamically discover all legacy tools by scanning handler configurations
+ */
+function discoverLegacyToolsFromConfigs() {
+  const discoveredTools = [];
+  const seenToolNames = new Set(); // Prevent duplicates
+  const srcDir = path.join(projectRoot, 'src', 'handlers', 'tool-configs');
+  
+  // Recursively scan for tool config files (excluding universal directory)
+  function scanConfigFiles(dir) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relativePath = path.relative(srcDir, fullPath);
+        
+        if (entry.isDirectory()) {
+          // Skip universal directory - these are not legacy tools
+          if (entry.name === 'universal') {
+            continue;
+          }
+          scanConfigFiles(fullPath);
+        } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
+          try {
+            const content = fs.readFileSync(fullPath, 'utf8');
+            
+            // Extract tool names from config definitions
+            // Look for patterns: name: 'tool-name' or name: "tool-name"
+            const nameMatches = content.matchAll(/name:\s*['"`]([^'"`]+)['"`]/g);
+            
+            for (const match of nameMatches) {
+              const toolName = match[1];
+              
+              // Skip duplicates
+              if (seenToolNames.has(toolName)) {
+                continue;
+              }
+              seenToolNames.add(toolName);
+              
+              const category = categorizeTool(toolName, relativePath);
+              
+              discoveredTools.push({
+                name: toolName,
+                category,
+                sourceFile: relativePath,
+                universal: suggestUniversalTool(toolName, category),
+                resourceType: inferResourceType(toolName, relativePath)
+              });
+            }
+          } catch (error) {
+            // Skip files that can't be read
+          }
+        }
+      }
+    } catch (error) {
+      // Skip directories that can't be read
+    }
+  }
+  
+  if (fs.existsSync(srcDir)) {
+    scanConfigFiles(srcDir);
+  }
+  
+  return discoveredTools;
+}
 
-console.log('🚫 Legacy Tools to Check For:', legacyTools.length);
-legacyTools.forEach(tool => console.log(`  - ${tool}`));
+/**
+ * Categorize a tool based on its name and source file
+ */
+function categorizeTool(toolName, sourceFile) {
+  // CRUD operations
+  if (toolName.match(/^(create|update|delete|patch)-/)) return 'CRUD';
+  
+  // Search operations
+  if (toolName.match(/^(search|find|list|get-list)-/) || toolName.includes('-search-')) return 'Search';
+  if (toolName.match(/^advanced-search-/) || toolName.includes('paginated-search')) return 'Search';
+  if (toolName.match(/^rate-limited-search-/)) return 'Search';
+  
+  // Info/Details operations
+  if (toolName.match(/^get-.*-(details|info|basic-info|business-info|contact-info|social-info)$/)) return 'Info';
+  if (toolName.match(/^(get|fetch)-/) && !toolName.includes('list')) return 'Info';
+  
+  // Batch operations
+  if (toolName.match(/^batch-/)) return 'Batch';
+  
+  // Note operations
+  if (toolName.includes('-note') || toolName.includes('-notes')) return 'Notes';
+  
+  // Relationship operations
+  if (toolName.match(/^(link|unlink)-/) || toolName.includes('-relationship')) return 'Relationships';
+  
+  // List operations
+  if (toolName.match(/-(to|from)-list$/) || toolName.includes('list-entries')) return 'Lists';
+  
+  // Attribute operations
+  if (toolName.includes('attribute') || toolName.includes('field')) return 'Attributes';
+  
+  // Prompt operations
+  if (toolName.includes('prompt')) return 'Prompts';
+  
+  // Filter operations
+  if (toolName.includes('filter')) return 'Filters';
+  
+  // Default to Specialized
+  return 'Specialized';
+}
+
+/**
+ * Infer resource type from tool name and source file
+ */
+function inferResourceType(toolName, sourceFile) {
+  // Extract from source file path
+  if (sourceFile.includes('companies/')) return 'companies';
+  if (sourceFile.includes('people/')) return 'people';
+  if (sourceFile.includes('tasks')) return 'tasks';
+  if (sourceFile.includes('deals/')) return 'deals';
+  if (sourceFile.includes('lists')) return 'lists';
+  if (sourceFile.includes('records/')) return 'records';
+  
+  // Extract from tool name
+  if (toolName.includes('company') || toolName.includes('companies')) return 'companies';
+  if (toolName.includes('person') || toolName.includes('people')) return 'people';
+  if (toolName.includes('task') || toolName.includes('tasks')) return 'tasks';
+  if (toolName.includes('deal') || toolName.includes('deals')) return 'deals';
+  if (toolName.includes('list') || toolName.includes('lists')) return 'lists';
+  if (toolName.includes('record') || toolName.includes('records')) return 'records';
+  if (toolName.includes('note') || toolName.includes('notes')) return 'notes';
+  if (toolName.includes('prompt')) return 'prompts';
+  
+  return 'any';
+}
+
+/**
+ * Suggest appropriate universal tool based on legacy tool pattern
+ */
+function suggestUniversalTool(toolName, category) {
+  switch (category) {
+    case 'CRUD':
+      if (toolName.startsWith('create-')) return 'create-record';
+      if (toolName.startsWith('update-')) return 'update-record';
+      if (toolName.startsWith('delete-')) return 'delete-record';
+      return 'create-record | update-record | delete-record';
+      
+    case 'Search':
+      if (toolName.includes('advanced')) return 'advanced-search';
+      return 'search-records';
+      
+    case 'Info':
+      return 'get-record-details';
+      
+    case 'Batch':
+      return 'batch-search (if searching) | create-record + update-record (if modifying)';
+      
+    case 'Notes':
+      if (toolName.includes('create') || toolName.includes('add')) return 'create-note';
+      if (toolName.includes('get') || toolName.includes('list')) return 'list-notes';
+      if (toolName.includes('update')) return 'update-note';
+      if (toolName.includes('delete')) return 'delete-note';
+      return 'create-note | list-notes | update-note | delete-note';
+      
+    case 'Relationships':
+      return 'search-by-relationship | update-record (for linking/unlinking)';
+      
+    case 'Lists':
+      if (toolName.includes('entries')) return 'search-by-relationship';
+      if (toolName.includes('add') || toolName.includes('remove')) return 'update-record';
+      return 'search-records (for lists) | search-by-relationship (for entries)';
+      
+    case 'Attributes':
+      return 'get-record-details | update-record';
+      
+    case 'Prompts':
+      return 'search-records (with resource_type: "prompts")';
+      
+    case 'Filters':
+      return 'advanced-search';
+      
+    default:
+      return 'search-records | get-record-details | create-record | update-record';
+  }
+}
+
+// Extract legacy tools from authoritative tool migration mappings
+const legacyToolsFromMappings = TOOL_MAPPING_RULES.map(rule => ({
+  name: rule.legacyToolName,
+  universal: rule.universalToolName,
+  resourceType: rule.resourceType,
+  category: 'Mapped',
+  description: rule.description || `${rule.legacyToolName} → ${rule.universalToolName}`,
+  sourceFile: 'tool-migration.ts'
+}));
+
+// Dynamically discover all legacy tools from handler configurations
+const discoveredLegacyTools = discoverLegacyToolsFromConfigs();
+
+// CRITICAL FIX: Filter out universal tools from discovered tools
+// This prevents universal tools from being flagged as legacy
+const discoveredToolsWithoutUniversal = discoveredLegacyTools.filter(tool => 
+  !actualTools.includes(tool.name)
+);
+
+// Remove duplicates (prefer mapping rules over discovered tools)
+const mappedToolNames = new Set(legacyToolsFromMappings.map(t => t.name));
+const uniqueDiscoveredTools = discoveredToolsWithoutUniversal.filter(t => !mappedToolNames.has(t.name));
+
+// Combine all legacy tools for comprehensive detection
+const allLegacyTools = [...legacyToolsFromMappings, ...uniqueDiscoveredTools];
+const legacyToolNames = allLegacyTools.map(tool => tool.name);
+const legacyTools = legacyToolNames; // For backward compatibility with existing code
+
+// VALIDATION: Check for false positives (universal tools flagged as legacy)
+const falsePositives = legacyTools.filter(tool => actualTools.includes(tool));
+if (falsePositives.length > 0) {
+  console.warn('⚠️  WARNING: Universal tools detected in legacy tool list!');
+  console.warn('   These should NOT be flagged as legacy:', falsePositives.join(', '));
+  console.warn('   This indicates a bug in the discovery logic.\\n');
+}
+
+// Create lookup map for suggestions with enhanced details
+const legacyToolSuggestions = {};
+const legacyToolDetails = {};
+allLegacyTools.forEach(tool => {
+  const suggestion = tool.resourceType === 'any' 
+    ? tool.universal
+    : `${tool.universal} (with resource_type: "${tool.resourceType}")`;
+  legacyToolSuggestions[tool.name] = suggestion;
+  legacyToolDetails[tool.name] = tool;
+});
+
+// Display comprehensive statistics
+const categoryStats = allLegacyTools.reduce((stats, tool) => {
+  stats[tool.category] = (stats[tool.category] || 0) + 1;
+  return stats;
+}, {});
+
+console.log('🔍 COMPREHENSIVE LEGACY TOOL DISCOVERY');
+console.log('=====================================\n');
+console.log(`📊 Discovery Results:`);
+console.log(`   - Mapped tools (in tool-migration.ts): ${legacyToolsFromMappings.length}`);
+console.log(`   - Discovered tools (from handler configs): ${uniqueDiscoveredTools.length}`);
+console.log(`   - Universal tools filtered out: ${discoveredLegacyTools.length - discoveredToolsWithoutUniversal.length}`);
+console.log(`   - TOTAL LEGACY TOOLS: ${allLegacyTools.length}\n`);
+
+console.log('📋 Tools by Category:');
+Object.entries(categoryStats).sort(([,a], [,b]) => b - a).forEach(([category, count]) => {
+  console.log(`   - ${category}: ${count} tools`);
+});
+console.log('');
+
+console.log('🚫 All Legacy Tools Detected:', legacyTools.length);
+// Group tools by category for better display
+const toolsByCategory = allLegacyTools.reduce((groups, tool) => {
+  if (!groups[tool.category]) groups[tool.category] = [];
+  groups[tool.category].push(tool.name);
+  return groups;
+}, {});
+
+Object.entries(toolsByCategory).forEach(([category, tools]) => {
+  console.log(`\n  ${category} (${tools.length}):`);
+  tools.slice(0, 8).forEach(tool => console.log(`    - ${tool}`));
+  if (tools.length > 8) {
+    console.log(`    ... and ${tools.length - 8} more`);
+  }
+});
+console.log('');
+
+console.log('🔍 Enhanced Detection: Authoritative mappings + Dynamic config scanning + Pattern-based discovery');
+console.log(`📊 Coverage: ${allLegacyTools.length} legacy tools vs ${actualTools.length} universal tools`);
 console.log('');
 
 // File patterns to search
@@ -148,6 +407,32 @@ function isLegitimateReference(filePath, line, legacyTool) {
   
   // Test mapping files (test utilities for mapping validation)
   if (filePath.includes('test/mapping/') || filePath.includes('test-fixed-mapping')) {
+    return true;
+  }
+  
+  // ENHANCED FALSE POSITIVE DETECTION
+  // Error messages and function parameters
+  if (line.match(new RegExp(`createErrorResponse\\([^,]+,\\s*['"\`]${legacyTool}['"\`]`)) ||
+      line.match(new RegExp(`Error.*['"\`]${legacyTool}['"\`]`)) ||
+      line.match(new RegExp(`console\\.(log|error|warn).*['"\`]${legacyTool}['"\`]`)) ||
+      line.match(new RegExp(`throw.*['"\`]${legacyTool}['"\`]`))) {
+    return true;
+  }
+  
+  // Variable assignments and function parameters
+  if (line.match(new RegExp(`(const|let|var)\\s+\\w+\\s*=\\s*['"\`]${legacyTool}['"\`]`)) ||
+      line.match(new RegExp(`function\\s+\\w+\\([^)]*['"\`]${legacyTool}['"\`][^)]*\\)`))) {
+    return true;
+  }
+  
+  // Comments and documentation strings
+  if (line.trim().startsWith('//') || line.trim().startsWith('*') || 
+      line.includes('* @') || line.includes('/**') || line.includes('*/')) {
+    return true;
+  }
+  
+  // String literals in test descriptions
+  if (line.includes('describe(') || line.includes('it(') || line.includes('test(')) {
     return true;
   }
   
@@ -210,7 +495,7 @@ function searchInFile(filePath, content) {
     return;
   }
   
-  // Full mode: check all patterns
+  // Full mode: CONTEXT-AWARE pattern detection (only actual tool usage)
   legacyTools.forEach(legacyTool => {
     lines.forEach((line, index) => {
       // Pre-filter: skip lines that can't possibly contain the tool name
@@ -218,23 +503,27 @@ function searchInFile(filePath, content) {
         return;
       }
       
-      // Look for quoted tool names and MCP tool calls
-      // Use word boundaries and negative lookahead to avoid matching substrings of valid tools
-      const patterns = [
-        `'${legacyTool}'`,
-        `"${legacyTool}"`,
-        `mcp__attio__${legacyTool}\\b`, // Word boundary to avoid matching get-record within get-record-details
-        `name: '${legacyTool}'`,
-        `name: "${legacyTool}"`,
-        // Handle cases where legacy tool might be in comments or documentation
-        // Use negative lookahead to avoid matching get-record in get-record-details
-        legacyTool === 'get-record' 
-          ? new RegExp(`\\bget-record(?!-details)\\b`, 'g')
-          : new RegExp(`\\b${legacyTool}\\b`, 'g')
+      // CONTEXT-AWARE PATTERNS: Only detect actual tool usage, not string literals
+      const toolCallPatterns = [
+        // MCP tool calls (CRITICAL)
+        new RegExp(`mcp__attio__${legacyTool}\\b`),
+        
+        // Tool calls in handlers (HIGH)
+        new RegExp(`call\\w*Tool\\(['"\`]${legacyTool}['"\`]`),
+        new RegExp(`callTasksTool\\(['"\`]${legacyTool}['"\`]`),
+        
+        // Tool config definitions (HIGH - if not in tool-configs directory)
+        new RegExp(`name:\\s*['"\`]${legacyTool}['"\`]`),
+        
+        // Tool registrations (HIGH)
+        new RegExp(`['"\`]${legacyTool}['"\`]:\\s*\\{[^}]*handler`),
+        
+        // Tool dispatch/lookup (MEDIUM)
+        new RegExp(`\\['${legacyTool}'\\]|\\["${legacyTool}"\\]|\\[\`${legacyTool}\`\\]`)
       ];
       
-      patterns.forEach(pattern => {
-        if (typeof pattern === 'string' ? line.includes(pattern) : pattern.test(line)) {
+      toolCallPatterns.forEach(pattern => {
+        if (pattern.test(line)) {
           stats.total++;
           
           // Skip legitimate references entirely
@@ -252,7 +541,7 @@ function searchInFile(filePath, content) {
             line: index + 1,
             content: line.trim(),
             legacyTool,
-            pattern: typeof pattern === 'string' ? pattern : pattern.source,
+            pattern: pattern.source,
             severity
           });
         }
@@ -267,10 +556,25 @@ function searchDirectory(dir) {
     
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
+      const relativePath = path.relative(projectRoot, fullPath);
       
       if (entry.isDirectory()) {
-        // Skip node_modules, .git, dist (built files), and .archive
-        if (!['node_modules', '.git', 'dist', '.archive', '.windsurf'].includes(entry.name)) {
+        // Skip node_modules, .git, dist (built files), .archive, and legacy test directories
+        const skipDirectories = ['node_modules', '.git', 'dist', '.archive', '.windsurf'];
+        const skipPaths = [
+          'test/legacy',
+          'test/debug', 
+          'test/manual'
+        ];
+        
+        // Check if this is a directory we should skip
+        const shouldSkipDirectory = skipDirectories.includes(entry.name);
+        const shouldSkipPath = skipPaths.some(skipPath => 
+          relativePath.startsWith(skipPath) || 
+          fullPath.includes(path.sep + skipPath.replace('/', path.sep))
+        );
+        
+        if (!shouldSkipDirectory && !shouldSkipPath) {
           searchDirectory(fullPath);
         }
       } else if (entry.isFile()) {
@@ -383,29 +687,17 @@ if (priorityFindings.length === 0) {
           console.log(`    Line ${finding.line}: ${finding.content}`);
           console.log(`      🔍 Found: ${finding.legacyTool}`);
           
-          // Suggest replacement
-          const suggestions = {
-            'get-record': 'get-record-details',
-            'search-companies': 'search-records (with resource_type: "companies")',
-            'search-people': 'search-records (with resource_type: "people")',
-            'list-records': 'search-records',
-            'list-tasks': 'search-records (with resource_type: "tasks")',
-            'create-company': 'create-record (with resource_type: "companies")',
-            'create-person': 'create-record (with resource_type: "people")',
-            'create-task': 'create-record (with resource_type: "tasks")',
-            'update-company': 'update-record (with resource_type: "companies")',
-            'update-person': 'update-record (with resource_type: "people")',
-            'update-task': 'update-record (with resource_type: "tasks")',
-            'delete-company': 'delete-record (with resource_type: "companies")',
-            'delete-person': 'delete-record (with resource_type: "people")',
-            'delete-task': 'delete-record (with resource_type: "tasks")',
-            'get-company-details': 'get-record-details (with resource_type: "companies")',
-            'get-person-details': 'get-record-details (with resource_type: "people")',
-            'get-task-details': 'get-record-details (with resource_type: "tasks")'
-          };
-          
-          if (suggestions[finding.legacyTool]) {
-            console.log(`      💡 Suggest: ${suggestions[finding.legacyTool]}`);
+          // Enhanced suggestion with category and source information
+          const toolDetail = legacyToolDetails[finding.legacyTool];
+          if (toolDetail) {
+            console.log(`      📂 Category: ${toolDetail.category} (${toolDetail.resourceType})`);
+            console.log(`      📄 Source: ${toolDetail.sourceFile}`);
+            console.log(`      💡 Suggest: ${legacyToolSuggestions[finding.legacyTool]}`);
+          } else if (legacyToolSuggestions[finding.legacyTool]) {
+            console.log(`      💡 Suggest: ${legacyToolSuggestions[finding.legacyTool]}`);
+          } else {
+            // Fallback pattern-based suggestion
+            console.log(`      💡 Suggest: Check tool-migration.ts for correct universal tool mapping`);
           }
         });
         console.log('');

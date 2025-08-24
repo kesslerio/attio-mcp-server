@@ -174,69 +174,60 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     description: 'Legacy get-person-details → universal get-record-details',
   },
 
-  // Notes Management Tools - These need special handling
+  // Notes Management Tools - Use dedicated note APIs
   {
     legacyToolName: 'get-company-notes',
-    universalToolName: 'search-records',
-    resourceType: 'notes', // FIXED: Notes have their own resource type
+    universalToolName: 'list-notes',
+    resourceType: 'companies',
     parameterTransform: (params: any) => ({
-      resource_type: 'notes', // FIXED: Search in notes resource
-      filters: {
-        linked_record_type: 'companies',
-        linked_record_id: params.company_id || params.companyId,
-      },
+      resource_type: 'companies',
+      record_id: params.company_id || params.companyId,
       limit: params.limit || 50,
+      offset: params.offset || 0,
     }),
-    description: 'Legacy get-company-notes → universal search-records',
+    description: 'Legacy get-company-notes → universal list-notes',
   },
   {
     legacyToolName: 'get-person-notes',
-    universalToolName: 'search-records',
-    resourceType: 'notes', // FIXED: Notes have their own resource type
+    universalToolName: 'list-notes',
+    resourceType: 'people',
     parameterTransform: (params: any) => ({
-      resource_type: 'notes', // FIXED: Search in notes resource
-      filters: {
-        linked_record_type: 'people',
-        linked_record_id: params.person_id || params.personId,
-      },
+      resource_type: 'people',
+      record_id: params.person_id || params.personId,
       limit: params.limit || 50,
+      offset: params.offset || 0,
     }),
-    description: 'Legacy get-person-notes → universal search-records',
+    description: 'Legacy get-person-notes → universal list-notes',
   },
   {
     legacyToolName: 'create-company-note',
-    universalToolName: 'create-record',
-    resourceType: 'notes', // FIXED: Notes have their own resource type
+    universalToolName: 'create-note',
+    resourceType: 'companies',
     parameterTransform: (params: any) => {
-      // FIXED: Use proper notes resource_type and ensure record_data is plain object
       return {
-        resource_type: 'notes', // FIXED: Use notes resource type
-        record_data: {
-          title: params.title,
-          content: params.content,
-          linked_record_type: 'companies',
-          linked_record_id: params.companyId || params.company_id, // Support both camelCase and snake_case
-        },
+        resource_type: 'companies',
+        record_id: params.companyId || params.company_id,
+        title: params.title,
+        content: params.content,
+        format: params.format || 'markdown',
       };
     },
-    description: 'Legacy create-company-note → universal create-record',
+    description: 'Legacy create-company-note → universal create-note',
   },
   {
     legacyToolName: 'create-person-note',
-    universalToolName: 'create-record',
-    resourceType: 'notes', // FIXED: Notes have their own resource type
+    universalToolName: 'create-note',
+    resourceType: 'people',
     parameterTransform: (params: any) => {
       return {
-        resource_type: 'notes', // FIXED: Use notes resource type
-        record_data: {
-          title: params.title,
-          content: params.content,
-          linked_record_type: 'people',
-          linked_record_id: params.personId || params.person_id, // Support both camelCase and snake_case
-        },
+        resource_type: 'people',
+        record_id: params.personId || params.person_id,
+        title: params.title,
+        content: params.content,
+        format: params.format || 'markdown',
       };
     },
-    description: 'Legacy create-person-note → universal create-record',
+    description: 'Legacy create-person-note → universal create-note',
   },
 
   // List Management Tools

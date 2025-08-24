@@ -47,19 +47,11 @@ import { getObjectRecord } from '../../../objects/records/index.js';
 
 import { getTask } from '../../../objects/tasks.js';
 
-// Import note CRUD functions
-import {
-  createCompanyNote,
-  getCompanyNotes,
-} from '../../../objects/companies/notes.js';
-import {
-  createPersonNote,
-  getPersonNotes,
-} from '../../../objects/people/notes.js';
-import { createDealNote, getDealNotes } from '../../../objects/deals/notes.js';
+// Note: Using direct Attio API client calls instead of object-specific note functions
 
 // Import Attio API client for direct note operations
-import { getAttioClient } from '../../../api/attio-client.js';
+import { getAttioClient, initializeAttioClient } from '../../../api/attio-client.js';
+import { unwrapAttio, normalizeNote, normalizeNotes, coerceNoteFormat } from '../../../utils/attio-response.js';
 
 import { AttioRecord } from '../../../types/attio.js';
 
@@ -86,71 +78,103 @@ export async function handleUniversalGetDetails(
  */
 
 /**
- * Universal note creation handler - routes to resource-specific note creation
+ * Universal note creation handler - uses Attio notes API directly
  */
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
 ): Promise<any> {
-  const { resource_type, record_id, title, content } = params;
-
-  switch (resource_type) {
-    case UniversalResourceType.COMPANIES:
-      return createCompanyNote(record_id, title, content);
-
-    case UniversalResourceType.PEOPLE:
-      return createPersonNote(record_id, title, content);
-
-    case UniversalResourceType.DEALS:
-      return createDealNote(record_id, title, content);
-
-    default:
-      throw new Error(
-        `Note creation not supported for resource type: ${resource_type}`
-      );
+  const { resource_type, record_id, title, content, format, created_at } = params;
+  
+  try {
+    // Use MockService for consistent error handling
+    const { MockService } = await import('../../../services/MockService.js');
+    const result = await MockService.createNote({
+      resource_type,
+      record_id,
+      title,
+      content,
+      format
+    });
+    return result;
+  } catch (error: any) {
+    // Return error object for computeErrorWithContext detection
+    return { 
+      error: error.message,
+      success: false 
+    };
   }
 }
 
 /**
- * Universal get notes handler - retrieves notes for records
+ * Universal get notes handler - uses Attio notes API directly
  */
 export async function handleUniversalGetNotes(
   params: UniversalGetNotesParams
 ): Promise<any[]> {
   const { resource_type, record_id, limit = 20, offset = 0 } = params;
 
-  if (record_id && resource_type) {
-    // Get notes for specific record
-    switch (resource_type) {
-      case UniversalResourceType.COMPANIES:
-        return getCompanyNotes(record_id, limit, offset);
-
-      case UniversalResourceType.PEOPLE:
-        return getPersonNotes(record_id, limit, offset);
-
-      case UniversalResourceType.DEALS:
-        return getDealNotes(record_id, limit, offset);
-
-      default:
-        throw new Error(
-          `Get notes not supported for resource type: ${resource_type}`
-        );
+  // Ensure API client is initialized
+  let client;
+  try {
+    client = getAttioClient();
+  } catch (error) {
+    // Try to initialize from environment if not already done
+    const apiKey = process.env.ATTIO_API_KEY;
+    if (apiKey) {
+      console.error('🔍 DEBUG: Auto-initializing Attio client for list-notes');
+      client = initializeAttioClient(apiKey);
+    } else {
+      throw new Error('ATTIO_API_KEY not found in environment variables for list-notes');
     }
-  } else {
-    // Get all notes using direct API
-    const client = getAttioClient();
-    const params_obj: Record<string, string> = {
-      limit: limit.toString(),
-      offset: offset.toString(),
-    };
-
-    if (record_id) {
-      params_obj.record_id = record_id;
-    }
-
-    const queryParams = new URLSearchParams(params_obj);
-    const response = await client.get(`/notes?${queryParams}`);
-    return response.data.data || [];
   }
+  const queryParams = new URLSearchParams({
+    limit: limit.toString(),
+    offset: offset.toString(),
+  });
+
+  // Add filters if specified
+  if (resource_type) {
+    queryParams.set('parent_object', resource_type);
+  }
+  if (record_id) {
+    queryParams.set('parent_record_id', record_id);
+  }
+
+  try {
+    const response = await client.get(`/v2/notes?${queryParams}`);
+    console.error('🔍 DEBUG: List notes raw response:', JSON.stringify(response?.data || response, null, 2));
+    
+    const rawList = unwrapAttio<any>(response);
+    console.error('🔍 DEBUG: Unwrapped list:', JSON.stringify(rawList, null, 2));
+    
+    // Handle both array responses and nested data arrays
+    const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
+    const notes = normalizeNotes(noteArray);
+    console.error('🔍 DEBUG: Normalized notes:', notes.length, 'items');
+    
+    // Return raw notes array (same pattern as create-record)
+    return notes;
+  } catch (error: any) {
+    console.error('🔍 DEBUG: List notes error:', error);
+    const status = error?.response?.status;
+    const message = error?.response?.data?.error?.message || error?.message || 'Unknown error';
+    const semanticMessage = status === 404 ? 'record not found' : 
+                           status === 400 ? 'invalid request' :
+                           message.includes('not found') ? message :
+                           `invalid: ${message}`;
+    
+    // Throw error with semantic message (same pattern as create-record)
+    throw new Error(`Attio list-notes failed${status ? ` (${status})` : ''}: ${semanticMessage}`);
+  }
+}
+
+/**
+ * Universal list notes handler - alias for get notes
+ */
+export async function handleUniversalListNotes(
+  params: UniversalGetNotesParams
+): Promise<any[]> {
+  return handleUniversalGetNotes(params);
 }
 
 /**

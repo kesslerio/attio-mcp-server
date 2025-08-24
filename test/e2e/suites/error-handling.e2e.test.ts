@@ -25,7 +25,7 @@ import {
   callListTool,
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
-import { E2EAssertions } from '../utils/assertions.js';
+import { E2EAssertions, type McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 
 describe.skipIf(
@@ -55,16 +55,16 @@ describe.skipIf(
 
       // Create test company for error scenarios
       const companyData = testDataGenerator.companies.basicCompany();
-      const companyResult = await callUniversalTool('create-record', {
+      const companyResult = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       if (
         !companyResult.isError &&
-        companyResult.content?.[0]?.data?.id?.record_id
+(companyResult.content?.[0]?.data as any)?.id?.record_id
       ) {
-        testCompanyId = companyResult.content[0].data.id.record_id;
+        testCompanyId = (companyResult.content[0].data as any).id.record_id;
         console.error(`✅ Created test company: ${testCompanyId}`);
       } else {
         console.warn('⚠️  Could not create test company for error tests');
@@ -72,16 +72,16 @@ describe.skipIf(
 
       // Create test person for error scenarios
       const personData = testDataGenerator.people.basicPerson();
-      const personResult = await callUniversalTool('create-record', {
+      const personResult = (await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: personData,
-      });
+      })) as McpToolResponse;
 
       if (
         !personResult.isError &&
-        personResult.content?.[0]?.data?.id?.record_id
+(personResult.content?.[0]?.data as any)?.id?.record_id
       ) {
-        testPersonId = personResult.content[0].data.id.record_id;
+        testPersonId = (personResult.content[0].data as any).id.record_id;
         console.error(`✅ Created test person: ${testPersonId}`);
       }
     } catch (error: unknown) {
@@ -131,20 +131,20 @@ describe.skipIf(
   describe('Invalid Parameters and Validation Errors', () => {
     it('should handle missing required parameters gracefully', async () => {
       // Test search without required resource_type
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         // Missing resource_type
         query: 'test',
-      });
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(/(resource_type|required)/i);
     });
 
     it('should validate resource_type parameter values', async () => {
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'invalid_resource_type_12345',
         query: 'test',
-      });
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(/(invalid|resource_type|not found)/i);
@@ -152,10 +152,10 @@ describe.skipIf(
 
     it('should handle invalid record IDs gracefully', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: '00000000-0000-0000-0000-000000000000', // Valid UUID format, but doesn't exist
-      });
+      })) as McpToolResponse;
 
       // Debug logging to understand what response we're getting
       console.error('DEBUG: Test response:', {
@@ -163,7 +163,7 @@ describe.skipIf(
         error: response.error,
         contentType: response.content?.[0]?.type,
         contentText: response.content?.[0]?.text,
-        responseKeys: Object.keys(response),
+        responseKeys: Object.keys(response as object),
       });
 
       E2EAssertions.expectMcpError(response);
@@ -173,11 +173,11 @@ describe.skipIf(
     });
 
     it('should validate limit parameters', async () => {
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'test',
         limit: -5, // Invalid negative limit
-      });
+      })) as McpToolResponse;
 
       // May either reject the negative limit or silently use default
       // Both behaviors are acceptable for this validation test
@@ -185,10 +185,10 @@ describe.skipIf(
     });
 
     it('should handle malformed filter objects', async () => {
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'companies',
         filters: 'this_should_be_an_object_not_string', // Invalid filter format
-      });
+      })) as McpToolResponse;
 
       // Should either validate filters or handle gracefully
       expect(response).toBeDefined();
@@ -198,10 +198,10 @@ describe.skipIf(
   describe('Resource Not Found Scenarios', () => {
     it('should handle company not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: '11111111-1111-1111-1111-111111111111', // Valid UUID format, but doesn't exist
-      });
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(
@@ -211,10 +211,10 @@ describe.skipIf(
 
     it('should handle person not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
-      const response = await callUniversalTool('get-record-details', {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'people',
         record_id: '22222222-2222-2222-2222-222222222222', // Valid UUID format, but doesn't exist
-      });
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(
@@ -225,13 +225,13 @@ describe.skipIf(
     it('should handle task not found errors', async () => {
       // Note: update-task actually calls update-record internally with resource_type: 'tasks'
       // The error message might be different than expected
-      const response = await callUniversalTool('update-record', {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'tasks',
         record_id: '33333333-3333-3333-3333-333333333333', // Valid UUID format, but doesn't exist
         record_data: {
           title: 'Updated Title',
         }
-      });
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       // Broader pattern to match various error messages
@@ -241,9 +241,10 @@ describe.skipIf(
     });
 
     it('should handle list not found errors', async () => {
-      const response = await callListTool('get-list-details', {
-        list_id: '44444444-4444-4444-4444-444444444444', // Valid UUID format, but doesn't exist
-      });
+      const response = (await callUniversalTool('get-record-details', {
+        resource_type: 'lists',
+        record_id: '44444444-4444-4444-4444-444444444444', // Valid UUID format, but doesn't exist
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response);
       expect(response.error).toMatch(
@@ -252,9 +253,12 @@ describe.skipIf(
     });
 
     it('should handle note not found errors', async () => {
-      const response = await callNotesTool('get-company-notes', {
-        company_id: '55555555-5555-5555-5555-555555555555', // Valid UUID format, but doesn't exist
-      });
+      const response = (await callNotesTool('list-notes', {
+        resource_type: 'companies',
+        record_id: '55555555-5555-5555-5555-555555555555', // Valid UUID format, but doesn't exist
+        limit: 50,
+        offset: 0,
+      })) as McpToolResponse;
 
       // Notes might return empty array instead of error - both are valid
       expect(response).toBeDefined();
@@ -269,10 +273,10 @@ describe.skipIf(
         email_address: 'definitely_not_a_valid_email_format',
       };
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: personData,
-      });
+      })) as McpToolResponse;
 
       // May either validate email format or accept invalid emails
       // Both behaviors are acceptable depending on API implementation
@@ -287,10 +291,10 @@ describe.skipIf(
         content: 'Test task with extremely long title',
       };
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData
-      });
+      })) as McpToolResponse;
 
       // May either truncate, reject, or accept long text
       expect(response).toBeDefined();
@@ -303,19 +307,19 @@ describe.skipIf(
           'Company with special chars: <script>alert("test")</script> & symbols',
       };
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       // Should handle Unicode and special characters gracefully
       expect(response).toBeDefined();
 
       // Clean up if successful
-      if (!response.isError && response.content?.[0]?.data?.id?.record_id) {
+      if (!response.isError && (response.content?.[0]?.data as any)?.id?.record_id) {
         await callUniversalTool('delete-record', {
           resource_type: 'companies',
-          record_id: response.content[0].data.id.record_id,
+          record_id: (response.content[0].data as any).id.record_id,
         }).catch(() => {});
       }
     });
@@ -327,10 +331,10 @@ describe.skipIf(
         domain: '',
       };
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       // Should handle null/undefined values appropriately
       expect(response).toBeDefined();
@@ -342,10 +346,10 @@ describe.skipIf(
         due_date: 'not_a_valid_date_format_12345',
       };
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData
-      });
+      })) as McpToolResponse;
 
       // May either validate date format or ignore invalid dates
       expect(response).toBeDefined();
@@ -356,23 +360,30 @@ describe.skipIf(
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
       const taskData = testDataGenerator.tasks.basicTask();
-      const taskResponse = await callUniversalTool('create-record', {
+      const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData
-      });
+      })) as McpToolResponse;
 
       if (
         !taskResponse.isError &&
-        taskResponse.content?.[0]?.data?.id?.record_id
+(taskResponse.content?.[0]?.data as any)?.id?.record_id
       ) {
-        const taskId = taskResponse.content[0].data.id.record_id;
+        const taskId = (taskResponse.content[0].data as any).id.record_id;
 
         // Try to link to non-existent company
-        const linkResponse = await callTasksTool('link-record-to-task', {
-          task_id: taskId,
-          record_type: 'companies',
-          record_id: '66666666-6666-6666-6666-666666666666', // Valid UUID format, but doesn't exist
-        });
+        const linkResponse = (await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            linked_records: [
+              {
+                record_type: 'companies',
+                record_id: '66666666-6666-6666-6666-666666666666', // Valid UUID format, but doesn't exist
+              },
+            ],
+          },
+        })) as McpToolResponse;
 
         // Should handle linking to non-existent records gracefully
         expect(linkResponse).toBeDefined();
@@ -388,29 +399,31 @@ describe.skipIf(
     it('should handle cascading delete scenarios', async () => {
       // Create company then try to delete it while it might be linked
       const companyData = testDataGenerator.companies.basicCompany();
-      const companyResponse = await callUniversalTool('create-record', {
+      const companyResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       if (
         !companyResponse.isError &&
-        companyResponse.content?.[0]?.data?.id?.record_id
+(companyResponse.content?.[0]?.data as any)?.id?.record_id
       ) {
-        const companyId = companyResponse.content[0].data.id.record_id;
+        const companyId = (companyResponse.content[0].data as any).id.record_id;
 
         // Create a note linked to the company
-        const noteResponse = await callNotesTool('create-company-note', {
-          company_id: companyId,
-          title: 'Test Note for Delete Test',
-          content: 'This note will test cascading delete behavior',
-        });
-
-        // Try to delete the company - should handle linked data appropriately
-        const deleteResponse = await callUniversalTool('delete-record', {
+        const noteResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: companyId,
-        });
+          title: 'Test Note for Delete Test',
+          content: 'This note will test cascading delete behavior',
+          format: 'markdown',
+        })) as McpToolResponse;
+
+        // Try to delete the company - should handle linked data appropriately
+        const deleteResponse = (await callUniversalTool('delete-record', {
+          resource_type: 'companies',
+          record_id: companyId,
+        })) as McpToolResponse;
 
         // Should either cascade delete or prevent deletion
         expect(deleteResponse).toBeDefined();
@@ -447,11 +460,11 @@ describe.skipIf(
 
   describe('API Limits and Rate Handling', () => {
     it('should handle large result sets appropriately', async () => {
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: '', // Empty query to get all results
         limit: 1000, // Request large limit
-      });
+      })) as McpToolResponse;
 
       // Should either limit results, paginate, or handle large sets gracefully
       expect(response).toBeDefined();
@@ -490,7 +503,7 @@ describe.skipIf(
       // Use a complex search that might timeout
       const complexQuery = 'a'.repeat(1000); // Very long query
 
-      const response = await callUniversalTool('advanced-search', {
+      const response = (await callUniversalTool('advanced-search', {
         resource_type: 'companies',
         query: complexQuery,
         filters: {
@@ -498,7 +511,7 @@ describe.skipIf(
           status: 'active',
         },
         limit: 500,
-      });
+      })) as McpToolResponse;
 
       // Should handle complex queries without hanging
       expect(response).toBeDefined();
@@ -552,28 +565,42 @@ describe.skipIf(
         content: 'Testing circular relationships',
       };
 
-      const taskResponse = await callUniversalTool('create-record', {
+      const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData
-      });
+      })) as McpToolResponse;
 
       if (
         !taskResponse.isError &&
-        taskResponse.content?.[0]?.data?.id?.record_id
+(taskResponse.content?.[0]?.data as any)?.id?.record_id
       ) {
-        const taskId = taskResponse.content[0].data.id.record_id;
+        const taskId = (taskResponse.content[0].data as any).id.record_id;
 
         // Link task to company and person
-        await callTasksTool('link-record-to-task', {
-          task_id: taskId,
-          record_type: 'companies',
-          record_id: testCompanyId,
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            linked_records: [
+              {
+                record_type: 'companies',
+                record_id: testCompanyId,
+              },
+            ],
+          },
         }).catch(() => {});
 
-        await callTasksTool('link-record-to-task', {
-          task_id: taskId,
-          record_type: 'people',
-          record_id: testPersonId,
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            linked_records: [
+              {
+                record_type: 'people',
+                record_id: testPersonId,
+              },
+            ],
+          },
         }).catch(() => {});
 
         // Should handle complex relationship scenarios
@@ -590,7 +617,7 @@ describe.skipIf(
     it('should handle malformed JSON in parameters', async () => {
       // This test might be limited by the TypeScript interface,
       // but we can test edge cases within valid structure
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: {
           name: '{"malformed": json"}', // Nested JSON string
@@ -600,15 +627,15 @@ describe.skipIf(
             },
           },
         },
-      });
+      })) as McpToolResponse;
 
       expect(response).toBeDefined();
 
       // Clean up if successful
-      if (!response.isError && response.content?.[0]?.data?.id?.record_id) {
+      if (!response.isError && (response.content?.[0]?.data as any)?.id?.record_id) {
         await callUniversalTool('delete-record', {
           resource_type: 'companies',
-          record_id: response.content[0].data.id.record_id,
+          record_id: (response.content[0].data as any).id.record_id,
         }).catch(() => {});
       }
     });
@@ -617,12 +644,13 @@ describe.skipIf(
       // Create a note with very large content
       const largeContent = 'Large content for memory test.\n'.repeat(1000);
 
-      const response = await callNotesTool('create-company-note', {
-        company_id: testCompanyId || 'test_id',
+      const response = (await callNotesTool('create-note', {
+        resource_type: 'companies',
+        record_id: testCompanyId || 'test_id',
         title: 'Memory Test Note',
         content: largeContent,
         format: 'plaintext',
-      });
+      })) as McpToolResponse;
 
       // Should handle large content without memory issues
       expect(response).toBeDefined();
@@ -639,11 +667,11 @@ describe.skipIf(
       while (attemptCount < maxAttempts) {
         attemptCount++;
 
-        lastResponse = await callUniversalTool('search-records', {
+        lastResponse = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: `recovery_test_${attemptCount}`,
           limit: 5,
-        });
+        })) as McpToolResponse;
 
         if (!lastResponse.isError) {
           break; // Success
@@ -660,29 +688,29 @@ describe.skipIf(
     it('should maintain data consistency after errors', async () => {
       // Create a company
       const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = await callUniversalTool('create-record', {
+      const createResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       if (
         !createResponse.isError &&
-        createResponse.content?.[0]?.data?.id?.record_id
+(createResponse.content?.[0]?.data as any)?.id?.record_id
       ) {
-        const companyId = createResponse.content[0].data.id.record_id;
+        const companyId = (createResponse.content[0].data as any).id.record_id;
 
         // Try an invalid update
-        const invalidUpdateResponse = await callUniversalTool('update-record', {
+        const invalidUpdateResponse = (await callUniversalTool('update-record', {
           resource_type: 'companies',
           record_id: companyId,
           record_data: { invalid_field_12345: 'should not work' },
-        });
+        })) as McpToolResponse;
 
         // Verify the record still exists and is consistent
-        const verifyResponse = await callUniversalTool('get-record-details', {
+        const verifyResponse = (await callUniversalTool('get-record-details', {
           resource_type: 'companies',
           record_id: companyId,
-        });
+        })) as McpToolResponse;
 
         expect(verifyResponse).toBeDefined();
 

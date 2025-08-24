@@ -64,9 +64,10 @@ describe('get-list-details API test', () => {
       const mockRequest = {
         method: 'tools/call' as const,
         params: {
-          name: 'get-list-details',
+          name: 'get-record-details',
           arguments: {
-            listId: TEST_LIST_ID,
+            resource_type: 'lists',
+            record_id: TEST_LIST_ID,
           },
         },
       };
@@ -103,9 +104,10 @@ describe('get-list-details API test', () => {
       const mockRequest = {
         method: 'tools/call' as const,
         params: {
-          name: 'get-list-details',
+          name: 'get-record-details',
           arguments: {
-            listId: nonExistentId,
+            resource_type: 'lists',
+            record_id: nonExistentId,
           },
         },
       };

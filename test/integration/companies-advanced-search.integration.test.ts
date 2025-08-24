@@ -1,16 +1,14 @@
 /**
- * Integration tests for companies advanced search functionality
- * These tests validate the enhanced error handling and validation
- * in the advanced-search-companies tool.
+ * Integration tests for companies advanced search functionality using universal tools
+ * Tests migration from advanced-search-companies to advanced-search with resource_type: "companies"
+ * These tests validate the enhanced error handling and validation in the universal advanced-search tool.
  *
  * NOTE: This test file requires a valid ATTIO_API_KEY to be set
  * in the environment. If the key is not set, tests will be skipped.
  */
 import { describe, it, test, expect } from 'vitest';
-import {
-  advancedSearchCompanies,
-  createNameFilter,
-} from '../../src/objects/companies/search';
+import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
+import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { FilterValidationError } from '../../src/errors/api-errors';
 import { FilterConditionType } from '../../src/types/attio';
 
@@ -19,146 +17,193 @@ const shouldRunTests =
   process.env.ATTIO_API_KEY && !process.env.SKIP_INTEGRATION_TESTS;
 const testMethod = shouldRunTests ? test : test.skip;
 
-describe('Companies Advanced Search Integration', () => {
-  // Test valid search to verify the tool works properly
+describe('Companies Advanced Search Integration (Universal Tools)', () => {
+  // Test valid search to verify the tool works properly using universal tools
   testMethod(
     'should successfully search companies with valid filters',
     async () => {
-      const filters = createNameFilter('Test', FilterConditionType.CONTAINS);
-      const results = await advancedSearchCompanies(filters);
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: FilterConditionType.CONTAINS,
+                  value: 'Test'
+                }
+              ]
+            }
+          },
+        },
+      };
+      
+      const result = await executeToolRequest(mockRequest);
 
       // We don't care about the actual results, just that it doesn't throw
-      expect(Array.isArray(results)).toBeTruthy();
-      // Results might be empty depending on the test data, which is fine
+      expect(result).toBeDefined();
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
     },
     30000
   ); // 30s timeout for API call
 
-  // Test invalid search with missing filters property
+  // Test invalid search with missing filters property using universal tools
   testMethod(
     'should throw descriptive error for invalid filter structure',
     async () => {
-      const invalidFilters = {} as any; // Missing filters property
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {} as any // Missing filters property
+          },
+        },
+      };
 
-      await expect(advancedSearchCompanies(invalidFilters)).rejects.toThrow(
-        FilterValidationError
-      );
+      const result = await executeToolRequest(mockRequest);
 
-      try {
-        await advancedSearchCompanies(invalidFilters);
-      } catch (error: unknown) {
-        expect(error instanceof FilterValidationError).toBeTruthy();
-        // Should contain the specific error message and company context
-        expect((error as FilterValidationError).message).toContain(
-          'Advanced company search filter invalid'
-        );
-        expect((error as FilterValidationError).message).toContain(
-          'MISSING_FILTERS_PROPERTY'
-        );
-      }
+      expect(result).toBeDefined();
+      expect(result.isError).toBeTruthy();
+      
+      // Should contain error information about invalid filter structure
+      const errorText = result.content?.[0]?.text || '';
+      expect(errorText).toMatch(/filter.*invalid|missing.*filters|required.*filters/i);
     }
   );
 
-  // Test invalid search with invalid condition
+  // Test invalid search with invalid condition using universal tools
   testMethod(
     'should throw descriptive error for invalid filter condition',
     async () => {
-      const invalidFilters = {
-        filters: [
-          {
-            attribute: { slug: 'name' },
-            condition: 'not_a_real_condition' as FilterConditionType,
-            value: 'test',
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: 'not_a_real_condition' as FilterConditionType,
+                  value: 'test',
+                },
+              ],
+            }
           },
-        ],
+        },
       };
 
-      await expect(advancedSearchCompanies(invalidFilters)).rejects.toThrow(
-        FilterValidationError
-      );
+      const result = await executeToolRequest(mockRequest);
 
-      try {
-        await advancedSearchCompanies(invalidFilters);
-      } catch (error: unknown) {
-        expect(error instanceof FilterValidationError).toBeTruthy();
-        // Should contain the specific error message, example, and company context
-        expect((error as FilterValidationError).message).toContain(
-          'Advanced company search filter invalid'
-        );
-        expect((error as FilterValidationError).message).toContain(
-          'Invalid condition'
-        );
-        expect((error as FilterValidationError).message).toContain(
-          'Example of valid filter structure'
-        );
-      }
+      expect(result).toBeDefined();
+      expect(result.isError).toBeTruthy();
+      
+      // Should contain error information about invalid condition
+      const errorText = result.content?.[0]?.text || '';
+      expect(errorText).toMatch(/invalid.*condition|condition.*invalid/i);
     }
   );
 
-  // Test invalid search with missing attribute
+  // Test invalid search with missing attribute using universal tools
   testMethod(
     'should throw descriptive error for missing attribute',
     async () => {
-      const invalidFilters = {
-        filters: [
-          {
-            condition: FilterConditionType.CONTAINS,
-            value: 'test',
-          } as any,
-        ],
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  condition: FilterConditionType.CONTAINS,
+                  value: 'test',
+                } as any, // Missing attribute
+              ],
+            }
+          },
+        },
       };
 
-      await expect(advancedSearchCompanies(invalidFilters)).rejects.toThrow(
-        FilterValidationError
-      );
+      const result = await executeToolRequest(mockRequest);
 
-      try {
-        await advancedSearchCompanies(invalidFilters);
-      } catch (error: unknown) {
-        expect(error instanceof FilterValidationError).toBeTruthy();
-        expect((error as FilterValidationError).message).toContain(
-          'missing attribute'
-        );
-      }
+      expect(result).toBeDefined();
+      expect(result.isError).toBeTruthy();
+      
+      // Should contain error information about missing attribute
+      const errorText = result.content?.[0]?.text || '';
+      expect(errorText).toMatch(/missing.*attribute|attribute.*missing|attribute.*required/i);
     }
   );
 
-  // Test with OR logic
+  // Test with OR logic using universal tools
   testMethod(
     'should successfully search with OR logic',
     async () => {
-      const filters = {
-        filters: [
-          {
-            attribute: { slug: 'name' },
-            condition: FilterConditionType.CONTAINS,
-            value: 'Inc',
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {
+              filters: [
+                {
+                  attribute: { slug: 'name' },
+                  condition: FilterConditionType.CONTAINS,
+                  value: 'Inc',
+                },
+                {
+                  attribute: { slug: 'name' },
+                  condition: FilterConditionType.CONTAINS,
+                  value: 'LLC',
+                },
+              ],
+              matchAny: true,
+            }
           },
-          {
-            attribute: { slug: 'name' },
-            condition: FilterConditionType.CONTAINS,
-            value: 'LLC',
-          },
-        ],
-        matchAny: true,
+        },
       };
 
-      const results = await advancedSearchCompanies(filters);
-      expect(Array.isArray(results)).toBeTruthy();
+      const result = await executeToolRequest(mockRequest);
+      
+      expect(result).toBeDefined();
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
     },
     30000
   ); // 30s timeout for API call
 
-  // Test empty filters array
+  // Test empty filters array using universal tools
   testMethod(
     'should handle empty filters array gracefully',
     async () => {
-      const emptyFilters = {
-        filters: [],
+      const mockRequest: CallToolRequest = {
+        method: 'tools/call',
+        params: {
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            filters: {
+              filters: [],
+            }
+          },
+        },
       };
 
-      const results = await advancedSearchCompanies(emptyFilters);
-      expect(Array.isArray(results)).toBeTruthy();
+      const result = await executeToolRequest(mockRequest);
+      
+      expect(result).toBeDefined();
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toBeDefined();
     },
     30000
   ); // 30s timeout for API call

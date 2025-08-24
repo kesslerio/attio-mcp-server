@@ -4,12 +4,14 @@
  * Comprehensive end-to-end testing of tasks-related MCP tools
  * including task lifecycle management, record linking, filtering, and error scenarios.
  *
- * Tools tested (now using universal tools with automatic migration):
- * - list-tasks → search-records (resource_type: 'tasks')
- * - create-task → create-record (resource_type: 'tasks')
- * - update-task → update-record (resource_type: 'tasks')
- * - delete-task → delete-record (resource_type: 'tasks')
- * - link-record-to-task → update-record (resource_type: 'tasks')
+ * Tools tested (now using universal tools):
+ * - search-records (resource_type: 'tasks') [formerly list-tasks]
+ * - create-record (resource_type: 'tasks') [formerly create-task]
+ * - create-record (resource_type: 'companies') [formerly create-company] 
+ * - create-record (resource_type: 'people') [formerly create-person]
+ * - update-record (resource_type: 'tasks') [formerly update-task]
+ * - delete-record (resource_type: 'tasks') [formerly delete-task]
+ * - update-record (resource_type: 'tasks', with linked_records) [formerly link-record-to-task]
  */
 
 import {
@@ -110,7 +112,10 @@ describe.skipIf(
   describe('Test Data Setup', () => {
     it('should create test companies for task testing', async () => {
       const companyData = CompanyFactory.create();
-      const response = await callTasksTool('create-company', companyData);
+      const response = await callTasksTool('create-record', {
+        resource_type: 'companies',
+        record_data: companyData
+      });
 
       E2EAssertions.expectMcpSuccess(response);
       const company = E2EAssertions.expectMcpData(response);
@@ -123,7 +128,10 @@ describe.skipIf(
 
     it('should create test people for task assignment', async () => {
       const personData = PersonFactory.create();
-      const response = await callTasksTool('create-person', personData);
+      const response = await callTasksTool('create-record', {
+        resource_type: 'people',
+        record_data: personData
+      });
 
       E2EAssertions.expectMcpSuccess(response);
       const person = E2EAssertions.expectMcpData(response);
@@ -142,9 +150,12 @@ describe.skipIf(
     it('should create a basic task', async () => {
       const taskData = TaskFactory.create();
 
-      const response = await callTasksTool('create-task', {
-        content: taskData.content,
-        due_date: taskData.due_date,
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: taskData.content,
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -173,10 +184,13 @@ describe.skipIf(
       const taskData = TaskFactory.create();
       const assignee = testPeople[0];
 
-      const response = await callTasksTool('create-task', {
-        content: taskData.content,
-        assigneeId: assignee.id.record_id,
-        due_date: taskData.due_date,
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: taskData.content,
+          assigneeId: assignee.id.record_id,
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -200,10 +214,13 @@ describe.skipIf(
       const taskData = TaskFactory.create();
       const company = testCompanies[0];
 
-      const response = await callTasksTool('create-task', {
-        content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
-        recordId: company.id.record_id,
-        due_date: taskData.due_date,
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
+          recordId: company.id.record_id,
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -221,9 +238,12 @@ describe.skipIf(
     it('should create high priority task', async () => {
       const taskData = TaskFactory.createHighPriority();
 
-      const response = await callTasksTool('create-task', {
-        content: taskData.content,
-        due_date: taskData.due_date,
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: taskData.content,
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -240,9 +260,12 @@ describe.skipIf(
       const tasksBatch = TaskFactory.createMany(3);
 
       for (const taskData of tasksBatch) {
-        const response = await callTasksTool('create-task', {
-          content: taskData.content,
-          due_date: taskData.due_date,
+        const response = await callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData.content,
+            due_date: taskData.due_date,
+          }
         });
 
         if (response.isError) {
@@ -259,7 +282,9 @@ describe.skipIf(
 
   describe('Task Listing and Filtering', () => {
     it('should list all tasks', async () => {
-      const response = await callTasksTool('list-tasks', {});
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks'
+      });
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -292,7 +317,8 @@ describe.skipIf(
     }, 30000);
 
     it('should filter tasks by status', async () => {
-      const response = await callTasksTool('list-tasks', {
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks',
         status: 'open',
       });
 
@@ -312,7 +338,8 @@ describe.skipIf(
       }
 
       const assignee = testPeople[0];
-      const response = await callTasksTool('list-tasks', {
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks',
         assigneeId: assignee.id.record_id,
       });
 
@@ -324,7 +351,8 @@ describe.skipIf(
     }, 15000);
 
     it('should handle pagination for task listing', async () => {
-      const response = await callTasksTool('list-tasks', {
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks',
         page: 1,
         pageSize: 5,
       });
@@ -337,7 +365,8 @@ describe.skipIf(
     }, 15000);
 
     it('should handle empty task list gracefully', async () => {
-      const response = await callTasksTool('list-tasks', {
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks',
         status: 'nonexistent_status_12345',
       });
 
@@ -364,9 +393,12 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        status: 'completed',
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          status: 'completed',
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -388,9 +420,12 @@ describe.skipIf(
       const taskId = task.id.task_id || task.id;
       const newAssignee = testPeople[0];
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        assigneeId: newAssignee.id.record_id,
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          assigneeId: newAssignee.id.record_id,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -413,9 +448,12 @@ describe.skipIf(
       const newDueDate = new Date();
       newDueDate.setDate(newDueDate.getDate() + 14); // 2 weeks from now
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        due_date: newDueDate.toISOString().split('T')[0],
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          due_date: newDueDate.toISOString().split('T')[0],
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -438,10 +476,13 @@ describe.skipIf(
       const newDueDate = new Date();
       newDueDate.setDate(newDueDate.getDate() + 7);
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        status: 'in_progress',
-        due_date: newDueDate.toISOString().split('T')[0],
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          status: 'in_progress',
+          due_date: newDueDate.toISOString().split('T')[0],
+        }
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -463,9 +504,17 @@ describe.skipIf(
       const company = testCompanies[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('link-record-to-task', {
-        taskId: taskId,
-        recordId: company.id.record_id,
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'companies',
+              record_id: company.id.record_id,
+            },
+          ],
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -482,9 +531,17 @@ describe.skipIf(
       const person = testPeople[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('link-record-to-task', {
-        taskId: taskId,
-        recordId: person.id.record_id,
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'people',
+              record_id: person.id.record_id,
+            },
+          ],
+        },
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -507,17 +564,33 @@ describe.skipIf(
       const taskId = task.id.task_id || task.id;
 
       // Link to company
-      const companyLinkResponse = await callTasksTool('link-record-to-task', {
-        taskId: taskId,
-        recordId: testCompanies[0].id.record_id,
+      const companyLinkResponse = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'companies',
+              record_id: testCompanies[0].id.record_id,
+            },
+          ],
+        },
       });
 
       E2EAssertions.expectMcpSuccess(companyLinkResponse);
 
       // Link to person (if API supports multiple links)
-      const personLinkResponse = await callTasksTool('link-record-to-task', {
-        taskId: taskId,
-        recordId: testPeople[0].id.record_id,
+      const personLinkResponse = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'people',
+              record_id: testPeople[0].id.record_id,
+            },
+          ],
+        },
       });
 
       // This might succeed or fail depending on API limitations
@@ -535,9 +608,12 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create task
-      const createResponse = await callTasksTool('create-task', {
-        content: 'E2E Workflow Task - Initial Creation',
-        due_date: taskData.due_date,
+      const createResponse = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: 'E2E Workflow Task - Initial Creation',
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -545,17 +621,23 @@ describe.skipIf(
       const taskId = workflowTask.id.task_id || workflowTask.id;
 
       // Update to in-progress
-      const progressResponse = await callTasksTool('update-task', {
-        taskId: taskId,
-        status: 'in_progress',
+      const progressResponse = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          status: 'in_progress',
+        }
       });
 
       E2EAssertions.expectMcpSuccess(progressResponse);
 
       // Complete the task
-      const completeResponse = await callTasksTool('update-task', {
-        taskId: taskId,
-        status: 'completed',
+      const completeResponse = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          status: 'completed',
+        }
       });
 
       E2EAssertions.expectMcpSuccess(completeResponse);
@@ -568,9 +650,12 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create normal priority task
-      const createResponse = await callTasksTool('create-task', {
-        content: 'E2E Priority Task',
-        due_date: taskData.due_date,
+      const createResponse = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: 'E2E Priority Task',
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -593,9 +678,12 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create unassigned task
-      const createResponse = await callTasksTool('create-task', {
-        content: 'E2E Assignment Task - Initially Unassigned',
-        due_date: taskData.due_date,
+      const createResponse = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: 'E2E Assignment Task - Initially Unassigned',
+          due_date: taskData.due_date,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(createResponse);
@@ -603,9 +691,12 @@ describe.skipIf(
       const taskId = assignmentTask.id.task_id || assignmentTask.id;
 
       // Assign to person
-      const assignResponse = await callTasksTool('update-task', {
-        taskId: taskId,
-        assigneeId: testPeople[0].id.record_id,
+      const assignResponse = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          assigneeId: testPeople[0].id.record_id,
+        }
       });
 
       E2EAssertions.expectMcpSuccess(assignResponse);
@@ -617,9 +708,12 @@ describe.skipIf(
 
   describe('Error Handling and Validation', () => {
     it('should handle invalid task ID in updates', async () => {
-      const response = await callTasksTool('update-task', {
-        taskId: 'invalid-task-id-12345',
-        status: 'completed',
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: 'invalid-task-id-12345',
+        record_data: {
+          status: 'completed',
+        }
       });
 
       E2EAssertions.expectMcpError(
@@ -639,9 +733,12 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        content: 'This should fail - content is immutable',
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          content: 'This should fail - content is immutable',
+        }
       });
 
       E2EAssertions.expectMcpError(
@@ -653,8 +750,9 @@ describe.skipIf(
     }, 15000);
 
     it('should handle invalid task ID in deletion', async () => {
-      const response = await callTasksTool('delete-task', {
-        taskId: 'invalid-task-id-12345',
+      const response = await callTasksTool('delete-record', {
+        resource_type: 'tasks',
+        record_id: 'invalid-task-id-12345',
       });
 
       E2EAssertions.expectMcpError(
@@ -674,27 +772,36 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-task', {
-        taskId: taskId,
-        assigneeId: 'invalid-assignee-id-12345',
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          assigneeId: 'invalid-assignee-id-12345',
+        }
       });
 
       E2EAssertions.expectMcpError(response, /not found|invalid|assignee/i);
     }, 15000);
 
     it('should validate required fields for task creation', async () => {
-      const response = await callTasksTool('create-task', {
-        // Missing required 'content' field
-        due_date: '2024-12-31',
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          // Missing required 'content' field
+          due_date: '2024-12-31',
+        }
       });
 
       E2EAssertions.expectMcpError(response, /content|required/i);
     }, 15000);
 
     it('should handle invalid date formats', async () => {
-      const response = await callTasksTool('create-task', {
-        content: 'E2E Test Task with invalid date format for testing',
-        due_date: 'invalid-date-format',
+      const response = await callTasksTool('create-record', {
+        resource_type: 'tasks',
+        record_data: {
+          content: 'E2E Test Task with invalid date format for testing',
+          due_date: 'invalid-date-format',
+        }
       });
 
       // This might succeed or fail depending on API validation
@@ -718,9 +825,17 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('link-record-to-task', {
-        taskId: taskId,
-        recordId: 'invalid-record-id-12345',
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'companies', // Default to companies as per mapping rule
+              record_id: 'invalid-record-id-12345',
+            },
+          ],
+        },
       });
 
       E2EAssertions.expectMcpError(response, /not found|invalid|record/i);
@@ -734,9 +849,17 @@ describe.skipIf(
         return;
       }
 
-      const response = await callTasksTool('link-record-to-task', {
-        taskId: 'invalid-task-id-12345',
-        recordId: testCompanies[0].id.record_id,
+      const response = await callTasksTool('update-record', {
+        resource_type: 'tasks',
+        record_id: 'invalid-task-id-12345',
+        record_data: {
+          linked_records: [
+            {
+              record_type: 'companies',
+              record_id: testCompanies[0].id.record_id,
+            },
+          ],
+        },
       });
 
       E2EAssertions.expectMcpError(response, /not found|invalid|task/i);
@@ -750,17 +873,26 @@ describe.skipIf(
       const taskData3 = TaskFactory.create();
 
       const promises = [
-        callTasksTool('create-task', {
-          content: taskData1.content,
-          due_date: taskData1.due_date,
+        callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData1.content,
+            due_date: taskData1.due_date,
+          }
         }),
-        callTasksTool('create-task', {
-          content: taskData2.content,
-          due_date: taskData2.due_date,
+        callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData2.content,
+            due_date: taskData2.due_date,
+          }
         }),
-        callTasksTool('create-task', {
-          content: taskData3.content,
-          due_date: taskData3.due_date,
+        callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData3.content,
+            due_date: taskData3.due_date,
+          }
         }),
       ];
 
@@ -781,7 +913,8 @@ describe.skipIf(
     it('should validate task operation execution times', async () => {
       const startTime = Date.now();
 
-      const response = await callTasksTool('list-tasks', {
+      const response = await callTasksTool('search-records', {
+        resource_type: 'tasks',
         pageSize: 10,
       });
 
@@ -810,10 +943,13 @@ describe.skipIf(
         const taskId = task.id.task_id || task.id;
 
         updatePromises.push(
-          callTasksTool('update-task', {
-            taskId: taskId,
-            content: `Batch updated task ${i + 1}`,
-            status: 'in_progress',
+          callTasksTool('update-record', {
+            resource_type: 'tasks',
+            record_id: taskId,
+            record_data: {
+              content: `Batch updated task ${i + 1}`,
+              status: 'in_progress',
+            }
           })
         );
       }
@@ -849,8 +985,9 @@ describe.skipIf(
       const taskToDelete = createdTasks[createdTasks.length - 1];
       const taskId = taskToDelete.id.task_id || taskToDelete.id;
 
-      const response = await callTasksTool('delete-task', {
-        taskId: taskId,
+      const response = await callTasksTool('delete-record', {
+        resource_type: 'tasks',
+        record_id: taskId,
       });
 
       E2EAssertions.expectMcpSuccess(response);
@@ -864,8 +1001,9 @@ describe.skipIf(
     }, 30000);
 
     it('should handle deletion of non-existent task gracefully', async () => {
-      const response = await callTasksTool('delete-task', {
-        taskId: 'already-deleted-task-12345',
+      const response = await callTasksTool('delete-record', {
+        resource_type: 'tasks',
+        record_id: 'already-deleted-task-12345',
       });
 
       E2EAssertions.expectMcpError(

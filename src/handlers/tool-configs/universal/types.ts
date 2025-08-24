@@ -41,6 +41,8 @@ export interface UniversalCreateNoteParams {
   record_id: string;
   title: string;
   content: string;
+  format?: 'markdown' | 'plaintext';
+  created_at?: string;
 }
 
 /**

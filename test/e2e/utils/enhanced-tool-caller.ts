@@ -28,6 +28,7 @@ import {
 } from './logger.js';
 import { configLoader } from './config-loader.js';
 import type { ToolParameters, ApiResponse } from '../types';
+import { extractRecordId } from '../../../src/utils/validation/uuid-validation.js';
 
 export interface ToolCallOptions {
   testName?: string;
@@ -49,6 +50,41 @@ export interface ToolCallResult {
   toolName: string;
   originalToolName: string;
   wasTransformed: boolean;
+}
+
+/**
+ * Preprocess parameters to handle special cases like URI-to-record_id extraction
+ */
+function preprocessParameters(toolName: string, parameters: ToolParameters): ToolParameters {
+  // Handle URI parameter for note creation tools
+  if (toolName === 'create-note' && 'uri' in parameters && !('record_id' in parameters)) {
+    const uri = parameters.uri as string;
+    const recordId = extractRecordId(uri);
+    
+    if (recordId) {
+      const { uri: _uri, ...otherParams } = parameters;
+      return {
+        ...otherParams,
+        record_id: recordId,
+        resource_type: parameters.resource_type || inferResourceTypeFromUri(uri),
+      };
+    }
+  }
+  
+  return parameters;
+}
+
+/**
+ * Infer resource type from URI format
+ */
+function inferResourceTypeFromUri(uri: string): string {
+  if (uri.includes('/companies/') || uri.includes('companies')) {
+    return 'companies';
+  }
+  if (uri.includes('/people/') || uri.includes('people')) {
+    return 'people';
+  }
+  return 'companies'; // default fallback
 }
 
 /**
@@ -85,6 +121,9 @@ export async function callToolWithEnhancements(
         wasTransformed,
       };
     }
+
+    // Step 0.5: Preprocess parameters to handle special cases (URI extraction, etc.)
+    actualParams = preprocessParameters(actualToolName, actualParams);
 
     // Step 1: Check if this is a legacy tool that needs migration
     if (isLegacyTool(toolName)) {
@@ -142,20 +181,17 @@ export async function callToolWithEnhancements(
     let isErrorResponse = false;
     let errorInfo: string | undefined;
 
-    // More comprehensive error detection to avoid false positives
+    // Strict error detection - only flag actual errors, not text content
     if (finalResponse?.isError === true) {
       isErrorResponse = true;
     } else if (finalResponse?.error) {
       // Only consider it an error if there's an actual error object with meaningful content
       isErrorResponse = true;
-    } else if (finalResponse?.content?.[0]?.text) {
-      // Check if response text contains error indicators (but avoid false positives)
-      const responseText = finalResponse.content[0].text;
-      const errorIndicators = ['Error executing tool', 'Error:', 'Failed to', 'Invalid'];
-      isErrorResponse = errorIndicators.some(indicator => 
-        responseText.includes(indicator)
-      );
+    } else if (Array.isArray(finalResponse?.content) && finalResponse.content[0]?.type === 'error') {
+      // Check if the response content type is explicitly 'error'
+      isErrorResponse = true;
     }
+    // DO NOT check response text for error keywords - this causes false positives
 
     if (isErrorResponse) {
       // Extract error message from MCP error response

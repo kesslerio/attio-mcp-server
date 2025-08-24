@@ -1407,6 +1407,27 @@ export function validateUniversalToolParams(
       }
       break;
 
+    case 'list-notes':
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'companies'` }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_id',
+            suggestion: 'Provide the ID of the record to list notes for',
+            example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
+          }
+        );
+      }
+      break;
+
     default:
       // Additional validation for other tools can be added here
       break;

@@ -235,6 +235,52 @@ export function generateExampleUUID(): string {
 }
 
 /**
+ * Extract UUID from various input formats including URIs
+ * 
+ * Handles:
+ * - Raw UUIDs: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * - URI paths: "https://app.attio.com/records/companies/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * - Custom schemes: "attio://companies/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * 
+ * @param input - Input string that may contain a UUID
+ * @returns Extracted UUID string or null if no valid UUID found
+ */
+export function extractRecordId(input: string): string | null {
+  if (!input || typeof input !== 'string') {
+    return null;
+  }
+
+  // First try direct UUID matching
+  const directMatch = input.match(UUID_REGEX);
+  if (directMatch) {
+    return directMatch[0];
+  }
+
+  // Try URL parsing for URI-style inputs
+  try {
+    const url = new URL(input);
+    const pathSegments = url.pathname.split('/').filter(Boolean);
+    
+    // Check each path segment for a UUID
+    for (const segment of pathSegments) {
+      if (UUID_REGEX.test(segment)) {
+        return segment;
+      }
+    }
+  } catch {
+    // Not a valid URL, continue with other strategies
+  }
+
+  // Try extracting UUID from anywhere in the string as fallback
+  const anyMatch = input.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  if (anyMatch) {
+    return anyMatch[0];
+  }
+
+  return null;
+}
+
+/**
  * Common UUID validation patterns for testing
  */
 export const UUIDTestPatterns = {

@@ -14,6 +14,7 @@ import {
   loadE2EConfig,
   getE2EConfig,
   type E2EConfig,
+  configLoader,
 } from './utils/config-loader.js';
 import {
   initializeAttioClient,
@@ -91,6 +92,8 @@ export class E2ETestBase {
     // Load and validate configuration
     try {
       this.config = await loadE2EConfig();
+      // Also load the singleton config for assertions
+      await configLoader.loadConfig();
       console.error('✅ E2E configuration loaded successfully');
     } catch (error: unknown) {
       console.error('❌ Failed to load E2E configuration:', error);
