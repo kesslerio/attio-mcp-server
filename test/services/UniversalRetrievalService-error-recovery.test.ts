@@ -39,7 +39,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: 'test-id'
+          record_id: '12345678-1234-4000-a000-123456789012'
         })
       ).rejects.toMatchObject({
         status: 401,
@@ -60,7 +60,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: 'test-list-id'
+          record_id: '87654321-4321-4000-b000-987654321098'
         })
       ).rejects.toMatchObject({
         status: 503,
@@ -81,7 +81,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.TASKS,
-          record_id: 'test-task-id'
+          record_id: '11111111-1111-4000-a000-111111111111'
         })
       ).rejects.toMatchObject({
         status: 429,
@@ -102,17 +102,17 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.NOTES,
-          record_id: 'non-existent-note'
+          record_id: '22222222-2222-4000-a000-222222222222'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Note with ID "non-existent-note" not found.'
+          message: 'Note with ID "22222222-2222-4000-a000-222222222222" not found.'
         }
       });
 
-      expect(CachingService.cache404Response).toHaveBeenCalledWith('notes', 'non-existent-note');
+      expect(CachingService.cache404Response).toHaveBeenCalledWith('notes', '22222222-2222-4000-a000-222222222222');
     });
   });
 
@@ -125,7 +125,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: 'test-company-id'
+          record_id: '33333333-3333-4000-a000-333333333333'
         })
       ).rejects.toThrow('Cannot read properties of null');
 
@@ -140,7 +140,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: 'test-list-id'
+          record_id: '44444444-4444-4000-a000-444444444444'
         })
       ).rejects.toThrow('ETIMEDOUT: Connection timeout');
 
@@ -149,23 +149,23 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
     it('should treat clear not-found error messages as 404s', async () => {
       vi.mocked(tasks.getTask).mockRejectedValue(
-        new Error('Task with ID "missing-task" not found')
+        new Error('Task with ID "55555555-5555-4000-a000-555555555555" not found')
       );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.TASKS,
-          record_id: 'missing-task'
+          record_id: '55555555-5555-4000-a000-555555555555'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Task with ID "missing-task" not found.'
+          message: 'Task with ID "55555555-5555-4000-a000-555555555555" not found.'
         }
       });
 
-      expect(CachingService.cache404Response).toHaveBeenCalledWith('tasks', 'missing-task');
+      expect(CachingService.cache404Response).toHaveBeenCalledWith('tasks', '55555555-5555-4000-a000-555555555555');
     });
   });
 
@@ -177,13 +177,13 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: 'null-list-id'
+          record_id: '66666666-6666-4000-a000-666666666666'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "null-list-id" not found.'
+          message: 'List record with ID "66666666-6666-4000-a000-666666666666" not found.'
         }
       });
     });
@@ -199,13 +199,13 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: 'malformed-list-id'
+          record_id: '77777777-7777-4000-a000-777777777777'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "malformed-list-id" not found.'
+          message: 'List record with ID "77777777-7777-4000-a000-777777777777" not found.'
         }
       });
     });
@@ -221,13 +221,13 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.LISTS,
-          record_id: 'invalid-structure-id'
+          record_id: '88888888-8888-4000-a000-888888888888'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'List record with ID "invalid-structure-id" not found.'
+          message: 'List record with ID "88888888-8888-4000-a000-888888888888" not found.'
         }
       });
     });
@@ -241,13 +241,13 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.getRecordDetails({
           resource_type: UniversalResourceType.COMPANIES,
-          record_id: 'cached-404-id'
+          record_id: '99999999-9999-4000-a000-999999999999'
         })
       ).rejects.toMatchObject({
         status: 404,
         body: {
           code: 'not_found',
-          message: 'Record with ID "cached-404-id" not found.'
+          message: 'Record with ID "99999999-9999-4000-a000-999999999999" not found.'
         }
       });
 
@@ -261,7 +261,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       // Mock different outcomes for different records
       vi.mocked(companies.getCompanyDetails)
         .mockResolvedValueOnce({
-          id: { record_id: 'company-1' },
+          id: { record_id: 'cccccccc-cccc-4000-a000-cccccccccccc' },
           values: { name: [{ value: 'Company 1' }] },
           created_at: '2024-01-01',
           updated_at: '2024-01-01'
@@ -277,7 +277,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
       const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
-        ['company-1', 'company-404', 'company-auth-error']
+        ['cccccccc-cccc-4000-a000-cccccccccccc', 'dddddddd-dddd-4000-a000-dddddddddddd', 'eeeeeeee-eeee-4000-a000-eeeeeeeeeeee']
       );
 
       expect(results).toHaveLength(3);
@@ -293,7 +293,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
       const exists = await UniversalRetrievalService.recordExists(
         UniversalResourceType.TASKS,
-        'cached-missing-task'
+        'aaaaaaaa-aaaa-4000-a000-aaaaaaaaaaaa'
       );
 
       expect(exists).toBe(false);
@@ -310,7 +310,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       await expect(
         UniversalRetrievalService.recordExists(
           UniversalResourceType.TASKS,
-          'service-down-task'
+          'bbbbbbbb-bbbb-4000-a000-bbbbbbbbbbbb'
         )
       ).rejects.toMatchObject({
         status: 503,
