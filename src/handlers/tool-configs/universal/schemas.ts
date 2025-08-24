@@ -145,9 +145,9 @@ export class InputSanitizer {
 
     return input
       .trim()
-      .replace(/<[^>]*>/g, '') // Remove HTML tags completely
       .replace(/javascript:/gi, '') // Remove javascript: protocol
       .replace(/on\w+=/gi, ''); // Remove event handlers
+      // Note: HTML tags preserved for note content - only remove dangerous JS
   }
 
   /**

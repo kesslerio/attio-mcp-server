@@ -363,7 +363,10 @@ export class MockService {
     };
 
     // Apply E2E markers for test data cleanup
-    return applyE2EMarkers(baseNote);
+    const markedNote = applyE2EMarkers(baseNote);
+    
+    
+    return markedNote;
   }
 
   /**

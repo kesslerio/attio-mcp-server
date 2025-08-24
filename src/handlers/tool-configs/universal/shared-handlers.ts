@@ -95,6 +95,8 @@ export async function handleUniversalCreateNote(
       content,
       format
     });
+    
+    
     return result;
   } catch (error: any) {
     // Return error object for computeErrorWithContext detection

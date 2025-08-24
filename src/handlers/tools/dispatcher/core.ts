@@ -363,7 +363,7 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       if (
         isE2EMode &&
-        (toolName === 'create-record' || toolName === 'update-record')
+        (toolName === 'create-record' || toolName === 'update-record' || toolName === 'create-note')
       ) {
         // Return raw JSON for record operations in E2E mode
         // Handle null/undefined results gracefully instead of throwing
@@ -422,6 +422,7 @@ export async function executeToolRequest(request: CallToolRequest) {
         content: [{ type: 'text', text: formattedResult }],
         isError: errorAnalysis.isError,
       };
+
 
       // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === ('GENERAL' as any)) {

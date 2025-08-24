@@ -22,7 +22,7 @@ export function normalizeNote(note: any) {
 
   const id = note?.id ?? {};
 
-  return {
+  const normalized = {
     // Provide both flat ID and record-compatible structure
     id: {
       note_id: id?.note_id ?? id,
@@ -41,6 +41,9 @@ export function normalizeNote(note: any) {
     meeting_id: note?.meeting_id,
     format: note?.format || 'markdown',
   };
+  
+  
+  return normalized;
 }
 
 /**

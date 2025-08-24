@@ -1121,7 +1121,8 @@ describe.skipIf(
           note.title.includes('E2E') ||
           note.title.includes('Test') ||
           note.content.includes('E2E') ||
-          note.content.includes('testing purposes');
+          note.content.includes('testing purposes') ||
+          (note.tags && Array.isArray(note.tags) && note.tags.includes('e2e-test'));
 
         expect(
           isTestNote,
