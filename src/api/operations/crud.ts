@@ -139,7 +139,7 @@ export async function createRecord<T extends AttioRecord>(
     // Additional extraction patterns for different Attio API response formats
     if (!rawResult && response?.data?.attributes) {
       // Some APIs return { data: { attributes: {...}, id: {...} } }
-      rawResult = response.data;
+      rawResult = response.data as any;
     }
     
     // Handle array responses by taking first element

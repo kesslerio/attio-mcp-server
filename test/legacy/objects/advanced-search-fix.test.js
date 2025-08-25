@@ -13,7 +13,10 @@ const SKIP_TESTS = !process.env.ATTIO_API_KEY;
 
 // Tests have 30s timeout by default with Vitest config
 
-describe('Advanced Search Companies Fix', () => {
+describe.skip('Advanced Search Companies Fix (legacy)', () => {
+  // Skipped: superseded by test/api/advanced-search-validation.test.ts which validates FilterValidationError behavior.
+  // These legacy tests are redundant with the comprehensive TypeScript test suite.
+  
   // Skip all tests if no API key
   if (SKIP_TESTS) {
     test.skip('Skipped: No API key available', () => {

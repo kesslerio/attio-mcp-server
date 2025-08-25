@@ -348,7 +348,19 @@ export class UniversalRetrievalService {
         },
       } as unknown as AttioRecord;
     } catch (error: unknown) {
-      // Handle specific error types - don't mask auth/network issues as 404s
+      // Handle EnhancedApiError instances directly
+      if (
+        error &&
+        typeof error === 'object' &&
+        'statusCode' in error &&
+        'name' in error &&
+        error.name === 'EnhancedApiError'
+      ) {
+        // Re-throw EnhancedApiError as-is
+        throw error;
+      }
+
+      // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
@@ -396,7 +408,19 @@ export class UniversalRetrievalService {
       // Convert AttioTask to AttioRecord using proper type conversion
       return UniversalUtilityService.convertTaskToRecord(task);
     } catch (error: unknown) {
-      // Handle specific error types - don't mask auth/network issues as 404s
+      // Handle EnhancedApiError instances directly
+      if (
+        error &&
+        typeof error === 'object' &&
+        'statusCode' in error &&
+        'name' in error &&
+        error.name === 'EnhancedApiError'
+      ) {
+        // Re-throw EnhancedApiError as-is
+        throw error;
+      }
+
+      // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
@@ -452,7 +476,19 @@ export class UniversalRetrievalService {
       const normalizedRecord = normalizeNoteResponse(note);
       return normalizedRecord as AttioRecord;
     } catch (error: unknown) {
-      // Handle specific error types - don't mask auth/network issues as 404s
+      // Handle EnhancedApiError instances directly
+      if (
+        error &&
+        typeof error === 'object' &&
+        'statusCode' in error &&
+        'name' in error &&
+        error.name === 'EnhancedApiError'
+      ) {
+        // Re-throw EnhancedApiError as-is
+        throw error;
+      }
+
+      // Handle legacy error format - don't mask auth/network issues as 404s
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
@@ -554,6 +590,21 @@ export class UniversalRetrievalService {
       await this.getRecordDetails({ resource_type, record_id });
       return true;
     } catch (error: unknown) {
+      // Handle EnhancedApiError instances directly
+      if (
+        error &&
+        typeof error === 'object' &&
+        'statusCode' in error &&
+        'name' in error &&
+        error.name === 'EnhancedApiError'
+      ) {
+        // For 404 errors, return false; for other errors, re-throw
+        if (error.statusCode === 404) {
+          return false;
+        }
+        throw error;
+      }
+
       // Check for structured HTTP response (404)
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };

@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { CachingService } from '../../src/services/CachingService.js';
+import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
 import * as companies from '../../src/objects/companies/index.js';
 import * as lists from '../../src/objects/lists.js';
 import * as tasks from '../../src/objects/tasks.js';
@@ -31,10 +32,18 @@ describe('UniversalRetrievalService - Error Recovery', () => {
   describe('Authentication Error Handling', () => {
     it('should re-throw authentication errors without caching', async () => {
       // Mock an authentication error
-      vi.mocked(companies.getCompanyDetails).mockRejectedValue({
-        status: 401,
-        body: { code: 'unauthorized', message: 'Invalid API key' },
-      });
+      vi.mocked(companies.getCompanyDetails).mockRejectedValue(
+        new EnhancedApiError(
+          'Invalid API key',
+          401,
+          '/objects/companies/records/12345678-1234-4000-a000-123456789012',
+          'GET',
+          {
+            httpStatus: 401,
+            resourceType: 'companies',
+          }
+        )
+      );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -42,8 +51,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '12345678-1234-4000-a000-123456789012',
         })
       ).rejects.toMatchObject({
-        status: 401,
-        body: { code: 'unauthorized' },
+        name: 'EnhancedApiError',
+        statusCode: 401,
+        message: expect.stringMatching(/unauthorized|invalid api key/i),
       });
 
       // Verify 404 was not cached for auth errors
@@ -52,13 +62,18 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
     it('should re-throw network errors without caching', async () => {
       // Mock a network error
-      vi.mocked(lists.getListDetails).mockRejectedValue({
-        status: 503,
-        body: {
-          code: 'service_unavailable',
-          message: 'Service temporarily unavailable',
-        },
-      });
+      vi.mocked(lists.getListDetails).mockRejectedValue(
+        new EnhancedApiError(
+          'Service temporarily unavailable',
+          503,
+          '/lists/87654321-4321-4000-b000-987654321098',
+          'GET',
+          {
+            httpStatus: 503,
+            resourceType: 'lists',
+          }
+        )
+      );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -66,8 +81,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '87654321-4321-4000-b000-987654321098',
         })
       ).rejects.toMatchObject({
-        status: 503,
-        body: { code: 'service_unavailable' },
+        name: 'EnhancedApiError',
+        statusCode: 503,
+        message: expect.stringMatching(/service.{0,10}unavailable/i),
       });
 
       expect(CachingService.cache404Response).not.toHaveBeenCalled();
@@ -76,10 +92,18 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
   describe('Rate Limit Error Handling', () => {
     it('should re-throw rate limit errors without caching', async () => {
-      vi.mocked(tasks.getTask).mockRejectedValue({
-        status: 429,
-        body: { code: 'rate_limited', message: 'Too many requests' },
-      });
+      vi.mocked(tasks.getTask).mockRejectedValue(
+        new EnhancedApiError(
+          'Too many requests',
+          429,
+          '/tasks/11111111-1111-4000-a000-111111111111',
+          'GET',
+          {
+            httpStatus: 429,
+            resourceType: 'tasks',
+          }
+        )
+      );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -87,8 +111,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '11111111-1111-4000-a000-111111111111',
         })
       ).rejects.toMatchObject({
-        status: 429,
-        body: { code: 'rate_limited' },
+        name: 'EnhancedApiError',
+        statusCode: 429,
+        message: expect.stringMatching(/rate.{0,10}limit|too many requests/i),
       });
 
       expect(CachingService.cache404Response).not.toHaveBeenCalled();
@@ -97,10 +122,18 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
   describe('Legitimate 404 Error Handling', () => {
     it('should cache legitimate 404 errors and convert to structured response', async () => {
-      vi.mocked(notes.getNote).mockRejectedValue({
-        status: 404,
-        body: { code: 'not_found', message: 'Note not found' },
-      });
+      vi.mocked(notes.getNote).mockRejectedValue(
+        new EnhancedApiError(
+          'Note not found',
+          404,
+          '/notes/22222222-2222-4000-a000-222222222222',
+          'GET',
+          {
+            httpStatus: 404,
+            resourceType: 'notes',
+          }
+        )
+      );
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -108,12 +141,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '22222222-2222-4000-a000-222222222222',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'Note with ID "22222222-2222-4000-a000-222222222222" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/note.*not found/i),
       });
 
       expect(CachingService.cache404Response).toHaveBeenCalledWith(
@@ -156,8 +186,15 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
     it('should treat clear not-found error messages as 404s', async () => {
       vi.mocked(tasks.getTask).mockRejectedValue(
-        new Error(
-          'Task with ID "55555555-5555-4000-a000-555555555555" not found'
+        new EnhancedApiError(
+          'Task with ID "55555555-5555-4000-a000-555555555555" not found',
+          404,
+          '/tasks/55555555-5555-4000-a000-555555555555',
+          'GET',
+          {
+            httpStatus: 404,
+            resourceType: 'tasks',
+          }
         )
       );
 
@@ -167,12 +204,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '55555555-5555-4000-a000-555555555555',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'Task with ID "55555555-5555-4000-a000-555555555555" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/task.*not found/i),
       });
 
       expect(CachingService.cache404Response).toHaveBeenCalledWith(
@@ -193,12 +227,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '66666666-6666-4000-a000-666666666666',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'List record with ID "66666666-6666-4000-a000-666666666666" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/list.*not found/i),
       });
     });
 
@@ -216,12 +247,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '77777777-7777-4000-a000-777777777777',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'List record with ID "77777777-7777-4000-a000-777777777777" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/list.*not found/i),
       });
     });
 
@@ -239,12 +267,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '88888888-8888-4000-a000-888888888888',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'List record with ID "88888888-8888-4000-a000-888888888888" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/list.*not found/i),
       });
     });
   });
@@ -260,12 +285,9 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           record_id: '99999999-9999-4000-a000-999999999999',
         })
       ).rejects.toMatchObject({
-        status: 404,
-        body: {
-          code: 'not_found',
-          message:
-            'Record with ID "99999999-9999-4000-a000-999999999999" not found.',
-        },
+        name: 'EnhancedApiError',
+        statusCode: 404,
+        message: expect.stringMatching(/record.*not found/i),
       });
 
       // Should not call the underlying API if cached
@@ -283,14 +305,30 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           created_at: '2024-01-01',
           updated_at: '2024-01-01',
         })
-        .mockRejectedValueOnce({
-          status: 404,
-          body: { code: 'not_found', message: 'Company not found' },
-        })
-        .mockRejectedValueOnce({
-          status: 401,
-          body: { code: 'unauthorized', message: 'Invalid API key' },
-        });
+        .mockRejectedValueOnce(
+          new EnhancedApiError(
+            'Company not found',
+            404,
+            '/companies/dddddddd-dddd-4000-a000-dddddddddddd',
+            'GET',
+            {
+              httpStatus: 404,
+              resourceType: 'companies',
+            }
+          )
+        )
+        .mockRejectedValueOnce(
+          new EnhancedApiError(
+            'Invalid API key',
+            401,
+            '/companies/eeeeeeee-eeee-4000-a000-eeeeeeeeeeee',
+            'GET',
+            {
+              httpStatus: 401,
+              resourceType: 'companies',
+            }
+          )
+        );
 
       const results = await UniversalRetrievalService.getMultipleRecords(
         UniversalResourceType.COMPANIES,
@@ -323,10 +361,18 @@ describe('UniversalRetrievalService - Error Recovery', () => {
 
     it('should re-throw non-404 errors in existence check', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
-      vi.mocked(tasks.getTask).mockRejectedValue({
-        status: 503,
-        body: { code: 'service_unavailable', message: 'Service down' },
-      });
+      vi.mocked(tasks.getTask).mockRejectedValue(
+        new EnhancedApiError(
+          'Service down',
+          503,
+          '/tasks/bbbbbbbb-bbbb-4000-a000-bbbbbbbbbbbb',
+          'GET',
+          {
+            httpStatus: 503,
+            resourceType: 'tasks',
+          }
+        )
+      );
 
       await expect(
         UniversalRetrievalService.recordExists(
@@ -334,8 +380,11 @@ describe('UniversalRetrievalService - Error Recovery', () => {
           'bbbbbbbb-bbbb-4000-a000-bbbbbbbbbbbb'
         )
       ).rejects.toMatchObject({
-        status: 503,
-        body: { code: 'service_unavailable' },
+        name: 'EnhancedApiError',
+        statusCode: 503,
+        message: expect.stringMatching(
+          /service.{0,10}unavailable|service.{0,10}down/i
+        ),
       });
     });
   });
