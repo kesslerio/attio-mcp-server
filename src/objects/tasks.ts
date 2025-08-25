@@ -89,7 +89,7 @@ export async function createTask(
             },
           ]
         : [],
-    } as AttioTask;
+    } as unknown as AttioTask;
   }
 
   return apiCreate(content, options);
@@ -105,6 +105,48 @@ export async function updateTask(
     recordIds?: string[];
   }
 ): Promise<AttioTask> {
+  // Check if we should use mock data for testing
+  if (shouldUseMockData()) {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_TESTS === 'true'
+    ) {
+      console.error('[MockInjection] Using mock data for task update');
+    }
+
+    // Return mock task update response
+    return {
+      id: {
+        task_id: taskId,
+        object_id: 'tasks',
+        workspace_id: 'mock-workspace-id',
+      },
+      content_plaintext: updates.content || 'Mock updated task content',
+      deadline_at: updates.dueDate
+        ? new Date(updates.dueDate).toISOString()
+        : null,
+      is_completed: updates.status === 'completed',
+      status: updates.status || 'open',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      assignees: updates.assigneeId
+        ? [
+            {
+              referenced_actor_type: 'workspace-member' as const,
+              referenced_actor_id: updates.assigneeId,
+            },
+          ]
+        : [],
+      linked_records: updates.recordIds
+        ? updates.recordIds.map((recordId) => ({
+            id: recordId,
+            object_id: 'companies',
+            title: 'Mock Linked Record',
+          }))
+        : [],
+    } as unknown as AttioTask;
+  }
+
   return apiUpdate(taskId, updates);
 }
 

@@ -130,9 +130,9 @@ if (process.env.E2E_MODE !== 'true') {
     };
   });
 
-  // Global mock for companies search module
+  // Global mock for companies search module - pass-through for validation
   vi.mock('../src/objects/companies/search', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = await importOriginal<any>();
     return {
       ...actual,
       searchCompaniesByName: vi.fn(async (name: string) => {
@@ -142,17 +142,8 @@ if (process.env.E2E_MODE !== 'true') {
         }
         return [];
       }),
-      advancedSearchCompanies: vi.fn(async (...args) => {
-        // In E2E mode, use the actual implementation
-        if (process.env.E2E_MODE === 'true') {
-          const actual = await vi.importActual(
-            '../src/objects/companies/search'
-          );
-          return actual.advancedSearchCompanies(...args);
-        }
-        // Otherwise return mock
-        return [];
-      }),
+      // Pass-through for validation - let real validation run in offline tests
+      advancedSearchCompanies: actual.advancedSearchCompanies,
       companyCache: {
         clear: vi.fn(),
         get: vi.fn(),

@@ -23,6 +23,9 @@ import { UniversalUtilityService } from './UniversalUtilityService.js';
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 
+// Import error types for validation
+import { FilterValidationError } from '../errors/api-errors.js';
+
 // Import resource-specific search functions
 import { advancedSearchCompanies } from '../objects/companies/index.js';
 import { advancedSearchPeople } from '../objects/people/index.js';
@@ -295,11 +298,12 @@ export class UniversalSearchService {
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
-    if (filters && Object.keys(filters).length > 0) {
+    if (filters) {
       const searchFn = await ensureAdvancedSearchCompanies();
       if (!searchFn) {
         throw new Error('Companies search function not available');
       }
+      // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
       return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Handle content search vs basic search
@@ -323,6 +327,7 @@ export class UniversalSearchService {
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
+        // FilterValidationError will bubble up naturally from searchFn
         const results = await searchFn(contentFilters, limit, offset);
 
         // Apply relevance ranking if requested
@@ -346,6 +351,7 @@ export class UniversalSearchService {
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
+        // FilterValidationError will bubble up naturally from searchFn
         return await searchFn(nameFilters, limit, offset);
       }
     } else {
@@ -358,6 +364,11 @@ export class UniversalSearchService {
         }
         return await searchFn({ filters: [] }, limit, offset);
       } catch (error: unknown) {
+        // Let FilterValidationError bubble up for proper error handling
+        if (error instanceof FilterValidationError) {
+          throw error;
+        }
+
         // If empty filters aren't supported, return empty array rather than failing
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
@@ -383,11 +394,12 @@ export class UniversalSearchService {
     match_type: MatchType = MatchType.PARTIAL,
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
-    if (filters && Object.keys(filters).length > 0) {
+    if (filters) {
       const searchFn = await ensureAdvancedSearchPeople();
       if (!searchFn) {
         throw new Error('People search function not available');
       }
+      // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
       const paginatedResult = await searchFn(filters, {
         limit,
         offset,

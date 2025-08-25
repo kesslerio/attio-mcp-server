@@ -156,3 +156,31 @@ export interface SearchResultItem {
 export interface BatchOperationResult {
   [key: string]: unknown;
 }
+
+// Task Record Type Definition
+export interface TaskRecord {
+  id: {
+    task_id: string;
+    record_id?: string;
+    object_id?: string;
+  };
+  type?: string;
+  content?: string;
+  title?: string;
+  content_plaintext?: string;
+  status?: string;
+  due_date?: string;
+  assignee_id?: string;
+  assignee?: {
+    id: string;
+  };
+  values?: {
+    content?: Array<{ value: string }>;
+    title?: Array<{ value: string }>;
+    status?: Array<{ value: string }>;
+    [key: string]: unknown;
+  };
+  attributes?: Record<string, AttributeValue>;
+  created_at?: string;
+  updated_at?: string;
+}

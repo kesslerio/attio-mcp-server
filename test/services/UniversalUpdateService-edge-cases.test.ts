@@ -260,7 +260,9 @@ describe('UniversalUpdateService - Edge Cases', () => {
       });
 
       // The key assertion: we should NOT get an immutability error
-      expect(error.message).not.toContain('immutable');
+      expect(error.body?.message || error.message || '').not.toContain(
+        'immutable'
+      );
     });
 
     it('should return immutability error when task exists and content is modified', async () => {

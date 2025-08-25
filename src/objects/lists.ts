@@ -15,6 +15,7 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
+import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { FilterValue } from '../types/api-operations.js';
 import {
   AttioList,
@@ -48,6 +49,31 @@ function extract<T>(response: any): T {
 }
 
 /**
+ * Ensure list shape with proper ID structure and fallback values
+ */
+function ensureListShape(raw: any) {
+  if (!raw || typeof raw !== 'object') raw = {};
+  const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
+  const list_id =
+    typeof id === 'string'
+      ? id
+      : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
+  return {
+    id: { list_id },
+    name: raw.name ?? raw.title ?? 'Untitled List',
+    description: raw.description ?? '',
+    ...raw,
+  };
+}
+
+/**
+ * Helper to convert raw data to proper list array format
+ */
+function asListArray(raw: any): any[] {
+  return Array.isArray(raw) ? raw.map(ensureListShape) : [];
+}
+
+/**
  * Gets all lists in the workspace
  *
  * @param objectSlug - Optional object type to filter lists by (e.g., 'companies', 'people')
@@ -76,7 +102,7 @@ export async function getLists(
     }
 
     const response = await api.get(path);
-    return response.data.data || [];
+    return asListArray(extract<any[]>(response));
   }
 }
 
@@ -102,20 +128,21 @@ export async function getListDetails(listId: string): Promise<AttioList> {
 
     try {
       const response = await api.get(path);
-      return extract<AttioList>(response);
+
+      // Extract and normalize response, handling undefined case
+      const extracted = extract<AttioList>(response);
+
+      // Use ensureListShape to normalize the response (handles undefined/null)
+      return ensureListShape(extracted);
     } catch (apiError: any) {
-      const status = apiError?.response?.status;
+      const status = apiError?.response?.status ?? apiError?.statusCode;
       if (status === 404) {
-        // Import ResourceNotFoundError from api-errors
-        const { ResourceNotFoundError } = await import(
-          '../errors/api-errors.js'
-        );
-        throw new ResourceNotFoundError(
-          'list',
-          String(listId),
-          '/lists',
-          'GET'
-        );
+        throw new EnhancedApiError('Record not found', 404, path, 'GET', {
+          resourceType: 'lists',
+          recordId: String(listId),
+          httpStatus: 404,
+          documentationHint: 'Use search-lists to find valid list IDs.',
+        });
       }
       if (status === 422) {
         const { InvalidRequestError } = await import('../errors/api-errors.js');
@@ -125,7 +152,19 @@ export async function getListDetails(listId: string): Promise<AttioList> {
           'GET'
         );
       }
-      throw apiError;
+      // Surface other statuses as enhanced errors instead of generic 500s
+      const code = Number.isFinite(status) ? status : 500;
+      throw new EnhancedApiError(
+        apiError?.message ?? 'List retrieval failed',
+        code,
+        path,
+        'GET',
+        {
+          resourceType: 'lists',
+          recordId: String(listId),
+          httpStatus: code,
+        }
+      );
     }
   }
 }
@@ -1044,7 +1083,11 @@ export async function createList(
       console.error(`[createList] Success:`, JSON.stringify(response.data));
     }
 
-    return extract<AttioList>(response);
+    // Extract and normalize response, handling undefined case
+    const extracted = extract<AttioList>(response);
+
+    // Use ensureListShape to normalize the response (handles undefined/null)
+    return ensureListShape(extracted);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -1170,7 +1213,7 @@ export async function deleteList(listId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[deleteList] Error:`,
@@ -1185,14 +1228,26 @@ export async function deleteList(listId: string): Promise<boolean> {
       }
     }
 
-    // Add context to error message
-    if (hasErrorResponse(error) && error.response?.status === 404) {
-      throw new Error(`List ${listId} not found`);
-    } else if (hasErrorResponse(error) && error.response?.status === 403) {
-      throw new Error(`Insufficient permissions to delete list ${listId}`);
+    const status = error?.response?.status ?? error?.statusCode;
+    if (status === 404) {
+      throw new EnhancedApiError('Record not found', 404, path, 'DELETE', {
+        resourceType: 'lists',
+        recordId: String(listId),
+        httpStatus: 404,
+      });
     }
-
-    throw error;
+    const code = Number.isFinite(status) ? status : 500;
+    throw new EnhancedApiError(
+      error?.message ?? 'List deletion failed',
+      code,
+      path,
+      'DELETE',
+      {
+        resourceType: 'lists',
+        recordId: String(listId),
+        httpStatus: code,
+      }
+    );
   }
 }
 
@@ -1212,8 +1267,14 @@ export async function searchLists(
   // since Attio API may not support direct list search
   const allLists = await getLists(undefined, 100);
 
+  // Defensive programming: ensure we have an array to work with
+  const listsArray = Array.isArray(allLists) ? allLists : [];
+
   const lowerQuery = query.toLowerCase();
-  const filtered = allLists.filter((list) => {
+  const filtered = listsArray.filter((list) => {
+    // Ensure list is an object and has the expected properties
+    if (!list || typeof list !== 'object') return false;
+
     const name = (list.name || '').toLowerCase();
     const description = (list.description || '').toLowerCase();
     return name.includes(lowerQuery) || description.includes(lowerQuery);

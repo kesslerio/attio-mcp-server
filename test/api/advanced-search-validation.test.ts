@@ -9,6 +9,9 @@ import { initializeAttioClient } from '../../src/api/attio-client';
 vi.clearAllMocks();
 vi.resetAllMocks();
 
+// Unmock the specific module we want to test
+vi.doUnmock('../../src/objects/companies/search');
+
 // Import after clearing mocks
 const { advancedSearchCompanies } = await import(
   '../../src/objects/companies/search'

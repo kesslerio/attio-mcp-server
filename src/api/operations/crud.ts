@@ -133,21 +133,30 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
-    // Extract raw data from response
-    let rawResult: any;
-
-    if (response?.data?.data) {
-      // Standard nested structure
-      rawResult = response.data.data;
-    } else if (response?.data && typeof response.data === 'object') {
-      // Direct data structure
-      if (Array.isArray(response.data)) {
-        // If it's an array, take the first element (should be the created record)
-        rawResult = response.data[0];
-      } else {
-        rawResult = response.data;
-      }
-    } else {
+    // Extract raw data from response using Agent A's pattern
+    let rawResult = response?.data?.data ?? response?.data ?? response;
+    
+    // Additional extraction patterns for different Attio API response formats
+    if (!rawResult && response?.data?.attributes) {
+      // Some APIs return { data: { attributes: {...}, id: {...} } }
+      rawResult = response.data;
+    }
+    
+    // Handle array responses by taking first element
+    if (Array.isArray(rawResult) && rawResult.length > 0) {
+      rawResult = rawResult[0];
+    }
+    
+    // Final validation with debug logging
+    if (!rawResult || typeof rawResult !== 'object') {
+      console.error('DEBUG: Failed response extraction. Response structure:', {
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        hasNestedData: !!response?.data?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : [],
+        dataType: typeof response?.data,
+        rawDataType: typeof rawResult,
+      });
       throw new Error('Invalid API response structure: no data found');
     }
 
@@ -218,8 +227,8 @@ export async function updateRecord<T extends AttioRecord>(
 
     const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-    // Extract raw data from response
-    const rawResult = response?.data?.data || response?.data;
+    // Extract raw data from response using consistent pattern
+    const rawResult = response?.data?.data ?? response?.data ?? response;
 
     // Transform to proper AttioRecord structure with id.record_id
     const result = ensureAttioRecordStructure<T>(rawResult);

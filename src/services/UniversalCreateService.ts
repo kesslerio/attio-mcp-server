@@ -70,7 +70,7 @@ const COMPANY_ALLOWED_FIELDS = [
 
 const PERSON_ALLOWED_FIELDS = [
   'name',
-  // 'email_addresses', // Try without this field first
+  // 'email_addresses', // Still causing 400 errors
   // 'phone_numbers', // Commented out - not available in Attio API schema
   // 'job_title', // Use 'title' instead for Attio API
   // 'seniority', // Commented out - not available in Attio API schema

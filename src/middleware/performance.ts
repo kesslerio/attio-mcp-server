@@ -416,5 +416,8 @@ export function trackPerformance(toolName?: string) {
  */
 export const performanceTracker = PerformanceTracker;
 
-// Alias for backward compatibility
-export const PerformanceMonitor = PerformanceTracker;
+// Re-export compatibility layer for instance-based usage
+export {
+  PerformanceMonitor,
+  performanceMonitor,
+} from './performance-compat.js';

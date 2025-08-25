@@ -15,6 +15,7 @@ import {
   Company,
   FilterConditionType,
 } from '../../types/attio.js';
+import { FilterValidationError, FilterErrorCategory } from '../../errors/api-errors.js';
 import { normalizeDomain } from '../../utils/domain-utils.js';
 
 /**
@@ -100,48 +101,53 @@ export async function advancedSearchCompanies(
   // Strict validation BEFORE calling advancedSearchObject
   // This ensures FilterValidationError is thrown for invalid inputs
   if (!filters) {
-    throw new Error('Filters object is required');
+    throw new FilterValidationError('Filters object is required', FilterErrorCategory.STRUCTURE);
   }
 
   if (!('filters' in filters)) {
-    throw new Error('Filters must include a "filters" array');
+    throw new FilterValidationError('Filters must include a "filters" array', FilterErrorCategory.STRUCTURE);
   }
 
   if (!Array.isArray(filters.filters)) {
-    throw new Error('Filters.filters must be an array');
+    throw new FilterValidationError('Filters.filters must be an array', FilterErrorCategory.STRUCTURE);
   }
 
   // Validate each filter condition structure
   if (filters.filters && filters.filters.length > 0) {
     filters.filters.forEach((filter, index) => {
       if (!filter || typeof filter !== 'object') {
-        throw new Error(
-          `Invalid condition at index ${index}: filter must be an object`
+        throw new FilterValidationError(
+          `Invalid condition at index ${index}: filter must be an object`,
+          FilterErrorCategory.STRUCTURE
         );
       }
 
       if (!filter.attribute) {
-        throw new Error(
-          `Invalid condition at index ${index}: missing attribute object`
+        throw new FilterValidationError(
+          `Invalid condition at index ${index}: missing attribute object`,
+          FilterErrorCategory.ATTRIBUTE
         );
       }
 
       if (!filter.attribute.slug) {
-        throw new Error(
-          `Invalid condition at index ${index}: missing attribute.slug property`
+        throw new FilterValidationError(
+          `Invalid condition at index ${index}: missing attribute.slug property`,
+          FilterErrorCategory.ATTRIBUTE
         );
       }
 
       if (!filter.condition) {
-        throw new Error(
-          `Invalid condition at index ${index}: missing condition property`
+        throw new FilterValidationError(
+          `Invalid condition at index ${index}: missing condition property`,
+          FilterErrorCategory.CONDITION
         );
       }
 
       // Additional validation for unknown operators/malformed structures
       if (typeof filter.condition !== 'string') {
-        throw new Error(
-          `Invalid condition at index ${index}: condition must be a string`
+        throw new FilterValidationError(
+          `Invalid condition at index ${index}: condition must be a string`,
+          FilterErrorCategory.CONDITION
         );
       }
     });
@@ -151,14 +157,14 @@ export async function advancedSearchCompanies(
     limit !== undefined &&
     (typeof limit !== 'number' || limit < 0 || !Number.isInteger(limit))
   ) {
-    throw new Error('Limit must be a non-negative integer');
+    throw new FilterValidationError('Limit must be a non-negative integer', FilterErrorCategory.VALUE);
   }
 
   if (
     offset !== undefined &&
     (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset))
   ) {
-    throw new Error('Offset must be a non-negative integer');
+    throw new FilterValidationError('Offset must be a non-negative integer', FilterErrorCategory.VALUE);
   }
 
   return await advancedSearchObject<Company>(
@@ -177,7 +183,7 @@ export function createNameFilter(
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   if (!name || typeof name !== 'string') {
-    throw new Error('Name parameter must be a non-empty string');
+    throw new FilterValidationError('Name parameter must be a non-empty string', FilterErrorCategory.VALUE);
   }
 
   return {
@@ -199,7 +205,7 @@ export function createDomainFilter(
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   if (!domain || typeof domain !== 'string') {
-    throw new Error('Domain parameter must be a non-empty string');
+    throw new FilterValidationError('Domain parameter must be a non-empty string', FilterErrorCategory.VALUE);
   }
 
   const normalizedDomain = normalizeDomain(domain);
@@ -222,7 +228,7 @@ export function createIndustryFilter(
   condition: FilterConditionType = FilterConditionType.CONTAINS
 ): ListEntryFilters {
   if (!industry || typeof industry !== 'string') {
-    throw new Error('Industry parameter must be a non-empty string');
+    throw new FilterValidationError('Industry parameter must be a non-empty string', FilterErrorCategory.VALUE);
   }
 
   return {

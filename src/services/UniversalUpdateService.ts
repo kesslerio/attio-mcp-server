@@ -150,15 +150,16 @@ export class UniversalUpdateService {
         : {};
     const values = raw.values ?? raw;
 
-    // Early validation: if record_data is null/empty for tasks,
+    // Early validation: if record_data is null/empty/non-object for tasks,
     // return 404 without checking existence
     if (
       resource_type === UniversalResourceType.TASKS &&
       (!actualRecordData ||
+        typeof actualRecordData !== 'object' ||
         (typeof actualRecordData === 'object' &&
           Object.keys(values).length === 0))
     ) {
-      // For tasks with null/completely empty data, return 404 directly
+      // For tasks with null/non-object/completely empty data, return 404 directly
       throw {
         status: 404,
         body: {
@@ -452,11 +453,17 @@ export class UniversalUpdateService {
     record_id: string,
     mappedData: Record<string, unknown>
   ): Promise<AttioRecord> {
-    // 1) Check existence first
+    // 1) Early input validation - check for forbidden content fields BEFORE existence check
+    // This ensures proper error precedence: input validation → existence → immutability → update
+    const hasForbiddenFields = this.hasForbiddenContent(mappedData);
+
+    // 2) Check existence - only if input validation passes
+    let taskExists = false;
     try {
       await getTask(record_id); // calls GET /tasks/{id}
+      taskExists = true;
     } catch (error: unknown) {
-      // It doesn't exist → return a proper 404-like error object
+      // Task doesn't exist → return 404 immediately, don't check immutability
       throw {
         status: 404,
         body: {
@@ -466,15 +473,14 @@ export class UniversalUpdateService {
       };
     }
 
-    // 2) Check immutability - task exists, now validate content fields
-    try {
-      this.assertNoTaskContentUpdate(mappedData);
-    } catch (immutableErr) {
-      // Re-throw immutability error
-      throw immutableErr;
+    // 3) Now that we know task exists, check immutability constraints
+    if (taskExists && hasForbiddenFields) {
+      throw new FilterValidationError(
+        'Task content cannot be updated after creation. Content is immutable in the Attio API.'
+      );
     }
 
-    // 3) Proceed with normal update path (safe; no illegal content fields)
+    // 4) Proceed with normal update path (safe; task exists and no illegal content fields)
     return this.doUpdateTask(record_id, mappedData);
   }
 
