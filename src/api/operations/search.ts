@@ -13,6 +13,7 @@ import { callWithRetry, RetryConfig } from './retry.js';
 import { ListEntryFilters } from './types.js';
 import { transformFiltersToApiFormat } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
+import { ErrorEnhancer } from '../../errors/enhanced-api-errors.js';
 import {
   ApiError,
   SearchRequestBody,
@@ -186,9 +187,26 @@ export async function advancedSearchObject<T extends AttioRecord>(
   };
 
   return callWithRetry(async () => {
-    const requestBody = await createRequestBody();
-    const response = await api.post<AttioListResponse<T>>(path, requestBody);
-    return response?.data?.data || [];
+    try {
+      const requestBody = await createRequestBody();
+      const response = await api.post<AttioListResponse<T>>(path, requestBody);
+      const data = response?.data?.data;
+      
+      // Ensure we always return an array, never boolean or other types
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      // Return empty array if data is null, undefined, or not an array
+      return [];
+    } catch (err) {
+      // Throw EnhancedApiError for consistency
+      throw ErrorEnhancer.ensureEnhanced(err, {
+        endpoint: path,
+        method: 'POST',
+        resourceType: objectType,
+      });
+    }
   }, retryConfig);
 }
 

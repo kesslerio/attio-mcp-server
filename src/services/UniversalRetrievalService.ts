@@ -20,7 +20,7 @@ import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.j
 
 // Import error handling utilities
 import { createRecordNotFoundError } from '../utils/validation/uuid-validation.js';
-import { ErrorEnhancer } from '../errors/enhanced-api-errors.js';
+import { ErrorEnhancer, EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { toMcpResult, HttpResponse } from '../lib/http/toMcpResult.js';
 
 // Import resource-specific retrieval functions
@@ -136,6 +136,24 @@ export class UniversalRetrievalService {
     } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
 
+      // Handle EnhancedApiError instances directly - preserve them through the chain
+      if (apiError instanceof EnhancedApiError) {
+        // Cache 404 responses using CachingService
+        if (apiError.statusCode === 404) {
+          CachingService.cache404Response(resource_type, record_id);
+        }
+
+        enhancedPerformanceTracker.endOperation(
+          perfId,
+          false,
+          apiError.message,
+          apiError.statusCode
+        );
+
+        // Re-throw EnhancedApiError as-is - don't convert to legacy format
+        throw apiError;
+      }
+
       // Enhanced error handling for Issues #415, #416, #417
       const errorObj = apiError as Record<string, unknown>;
       const statusCode =
@@ -157,14 +175,15 @@ export class UniversalRetrievalService {
           404
         );
 
-        // Return legacy format for test compatibility
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `${resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)} record with ID "${record_id}" not found.`,
-          },
-        };
+        // Create and throw EnhancedApiError instead of legacy format
+        const enhancedError = new EnhancedApiError(
+          `${resource_type.charAt(0).toUpperCase() + resource_type.slice(1, -1)} record with ID "${record_id}" not found.`,
+          404,
+          `/${resource_type}/${record_id}`,
+          'GET',
+          { resourceType: resource_type, recordId: record_id }
+        );
+        throw enhancedError;
       }
 
       if (statusCode === 400) {
@@ -175,15 +194,15 @@ export class UniversalRetrievalService {
           400
         );
 
-        // Return structured HTTP response for MCP error mapping
-        throw {
-          status: 400,
-          body: {
-            code: 'validation_error',
-            message: `Invalid record_id format: ${record_id}`,
-            type: 'invalid_request_error',
-          },
-        } as HttpResponse;
+        // Create and throw EnhancedApiError instead of legacy format
+        const enhancedError = new EnhancedApiError(
+          `Invalid record_id format: ${record_id}`,
+          400,
+          `/${resource_type}/${record_id}`,
+          'GET',
+          { resourceType: resource_type, recordId: record_id }
+        );
+        throw enhancedError;
       }
 
       // Check if this is our structured HTTP response before enhancing
@@ -193,14 +212,23 @@ export class UniversalRetrievalService {
         'status' in apiError &&
         'body' in apiError
       ) {
-        // This is our structured HTTP response, re-throw as-is
+        // Convert legacy HTTP response to EnhancedApiError
+        const message = (apiError as any).body?.message || 'HTTP error';
+        const status = (apiError as any).status || 500;
         enhancedPerformanceTracker.endOperation(
           perfId,
           false,
-          'Structured HTTP error response',
-          statusCode
+          message,
+          status
         );
-        throw apiError;
+        const enhancedError = new EnhancedApiError(
+          message,
+          status,
+          `/${resource_type}/${record_id}`,
+          'GET',
+          { resourceType: resource_type, recordId: record_id }
+        );
+        throw enhancedError;
       }
 
       // Auto-enhance other errors with context
