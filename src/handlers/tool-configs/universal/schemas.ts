@@ -49,6 +49,7 @@ export class UniversalValidationError extends Error {
   public readonly example?: string;
   public readonly field?: string;
   public readonly httpStatusCode: HttpStatusCode;
+  public readonly cause?: Error;
 
   constructor(
     message: string,

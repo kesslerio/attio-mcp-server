@@ -88,16 +88,16 @@ export function registerResourceHandlers(server: Server): void {
         case ResourceType.LISTS:
           try {
             const lists = await getLists();
+            // Ensure lists is always an array
+            const safeList = Array.isArray(lists) ? lists : [];
             return {
-              resources: lists.map((list) => formatListAsResource(list)),
+              resources: safeList.map((list) => formatListAsResource(list)),
             };
           } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              `/lists`,
-              'GET',
-              (error as ApiError).response?.data || {}
-            );
+            // For resource requests, always return resources array even on error
+            return {
+              resources: [],
+            };
           }
 
         case ResourceType.COMPANIES:

@@ -33,7 +33,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'non-existent-task',
-          data: { content: 'New content' },
+          record_data: { content: 'New content' },
         })
       ).rejects.toMatchObject({
         status: 404,
@@ -55,7 +55,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'network-error-task',
-          data: { content: 'New content' },
+          record_data: { content: 'New content' },
         })
       ).rejects.toMatchObject({
         status: 404,
@@ -70,15 +70,15 @@ describe('UniversalUpdateService - Edge Cases', () => {
       // Mock getTask to return existing task
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { content: 'Modified content' },
+          record_data: { content: 'Modified content' },
         })
       ).rejects.toThrow(FilterValidationError);
     });
@@ -87,15 +87,15 @@ describe('UniversalUpdateService - Edge Cases', () => {
       // Mock getTask to return existing task
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       });
 
       await expect(
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: {
+          record_data: {
             content: 'Modified content',
             content_markdown: '**Modified** content',
             content_plaintext: 'Modified content',
@@ -167,13 +167,13 @@ describe('UniversalUpdateService - Edge Cases', () => {
     it('should allow updates with non-forbidden fields when task exists', async () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       };
 
       const mockUpdatedTask = {
         ...mockTask,
-        status: [{ value: 'completed' }],
+        status: 'completed',
       };
 
       // Mock successful existence check and update
@@ -196,8 +196,8 @@ describe('UniversalUpdateService - Edge Cases', () => {
     it('should handle task update API errors gracefully', async () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       };
 
       vi.mocked(tasks.getTask).mockResolvedValue(mockTask);
@@ -210,7 +210,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'invalid-status' },
+          record_data: { status: 'invalid-status' },
         })
       ).rejects.toMatchObject({
         status: 400,
@@ -221,8 +221,8 @@ describe('UniversalUpdateService - Edge Cases', () => {
     it('should handle task update with network errors', async () => {
       const mockTask = {
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       };
 
       vi.mocked(tasks.getTask).mockResolvedValue(mockTask);
@@ -234,7 +234,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'completed' },
+          record_data: { status: 'completed' },
         })
       ).rejects.toThrow('ECONNRESET');
     });
@@ -269,8 +269,8 @@ describe('UniversalUpdateService - Edge Cases', () => {
       // Mock task exists
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       });
 
       const error = await UniversalUpdateService.updateRecord({
@@ -287,8 +287,8 @@ describe('UniversalUpdateService - Edge Cases', () => {
       // Mock task exists during immutability check but is deleted before update
       vi.mocked(tasks.getTask).mockResolvedValueOnce({
         id: { task_id: 'existing-task' },
-        content: [{ value: 'Original content' }],
-        status: [{ value: 'pending' }],
+        content: 'Original content',
+        status: 'pending',
       });
 
       vi.mocked(tasks.updateTask).mockRejectedValue({
@@ -300,7 +300,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'existing-task',
-          data: { status: 'completed' },
+          record_data: { status: 'completed' },
         })
       ).rejects.toMatchObject({
         status: 404,
@@ -315,7 +315,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
-          data: {
+          record_data: {
             nested: {
               content: 'Hidden content update',
             },
@@ -335,7 +335,7 @@ describe('UniversalUpdateService - Edge Cases', () => {
         UniversalUpdateService.updateRecord({
           resource_type: UniversalResourceType.TASKS,
           record_id: 'test-task',
-          data: {
+          record_data: {
             updates: ['content', 'content_markdown'],
           },
         })

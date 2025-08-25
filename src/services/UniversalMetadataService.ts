@@ -352,6 +352,18 @@ export class UniversalMetadataService {
           count: Array.isArray(filtered) ? filtered.length : 0,
         };
       }
+
+      // Handle format with 'all', 'custom', 'standard' fields (e.g., from discoverCompanyAttributes)
+      if (Array.isArray(attrs.all)) {
+        const filtered = this.filterAttributesByCategory(
+          attrs.all as any[],
+          requestedCategories
+        );
+        return {
+          attributes: filtered,
+          count: Array.isArray(filtered) ? filtered.length : 0,
+        };
+      }
     }
 
     // If neither array nor object with attributes, return as-is

@@ -127,6 +127,19 @@ export async function createObjectWithDynamicFields<T extends AttioRecord>(
         Object.keys(result).length === 0 &&
         !looksLikeCreatedRecord)
     ) {
+      // For companies, allow empty results to pass through to createObjectRecord fallback logic
+      if (objectType === ResourceType.COMPANIES) {
+        if (
+          process.env.NODE_ENV === 'development' ||
+          process.env.E2E_MODE === 'true'
+        ) {
+          console.error(
+            `[createObjectWithDynamicFields:${objectType}] Empty result detected, passing to createObjectRecord fallback`
+          );
+        }
+        return result; // Let createObjectRecord handle the fallback
+      }
+
       throw new Error(
         `Create operation returned empty result for ${objectType}`
       );

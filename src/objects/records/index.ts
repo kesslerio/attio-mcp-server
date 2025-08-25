@@ -90,6 +90,62 @@ export async function createObjectRecord<T extends AttioRecord>(
       });
     }
 
+    // Check for empty results and apply fallback query for companies
+    const isEmpty = !result || (typeof result === 'object' && Object.keys(result).length === 0);
+    const hasNoValidId = !result?.id?.record_id && !result?.record_id;
+    
+    if ((isEmpty || hasNoValidId) && normalizedSlug === 'companies' && attributes?.name) {
+      // Extract the actual name value from the Attio format
+      const nameValue = attributes.name?.value || attributes.name;
+      
+      if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.E2E_MODE === 'true'
+      ) {
+        console.error('[createObjectRecord] Empty result detected for company creation, trying query fallback with name:', nameValue);
+      }
+      
+      try {
+        const api = getAttioClient();
+        // Use the documented query endpoint with exact name match
+        const queryResponse = await api.post(`/objects/companies/records/query`, {
+          filter: { name: nameValue },
+          limit: 1,
+        });
+        
+        if (
+          process.env.NODE_ENV === 'development' ||
+          process.env.E2E_MODE === 'true'
+        ) {
+          console.error('[createObjectRecord] Query fallback response:', {
+            queryResponse: queryResponse?.data,
+            hasData: !!queryResponse?.data?.data,
+            dataLength: Array.isArray(queryResponse?.data?.data) ? queryResponse.data.data.length : 'not array',
+          });
+        }
+        
+        // If we found an existing record, return it
+        if (queryResponse?.data?.data && Array.isArray(queryResponse.data.data) && queryResponse.data.data.length > 0) {
+          const foundRecord = queryResponse.data.data[0];
+          if (
+            process.env.NODE_ENV === 'development' ||
+            process.env.E2E_MODE === 'true'
+          ) {
+            console.error('[createObjectRecord] Found existing company via query fallback:', foundRecord);
+          }
+          return foundRecord as T;
+        }
+      } catch (queryError) {
+        if (
+          process.env.NODE_ENV === 'development' ||
+          process.env.E2E_MODE === 'true'
+        ) {
+          console.error('[createObjectRecord] Query fallback failed:', queryError);
+        }
+        // Continue with original empty result rather than throwing
+      }
+    }
+
     return result;
   } catch (error: unknown) {
     if (

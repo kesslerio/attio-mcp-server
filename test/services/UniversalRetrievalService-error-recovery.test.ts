@@ -64,7 +64,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
       // Mock a network error
       vi.mocked(lists.getListDetails).mockRejectedValue(
         new EnhancedApiError(
-          'Service temporarily unavailable',
+          'Service unavailable',
           503,
           '/lists/87654321-4321-4000-b000-987654321098',
           'GET',
@@ -219,7 +219,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
   describe('List-Specific Edge Cases', () => {
     it('should handle null list response without masking other errors', async () => {
       // Mock getListDetails returning null
-      vi.mocked(lists.getListDetails).mockResolvedValue(null);
+      vi.mocked(lists.getListDetails).mockResolvedValue(null as any);
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -239,7 +239,7 @@ describe('UniversalRetrievalService - Error Recovery', () => {
         // Missing required 'id' field
         name: 'Test List',
         description: 'A test list',
-      });
+      } as any);
 
       await expect(
         UniversalRetrievalService.getRecordDetails({
@@ -256,9 +256,14 @@ describe('UniversalRetrievalService - Error Recovery', () => {
     it('should handle list with missing list_id without masking other errors', async () => {
       // Mock getListDetails returning data with invalid ID structure
       vi.mocked(lists.getListDetails).mockResolvedValue({
-        id: { workspace_id: 'ws-123' }, // Missing list_id
+        id: { workspace_id: 'ws-123', list_id: '' }, // Missing list_id value
+        title: 'Test List',
         name: 'Test List',
         description: 'A test list',
+        object_slug: 'test-list',
+        workspace_id: 'ws-123',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
       });
 
       await expect(

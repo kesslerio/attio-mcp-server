@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../../src/types/attio.js';
+import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
 
 // Mock the dependencies
 vi.mock('../../src/services/ValidationService.js', () => ({
@@ -65,6 +66,16 @@ vi.mock('../../src/utils/normalization/people-normalization.js', () => ({
 }));
 
 vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+  EnhancedApiError: vi
+    .fn()
+    .mockImplementation((message, statusCode, endpoint, method) => {
+      const error = new Error(message);
+      (error as any).statusCode = statusCode;
+      (error as any).endpoint = endpoint;
+      (error as any).method = method;
+      (error as any).name = 'EnhancedApiError';
+      return error;
+    }),
   ErrorTemplates: {
     TASK_FIELD_MAPPING: vi.fn(
       (tried, correct) => new Error(`Use ${correct} instead of ${tried}`)
@@ -211,6 +222,7 @@ describe('UniversalCreateService', () => {
     it('should create a list record and convert format', async () => {
       const mockList = {
         id: { list_id: 'list_789' },
+        title: 'Test List',
         name: 'Test List',
         description: 'Test description',
         object_slug: 'companies',
@@ -218,6 +230,7 @@ describe('UniversalCreateService', () => {
         workspace_id: 'ws_123',
         workspace_member_access: 'read',
         created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
       };
       vi.mocked(createList).mockResolvedValue(mockList);
 
@@ -526,6 +539,7 @@ describe('UniversalCreateService', () => {
 
     it('should handle unsupported resource type with correction', async () => {
       vi.mocked(validateResourceType).mockReturnValue({
+        valid: false,
         corrected: UniversalResourceType.COMPANIES,
         suggestion: 'Did you mean "companies"?',
       });
@@ -546,7 +560,8 @@ describe('UniversalCreateService', () => {
 
     it('should handle unsupported resource type without correction', async () => {
       vi.mocked(validateResourceType).mockReturnValue({
-        corrected: null,
+        valid: false,
+        corrected: undefined,
         suggestion: 'Valid resource types are: companies, people, lists',
       });
 
@@ -562,7 +577,7 @@ describe('UniversalCreateService', () => {
       const originalError = new Error('Task creation failed');
       vi.mocked(MockService.createTask).mockRejectedValue(originalError);
       vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(
-        new Error('Enhanced task error')
+        new EnhancedApiError('Enhanced task error', 400, '/api/tasks', 'POST')
       );
 
       vi.mocked(mapRecordFields).mockReturnValue({

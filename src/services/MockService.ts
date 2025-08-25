@@ -174,24 +174,15 @@ export class MockService {
         workspace_id: 'mock-workspace-id',
       },
       values: {
-        name: [
-          {
-            value:
-              (companyData.name as string) ||
-              `Mock Company ${mockId.slice(-4)}`,
-          },
-        ],
+        name:
+          (companyData.name as string) || `Mock Company ${mockId.slice(-4)}`,
         domains: Array.isArray(companyData.domains)
           ? (companyData.domains as string[]).map((d) => ({ value: d }))
           : [{ value: `${mockId}.example.com` }],
-        industry: [{ value: (companyData.industry as string) || 'Technology' }],
-        description: [
-          {
-            value:
-              (companyData.description as string) ||
-              `Mock company for testing - ${mockId}`,
-          },
-        ],
+        industry: (companyData.industry as string) || 'Technology',
+        description:
+          (companyData.description as string) ||
+          `Mock company for testing - ${mockId}`,
       },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -279,12 +270,7 @@ export class MockService {
         workspace_id: 'mock-workspace-id',
       },
       values: {
-        name: [
-          {
-            value:
-              (personData.name as string) || `Mock Person ${mockId.slice(-4)}`,
-          },
-        ],
+        name: (personData.name as string) || `Mock Person ${mockId.slice(-4)}`,
         email_addresses: Array.isArray(personData.email_addresses)
           ? (personData.email_addresses as string[]).map((email) => ({
               value: email,
@@ -356,15 +342,13 @@ export class MockService {
                 workspace_id: task.id.workspace_id || 'test-workspace',
               },
               values: {
-                content: task.content ? [{ value: task.content }] : undefined,
-                title: task.content ? [{ value: task.content }] : undefined,
-                status: task.status ? [{ value: task.status }] : undefined,
+                content: task.content || undefined,
+                title: task.content || undefined,
+                status: task.status || undefined,
                 due_date: task.deadline_at
-                  ? [{ value: String(task.deadline_at).split('T')[0] }]
+                  ? String(task.deadline_at).split('T')[0]
                   : undefined,
-                assignee: task.assignee
-                  ? [{ value: task.assignee }]
-                  : undefined,
+                assignee: task.assignee || undefined,
               },
               created_at: task.created_at,
               updated_at: task.updated_at,

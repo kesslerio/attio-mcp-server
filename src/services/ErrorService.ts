@@ -193,6 +193,10 @@ export class ErrorService {
             fieldName
           );
           if (suggestion) {
+            // If suggestion indicates unable to provide suggestions, enhance with discover-attributes guidance
+            if (suggestion.includes('Unable to provide suggestions')) {
+              return `Try the discover-attributes tool to list available fields for ${resourceType}. ${suggestion}`;
+            }
             return suggestion;
           }
         }

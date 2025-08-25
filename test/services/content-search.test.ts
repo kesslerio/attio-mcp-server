@@ -87,8 +87,8 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: [{ value: 'Alpha Technologies' }],
-            description: [{ value: 'AI solutions for healthcare' }],
+            name: 'Alpha Technologies',
+            description: 'AI solutions for healthcare',
           },
         } as AttioRecord,
       ];
@@ -191,15 +191,15 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: [{ value: 'AI Company' }],
-            description: [{ value: 'Specializes in AI and AI technologies' }],
+            name: 'AI Company',
+            description: 'Specializes in AI and AI technologies',
           },
         } as AttioRecord,
         {
           id: { record_id: '2' },
           values: {
-            name: [{ value: 'Tech Corp' }],
-            description: [{ value: 'General technology with some AI' }],
+            name: 'Tech Corp',
+            description: 'General technology with some AI',
           },
         } as AttioRecord,
       ];
@@ -361,17 +361,15 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: [{ value: 'Tech Company' }],
-            description: [{ value: 'AI is mentioned once' }],
+            name: 'Tech Company',
+            description: 'AI is mentioned once',
           },
         } as AttioRecord,
         {
           id: { record_id: '2' },
           values: {
-            name: [{ value: 'AI Corp' }],
-            description: [
-              { value: 'AI solutions using AI technology for AI applications' },
-            ],
+            name: 'AI Corp',
+            description: 'AI solutions using AI technology for AI applications',
           },
         } as AttioRecord,
       ];
@@ -394,8 +392,8 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: [{ value: 'Company' }],
-            description: [{ value: 'automation systems' }],
+            name: 'Company',
+            description: 'automation systems',
           },
         } as AttioRecord,
       ];

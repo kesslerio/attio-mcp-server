@@ -129,7 +129,10 @@ describe('UniversalUtilityService', () => {
         },
         content: 'Test task content',
         status: 'pending',
-        assignee: 'user_789',
+        assignee: {
+          id: 'user_789',
+          type: 'person',
+        },
         due_date: '2024-01-15',
         linked_records: [],
         created_at: '2024-01-01T00:00:00Z',
@@ -146,10 +149,10 @@ describe('UniversalUtilityService', () => {
           workspace_id: 'ws_456',
         },
         values: {
-          content: [{ value: 'Test task content' }],
-          status: [{ value: 'pending' }],
-          assignee: [{ value: 'user_789', name: undefined }],
-          due_date: [{ value: '2024-01-15' }],
+          content: 'Test task content',
+          status: 'pending',
+          assignee: 'user_789',
+          due_date: '2024-01-15',
           linked_records: [],
         },
         created_at: '2024-01-01T00:00:00Z',
@@ -159,18 +162,14 @@ describe('UniversalUtilityService', () => {
         status: 'pending',
         due_date: '2024-01-15',
         assignee_id: 'user_789',
-        assignee: {
-          id: 'user_789',
-          type: 'person',
-          name: undefined,
-        },
+        assignee: 'user_789',
       });
     });
 
     it('should convert task with id structure', () => {
       const task: AttioTask = {
         id: {
-          id: 'task_abc',
+          task_id: 'task_abc',
           workspace_id: 'ws_def',
         },
         content: 'Another task',
@@ -192,10 +191,10 @@ describe('UniversalUtilityService', () => {
           workspace_id: 'ws_def',
         },
         values: {
-          content: [{ value: 'Another task' }],
-          status: [{ value: 'completed' }],
+          content: 'Another task',
+          status: 'completed',
           assignee: undefined,
-          due_date: undefined,
+          due_date: null,
           linked_records: undefined,
         },
         created_at: '2024-01-01T00:00:00Z',
@@ -210,10 +209,15 @@ describe('UniversalUtilityService', () => {
 
     it('should convert task with string ID', () => {
       const task: AttioTask = {
-        id: 'simple_task_id',
+        id: {
+          task_id: 'simple_task_id',
+        },
         content: 'Simple task',
         status: 'in_progress',
-        assignee: 'user_xyz',
+        assignee: {
+          id: 'user_xyz',
+          type: 'person',
+        },
         due_date: '2024-02-01',
         linked_records: [{ type: 'company', id: 'comp_123' }],
         created_at: '2024-01-01T00:00:00Z',
@@ -230,10 +234,10 @@ describe('UniversalUtilityService', () => {
           workspace_id: '',
         },
         values: {
-          content: [{ value: 'Simple task' }],
-          status: [{ value: 'in_progress' }],
-          assignee: [{ value: 'user_xyz', name: undefined }],
-          due_date: [{ value: '2024-02-01' }],
+          content: 'Simple task',
+          status: 'in_progress',
+          assignee: 'user_xyz',
+          due_date: '2024-02-01',
           linked_records: [{ type: 'company', id: 'comp_123' }],
         },
         created_at: '2024-01-01T00:00:00Z',
@@ -243,11 +247,7 @@ describe('UniversalUtilityService', () => {
         status: 'in_progress',
         due_date: '2024-02-01',
         assignee_id: 'user_xyz',
-        assignee: {
-          id: 'user_xyz',
-          type: 'person',
-          name: undefined,
-        },
+        assignee: 'user_xyz',
       });
     });
 
@@ -271,7 +271,7 @@ describe('UniversalUtilityService', () => {
     });
 
     it('should throw error for unrecognized ID structure', () => {
-      const task: AttioTask = {
+      const task: any = {
         id: {
           unknown_field: 'some_value',
         },

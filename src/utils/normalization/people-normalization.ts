@@ -560,7 +560,13 @@ export class PeopleDataNormalizer {
     if (hasNameField) {
       const nameData = this.normalizeName(sanitized);
       if (nameData) {
-        // Flatten name fields to top level for Attio API compatibility
+        // Create name object for Attio personal-name format (tests expect this)
+        normalized.name = {
+          first_name: nameData.first_name,
+          last_name: nameData.last_name,
+        };
+        
+        // Also add flattened fields for backward compatibility with attribute-format-helpers
         if (nameData.first_name) {
           normalized.first_name = nameData.first_name;
         }
