@@ -1,7 +1,7 @@
 /**
  * Debug script for testing tool handlers
  */
-const { registerToolHandlers } = require('./dist/handlers/tools.js');
+import { registerToolHandlers } from '../../dist/handlers/tools/index.js';
 
 // Mock server
 const mockServer = {

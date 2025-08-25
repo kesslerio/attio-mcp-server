@@ -19,6 +19,8 @@ import { AttioRecord, AttioTask } from '../../src/types/attio.js';
 vi.mock('../../src/services/ValidationService.js', () => ({
   ValidationService: {
     validatePaginationParameters: vi.fn(),
+    validateFiltersSchema: vi.fn(),
+    validateUUIDForSearch: vi.fn().mockReturnValue(true),
   },
 }));
 
@@ -55,6 +57,17 @@ vi.mock('../../src/objects/people/index.js', () => ({
 
 vi.mock('../../src/objects/lists.js', () => ({
   searchLists: vi.fn(),
+}));
+
+vi.mock('../../src/services/MockService.js', () => ({
+  MockService: {
+    isUsingMockData: vi.fn().mockReturnValue(false),
+  },
+}));
+
+vi.mock('../../src/services/_guards.js', () => ({
+  assertNoMockInE2E: vi.fn(),
+  assertListMembershipRoute: vi.fn(),
 }));
 
 vi.mock('../../src/objects/records/index.js', () => ({

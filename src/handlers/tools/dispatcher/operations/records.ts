@@ -1,7 +1,7 @@
 /**
  * Generic record operation handlers for tool execution
  *
- * Handles generic record operations like list-records and get-record
+ * Handles generic record operations like list-records and get-record-details
  * that work across all object types (companies, people, deals, etc.)
  */
 
@@ -67,7 +67,7 @@ export async function handleListOperation(
 }
 
 /**
- * Handle get-record operations
+ * Handle get-record-details operations
  *
  * Executes generic record retrieval for any object type
  */

@@ -99,7 +99,7 @@ await client.callTool('search-records', {
 
 **Description**: Get detailed information for any record type.
 
-**Consolidates**: `get-company-details`, `get-person-details`, `get-record`, `get-task-details`
+**Consolidates**: `get-company-details`, `get-person-details`, `get-record-details`, `get-task-details`
 
 **Schema**:
 ```typescript

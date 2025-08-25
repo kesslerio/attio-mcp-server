@@ -75,7 +75,6 @@ export function registerResourceHandlers(server: Server): void {
               resources: people.map((person) =>
                 formatRecordAsResource(person, ResourceType.PEOPLE)
               ),
-              description: `Found ${people.length} people that you have interacted with most recently`,
             };
           } catch (error: unknown) {
             return createErrorResult(
@@ -91,7 +90,6 @@ export function registerResourceHandlers(server: Server): void {
             const lists = await getLists();
             return {
               resources: lists.map((list) => formatListAsResource(list)),
-              description: `Found ${lists.length} lists in your workspace`,
             };
           } catch (error: unknown) {
             return createErrorResult(
@@ -110,7 +108,6 @@ export function registerResourceHandlers(server: Server): void {
               resources: companies.map((company) =>
                 formatRecordAsResource(company, ResourceType.COMPANIES)
               ),
-              description: `Found ${companies.length} companies that you have interacted with most recently`,
             };
           } catch (error: unknown) {
             return createErrorResult(

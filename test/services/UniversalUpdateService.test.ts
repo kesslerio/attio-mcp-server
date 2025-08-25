@@ -33,6 +33,7 @@ vi.mock('../../src/config/deal-defaults.js', () => ({
 
 vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
+  mapTaskFields: vi.fn((operation, input) => input), // Return input unchanged for tests
   validateResourceType: vi.fn(),
   getFieldSuggestions: vi.fn(),
   validateFields: vi.fn(),

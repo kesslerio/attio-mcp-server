@@ -26,6 +26,52 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
 }
 
 /**
+ * Transforms raw API response to ensure proper AttioRecord structure
+ * @private
+ */
+function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any): T {
+  if (!rawData || typeof rawData !== 'object') {
+    throw new Error('Invalid API response: no data found');
+  }
+
+  // If already has the proper structure, return as-is
+  if (rawData.id && rawData.id.record_id && rawData.values) {
+    return rawData as T;
+  }
+
+  // Transform to proper AttioRecord structure
+  let result: any = { ...rawData };
+
+  // Ensure id.record_id structure exists
+  if (!result.id || !result.id.record_id) {
+    if (typeof result.record_id === 'string') {
+      // Move record_id to nested structure
+      result.id = { record_id: result.record_id };
+    } else if (typeof result.id === 'string') {
+      // Convert string id to nested structure
+      result.id = { record_id: result.id };
+    } else if (result.data?.id?.record_id) {
+      // Use nested data structure
+      result.id = result.data.id;
+      result.values = result.data.values || result.values;
+    } else {
+      throw new Error('Invalid API response: record missing ID structure');
+    }
+  }
+
+  // Ensure values object exists
+  if (!result.values) {
+    if (result.data?.values) {
+      result.values = result.data.values;
+    } else {
+      result.values = {};
+    }
+  }
+
+  return result as T;
+}
+
+/**
  * Generic function to get details for a specific record
  *
  * @param objectType - The type of object to get (people or companies)
@@ -87,28 +133,35 @@ export async function createRecord<T extends AttioRecord>(
       },
     });
 
-    // Handle different response structures
-    let result: T;
-
-    if (response?.data?.data) {
-      // Standard nested structure
-      result = response.data.data;
-    } else if (response?.data && typeof response.data === 'object') {
-      // Direct data structure
-      if (Array.isArray(response.data)) {
-        // If it's an array, take the first element (should be the created record)
-        result = response.data[0] as T;
-      } else {
-        result = response.data as unknown as T;
-      }
-    } else {
+    // Extract raw data from response using Agent A's pattern
+    let rawResult = response?.data?.data ?? response?.data ?? response;
+    
+    // Additional extraction patterns for different Attio API response formats
+    if (!rawResult && response?.data?.attributes) {
+      // Some APIs return { data: { attributes: {...}, id: {...} } }
+      rawResult = response.data as any;
+    }
+    
+    // Handle array responses by taking first element
+    if (Array.isArray(rawResult) && rawResult.length > 0) {
+      rawResult = rawResult[0];
+    }
+    
+    // Final validation with debug logging
+    if (!rawResult || typeof rawResult !== 'object') {
+      console.error('DEBUG: Failed response extraction. Response structure:', {
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        hasNestedData: !!response?.data?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : [],
+        dataType: typeof response?.data,
+        rawDataType: typeof rawResult,
+      });
       throw new Error('Invalid API response structure: no data found');
     }
 
-    // Ensure we have a valid record with an ID
-    if (!result || !('id' in result)) {
-      throw new Error('Invalid API response: record missing ID');
-    }
+    // Transform to proper AttioRecord structure with id.record_id
+    const result = ensureAttioRecordStructure<T>(rawResult);
 
     return result;
   }, retryConfig);
@@ -174,7 +227,13 @@ export async function updateRecord<T extends AttioRecord>(
 
     const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-    return response?.data?.data || response?.data;
+    // Extract raw data from response using consistent pattern
+    const rawResult = response?.data?.data ?? response?.data ?? response;
+
+    // Transform to proper AttioRecord structure with id.record_id
+    const result = ensureAttioRecordStructure<T>(rawResult);
+
+    return result;
   }, retryConfig);
 }
 

@@ -116,10 +116,15 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
      record_data='{"job_title": "TC004 Updated Title"}'
    ```
 
-3. Update task status:
+3. Update task completion status:
    ```bash
+   # CORRECT: Use supported task fields (per Issue #517 API research)
    mcp__attio__update-record resource_type="tasks" record_id="[TC003_TASK_ID]" \
-     record_data='{"status": "in_progress"}'
+     record_data='{"is_completed": false}'
+   
+   # LEGACY/INCORRECT: "status" field not supported by Attio API
+   # mcp__attio__update-record resource_type="tasks" record_id="[TC003_TASK_ID]" \
+   #   record_data='{"status": "in_progress"}'
    ```
 
 **Expected Results:**
@@ -129,6 +134,8 @@ Priority 0 tests validate essential CRUD (Create, Read, Update, Delete) operatio
 - Proper validation prevents invalid field updates
 
 **Success Criteria:** All updates applied successfully with data persistence verified
+
+**Related Issues:** [Issue #517](https://github.com/kesslerio/attio-mcp-server/issues/517) - Task updates limited to specific fields: `deadline_at`, `is_completed`, `linked_records`, `assignees`
 
 ---
 

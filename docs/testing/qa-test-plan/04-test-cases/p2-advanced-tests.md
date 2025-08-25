@@ -24,23 +24,32 @@ Priority 2 tests validate advanced functionality including relationship queries,
 
 **Prerequisites:** Established relationships between test records
 
+⚠️ **IMPLEMENTATION NOTE**: As of Issue #523, this test requires proper query API implementation. Current MCP tools may not use correct Attio API structure.
+
 **Test Steps:**
 1. Find people associated with a company:
    ```bash
+   # PREFERRED: Use advanced-search with proper filter structure (after Issue #523 fix)
+   mcp__attio__advanced-search resource_type="people" \
+     filters='{"filter": {"path": ["company", "id"], "constraints": [{"operator": "equals", "value": "[COMPANY_ID]"}]}}'
+   
+   # LEGACY: Current relationship search (may fail until Issue #523 resolved)
    mcp__attio__search-by-relationship relationship_type="company_person" \
      source_id="[COMPANY_ID]" target_resource_type="people" limit=10
    ```
 
 2. Find deals associated with a person:
    ```bash
-   mcp__attio__search-by-relationship relationship_type="person_deal" \
-     source_id="[PERSON_ID]" target_resource_type="deals" limit=10
+   # PREFERRED: Query API approach
+   mcp__attio__advanced-search resource_type="deals" \
+     filters='{"filter": {"path": ["person", "id"], "constraints": [{"operator": "equals", "value": "[PERSON_ID]"}]}}'
    ```
 
 3. Find tasks linked to a company:
    ```bash
-   mcp__attio__search-by-relationship relationship_type="company_task" \
-     source_id="[COMPANY_ID]" target_resource_type="tasks" limit=10
+   # PREFERRED: Query API approach  
+   mcp__attio__advanced-search resource_type="tasks" \
+     filters='{"filter": {"path": ["company", "id"], "constraints": [{"operator": "equals", "value": "[COMPANY_ID]"}]}}'
    ```
 
 **Expected Results:**
@@ -51,29 +60,40 @@ Priority 2 tests validate advanced functionality including relationship queries,
 
 **Success Criteria:** Relationship searches return accurate connected records for at least 2/3 relationship types tested
 
+**Related Issues:** [Issue #523](https://github.com/kesslerio/attio-mcp-server/issues/523) - Query API implementation needed
+
 ---
 
 ### TC-011: Search by Content - Content-Based Searches
 
 **Objective:** Validate search capabilities across notes, descriptions, and content fields
 
+⚠️ **IMPLEMENTATION NOTE**: As of Issue #523, this test requires proper query API implementation. Current MCP tools use incorrect filter structure.
+
 **Test Steps:**
 1. Search companies by content:
    ```bash
+   # PREFERRED: Use advanced-search with proper content path (after Issue #523 fix)
+   mcp__attio__advanced-search resource_type="companies" \
+     filters='{"filter": {"path": ["description"], "constraints": [{"operator": "contains", "value": "important client"}]}}'
+   
+   # LEGACY: Current content search (fails until Issue #523 resolved)
    mcp__attio__search-by-content resource_type="companies" \
      content_type="notes" search_query="important client" limit=10
    ```
 
 2. Search people by content:
    ```bash
-   mcp__attio__search-by-content resource_type="people" \
-     content_type="description" search_query="key contact" limit=10
+   # PREFERRED: Query API with specific content field
+   mcp__attio__advanced-search resource_type="people" \
+     filters='{"filter": {"path": ["bio"], "constraints": [{"operator": "contains", "value": "key contact"}]}}'
    ```
 
 3. Search across multiple content types:
    ```bash
-   mcp__attio__search-by-content resource_type="deals" \
-     content_type="all" search_query="quarterly review" limit=10
+   # PREFERRED: Multiple filter approach for different content fields
+   mcp__attio__advanced-search resource_type="deals" \
+     filters='{"filter": {"path": ["description"], "constraints": [{"operator": "contains", "value": "quarterly review"}]}}'
    ```
 
 **Expected Results:**
@@ -84,29 +104,41 @@ Priority 2 tests validate advanced functionality including relationship queries,
 
 **Success Criteria:** Content search returns relevant results for at least 2/3 search scenarios
 
+**Related Issues:** [Issue #523](https://github.com/kesslerio/attio-mcp-server/issues/523) - Query API implementation needed
+
 ---
 
 ### TC-012: Search by Timeframe - Date Range Searches
 
 **Objective:** Validate temporal filtering and date-based searches
 
+⚠️ **IMPLEMENTATION NOTE**: As of Issue #523, this test requires proper query API implementation. Current MCP tools attempt direct timeframe search instead of date filtering.
+
 **Test Steps:**
 1. Search tasks by creation date:
    ```bash
+   # PREFERRED: Use advanced-search with date filter (after Issue #523 fix)
+   mcp__attio__advanced-search resource_type="tasks" \
+     filters='[{"field": "created_at", "operator": ">=", "value": "2024-01-01"}, {"field": "created_at", "operator": "<=", "value": "2024-12-31"}]'
+   
+   # LEGACY: Current timeframe search (fails until Issue #523 resolved)
    mcp__attio__search-by-timeframe resource_type="tasks" \
      timeframe_type="created_at" start_date="2024-01-01" end_date="2024-12-31" limit=20
    ```
 
 2. Search companies by last activity:
    ```bash
-   mcp__attio__search-by-timeframe resource_type="companies" \
-     timeframe_type="last_activity" start_date="2024-08-01" limit=15
+   # PREFERRED: Query API with date operator
+   mcp__attio__advanced-search resource_type="companies" \
+     filters='[{"field": "created_at", "operator": ">=", "value": "2024-08-01"}]' \
+     sort_by="created_at" sort_order="desc" limit=15
    ```
 
 3. Search people by modified date:
    ```bash
-   mcp__attio__search-by-timeframe resource_type="people" \
-     timeframe_type="updated_at" start_date="2024-08-15" end_date="2024-08-20"
+   # PREFERRED: Date range filtering with query API
+   mcp__attio__advanced-search resource_type="people" \
+     filters='[{"field": "updated_at", "operator": ">=", "value": "2024-08-15"}, {"field": "updated_at", "operator": "<=", "value": "2024-08-20"}]'
    ```
 
 **Expected Results:**
@@ -116,6 +148,8 @@ Priority 2 tests validate advanced functionality including relationship queries,
 - Returns chronologically sorted results
 
 **Success Criteria:** Timeframe searches accurately filter by dates for at least 2/3 scenarios
+
+**Related Issues:** [Issue #523](https://github.com/kesslerio/attio-mcp-server/issues/523) - Query API implementation needed
 
 ---
 

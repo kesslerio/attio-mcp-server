@@ -35,12 +35,10 @@ export function validateTestEnvironment(): void {
     );
   }
 
-  // Validate API key format (basic check)
+  // Validate API key presence (removed incorrect sk_ format check)
   const apiKey = process.env.ATTIO_API_KEY;
-  if (apiKey && !apiKey.startsWith('sk_')) {
-    console.warn(
-      'Warning: ATTIO_API_KEY should start with "sk_". Please verify you are using a valid API key.'
-    );
+  if (!apiKey) {
+    console.warn('Warning: ATTIO_API_KEY environment variable not set.');
   }
 }
 

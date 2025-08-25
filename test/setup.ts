@@ -100,31 +100,57 @@ if (process.env.E2E_MODE !== 'true') {
         return [];
       }),
       searchCompaniesByDomain: vi.fn(async () => []),
-      advancedSearchCompanies: vi.fn(async () => []),
+      advancedSearchCompanies: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/search'
+          );
+          return actual.advancedSearchCompanies(...args);
+        }
+        // Otherwise return mock
+        return [];
+      }),
       listCompanies: vi.fn(async () => []),
       getCompanyDetails: vi.fn(async () => ({})),
-      createCompany: vi.fn(async () => ({})),
+      createCompany: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/index'
+          );
+          return actual.createCompany(...args);
+        }
+        // Otherwise return mock
+        return {};
+      }),
       updateCompany: vi.fn(async () => ({})),
       deleteCompany: vi.fn(async () => true),
       smartSearchCompanies: vi.fn(async () => []),
     };
   });
 
-  // Global mock for companies search module
-  vi.mock('../src/objects/companies/search', () => ({
-    searchCompaniesByName: vi.fn(async (name: string) => {
-      // Mock behavior based on company name for testing
-      if (name === 'Test Company' || name === 'Existing Company') {
-        return [{ id: { record_id: 'existing-company-id' } }];
-      }
-      return [];
-    }),
-    companyCache: {
-      clear: vi.fn(),
-      get: vi.fn(),
-      set: vi.fn(),
-    },
-  }));
+  // Global mock for companies search module - pass-through for validation
+  vi.mock('../src/objects/companies/search', async (importOriginal) => {
+    const actual = await importOriginal<any>();
+    return {
+      ...actual,
+      searchCompaniesByName: vi.fn(async (name: string) => {
+        // Mock behavior based on company name for testing
+        if (name === 'Test Company' || name === 'Existing Company') {
+          return [{ id: { record_id: 'existing-company-id' } }];
+        }
+        return [];
+      }),
+      // Pass-through for validation - let real validation run in offline tests
+      advancedSearchCompanies: actual.advancedSearchCompanies,
+      companyCache: {
+        clear: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+      },
+    };
+  });
 
   // Global mock for people module
   vi.mock('../src/objects/people/index', async (importOriginal) => {
@@ -154,11 +180,13 @@ const originalConsole = {
   debug: console.debug,
 };
 
-// Set up environment variables for testing
+// Set up environment variables for testing (skip for E2E tests)
 beforeEach(() => {
-  // Mock environment variables for API initialization
-  vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
-  vi.stubEnv('ATTIO_WORKSPACE_ID', 'test-workspace-id');
+  // Mock environment variables for API initialization (skip for E2E tests)
+  if (process.env.E2E_MODE !== 'true') {
+    vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
+    vi.stubEnv('ATTIO_WORKSPACE_ID', 'test-workspace-id');
+  }
 
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();

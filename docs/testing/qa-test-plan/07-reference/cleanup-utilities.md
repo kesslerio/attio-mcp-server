@@ -20,7 +20,7 @@ The project includes comprehensive cleanup utilities for efficient batch cleanup
 npm run cleanup:test-data
 
 # Alternative: Shell wrapper with detailed output
-./cleanup-test-data.sh --dry-run
+./scripts/cleanup-test-data.sh --dry-run
 ```
 
 #### Full Cleanup Execution
@@ -29,7 +29,7 @@ npm run cleanup:test-data
 npm run cleanup:test-data:live
 
 # Alternative: Shell wrapper with confirmation prompts
-./cleanup-test-data.sh --live
+./scripts/cleanup-test-data.sh --live
 ```
 
 ### Resource-Specific Cleanup
@@ -58,28 +58,28 @@ npm run cleanup:test-data:deals -- --live
 #### Custom Prefixes
 ```bash
 # Default prefixes: TEST_, QA_, E2E_, DEMO_
-./cleanup-test-data.sh --prefix=CUSTOM_,TEMP_ --live
+./scripts/cleanup-test-data.sh --prefix=CUSTOM_,TEMP_ --live
 
 # Single prefix
-./cleanup-test-data.sh --prefix=BUILD_ --live
+./scripts/cleanup-test-data.sh --prefix=BUILD_ --live
 ```
 
 #### Performance Tuning
 ```bash
 # Parallel processing (default: 5 concurrent)
-./cleanup-test-data.sh --parallel=10 --live
+./scripts/cleanup-test-data.sh --parallel=10 --live
 
 # With rate limiting for API protection
-./cleanup-test-data.sh --parallel=3 --live
+./scripts/cleanup-test-data.sh --parallel=3 --live
 ```
 
 #### Batch Size Control
 ```bash
 # Smaller batches for stability
-./cleanup-test-data.sh --batch-size=50 --live
+./scripts/cleanup-test-data.sh --batch-size=50 --live
 
 # Larger batches for speed (if API supports)
-./cleanup-test-data.sh --batch-size=200 --live
+./scripts/cleanup-test-data.sh --batch-size=200 --live
 ```
 
 ## Automated Utility Features
@@ -224,7 +224,7 @@ npm run cleanup:test-data  # Should show no items to delete
 npm run cleanup:test-data:live --prefix=CI_,BUILD_
 
 # Jenkins/GitHub Actions cleanup
-./cleanup-test-data.sh --prefix=CI_${BUILD_NUMBER} --live
+./scripts/cleanup-test-data.sh --prefix=CI_${BUILD_NUMBER} --live
 ```
 
 ## Troubleshooting Cleanup Issues

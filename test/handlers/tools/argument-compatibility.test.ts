@@ -1,6 +1,7 @@
 /**
  * Test suite for Issue #344: MCP tool call argument compatibility
- * Tests both wrapped and unwrapped argument formats
+ * Tests both wrapped and unwrapped argument formats using universal tools
+ * Tests migration from legacy tools to universal tools
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -37,11 +38,12 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
   });
 
   describe('Argument Format Normalization', () => {
-    it('should handle properly wrapped arguments (standard MCP format)', async () => {
+    it('should handle properly wrapped arguments (standard MCP format) with universal tools', async () => {
       const request: CallToolRequest = {
         params: {
-          name: 'search-companies',
+          name: 'search-records',
           arguments: {
+            resource_type: 'companies',
             query: 'Lenox Hill Plastic Surgery',
           },
         },
@@ -53,11 +55,12 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.content).toBeDefined();
     });
 
-    it('should handle unwrapped arguments (Issue #344 format)', async () => {
-      // This is the problematic format from Issue #344
+    it('should handle unwrapped arguments (Issue #344 format) with universal tools', async () => {
+      // This is the problematic format from Issue #344 adapted for universal tools
       const request = {
         params: {
-          name: 'search-companies',
+          name: 'search-records',
+          resource_type: 'companies',
           query: 'Lenox Hill Plastic Surgery', // Arguments directly in params
         },
       } as any;
@@ -68,11 +71,14 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.content).toBeDefined();
     });
 
-    it('should handle tools with no arguments', async () => {
+    it('should handle tools with minimal arguments using universal tools', async () => {
       const request: CallToolRequest = {
         params: {
-          name: 'discover-company-attributes',
-          // No arguments needed
+          name: 'get-record-details',
+          arguments: {
+            resource_type: 'companies',
+            // Could include record_id for specific record, but testing minimal args
+          },
         },
       };
 
@@ -82,12 +88,13 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.content).toBeDefined();
     });
 
-    it('should handle multiple unwrapped arguments', async () => {
+    it('should handle multiple unwrapped arguments with universal tools', async () => {
       const request = {
         params: {
-          name: 'create-company',
+          name: 'create-record',
           // Multiple arguments directly in params
-          attributes: {
+          resource_type: 'companies',
+          record_data: {
             name: 'Test Company',
             domain: 'test.com',
           },
@@ -100,7 +107,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.content).toBeDefined();
     });
 
-    it('should preserve properly wrapped arguments without modification', async () => {
+    it('should preserve properly wrapped arguments without modification using universal tools', async () => {
       const { executeToolRequest } = await import(
         '../../../src/handlers/tools/dispatcher.js'
       );
@@ -108,8 +115,9 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request: CallToolRequest = {
         params: {
-          name: 'search-companies',
+          name: 'search-records',
           arguments: {
+            resource_type: 'companies',
             query: 'Test Query',
             limit: 10,
           },
@@ -121,12 +129,13 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       // Verify the normalized request preserves the wrapped structure
       const calledWith = mockedExecute.mock.calls[0][0];
       expect(calledWith.params.arguments).toEqual({
+        resource_type: 'companies',
         query: 'Test Query',
         limit: 10,
       });
     });
 
-    it('should wrap loose arguments correctly', async () => {
+    it('should wrap loose arguments correctly using universal tools', async () => {
       const { executeToolRequest } = await import(
         '../../../src/handlers/tools/dispatcher.js'
       );
@@ -134,7 +143,8 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request = {
         params: {
-          name: 'search-companies',
+          name: 'search-records',
+          resource_type: 'companies',
           query: 'Test Query',
           limit: 10,
         },
@@ -144,8 +154,9 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       // Verify the arguments were wrapped
       const calledWith = mockedExecute.mock.calls[0][0];
-      expect(calledWith.params.name).toBe('search-companies');
+      expect(calledWith.params.name).toBe('search-records');
       expect(calledWith.params.arguments).toEqual({
+        resource_type: 'companies',
         query: 'Test Query',
         limit: 10,
       });
@@ -153,10 +164,11 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle request with only name parameter', async () => {
+    it('should handle request with only name parameter using universal tools', async () => {
       const request = {
         params: {
-          name: 'discover-company-attributes',
+          name: 'get-record-details',
+          resource_type: 'companies', // Minimal args for universal tool
         },
       } as any;
 
@@ -166,11 +178,11 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.content).toBeDefined();
     });
 
-    it('should handle malformed requests gracefully', async () => {
+    it('should handle malformed requests gracefully using universal tools', async () => {
       const request = {
         params: {
-          name: 'search-companies',
-          // Missing required arguments
+          name: 'search-records',
+          // Missing required resource_type argument
         },
       } as any;
 
@@ -180,7 +192,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result).toBeDefined();
     });
 
-    it('should not wrap arguments if they already exist', async () => {
+    it('should not wrap arguments if they already exist using universal tools', async () => {
       const { executeToolRequest } = await import(
         '../../../src/handlers/tools/dispatcher.js'
       );
@@ -188,8 +200,8 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const request = {
         params: {
-          name: 'search-companies',
-          arguments: { query: 'Already wrapped' },
+          name: 'search-records',
+          arguments: { resource_type: 'companies', query: 'Already wrapped' },
           query: 'Should be ignored', // This should be ignored
         },
       } as any;
@@ -198,6 +210,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
       const calledWith = mockedExecute.mock.calls[0][0];
       expect(calledWith.params.arguments).toEqual({
+        resource_type: 'companies',
         query: 'Already wrapped',
       });
       // The loose 'query' parameter should not be included
@@ -218,12 +231,13 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       expect(result.error?.message).toContain('missing params or tool name');
     });
 
-    it('should reject oversized arguments', async () => {
+    it('should reject oversized arguments using universal tools', async () => {
       const largeString = 'x'.repeat(1024 * 1024 + 1); // Over 1MB
       const request = {
         params: {
-          name: 'search-companies',
+          name: 'search-records',
           arguments: {
+            resource_type: 'companies',
             query: largeString,
           },
         },

@@ -328,7 +328,7 @@ export class ConfigLoader {
   getTestEmail(prefix: string = 'test'): string {
     const config = this.getConfig();
     const identifier = this.getTestIdentifier(prefix);
-    return `${identifier}${config.testData.testEmailDomain}`;
+    return `${identifier}@${config.testData.testEmailDomain}`;
   }
 
   /**

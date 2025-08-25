@@ -34,8 +34,8 @@ import {
   UniversalSearchParams,
 } from '../../handlers/tool-configs/universal/types.js';
 
-// Import UniversalSearchService for resource type conversions
-import { UniversalSearchService } from '../../services/UniversalSearchService.js';
+// Note: UniversalSearchService is imported dynamically to avoid circular dependency
+// (UniversalSearchService imports from api/operations which includes this file)
 
 /**
  * Helper function to construct object path
@@ -497,6 +497,10 @@ async function handleUniversalResourceTypeBatchSearch(
   await Promise.allSettled(
     queries.map(async (query) => {
       try {
+        // Dynamic import to avoid circular dependency
+        const { UniversalSearchService } = await import(
+          '../../services/UniversalSearchService.js'
+        );
         const searchResult = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,

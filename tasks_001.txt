@@ -1,0 +1,4038 @@
+
+> attio-mcp@0.2.0 test
+> vitest test/e2e/suites/tasks-management.e2e.test.ts
+
+
+ DEV  v3.2.4 /Users/kesslerio/GDrive/Projects/attio-mcp-server
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts
+Warning: ATTIO_API_KEY should start with "sk_". Please verify you are using a valid API key.
+
+stdout | test/e2e/suites/tasks-management.e2e.test.ts
+[dotenv@17.2.1] injecting env (1) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts
+Loaded E2E configuration from config.local.json
+
+stdout | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+Checking advancedSearchCompanies availability: function
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.354Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1cc0bcca-d734-4e64-8c34-da316787ac00",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.355Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1cc0bcca-d734-4e64-8c34-da316787ac00",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.355Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1cc0bcca-d734-4e64-8c34-da316787ac00",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+📊 Tool migration stats: {
+  totalMappings: [33m28[39m,
+  universalToolsUsed: [33m7[39m,
+  resourceTypesCovered: [ [32m'tasks'[39m, [32m'companies'[39m, [32m'people'[39m, [32m'notes'[39m, [32m'lists'[39m, [32m'records'[39m ],
+  mappingsByUniversalTool: {
+    [32m'create-record'[39m: [33m6[39m,
+    [32m'search-records'[39m: [33m8[39m,
+    [32m'get-record-details'[39m: [33m4[39m,
+    [32m'update-record'[39m: [33m6[39m,
+    [32m'delete-record'[39m: [33m1[39m,
+    [32m'search-by-relationship'[39m: [33m1[39m,
+    [32m'advanced-search'[39m: [33m2[39m
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+🚀 Starting Tasks Management E2E Tests with Universal Tools
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.357Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9c4436be-8af7-46be-9543-010c359eaf9f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'companies'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "name": "Test Company E2E_TEST_company_1755978991357_numae5",\n'[39m +
+    [32m'  "domain": "E2E_TEST_company_1755978991357_sc63xu.e2etest.example.com",\n'[39m +
+    [32m'  "website": "https://E2E_TEST_company_1755978991357_sc63xu.e2etest.example.com",\n'[39m +
+    [32m'  "industry": "Technology",\n'[39m +
+    [32m'  "description": "E2E test company created for testing purposes - E2E_TEST_company_1755978991357_numae5",\n'[39m +
+    [32m'  "annual_revenue": "10509328",\n'[39m +
+    [32m'  "employee_count": "615",\n'[39m +
+    [32m'  "categories": [\n'[39m +
+    [32m'    "Software",\n'[39m +
+    [32m'    "B2B"\n'[39m +
+    [32m'  ]\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.364Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9c4436be-8af7-46be-9543-010c359eaf9f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "7ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.364Z",
+    "level": "ERROR",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9c4436be-8af7-46be-9543-010c359eaf9f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "create-record",
+    "stack": "UniversalValidationError: Field collision detected: \"domain\", \"website\" all map to \"domains\". Please use only one field. Recommended: Use \"domain\" for clarity.\n    at Function.createRecord (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/UniversalCreateService.ts:322:13)\n    at handleUniversalCreate (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts:230:33)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:264:28)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:113:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null,
+    "duration": "7ms"
+  },
+  "error": {
+    "message": "Field collision detected: \"domain\", \"website\" all map to \"domains\". Please use only one field. Recommended: Use \"domain\" for clarity.",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Field collision detected: \"domain\", \"website\" all map to \"domains\". Please use only one field. Recommended: Use \"domain\" for clarity.\n    at Function.createRecord (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/UniversalCreateService.ts:322:13)\n    at handleUniversalCreate (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts:230:33)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:264:28)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:113:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing
+ERR {
+  "error": "Error executing tool 'create-record': Field collision detected: \"domain\", \"website\" all map to \"domains\". Please use only one field. Recommended: Use \"domain\" for clarity."
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test people for task assignment
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.368Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "47cdfaf8-d165-4a7f-ad8f-db498bddbe0e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test people for task assignment
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'people'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "name": "Test Person E2E_TEST_person_1755978991367_9332j5",\n'[39m +
+    [32m'  "email_addresses": [\n'[39m +
+    [32m'    "e2e_test_person_1755978991367_vu6s7g+1755978991367_lkjtrb@e2e.test"\n'[39m +
+    [32m'  ],\n'[39m +
+    [32m'  "phone_numbers": [\n'[39m +
+    [32m'    "+1-555-515-5533"\n'[39m +
+    [32m'  ],\n'[39m +
+    [32m'  "job_title": "Software Engineer",\n'[39m +
+    [32m'  "department": "Engineering",\n'[39m +
+    [32m'  "seniority": "Mid-level"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "job_title" was automatically mapped to "title"
+[Format Helper] Converted name object to string: "Test Person E2E_TEST_person_1755978991367_9332j5"
+[Format Helper] Converting email object format to string
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test people for task assignment
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.369Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "47cdfaf8-d165-4a7f-ad8f-db498bddbe0e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.369Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "47cdfaf8-d165-4a7f-ad8f-db498bddbe0e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test people for task assignment
+👤 Created test person for task assignment: 12345678-1234-4000-9000-755978991369
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.370Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6e6522b4-bb41-4ae3-9933-0698b5532473",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991370_olu0be",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.370Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "6e6522b4-bb41-4ae3-9933-0698b5532473",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.370Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "6e6522b4-bb41-4ae3-9933-0698b5532473",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.370Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6e6522b4-bb41-4ae3-9933-0698b5532473",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.370Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6e6522b4-bb41-4ae3-9933-0698b5532473",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task
+📋 Created basic task: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.371Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "81dba2a1-929f-4dbd-bc65-42715c284f8d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991371_txvxrv",\n'[39m +
+    [32m'  "assigneeId": "12345678-1234-4000-9000-755978991369",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "assigneeId" was automatically mapped to "assignees"
+Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.371Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "81dba2a1-929f-4dbd-bc65-42715c284f8d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.371Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "81dba2a1-929f-4dbd-bc65-42715c284f8d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.371Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "81dba2a1-929f-4dbd-bc65-42715c284f8d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.371Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "81dba2a1-929f-4dbd-bc65-42715c284f8d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee
+👥 Created task with assignee: 12345678-1234-4000-a000-755978991371
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create task linked to record
+⏭️ Skipping record link test - no test companies available
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.372Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d8a3f750-84e1-42ab-bfd6-5b1b960a6b79",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991372_bhkhk5",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.372Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "d8a3f750-84e1-42ab-bfd6-5b1b960a6b79",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.372Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "d8a3f750-84e1-42ab-bfd6-5b1b960a6b79",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.372Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d8a3f750-84e1-42ab-bfd6-5b1b960a6b79",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.372Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d8a3f750-84e1-42ab-bfd6-5b1b960a6b79",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task
+⚡ Created high priority task: 12345678-1234-4000-a000-755978991372
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6634ad08-bff4-4bfc-836d-90bfcb4c3577",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task 1 created for testing purposes - E2E_TEST_task_0_1755978991373_fsiv0o",\n'[39m +
+    [32m'  "due_date": "2025-08-24"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "6634ad08-bff4-4bfc-836d-90bfcb4c3577",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "6634ad08-bff4-4bfc-836d-90bfcb4c3577",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6634ad08-bff4-4bfc-836d-90bfcb4c3577",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6634ad08-bff4-4bfc-836d-90bfcb4c3577",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.373Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ec80aa06-a52a-490e-9226-6e5b5fde0673",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task 2 created for testing purposes - E2E_TEST_task_1_1755978991373_5fscwy",\n'[39m +
+    [32m'  "due_date": "2025-08-25"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "ec80aa06-a52a-490e-9226-6e5b5fde0673",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "ec80aa06-a52a-490e-9226-6e5b5fde0673",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ec80aa06-a52a-490e-9226-6e5b5fde0673",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ec80aa06-a52a-490e-9226-6e5b5fde0673",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f9124a78-5df4-4299-8e56-46b9f218a3d1",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task 3 created for testing purposes - E2E_TEST_task_2_1755978991373_2qq0z7",\n'[39m +
+    [32m'  "due_date": "2025-08-26"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "f9124a78-5df4-4299-8e56-46b9f218a3d1",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "f9124a78-5df4-4299-8e56-46b9f218a3d1",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f9124a78-5df4-4299-8e56-46b9f218a3d1",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.374Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f9124a78-5df4-4299-8e56-46b9f218a3d1",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing
+📦 Created batch of tasks for testing
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should list all tasks
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.375Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4a1395f-0204-4e4d-bc60-778c67525c92",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should list all tasks
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.376Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4a1395f-0204-4e4d-bc60-778c67525c92",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.376Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4a1395f-0204-4e4d-bc60-778c67525c92",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should list all tasks
+📋 Listed tasks: [33m0[39m
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by status
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.376Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "db4c6191-0bff-4821-a56d-2e48929ea66c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by status
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.377Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "db4c6191-0bff-4821-a56d-2e48929ea66c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.377Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "db4c6191-0bff-4821-a56d-2e48929ea66c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by status
+🔍 Filtered tasks by status
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by assignee
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.377Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "38f0d27c-75ef-49e1-bedb-a58098e1799e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by assignee
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.377Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "38f0d27c-75ef-49e1-bedb-a58098e1799e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.377Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "38f0d27c-75ef-49e1-bedb-a58098e1799e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by assignee
+👥 Filtered tasks by assignee
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should handle pagination for task listing
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9b935080-55da-48eb-b0aa-9496b2006587",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should handle pagination for task listing
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9b935080-55da-48eb-b0aa-9496b2006587",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "9b935080-55da-48eb-b0aa-9496b2006587",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should handle pagination for task listing
+📄 Tested task pagination
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should handle empty task list gracefully
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c6fdba83-5fab-45b5-859f-3ba401eb5ecc",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Listing and Filtering > should handle empty task list gracefully
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c6fdba83-5fab-45b5-859f-3ba401eb5ecc",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.378Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c6fdba83-5fab-45b5-859f-3ba401eb5ecc",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task status
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.379Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d93f32f9-cdaf-41c7-98ec-12b6b0af0eea",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task status
+Field mapping applied: Field "status" mapped to "is_completed": Use "status" (pending/completed) or "is_completed" (true/false)
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task status
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991370: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task status
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.380Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d93f32f9-cdaf-41c7-98ec-12b6b0af0eea",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.380Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "d93f32f9-cdaf-41c7-98ec-12b6b0af0eea",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task status
+✅ Updated task status: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.380Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "a0e4a1ea-03a9-4a12-99b7-7ccdead764b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee
+Field mapping applied: Field "assigneeId" was automatically mapped to "assignees"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991370: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.381Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "a0e4a1ea-03a9-4a12-99b7-7ccdead764b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.381Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "a0e4a1ea-03a9-4a12-99b7-7ccdead764b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee
+👤 Updated task assignee: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task due date
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.381Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ca7f2226-3425-4daa-ab33-45e69dc73e3f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task due date
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task due date
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991370: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task due date
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.381Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ca7f2226-3425-4daa-ab33-45e69dc73e3f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.381Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ca7f2226-3425-4daa-ab33-45e69dc73e3f",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update task due date
+📅 Updated task due date: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.382Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4e716d3-396c-426c-820a-cc63e18ec821",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously
+Field mapping applied: Field "status" mapped to "is_completed": Use "status" (pending/completed) or "is_completed" (true/false)
+Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991370: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.382Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4e716d3-396c-426c-820a-cc63e18ec821",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.382Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "c4e716d3-396c-426c-820a-cc63e18ec821",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously
+🔄 Updated multiple task fields: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should link task to company record
+⏭️ Skipping company link test - insufficient test data
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should link task to person record
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.382Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1b9abed5-2d85-4443-b062-eb8faa6e2400",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should link task to person record
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991371: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should link task to person record
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1b9abed5-2d85-4443-b062-eb8faa6e2400",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "1b9abed5-2d85-4443-b062-eb8faa6e2400",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should link task to person record
+👤 Linked task to person record: 12345678-1234-4000-a000-755978991371
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Record Linking > should handle linking to multiple records
+⏭️ Skipping multiple link test - insufficient test data
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "8b1e7e7a-3800-4943-9d24-ef8a353d2ce2",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Workflow Task - Initial Creation",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "8b1e7e7a-3800-4943-9d24-ef8a353d2ce2",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "8b1e7e7a-3800-4943-9d24-ef8a353d2ce2",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "8b1e7e7a-3800-4943-9d24-ef8a353d2ce2",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "8b1e7e7a-3800-4943-9d24-ef8a353d2ce2",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.383Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ee0ac652-69be-4d30-8603-8d2011e84e0d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+Field mapping applied: Field "status" mapped to "is_completed": Use "status" (pending/completed) or "is_completed" (true/false)
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991383: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.384Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ee0ac652-69be-4d30-8603-8d2011e84e0d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.384Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ee0ac652-69be-4d30-8603-8d2011e84e0d",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.385Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "2a527557-492c-4a00-9379-738c8f53e954",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+Field mapping applied: Field "status" mapped to "is_completed": Use "status" (pending/completed) or "is_completed" (true/false)
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991383: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.385Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "2a527557-492c-4a00-9379-738c8f53e954",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.385Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "2a527557-492c-4a00-9379-738c8f53e954",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow
+🔄 Completed full task lifecycle: 12345678-1234-4000-a000-755978991383
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f4253541-4dca-48a9-a656-52ebb784763e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n  "content": "E2E Priority Task",\n  "due_date": "2025-08-30"\n}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "f4253541-4dca-48a9-a656-52ebb784763e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "f4253541-4dca-48a9-a656-52ebb784763e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f4253541-4dca-48a9-a656-52ebb784763e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "f4253541-4dca-48a9-a656-52ebb784763e",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle
+📊 Task priority lifecycle tested: 12345678-1234-4000-a000-755978991386
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "547dfc29-3fd9-45b3-9450-6e38d5f67971",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Assignment Task - Initially Unassigned",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "547dfc29-3fd9-45b3-9450-6e38d5f67971",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.386Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "547dfc29-3fd9-45b3-9450-6e38d5f67971",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "547dfc29-3fd9-45b3-9450-6e38d5f67971",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "547dfc29-3fd9-45b3-9450-6e38d5f67971",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "b9055812-7d32-4d6b-b671-cbb83955c28c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+Field mapping applied: Field "assigneeId" was automatically mapped to "assignees"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+Field persistence warnings for tasks 12345678-1234-4000-a000-755978991386: [ [32m'Field persistence verification skipped in test environment'[39m ]
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "b9055812-7d32-4d6b-b671-cbb83955c28c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "INFO",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "b9055812-7d32-4d6b-b671-cbb83955c28c",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments
+👥 Completed assignment change workflow: 12345678-1234-4000-a000-755978991386
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in updates
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.387Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "dd63f1ba-1dc0-4093-9e6c-3f3351168073",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in updates
+Field mapping applied: Field "status" mapped to "is_completed": Use "status" (pending/completed) or "is_completed" (true/false)
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in updates
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.388Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "dd63f1ba-1dc0-4093-9e6c-3f3351168073",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.388Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "dd63f1ba-1dc0-4093-9e6c-3f3351168073",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Task not found: invalid-task-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:620:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null,
+    "duration": "1ms"
+  },
+  "error": {
+    "message": "Universal update failed for resource type tasks: Task not found: invalid-task-id-12345",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Task not found: invalid-task-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:620:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should reject task content updates with proper error message
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.389Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "bc249f73-c818-4d85-a160-e9b7ac92331b",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should reject task content updates with proper error message
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.390Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "bc249f73-c818-4d85-a160-e9b7ac92331b",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.390Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "bc249f73-c818-4d85-a160-e9b7ac92331b",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:642:30\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "additionalInfo": null,
+    "duration": "1ms"
+  },
+  "error": {
+    "message": "Task content is immutable and cannot be updated",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:642:30\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "code": null
+  }
+}
+
+stdout | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should reject task content updates with proper error message
+✅ Content update properly rejected: 12345678-1234-4000-a000-755978991370
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in deletion
+[findToolConfig] Looking for tool: delete-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: delete-record, type: delete-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.390Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e43dd23c-76b0-476e-9604-ea1d8282adc8",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "delete-record",
+    "toolName": "delete-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in deletion
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.390Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e43dd23c-76b0-476e-9604-ea1d8282adc8",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.390Z",
+    "level": "ERROR",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e43dd23c-76b0-476e-9604-ea1d8282adc8",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "delete-record",
+    "toolName": "delete-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "delete-record",
+    "stack": "UniversalValidationError: Universal delete failed for resource type tasks: Task not found: invalid-task-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:370:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:656:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null
+  },
+  "error": {
+    "message": "Universal delete failed for resource type tasks: Task not found: invalid-task-id-12345",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Universal delete failed for resource type tasks: Task not found: invalid-task-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:370:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:656:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid assignee ID
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.391Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "7c86b1b5-7e55-4044-9890-cbf75f954948",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid assignee ID
+Field mapping applied: Field "assigneeId" was automatically mapped to "assignees"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid assignee ID
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.391Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "7c86b1b5-7e55-4044-9890-cbf75f954948",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.391Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "7c86b1b5-7e55-4044-9890-cbf75f954948",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Invalid assignee ID: invalid-assignee-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:677:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null
+  },
+  "error": {
+    "message": "Universal update failed for resource type tasks: Invalid assignee ID: invalid-assignee-id-12345",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Invalid assignee ID: invalid-assignee-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:677:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should validate required fields for task creation
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "964c3404-85c2-4315-9eed-aa0366f4eb14",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should validate required fields for task creation
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n  "due_date": "2024-12-31"\n}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: {
+  valid: [33mfalse[39m,
+  warnings: [],
+  errors: [ [32m'Required field "content" is missing'[39m ],
+  suggestions: []
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should validate required fields for task creation
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "964c3404-85c2-4315-9eed-aa0366f4eb14",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "ERROR",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "964c3404-85c2-4315-9eed-aa0366f4eb14",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "create-record",
+    "stack": "UniversalValidationError: Field validation failed for tasks:\n  ❌ Required field \"content\" is missing\n\n📋 Available fields for tasks:\n  content, format, deadline_at, is_completed, assignees, linked_records, priority, due_date, status, assignee_id, record_id, assignee\n    at Function.createRecord (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/UniversalCreateService.ts:308:13)\n    at handleUniversalCreate (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts:230:33)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:264:28)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:686:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null
+  },
+  "error": {
+    "message": "Field validation failed for tasks:\n  ❌ Required field \"content\" is missing\n\n📋 Available fields for tasks:\n  content, format, deadline_at, is_completed, assignees, linked_records, priority, due_date, status, assignee_id, record_id, assignee",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Field validation failed for tasks:\n  ❌ Required field \"content\" is missing\n\n📋 Available fields for tasks:\n  content, format, deadline_at, is_completed, assignees, linked_records, priority, due_date, status, assignee_id, record_id, assignee\n    at Function.createRecord (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/UniversalCreateService.ts:308:13)\n    at handleUniversalCreate (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/shared-handlers.ts:230:33)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:264:28)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:686:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "99ec6df9-3c36-43b3-87c4-b14e30865616",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task with invalid date format for testing",\n'[39m +
+    [32m'  "due_date": "invalid-date-format"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "99ec6df9-3c36-43b3-87c4-b14e30865616",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.392Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "99ec6df9-3c36-43b3-87c4-b14e30865616",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "99ec6df9-3c36-43b3-87c4-b14e30865616",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "99ec6df9-3c36-43b3-87c4-b14e30865616",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats
+ℹ️ API accepts flexible date formats
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid record ID in linking
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "82997fa3-37db-4640-88cb-a0e733b438b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid record ID in linking
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "82997fa3-37db-4640-88cb-a0e733b438b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "82997fa3-37db-4640-88cb-a0e733b438b9",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Record not found: invalid-record-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:721:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null
+  },
+  "error": {
+    "message": "Universal update failed for resource type tasks: Record not found: invalid-record-id-12345",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Universal update failed for resource type tasks: Record not found: invalid-record-id-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:322:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:721:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in linking
+⏭️ Skipping invalid task link test - no test companies available
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.393Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "ce2e0244-c5b5-44a2-a222-ad9bc6b5a27b",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "92f64919-e4de-440b-ae24-2d03a76443ab",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+[findToolConfig] Looking for tool: create-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: create-record, type: create-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "create-record",
+    "toolName": "create-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991393_cfnbum",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991393_u2gtdw",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+[UniversalCreateService.createRecord] DEBUG - Entry point: {
+  resource_type: [32m'tasks'[39m,
+  record_data: [32m'{\n'[39m +
+    [32m'  "content": "E2E Test Task created for testing purposes - E2E_TEST_task_1755978991393_n2k735",\n'[39m +
+    [32m'  "due_date": "2025-08-30"\n'[39m +
+    [32m'}'[39m
+}
+[UniversalCreateService.createRecord] DEBUG - Field validation result: { valid: [33mtrue[39m, warnings: [], errors: [], suggestions: [] }
+Field mapping applied: Field "due_date" was automatically mapped to "deadline_at"
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "About to convert task to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasCreatedTask": true,
+    "taskType": "object",
+    "taskHasId": true,
+    "taskIdType": "object",
+    "taskIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+{
+  "message": "Task converted to record",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "universal.createTask",
+    "operation": "createTask",
+    "operationType": "api_call",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "hasRecord": true,
+    "recordType": "object",
+    "recordHasId": true,
+    "recordIdType": "object",
+    "recordIdStructure": [
+      "record_id",
+      "task_id",
+      "object_id",
+      "workspace_id"
+    ]
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array",
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "DEBUG",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.394Z",
+    "level": "INFO",
+    "module": "tool:create-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "4a5b5f22-cb66-42e8-95a5-139b718ee10a",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations
+🚀 Concurrent task operations completed successfully
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should validate task operation execution times
+[findToolConfig] Looking for tool: search-records
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: search-records, type: search-records, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e3ec46d0-d30b-44c3-9cd1-55f298545ae5",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "search-records",
+    "toolName": "search-records",
+    "argumentsCount": 4,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should validate task operation execution times
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "DEBUG",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e3ec46d0-d30b-44c3-9cd1-55f298545ae5",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "INFO",
+    "module": "tool:search-records",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "e3ec46d0-d30b-44c3-9cd1-55f298545ae5",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should validate task operation execution times
+⚡ Task listing completed in 0ms
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle batch task updates efficiently
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "3f99eb5c-6f30-478e-bb29-ab18f2656802",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "6e2cf51e-c142-4e08-940f-58ead2456760",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+[findToolConfig] Looking for tool: update-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: update-record, type: update-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.395Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "argumentsCount": 3,
+    "hasArguments": true
+  }
+}
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "additionalInfo": null,
+    "duration": "1ms"
+  },
+  "error": {
+    "message": "Task content is immutable and cannot be updated",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "code": null
+  }
+}
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "additionalInfo": null,
+    "duration": "1ms"
+  },
+  "error": {
+    "message": "Task content is immutable and cannot be updated",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "code": null
+  }
+}
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "DEBUG",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "1ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.396Z",
+    "level": "ERROR",
+    "module": "tool:update-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "83619a78-5bd3-46af-8184-913eddf4f5e0",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "update-record",
+    "toolName": "update-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "update-record",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "additionalInfo": null,
+    "duration": "1ms"
+  },
+  "error": {
+    "message": "Task content is immutable and cannot be updated",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Task content is immutable and cannot be updated\n    at validateUniversalToolParams (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/schemas.ts:1252:21)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:308:31)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:40)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:28)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:24)\n    at Object.call (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:304:14)\n    at callTasksTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:336:30)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:813:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Performance and Scalability > should handle batch task updates efficiently
+Batch update 1 failed: Error executing tool 'update-record': Task content is immutable and cannot be updated
+Batch update 2 failed: Error executing tool 'update-record': Task content is immutable and cannot be updated
+Batch update 3 failed: Error executing tool 'update-record': Task content is immutable and cannot be updated
+📊 Batch updates: 3 tasks in 1ms (avg: 0.3333333333333333ms per update)
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should delete individual tasks
+[findToolConfig] Looking for tool: delete-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: delete-record, type: delete-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "5c26f999-b89c-4bc6-8897-dc97808c8f90",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "delete-record",
+    "toolName": "delete-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should delete individual tasks
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "5c26f999-b89c-4bc6-8897-dc97808c8f90",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation successful: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "INFO",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "5c26f999-b89c-4bc6-8897-dc97808c8f90",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "success": true,
+    "hasContent": true,
+    "contentLength": 1,
+    "resultType": "array"
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should delete individual tasks
+🗑️ Deleted task: 12345678-1234-4000-a000-755978991394
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should handle deletion of non-existent task gracefully
+[findToolConfig] Looking for tool: delete-record
+[findToolConfig] No config found for resource type: people
+[findToolConfig] No config found for resource type: companies
+[findToolConfig] No config found for resource type: deals
+[findToolConfig] No config found for resource type: records
+[findToolConfig] No config found for resource type: tasks
+[findToolConfig] Found universal tool: delete-record, type: delete-record, category: UNIVERSAL
+{
+  "message": "Starting operation: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "0af7aaaa-93f5-4f76-8c47-3955b27fb3b7",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "delete-record",
+    "toolName": "delete-record",
+    "argumentsCount": 2,
+    "hasArguments": true
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should handle deletion of non-existent task gracefully
+{
+  "message": "Operation completed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "DEBUG",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "0af7aaaa-93f5-4f76-8c47-3955b27fb3b7",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "duration": "0ms"
+  }
+}
+{
+  "message": "Operation failed: execute",
+  "metadata": {
+    "timestamp": "2025-08-23T19:56:31.397Z",
+    "level": "ERROR",
+    "module": "tool:delete-record",
+    "operation": "execute",
+    "operationType": "tool_execution",
+    "correlationId": "0af7aaaa-93f5-4f76-8c47-3955b27fb3b7",
+    "sessionId": null,
+    "requestId": null,
+    "userId": null
+  },
+  "data": {
+    "toolType": "delete-record",
+    "toolName": "delete-record",
+    "errorType": "UniversalValidationError",
+    "hasStack": true,
+    "tool": "delete-record",
+    "stack": "UniversalValidationError: Universal delete failed for resource type tasks: Task not found: already-deleted-task-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:370:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:867:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "additionalInfo": null
+  },
+  "error": {
+    "message": "Universal delete failed for resource type tasks: Task not found: already-deleted-task-12345",
+    "name": "UniversalValidationError",
+    "stack": "UniversalValidationError: Universal delete failed for resource type tasks: Task not found: already-deleted-task-12345\n    at Function.createUniversalError (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/services/ErrorService.ts:87:12)\n    at Object.handler (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tool-configs/universal/core-operations.ts:370:26)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at executeToolRequest (/Users/kesslerio/GDrive/Projects/attio-mcp-server/src/handlers/tools/dispatcher/core.ts:349:23)\n    at callToolWithEnhancements (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:118:22)\n    at callTool (/Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/utils/enhanced-tool-caller.ts:256:18)\n    at /Users/kesslerio/GDrive/Projects/attio-mcp-server/test/e2e/suites/tasks-management.e2e.test.ts:867:24\n    at file:///Users/kesslerio/GDrive/Projects/attio-mcp-server/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20",
+    "code": null
+  }
+}
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Task Deletion and Cleanup > should validate task cleanup tracking
+🧹 Validated cleanup tracking for [33m10[39m tasks
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Data Consistency and Integration > should maintain task structure consistency
+🧪 Validated task structure consistency across [33m10[39m tasks
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Data Consistency and Integration > should validate task relationship integrity
+🔗 Task relationship integrity validated for [33m10[39m tasks
+
+stderr | test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests
+✅ Tasks Management E2E Tests completed with enhanced logging
+
+ ❯ test/e2e/suites/tasks-management.e2e.test.ts (38 tests | 1 failed) 48ms
+   × Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing 11ms
+     → Expected MCP tool response to be successful - Response has error flag: expected true to be false // Object.is equality
+   ✓ Tasks Management E2E Tests > Test Data Setup > should create test people for task assignment 2ms
+   ✓ Tasks Management E2E Tests > Task Creation and Basic Operations > should create a basic task 1ms
+   ✓ Tasks Management E2E Tests > Task Creation and Basic Operations > should create task with assignee 1ms
+   ✓ Tasks Management E2E Tests > Task Creation and Basic Operations > should create task linked to record 0ms
+   ✓ Tasks Management E2E Tests > Task Creation and Basic Operations > should create high priority task 1ms
+   ✓ Tasks Management E2E Tests > Task Creation and Basic Operations > should create multiple tasks for testing 2ms
+   ✓ Tasks Management E2E Tests > Task Listing and Filtering > should list all tasks 1ms
+   ✓ Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by status 1ms
+   ✓ Tasks Management E2E Tests > Task Listing and Filtering > should filter tasks by assignee 1ms
+   ✓ Tasks Management E2E Tests > Task Listing and Filtering > should handle pagination for task listing 1ms
+   ✓ Tasks Management E2E Tests > Task Listing and Filtering > should handle empty task list gracefully 0ms
+   ✓ Tasks Management E2E Tests > Task Updates and Modifications > should update task status 2ms
+   ✓ Tasks Management E2E Tests > Task Updates and Modifications > should update task assignee 1ms
+   ✓ Tasks Management E2E Tests > Task Updates and Modifications > should update task due date 1ms
+   ✓ Tasks Management E2E Tests > Task Updates and Modifications > should update multiple task fields simultaneously 0ms
+   ✓ Tasks Management E2E Tests > Task Record Linking > should link task to company record 0ms
+   ✓ Tasks Management E2E Tests > Task Record Linking > should link task to person record 1ms
+   ✓ Tasks Management E2E Tests > Task Record Linking > should handle linking to multiple records 0ms
+   ✓ Tasks Management E2E Tests > Task Lifecycle Management > should create complete task workflow 3ms
+   ✓ Tasks Management E2E Tests > Task Lifecycle Management > should handle task priority changes throughout lifecycle 1ms
+   ✓ Tasks Management E2E Tests > Task Lifecycle Management > should manage task with changing assignments 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in updates 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should reject task content updates with proper error message 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in deletion 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid assignee ID 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should validate required fields for task creation 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid date formats 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid record ID in linking 1ms
+   ✓ Tasks Management E2E Tests > Error Handling and Validation > should handle invalid task ID in linking 0ms
+   ✓ Tasks Management E2E Tests > Performance and Scalability > should handle concurrent task operations 1ms
+   ✓ Tasks Management E2E Tests > Performance and Scalability > should validate task operation execution times 0ms
+   ✓ Tasks Management E2E Tests > Performance and Scalability > should handle batch task updates efficiently 1ms
+   ✓ Tasks Management E2E Tests > Task Deletion and Cleanup > should delete individual tasks 1ms
+   ✓ Tasks Management E2E Tests > Task Deletion and Cleanup > should handle deletion of non-existent task gracefully 1ms
+   ✓ Tasks Management E2E Tests > Task Deletion and Cleanup > should validate task cleanup tracking 0ms
+   ✓ Tasks Management E2E Tests > Data Consistency and Integration > should maintain task structure consistency 1ms
+   ✓ Tasks Management E2E Tests > Data Consistency and Integration > should validate task relationship integrity 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/e2e/suites/tasks-management.e2e.test.ts > Tasks Management E2E Tests > Test Data Setup > should create test companies for task testing
+AssertionError: Expected MCP tool response to be successful - Response has error flag: expected true to be false // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ Function.expectMcpSuccess test/e2e/utils/assertions.ts:295:71
+    293|     }
+    294| 
+    295|     expect(response.isError, `${errorMsg} - Response has error flag`).…
+       |                                                                       ^
+    296|       false
+    297|     );
+ ❯ test/e2e/suites/tasks-management.e2e.test.ts:115:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  12:56:29
+   Duration  1.74s (transform 834ms, setup 68ms, collect 885ms, tests 48ms, environment 0ms, prepare 340ms)
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+Cancelling test run. Press CTRL+c again to exit forcefully.
+

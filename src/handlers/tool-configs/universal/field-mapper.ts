@@ -40,6 +40,8 @@ const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
   deals: UniversalResourceType.DEALS,
   task: UniversalResourceType.TASKS,
   tasks: UniversalResourceType.TASKS,
+  note: UniversalResourceType.NOTES,
+  notes: UniversalResourceType.NOTES,
   // Common typos and variations
   comapny: UniversalResourceType.COMPANIES,
   compnay: UniversalResourceType.COMPANIES,
@@ -348,6 +350,37 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
     requiredFields: [],
     uniqueFields: [],
   },
+
+  [UniversalResourceType.NOTES]: {
+    fieldMappings: {
+      // Normalize universal/legacy field names to Attio Notes API fields
+      linked_record_type: 'parent_object', // 'companies' | 'people'
+      linked_record_id: 'parent_record_id', // UUID
+      note: 'content',
+      description: 'content',
+      // title and content pass through unchanged
+    },
+    validFields: [
+      'title',
+      'content',
+      'format',
+      'linked_record_type',
+      'linked_record_id',
+      'parent_object',
+      'parent_record_id',
+      'created_at',
+      'meeting_id',
+    ],
+    requiredFields: ['content', 'linked_record_type', 'linked_record_id'],
+    commonMistakes: {
+      parentId: 'Use "linked_record_id" or "parent_record_id" with UUID',
+      parentType:
+        'Use "linked_record_type" or "parent_object" with resource slug',
+      note: 'Use "content" for note body text',
+      description: 'Use "content" for note body text',
+    },
+    uniqueFields: [],
+  },
 };
 
 /**
@@ -576,7 +609,7 @@ export function validateResourceType(resourceType: string): {
       resourceType as UniversalResourceType
     )
   ) {
-    return { valid: true, corrected: resourceType as UniversalResourceType };
+    return { valid: true }; // No corrected field when valid
   }
 
   // Try to map it
@@ -1052,4 +1085,30 @@ export function processCategories(
  */
 export function getValidCategories(): string[] {
   return [...VALID_COMPANY_CATEGORIES];
+}
+
+/**
+ * Task field mapping with operation-specific handling
+ *
+ * Prevents content injection on update operations (Issue #480 compatibility)
+ */
+export function mapTaskFields(
+  operation: 'create' | 'update',
+  input: Record<string, unknown>
+): Record<string, unknown> {
+  const output = { ...input };
+
+  // For create operations, synthesize content from title if missing
+  if (operation === 'create' && 'title' in output && !('content' in output)) {
+    output.content = output.title;
+  }
+
+  // For update operations, never synthesize content - it's immutable
+  // Do NOT delete user-supplied content; let API reject it with proper error
+  if (operation === 'update') {
+    // Content is immutable - if user supplies it, let Attio API reject with error
+    // Do not inject, do not delete
+  }
+
+  return output;
 }

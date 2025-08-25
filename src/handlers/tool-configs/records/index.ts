@@ -122,7 +122,7 @@ export const recordToolConfigs = {
   } as RecordCreateToolConfig,
 
   get: {
-    name: 'get-record',
+    name: 'get-record-details',
     handler: getObjectRecord,
     formatResult: (result: AttioRecord) => {
       return `Record details:\n${JSON.stringify(result, null, 2)}`;
@@ -228,7 +228,7 @@ export const recordToolDefinitions = [
     },
   },
   {
-    name: 'get-record',
+    name: 'get-record-details',
     description: 'Get details of a specific CRM record (company, person, etc.)',
     inputSchema: {
       type: 'object',

@@ -98,14 +98,14 @@ export async function handleBasicSearch(
   if (
     effectiveQuery === undefined &&
     domainFromArgs !== undefined &&
-    toolConfig.name === 'search-companies'
+    toolConfig.name === 'search-records'
   ) {
     effectiveQuery = domainFromArgs;
     console.warn(
-      `[handleBasicSearch] Tool 'search-companies' was called with a 'domain' parameter instead of 'query'. ` +
+      `[handleBasicSearch] Tool 'search-records' was called with a 'domain' parameter instead of 'query'. ` +
         `Using the 'domain' value ("${effectiveQuery}") as the search query. ` +
-        `For clarity and future compatibility, please use the 'query' parameter for the 'search-companies' tool, ` +
-        `or use the 'search-companies-by-domain' tool for explicit domain searches.`
+        `For clarity and future compatibility, please use the 'query' parameter for the 'search-records' tool, ` +
+        `or use domain-specific search parameters for explicit domain searches.`
     );
   }
 

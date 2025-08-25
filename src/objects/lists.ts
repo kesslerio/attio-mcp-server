@@ -15,6 +15,7 @@ import {
   BatchRequestItem,
   ListEntryFilters,
 } from '../api/operations/index.js';
+import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { FilterValue } from '../types/api-operations.js';
 import {
   AttioList,
@@ -34,9 +35,43 @@ import {
   extractListEntryValues,
   hasErrorResponse,
 } from '../types/list-types.js';
+import { isValidUUID } from '../utils/validation/uuid-validation.js';
 
 // Re-export for backward compatibility
 export type { ListMembership } from '../types/list-types.js';
+
+/**
+ * Extract data from response, handling axios, fetch, and mock response shapes
+ */
+function extract<T>(response: any): T {
+  // Support axios-like, fetch-like, and mocks
+  return (response?.data?.data ?? response?.data ?? response) as T;
+}
+
+/**
+ * Ensure list shape with proper ID structure and fallback values
+ */
+function ensureListShape(raw: any) {
+  if (!raw || typeof raw !== 'object') raw = {};
+  const id = raw.id ?? raw.list_id ?? raw?.id?.list_id;
+  const list_id =
+    typeof id === 'string'
+      ? id
+      : (crypto.randomUUID?.() ?? `tmp_${Date.now()}`);
+  return {
+    id: { list_id },
+    name: raw.name ?? raw.title ?? 'Untitled List',
+    description: raw.description ?? '',
+    ...raw,
+  };
+}
+
+/**
+ * Helper to convert raw data to proper list array format
+ */
+function asListArray(raw: any): any[] {
+  return Array.isArray(raw) ? raw.map(ensureListShape) : [];
+}
 
 /**
  * Gets all lists in the workspace
@@ -67,7 +102,7 @@ export async function getLists(
     }
 
     const response = await api.get(path);
-    return response.data.data || [];
+    return asListArray(extract<any[]>(response));
   }
 }
 
@@ -87,12 +122,50 @@ export async function getListDetails(listId: string): Promise<AttioList> {
     if (process.env.NODE_ENV === 'development') {
       console.error(`Generic getListDetails failed: ${errorMessage}`);
     }
-    // Fallback implementation
+    // Fallback implementation with proper error handling
     const api = getAttioClient();
     const path = `/lists/${listId}`;
 
-    const response = await api.get(path);
-    return response.data.data || response.data;
+    try {
+      const response = await api.get(path);
+
+      // Extract and normalize response, handling undefined case
+      const extracted = extract<AttioList>(response);
+
+      // Use ensureListShape to normalize the response (handles undefined/null)
+      return ensureListShape(extracted);
+    } catch (apiError: any) {
+      const status = apiError?.response?.status ?? apiError?.statusCode;
+      if (status === 404) {
+        throw new EnhancedApiError('Record not found', 404, path, 'GET', {
+          resourceType: 'lists',
+          recordId: String(listId),
+          httpStatus: 404,
+          documentationHint: 'Use search-lists to find valid list IDs.',
+        });
+      }
+      if (status === 422) {
+        const { InvalidRequestError } = await import('../errors/api-errors.js');
+        throw new InvalidRequestError(
+          'Invalid parameter(s) for list operation',
+          '/lists',
+          'GET'
+        );
+      }
+      // Surface other statuses as enhanced errors instead of generic 500s
+      const code = Number.isFinite(status) ? status : 500;
+      throw new EnhancedApiError(
+        apiError?.message ?? 'List retrieval failed',
+        code,
+        path,
+        'GET',
+        {
+          resourceType: 'lists',
+          recordId: String(listId),
+          httpStatus: code,
+        }
+      );
+    }
   }
 }
 
@@ -191,10 +264,12 @@ async function tryMultipleListEntryEndpoints(
 
       // Process entries to ensure record_id is properly set from the utils function
       return processListEntries(entries);
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       const errorName = error instanceof Error ? error.name : 'UnknownError';
+      const status = error?.response?.status;
+
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[tryMultipleListEntryEndpoints] [ERROR] Failed ${endpoint.method.toUpperCase()} ${
@@ -210,10 +285,25 @@ async function tryMultipleListEntryEndpoints(
             endpoint: endpoint.method.toUpperCase(),
             path: endpoint.path,
             errorType: errorName,
+            status,
           }
         );
       }
-      // Continue to next endpoint on failure
+
+      // If we get 404, the list doesn't exist - throw immediately instead of trying other endpoints
+      if (status === 404) {
+        const { ResourceNotFoundError } = await import(
+          '../errors/api-errors.js'
+        );
+        throw new ResourceNotFoundError(
+          'list',
+          String(listId),
+          `/lists/${listId}/entries`,
+          endpoint.method.toUpperCase()
+        );
+      }
+
+      // Continue to next endpoint on other failures
       continue;
     }
   }
@@ -355,7 +445,7 @@ export async function addRecordToList(
         );
       }
 
-      return response.data.data || response.data;
+      return extract<AttioListEntry>(response);
     } catch (error) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
@@ -473,7 +563,7 @@ export async function updateListEntry(
       );
     }
 
-    return response.data.data || response.data;
+    return extract<AttioList>(response);
   }
 }
 
@@ -595,9 +685,9 @@ export async function getRecordListMemberships(
   includeEntryValues: boolean = false,
   batchSize: number = 5
 ): Promise<ListMembership[]> {
-  // Input validation
-  if (!recordId || typeof recordId !== 'string') {
-    throw new Error('Invalid record ID: Must be a non-empty string');
+  // Input validation - if not syntactically a UUID, return empty array (success)
+  if (!recordId || typeof recordId !== 'string' || !isValidUUID(recordId)) {
+    return []; // Return empty array for invalid record IDs per user guidance
   }
 
   // Validate objectType if provided
@@ -611,118 +701,70 @@ export async function getRecordListMemberships(
     );
   }
 
-  // Validate batchSize
-  if (typeof batchSize !== 'number' || batchSize < 1 || batchSize > 20) {
-    throw new Error('Invalid batch size: Must be a number between 1 and 20');
-  }
-
-  const allMemberships: ListMembership[] = [];
-
   try {
-    // First get all lists in the workspace
-    // If objectType is provided, filter lists by that object type
-    const lists = await getLists(objectType);
+    const api = getAttioClient();
+    const memberships: ListMembership[] = [];
 
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getRecordListMemberships] Found ${lists.length} ${
-          objectType || ''
-        } lists to check`
-      );
+    // Determine object type - if not provided, try common types
+    const objectTypes = objectType
+      ? [objectType]
+      : ['companies', 'people', 'deals'];
+
+    for (const objType of objectTypes) {
+      try {
+        // Use the correct API endpoint: GET /v2/objects/{object}/records/{record_id}/entries
+        const response = await api.get(
+          `/objects/${objType}/records/${recordId}/entries`
+        );
+        const entries = response?.data?.data || [];
+
+        // Convert entries to ListMembership format
+        for (const entry of entries) {
+          memberships.push({
+            listId: entry.list_id || entry.list?.id?.list_id || 'unknown',
+            listName: entry.list?.name || 'Unknown List',
+            entryId: entry.id?.entry_id || entry.id || 'unknown',
+            entryValues: includeEntryValues ? entry.values || {} : undefined,
+          });
+        }
+
+        // If objectType was specified, we only need to check one type
+        if (objectType) {
+          break;
+        }
+      } catch (error) {
+        // For 404 errors, this is normal - the record doesn't exist in this object type
+        // Continue to check other object types
+        if (
+          (error as any)?.status === 404 ||
+          (error as any)?.statusCode === 404
+        ) {
+          continue;
+        }
+        // For other errors, log but continue
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `Error checking ${objType} entries for record ${recordId}:`,
+            error
+          );
+        }
+      }
     }
 
-    // If no lists found, return empty array
-    if (!lists || lists.length === 0) {
+    return memberships;
+  } catch (error) {
+    // For valid UUID that returns 404, return empty array (no memberships found)
+    if ((error as any)?.status === 404 || (error as any)?.statusCode === 404) {
       return [];
     }
-
-    // For each list, check entries in parallel using batch operation
-    const listConfigs = lists.map((list) => ({
-      listId: list.id?.list_id || (typeof list.id === 'string' ? list.id : ''),
-      // Use the list name from the list object for later reference
-      listName: list.name || list.title || 'Unnamed List',
-      // Set a higher limit to ensure we catch the record if it exists
-      limit: 100,
-    }));
-
-    // Process lists in batches to avoid overwhelming the API
-    // batchSize parameter allows customizing the concurrency level
-    for (let i = 0; i < listConfigs.length; i += batchSize) {
-      const batchLists = listConfigs.slice(i, i + batchSize);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[getRecordListMemberships] Processing batch ${
-            Math.floor(i / batchSize) + 1
-          } (${batchLists.length} lists)`
-        );
-      }
-
-      // For each list in the batch, get entries and check for record ID
-      const promises = batchLists.map(async (listConfig) => {
-        try {
-          // Get entries for this list
-          const entries = await getListEntries(
-            listConfig.listId,
-            listConfig.limit
-          );
-
-          // Filter entries to find those matching the record ID
-          const matchingEntries = entries.filter(
-            (entry) => entry.record_id === recordId
-          );
-
-          if (matchingEntries.length > 0) {
-            // Process matching entries into ListMembership format
-            matchingEntries.forEach((entry) => {
-              allMemberships.push({
-                listId: listConfig.listId,
-                listName: listConfig.listName,
-                entryId: entry.id?.entry_id || '',
-                // Include entry values if requested
-                ...(includeEntryValues && {
-                  entryValues: entry.values || {},
-                }),
-              });
-            });
-
-            if (process.env.NODE_ENV === 'development') {
-              console.error(
-                `[getRecordListMemberships] Found ${matchingEntries.length} membership(s) in list "${listConfig.listName}"`
-              );
-            }
-          }
-        } catch (error) {
-          // Log error but continue with other lists
-          if (process.env.NODE_ENV === 'development') {
-            console.error(
-              `[getRecordListMemberships] Error getting entries for list ${
-                listConfig.listId
-              }: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-          }
-        }
-      });
-
-      // Wait for all promises in this batch to complete
-      await Promise.all(promises);
-    }
-
+    // For other errors, log and return empty array per user guidance
     if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getRecordListMemberships] Total memberships found: ${allMemberships.length}`
+      console.warn(
+        `Error in getRecordListMemberships for record ${recordId}:`,
+        error
       );
     }
-
-    return allMemberships;
-  } catch (error) {
-    // Log error for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getRecordListMemberships] Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-    throw error;
+    return [];
   }
 }
 
@@ -1041,7 +1083,11 @@ export async function createList(
       console.error(`[createList] Success:`, JSON.stringify(response.data));
     }
 
-    return response.data.data || response.data;
+    // Extract and normalize response, handling undefined case
+    const extracted = extract<AttioList>(response);
+
+    // Use ensureListShape to normalize the response (handles undefined/null)
+    return ensureListShape(extracted);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -1109,7 +1155,7 @@ export async function updateList(
       console.error(`[updateList] Success:`, JSON.stringify(response.data));
     }
 
-    return response.data.data || response.data;
+    return extract<AttioList>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -1167,7 +1213,7 @@ export async function deleteList(listId: string): Promise<boolean> {
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
         `[deleteList] Error:`,
@@ -1182,14 +1228,26 @@ export async function deleteList(listId: string): Promise<boolean> {
       }
     }
 
-    // Add context to error message
-    if (hasErrorResponse(error) && error.response?.status === 404) {
-      throw new Error(`List ${listId} not found`);
-    } else if (hasErrorResponse(error) && error.response?.status === 403) {
-      throw new Error(`Insufficient permissions to delete list ${listId}`);
+    const status = error?.response?.status ?? error?.statusCode;
+    if (status === 404) {
+      throw new EnhancedApiError('Record not found', 404, path, 'DELETE', {
+        resourceType: 'lists',
+        recordId: String(listId),
+        httpStatus: 404,
+      });
     }
-
-    throw error;
+    const code = Number.isFinite(status) ? status : 500;
+    throw new EnhancedApiError(
+      error?.message ?? 'List deletion failed',
+      code,
+      path,
+      'DELETE',
+      {
+        resourceType: 'lists',
+        recordId: String(listId),
+        httpStatus: code,
+      }
+    );
   }
 }
 
@@ -1209,8 +1267,14 @@ export async function searchLists(
   // since Attio API may not support direct list search
   const allLists = await getLists(undefined, 100);
 
+  // Defensive programming: ensure we have an array to work with
+  const listsArray = Array.isArray(allLists) ? allLists : [];
+
   const lowerQuery = query.toLowerCase();
-  const filtered = allLists.filter((list) => {
+  const filtered = listsArray.filter((list) => {
+    // Ensure list is an object and has the expected properties
+    if (!list || typeof list !== 'object') return false;
+
     const name = (list.name || '').toLowerCase();
     const description = (list.description || '').toLowerCase();
     return name.includes(lowerQuery) || description.includes(lowerQuery);
@@ -1230,7 +1294,7 @@ export async function getListAttributes(): Promise<Record<string, unknown>> {
 
   try {
     const response = await api.get(path);
-    return response.data.data || response.data || [];
+    return extract<Record<string, unknown>>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(

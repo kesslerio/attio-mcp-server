@@ -7,13 +7,27 @@
 
 // Load environment variables from .env file BEFORE any other imports
 import * as dotenv from 'dotenv';
-dotenv.config({ debug: false });
+const result = dotenv.config({ debug: false });
+
+if (process.env.E2E_MODE === 'true') {
+  console.error('[E2E Setup] Loading .env file for E2E tests...');
+  if (result.error) {
+    console.error('[E2E Setup] Error loading .env:', result.error);
+  } else {
+    console.error('[E2E Setup] .env loaded successfully');
+    console.error(
+      '[E2E Setup] ATTIO_API_KEY available:',
+      !!process.env.ATTIO_API_KEY
+    );
+  }
+}
 
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import {
   loadE2EConfig,
   getE2EConfig,
   type E2EConfig,
+  configLoader,
 } from './utils/config-loader.js';
 import {
   initializeAttioClient,
@@ -91,6 +105,8 @@ export class E2ETestBase {
     // Load and validate configuration
     try {
       this.config = await loadE2EConfig();
+      // Also load the singleton config for assertions
+      await configLoader.loadConfig();
       console.error('✅ E2E configuration loaded successfully');
     } catch (error: unknown) {
       console.error('❌ Failed to load E2E configuration:', error);

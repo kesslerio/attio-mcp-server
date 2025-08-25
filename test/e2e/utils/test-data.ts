@@ -9,7 +9,7 @@ import { configLoader } from './config-loader.js';
 export interface E2ETestCompany {
   name: string;
   domain?: string;
-  // website field removed - causes collision with domain (both map to 'domains' field)
+  website?: string; // Test-only field - stripped before API calls to avoid collision with domain
   industry?: string;
   description?: string;
   annual_revenue?: string; // Changed to string to match API requirements
@@ -22,7 +22,7 @@ export interface E2ETestPerson {
   email_addresses: string[];
   phone_numbers?: string[];
   job_title?: string;
-  // department field removed - not supported by API
+  department?: string; // Test-only field - stripped before API calls (not supported by API)
   seniority?: string;
   company?: string; // Company record ID
 }
@@ -66,12 +66,25 @@ export abstract class E2ETestDataFactory {
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
+    const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const testId = this.getTestId(prefix);
+    const defaultDomain = process.env.E2E_TEST_EMAIL_DOMAIN || 'e2e.test';
+
+    const build = (local: string, domain: string) =>
+      `${local}+${uniq}@${domain}`.toLowerCase();
+
     try {
-      return configLoader.getTestEmail(prefix);
-    } catch (error) {
-      // Configuration not loaded - provide fallback
-      const testId = this.getTestId(prefix);
-      return `${testId}@test-domain.com`;
+      const baseEmail = (configLoader.getTestEmail(prefix) || '').trim();
+      if (baseEmail.includes('@')) {
+        const [local, domain] = baseEmail.split('@', 2);
+        const out = build(local || testId, domain || defaultDomain);
+        return out.includes('@') ? out : build(testId, defaultDomain);
+      }
+      // Misconfigured (no "@"): treat entire string as local part
+      return build(baseEmail || testId, defaultDomain);
+    } catch {
+      // No config loader: safe fallback
+      return build(testId, defaultDomain);
     }
   }
 
@@ -119,7 +132,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
       domain,
-      // Removed website field to avoid collision - both domain and website map to 'domains' field
+      // Removed website to avoid field collision with domain -> domains mapping
       industry: 'Technology',
       description: `E2E test company created for testing purposes - ${testId}`,
       annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
@@ -142,7 +155,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
         ...overrides,
         name: `Test Company ${testId}`,
         domain: `${testId}.${domain}`,
-        // Removed website field to avoid collision - both domain and website map to 'domains' field
+        // Removed website to avoid field collision with domain -> domains mapping
         description: `E2E test company ${i + 1} created for testing purposes - ${testId}`,
       });
     });
@@ -188,7 +201,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
         `+1-555-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
       ],
       job_title: 'Software Engineer',
-      // department field removed - not supported by API
+      department: 'Engineering', // Test-only field - stripped before API calls
       seniority: 'Mid-level',
     };
 
@@ -217,7 +230,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   ): E2ETestPerson {
     return this.create({
       job_title: 'Chief Executive Officer',
-      // department field removed - not supported by API
+      department: 'Executive', // Test-only field - stripped before API calls
       seniority: 'Executive',
       ...overrides,
     });
@@ -228,7 +241,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   ): E2ETestPerson {
     return this.create({
       job_title: 'Account Executive',
-      // department field removed - not supported by API
+      department: 'Sales', // Test-only field - stripped before API calls
       seniority: 'Mid-level',
       ...overrides,
     });
@@ -237,7 +250,7 @@ export class E2EPersonFactory extends E2ETestDataFactory {
   static createEngineer(overrides: Partial<E2ETestPerson> = {}): E2ETestPerson {
     return this.create({
       job_title: 'Software Engineer',
-      // department field removed - not supported by API
+      department: 'Engineering', // Test-only field - stripped before API calls
       seniority: 'Mid-level',
       ...overrides,
     });
