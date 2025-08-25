@@ -44,6 +44,33 @@ function shouldUseMockData(): boolean {
  */
 export class UniversalDeleteService {
   /**
+   * Helper to detect 404 errors from various API error formats
+   */
+  private static is404Error(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+
+    const errorObj = error as Record<string, unknown>;
+
+    // Check status field
+    if (errorObj.status === 404) return true;
+
+    // Check nested status
+    if (errorObj.response && typeof errorObj.response === 'object') {
+      const response = errorObj.response as Record<string, unknown>;
+      if (response.status === 404) return true;
+    }
+
+    // Check error message patterns
+    const message = errorObj.message || errorObj.error || '';
+    if (typeof message === 'string') {
+      return (
+        message.toLowerCase().includes('not found') || message.includes('404')
+      );
+    }
+
+    return false;
+  }
+  /**
    * Delete a record across any supported resource type
    *
    * @param params - Delete operation parameters
@@ -56,16 +83,12 @@ export class UniversalDeleteService {
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        // Check if record exists before deletion (to match test expectations)
         try {
-          const existingRecord = await getCompanyDetails(record_id);
-
-          // Check if it's a fake "unknown" record or missing critical fields
-          if (
-            existingRecord?.id?.record_id === 'unknown' ||
-            !existingRecord?.id?.record_id ||
-            (existingRecord && Object.keys(existingRecord).length === 0)
-          ) {
+          await deleteCompany(record_id);
+          return { success: true, record_id };
+        } catch (error: unknown) {
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
             throw {
               status: 404,
               body: {
@@ -74,59 +97,48 @@ export class UniversalDeleteService {
               },
             };
           }
-        } catch (error: unknown) {
-          // If record doesn't exist, throw error as expected by tests
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Company record with ID "${record_id}" not found.`,
-            },
-          };
+          throw error;
         }
-
-        await deleteCompany(record_id);
-        return { success: true, record_id };
 
       case UniversalResourceType.PEOPLE:
-        // Check if record exists before deletion (to match test expectations)
         try {
-          await getPersonDetails(record_id);
+          await deletePerson(record_id);
+          return { success: true, record_id };
         } catch (error: unknown) {
-          // If record doesn't exist, throw error as expected by tests
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Person record with ID "${record_id}" not found.`,
-            },
-          };
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            throw {
+              status: 404,
+              body: {
+                code: 'not_found',
+                message: `Person record with ID "${record_id}" not found.`,
+              },
+            };
+          }
+          throw error;
         }
-
-        await deletePerson(record_id);
-        return { success: true, record_id };
 
       case UniversalResourceType.LISTS:
         await deleteList(record_id);
         return { success: true, record_id };
 
       case UniversalResourceType.RECORDS:
-        // Check if record exists before deletion (to match test expectations)
         try {
-          await getObjectRecord('records', record_id);
+          await deleteObjectRecord('records', record_id);
+          return { success: true, record_id };
         } catch (error: unknown) {
-          // If record doesn't exist, throw error as expected by tests
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Record with ID "${record_id}" not found.`,
-            },
-          };
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            throw {
+              status: 404,
+              body: {
+                code: 'not_found',
+                message: `Record with ID "${record_id}" not found.`,
+              },
+            };
+          }
+          throw error;
         }
-
-        await deleteObjectRecord('records', record_id);
-        return { success: true, record_id };
 
       case UniversalResourceType.DEALS:
         await deleteObjectRecord('deals', record_id);

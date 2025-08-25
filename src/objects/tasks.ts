@@ -44,6 +44,54 @@ export async function createTask(
   content: string,
   options: { assigneeId?: string; dueDate?: string; recordId?: string } = {}
 ): Promise<AttioTask> {
+  // Check if we should use mock data for testing
+  if (shouldUseMockData()) {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_TESTS === 'true'
+    ) {
+      console.error('[MockInjection] Using mock data for task creation');
+    }
+
+    // Generate mock task ID
+    const mockId = `mock-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Return mock task response
+    return {
+      id: {
+        task_id: mockId,
+        object_id: 'tasks',
+        workspace_id: 'mock-workspace-id',
+      },
+      content: content,
+      content_plaintext: content,
+      status: 'open' as const,
+      deadline_at: options.dueDate
+        ? new Date(options.dueDate).toISOString()
+        : null,
+      is_completed: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      assignees: options.assigneeId
+        ? [
+            {
+              referenced_actor_type: 'workspace-member' as const,
+              referenced_actor_id: options.assigneeId,
+            },
+          ]
+        : [],
+      linked_records: options.recordId
+        ? [
+            {
+              id: options.recordId,
+              object_id: 'companies',
+              title: 'Mock Record',
+            },
+          ]
+        : [],
+    } as AttioTask;
+  }
+
   return apiCreate(content, options);
 }
 

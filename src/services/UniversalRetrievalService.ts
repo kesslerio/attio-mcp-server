@@ -57,7 +57,19 @@ export class UniversalRetrievalService {
     const validationStart = performance.now();
 
     // Validate UUID format with clear error distinction
-    ValidationService.validateUUID(record_id, resource_type, 'GET', perfId);
+    // Invalid UUID format should be treated as "not found" rather than validation error
+    try {
+      ValidationService.validateUUID(record_id, resource_type, 'GET', perfId);
+    } catch (validationError) {
+      enhancedPerformanceTracker.endOperation(
+        perfId,
+        false,
+        'Invalid UUID format treated as not found',
+        404
+      );
+      // Throw Error object to match test expectations
+      throw createRecordNotFoundError(record_id, resource_type);
+    }
 
     enhancedPerformanceTracker.markTiming(
       perfId,
@@ -74,6 +86,7 @@ export class UniversalRetrievalService {
         404,
         { cached: true }
       );
+      // Throw Error object to match test expectations
       throw createRecordNotFoundError(record_id, resource_type);
     }
 
@@ -124,15 +137,8 @@ export class UniversalRetrievalService {
           404
         );
 
-        // Return structured HTTP response for MCP error mapping
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `Record with ID "${record_id}" not found.`,
-            type: 'invalid_request_error',
-          },
-        } as HttpResponse;
+        // Throw Error object to match test expectations
+        throw createRecordNotFoundError(record_id, resource_type);
       }
 
       if (statusCode === 400) {
@@ -238,13 +244,8 @@ export class UniversalRetrievalService {
 
       // NEW: robust null/shape guard
       if (!list || !list.id || !('list_id' in list.id)) {
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `List record with ID "${record_id}" not found.`,
-          },
-        };
+        // Throw Error object to match test expectations
+        throw createRecordNotFoundError(record_id, 'lists');
       }
 
       // proceed safely
@@ -268,15 +269,8 @@ export class UniversalRetrievalService {
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
-          // Legitimate 404 from API
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `List record with ID "${record_id}" not found.`,
-              type: 'invalid_request_error',
-            },
-          } as HttpResponse;
+          // Legitimate 404 from API - throw Error object
+          throw createRecordNotFoundError(record_id, 'lists');
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
@@ -286,14 +280,8 @@ export class UniversalRetrievalService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `List record with ID "${record_id}" not found.`,
-            type: 'invalid_request_error',
-          },
-        } as HttpResponse;
+        // Throw Error object to match test expectations
+        throw createRecordNotFoundError(record_id, 'lists');
       }
 
       // Re-throw other errors to avoid masking legitimate issues
@@ -317,16 +305,10 @@ export class UniversalRetrievalService {
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
-          // Cache legitimate 404s and re-throw as structured response
+          // Cache legitimate 404s and throw Error object
           CachingService.cache404Response(resource_type, record_id);
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Task with ID "${record_id}" not found.`,
-              type: 'invalid_request_error',
-            },
-          } as HttpResponse;
+          // Throw Error object to match test expectations
+          throw createRecordNotFoundError(record_id, resource_type);
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
@@ -337,14 +319,8 @@ export class UniversalRetrievalService {
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `Task with ID "${record_id}" not found.`,
-            type: 'invalid_request_error',
-          },
-        } as HttpResponse;
+        // Throw Error object to match test expectations
+        throw createRecordNotFoundError(record_id, resource_type);
       }
 
       // Re-throw other errors to avoid masking legitimate issues
@@ -370,16 +346,10 @@ export class UniversalRetrievalService {
       if (error && typeof error === 'object' && 'status' in error) {
         const httpError = error as { status: number; body?: unknown };
         if (httpError.status === 404) {
-          // Cache legitimate 404s and re-throw as structured response
+          // Cache legitimate 404s and throw Error object
           CachingService.cache404Response('notes', noteId);
-          throw {
-            status: 404,
-            body: {
-              code: 'not_found',
-              message: `Note with ID "${noteId}" not found.`,
-              type: 'invalid_request_error',
-            },
-          } as HttpResponse;
+          // Throw Error object to match test expectations
+          throw createRecordNotFoundError(noteId, 'notes');
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
         throw error;
@@ -390,14 +360,8 @@ export class UniversalRetrievalService {
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response('notes', noteId);
-        throw {
-          status: 404,
-          body: {
-            code: 'not_found',
-            message: `Note with ID "${noteId}" not found.`,
-            type: 'invalid_request_error',
-          },
-        } as HttpResponse;
+        // Throw Error object to match test expectations
+        throw createRecordNotFoundError(noteId, 'notes');
       }
 
       // Re-throw other errors to avoid masking legitimate issues

@@ -34,15 +34,9 @@ export function performanceErrorsTests() {
     });
 
     it('should handle rapid successive requests', async () => {
-      const rapidOperations =
-        errorScenarios.performanceTests.rapidTestQueries.map(
-          (query) => () =>
-            callUniversalTool('search-records', {
-              resource_type: 'companies',
-              query,
-              limit: 10,
-            })
-        );
+      const rapidOperations = errorScenarios.concurrency.rapidRequests.map(
+        (request) => () => callUniversalTool('search-records', request)
+      );
 
       const responses = await executeConcurrentOperations(rapidOperations);
       const analysis = analyzeBatchResults(responses);

@@ -97,8 +97,54 @@ export async function advancedSearchCompanies(
   limit?: number,
   offset?: number
 ): Promise<Company[]> {
+  // Strict validation BEFORE calling advancedSearchObject
+  // This ensures FilterValidationError is thrown for invalid inputs
   if (!filters) {
-    throw new Error('Filters parameter is required');
+    throw new Error('Filters object is required');
+  }
+
+  if (!('filters' in filters)) {
+    throw new Error('Filters must include a "filters" array');
+  }
+
+  if (!Array.isArray(filters.filters)) {
+    throw new Error('Filters.filters must be an array');
+  }
+
+  // Validate each filter condition structure
+  if (filters.filters && filters.filters.length > 0) {
+    filters.filters.forEach((filter, index) => {
+      if (!filter || typeof filter !== 'object') {
+        throw new Error(
+          `Invalid condition at index ${index}: filter must be an object`
+        );
+      }
+
+      if (!filter.attribute) {
+        throw new Error(
+          `Invalid condition at index ${index}: missing attribute object`
+        );
+      }
+
+      if (!filter.attribute.slug) {
+        throw new Error(
+          `Invalid condition at index ${index}: missing attribute.slug property`
+        );
+      }
+
+      if (!filter.condition) {
+        throw new Error(
+          `Invalid condition at index ${index}: missing condition property`
+        );
+      }
+
+      // Additional validation for unknown operators/malformed structures
+      if (typeof filter.condition !== 'string') {
+        throw new Error(
+          `Invalid condition at index ${index}: condition must be a string`
+        );
+      }
+    });
   }
 
   if (

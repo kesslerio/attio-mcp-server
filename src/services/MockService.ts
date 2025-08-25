@@ -300,8 +300,8 @@ export class MockService {
   static async createTask(
     taskData: Record<string, unknown>
   ): Promise<AttioRecord> {
-    // Prefer vi.mock() in unit tests, then MockService, then real API
-    if (shouldUseViMocks() || !shouldUseMockData()) {
+    // Use real API if not in mock mode, otherwise use mocks
+    if (!shouldUseMockData()) {
       try {
         const { createTask } = await import('../objects/tasks.js');
         const createdTask = await createTask(taskData.content as string, {
@@ -426,7 +426,13 @@ export class MockService {
           dueDate: updateData.dueDate as string,
           recordIds: updateData.recordIds as string[],
         })) as unknown as AttioRecord;
-      } catch (error) {
+      } catch (error: unknown) {
+        // Preserve structured HTTP responses from the real API/mocks
+        if (error && typeof error === 'object' && 'status' in error) {
+          throw error; // Re-throw structured responses as-is
+        }
+
+        // Only wrap non-structured errors
         throw new Error(
           `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
         );

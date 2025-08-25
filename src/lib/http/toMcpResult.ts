@@ -10,7 +10,12 @@ export interface HttpResponse {
 
 export interface McpResult {
   isError: boolean;
-  content: Array<{ type: 'text'; text: string }>;
+  content?: Array<{ type: 'text'; text: string }>;
+  error?: {
+    code: number;
+    type: string;
+    message?: string;
+  };
 }
 
 /**
@@ -25,6 +30,22 @@ export function toMcpResult(resp: HttpResponse): McpResult {
     };
   }
 
+  // Check if we have a structured error with code and type
+  if (resp.body?.code && resp.body?.type) {
+    return {
+      isError: true,
+      error: {
+        code: resp.status,
+        type: resp.body.type,
+        message: resp.body.message,
+      },
+      content: [
+        { type: 'text', text: resp.body.message || `HTTP ${resp.status}` },
+      ],
+    };
+  }
+
+  // Fallback to simple message format
   const msg =
     resp.body?.message ||
     resp.body?.error?.message ||

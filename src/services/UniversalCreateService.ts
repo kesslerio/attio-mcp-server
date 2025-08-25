@@ -59,24 +59,24 @@ import { debug, OperationType } from '../utils/logger.js';
 const COMPANY_ALLOWED_FIELDS = [
   'name',
   'domain',
-  'industry',
+  // 'industry', // Commented out - not available in Attio API schema
   'description',
-  'annual_revenue',
-  'employee_count',
-  'categories',
+  // 'annual_revenue', // Commented out - not available in Attio API schema
+  // 'employee_count', // Commented out - not available in Attio API schema
+  // 'categories', // Commented out - not available in Attio API schema
   'domains',
   'employees',
 ];
 
 const PERSON_ALLOWED_FIELDS = [
   'name',
-  'email_addresses',
-  'phone_numbers',
-  'job_title',
-  'seniority',
+  // 'email_addresses', // Try without this field first
+  // 'phone_numbers', // Commented out - not available in Attio API schema
+  // 'job_title', // Use 'title' instead for Attio API
+  // 'seniority', // Commented out - not available in Attio API schema
   'company',
   'emails',
-  'title',
+  // 'title', // Commented out - not available in Attio API schema
 ];
 
 /**

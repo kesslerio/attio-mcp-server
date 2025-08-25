@@ -100,10 +100,30 @@ if (process.env.E2E_MODE !== 'true') {
         return [];
       }),
       searchCompaniesByDomain: vi.fn(async () => []),
-      advancedSearchCompanies: vi.fn(async () => []),
+      advancedSearchCompanies: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/search'
+          );
+          return actual.advancedSearchCompanies(...args);
+        }
+        // Otherwise return mock
+        return [];
+      }),
       listCompanies: vi.fn(async () => []),
       getCompanyDetails: vi.fn(async () => ({})),
-      createCompany: vi.fn(async () => ({})),
+      createCompany: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/index'
+          );
+          return actual.createCompany(...args);
+        }
+        // Otherwise return mock
+        return {};
+      }),
       updateCompany: vi.fn(async () => ({})),
       deleteCompany: vi.fn(async () => true),
       smartSearchCompanies: vi.fn(async () => []),
@@ -111,20 +131,35 @@ if (process.env.E2E_MODE !== 'true') {
   });
 
   // Global mock for companies search module
-  vi.mock('../src/objects/companies/search', () => ({
-    searchCompaniesByName: vi.fn(async (name: string) => {
-      // Mock behavior based on company name for testing
-      if (name === 'Test Company' || name === 'Existing Company') {
-        return [{ id: { record_id: 'existing-company-id' } }];
-      }
-      return [];
-    }),
-    companyCache: {
-      clear: vi.fn(),
-      get: vi.fn(),
-      set: vi.fn(),
-    },
-  }));
+  vi.mock('../src/objects/companies/search', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      searchCompaniesByName: vi.fn(async (name: string) => {
+        // Mock behavior based on company name for testing
+        if (name === 'Test Company' || name === 'Existing Company') {
+          return [{ id: { record_id: 'existing-company-id' } }];
+        }
+        return [];
+      }),
+      advancedSearchCompanies: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/search'
+          );
+          return actual.advancedSearchCompanies(...args);
+        }
+        // Otherwise return mock
+        return [];
+      }),
+      companyCache: {
+        clear: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+      },
+    };
+  });
 
   // Global mock for people module
   vi.mock('../src/objects/people/index', async (importOriginal) => {

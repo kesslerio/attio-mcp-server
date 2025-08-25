@@ -40,6 +40,14 @@ import { isValidUUID } from '../utils/validation/uuid-validation.js';
 export type { ListMembership } from '../types/list-types.js';
 
 /**
+ * Extract data from response, handling axios, fetch, and mock response shapes
+ */
+function extract<T>(response: any): T {
+  // Support axios-like, fetch-like, and mocks
+  return (response?.data?.data ?? response?.data ?? response) as T;
+}
+
+/**
  * Gets all lists in the workspace
  *
  * @param objectSlug - Optional object type to filter lists by (e.g., 'companies', 'people')
@@ -94,7 +102,7 @@ export async function getListDetails(listId: string): Promise<AttioList> {
 
     try {
       const response = await api.get(path);
-      return response.data.data || response.data;
+      return extract<AttioList>(response);
     } catch (apiError: any) {
       const status = apiError?.response?.status;
       if (status === 404) {
@@ -398,7 +406,7 @@ export async function addRecordToList(
         );
       }
 
-      return response.data.data || response.data;
+      return extract<AttioListEntry>(response);
     } catch (error) {
       // Enhanced error handling for validation errors
       if (process.env.NODE_ENV === 'development') {
@@ -516,7 +524,7 @@ export async function updateListEntry(
       );
     }
 
-    return response.data.data || response.data;
+    return extract<AttioList>(response);
   }
 }
 
@@ -1036,7 +1044,7 @@ export async function createList(
       console.error(`[createList] Success:`, JSON.stringify(response.data));
     }
 
-    return response.data.data || response.data;
+    return extract<AttioList>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -1104,7 +1112,7 @@ export async function updateList(
       console.error(`[updateList] Success:`, JSON.stringify(response.data));
     }
 
-    return response.data.data || response.data;
+    return extract<AttioList>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -1225,7 +1233,7 @@ export async function getListAttributes(): Promise<Record<string, unknown>> {
 
   try {
     const response = await api.get(path);
-    return response.data.data || response.data || [];
+    return extract<Record<string, unknown>>(response);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error(
