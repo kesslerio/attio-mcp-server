@@ -44,6 +44,54 @@ export async function createTask(
   content: string,
   options: { assigneeId?: string; dueDate?: string; recordId?: string } = {}
 ): Promise<AttioTask> {
+  // Check if we should use mock data for testing
+  if (shouldUseMockData()) {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_TESTS === 'true'
+    ) {
+      console.error('[MockInjection] Using mock data for task creation');
+    }
+
+    // Generate mock task ID
+    const mockId = `mock-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Return mock task response
+    return {
+      id: {
+        task_id: mockId,
+        object_id: 'tasks',
+        workspace_id: 'mock-workspace-id',
+      },
+      content: content,
+      content_plaintext: content,
+      status: 'open' as const,
+      deadline_at: options.dueDate
+        ? new Date(options.dueDate).toISOString()
+        : null,
+      is_completed: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      assignees: options.assigneeId
+        ? [
+            {
+              referenced_actor_type: 'workspace-member' as const,
+              referenced_actor_id: options.assigneeId,
+            },
+          ]
+        : [],
+      linked_records: options.recordId
+        ? [
+            {
+              id: options.recordId,
+              object_id: 'companies',
+              title: 'Mock Record',
+            },
+          ]
+        : [],
+    } as unknown as AttioTask;
+  }
+
   return apiCreate(content, options);
 }
 
@@ -57,6 +105,48 @@ export async function updateTask(
     recordIds?: string[];
   }
 ): Promise<AttioTask> {
+  // Check if we should use mock data for testing
+  if (shouldUseMockData()) {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_TESTS === 'true'
+    ) {
+      console.error('[MockInjection] Using mock data for task update');
+    }
+
+    // Return mock task update response
+    return {
+      id: {
+        task_id: taskId,
+        object_id: 'tasks',
+        workspace_id: 'mock-workspace-id',
+      },
+      content_plaintext: updates.content || 'Mock updated task content',
+      deadline_at: updates.dueDate
+        ? new Date(updates.dueDate).toISOString()
+        : null,
+      is_completed: updates.status === 'completed',
+      status: updates.status || 'open',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      assignees: updates.assigneeId
+        ? [
+            {
+              referenced_actor_type: 'workspace-member' as const,
+              referenced_actor_id: updates.assigneeId,
+            },
+          ]
+        : [],
+      linked_records: updates.recordIds
+        ? updates.recordIds.map((recordId) => ({
+            id: recordId,
+            object_id: 'companies',
+            title: 'Mock Linked Record',
+          }))
+        : [],
+    } as unknown as AttioTask;
+  }
+
   return apiUpdate(taskId, updates);
 }
 

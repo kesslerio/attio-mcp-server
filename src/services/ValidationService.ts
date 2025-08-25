@@ -409,6 +409,73 @@ export class ValidationService {
   }
 
   /**
+   * Validate UUID for search operations with lenient validation
+   * Returns false for invalid UUIDs instead of throwing (used for filters)
+   *
+   * @param uuid - UUID string to validate
+   * @returns True if valid UUID, false otherwise
+   */
+  static validateUUIDForSearch(uuid: string): boolean {
+    try {
+      return isValidUUID(uuid);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Validate filter schema for search operations
+   *
+   * @param filters - Filter object to validate
+   * @throws UniversalValidationError for malformed filter schemas
+   */
+  static validateFiltersSchema(filters: unknown): void {
+    if (filters == null) return;
+
+    if (typeof filters !== 'object') {
+      throw new UniversalValidationError(
+        'filters must be an object',
+        ErrorType.USER_ERROR,
+        { field: 'filters' }
+      );
+    }
+
+    const filtersObj = filters as Record<string, unknown>;
+
+    if ('advanced' in filtersObj) {
+      if (!Array.isArray(filtersObj.advanced)) {
+        throw new UniversalValidationError(
+          'filters.advanced must be an array',
+          ErrorType.USER_ERROR,
+          { field: 'filters.advanced' }
+        );
+      }
+
+      filtersObj.advanced.forEach((filter: unknown, index: number) => {
+        if (!filter || typeof filter !== 'object') {
+          throw new UniversalValidationError(
+            `advanced[${index}] must be an object`,
+            ErrorType.USER_ERROR,
+            { field: `filters.advanced[${index}]` }
+          );
+        }
+
+        const filterObj = filter as Record<string, unknown>;
+        if (!filterObj.op || !filterObj.field) {
+          throw new UniversalValidationError(
+            `advanced[${index}] missing "op" or "field"`,
+            ErrorType.USER_ERROR,
+            {
+              field: `filters.advanced[${index}]`,
+              suggestion: 'Include both "op" and "field" properties',
+            }
+          );
+        }
+      });
+    }
+  }
+
+  /**
    * Comprehensive validation for universal operations
    *
    * @param params - Validation parameters

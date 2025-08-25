@@ -1,8 +1,8 @@
 /**
  * Universal Resource Types Validation Test
  *
- * Validates that all 6 universal resource types work correctly with our refactored
- * formatResult functions and that Phase 2 LISTS support is working properly.
+ * Validates that all 7 universal resource types work correctly with our refactored
+ * formatResult functions and that Phase 2 LISTS and NOTES support is working properly.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,10 +22,10 @@ import {
 } from './utils/mock-factories/index.js';
 
 describe('Universal Resource Types Validation', () => {
-  describe('All 6 Resource Types Enum Validation', () => {
-    it('should have exactly 6 resource types defined', () => {
+  describe('All 7 Resource Types Enum Validation', () => {
+    it('should have exactly 7 resource types defined', () => {
       const resourceTypes = Object.values(UniversalResourceType);
-      expect(resourceTypes).toHaveLength(6);
+      expect(resourceTypes).toHaveLength(7);
 
       // Verify all expected types are present
       expect(resourceTypes).toContain('companies');
@@ -55,6 +55,10 @@ describe('Universal Resource Types Validation', () => {
       records: CompanyMockFactory.create(), // Records use company structure
       tasks: TaskMockFactory.create(),
       deals: CompanyMockFactory.create(), // Deals use company-like structure
+      notes: {
+        id: { record_id: 'note_123' },
+        values: { title: [{ value: 'Test Note' }] },
+      }, // Simple mock for notes
     };
 
     const formatResultFunctions = [
@@ -83,8 +87,24 @@ describe('Universal Resource Types Validation', () => {
       describe(`${name} formatResult`, () => {
         Object.values(UniversalResourceType).forEach((resourceType) => {
           it(`should handle ${resourceType} resource type`, () => {
-            const mockData =
-              mockDataByType[resourceType as keyof typeof mockDataByType];
+            // Choose appropriate mock data based on the function
+            let mockData;
+            if (name === 'delete-record') {
+              // Delete functions expect { success: boolean; record_id: string }
+              mockData = { success: true, record_id: 'test_123' };
+            } else if (
+              name === 'search-records' ||
+              name === 'advanced-search'
+            ) {
+              // Search functions expect arrays
+              mockData = [
+                mockDataByType[resourceType as keyof typeof mockDataByType],
+              ].filter(Boolean);
+            } else {
+              // Other functions expect single records
+              mockData =
+                mockDataByType[resourceType as keyof typeof mockDataByType];
+            }
 
             expect(() => {
               const result = fn(mockData, resourceType as ResourceType);
@@ -136,6 +156,7 @@ describe('Universal Resource Types Validation', () => {
         'records',
         'tasks',
         'deals',
+        'notes',
       ];
       expect(resourceTypes.sort()).toEqual(expectedTypes.sort());
     });

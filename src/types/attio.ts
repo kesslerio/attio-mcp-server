@@ -188,11 +188,14 @@ export interface AttioRecord {
     [key: string]: unknown;
   };
   values: {
-    name?: Array<AttioValue<string>>;
-    email?: Array<AttioValue<string>>;
-    phone?: Array<AttioValue<string>>;
-    industry?: Array<AttioValue<string>>;
-    website?: Array<AttioValue<string>>;
+    name?: string;
+    email?: string;
+    phone?: string;
+    industry?: string;
+    website?: string;
+    title?: string;
+    content?: string;
+    description?: string;
     [key: string]: unknown; // Other fields
   };
   [key: string]: unknown; // Additional top-level fields
@@ -403,9 +406,9 @@ export interface AttioSingleResponse<T> {
 // Specific record types
 export interface Person extends AttioRecord {
   values: {
-    name?: Array<{ value: string }>;
-    email?: Array<{ value: string }>;
-    phone?: Array<{ value: string }>;
+    name?: string;
+    email?: string;
+    phone?: string;
     [key: string]: unknown;
   };
 }
@@ -424,9 +427,9 @@ export interface PersonCreateAttributes {
 
 export interface Company extends AttioRecord {
   values: {
-    name?: Array<{ value: string }>;
-    website?: Array<{ value: string }>;
-    industry?: Array<{ value: string }>;
+    name?: string;
+    website?: string;
+    industry?: string;
     [key: string]: unknown;
   };
 }

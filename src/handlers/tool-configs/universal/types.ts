@@ -19,6 +19,7 @@ export enum UniversalResourceType {
   RECORDS = 'records',
   TASKS = 'tasks',
   DEALS = 'deals',
+  NOTES = 'notes',
 }
 
 /**
@@ -40,6 +41,8 @@ export interface UniversalCreateNoteParams {
   record_id: string;
   title: string;
   content: string;
+  format?: 'markdown' | 'plaintext';
+  created_at?: string;
 }
 
 /**
@@ -236,6 +239,7 @@ export interface RelationshipSearchParams {
   relationship_type: RelationshipType;
   source_id: string;
   target_resource_type?: UniversalResourceType;
+  listId?: string;
   limit?: number;
   offset?: number;
 }

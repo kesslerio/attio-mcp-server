@@ -6,12 +6,14 @@
  * Tests will be skipped if SKIP_INTEGRATION_TESTS is set to true or
  * if ATTIO_API_KEY is not provided.
  */
-import { describe, beforeAll, it, expect, test } from 'vitest';
-import { advancedSearchCompanies } from '../../src/objects/companies/index';
-import { advancedSearchObject } from '../../src/api/operations/search';
-import { FilterConditionType, ResourceType } from '../../src/types/attio';
-import { initializeAttioClient } from '../../src/api/attio-client';
-import { FilterValidationError } from '../../src/errors/api-errors';
+import { describe, beforeAll, it, expect, test, vi } from 'vitest';
+import { advancedSearchObject } from '../../src/api/operations/search.js';
+import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { FilterValidationError } from '../../src/errors/api-errors.js';
+
+// Import the actual implementation directly to bypass mocks
+import { advancedSearchCompanies } from '../../src/objects/companies/search.js';
 
 // Skip tests if no API key or if explicitly disabled
 const SKIP_TESTS =
@@ -19,8 +21,12 @@ const SKIP_TESTS =
 
 describe('Advanced Search API Tests', { timeout: 30000 }, () => {
   // Initialize API client if not skipping tests
-  beforeAll(() => {
+  beforeAll(async () => {
     if (!SKIP_TESTS) {
+      // Unmock the companies module for integration tests
+      vi.doUnmock('../../src/objects/companies/search');
+      vi.doUnmock('../../src/objects/companies/index');
+
       const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
 

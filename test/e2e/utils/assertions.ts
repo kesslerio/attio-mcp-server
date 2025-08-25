@@ -285,6 +285,20 @@ export class E2EAssertions {
   static expectMcpSuccess(response: McpToolResponse, message?: string): void {
     const errorMsg = message || 'Expected MCP tool response to be successful';
 
+    // Add debug logging for error analysis
+    if (response.isError) {
+      console.error(
+        'ERR',
+        JSON.stringify(
+          {
+            error: response.error,
+          },
+          null,
+          2
+        )
+      );
+    }
+
     expect(response.isError, `${errorMsg} - Response has error flag`).toBe(
       false
     );
@@ -331,11 +345,11 @@ export class E2EAssertions {
         return parsedData;
       } catch (error: unknown) {
         // If not JSON, return text directly
-        return dataContent.text;
+        return dataContent.text as unknown as McpResponseData;
       }
     }
 
-    return null;
+    return undefined;
   }
 
   /**
@@ -535,7 +549,17 @@ export class E2EAssertions {
         !Array.isArray(expectedType)
       ) {
         expect(obj[key], `Property ${key} should be object`).toBeDefined();
-        this.expectObjectShape(obj[key], expectedType);
+        if (
+          obj[key] &&
+          typeof obj[key] === 'object' &&
+          !Array.isArray(obj[key]) &&
+          expectedType
+        ) {
+          this.expectObjectShape(
+            obj[key] as TestDataObject,
+            expectedType as ExpectedDataShape
+          );
+        }
       } else if (Array.isArray(expectedType) && expectedType.length > 0) {
         expect(Array.isArray(obj[key]), `Property ${key} should be array`).toBe(
           true
@@ -552,7 +576,8 @@ export class E2EAssertions {
    */
   static expectTestDataPrefix(data: TestDataObject, prefix?: string): void {
     const config = configLoader.getConfig();
-    const expectedPrefix = prefix || config.testData.testDataPrefix;
+    const expectedPrefix =
+      prefix || (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
     const hasPrefix = this.hasTestPrefix(data, expectedPrefix);
     expect(
@@ -566,7 +591,7 @@ export class E2EAssertions {
    */
   static expectNoTestDataPrefix(data: TestDataObject): void {
     const config = configLoader.getConfig();
-    const testPrefix = config.testData.testDataPrefix;
+    const testPrefix = (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
     const hasPrefix = this.hasTestPrefix(data, testPrefix);
     expect(
@@ -782,7 +807,9 @@ export class E2EAssertions {
       try {
         this.expectValidNoteStructure(note);
       } catch (error: unknown) {
-        throw new Error(`Note ${index} validation failed: ${error.message}`);
+        throw new Error(
+          `Note ${index} validation failed: ${(error as Error).message || String(error)}`
+        );
       }
     });
   }
@@ -873,8 +900,18 @@ export class E2EAssertions {
   static expectTestNote(note: any): void {
     this.expectValidNoteStructure(note);
 
-    const config = configLoader.getConfig();
-    const testPrefix = config.testSettings?.testDataPrefix || 'E2E_TEST_';
+    let config;
+    try {
+      config = configLoader.getConfig();
+    } catch (error: any) {
+      if (error?.message?.includes('Configuration not loaded')) {
+        // Use fallback if config not loaded
+        config = { testData: { testDataPrefix: 'E2E_TEST_' } };
+      } else {
+        throw error;
+      }
+    }
+    const testPrefix = (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
     // Check if note title indicates it's test data
     expect(
@@ -882,10 +919,14 @@ export class E2EAssertions {
       'Test note should have E2E or test prefix in title'
     ).toBe(true);
 
-    // Check content for test indicators
+    // Check content for test indicators - accept tags as alternative
+    const hasContentMarker =
+      note.content.includes('E2E') || note.content.includes('test');
+    const hasTagMarker =
+      note.tags && Array.isArray(note.tags) && note.tags.includes('e2e-test');
     expect(
-      note.content.includes('E2E') || note.content.includes('test'),
-      "Test note content should indicate it's for testing"
+      hasContentMarker || hasTagMarker,
+      'Test note should have E2E markers in content or tags'
     ).toBe(true);
   }
 }

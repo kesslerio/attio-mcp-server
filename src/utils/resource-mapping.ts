@@ -46,9 +46,10 @@ const RESOURCE_PATH_MAP: Record<string, ResourcePathConfig> = {
     idPrefix: 'deal_',
   },
   tasks: {
-    basePath: '/objects/tasks',
+    basePath: '/tasks',
     singular: 'task',
     plural: 'tasks',
+    customPath: true,
     idPrefix: 'task_',
   },
   lists: {

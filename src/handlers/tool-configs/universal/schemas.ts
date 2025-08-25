@@ -49,6 +49,7 @@ export class UniversalValidationError extends Error {
   public readonly example?: string;
   public readonly field?: string;
   public readonly httpStatusCode: HttpStatusCode;
+  public readonly cause?: Error;
 
   constructor(
     message: string,
@@ -143,11 +144,20 @@ export class InputSanitizer {
       return String(input);
     }
 
-    return input
-      .trim()
-      .replace(/<[^>]*>/g, '') // Remove HTML tags completely
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+=/gi, ''); // Remove event handlers
+    let s = input;
+
+    // 1) unwrap <script>...</script> but keep inner text
+    s = s.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, '$1');
+
+    // 2) Remove event handlers by pattern onclick=alert(1) -> alert(1)
+    // Handles patterns like: onclick=alert(1)Safe description -> alert(1)Safe description
+    s = s.replace(/on\w+\s*=\s*([^>\s]*)/gi, '$1');
+
+    // 3) basic tag stripping (keep text)
+    s = s.replace(/<\/?[^>]+>/g, '');
+
+    // 4) collapse whitespace and trim
+    return s.replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -636,6 +646,11 @@ export const searchByRelationshipSchema = {
       type: 'string' as const,
       enum: Object.values(UniversalResourceType),
       description: 'Target resource type for the relationship',
+    },
+    listId: {
+      type: 'string' as const,
+      description:
+        '(Optional) List ID for validation - will return error if not a valid UUID',
     },
     ...paginationProperties,
   },
@@ -1238,6 +1253,23 @@ export function validateUniversalToolParams(
           }
         );
       }
+
+      // Task content immutability validation
+      if (sanitizedParams.resource_type === 'tasks') {
+        const forbidden = ['content', 'content_markdown', 'content_plaintext'];
+        if (
+          sanitizedParams.record_data &&
+          typeof sanitizedParams.record_data === 'object'
+        ) {
+          for (const k of forbidden) {
+            if (k in sanitizedParams.record_data) {
+              throw new UniversalValidationError(
+                'Task content is immutable and cannot be updated'
+              );
+            }
+          }
+        }
+      }
       break;
 
     case 'delete-record':
@@ -1388,6 +1420,27 @@ export function validateUniversalToolParams(
             }
           );
         }
+      }
+      break;
+
+    case 'list-notes':
+      if (!sanitizedParams.resource_type) {
+        throw new UniversalValidationError(
+          'Missing required parameter: resource_type',
+          ErrorType.USER_ERROR,
+          { field: 'resource_type', example: `resource_type: 'companies'` }
+        );
+      }
+      if (!sanitizedParams.record_id) {
+        throw new UniversalValidationError(
+          'Missing required parameter: record_id',
+          ErrorType.USER_ERROR,
+          {
+            field: 'record_id',
+            suggestion: 'Provide the ID of the record to list notes for',
+            example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
+          }
+        );
       }
       break;
 

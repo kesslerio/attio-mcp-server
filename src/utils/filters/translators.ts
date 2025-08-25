@@ -267,9 +267,10 @@ function createOrFilterStructure(
       }
 
       // List-specific attributes use direct field access
-      const operator = filter.condition;
+      const operator =
+        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
       condition[slug] = {
-        [`$${operator}`]: filter.value,
+        [operator]: filter.value,
       };
     } else if (
       FIELD_SPECIAL_HANDLING[slug] &&
@@ -286,17 +287,18 @@ function createOrFilterStructure(
       condition[slug] = filter.value;
     } else {
       // Standard operator handling for normal fields
-      const operator = filter.condition;
+      const operator =
+        filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
       // For parent record attributes in list context, we need to use the record path
       if (isListEntryContext && !isListSpecificAttribute(slug)) {
         condition[`record.values.${slug}`] = {
-          [`$${operator}`]: filter.value,
+          [operator]: filter.value,
         };
       } else {
         // Standard field access for non-list contexts
         condition[slug] = {
-          [`$${operator}`]: filter.value,
+          [operator]: filter.value,
         };
       }
     }
@@ -329,7 +331,8 @@ function createAndFilterStructure(
   validateConditions: boolean,
   isListEntryContext: boolean = false
 ): { filter?: AttioApiFilter } {
-  const apiFilter: AttioApiFilter = {};
+  // Use simple merged object for AND logic instead of $and wrapper
+  const mergedConditions: any = {};
 
   // Use centralized validation utility to collect invalid filters with consistent messages
   const invalidFilters = collectInvalidFilters(filters, validateConditions);
@@ -358,9 +361,7 @@ function createAndFilterStructure(
     );
   }
 
-  // Process valid filters
-  let hasValidFilters = false;
-
+  // Process valid filters by merging into single object
   filters.forEach((filter, index) => {
     // Skip if this filter was found invalid
     if (invalidFilters.some((invalid) => invalid.index === index)) {
@@ -377,81 +378,42 @@ function createAndFilterStructure(
     }
 
     const { slug } = filter.attribute;
+    const operator =
+      filter.condition === 'equals' ? '$equals' : `$${filter.condition}`;
 
-    // Check if we're in list entry context and this is a list-specific attribute
+    // Build condition object in Attio's expected format
+    let fieldPath: string;
+
     if (isListEntryContext && isListSpecificAttribute(slug)) {
-      // For list-specific attributes, we don't need any path prefix
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[AND Logic] Using list-specific attribute format for field ${slug}`
-        );
-      }
-
       // List-specific attributes use direct field access
-      const operator = filter.condition;
-
-      // Initialize attribute entry if needed
-      if (!apiFilter[slug]) {
-        apiFilter[slug] = {};
-      }
-
-      // Add operator with $ prefix
-      apiFilter[slug][`$${operator}`] = filter.value;
-    } else if (
-      FIELD_SPECIAL_HANDLING[slug] &&
-      FIELD_SPECIAL_HANDLING[slug].useShorthandFormat
-    ) {
-      // For special fields that need shorthand format
-      if (process.env.NODE_ENV === 'development') {
-        console.error(
-          `[AND Logic] Using shorthand filter format for field ${slug}`
-        );
-      }
-
-      // Direct value assignment for shorthand format
-      if (filter.value !== undefined && filter.value !== null) {
-        if (!apiFilter[slug]) {
-          apiFilter[slug] = filter.value as { [condition: string]: any };
-        } else {
-          console.warn(
-            `Multiple filters for ${slug} using shorthand format will overwrite previous values`
-          );
-          apiFilter[slug] = filter.value as { [condition: string]: any };
-        }
-      }
+      fieldPath = slug;
+    } else if (isListEntryContext && !isListSpecificAttribute(slug)) {
+      // Parent record attributes in list context need record path
+      fieldPath = `record.values.${slug}`;
     } else {
-      // Standard operator handling for normal fields
-      const operator = filter.condition;
-
-      // For parent record attributes in list context, we need to use the record path
-      if (isListEntryContext && !isListSpecificAttribute(slug)) {
-        const fieldPath = `record.values.${slug}`;
-
-        // Initialize attribute entry if needed for operator-based filtering
-        if (!apiFilter[fieldPath]) {
-          apiFilter[fieldPath] = {};
-        }
-
-        // Add operator with $ prefix as required by Attio API
-        apiFilter[fieldPath][`$${operator}`] = filter.value;
-      } else {
-        // Standard field access for non-list contexts
-
-        // Initialize attribute entry if needed for operator-based filtering
-        if (!apiFilter[slug]) {
-          apiFilter[slug] = {};
-        }
-
-        // Add operator with $ prefix as required by Attio API
-        apiFilter[slug][`$${operator}`] = filter.value;
-      }
+      // Standard field access for non-list contexts
+      fieldPath = slug;
     }
 
-    hasValidFilters = true;
+    // Merge condition directly into the main object (AND logic)
+    mergedConditions[fieldPath] = {
+      [operator]: filter.value,
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        `[createAndFilterStructure] Added condition for ${fieldPath}:`,
+        mergedConditions[fieldPath]
+      );
+    }
   });
 
-  // Return the filter object only if valid filters were found
-  return hasValidFilters ? { filter: apiFilter } : {};
+  // Return merged conditions if we have any
+  if (Object.keys(mergedConditions).length === 0) {
+    return {};
+  }
+
+  return { filter: mergedConditions };
 }
 
 /**

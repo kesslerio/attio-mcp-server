@@ -49,7 +49,7 @@ export default defineConfig({
       ],
     },
     silent: false,
-    reporter: 'verbose',
+    reporters: ['verbose'],
   },
   resolve: {
     alias: {

@@ -26,6 +26,101 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
 }
 
 /**
+ * Extract ID from various API response shapes
+ * @private
+ */
+function extractAnyId(obj: any): string | undefined {
+  if (!obj) return;
+  return (
+    obj?.id?.record_id ??
+    obj?.id?.company_id ??
+    obj?.id?.person_id ??
+    obj?.id?.list_id ??
+    obj?.id?.task_id ??
+    (typeof obj?.id === 'string' ? obj.id : undefined) ??
+    obj?.record_id ??
+    obj?.company_id ??
+    obj?.person_id ??
+    obj?.list_id ??
+    obj?.task_id
+  );
+}
+
+/**
+ * Transforms raw API response to ensure proper AttioRecord structure
+ * @private
+ */
+function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any, allowEmpty = false): T {
+  if (!rawData || typeof rawData !== 'object') {
+    throw new Error('Invalid API response: no data found');
+  }
+
+  // Guard against empty objects that slip through, but allow them if explicitly requested
+  if (Object.keys(rawData).length === 0) {
+    if (allowEmpty) {
+      return rawData as T; // Allow empty objects to pass through for fallback handling
+    }
+    throw new Error('Invalid API response: empty data object');
+  }
+
+  // Debug logging to understand the actual API response structure
+  if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+    console.error('[ensureAttioRecordStructure] Raw data received:', {
+      type: typeof rawData,
+      keys: Object.keys(rawData || {}),
+      hasId: !!rawData.id,
+      idType: typeof rawData.id,
+      idKeys: rawData.id ? Object.keys(rawData.id) : [],
+      idValue: rawData.id,
+      hasValues: !!rawData.values,
+      valuesType: typeof rawData.values,
+      fullData: JSON.stringify(rawData, null, 2)
+    });
+  }
+
+  // If already has the proper structure, return as-is
+  if (rawData.id && rawData.id.record_id && rawData.values) {
+    return rawData as T;
+  }
+
+  // Transform to proper AttioRecord structure
+  let result: any = { ...rawData };
+
+  // Ensure id.record_id structure exists
+  if (!result.id || !result.id.record_id) {
+    // Probe across common wrappers in order using the helper
+    const extractedId =
+      extractAnyId(result) ??
+      extractAnyId(result?.data) ??
+      extractAnyId(result?.data?.data) ??
+      extractAnyId(result?.data?.record) ??
+      extractAnyId(result?.data?.items?.[0]);
+
+    if (extractedId) {
+      // Ensure canonical shape
+      result.id = { record_id: extractedId };
+      // Also use nested data structure if available
+      if (result.data?.values) {
+        result.values = result.data.values;
+      }
+    } else {
+      throw new Error('Invalid API response: record missing ID structure');
+    }
+  }
+
+  // Ensure values object exists
+  if (!result.values) {
+    if (result.data?.values) {
+      result.values = result.data.values;
+    } else {
+      result.values = {};
+    }
+  }
+
+  return result as T;
+}
+
+/**
  * Generic function to get details for a specific record
  *
  * @param objectType - The type of object to get (people or companies)
@@ -81,36 +176,101 @@ export async function createRecord<T extends AttioRecord>(
   const path = `${objectPath}/records`;
 
   return callWithRetry(async () => {
+    // Debug log the request being made
+    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+      console.error('[createRecord] Making API request:', {
+        path,
+        requestBody: {
+          data: {
+            values: params.attributes,
+          },
+        }
+      });
+    }
+    
     const response = await api.post<AttioSingleResponse<T>>(path, {
       data: {
         values: params.attributes,
       },
     });
+    
+    // Debug log the full response
+    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+      console.error('[createRecord] Full API response:', {
+        status: response?.status,
+        statusText: response?.statusText,
+        headers: response?.headers,
+        data: response?.data,
+        dataType: typeof response?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : []
+      });
+    }
 
-    // Handle different response structures
-    let result: T;
+    // Extract raw data from response using Agent A's pattern
+    let rawResult = response?.data?.data ?? response?.data ?? response;
 
-    if (response?.data?.data) {
-      // Standard nested structure
-      result = response.data.data;
-    } else if (response?.data && typeof response.data === 'object') {
-      // Direct data structure
-      if (Array.isArray(response.data)) {
-        // If it's an array, take the first element (should be the created record)
-        result = response.data[0] as T;
-      } else {
-        result = response.data as unknown as T;
-      }
-    } else {
+    // Additional extraction patterns for different Attio API response formats
+    if (!rawResult && response?.data?.attributes) {
+      // Some APIs return { data: { attributes: {...}, id: {...} } }
+      rawResult = response.data as any;
+    }
+
+    // Handle array responses by taking first element
+    if (Array.isArray(rawResult) && rawResult.length > 0) {
+      rawResult = rawResult[0];
+    }
+
+    // Final validation with debug logging
+    if (!rawResult || typeof rawResult !== 'object') {
+      console.error('DEBUG: Failed response extraction. Response structure:', {
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        hasNestedData: !!response?.data?.data,
+        dataKeys: response?.data ? Object.keys(response.data) : [],
+        dataType: typeof response?.data,
+        rawDataType: typeof rawResult,
+      });
       throw new Error('Invalid API response structure: no data found');
     }
 
-    // Ensure we have a valid record with an ID
-    if (!result || !('id' in result)) {
-      throw new Error('Invalid API response: record missing ID');
+    // Transform to proper AttioRecord structure with id.record_id
+    try {
+      // Allow empty objects for companies to enable fallback handling at higher levels
+      const isCompaniesRequest = params.objectSlug === 'companies' || params.objectId === 'companies';
+      const result = ensureAttioRecordStructure<T>(rawResult, isCompaniesRequest);
+      return result;
+    } catch (error) {
+      // Robust fallback for { data: {} } responses - query the just-created record by name
+      const name = params?.attributes?.name?.value ?? params?.attributes?.name;
+      if (name && error instanceof Error && error.message.includes('missing ID structure')) {
+        if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+          console.error('[createRecord] Fallback: querying just-created record by name:', name);
+        }
+        try {
+          // Use the documented query endpoint with exact name match
+          const queryResponse = await api.post(path + '/query', {
+            filter: { name },
+            limit: 1,
+          });
+          
+          const found = queryResponse?.data?.data?.[0];
+          if (found) {
+            const fallbackResult = ensureAttioRecordStructure<T>(found);
+            if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+              console.error('[createRecord] Fallback successful, found record:', fallbackResult.id?.record_id);
+            }
+            return fallbackResult;
+          }
+        } catch (lookupError) {
+          if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
+            console.error('[createRecord] Fallback query failed:', lookupError);
+          }
+        }
+      }
+      
+      // If fallback didn't work, rethrow original error
+      throw error;
     }
-
-    return result;
   }, retryConfig);
 }
 
@@ -174,7 +334,13 @@ export async function updateRecord<T extends AttioRecord>(
 
     const response = await api.patch<AttioSingleResponse<T>>(path, payload);
 
-    return response?.data?.data || response?.data;
+    // Extract raw data from response using consistent pattern
+    const rawResult = response?.data?.data ?? response?.data ?? response;
+
+    // Transform to proper AttioRecord structure with id.record_id
+    const result = ensureAttioRecordStructure<T>(rawResult);
+
+    return result;
   }, retryConfig);
 }
 
@@ -250,6 +416,14 @@ export async function listRecords<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioListResponse<T>>(path);
-    return response?.data?.data || [];
+    // Ensure we always return an array, never undefined/null/objects
+    const items = Array.isArray(response?.data?.data) 
+      ? response.data.data 
+      : Array.isArray(response?.data?.records) 
+      ? response.data.records 
+      : Array.isArray(response?.data)
+      ? response.data
+      : [];
+    return items;
   }, retryConfig);
 }

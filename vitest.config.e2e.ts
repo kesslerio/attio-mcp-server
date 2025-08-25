@@ -1,13 +1,9 @@
 import { defineConfig } from 'vitest/config';
-import { config } from 'dotenv';
-
-// Load environment variables from .env file for E2E tests
-const envVars = config().parsed || {};
-
-// Also load E2E-specific environment variables (if exists)
-const e2eEnvVars = config({ path: '.env.e2e' }).parsed || {};
+import { resolve } from 'node:path';
 
 export default defineConfig({
+  // Project root for env file resolution
+  envDir: resolve(__dirname),
   test: {
     environment: 'node',
     include: ['test/e2e/suites/**/*.e2e.test.ts', 'test/e2e/**/*.e2e.test.ts'],
@@ -42,17 +38,10 @@ export default defineConfig({
     retry: 2, // Retry failed tests up to 2 times
     bail: 10, // Stop after 10 failures to avoid overwhelming the API
 
-    // Environment variables for E2E tests
+    // Environment variables for E2E tests (loaded via --env-file)
     env: {
       NODE_ENV: 'test',
       E2E_MODE: 'true',
-      ...envVars,
-      ...e2eEnvVars,
-      // Ensure ATTIO_API_KEY is always passed through from any source
-      ATTIO_API_KEY:
-        process.env.ATTIO_API_KEY ||
-        envVars.ATTIO_API_KEY ||
-        e2eEnvVars.ATTIO_API_KEY,
     },
 
     // Coverage configuration for E2E tests
@@ -95,7 +84,7 @@ export default defineConfig({
 
     // Reporting configuration
     silent: false,
-    reporter: ['verbose', 'json'],
+    reporters: ['verbose', 'json'],
     outputFile: {
       json: './test-results/e2e-results.json',
     },
@@ -106,29 +95,11 @@ export default defineConfig({
     // Test name pattern matching
     testNamePattern: undefined, // Run all E2E tests by default
 
-    // File watching exclusions for performance
-    watchExclude: [
-      'node_modules/**',
-      'dist/**',
-      '.git/**',
-      'coverage/**',
-      'coverage-e2e/**',
-      'test-results/**',
-      '**/*.d.ts',
-      // Exclude non-E2E test directories from watch
-      'test/unit/**',
-      'test/integration/**',
-      'test/handlers/**',
-      'test/api/**',
-      'test/utils/**',
-      'test/validators/**',
-      'test/objects/**',
-      'test/manual/**',
-    ],
+    // Note: File watching is disabled for E2E tests (watch: false above)
 
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup
-    setupFiles: ['./test/e2e/setup/env-loader.ts'], // Load env vars BEFORE test files
+    setupFiles: ['./test/e2e/setupEnv.ts'], // Validate env vars BEFORE test files
 
     // Performance optimizations
     minWorkers: 1,

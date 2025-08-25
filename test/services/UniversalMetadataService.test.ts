@@ -276,7 +276,10 @@ describe('UniversalMetadataService', () => {
 
   describe('getAttributes', () => {
     it('should get company attributes with record ID', async () => {
-      const mockResult = { name: 'Test Company' };
+      const mockResult = {
+        company: 'Test Company',
+        attributes: ['name', 'website'],
+      };
       vi.mocked(getCompanyAttributes).mockResolvedValue(mockResult);
 
       const result = await UniversalMetadataService.getAttributes({
@@ -289,7 +292,7 @@ describe('UniversalMetadataService', () => {
     });
 
     it('should discover company attributes without record ID', async () => {
-      const mockResult = { attributes: [], count: 0 };
+      const mockResult = { standard: [], custom: [], all: [] };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
       const result = await UniversalMetadataService.getAttributes({
@@ -314,11 +317,12 @@ describe('UniversalMetadataService', () => {
 
     it('should apply category filtering', async () => {
       const mockResult = {
-        attributes: [
-          { name: 'attr1', category: 'contact' },
-          { name: 'attr2', category: 'business' },
+        standard: ['attr1'],
+        custom: ['attr2'],
+        all: [
+          { name: 'attr1', category: 'contact', isCustom: false },
+          { name: 'attr2', category: 'other', isCustom: true },
         ],
-        count: 2,
       };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
@@ -328,7 +332,7 @@ describe('UniversalMetadataService', () => {
       });
 
       expect(result).toEqual({
-        attributes: [{ name: 'attr1', category: 'contact' }],
+        attributes: [{ name: 'attr1', category: 'contact', isCustom: false }],
         count: 1,
       });
     });
@@ -346,7 +350,7 @@ describe('UniversalMetadataService', () => {
 
   describe('discoverAttributes', () => {
     it('should discover company attributes', async () => {
-      const mockResult = { attributes: [], count: 0 };
+      const mockResult = { standard: [], custom: [], all: [] };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
 
       const result = await UniversalMetadataService.discoverAttributes(

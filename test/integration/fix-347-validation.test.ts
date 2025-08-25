@@ -1,6 +1,7 @@
 /**
- * Integration tests for issue #347 fixes
+ * Integration tests for issue #347 fixes using universal tools
  * Tests the fixes implemented based on production logs and user feedback
+ * Tests migration from legacy tools to universal tools
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
@@ -35,33 +36,40 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'update-company',
+          name: 'update-record',
           arguments: {
-            companyId: 'test-company-1',
-            updates: {
+            resource_type: 'companies',
+            record_id: 'test-company-1',
+            record_data: {
               lead_score: '90', // String value that should be converted to number
             },
           },
         },
       };
 
-      // Mock the update handler
-      const mockUpdateCompany = vi.fn().mockResolvedValue({
+      // Mock the universal update service
+      const mockUpdateRecord = vi.fn().mockResolvedValue({
         id: { record_id: 'test-company-1' },
         values: { lead_score: [{ value: 90 }] },
       });
 
-      vi.doMock('../../src/objects/companies/index.js', () => ({
-        updateCompany: mockUpdateCompany,
+      vi.doMock('../../src/services/UniversalUpdateService.js', () => ({
+        UniversalUpdateService: {
+          updateRecord: mockUpdateRecord,
+        },
       }));
 
       const result = await executeToolRequest(request);
 
-      // The tool should accept the string value and convert it
+      // The universal tool should accept the string value and handle conversion
       expect(result.isError).toBeFalsy();
-      expect(mockUpdateCompany).toHaveBeenCalledWith('test-company-1', {
-        lead_score: 90, // Should be converted to number
-      });
+      expect(mockUpdateRecord).toHaveBeenCalledWith(
+        'companies',
+        'test-company-1',
+        {
+          lead_score: '90', // Universal tools handle type conversion internally
+        }
+      );
     });
   });
 
@@ -70,10 +78,11 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'update-company',
+          name: 'update-record',
           arguments: {
-            recordId: 'test-company-1', // Using recordId instead of companyId
-            updates: {
+            resource_type: 'companies',
+            record_id: 'test-company-1', // Using record_id (universal tool standard)
+            record_data: {
               name: 'Updated Company Name',
             },
           },
@@ -82,7 +91,7 @@ describe.skip('Issue #347 Fixes', () => {
 
       const result = await executeToolRequest(request);
 
-      // Should not error on missing companyId when recordId is provided
+      // Should not error with universal tools standard record_id parameter
       expect(result.isError).toBeFalsy();
     });
 
@@ -90,10 +99,11 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'update-person',
+          name: 'update-record',
           arguments: {
-            recordId: 'test-person-1', // Using recordId instead of personId
-            updates: {
+            resource_type: 'people',
+            record_id: 'test-person-1', // Using record_id (universal tool standard)
+            record_data: {
               name: 'Updated Person Name',
             },
           },
@@ -102,7 +112,7 @@ describe.skip('Issue #347 Fixes', () => {
 
       const result = await executeToolRequest(request);
 
-      // Should not error on missing personId when recordId is provided
+      // Should not error with universal tools standard record_id parameter
       expect(result.isError).toBeFalsy();
     });
   });
@@ -112,8 +122,9 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'advanced-search-companies',
+          name: 'advanced-search',
           arguments: {
+            resource_type: 'companies',
             filters: null, // Null filters should be handled gracefully
           },
         },
@@ -130,8 +141,11 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'advanced-search-companies',
-          arguments: {}, // Missing filters entirely
+          name: 'advanced-search',
+          arguments: {
+            resource_type: 'companies',
+            // Missing filters entirely
+          },
         },
       };
 
@@ -147,32 +161,33 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'link-person-to-company',
+          name: 'update-record',
           arguments: {
-            personId: 'test-person-1',
-            companyId: 'test-company-1',
+            resource_type: 'companies',
+            record_id: 'test-company-1',
+            record_data: {
+              team: {
+                add: ['test-person-1'],
+              },
+            },
           },
         },
       };
 
-      // Mock the company details and update
-      vi.doMock('../../src/objects/companies/index.js', () => ({
-        getCompanyDetails: vi.fn().mockResolvedValue({
-          id: { record_id: 'test-company-1' },
-          values: { team: [] },
-        }),
-        updateCompany: vi.fn().mockResolvedValue({
-          id: { record_id: 'test-company-1' },
-          values: { team: [{ target_record_id: 'test-person-1' }] },
-        }),
+      // Mock the universal update service
+      vi.doMock('../../src/services/UniversalUpdateService.js', () => ({
+        UniversalUpdateService: {
+          updateRecord: vi.fn().mockResolvedValue({
+            id: { record_id: 'test-company-1' },
+            values: { team: [{ target_record_id: 'test-person-1' }] },
+          }),
+        },
       }));
 
       const result = await executeToolRequest(request);
 
       expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain(
-        'Successfully linked person to company'
-      );
+      expect(result.content[0].text).toContain('Successfully updated record');
     });
   });
 
@@ -181,17 +196,18 @@ describe.skip('Issue #347 Fixes', () => {
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
-          name: 'update-company-attribute',
+          name: 'update-record',
           arguments: {
-            // Missing required parameters
+            resource_type: 'companies',
+            // Missing required parameters like record_id
           },
         },
       };
 
       const result = await executeToolRequest(request);
 
-      // Error message should list accepted parameter names
-      expect(result.content[0].text).toMatch(/companyId|recordId/);
+      // Error message should list accepted parameter names for universal tools
+      expect(result.content[0].text).toMatch(/record_id|resource_type/);
     });
   });
 });

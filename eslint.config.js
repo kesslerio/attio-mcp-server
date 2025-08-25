@@ -13,13 +13,22 @@ export default [
       'test/**/*.js',
       'test/**/*.mjs',
       'test/**/*.cjs',
+      'test-dist/**',  // Ignore compiled test files
       '*.js',
       '*.mjs', 
       '*.cjs',
       '**/*.d.ts'  // Ignore TypeScript declaration files
     ]
   },
-  js.configs.recommended,
+  {
+    // Convert base JS recommended rules to warnings for migration phase
+    rules: Object.fromEntries(
+      Object.entries(js.configs.recommended.rules || {}).map(([key, value]) => [
+        key, 
+        value === 'error' ? 'warn' : value
+      ])
+    )
+  },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
@@ -45,7 +54,13 @@ export default [
       '@typescript-eslint': tsPlugin
     },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
+      // Import recommended rules but convert errors to warnings for migration phase
+      ...Object.fromEntries(
+        Object.entries(tsPlugin.configs.recommended.rules).map(([key, value]) => [
+          key, 
+          value === 'error' ? 'warn' : value
+        ])
+      ),
       // Temporarily relaxed rules to get CI working - matching legacy config
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn', 

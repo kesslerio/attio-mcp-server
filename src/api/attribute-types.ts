@@ -78,9 +78,19 @@ export async function getObjectAttributeMetadata(
 
     const api = getAttioClient();
     const response = await api.get(`/objects/${objectSlug}/attributes`);
-    // Handle both response.data.data and response.data structures
-    const attributes: AttioAttributeMetadata[] =
-      response?.data?.data || response?.data || [];
+    // Handle multiple API response structures for attributes
+    let rawAttributes = response?.data?.data || response?.data || [];
+
+    // Ensure attributes is always an array - handle multiple shape variants
+    const attributes: AttioAttributeMetadata[] = Array.isArray(rawAttributes)
+      ? rawAttributes
+      : Array.isArray(rawAttributes?.attributes)
+        ? rawAttributes.attributes
+        : Array.isArray(rawAttributes?.items)
+          ? rawAttributes.items
+          : Array.isArray(rawAttributes?.data)
+            ? rawAttributes.data
+            : [];
 
     // Build metadata map
     const metadataMap = new Map<string, AttioAttributeMetadata>();

@@ -1,40 +1,27 @@
 # ATTIO MCP SERVER INSTRUCTIONS [LLM-OPTIMIZED]
 
-```
 ## STYLE & TOKEN BUDGET (for CLAUDE.md)
+
 - Keep this file concise; it loads into every Claude Code session.
 - Use `##`/`###` headings and short checklists.
 - Use **bold** for must‑do rules only; avoid ALL‑CAPS sentences.
 - Prefer lists/tables over prose; put commands in fenced code blocks.
-```
 
 ## CORE PRINCIPLES
 
-RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
+RULE: Documentation-first development | WHEN: Building any feature | DO: Check official docs (use Context 7, fallback: web search) → existing solutions → ONLY then custom | ELSE: Technical debt accumulation
 RULE: Complexity audit required | WHEN: Encountering complex code | DO: Use mcp**clear-thought-server**mentalmodel First Principles | ELSE: Perpetuating unnecessary complexity
 RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-server**decisionframework → find alternative | ELSE: Wasted time on workarounds
 
-## BUILD & TEST COMMANDS [UPDATED CI/CD - Issue #491]
+## BUILD & TEST GOTCHAS
 
-`npm run build` - TypeScript compilation | `npm run build:watch` - Watch mode
-`npm run typecheck` - Type checking only (fast) | `npm run typecheck:watch` - Watch mode
-`npm run check` - Validation suite (lint, format, typecheck) | `npm run clean` - Clean build artifacts
-`npm test` - Run all unit tests (globals enabled) | `npm run test:offline` - Unit tests only (no API)
-`npm run test:integration` - Real API tests | `npm run test:integration:only` - Integration tests in test/integration/ only
-`npm test -- -t "pattern"` - Single test pattern | `npm test <filepath>` - Specific file
-`npm test -- --coverage` - With coverage report
-
+⚠️ CRITICAL: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
-⚠️ IMPORTANT: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 
-## TEST DATA CLEANUP [COMPREHENSIVE UTILITIES]
+## TEST DATA CLEANUP
 
 RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
 `npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
-`./cleanup-test-data.sh --dry-run` - Shell wrapper with validation | `./cleanup-test-data.sh --live` - Live cleanup
-`npm run cleanup:test-data:companies -- --live` - Companies only | `npm run cleanup:test-data:people -- --live` - People only
-`npm run cleanup:test-data:tasks -- --live` - Tasks only | `npm run cleanup:test-data:lists -- --live` - Lists only
-FEATURES: Parallel processing | Rate limiting | Error handling | Prefix-based filtering | Progress tracking
 ⚠️ CRITICAL: Use `--dry-run` first to preview deletions | Supports custom prefixes: `--prefix=TEST_,QA_,E2E_,DEMO_`
 
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
@@ -52,11 +39,11 @@ RULE: Environment-aware budgets | WHEN: Performance tests | DO: Auto CI multipli
 COMMANDS: `npm test test/performance/regression.test.ts` | `CI=true npm test test/performance/regression.test.ts`
 FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance.test.ts` (benchmarking)
 
-## AUTO-APPROVED OPERATIONS
+## DEBUG UTILITIES
 
-Testing: `npm test*` all variations | Building: `npm run build*` all variations
-Inspection: `grep`, `find`, `sed`, `head`, `tail`, `cat` | Git read-only: `git status`, `git diff`, `git log`
-MCP tools: Read, Glob, Grep, LS | Scripts: `./scripts/review-pr.sh`
+RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: Check `scripts/debug/README.md` | ELSE: Slower debugging cycles
+KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
+USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
 ## CODE STANDARDS [PR #483 ENHANCED]
 
@@ -70,55 +57,46 @@ RULE: Remove unused code | WHEN: Any unused import/variable | DO: Remove immedia
 STYLE: PascalCase (classes/interfaces) | camelCase (functions/variables) | snake_case (files) | 2-space indentation
 IMPORTS: Order as node → external → internal | Remove unused immediately
 
-## AGENT AUTOMATION [Use Task tool]
+## AGENT AUTOMATION [Use `/agents` command]
 
-**CORE RULE**: Auto-delegate work when user intent matches patterns → Launch specialist agent → Chain to completion
+**CORE RULE**: Use native Claude Code subagents for specialized tasks → Separate context windows → Parallel development
 
-### TRIGGER MATRIX [P0=Critical, P1=Required, P2=Recommended]
+### SUBAGENT CREATION & USAGE
 
-| **Intent Pattern**      | **Primary Agent**              | **Chain**                        | **Priority** |
-| ----------------------- | ------------------------------ | -------------------------------- | ------------ |
-| implement/build/feature | project-delegator-orchestrator | → docs-architect                 | P0           |
-| fix/debug/error/crash   | debug-specialist               | → test-coverage-specialist       | P0           |
-| refactor/clean up       | code-refactoring-architect     | → code-review-specialist         | P0           |
-| review my code          | code-review-specialist         | → test-coverage-specialist       | P1           |
-| organize/plan tasks     | issue-plan-author              | → project-delegator-orchestrator | P2           |
+COMMAND: `/agents` → Create New Agent → Define role, tools, system prompt
+INVOKE: "Use the [agent-name] subagent to [specific task]" or auto-delegation when appropriate
+CONTEXT: Each subagent operates in separate context window for focused expertise
 
-| **Auto-Trigger Condition**             | **Agent**                      | **Priority** |
-| -------------------------------------- | ------------------------------ | ------------ |
-| File >500 lines                        | code-refactoring-architect     | P0           |
-| Function >30 lines                     | code-refactoring-architect     | P1           |
-| Error/test failure                     | debug-specialist               | P0           |
-| Before commit/PR                       | code-review-specialist         | P1           |
-| Security keywords (auth/token/API-key) | security-vulnerability-scanner | P0           |
-| After code changes                     | docs-architect                 | P1           |
-| `any` types found                      | code-refactoring-architect     | P2           |
-| Performance degradation                | performance-engineer           | P1           |
+### RECOMMENDED AGENT PATTERNS
 
-### AGENT ORCHESTRATION
+| **Role Type** | **Purpose**                | **Tools**                 | **Use When**     |
+| ------------- | -------------------------- | ------------------------- | ---------------- |
+| Architect     | Research, planning, design | File ops, system commands | Complex features |
+| Builder       | Core implementation        | Full toolset              | Main development |
+| Validator     | Testing, quality assurance | Testing frameworks        | QA, debugging    |
+| Scribe        | Documentation, refinement  | Documentation tools       | Docs, examples   |
 
-**Default Posture**: Single Claude Code session. Spawn sub-agents only when improving quality/speed.
+### ORCHESTRATION PRINCIPLES
 
-**Spawn Conditions** (any apply):
+RULE: Context separation | WHEN: Complex multi-file work | DO: Use separate subagents | ELSE: Context pollution
+RULE: Parallel development | WHEN: Independent tasks | DO: Multi-terminal coordination | ELSE: Sequential bottlenecks
+RULE: Shared coordination | WHEN: Multi-agent work | DO: Use planning documents | ELSE: Agent conflicts
 
-- Cross-domain work in one PR (refactor + typing + tests)
-- Touches >3 files or >100 LOC
-- Long-running/shardable work (tests/linters/docs)
-- Strict context separation needed (implementer vs. reviewer)
+### MULTI-TERMINAL COORDINATION
 
-**Constraints**:
+PATTERN: 4-agent parallel development (inspired by community best practices)
+SETUP: Open VSCode with 4 terminals → Launch agents with specific roles → Shared planning document
+COMMUNICATION: Agents coordinate via `MULTI_AGENT_PLAN.md` with task assignments and status updates
+BENEFITS: 4x faster development, built-in quality checks, clear separation of concerns
 
-- Max **2 active sub-agents** per PR (burst to 3-4 for independent work on disjoint files)
-- Preferred sequence: **code-refactoring-architect → test-coverage-specialist → code-review-specialist**
-- Call **debug-specialist** only on CI/test failures
-- **Never rename agent IDs** - use exact names from this file
+**Best Practices**:
 
-**Output Standards**:
+- Regular sync points: Agents check planning document every 30 minutes
+- Clear boundaries: Define what each agent owns to avoid conflicts
+- Version control: Include `MULTI_AGENT_PLAN.md` in commits
+- Branch organization: Use agent-specific branches when appropriate
 
-- Scope: current diff + nearest context (no repo-wide rewrites)
-- Deliver: concise notes + exact diffs + one commit message per agent
-
-### PARALLELIZATION GUIDE [Task Tool]
+### TASK PARALLELIZATION GUIDE
 
 **Safe to Parallelize**:
 
@@ -131,100 +109,25 @@ IMPORTS: Order as node → external → internal | Remove unused immediately
 - Two writers modifying same modules/files
 - Migrations changing shared configs/schemas/codegen
 
-**Concurrency Best Practices**:
+**Concurrency Guidelines**:
 
-- Request explicitly: _"Use Task tool, run independent jobs in parallel (max 4 concurrent)"_
 - Sweet spot: **4-6 concurrent tasks** for CI/laptop
 - Beyond 6: prefer queueing or branch isolation
 - Multiple writers: use short-lived feature branches per task
-
-## AGENT CATALOG
-
-### Planning & Orchestration
-
-- **project-delegator-orchestrator** [P0] → Multi-step tasks, complex changes → All specialists → docs-architect
-- **issue-plan-author** [P2] → Feature specs, structured bug reports → project-delegator-orchestrator
-- **backlog-triage-specialist** [P2] → Raw reports, duplicates, priorities → issue-plan-author
-
-### Implementation & Refactoring
-
-- **code-refactoring-architect** [P0] → Files >500 lines, functions >30 lines, `any` types, SRP violations → code-review-specialist → test-coverage-specialist
-- **api-design-architect** [P1] → New endpoints, API changes, MCP tools, service boundaries → code-review-specialist → docs-architect
-- **ui-implementation-specialist** [P2] → UI components, responsive design, accessibility → code-review-specialist → test-coverage-specialist
-- **architecture-optimizer** [P2] → Build issues, duplication, tight coupling → code-refactoring-architect
-
-### Validation & Quality
-
-- **code-review-specialist** [P1] → Pre-commit, critical paths, API handlers → test-coverage-specialist → security-vulnerability-scanner
-- **test-coverage-specialist** [P1] → New features, <80% coverage, integration tests → debug-specialist (if failures)
-- **debug-specialist** [P0] → Errors, test failures, regressions → test-coverage-specialist → docs-architect
-- **security-vulnerability-scanner** [P0] → Pre-release, dependency updates, auth/token code → AUTO-INVOKE
-- **performance-engineer** [P1] → Hot paths, bottlenecks, optimization needs → code-review-specialist → test-coverage-specialist
-
-### Documentation
-
-- **docs-architect** [P1] → ALWAYS after code changes → None (final step)
-
-## WORKFLOW PATTERNS
-
-**Standard Chains**:
-
-1. **Feature**: project-delegator → implementation → review → test → docs
-2. **Debug**: debug-specialist → test-coverage → code-review → docs
-3. **Refactor**: code-refactoring → code-review → test-coverage → docs
-4. **TypeScript**: code-refactoring (any-types) → code-review → test → docs
-
-**Exit Criteria** (diff-scoped):
-
-- **code-refactoring-architect** → minimal diff, no behavior change, compiles
-- **test-coverage-specialist** → lints clean; tests pass or smallest viable test updates applied
-- **code-review-specialist** → checklist satisfied; zero new issues
-
-### DECISION CHEATSHEET (no renames)
-
-- Only constants/type hints/init → **code-refactoring-architect** → **test-coverage-specialist**
-- Tests fail → **debug-specialist** → **test-coverage-specialist**
 - Approved PR, minor cleanup → **code-refactoring-architect** → **code-review-specialist** (optional)
 
-````
-
-## ARCHITECTURE PATTERNS [PR #483 SUCCESS]
+## ARCHITECTURE PATTERNS
 
 ### formatResult Pattern [MANDATORY]
+
 RULE: String return consistency | WHEN: Any format function | DO: Always return string, never conditional | ELSE: Type safety violations
 RULE: No environment coupling | WHEN: Production code | DO: Never check NODE_ENV for behavior | ELSE: Dual-mode anti-patterns
-TEMPLATE:
-```typescript
-// ✅ CORRECT: Consistent string return
-function formatSearchResults(records: AttioRecord[]): string {
-  return records.map((r, i) => `${i + 1}. ${r.values?.name?.[0]?.value || 'Unknown'}`).join('\n');
-}
-
-// ❌ WRONG: Environment-dependent behavior  
-function formatResult(data: any): string | object {
-  if (process.env.NODE_ENV === 'test') return data;
-  return formatString(data);
-}
-```
+RULE: Error handling | WHEN: Format functions | DO: Implement try-catch blocks | ELSE: Unhandled errors
 
 ### Mock Factory Pattern [MANDATORY]
-RULE: Test data isolation | WHEN: Creating test data | DO: Use mock factories only in test/ | ELSE: Production contamination
+
+RULE: Test data isolation | WHEN: Creating test data | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Production contamination
 RULE: Issue #480 compatibility | WHEN: Task mocks | DO: Include both content and title, preserve task_id | ELSE: E2E failures
-TEMPLATE:
-```typescript
-// test/utils/mock-factories/TaskMockFactory.ts
-export class TaskMockFactory {
-  static create(overrides = {}): AttioTask {
-    const content = overrides.content || overrides.title || 'Mock Task';
-    return {
-      id: { record_id: generateId(), task_id: generateId() },
-      content,
-      title: content,  // Issue #480 compatibility
-      ...overrides
-    };
-  }
-}
-```
 
 ## ANY TYPE REDUCTION STRATEGY [PR #483 PROGRESS]
 
@@ -235,14 +138,14 @@ MILESTONES:
 - ACHIEVED: 395 warnings (reduced from 957, 59% improvement) ✅
 - Current Goal: 350 warnings (reduce by 45 more)
 - Month 1: 300 warnings
-- Month 2: 250 warnings  
+- Month 2: 250 warnings
 - Month 3: <200 warnings (updated target)
   STRATEGY: PR #483 proved high-impact refactoring works - focus on formatResult pattern success
   RECOMMENDED: Use `Record<string, unknown>` instead of `Record<string, any>` for better type safety
   COMMON PATTERNS:
 - API responses: `Record<string, unknown>` or specific interface
 - Format functions: Always return string (never conditional types)
-- Configuration objects: Define specific interfaces  
+- Configuration objects: Define specific interfaces
 - Legacy integration: Gradually migrate `any` → `unknown` → specific types
 
 ## TESTING CONFIGURATION [PR #483 ARCHITECTURE]
@@ -306,85 +209,13 @@ PIPELINE STAGES:
 4. **Build Verification**: Ensure artifacts created correctly
 5. **Security Audit**: Dependency vulnerability scanning
 
-PERFORMANCE IMPROVEMENTS (Issue #429):
+## MOCK FACTORY PATTERN [MANDATORY]
 
-- Eliminated duplicate test execution (40% time savings)
-- Separated typecheck from full check command
-- Progressive ESLint warning reduction (1030 → 927 → 500)
-- Pre-commit runs fast checks only (lint, format, build, test:offline)
-- Full test suite runs in CI only (not blocking local development)
-
-E2E TEST IMPROVEMENTS (Issue #480):
-
-- Mock factory architecture: Clean separation of test and production concerns
-- Success rate: 76% E2E tests passing (29/38) with architectural compliance
-- Compatibility layer: Dual field support for legacy and new test patterns
-- Environment detection: Multi-strategy test environment validation
-- Production safety: Zero test code contamination in production bundles
-
-## ISSUE #480 ARCHITECTURAL COMPLIANCE [CRITICAL PATTERNS]
-
-### Mock Factory Architecture Requirements
-
-RULE: Clean separation principle | WHEN: Creating test mocks | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Architectural violation
+RULE: Test data isolation | WHEN: Creating test data | DO: Use `/test/utils/mock-factories/` pattern | ELSE: Production contamination
+RULE: Issue #480 compatibility | WHEN: Task mocks | DO: Include both content and title, preserve task_id | ELSE: E2E failures
 RULE: Production isolation | WHEN: Writing production code | DO: NEVER import from test directories | ELSE: Bundle contamination
-RULE: Interface compliance | WHEN: Creating mock factories | DO: Implement `MockFactory<T>` interface | ELSE: Inconsistent patterns
 
-### Issue #480 Compatibility Pattern
-
-PROBLEM: E2E tests expect different field structures than production API responses
-SOLUTION: Dual field support in mock factories for backward compatibility
-IMPLEMENTATION:
-
-```typescript
-// Issue #480 compatible task mock
-static create(overrides = {}) {
-  const content = overrides.content || overrides.title || 'Mock Task Content';
-  return {
-    id: {
-      record_id: this.generateMockId(),
-      task_id: this.generateMockId()     // Issue #480: Required field
-    },
-    content,                             // Primary API field
-    title: content                       // Issue #480: Compatibility field
-  };
-}
-````
-
-### Environment Detection Standards
-
-RULE: Multi-strategy detection | WHEN: Detecting test environment | DO: Use TestEnvironment.useMocks() | ELSE: Unreliable detection
-STRATEGIES: NODE_ENV check → VITEST flag → Global detection → Process args → Stack analysis
-FALLBACK: Graceful degradation to production behavior when detection fails
-VALIDATION: Pre-test health checks ensure proper environment setup
-
-### Production Safety Guidelines
-
-RULE: Dynamic imports only | WHEN: Production code needs test support | DO: Use dynamic import() for test utilities | ELSE: Production bundle pollution
-RULE: Error boundaries | WHEN: Mock injection fails | DO: Graceful fallback to real implementation | ELSE: Production system failure
-RULE: Zero runtime impact | WHEN: Test code integrated | DO: Ensure zero performance impact in production | ELSE: Performance degradation
-
-### Compatibility Field Implementation Rules
-
-WHEN: API field structure changes (similar to Issue #480)
-DO:
-
-1. Maintain backward compatibility with dual field support
-2. Document field mapping in mock factory comments
-3. Add validation tests for both field formats
-4. Implement gradual migration path
-   ELSE: Breaking changes cause widespread E2E test failures
-
-### Testing Infrastructure Extensions
-
-RULE: Consistent factory pattern | WHEN: Adding new resource mocks | DO: Follow TaskMockFactory pattern | ELSE: Inconsistent architecture
-TEMPLATE:
-
-1. Create factory class implementing MockFactory<T>
-2. Add to UniversalMockFactory switch statement
-3. Include specialized creation methods for common scenarios
-4. Add validation tests for mock data structure
-5. Document compatibility requirements
+See `/test/utils/mock-factories/` for implementation patterns and `TaskMockFactory` for Issue #480 compatibility example.
 
 ## RELEASE PROCESS
 
@@ -416,106 +247,72 @@ CREATE: `gh issue create --title "Type: Description" --body "Details" --label "P
 RULE: Use Clear Thought | WHEN: Complex problems | DO: mcp**clear-thought-server**mentalmodel | ELSE: Incomplete analysis
 REFACTORING: Follow @docs/refactoring-guidelines.md template
 
-Required Labels:
+1. **Required Labels**:
+   - Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
+   - Type: bug, feature, enhancement, documentation, test
+   - Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
+   - Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
 
-- Priority: P0(Critical), P1(High), P2(Medium), P3(Low), P4/P5(Trivial)
-- Type: bug, feature, enhancement, documentation, test
-- Status (Required): status:blocked, status:in-progress, status:ready, status:review, status:needs-info, status:untriaged
-- Area: area:core, area:api, area:build, area:dist, area:documentation, area:testing, area:performance, area:refactor, area:api:people, area:api:lists, area:api:notes, area:api:objects, area:api:records, area:api:tasks, area:extension, area:integration, area:security, area:rate-limiting, area:error-handling, area:logging
+2. **Branch Strategy**
+   - NEVER work directly on main (except critical hotfixes).
+   - ALWAYS create a new branch before starting ANY work on GitHub issues.
+   - MANDATORY: Check current branch with `git branch --show-current` BEFORE starting work.
+   - If not on a clean feature branch, IMMEDIATELY create one: `git checkout -b feature/issue-{issue-number}-{short-description}` or `git checkout -b fix/issue-{issue-number}-{short-description}`.
+   - Branch naming convention: `feature/issue-319-test-cleanup`, `fix/issue-123-domain-utils`, `docs/issue-456-api-guide`.
+   - NEVER continue work on unrelated branches unless explicitly approved.
+   - Use Clear Thought tools for planning (e.g., `mcp__clear-thought-server__mentalmodel` for analysis, `mcp__clear-thought-server__decisionframework` for architectural choices).
 
-2. Branch Strategy
+3. **Commit Message Format**
+   - Prefixes: Feature:, Fix:, Docs:, Refactor:, Test:, Chore:
+   - Include issue references: #123. [HOTFIX] for hotfixes.
 
-- NEVER work directly on main (except critical hotfixes).
-- ALWAYS create a new branch before starting ANY work on GitHub issues.
-- MANDATORY: Check current branch with `git branch --show-current` BEFORE starting work.
-- If not on a clean feature branch, IMMEDIATELY create one: `git checkout -b feature/issue-{issue-number}-{short-description}` or `git checkout -b fix/issue-{issue-number}-{short-description}`.
-- Branch naming convention: `feature/issue-319-test-cleanup`, `fix/issue-123-domain-utils`, `docs/issue-456-api-guide`.
-- NEVER continue work on unrelated branches unless explicitly approved.
-- Use Clear Thought tools for planning (e.g., `mcp__clear-thought-server__mentalmodel` for analysis, `mcp__clear-thought-server__decisionframework` for architectural choices).
+4. **Pull Requests**
+   - Get approval before pushing to upstream.
+   - Reference issues: Closes #XX or Relates to #XX.
+   - Include testing details. Wait for review. Use squash merging.
 
-3. Commit Message Format
+5. **Issue Closure Requirements**
+   - Verify acceptance criteria.
+   - Add implementation comment (details, lessons, challenges, future considerations).
+   - Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
 
-- Prefixes: Feature:, Fix:, Docs:, Refactor:, Test:, Chore:
-- Include issue references: #123. [HOTFIX] for hotfixes.
-
-4. Pull Requests
-
-- Get approval before pushing to upstream.
-- Reference issues: Closes #XX or Relates to #XX.
-- Include testing details. Wait for review. Use squash merging.
-
-5. Issue Closure Requirements
-
-- Verify acceptance criteria.
-- Add implementation comment (details, lessons, challenges, future considerations).
-- Verification statement: "✅ VERIFICATION: All GitHub documentation requirements completed."
-
-DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
+## DOCUMENTATION SEARCH WORKFLOW (ALWAYS FOLLOW THIS ORDER)
 
 ⚠️ CRITICAL: Documentation Search Priority
 NEVER use web search as the first option. ALWAYS follow this sequence:
 
-1. **PRIMARY: Check Existing Crawled Documentation**
-   - FIRST: Use `mcp_crawl4ai-rag_perform_rag_query(query="search terms", match_count=5)` to search ALL indexed sources
-   - Check available sources: `mcp_crawl4ai-rag_get_available_sources()`
-   - Try domain-specific searches: `mcp_crawl4ai-rag_perform_rag_query(query="search terms", source="docs.attio.com", match_count=5)`
+1. **PRIMARY: Get Library Documentation Using Context 7**
+   - FIRST: Resolve library name to Context7-compatible ID: `mcp4_resolve-library-id(libraryName="library-name")`
+   - THEN: Get documentation: `mcp4_get-library-docs(context7CompatibleLibraryID="/org/project", topic="specific-topic", tokens=10000)`
    - Examples:
-     - `mcp_crawl4ai-rag_perform_rag_query(query="bearer token authentication", source="docs.attio.com")`
-     - `mcp_crawl4ai-rag_perform_rag_query(query="MCP protocol schema validation", source="modelcontextprotocol.io")`
-     - `mcp_crawl4ai-rag_perform_rag_query(query="webhook configuration", match_count=8)`
+     - `mcp4_resolve-library-id(libraryName="Attio API")` → `mcp4_get-library-docs(context7CompatibleLibraryID="/attio/docs", topic="authentication")`
+     - `mcp4_resolve-library-id(libraryName="GitHub API")` → `mcp4_get-library-docs(context7CompatibleLibraryID="/github/rest-api", topic="webhooks")`
+     - `mcp4_resolve-library-id(libraryName="vitest")` → `mcp4_get-library-docs(context7CompatibleLibraryID="/vitest/guide", topic="testing")`
+     - `mcp4_resolve-library-id(libraryName="Node.js")` → `mcp4_get-library-docs(context7CompatibleLibraryID="/nodejs/docs")`
 
-2. **SECONDARY: Crawl Additional Documentation (If Needed)**
-   - If existing docs don't contain the information, crawl new sources:
-   - Single page: `mcp_crawl4ai-rag_crawl_single_page(url="https://specific-doc-page.com")`
-   - Smart crawling: `mcp_crawl4ai-rag_smart_crawl_url(url="https://docs.example.com", max_depth=2, max_concurrent=5)`
-   - Target relevant documentation sites, GitHub repos, or API references
-   - After crawling, retry the search: `mcp_crawl4ai-rag_perform_rag_query(query="same search terms")`
+2. **SECONDARY: Direct Library ID Usage (If Known)**
+   - If you already know the exact Context7-compatible library ID, use it directly:
+   - `mcp4_get-library-docs(context7CompatibleLibraryID="/mongodb/docs", topic="authentication")`
+   - `mcp4_get-library-docs(context7CompatibleLibraryID="/vercel/next.js", topic="routing")`
+   - Common patterns: `/org/project` or `/org/project/version`
 
 3. **TERTIARY: Web Search (Last Resort)**
-   - Only use web search tools if crawled documentation is insufficient
+   - Only use web search tools if Context 7 doesn't have the library documentation
    - Use for real-time information, recent updates, or community discussions
-   - Consider crawling any valuable sources found via web search for future use
+   - Focus on official documentation sites and authoritative sources
 
-**Currently Indexed Sources:**
+**Available Sources**: Attio API, GitHub API, Vitest, Node.js, TypeScript, React, Next.js, MongoDB, and many others
 
-- docs.cognee.ai, docs.falkordb.com, modelcontextprotocol.io, github.com (MCP SDKs), yourls.org, docs.attio.com
-- Verify current sources: `mcp_crawl4ai-rag_get_available_sources()`
+CLEAR THOUGHT MCP INTEGRATION
 
-**Examples of Crawl Targets When Extending Documentation:**
-
-- API documentation: `https://docs.attio.com/api/`, `https://docs.github.com/en/rest`
-- Framework docs: `https://vitest.dev/guide/`, `https://nodejs.org/docs/`
-- MCP examples: GitHub repositories with MCP implementations
-- TypeScript references: `https://www.typescriptlang.org/docs/`
-
-CLEAR THOUGHT MCP INTEGRATION (Systematic Problem-Solving)
-
-- Purpose: Enhance problem analysis, design, implementation, and debugging.
-- Documentation: See @docs/tools/clear-thought-tools.md for comprehensive tool reference.
-- Integration: Use Clear Thought MCP tools (e.g., `mcp__clear-thought-server__mentalmodel`, `mcp__clear-thought-server__sequentialthinking`, `mcp__clear-thought-server__debuggingapproach`) via their respective MCP tool names and schemas.
-- Problem-Solving Workflow:
-  1. Problem Analysis (e.g., First Principles via `mcp__clear-thought-server__mentalmodel`)
-  2. Architecture Planning (e.g., Design Patterns via `mcp__clear-thought-server__designpattern`)
-  3. Implementation Strategy (e.g., Programming Paradigms via `mcp__clear-thought-server__programmingparadigm`)
-  4. Debugging (e.g., Systematic approaches via `mcp__clear-thought-server__debuggingapproach`)
-  5. Documentation/Synthesis (e.g., `mcp__clear-thought-server__sequentialthinking`)
-
-- Contextual Tool Application:
-  - Performance Issues: `mcp__clear-thought-server__programmingparadigm` + `mcp__clear-thought-server__debuggingapproach`.
-  - New Features: `mcp__clear-thought-server__mentalmodel` + `mcp__clear-thought-server__designpattern`.
-  - Integration Problems: `mcp__clear-thought-server__debuggingapproach` + `mcp__clear-thought-server__designpattern`.
-  - Refactoring: `mcp__clear-thought-server__mentalmodel` (e.g., Opportunity Cost) + `mcp__clear-thought-server__programmingparadigm`.
-
-- Enhanced Testing with Clear Thought:
-  1. Pre-Test Analysis: `mcp__clear-thought-server__mentalmodel` (e.g., Error Propagation).
-  2. Test Strategy: `mcp__clear-thought-server__debuggingapproach` (e.g., Program Slicing).
-  3. Failure Analysis: `mcp__clear-thought-server__sequentialthinking`.
+RULE: Use systematic problem-solving | WHEN: Complex problems | DO: See @docs/tools/clear-thought-tools.md for comprehensive tool reference | ELSE: Incomplete analysis
 
 EXTERNAL MCP SERVERS (Runtime Dependencies)
 
 - Note: External services, not npm dependencies.
-- Namespace `mcp__crawl4ai-rag__`:
-  - Server: Crawl4AI RAG MCP Server (https://github.com/coleam00/mcp-crawl4ai-rag)
-  - Purpose: Web crawling and RAG.
-  - Tools: get_available_sources(), crawl_single_page(url), smart_crawl_url(url), perform_rag_query(q, source?, match_count?)
-  - Setup: Install external server, configure in MCP client.
+- Namespace `mcp4_`:
+  - Server: Context 7 MCP Server (https://github.com/upstash/context7)
+  - Purpose: Up-to-date library and framework documentation retrieval.
+  - Tools: resolve-library-id(libraryName), get-library-docs(context7CompatibleLibraryID, topic?, tokens?)
+  - Setup: Install with `npx -y @upstash/context7-mcp` or configure in MCP client.
+  - Features: Official documentation, code examples, topic filtering, intelligent project ranking.

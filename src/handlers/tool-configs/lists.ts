@@ -3,6 +3,7 @@
  */
 import { AttioList, AttioListEntry } from '../../types/attio.js';
 import { getRecordNameFromEntry } from '../../utils/record-utils.js';
+import { isValidUUID } from '../../utils/validation/uuid-validation.js';
 import {
   getLists,
   getListDetails,
@@ -30,121 +31,64 @@ export const listsToolConfigs = {
     name: 'get-lists',
     handler: getLists,
     formatResult: (results: AttioList[]) => {
-      return `Found ${results.length} lists:\n${results
-        .map((list: AttioList) => {
-          // Extract list_id properly from id object
-          const listId = list.id?.list_id || list.id || 'unknown';
-          return `- ${list.name || list.title} (ID: ${listId})`;
-        })
-        .join('\n')}`;
+      // Return JSON string - dispatcher will convert to JSON content
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as GetListsToolConfig,
   getRecordListMemberships: {
     name: 'get-record-list-memberships',
     handler: getRecordListMemberships,
-    formatResult: (results: ListMembership[]) => {
-      if (results.length === 0) {
-        return 'Record is not a member of any lists.';
-      }
-
-      return `Found ${results.length} list membership(s):\n${results
-        .map((membership: ListMembership) => {
-          // Format each membership with list name and IDs
-          let membershipInfo = `- List: ${membership.listName} (ID: ${membership.listId})
-  Entry ID: ${membership.entryId}`;
-
-          // Add entry values if available
-          if (
-            membership.entryValues &&
-            Object.keys(membership.entryValues).length > 0
-          ) {
-            const valuesString = Object.entries(membership.entryValues)
-              .map(([key, value]) => `    ${key}: ${value}`)
-              .join('\n');
-            membershipInfo += `\n  Entry Values:\n${valuesString}`;
-          }
-
-          return membershipInfo;
-        })
-        .join('\n')}`;
+    formatResult: (results: ListMembership[] | null | undefined) => {
+      // Return JSON string - dispatcher will convert to JSON content
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
   getListDetails: {
     name: 'get-list-details',
-    handler: getListDetails,
+    handler: async (listId: string) => {
+      // Let Attio API decide if list ID is valid (supports UUIDs and slugs)
+      return await getListDetails(listId);
+    },
     formatResult: (result: AttioList) => {
-      // Extract list_id properly from id object
-      const listId = result.id?.list_id || result.id || 'unknown';
-      const listName = result.name || result.title || 'Unnamed List';
-      const objectType = result.object_slug || 'unknown';
-      const entryCount =
-        result.entry_count !== undefined
-          ? `${result.entry_count} entries`
-          : 'Unknown entry count';
-      // Format dates in ISO format for consistency across environments
-      const createdAt = result.created_at
-        ? new Date(result.created_at).toISOString().split('T')[0]
-        : 'Unknown date';
-      const updatedAt = result.updated_at
-        ? new Date(result.updated_at).toISOString().split('T')[0]
-        : 'Unknown date';
-
-      return `List Details:
-ID: ${listId}
-Name: ${listName}
-Object Type: ${objectType}
-${entryCount}
-Created: ${createdAt}
-Updated: ${updatedAt}
-${result.description ? `\nDescription: ${result.description}` : ''}`;
+      // Return JSON string
+      return JSON.stringify(result);
     },
   } as ToolConfig,
   getListEntries: {
     name: 'get-list-entries',
-    handler: getListEntries,
-    formatResult: (results: AttioListEntry[]) => {
-      return `Found ${results.length} entries in list:\n${results
-        .map((entry: AttioListEntry) => {
-          // Extract record details with improved name and type extraction
-          const recordDetails = getRecordNameFromEntry(entry);
+    handler: async (listId: string, limit?: number, offset?: number) => {
+      // UUID validation - hard fail for invalid list IDs
+      if (!isValidUUID(listId)) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
+        };
+      }
+      return await getListEntries(listId, limit, offset);
+    },
+    formatResult: (
+      results: AttioListEntry[] | { isError: boolean; content: any[] }
+    ) => {
+      // Handle validation error response
+      if (results && typeof results === 'object' && 'isError' in results) {
+        return 'Error: Invalid list ID';
+      }
 
-          // Format display name with record type for better context
-          let displayInfo = '';
-          if (recordDetails.name) {
-            displayInfo = recordDetails.type
-              ? ` (${recordDetails.type}: ${recordDetails.name})`
-              : ` (${recordDetails.name})`;
-          }
-
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
-            entry.record_id || 'unknown'
-          }${displayInfo}`;
-        })
-        .join('\n')}`;
+      // Return JSON string
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as GetListEntriesToolConfig,
   filterListEntries: {
     name: 'filter-list-entries',
     handler: filterListEntries,
     formatResult: (results: AttioListEntry[]) => {
-      return `Found ${results.length} filtered entries in list:\n${results
-        .map((entry: AttioListEntry) => {
-          // Extract record details with improved name and type extraction
-          const recordDetails = getRecordNameFromEntry(entry);
-
-          // Format display name with record type for better context
-          let displayInfo = '';
-          if (recordDetails.name) {
-            displayInfo = recordDetails.type
-              ? ` (${recordDetails.type}: ${recordDetails.name})`
-              : ` (${recordDetails.name})`;
-          }
-
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
-            entry.record_id || 'unknown'
-          }${displayInfo}`;
-        })
-        .join('\n')}`;
+      // Return JSON string
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
 
@@ -152,60 +96,69 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     name: 'advanced-filter-list-entries',
     handler: advancedFilterListEntries,
     formatResult: (results: AttioListEntry[]) => {
-      return `Found ${results.length} filtered entries in list:\n${results
-        .map((entry: AttioListEntry) => {
-          // Extract record details with improved name and type extraction
-          const recordDetails = getRecordNameFromEntry(entry);
-
-          // Format display name with record type for better context
-          let displayInfo = '';
-          if (recordDetails.name) {
-            displayInfo = recordDetails.type
-              ? ` (${recordDetails.type}: ${recordDetails.name})`
-              : ` (${recordDetails.name})`;
-          }
-
-          return `- Entry ID: ${entry.id?.entry_id || 'unknown'}, Record ID: ${
-            entry.record_id || 'unknown'
-          }${displayInfo}`;
-        })
-        .join('\n')}`;
+      // Return JSON string
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
   addRecordToList: {
     name: 'add-record-to-list',
-    handler: addRecordToList,
+    handler: async (
+      listId: string,
+      recordId: string,
+      objectType: string,
+      values?: any
+    ) => {
+      // UUID validation - hard fail for invalid list IDs
+      if (!isValidUUID(listId)) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
+        };
+      }
+      return await addRecordToList(listId, recordId, objectType, values);
+    },
     idParams: ['listId', 'recordId'],
-    formatResult: (result: AttioListEntry) => {
-      const entryId = result.id?.entry_id || 'unknown';
-      const recordId = result.record_id || result.parent_record_id || 'unknown';
-
-      return `Successfully added record ${recordId} to list (Entry ID: ${entryId})`;
+    formatResult: (
+      result: AttioListEntry | { isError: boolean; content: any[] }
+    ) => {
+      // Handle validation error response
+      if (result && typeof result === 'object' && 'isError' in result) {
+        return 'Error: Invalid list ID';
+      }
+      // Return JSON string
+      return JSON.stringify(result);
     },
   } as ToolConfig,
   removeRecordFromList: {
     name: 'remove-record-from-list',
-    handler: removeRecordFromList,
+    handler: async (listId: string, entryId: string) => {
+      // UUID validation - hard fail for invalid list IDs
+      if (!isValidUUID(listId)) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Invalid list_id: must be a UUID. Got: ${listId}`,
+            },
+          ],
+        };
+      }
+      return await removeRecordFromList(listId, entryId);
+    },
     idParams: ['listId', 'entryId'],
   } as ListActionToolConfig,
   updateListEntry: {
     name: 'update-list-entry',
     handler: updateListEntry,
     formatResult: (result: AttioListEntry) => {
-      const entryId = result.id?.entry_id || 'unknown';
-      const recordId = result.record_id || 'unknown';
-
-      // Extract stage information if available
-      let stageInfo = '';
-      const values = result.values as any;
-      if (values && values.stage) {
-        const stageValue = Array.isArray(values.stage)
-          ? values.stage[0]?.value || values.stage[0]
-          : values.stage.value || values.stage;
-        stageInfo = ` - Stage: ${stageValue}`;
-      }
-
-      return `Successfully updated list entry ${entryId} for record ${recordId}${stageInfo}`;
+      // Return JSON string
+      return JSON.stringify(result);
     },
   } as ToolConfig,
 
@@ -213,30 +166,8 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     name: 'filter-list-entries-by-parent',
     handler: filterListEntriesByParent,
     formatResult: (results: AttioListEntry[]) => {
-      if (results.length === 0) {
-        return 'No entries found matching the filter criteria.';
-      }
-
-      return `Found ${
-        results.length
-      } entries matching the parent record filter:\n${results
-        .map((entry, index) => {
-          // Extract record details with improved name and type extraction
-          const recordDetails = getRecordNameFromEntry(entry);
-
-          // Format display name with record type for better context
-          let displayInfo = '';
-          if (recordDetails.name) {
-            displayInfo = recordDetails.type
-              ? ` (${recordDetails.type}: ${recordDetails.name})`
-              : ` (${recordDetails.name})`;
-          }
-
-          return `${index + 1}. Entry ID: ${
-            entry.id?.entry_id || 'unknown'
-          }, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
-        })
-        .join('\n')}`;
+      // Return JSON string
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
 
@@ -244,30 +175,8 @@ ${result.description ? `\nDescription: ${result.description}` : ''}`;
     name: 'filter-list-entries-by-parent-id',
     handler: filterListEntriesByParentId,
     formatResult: (results: AttioListEntry[]) => {
-      if (results.length === 0) {
-        return 'No entries found with the specified parent record ID.';
-      }
-
-      return `Found ${
-        results.length
-      } entries with the specified parent record ID:\n${results
-        .map((entry, index) => {
-          // Extract record details with improved name and type extraction
-          const recordDetails = getRecordNameFromEntry(entry);
-
-          // Format display name with record type for better context
-          let displayInfo = '';
-          if (recordDetails.name) {
-            displayInfo = recordDetails.type
-              ? ` (${recordDetails.type}: ${recordDetails.name})`
-              : ` (${recordDetails.name})`;
-          }
-
-          return `${index + 1}. Entry ID: ${
-            entry.id?.entry_id || 'unknown'
-          }, Record ID: ${entry.record_id || 'unknown'}${displayInfo}`;
-        })
-        .join('\n')}`;
+      // Return JSON string
+      return JSON.stringify(Array.isArray(results) ? results : []);
     },
   } as ToolConfig,
 };

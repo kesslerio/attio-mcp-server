@@ -174,75 +174,69 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     description: 'Legacy get-person-details → universal get-record-details',
   },
 
-  // Notes Management Tools - These need special handling
+  // Notes Management Tools - Use dedicated note APIs
   {
     legacyToolName: 'get-company-notes',
-    universalToolName: 'search-by-content',
-    resourceType: 'records', // Notes are handled as records
+    universalToolName: 'list-notes',
+    resourceType: 'companies',
     parameterTransform: (params: any) => ({
       resource_type: 'companies',
-      content_type: 'notes',
-      query: '', // Required parameter - empty string to get all notes
-      record_id: params.company_id,
+      record_id: params.company_id || params.companyId,
       limit: params.limit || 50,
+      offset: params.offset || 0,
     }),
-    description: 'Legacy get-company-notes → universal search-by-content',
+    description: 'Legacy get-company-notes → universal list-notes',
   },
   {
     legacyToolName: 'get-person-notes',
-    universalToolName: 'search-by-content',
-    resourceType: 'records', // Notes are handled as records
+    universalToolName: 'list-notes',
+    resourceType: 'people',
     parameterTransform: (params: any) => ({
       resource_type: 'people',
-      content_type: 'notes',
-      query: '', // Required parameter - empty string to get all notes
-      record_id: params.person_id,
+      record_id: params.person_id || params.personId,
       limit: params.limit || 50,
+      offset: params.offset || 0,
     }),
-    description: 'Legacy get-person-notes → universal search-by-content',
+    description: 'Legacy get-person-notes → universal list-notes',
   },
   {
     legacyToolName: 'create-company-note',
-    universalToolName: 'create-record',
-    resourceType: 'records', // Notes are handled as records
+    universalToolName: 'create-note',
+    resourceType: 'companies',
     parameterTransform: (params: any) => {
-      // Notes are typically created as a special record type or attribute
-      // This might need adjustment based on actual Attio API structure
       return {
-        resource_type: 'records', // Notes are records
-        record_data: {
-          ...params,
-          linked_record_type: 'companies',
-          linked_record_id: params.company_id,
-        },
+        resource_type: 'companies',
+        record_id: params.companyId || params.company_id,
+        title: params.title,
+        content: params.content,
+        format: params.format || 'markdown',
       };
     },
-    description: 'Legacy create-company-note → universal create-record',
+    description: 'Legacy create-company-note → universal create-note',
   },
   {
     legacyToolName: 'create-person-note',
-    universalToolName: 'create-record',
-    resourceType: 'records', // Notes are handled as records
+    universalToolName: 'create-note',
+    resourceType: 'people',
     parameterTransform: (params: any) => {
       return {
-        resource_type: 'records', // Notes are records
-        record_data: {
-          ...params,
-          linked_record_type: 'people',
-          linked_record_id: params.person_id,
-        },
+        resource_type: 'people',
+        record_id: params.personId || params.person_id,
+        title: params.title,
+        content: params.content,
+        format: params.format || 'markdown',
       };
     },
-    description: 'Legacy create-person-note → universal create-record',
+    description: 'Legacy create-person-note → universal create-note',
   },
 
   // List Management Tools
   {
     legacyToolName: 'get-lists',
     universalToolName: 'search-records',
-    resourceType: 'records', // Lists are handled as records
+    resourceType: 'lists', // Lists are handled as lists resource type
     parameterTransform: (params: any) => ({
-      resource_type: 'records', // Lists are records
+      resource_type: 'lists', // Lists use lists resource type
       query: params.query || '',
       limit: params.limit || 50,
       filters: params.filters || {},
@@ -262,10 +256,10 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
   {
     legacyToolName: 'get-list-details',
     universalToolName: 'get-record-details',
-    resourceType: 'records', // Lists are handled as records
+    resourceType: 'lists', // Lists resource type
     parameterTransform: (params: any) => ({
-      resource_type: 'records', // Lists are records
-      record_id: params.list_id || params.record_id,
+      resource_type: 'lists', // Lists resource type
+      record_id: params.listId || params.list_id || params.record_id,
     }),
     description: 'Legacy get-list-details → universal get-record-details',
   },
@@ -337,7 +331,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id,
+        list_membership: params.listId || params.list_id,
         ...params.filters,
       },
       limit: params.limit || 50,
@@ -353,7 +347,7 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     parameterTransform: (params: any) => ({
       resource_type: 'records',
       filters: {
-        list_membership: params.list_id,
+        list_membership: params.listId || params.list_id,
         ...params.advanced_filters,
       },
       query: params.query || '',
@@ -363,6 +357,41 @@ export const TOOL_MAPPING_RULES: ToolMappingRule[] = [
     }),
     description:
       'Legacy advanced-filter-list-entries → universal advanced-search',
+  },
+  {
+    legacyToolName: 'filter-list-entries-by-parent',
+    universalToolName: 'search-records',
+    resourceType: 'records',
+    parameterTransform: (params: any) => ({
+      resource_type: 'records',
+      filters: {
+        list_membership: params.listId || params.list_id,
+        parent_record_type: params.parent_record_type,
+        parent_record_id: params.parent_record_id,
+        ...params.filters,
+      },
+      limit: params.limit || 50,
+      offset: params.offset || 0,
+    }),
+    description:
+      'Legacy filter-list-entries-by-parent → universal search-records',
+  },
+  {
+    legacyToolName: 'filter-list-entries-by-parent-id',
+    universalToolName: 'search-records',
+    resourceType: 'records',
+    parameterTransform: (params: any) => ({
+      resource_type: 'records',
+      filters: {
+        list_membership: params.listId || params.list_id,
+        parent_record_id: params.parent_id || params.parent_record_id,
+        ...params.filters,
+      },
+      limit: params.limit || 50,
+      offset: params.offset || 0,
+    }),
+    description:
+      'Legacy filter-list-entries-by-parent-id → universal search-records',
   },
 
   // Record linking tools

@@ -113,24 +113,12 @@ export class UniversalUtilityService {
         workspace_id,
       },
       values: {
-        // Map task properties to proper AttioRecord array format
-        content: [{ value: task.content }],
-        status: [{ value: task.status }],
-        assignee: task.assignee
-          ? [
-              {
-                value:
-                  typeof task.assignee === 'string'
-                    ? task.assignee
-                    : task.assignee.id,
-                name:
-                  typeof task.assignee === 'string'
-                    ? undefined
-                    : task.assignee.name,
-              },
-            ]
-          : undefined,
-        due_date: task.due_date ? [{ value: task.due_date }] : undefined,
+        // Map task properties to simple string format (corrected after API verification)
+        content: task.content,
+        status: task.status,
+        assignee:
+          typeof task.assignee === 'string' ? task.assignee : task.assignee?.id,
+        due_date: task.due_date,
         linked_records: task.linked_records || undefined,
       },
       created_at: task.created_at,
@@ -146,18 +134,10 @@ export class UniversalUtilityService {
         typeof task.assignee === 'string' ? task.assignee : task.assignee?.id,
     };
 
-    // Add assignee object format if assignee provided
+    // Add assignee as simple string (corrected after API verification)
     if (task.assignee) {
-      (flatFields as any).assignee = {
-        id:
-          typeof task.assignee === 'string' ? task.assignee : task.assignee.id,
-        type:
-          typeof task.assignee === 'string'
-            ? 'person'
-            : task.assignee.type || 'person',
-        name:
-          typeof task.assignee === 'string' ? undefined : task.assignee.name,
-      };
+      (flatFields as any).assignee =
+        typeof task.assignee === 'string' ? task.assignee : task.assignee.id;
     }
 
     return { ...baseRecord, ...flatFields };

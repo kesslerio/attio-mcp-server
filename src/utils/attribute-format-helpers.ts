@@ -67,32 +67,32 @@ function convertCompanyAttributes(attributes: any): any {
 function convertPeopleAttributes(attributes: any): any {
   const corrected = { ...attributes };
 
-  // Convert name from object format to string
-  if (corrected.name && typeof corrected.name === 'object') {
-    const nameObj = corrected.name;
-    let fullName = '';
+  // Ensure name is in proper Attio personal-name format
+  if (corrected.first_name || corrected.last_name || corrected.full_name) {
+    // Create proper personal-name object for Attio API
+    const nameObj: Record<string, string> = {};
 
-    // Handle various name object formats
-    if (nameObj.first_name || nameObj.firstName) {
-      fullName = nameObj.first_name || nameObj.firstName;
+    if (corrected.first_name) {
+      nameObj.first_name = corrected.first_name;
     }
-    if (nameObj.last_name || nameObj.lastName) {
-      fullName = fullName
-        ? `${fullName} ${nameObj.last_name || nameObj.lastName}`
-        : nameObj.last_name || nameObj.lastName;
+    if (corrected.last_name) {
+      nameObj.last_name = corrected.last_name;
     }
-    if (nameObj.middle_name || nameObj.middleName) {
-      // Insert middle name between first and last
-      const parts = fullName.split(' ');
-      if (parts.length >= 2) {
-        parts.splice(1, 0, nameObj.middle_name || nameObj.middleName);
-        fullName = parts.join(' ');
-      }
+    if (corrected.full_name) {
+      nameObj.full_name = corrected.full_name;
     }
 
-    corrected.name = fullName.trim() || 'Unknown';
+    // Create name field in personal-name format expected by Attio
+    corrected.name = nameObj;
+
+    // Remove the flattened fields since they're now in the name object
+    delete corrected.first_name;
+    delete corrected.last_name;
+    delete corrected.full_name;
+
     console.error(
-      `[Format Helper] Converted name object to string: "${corrected.name}"`
+      `[Format Helper] Created name object in personal-name format:`,
+      nameObj
     );
   }
 

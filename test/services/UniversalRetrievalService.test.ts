@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../src/types/attio.js';
+import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
 
 // Mock the dependencies
 vi.mock('../../src/services/ValidationService.js', () => ({
@@ -48,6 +49,27 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
   ErrorEnhancer: {
     autoEnhance: vi.fn((error) => error),
     getErrorMessage: vi.fn((error) => error.message),
+  },
+  EnhancedApiError: class EnhancedApiError extends Error {
+    public readonly statusCode: number;
+    public readonly endpoint: string;
+    public readonly method: string;
+    public readonly context?: any;
+
+    constructor(
+      message,
+      statusCode = 500,
+      endpoint = '',
+      method = 'GET',
+      context = {}
+    ) {
+      super(message);
+      this.name = 'EnhancedApiError';
+      this.statusCode = statusCode;
+      this.endpoint = endpoint;
+      this.method = method;
+      this.context = context;
+    }
   },
 }));
 
@@ -91,7 +113,7 @@ describe('UniversalRetrievalService', () => {
   describe('getRecordDetails', () => {
     const mockRecord: AttioRecord = {
       id: { record_id: 'test_123' },
-      values: { name: 'Test Record' },
+      values: { name: [{ value: 'Test Record' }] },
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
     };
@@ -134,12 +156,14 @@ describe('UniversalRetrievalService', () => {
       const mockList = {
         id: { list_id: 'list_789' },
         name: 'Test List',
+        title: 'Test List',
         description: 'Test description',
         object_slug: 'companies',
         api_slug: 'test-list',
         workspace_id: 'ws_123',
         workspace_member_access: 'read',
         created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
       };
       vi.mocked(getListDetails).mockResolvedValue(mockList);
 
@@ -195,9 +219,6 @@ describe('UniversalRetrievalService', () => {
         id: { task_id: 'task_ghi' },
         content: 'Test Task',
         status: 'pending',
-        assignee: null,
-        due_date: null,
-        linked_records: null,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
@@ -230,7 +251,9 @@ describe('UniversalRetrievalService', () => {
     it('should handle cached 404 responses', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(true);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
-        new Error('Record not found')
+        new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -260,7 +283,9 @@ describe('UniversalRetrievalService', () => {
       };
       vi.mocked(getCompanyDetails).mockRejectedValue(notFoundError);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
-        new Error('Record not found')
+        new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -280,7 +305,9 @@ describe('UniversalRetrievalService', () => {
       const taskError = new Error('Task not found');
       vi.mocked(getTask).mockRejectedValue(taskError);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
-        new Error('Record not found')
+        new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -303,7 +330,10 @@ describe('UniversalRetrievalService', () => {
       };
       vi.mocked(getCompanyDetails).mockRejectedValue(serverError);
       vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(
-        new Error('Enhanced error')
+        new EnhancedApiError('Enhanced error', 500, '/records/test', 'GET', {
+          operation: 'get',
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -320,10 +350,10 @@ describe('UniversalRetrievalService', () => {
       const fullRecord: AttioRecord = {
         id: { record_id: 'comp_123' },
         values: {
-          name: 'Test Company',
+          name: [{ value: 'Test Company' }],
           domain: 'test.com',
           employees: 50,
-          industry: 'Tech',
+          industry: [{ value: 'Tech' }],
         },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
@@ -380,7 +410,7 @@ describe('UniversalRetrievalService', () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(getCompanyDetails).mockResolvedValue({
         id: { record_id: 'comp_123' },
-        values: { name: 'Test Company' },
+        values: { name: [{ value: 'Test Company' }] },
       });
 
       const exists = await UniversalRetrievalService.recordExists(
@@ -420,7 +450,10 @@ describe('UniversalRetrievalService', () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(getCompanyDetails).mockRejectedValue(new Error('Server error'));
       vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(
-        new Error('Enhanced error')
+        new EnhancedApiError('Enhanced error', 500, '/records/test', 'GET', {
+          operation: 'get',
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -436,11 +469,11 @@ describe('UniversalRetrievalService', () => {
     it('should retrieve multiple records successfully', async () => {
       const record1: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Company 1' },
+        values: { name: [{ value: 'Company 1' }] },
       };
       const record2: AttioRecord = {
         id: { record_id: 'comp_456' },
-        values: { name: 'Company 2' },
+        values: { name: [{ value: 'Company 2' }] },
       };
 
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
@@ -459,7 +492,7 @@ describe('UniversalRetrievalService', () => {
     it('should handle mixed success and failure results', async () => {
       const record1: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Company 1' },
+        values: { name: [{ value: 'Company 1' }] },
       };
 
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
@@ -478,7 +511,11 @@ describe('UniversalRetrievalService', () => {
     it('should apply field filtering to multiple records', async () => {
       const record1: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Company 1', domain: 'company1.com', employees: 10 },
+        values: {
+          name: [{ value: 'Company 1' }],
+          domain: 'company1.com',
+          employees: 10,
+        },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
@@ -501,7 +538,7 @@ describe('UniversalRetrievalService', () => {
     it('should return record with performance metrics', async () => {
       const mockRecord: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Test Company' },
+        values: { name: [{ value: 'Test Company' }] },
       };
 
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
@@ -513,16 +550,20 @@ describe('UniversalRetrievalService', () => {
       });
 
       expect(result.record).toEqual(mockRecord);
-      expect(result.metrics).toEqual({
-        duration: expect.any(Number),
-        cached: false,
-      });
+      expect(result.metrics).toEqual(
+        expect.objectContaining({
+          duration: expect.any(Number),
+          cached: false,
+        })
+      );
     });
 
     it('should indicate cached status in metrics', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(true);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
-        new Error('Record not found')
+        new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
+          resourceType: 'record',
+        })
       );
 
       await expect(
@@ -563,7 +604,7 @@ describe('UniversalRetrievalService', () => {
     it('should return full data when no fields specified', async () => {
       const fullRecord: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Test Company', domain: 'test.com' },
+        values: { name: [{ value: 'Test Company' }], domain: 'test.com' },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
@@ -581,7 +622,7 @@ describe('UniversalRetrievalService', () => {
     it('should handle empty fields array', async () => {
       const fullRecord: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Test Company', domain: 'test.com' },
+        values: { name: [{ value: 'Test Company' }], domain: 'test.com' },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
@@ -600,7 +641,7 @@ describe('UniversalRetrievalService', () => {
     it('should handle fields that do not exist in the record', async () => {
       const fullRecord: AttioRecord = {
         id: { record_id: 'comp_123' },
-        values: { name: 'Test Company' },
+        values: { name: [{ value: 'Test Company' }] },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };

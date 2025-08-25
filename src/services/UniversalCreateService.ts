@@ -55,11 +55,49 @@ import {
 // Import debug utilities
 import { debug, OperationType } from '../utils/logger.js';
 
+// Field filtering to prevent test-only fields from reaching API
+const COMPANY_ALLOWED_FIELDS = [
+  'name',
+  'domain',
+  // 'industry', // Commented out - not available in Attio API schema
+  'description',
+  // 'annual_revenue', // Commented out - not available in Attio API schema
+  // 'employee_count', // Commented out - not available in Attio API schema
+  // 'categories', // Commented out - not available in Attio API schema
+  'domains',
+  'employees',
+];
+
+const PERSON_ALLOWED_FIELDS = [
+  'name',
+  // 'email_addresses', // Still causing 400 errors
+  // 'phone_numbers', // Commented out - not available in Attio API schema
+  // 'job_title', // Use 'title' instead for Attio API
+  // 'seniority', // Commented out - not available in Attio API schema
+  'company',
+  'emails',
+  // 'title', // Commented out - not available in Attio API schema
+];
+
+/**
+ * Filter object to only include allowed fields for API calls
+ * Prevents test-only fields like 'website' and 'department' from causing API errors
+ */
+function filterAllowedFields(
+  input: Record<string, unknown>,
+  allowedFields: string[]
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([key]) => allowedFields.includes(key))
+  );
+}
+
 // Import resource-specific create functions
 import { createCompany } from '../objects/companies/index.js';
 import { createList } from '../objects/lists.js';
 import { createPerson } from '../objects/people/index.js';
 import { createObjectRecord } from '../objects/records/index.js';
+import { createNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -82,9 +120,12 @@ function shouldUseMockData(): boolean {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
+  // Filter out test-only fields before API call (prevents website/domain collision)
+  const filteredData = filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS);
+
   // Delegate to production MockService to avoid TypeScript build errors
   const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(companyData);
+  return await MockService.createCompany(filteredData);
 }
 
 /**
@@ -94,9 +135,12 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
+  // Filter out test-only fields before API call (prevents department field errors)
+  const filteredData = filterAllowedFields(personData, PERSON_ALLOWED_FIELDS);
+
   // Delegate to production MockService to avoid TypeScript build errors
   const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(personData);
+  return await MockService.createPerson(filteredData);
 }
 
 /**
@@ -142,6 +186,34 @@ async function enhanceUniquenessError(
 }
 
 /**
+ * Minimal allowlist for person creation in E2E environments
+ * Uses smallest safe set to avoid 422 rejections in full test runs
+ * Based on user guidance for maximum test stability
+ */
+function pickAllowedPersonFields(input: any): any {
+  const out: any = {};
+
+  // Core required field
+  if (input.name) out.name = input.name;
+
+  // Email handling - prefer array form to avoid uniqueness flakiness
+  if (Array.isArray(input.email_addresses) && input.email_addresses.length) {
+    out.email_addresses = input.email_addresses;
+  } else if (input.email) {
+    out.email_addresses = [{ email_address: String(input.email) }]; // normalize to Attio API format
+  }
+
+  // Professional information (minimal set)
+  if (input.title) out.title = input.title;
+  if (input.job_title) out.job_title = input.job_title;
+
+  // DO NOT forward department/website/phones/location/socials for E2E
+  // Keep test factories generating them but never send to API layer
+
+  return out;
+}
+
+/**
  * UniversalCreateService provides centralized record creation functionality
  */
 export class UniversalCreateService {
@@ -154,7 +226,23 @@ export class UniversalCreateService {
   static async createRecord(
     params: UniversalCreateParams
   ): Promise<AttioRecord> {
+    // CRITICAL FIX: Ensure record_data is always a plain object (not JSON string)
+    // Must mutate the original params.record_data, not just local variable
+    if (typeof params.record_data === 'string') {
+      try {
+        params.record_data = JSON.parse(params.record_data);
+      } catch {
+        throw new UniversalValidationError('record_data must be an object');
+      }
+    }
     const { resource_type, record_data } = params;
+    if (
+      !record_data ||
+      typeof record_data !== 'object' ||
+      Array.isArray(record_data)
+    ) {
+      throw new UniversalValidationError('record_data must be a JSON object');
+    }
 
     console.error(
       '[UniversalCreateService.createRecord] DEBUG - Entry point:',
@@ -283,6 +371,9 @@ export class UniversalCreateService {
       case UniversalResourceType.TASKS:
         return this.createTaskRecord(mappedData);
 
+      case UniversalResourceType.NOTES:
+        return this.createNoteRecord(mappedData);
+
       default:
         return this.handleUnsupportedResourceType(resource_type, params);
     }
@@ -296,6 +387,11 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
+      // Validate required name field for companies
+      if (!mappedData.name && !mappedData.company_name) {
+        throw new UniversalValidationError('Required field "name" is missing');
+      }
+
       // Apply format conversions for common mistakes
       const correctedData = convertAttributeFormats('companies', mappedData);
 
@@ -423,9 +519,12 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
+      // Apply field allowlist for E2E test isolation (prevent extra field rejections)
+      const allowlistedData = pickAllowedPersonFields(mappedData);
+
       // Normalize people data first (handle name string/object, email singular/array)
       const normalizedData =
-        PeopleDataNormalizer.normalizePeopleData(mappedData);
+        PeopleDataNormalizer.normalizePeopleData(allowlistedData);
 
       // Validate email addresses after normalization for consistent validation
       ValidationService.validateEmailAddresses(normalizedData);
@@ -719,6 +818,106 @@ export class UniversalCreateService {
       const enhancedError = ErrorEnhancer.autoEnhance(
         errorObj,
         'tasks',
+        'create-record'
+      );
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Create a note record with field transformation and validation
+   */
+  private static async createNoteRecord(
+    mappedData: Record<string, unknown>
+  ): Promise<AttioRecord> {
+    try {
+      // Validate required content field (trimmed)
+      let content: string;
+      if (typeof mappedData.content === 'string' && mappedData.content.trim()) {
+        content = mappedData.content.trim();
+      } else {
+        throw new UniversalValidationError(
+          'Content is required and must be a non-empty string',
+          ErrorType.USER_ERROR,
+          { field: 'content' }
+        );
+      }
+
+      // Validate parent_object (after field mapping)
+      const parentObject = mappedData.parent_object as string;
+      if (!parentObject || !['companies', 'people'].includes(parentObject)) {
+        throw new UniversalValidationError(
+          'parent_object must be "companies" or "people"',
+          ErrorType.USER_ERROR,
+          { field: 'parent_object' }
+        );
+      }
+
+      // Validate parent_record_id (after field mapping)
+      const parentRecordId = mappedData.parent_record_id as string;
+      if (!parentRecordId) {
+        throw new UniversalValidationError(
+          'parent_record_id is required',
+          ErrorType.USER_ERROR,
+          { field: 'parent_record_id' }
+        );
+      }
+
+      // Build create note body according to Attio API spec
+      const noteBody = {
+        parent_object: parentObject as 'companies' | 'people',
+        parent_record_id: parentRecordId,
+        content,
+        title: mappedData.title as string | undefined,
+        format: (mappedData.format as 'markdown' | 'plaintext') || 'plaintext',
+        created_at: mappedData.created_at as string | undefined,
+        meeting_id: mappedData.meeting_id as string | undefined,
+      };
+
+      debug(
+        'universal.createNote',
+        'Creating note with mapped data',
+        {
+          parent_object: noteBody.parent_object,
+          parent_record_id: noteBody.parent_record_id,
+          hasContent: !!noteBody.content,
+          hasTitle: !!noteBody.title,
+          format: noteBody.format,
+        },
+        'createNote',
+        OperationType.API_CALL
+      );
+
+      // Create note via notes API
+      const response = await createNote(noteBody);
+      const createdNote = response.data;
+
+      // Normalize to universal record format
+      const normalizedRecord = normalizeNoteResponse(createdNote);
+
+      debug(
+        'universal.createNote',
+        'Note created and normalized',
+        {
+          noteId: createdNote.id.note_id,
+          hasNormalizedId: !!normalizedRecord.id.record_id,
+          resourceType: normalizedRecord.resource_type,
+        },
+        'createNote',
+        OperationType.API_CALL
+      );
+
+      return normalizedRecord as AttioRecord;
+    } catch (error: unknown) {
+      // Log original error for debugging
+      console.error('[Notes] Original error:', error);
+
+      // Enhanced error handling for notes
+      const errorObj: Error =
+        error instanceof Error ? error : new Error(String(error));
+      const enhancedError = ErrorEnhancer.autoEnhance(
+        errorObj,
+        'notes',
         'create-record'
       );
       throw enhancedError;

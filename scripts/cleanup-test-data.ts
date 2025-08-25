@@ -512,14 +512,92 @@ class TestDataCleanup {
   }
 
   /**
-   * Clean up test notes (if API available)
+   * Clean up test notes using /v2/notes API endpoints
    */
   private async cleanupNotes(): Promise<void> {
-    console.log(
-      '  ⚠️  Notes cleanup not yet implemented (API endpoint research needed)'
-    );
-    // TODO: Research notes API endpoints and implement cleanup
-    this.stats.notes = { found: 0, deleted: 0, errors: 0 };
+    try {
+      const testNotes = await this.findTestNotes();
+      console.log(`  Found ${testNotes.length} test notes`);
+
+      if (testNotes.length === 0) {
+        this.stats.notes = { found: 0, deleted: 0, errors: 0 };
+        return;
+      }
+
+      this.stats.notes = { found: testNotes.length, deleted: 0, errors: 0 };
+
+      if (this.options.dryRun) {
+        console.log('  📋 Would delete notes:');
+        testNotes.forEach((note) => {
+          console.log(
+            `    • ${note.title || 'Untitled'} (ID: ${note.id?.note_id || 'unknown'})`
+          );
+        });
+        return;
+      }
+
+      // Delete notes with rate limiting and parallel processing
+      const deletePromises = testNotes.map((note) =>
+        this.rateLimiter(() => this.deleteNote(note))
+      );
+
+      const results = await Promise.allSettled(deletePromises);
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          this.stats.notes.deleted++;
+        } else {
+          this.stats.notes.errors++;
+          console.error(
+            `    ❌ Failed to delete note ${testNotes[index].id?.note_id}: ${result.reason}`
+          );
+        }
+      });
+
+      console.log(`  ✅ Deleted ${this.stats.notes.deleted} notes`);
+      if (this.stats.notes.errors > 0) {
+        console.log(`  ❌ ${this.stats.notes.errors} deletion errors`);
+      }
+    } catch (error) {
+      console.error('  ❌ Error during notes cleanup:', error);
+      this.stats.notes = { found: 0, deleted: 0, errors: 1 };
+    }
+  }
+
+  /**
+   * Find test notes using configured prefixes and common test patterns
+   */
+  private async findTestNotes(): Promise<any[]> {
+    try {
+      // Use listNotes to get all notes (no filtering by prefix available at API level)
+      const { listNotes } = await import('../dist/objects/notes.js');
+      const response = await listNotes({ limit: 1000 }); // Get a large batch
+      const allNotes = response.data || [];
+
+      // Filter client-side for test notes based on title or content
+      return allNotes.filter((note: any) => {
+        const title = note.title || '';
+        const content = note.content_plaintext || note.content_markdown || '';
+        
+        return this.options.testPrefixes.some((prefix) => 
+          title.startsWith(prefix) || content.startsWith(prefix)
+        );
+      });
+    } catch (error: any) {
+      console.error(`Error fetching notes: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Delete a single note
+   */
+  private async deleteNote(note: any): Promise<void> {
+    try {
+      const { deleteNote } = await import('../dist/objects/notes.js');
+      await deleteNote(note.id.note_id);
+    } catch (error: any) {
+      throw new Error(`Failed to delete note ${note.id?.note_id}: ${error.message}`);
+    }
   }
 
   /**

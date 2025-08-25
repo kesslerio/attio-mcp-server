@@ -10,11 +10,19 @@ import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/t
 import { isValidId } from '../utils/validation.js';
 
 // Import delete functions for each resource type
-import { deleteCompany } from '../objects/companies/index.js';
+import {
+  deleteCompany,
+  getCompanyDetails,
+} from '../objects/companies/index.js';
 import { deletePerson } from '../objects/people-write.js';
-import { deleteList } from '../objects/lists.js';
-import { deleteObjectRecord } from '../objects/records/index.js';
-import { deleteTask } from '../objects/tasks.js';
+import { deleteList, getListDetails } from '../objects/lists.js';
+import {
+  deleteObjectRecord,
+  getObjectRecord,
+} from '../objects/records/index.js';
+import { deleteTask, getTask } from '../objects/tasks.js';
+import { deleteNote } from '../objects/notes.js';
+import { getPersonDetails } from '../objects/people/basic.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -36,6 +44,33 @@ function shouldUseMockData(): boolean {
  */
 export class UniversalDeleteService {
   /**
+   * Helper to detect 404 errors from various API error formats
+   */
+  private static is404Error(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+
+    const errorObj = error as Record<string, unknown>;
+
+    // Check status field
+    if (errorObj.status === 404) return true;
+
+    // Check nested status
+    if (errorObj.response && typeof errorObj.response === 'object') {
+      const response = errorObj.response as Record<string, unknown>;
+      if (response.status === 404) return true;
+    }
+
+    // Check error message patterns
+    const message = errorObj.message || errorObj.error || '';
+    if (typeof message === 'string') {
+      return (
+        message.toLowerCase().includes('not found') || message.includes('404')
+      );
+    }
+
+    return false;
+  }
+  /**
    * Delete a record across any supported resource type
    *
    * @param params - Delete operation parameters
@@ -48,20 +83,62 @@ export class UniversalDeleteService {
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
-        await deleteCompany(record_id);
-        return { success: true, record_id };
+        try {
+          await deleteCompany(record_id);
+          return { success: true, record_id };
+        } catch (error: unknown) {
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            throw {
+              status: 404,
+              body: {
+                code: 'not_found',
+                message: `Company record with ID "${record_id}" not found.`,
+              },
+            };
+          }
+          throw error;
+        }
 
       case UniversalResourceType.PEOPLE:
-        await deletePerson(record_id);
-        return { success: true, record_id };
+        try {
+          await deletePerson(record_id);
+          return { success: true, record_id };
+        } catch (error: unknown) {
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            throw {
+              status: 404,
+              body: {
+                code: 'not_found',
+                message: `Person record with ID "${record_id}" not found.`,
+              },
+            };
+          }
+          throw error;
+        }
 
       case UniversalResourceType.LISTS:
         await deleteList(record_id);
         return { success: true, record_id };
 
       case UniversalResourceType.RECORDS:
-        await deleteObjectRecord('records', record_id);
-        return { success: true, record_id };
+        try {
+          await deleteObjectRecord('records', record_id);
+          return { success: true, record_id };
+        } catch (error: unknown) {
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            throw {
+              status: 404,
+              body: {
+                code: 'not_found',
+                message: `Record with ID "${record_id}" not found.`,
+              },
+            };
+          }
+          throw error;
+        }
 
       case UniversalResourceType.DEALS:
         await deleteObjectRecord('deals', record_id);
@@ -88,6 +165,10 @@ export class UniversalDeleteService {
 
         await deleteTask(record_id);
         return { success: true, record_id };
+
+      case UniversalResourceType.NOTES:
+        const result = await deleteNote(record_id);
+        return { success: result.success, record_id };
 
       default:
         throw new Error(

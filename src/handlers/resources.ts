@@ -75,7 +75,6 @@ export function registerResourceHandlers(server: Server): void {
               resources: people.map((person) =>
                 formatRecordAsResource(person, ResourceType.PEOPLE)
               ),
-              description: `Found ${people.length} people that you have interacted with most recently`,
             };
           } catch (error: unknown) {
             return createErrorResult(
@@ -89,17 +88,16 @@ export function registerResourceHandlers(server: Server): void {
         case ResourceType.LISTS:
           try {
             const lists = await getLists();
+            // Ensure lists is always an array
+            const safeList = Array.isArray(lists) ? lists : [];
             return {
-              resources: lists.map((list) => formatListAsResource(list)),
-              description: `Found ${lists.length} lists in your workspace`,
+              resources: safeList.map((list) => formatListAsResource(list)),
             };
           } catch (error: unknown) {
-            return createErrorResult(
-              error instanceof Error ? error : new Error('Unknown error'),
-              `/lists`,
-              'GET',
-              (error as ApiError).response?.data || {}
-            );
+            // For resource requests, always return resources array even on error
+            return {
+              resources: [],
+            };
           }
 
         case ResourceType.COMPANIES:
@@ -110,7 +108,6 @@ export function registerResourceHandlers(server: Server): void {
               resources: companies.map((company) =>
                 formatRecordAsResource(company, ResourceType.COMPANIES)
               ),
-              description: `Found ${companies.length} companies that you have interacted with most recently`,
             };
           } catch (error: unknown) {
             return createErrorResult(

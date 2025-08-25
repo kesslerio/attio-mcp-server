@@ -129,3 +129,58 @@ export interface ToolCallResult<T = unknown> {
     duration: number;
   };
 }
+
+// Missing exports that are used in test files
+export type TestDataObject = any; // Flexible type for test data objects
+
+// Re-export McpToolResponse from assertions.ts to avoid duplication
+export type { McpToolResponse } from '../utils/assertions.js';
+
+// Additional type exports
+export interface McpResponseData {
+  [key: string]: unknown;
+}
+
+export interface ExpectedDataShape {
+  [key: string]: unknown;
+}
+
+export interface AttioRecordValues {
+  [key: string]: unknown;
+}
+
+export interface SearchResultItem {
+  [key: string]: unknown;
+}
+
+export interface BatchOperationResult {
+  [key: string]: unknown;
+}
+
+// Task Record Type Definition
+export interface TaskRecord {
+  id: {
+    task_id: string;
+    record_id?: string;
+    object_id?: string;
+  };
+  type?: string;
+  content?: string;
+  title?: string;
+  content_plaintext?: string;
+  status?: string;
+  due_date?: string;
+  assignee_id?: string;
+  assignee?: {
+    id: string;
+  };
+  values?: {
+    content?: Array<{ value: string }>;
+    title?: Array<{ value: string }>;
+    status?: Array<{ value: string }>;
+    [key: string]: unknown;
+  };
+  attributes?: Record<string, AttributeValue>;
+  created_at?: string;
+  updated_at?: string;
+}

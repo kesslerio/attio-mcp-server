@@ -81,22 +81,25 @@ async function createTestRecord(
 
   if (resourceType === 'companies') {
     testData = CompanyFactory.create();
+    // Generate unique domain per test run to avoid conflicts
+    const uniqueDomain = `e2e-${Date.now()}.example.com`;
     recordData = {
       values: {
         name: testData.name,
-        domains: testData.domain
-          ? [testData.domain]
-          : [config.testData.testCompanyDomain],
+        domains: testData.domain ? [testData.domain] : [uniqueDomain],
       },
     };
   } else if (resourceType === 'people') {
     testData = PersonFactory.create();
+    // Generate unique email per test run to avoid conflicts
+    const uniqueEmail = `e2e.${Date.now()}@example.com`;
     recordData = {
       values: {
         name: testData.name,
-        email_addresses: testData.email_addresses.map((email) => ({
-          email_address: email,
-        })),
+        email_addresses:
+          testData.email_addresses?.length > 0
+            ? testData.email_addresses
+            : [uniqueEmail], // Use strings, not objects
       },
     };
   }
@@ -150,11 +153,21 @@ describe.skipIf(
 )('Universal Tools E2E Test Suite', () => {
   beforeAll(async () => {
     await E2ETestBase.setup({
-      requiresRealApi: false, // Use mock data instead of real API for reliable testing
+      requiresRealApi: process.env.E2E_MODE === 'true', // Use real API when E2E_MODE=true
       cleanupAfterTests: true,
       timeout: 120000,
     });
   }, 120000);
+
+  // Store the real API key before test setup can override it
+  const realApiKey = process.env.ATTIO_API_KEY;
+
+  beforeEach(async () => {
+    // Restore real API key for E2E tests (in case test setup stubbed it)
+    if (process.env.E2E_MODE === 'true' && realApiKey) {
+      process.env.ATTIO_API_KEY = realApiKey;
+    }
+  });
 
   afterAll(async () => {
     // Additional cleanup for any records we created
@@ -273,9 +286,9 @@ describe.skipIf(
           record_id: '00000000-0000-4000-8000-000000000000', // Valid UUID format but non-existent
         });
 
-        // Attio API handles non-existent record gets gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 
@@ -288,9 +301,7 @@ describe.skipIf(
           record_data: {
             values: {
               name: companyData.name,
-              domains: companyData.domain
-                ? [companyData.domain]
-                : [config.testData.testCompanyDomain],
+              domains: [`create-${Date.now()}.example.com`], // Unique domain per run
             },
           },
         });
@@ -313,8 +324,12 @@ describe.skipIf(
           resource_type: 'people',
           record_data: {
             values: {
-              name: personData.name,
-              email_addresses: personData.email_addresses,
+              name: {
+                first_name: 'Test',
+                last_name: 'Person',
+                full_name: 'Test Person',
+              },
+              email_addresses: [`e2e-person-${Date.now()}@example.com`], // Array of strings
             },
           },
         });
@@ -383,9 +398,9 @@ describe.skipIf(
           },
         });
 
-        // Attio API handles non-existent record updates gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 
@@ -422,9 +437,9 @@ describe.skipIf(
           record_id: 'non-existent-id-12345',
         });
 
-        // Attio API handles non-existent record deletions gracefully (no error)
-        E2EAssertions.expectMcpSuccess(response);
-        expect(response.content).toBeDefined();
+        // Non-existent records should return error (404) - this is correct behavior
+        E2EAssertions.expectMcpError(response);
+        expect(response.content[0].text).toContain('not found');
       });
     });
 

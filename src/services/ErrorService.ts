@@ -193,6 +193,10 @@ export class ErrorService {
             fieldName
           );
           if (suggestion) {
+            // If suggestion indicates unable to provide suggestions, enhance with discover-attributes guidance
+            if (suggestion.includes('Unable to provide suggestions')) {
+              return `Try the discover-attributes tool to list available fields for ${resourceType}. ${suggestion}`;
+            }
             return suggestion;
           }
         }
@@ -340,5 +344,99 @@ export class ErrorService {
     }
 
     return undefined;
+  }
+
+  /**
+   * Map Axios/HTTP errors to appropriate Universal errors
+   *
+   * @param error - Axios error object
+   * @returns Universal error object with proper classification
+   */
+  static fromAxios(error: any): {
+    code: number;
+    type:
+      | 'not_found'
+      | 'validation_error'
+      | 'unauthorized'
+      | 'forbidden'
+      | 'conflict'
+      | 'rate_limit'
+      | 'server_error';
+    name: string;
+    message: string;
+  } {
+    const status = error?.response?.status || 500;
+
+    // Extract validation message for 400/422 errors
+    const extractValidationMessage = (err: any): string => {
+      try {
+        const responseData = err?.response?.data;
+        if (responseData?.message) return responseData.message;
+        if (responseData?.detail) return responseData.detail;
+        if (responseData?.error) return responseData.error;
+        return 'Invalid request';
+      } catch {
+        return 'Invalid request';
+      }
+    };
+
+    switch (status) {
+      case 404:
+        return {
+          code: 404,
+          type: 'not_found',
+          name: 'UniversalNotFoundError',
+          message: 'Record not found',
+        };
+
+      case 400:
+      case 422:
+        return {
+          code: status,
+          type: 'validation_error',
+          name: 'UniversalValidationError',
+          message: extractValidationMessage(error),
+        };
+
+      case 401:
+        return {
+          code: 401,
+          type: 'unauthorized',
+          name: 'UniversalUnauthorizedError',
+          message: 'Authentication required',
+        };
+
+      case 403:
+        return {
+          code: 403,
+          type: 'forbidden',
+          name: 'UniversalForbiddenError',
+          message: 'Access denied',
+        };
+
+      case 409:
+        return {
+          code: 409,
+          type: 'conflict',
+          name: 'UniversalConflictError',
+          message: 'Resource conflict',
+        };
+
+      case 429:
+        return {
+          code: 429,
+          type: 'rate_limit',
+          name: 'UniversalRateLimitError',
+          message: 'Rate limit exceeded',
+        };
+
+      default:
+        return {
+          code: status,
+          type: 'server_error',
+          name: 'UniversalServerError',
+          message: 'Internal server error',
+        };
+    }
   }
 }
