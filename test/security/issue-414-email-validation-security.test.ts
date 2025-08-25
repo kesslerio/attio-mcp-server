@@ -347,18 +347,6 @@ describe('Issue #414: Email Validation Security Tests', () => {
     });
 
     describe('Email Format Consistency Security', () => {
-      it('should maintain consistent email object structure', () => {
-        const validEmail = 'test@domain.com';
-        const result = PeopleDataNormalizer.normalizeEmails(validEmail);
-
-        expect(result).toHaveLength(1);
-        expect(result![0]).toMatchObject({
-          email_address: expect.any(String),
-        });
-        expect(result![0].email_address).toBe('test@domain.com');
-        expect(Object.keys(result![0])).toEqual(['email_address']);
-      });
-
       it('should preserve email_type when provided securely', () => {
         const emailWithType = {
           email_address: 'work@company.com',

@@ -49,14 +49,16 @@ export type EmailInput =
  * Normalized people data
  */
 export interface NormalizedPeopleData {
-  name?: {
-    first_name?: string;
-    last_name?: string;
-    full_name?: string;
-  };
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   email_addresses?: Array<{
     email_address: string;
     email_type?: string;
+  }>;
+  phone_numbers?: Array<{
+    phone_number: string;
+    phone_type?: string;
   }>;
   [key: string]: any;
 }
@@ -69,7 +71,8 @@ export class PeopleDataNormalizer {
    * Normalize name input to standard format
    */
   static normalizeName(
-    input: any
+    input: any,
+    options?: { includeFullName?: boolean }
   ):
     | { first_name?: string; last_name?: string; full_name?: string }
     | undefined {
@@ -82,22 +85,36 @@ export class PeopleDataNormalizer {
 
       // Try to split into first and last name
       const parts = trimmed.split(/\s+/);
+      let result: {
+        first_name?: string;
+        last_name?: string;
+        full_name?: string;
+      };
+
       if (parts.length === 1) {
-        return { first_name: parts[0], full_name: trimmed };
+        result = { first_name: parts[0], full_name: trimmed };
       } else if (parts.length === 2) {
-        return {
+        result = {
           first_name: parts[0],
           last_name: parts[1],
           full_name: trimmed,
         };
       } else {
-        // Multiple parts - take first as first name, rest as last name
-        return {
+        // Multiple parts - take first as first name, last as last name
+        result = {
           first_name: parts[0],
-          last_name: parts.slice(1).join(' '),
+          last_name: parts[parts.length - 1],
           full_name: trimmed,
         };
       }
+
+      // Filter out full_name if not explicitly requested
+      if (!options?.includeFullName && result.full_name) {
+        const { full_name, ...filtered } = result;
+        return filtered;
+      }
+
+      return result;
     }
 
     // Handle object input
@@ -154,7 +171,15 @@ export class PeopleDataNormalizer {
         result.last_name = String(input.lastName).trim();
       }
 
-      return Object.keys(result).length > 0 ? result : undefined;
+      if (Object.keys(result).length === 0) return undefined;
+
+      // Filter out full_name if not explicitly requested
+      if (!options?.includeFullName && result.full_name) {
+        const { full_name, ...filtered } = result;
+        return Object.keys(filtered).length > 0 ? filtered : undefined;
+      }
+
+      return result;
     }
 
     return undefined;
@@ -380,7 +405,25 @@ export class PeopleDataNormalizer {
       }
     }
 
-    return emails.length > 0 ? emails : undefined;
+    if (emails.length === 0) return undefined;
+
+    // Add default email_type: "primary" for single emails without a type
+    if (emails.length === 1 && !emails[0].email_type) {
+      emails[0].email_type = 'primary';
+    }
+
+    // For multiple emails, ensure first has primary if none specified
+    if (emails.length > 1) {
+      const hasTyped = emails.some((e) => e.email_type);
+      if (!hasTyped) {
+        emails[0].email_type = 'primary';
+        for (let i = 1; i < emails.length; i++) {
+          emails[i].email_type = 'secondary';
+        }
+      }
+    }
+
+    return emails;
   }
 
   /**
@@ -517,7 +560,16 @@ export class PeopleDataNormalizer {
     if (hasNameField) {
       const nameData = this.normalizeName(sanitized);
       if (nameData) {
-        normalized.name = nameData;
+        // Flatten name fields to top level for Attio API compatibility
+        if (nameData.first_name) {
+          normalized.first_name = nameData.first_name;
+        }
+        if (nameData.last_name) {
+          normalized.last_name = nameData.last_name;
+        }
+        if (nameData.full_name) {
+          normalized.full_name = nameData.full_name;
+        }
       }
     }
 

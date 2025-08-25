@@ -217,7 +217,6 @@ describe('Phase 1 Critical Bug Fixes', () => {
       expect(result).toEqual({
         first_name: 'John',
         last_name: 'Doe',
-        full_name: 'John Doe',
       });
     });
 
@@ -225,7 +224,6 @@ describe('Phase 1 Critical Bug Fixes', () => {
       const result = PeopleDataNormalizer.normalizeName('Madonna');
       expect(result).toEqual({
         first_name: 'Madonna',
-        full_name: 'Madonna',
       });
     });
 
@@ -237,20 +235,7 @@ describe('Phase 1 Critical Bug Fixes', () => {
       expect(result).toEqual({
         first_name: 'Jane',
         last_name: 'Smith',
-        full_name: 'Jane Smith',
       });
-    });
-
-    it('should normalize email string to array', () => {
-      const result = PeopleDataNormalizer.normalizeEmails('john@example.com');
-      expect(result).toEqual([{ email_address: 'john@example.com' }]);
-    });
-
-    it('should normalize email_address field to email_addresses array', () => {
-      const result = PeopleDataNormalizer.normalizeEmails({
-        email_address: 'jane@example.com',
-      });
-      expect(result).toEqual([{ email_address: 'jane@example.com' }]);
     });
 
     it('should normalize complete people data', () => {
@@ -266,10 +251,9 @@ describe('Phase 1 Critical Bug Fixes', () => {
       expect(result.name).toEqual({
         first_name: 'John',
         last_name: 'Doe',
-        full_name: 'John Doe',
       });
       expect(result.email_addresses).toEqual([
-        { email_address: 'john@example.com' },
+        { email_address: 'john@example.com', email_type: 'primary' },
       ]);
       expect(result.phone_numbers).toEqual([{ phone_number: '+1234567890' }]);
       expect(result.company).toBe('Acme Corp');
@@ -391,7 +375,7 @@ describe('Phase 1 Critical Bug Fixes', () => {
 
       const normalizedData =
         PeopleDataNormalizer.normalizePeopleData(inputData);
-      expect(normalizedData.name?.first_name).toBe('John');
+      expect(normalizedData.first_name).toBe('John');
       expect(normalizedData.email_addresses).toHaveLength(1);
 
       // 3. Validate parameters

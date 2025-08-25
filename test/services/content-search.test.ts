@@ -55,7 +55,7 @@ describe('Content Search Functionality', () => {
       const mockResults = [
         {
           id: { record_id: '1' },
-          values: { name: 'Test Company' },
+          values: { name: [{ value: 'Test Company' }] },
         } as AttioRecord,
       ];
 
@@ -87,8 +87,8 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: 'Alpha Technologies',
-            description: 'AI solutions for healthcare',
+            name: [{ value: 'Alpha Technologies' }],
+            description: [{ value: 'AI solutions for healthcare' }],
           },
         } as AttioRecord,
       ];
@@ -191,15 +191,15 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: 'AI Company',
-            description: 'Specializes in AI and AI technologies',
+            name: [{ value: 'AI Company' }],
+            description: [{ value: 'Specializes in AI and AI technologies' }],
           },
         } as AttioRecord,
         {
           id: { record_id: '2' },
           values: {
-            name: 'Tech Corp',
-            description: 'General technology with some AI',
+            name: [{ value: 'Tech Corp' }],
+            description: [{ value: 'General technology with some AI' }],
           },
         } as AttioRecord,
       ];
@@ -225,11 +225,20 @@ describe('Content Search Functionality', () => {
           {
             id: { record_id: '1' },
             values: {
-              name: 'Alice Smith',
-              notes: 'Expert in machine learning',
+              name: [{ value: 'Alice Smith' }],
+              notes: [{ value: 'Expert in machine learning' }],
             },
           } as AttioRecord,
         ],
+        pagination: {
+          totalCount: 1,
+          currentPage: 1,
+          pageSize: 10,
+          totalPages: 1,
+          hasMore: false,
+          nextPageUrl: undefined,
+          prevPageUrl: undefined,
+        },
       };
 
       vi.mocked(advancedSearchPeople).mockResolvedValue(mockResults);
@@ -274,6 +283,15 @@ describe('Content Search Functionality', () => {
     it('should handle people search with custom fields', async () => {
       const mockResults = {
         results: [] as AttioRecord[],
+        pagination: {
+          totalCount: 0,
+          currentPage: 1,
+          pageSize: 10,
+          totalPages: 0,
+          hasMore: false,
+          nextPageUrl: undefined,
+          prevPageUrl: undefined,
+        },
       };
 
       vi.mocked(advancedSearchPeople).mockResolvedValue(mockResults);
@@ -311,15 +329,15 @@ describe('Content Search Functionality', () => {
       const mockResults = [
         {
           id: { record_id: '1' },
-          values: { name: 'Other Company' },
+          values: { name: [{ value: 'Other Company' }] },
         } as AttioRecord,
         {
           id: { record_id: '2' },
-          values: { name: 'AI' },
+          values: { name: [{ value: 'AI' }] },
         } as AttioRecord,
         {
           id: { record_id: '3' },
-          values: { name: 'AI Technologies' },
+          values: { name: [{ value: 'AI Technologies' }] },
         } as AttioRecord,
       ];
 
@@ -343,15 +361,17 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: 'Tech Company',
-            description: 'AI is mentioned once',
+            name: [{ value: 'Tech Company' }],
+            description: [{ value: 'AI is mentioned once' }],
           },
         } as AttioRecord,
         {
           id: { record_id: '2' },
           values: {
-            name: 'AI Corp',
-            description: 'AI solutions using AI technology for AI applications',
+            name: [{ value: 'AI Corp' }],
+            description: [
+              { value: 'AI solutions using AI technology for AI applications' },
+            ],
           },
         } as AttioRecord,
       ];
@@ -374,8 +394,8 @@ describe('Content Search Functionality', () => {
         {
           id: { record_id: '1' },
           values: {
-            name: 'Company',
-            description: 'automation systems',
+            name: [{ value: 'Company' }],
+            description: [{ value: 'automation systems' }],
           },
         } as AttioRecord,
       ];

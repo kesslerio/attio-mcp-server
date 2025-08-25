@@ -20,9 +20,7 @@ import {
 } from 'vitest';
 import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
-import {
-  TaskFactory,
-} from '../fixtures/index.js';
+import { TaskFactory } from '../fixtures/index.js';
 import type { TestDataObject, McpToolResponse } from '../types/index.js';
 
 // Import enhanced tool caller with logging and migration
@@ -86,13 +84,13 @@ describe.skipIf(
     // Create test tasks for validation
     const tasksBatch = TaskFactory.createMany(3);
     for (const taskData of tasksBatch) {
-      const response = await callTasksTool('create-record', {
+      const response = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: taskData.content,
           due_date: taskData.due_date,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       if (!response.isError) {
         const createdTask = E2EAssertions.expectMcpData(response);
@@ -103,13 +101,13 @@ describe.skipIf(
 
   describe('Error Handling and Validation', () => {
     it('should handle invalid task ID in updates', async () => {
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: 'invalid-task-id-12345',
         record_data: {
           status: 'completed',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -128,13 +126,13 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
           content: 'This should fail - content is immutable',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -145,10 +143,10 @@ describe.skipIf(
     }, 15000);
 
     it('should handle invalid task ID in deletion', async () => {
-      const response = await callTasksTool('delete-record', {
+      const response = (await callTasksTool('delete-record', {
         resource_type: 'tasks',
         record_id: 'invalid-task-id-12345',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(
         response,
@@ -167,37 +165,37 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
           assigneeId: 'invalid-assignee-id-12345',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response, /not found|invalid|assignee/i);
     }, 15000);
 
     it('should validate required fields for task creation', async () => {
-      const response = await callTasksTool('create-record', {
+      const response = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           // Missing required 'content' field
           due_date: '2024-12-31',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response, /content|required/i);
     }, 15000);
 
     it('should handle invalid date formats', async () => {
-      const response = await callTasksTool('create-record', {
+      const response = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: 'E2E Test Task with invalid date format for testing',
           due_date: 'invalid-date-format',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       // This might succeed or fail depending on API validation
       if (response.isError) {
@@ -220,7 +218,7 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
@@ -231,13 +229,13 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response, /not found|invalid|record/i);
     }, 15000);
 
     it('should handle invalid task ID in linking', async () => {
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: 'invalid-task-id-12345',
         record_data: {
@@ -248,7 +246,7 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpError(response, /not found|invalid|task/i);
     }, 15000);
@@ -301,10 +299,10 @@ describe.skipIf(
     it('should validate task operation execution times', async () => {
       const startTime = Date.now();
 
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         pageSize: 10,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       const endTime = Date.now();
       const executionTime = endTime - startTime;
@@ -337,7 +335,7 @@ describe.skipIf(
             record_data: {
               status: 'in_progress',
             },
-          }).then(result => result as McpToolResponse)
+          }).then((result) => result as McpToolResponse)
         );
       }
 
@@ -377,13 +375,13 @@ describe.skipIf(
         // All tasks should have consistent core structure
         expect(task.id, `Task ${index} should have id object`).toBeDefined();
         // Check for content in various possible locations
-        const taskContent = 
-          task.content || 
-          task.title || 
+        const taskContent =
+          task.content ||
+          task.title ||
           task.values?.content?.[0]?.value ||
           task.values?.title?.[0]?.value ||
           task.content_plaintext;
-        
+
         expect(
           taskContent,
           `Task ${index} should have content or title`

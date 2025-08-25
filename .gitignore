@@ -22,9 +22,12 @@ CLAUDE.md
 
 # Build output
 dist/
+test-dist/
 
 # Log files
 *.log
+performance-report-22.x/
+performance-report-20.x/
 
 # Temporary directories
 /temp/
@@ -53,3 +56,8 @@ test-results/
 # Log files
 logs/
 logs.backup/
+
+# Other
+.archive
+.qodo
+.vscode

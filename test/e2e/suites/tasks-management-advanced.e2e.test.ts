@@ -89,10 +89,10 @@ describe.skipIf(
   async function setupAdvancedTestData(): Promise<void> {
     // Create test companies
     const companyData = CompanyFactory.create();
-    const companyResponse = await callTasksTool('create-record', {
+    const companyResponse = (await callTasksTool('create-record', {
       resource_type: 'companies',
       record_data: companyData as any,
-    }) as McpToolResponse;
+    })) as McpToolResponse;
 
     if (!companyResponse.isError) {
       const company = E2EAssertions.expectMcpData(companyResponse);
@@ -101,10 +101,10 @@ describe.skipIf(
 
     // Create test people
     const personData = PersonFactory.create();
-    const personResponse = await callTasksTool('create-record', {
+    const personResponse = (await callTasksTool('create-record', {
       resource_type: 'people',
       record_data: personData as any,
-    }) as McpToolResponse;
+    })) as McpToolResponse;
 
     if (!personResponse.isError) {
       const person = E2EAssertions.expectMcpData(personResponse);
@@ -114,13 +114,13 @@ describe.skipIf(
     // Create test tasks
     const tasksBatch = TaskFactory.createMany(5);
     for (const taskData of tasksBatch) {
-      const response = await callTasksTool('create-record', {
+      const response = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: taskData.content,
           due_date: taskData.due_date,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       if (!response.isError) {
         const createdTask = E2EAssertions.expectMcpData(response);
@@ -131,9 +131,9 @@ describe.skipIf(
 
   describe('Task Listing and Filtering', () => {
     it('should list all tasks', async () => {
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -166,10 +166,10 @@ describe.skipIf(
     }, 30000);
 
     it('should filter tasks by status', async () => {
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         status: 'open',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -187,10 +187,10 @@ describe.skipIf(
       }
 
       const assignee = testPeople[0];
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         assigneeId: assignee.id.record_id,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -200,11 +200,11 @@ describe.skipIf(
     }, 15000);
 
     it('should handle pagination for task listing', async () => {
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         page: 1,
         pageSize: 5,
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -214,10 +214,10 @@ describe.skipIf(
     }, 15000);
 
     it('should handle empty task list gracefully', async () => {
-      const response = await callTasksTool('search-records', {
+      const response = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         status: 'nonexistent_status_12345',
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       const tasks = E2EAssertions.expectMcpData(response);
@@ -238,7 +238,7 @@ describe.skipIf(
       const company = testCompanies[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
@@ -249,7 +249,7 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       console.error('🏢 Linked task to company record:', taskId);
@@ -265,7 +265,7 @@ describe.skipIf(
       const person = testPeople[0];
       const taskId = task.id.task_id || task.id;
 
-      const response = await callTasksTool('update-record', {
+      const response = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
@@ -276,7 +276,7 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(response);
       console.error('👤 Linked task to person record:', taskId);
@@ -298,7 +298,7 @@ describe.skipIf(
       const taskId = task.id.task_id || task.id;
 
       // Link to company
-      const companyLinkResponse = await callTasksTool('update-record', {
+      const companyLinkResponse = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
@@ -309,12 +309,12 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(companyLinkResponse);
 
       // Link to person (if API supports multiple links)
-      const personLinkResponse = await callTasksTool('update-record', {
+      const personLinkResponse = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
@@ -325,7 +325,7 @@ describe.skipIf(
             },
           ],
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       // This might succeed or fail depending on API limitations
       if (personLinkResponse.isError) {
@@ -342,37 +342,38 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create task
-      const createResponse = await callTasksTool('create-record', {
+      const createResponse = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: 'E2E Workflow Task - Initial Creation',
           due_date: taskData.due_date,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(createResponse);
       const workflowTask = E2EAssertions.expectMcpData(createResponse)!;
-      const taskId = (workflowTask as any)?.id?.task_id || (workflowTask as any)?.id;
+      const taskId =
+        (workflowTask as any)?.id?.task_id || (workflowTask as any)?.id;
 
       // Update to in-progress
-      const progressResponse = await callTasksTool('update-record', {
+      const progressResponse = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
           status: 'in_progress',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(progressResponse);
 
       // Complete the task
-      const completeResponse = await callTasksTool('update-record', {
+      const completeResponse = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
           status: 'completed',
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(completeResponse);
 
@@ -384,17 +385,18 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create normal priority task
-      const createResponse = await callTasksTool('create-record', {
+      const createResponse = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: 'E2E Priority Task',
           due_date: taskData.due_date,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(createResponse);
       const priorityTask = E2EAssertions.expectMcpData(createResponse)!;
-      const taskId = (priorityTask as any)?.id?.task_id || (priorityTask as any)?.id;
+      const taskId =
+        (priorityTask as any)?.id?.task_id || (priorityTask as any)?.id;
 
       // Note: Priority updates depend on API field availability
       console.error('📊 Task priority lifecycle tested:', taskId);
@@ -412,26 +414,27 @@ describe.skipIf(
       const taskData = TaskFactory.create();
 
       // Create unassigned task
-      const createResponse = await callTasksTool('create-record', {
+      const createResponse = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: 'E2E Assignment Task - Initially Unassigned',
           due_date: taskData.due_date,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(createResponse);
       const assignmentTask = E2EAssertions.expectMcpData(createResponse)!;
-      const taskId = (assignmentTask as any)?.id?.task_id || (assignmentTask as any)?.id;
+      const taskId =
+        (assignmentTask as any)?.id?.task_id || (assignmentTask as any)?.id;
 
       // Assign to person
-      const assignResponse = await callTasksTool('update-record', {
+      const assignResponse = (await callTasksTool('update-record', {
         resource_type: 'tasks',
         record_id: taskId,
         record_data: {
           assigneeId: testPeople[0].id.record_id,
         },
-      }) as McpToolResponse;
+      })) as McpToolResponse;
 
       E2EAssertions.expectMcpSuccess(assignResponse);
 

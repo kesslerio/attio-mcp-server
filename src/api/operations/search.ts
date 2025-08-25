@@ -191,16 +191,25 @@ export async function advancedSearchObject<T extends AttioRecord>(
       const requestBody = await createRequestBody();
       const response = await api.post<AttioListResponse<T>>(path, requestBody);
       const data = response?.data?.data;
-      
+
       // Ensure we always return an array, never boolean or other types
       if (Array.isArray(data)) {
         return data;
       }
-      
+
       // Return empty array if data is null, undefined, or not an array
       return [];
     } catch (err) {
-      // Throw EnhancedApiError for consistency
+      // If the error is a FilterValidationError, rethrow it unchanged
+      // Tests expect this specific error type to bubble up
+      if (
+        err instanceof FilterValidationError ||
+        (err as any)?.name === 'FilterValidationError'
+      ) {
+        throw err;
+      }
+
+      // For all other errors, enhance them for consistency
       throw ErrorEnhancer.ensureEnhanced(err, {
         endpoint: path,
         method: 'POST',
@@ -239,6 +248,13 @@ export async function listObjects<T extends AttioRecord>(
     };
 
     const response = await api.post<AttioListResponse<T>>(path, body);
-    return response?.data?.data || [];
+    let result = response?.data?.data || [];
+
+    // BUGFIX: Handle case where API returns {} instead of [] for empty results
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      result = [];
+    }
+
+    return result;
   }, retryConfig);
 }

@@ -213,12 +213,15 @@ export class PerformanceTracker {
       totalOperations: relevantMetrics.length,
       successfulOperations: successCount,
       failedOperations: failureCount,
-      averageDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
-      minDuration: durations[0],
-      maxDuration: durations[durations.length - 1],
-      p50Duration: this.getPercentile(durations, 50),
-      p95Duration: this.getPercentile(durations, 95),
-      p99Duration: this.getPercentile(durations, 99),
+      averageDuration:
+        durations.length > 0
+          ? durations.reduce((a, b) => a + b, 0) / durations.length
+          : 0,
+      minDuration: durations.length > 0 ? durations[0] : 0,
+      maxDuration: durations.length > 0 ? durations[durations.length - 1] : 0,
+      p50Duration: durations.length > 0 ? this.getPercentile(durations, 50) : 0,
+      p95Duration: durations.length > 0 ? this.getPercentile(durations, 95) : 0,
+      p99Duration: durations.length > 0 ? this.getPercentile(durations, 99) : 0,
     };
   }
 
@@ -229,6 +232,7 @@ export class PerformanceTracker {
     sortedArray: number[],
     percentile: number
   ): number {
+    if (sortedArray.length === 0) return 0;
     const index = Math.ceil((percentile / 100) * sortedArray.length) - 1;
     return sortedArray[Math.max(0, index)];
   }

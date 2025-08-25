@@ -16,6 +16,7 @@ import {
  */
 class PerformanceMonitorInstance {
   private static _instance: PerformanceMonitorInstance | undefined;
+  private activeOperations: Map<string, number> = new Map();
 
   static getInstance(): PerformanceMonitorInstance {
     if (!this._instance) {
@@ -26,22 +27,58 @@ class PerformanceMonitorInstance {
 
   // Instance methods that delegate to static PerformanceTracker methods
   startOperation(toolName: string, metadata?: Record<string, any>): number {
-    return PerformanceTracker.startOperation(toolName, metadata);
+    const startTime = PerformanceTracker.startOperation(toolName, metadata);
+    this.activeOperations.set(toolName, startTime);
+    return startTime;
   }
 
   endOperation(
     toolName: string,
-    startTime: number,
+    startTimeOrSuccess?: number | boolean,
     success: boolean = true,
     error?: string,
     metadata?: Record<string, any>
   ): PerformanceMetrics {
+    // Support both patterns:
+    // 1. endOperation(toolName, startTime, success, error, metadata) - explicit startTime
+    // 2. endOperation(toolName, success, error, metadata) - use stored startTime
+
+    let startTime: number;
+    let actualSuccess: boolean;
+    let actualError: string | undefined;
+    let actualMetadata: Record<string, any> | undefined;
+
+    if (typeof startTimeOrSuccess === 'number') {
+      // Pattern 1: explicit startTime provided
+      startTime = startTimeOrSuccess;
+      actualSuccess = success;
+      actualError = error;
+      actualMetadata = metadata;
+    } else {
+      // Pattern 2: use stored startTime
+      const storedStartTime = this.activeOperations.get(toolName);
+      if (storedStartTime === undefined) {
+        throw new Error(
+          `No active operation found for tool: ${toolName}. Call startOperation() first.`
+        );
+      }
+      startTime = storedStartTime;
+      actualSuccess =
+        typeof startTimeOrSuccess === 'boolean' ? startTimeOrSuccess : true;
+      actualError = typeof success === 'string' ? (success as any) : error;
+      actualMetadata =
+        error && typeof error === 'object' ? (error as any) : metadata;
+
+      // Clean up stored operation
+      this.activeOperations.delete(toolName);
+    }
+
     return PerformanceTracker.endOperation(
       toolName,
       startTime,
-      success,
-      error,
-      metadata
+      actualSuccess,
+      actualError,
+      actualMetadata
     );
   }
 
@@ -50,16 +87,29 @@ class PerformanceMonitorInstance {
   }
 
   clear(): void {
+    this.activeOperations.clear();
     return PerformanceTracker.clear();
   }
 
   reset(): void {
     // Alias for clear() to match legacy test expectations
+    this.activeOperations.clear();
     return PerformanceTracker.clear();
   }
 
-  getMetrics(): PerformanceMetrics[] {
-    return PerformanceTracker.getMetrics();
+  getMetrics(): {
+    totalOperations: number;
+    averageTime: number;
+    slowOperations: number;
+  } {
+    const summary = PerformanceTracker.getSummary();
+    const slowOps = PerformanceTracker.getSlowOperations(100);
+
+    return {
+      totalOperations: summary.totalOperations,
+      averageTime: summary.averageDuration,
+      slowOperations: slowOps.length,
+    };
   }
 
   isEnabled(): boolean {

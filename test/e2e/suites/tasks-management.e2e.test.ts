@@ -51,7 +51,7 @@ describe.skip('Tasks Management E2E Tests - Redirected', () => {
   it('should reference the split test files', () => {
     // This test suite has been split into three focused files:
     // - tasks-management-core.e2e.test.ts
-    // - tasks-management-advanced.e2e.test.ts  
+    // - tasks-management-advanced.e2e.test.ts
     // - tasks-management-validation.e2e.test.ts
     //
     // See file header documentation for details on running the tests.

@@ -555,7 +555,9 @@ describe('ErrorService', () => {
     it('should provide generic field suggestions for non-deal resources', () => {
       const error = new Error('Cannot find attribute with slug/id "bad_field"');
       // Clear the mock return to get the fallback suggestion
-      vi.mocked(getFieldSuggestions).mockReturnValue(undefined);
+      vi.mocked(getFieldSuggestions).mockReturnValue(
+        'Unable to provide suggestions for resource type companies'
+      );
 
       const result = ErrorService.getOperationSuggestion(
         'create',

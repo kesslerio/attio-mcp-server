@@ -10,6 +10,7 @@ import { PerformanceMonitor } from '../src/middleware/performance.js';
 import { SchemaPreValidator } from '../src/utils/schema-pre-validation.js';
 import { PeopleDataNormalizer } from '../src/utils/normalization/people-normalization.js';
 import { ResourceMapper } from '../src/utils/resource-mapping.js';
+import { EmailValidationMode } from '../src/utils/normalization/email-validation-config.js';
 
 // Skip these tests if no API key is available
 const SKIP_INTEGRATION =
@@ -30,8 +31,9 @@ describe.skipIf(SKIP_INTEGRATION)('Phase 1 Integration Tests', () => {
   describe('Schema Validation with Real API', () => {
     it('should validate against real company attributes', async () => {
       // Pre-populate cache with real attributes
-      const attributes =
-        await SchemaPreValidator.getAttributes('companies' as any);
+      const attributes = await SchemaPreValidator.getAttributes(
+        'companies' as any
+      );
 
       // Valid data that matches real schema
       const validData = {
@@ -213,7 +215,10 @@ describe.skipIf(SKIP_INTEGRATION)('Phase 1 Integration Tests', () => {
       }
 
       for (const email of invalidEmails) {
-        const result = PeopleDataNormalizer.normalizeEmails(email);
+        const result = PeopleDataNormalizer.normalizeEmails(email, {
+          mode: EmailValidationMode.WARN,
+          logDeprecationWarnings: false,
+        });
         expect(result).toBeUndefined();
       }
     });
@@ -259,7 +264,6 @@ describe.skipIf(SKIP_INTEGRATION)('Phase 1 Integration Tests', () => {
 
       // Normalize the data
       const normalized = PeopleDataNormalizer.normalizePeopleData(input.data);
-
       expect(normalized).toHaveProperty('first_name', 'John');
       expect(normalized).toHaveProperty('last_name', 'Doe');
       expect(normalized).toHaveProperty('email_addresses');

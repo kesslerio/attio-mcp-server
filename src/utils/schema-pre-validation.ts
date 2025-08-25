@@ -145,11 +145,36 @@ export class SchemaPreValidator {
    * Normalize attributes from API response
    */
   private static normalizeAttributes(apiResponse: any): AttributeMetadata[] {
-    if (!apiResponse || !Array.isArray(apiResponse)) {
+    // Handle both array format (direct attributes) and object format (discovery response)
+    let attributesList: any[] = [];
+
+    if (Array.isArray(apiResponse)) {
+      attributesList = apiResponse;
+    } else if (apiResponse && typeof apiResponse === 'object') {
+      // Handle discoverCompanyAttributes response format: { standard: [], custom: [], all: [] }
+      if (Array.isArray(apiResponse.all)) {
+        // Handle both string array and object array formats
+        attributesList = apiResponse.all.map((attr: any) => {
+          if (typeof attr === 'string') {
+            return { slug: attr, name: attr };
+          }
+          return attr; // Already an object
+        });
+      } else if (Array.isArray(apiResponse.standard)) {
+        attributesList = apiResponse.standard.map((attr: any) => {
+          if (typeof attr === 'string') {
+            return { slug: attr, name: attr };
+          }
+          return attr;
+        });
+      }
+    }
+
+    if (attributesList.length === 0) {
       return [];
     }
 
-    return apiResponse.map((attr: any) => ({
+    return attributesList.map((attr: any) => ({
       id: attr.id || attr.slug,
       slug: attr.slug || attr.id,
       name: attr.name || attr.title || attr.slug,
@@ -417,7 +442,8 @@ export class SchemaPreValidator {
     recordData: Record<string, any>,
     context?: { workspaceId?: string; tenantId?: string }
   ): Promise<{
-    valid: boolean;
+    isValid: boolean;
+    valid: boolean; // Keep for backward compatibility
     errors: string[];
     warnings: string[];
     suggestions: Map<string, string>;
@@ -494,8 +520,10 @@ export class SchemaPreValidator {
       }
     }
 
+    const isValid = errors.length === 0;
     return {
-      valid: errors.length === 0,
+      isValid,
+      valid: isValid, // Keep for backward compatibility
       errors,
       warnings,
       suggestions,
@@ -673,7 +701,7 @@ export class SchemaPreValidator {
     }
 
     // Throw error if validation failed
-    if (!validation.valid) {
+    if (!validation.isValid) {
       throw new UniversalValidationError(
         `Schema validation failed:\n${validation.errors.join('\n')}`,
         ErrorType.USER_ERROR,

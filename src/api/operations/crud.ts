@@ -44,16 +44,31 @@ function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any): T {
 
   // Ensure id.record_id structure exists
   if (!result.id || !result.id.record_id) {
-    if (typeof result.record_id === 'string') {
-      // Move record_id to nested structure
-      result.id = { record_id: result.record_id };
-    } else if (typeof result.id === 'string') {
-      // Convert string id to nested structure
-      result.id = { record_id: result.id };
-    } else if (result.data?.id?.record_id) {
-      // Use nested data structure
-      result.id = result.data.id;
-      result.values = result.data.values || result.values;
+    // Extract ID from various possible shapes as suggested by Codex
+    const extractedId = 
+      result.id?.record_id ??
+      result.id?.company_id ??
+      result.id?.person_id ??
+      result.id?.list_id ??
+      result.id?.task_id ??
+      (typeof result.id === 'string' ? result.id : undefined) ??
+      result.record_id ??
+      result.company_id ??
+      result.person_id ??
+      result.list_id ??
+      result.task_id ??
+      result.data?.id?.record_id ??
+      result.data?.id?.company_id ??
+      result.data?.id?.person_id ??
+      (typeof result.data?.id === 'string' ? result.data.id : undefined);
+
+    if (extractedId) {
+      // Ensure canonical shape
+      result.id = { record_id: extractedId };
+      // Also use nested data structure if available
+      if (result.data?.values) {
+        result.values = result.data.values;
+      }
     } else {
       throw new Error('Invalid API response: record missing ID structure');
     }
@@ -135,18 +150,18 @@ export async function createRecord<T extends AttioRecord>(
 
     // Extract raw data from response using Agent A's pattern
     let rawResult = response?.data?.data ?? response?.data ?? response;
-    
+
     // Additional extraction patterns for different Attio API response formats
     if (!rawResult && response?.data?.attributes) {
       // Some APIs return { data: { attributes: {...}, id: {...} } }
       rawResult = response.data as any;
     }
-    
+
     // Handle array responses by taking first element
     if (Array.isArray(rawResult) && rawResult.length > 0) {
       rawResult = rawResult[0];
     }
-    
+
     // Final validation with debug logging
     if (!rawResult || typeof rawResult !== 'object') {
       console.error('DEBUG: Failed response extraction. Response structure:', {

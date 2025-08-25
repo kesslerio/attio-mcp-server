@@ -11,7 +11,7 @@
     "attio-discover": "dist/cli/discover.js"
   },
   "scripts": {
-    "clean": "shx rm -rf dist",
+    "clean": "shx rm -rf dist test-dist",
     "build": "tsc",
     "postbuild": "shx chmod +x dist/*.js",
     "check": "wireit",

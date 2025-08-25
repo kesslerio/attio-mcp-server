@@ -141,10 +141,12 @@ describe.skipIf(
   describe('Test Data Setup', () => {
     it('should create test companies for task testing', async () => {
       const companyData = CompanyFactory.create();
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'companies',
-        record_data: companyData as any,
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'companies',
+          record_data: companyData as any,
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const company = E2EAssertions.expectMcpData(response)!;
@@ -152,15 +154,20 @@ describe.skipIf(
       E2EAssertions.expectCompanyRecord(company);
       testCompanies.push(company);
 
-      console.error('🏢 Created test company for tasks:', (company as any)?.id?.record_id);
+      console.error(
+        '🏢 Created test company for tasks:',
+        (company as any)?.id?.record_id
+      );
     }, 30000);
 
     it('should create test people for task assignment', async () => {
       const personData = PersonFactory.create();
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'people',
-        record_data: personData as any,
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'people',
+          record_data: personData as any,
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const person = E2EAssertions.expectMcpData(response)!;
@@ -179,13 +186,15 @@ describe.skipIf(
     it('should create a basic task', async () => {
       const taskData = TaskFactory.create();
 
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'tasks',
-        record_data: {
-          content: taskData.content,
-          due_date: taskData.due_date,
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData.content,
+            due_date: taskData.due_date,
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const createdTask = extractTaskData(response);
@@ -213,14 +222,16 @@ describe.skipIf(
       const taskData = TaskFactory.create();
       const assignee = testPeople[0];
 
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'tasks',
-        record_data: {
-          content: taskData.content,
-          assigneeId: assignee.id.record_id,
-          due_date: taskData.due_date,
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData.content,
+            assigneeId: assignee.id.record_id,
+            due_date: taskData.due_date,
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const createdTask = extractTaskData(response);
@@ -243,14 +254,16 @@ describe.skipIf(
       const taskData = TaskFactory.create();
       const company = testCompanies[0];
 
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'tasks',
-        record_data: {
-          content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
-          recordId: company.id.record_id,
-          due_date: taskData.due_date,
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
+            recordId: company.id.record_id,
+            due_date: taskData.due_date,
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const createdTask = extractTaskData(response);
@@ -267,26 +280,28 @@ describe.skipIf(
     it('should create high priority task', async () => {
       const taskData = TaskFactory.createHighPriority();
 
-      const response = asToolResponse(await callTasksTool('create-record', {
-        resource_type: 'tasks',
-        record_data: {
-          content: taskData.content,
-          due_date: taskData.due_date,
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('create-record', {
+          resource_type: 'tasks',
+          record_data: {
+            content: taskData.content,
+            due_date: taskData.due_date,
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const createdTask = extractTaskData(response);
 
       E2EAssertions.expectTaskRecord(createdTask);
       // Check for content in various possible locations
-      const taskContent = 
-        createdTask.content || 
-        createdTask.title || 
+      const taskContent =
+        createdTask.content ||
+        createdTask.title ||
         createdTask.values?.content?.[0]?.value ||
         createdTask.values?.title?.[0]?.value ||
         createdTask.content_plaintext;
-        
+
       expect(taskContent).toContain('Test Task');
 
       createdTasks.push(createdTask);
@@ -297,13 +312,15 @@ describe.skipIf(
       const tasksBatch = TaskFactory.createMany(3);
 
       for (const taskData of tasksBatch) {
-        const response = asToolResponse(await callTasksTool('create-record', {
-          resource_type: 'tasks',
-          record_data: {
-            content: taskData.content,
-            due_date: taskData.due_date,
-          },
-        }));
+        const response = asToolResponse(
+          await callTasksTool('create-record', {
+            resource_type: 'tasks',
+            record_data: {
+              content: taskData.content,
+              due_date: taskData.due_date,
+            },
+          })
+        );
 
         if (response.isError) {
           console.warn('Failed to create batch task:', response.error);
@@ -332,13 +349,15 @@ describe.skipIf(
       const task = createdTasks[0];
       const taskId = task.id.task_id;
 
-      const response = asToolResponse(await callTasksTool('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: {
-          status: 'completed',
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            status: 'completed',
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedTask = extractTaskData(response);
@@ -359,13 +378,15 @@ describe.skipIf(
       const taskId = task.id.task_id;
       const newAssignee = testPeople[0];
 
-      const response = asToolResponse(await callTasksTool('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: {
-          assigneeId: newAssignee.id.record_id,
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            assigneeId: newAssignee.id.record_id,
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedTask = extractTaskData(response);
@@ -387,13 +408,15 @@ describe.skipIf(
       const newDueDate = new Date();
       newDueDate.setDate(newDueDate.getDate() + 14); // 2 weeks from now
 
-      const response = asToolResponse(await callTasksTool('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: {
-          due_date: newDueDate.toISOString().split('T')[0],
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            due_date: newDueDate.toISOString().split('T')[0],
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedTask = extractTaskData(response);
@@ -415,14 +438,16 @@ describe.skipIf(
       const newDueDate = new Date();
       newDueDate.setDate(newDueDate.getDate() + 7);
 
-      const response = asToolResponse(await callTasksTool('update-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-        record_data: {
-          status: 'in_progress',
-          due_date: newDueDate.toISOString().split('T')[0],
-        },
-      }));
+      const response = asToolResponse(
+        await callTasksTool('update-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+          record_data: {
+            status: 'in_progress',
+            due_date: newDueDate.toISOString().split('T')[0],
+          },
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
       const updatedTask = extractTaskData(response);
@@ -443,26 +468,28 @@ describe.skipIf(
       const taskToDelete = createdTasks[createdTasks.length - 1];
       const taskId = taskToDelete.id.task_id;
 
-      const response = asToolResponse(await callTasksTool('delete-record', {
-        resource_type: 'tasks',
-        record_id: taskId,
-      }));
+      const response = asToolResponse(
+        await callTasksTool('delete-record', {
+          resource_type: 'tasks',
+          record_id: taskId,
+        })
+      );
 
       E2EAssertions.expectMcpSuccess(response);
 
       // Remove from our tracking
-      createdTasks = createdTasks.filter(
-        (t) => t.id.task_id !== taskId
-      );
+      createdTasks = createdTasks.filter((t) => t.id.task_id !== taskId);
 
       console.error('🗑️ Deleted task:', taskId);
     }, 30000);
 
     it('should handle deletion of non-existent task gracefully', async () => {
-      const response = asToolResponse(await callTasksTool('delete-record', {
-        resource_type: 'tasks',
-        record_id: 'already-deleted-task-12345',
-      }));
+      const response = asToolResponse(
+        await callTasksTool('delete-record', {
+          resource_type: 'tasks',
+          record_id: 'already-deleted-task-12345',
+        })
+      );
 
       E2EAssertions.expectMcpError(
         response,
@@ -480,13 +507,13 @@ describe.skipIf(
           `Task ${index} should have ID`
         ).toBeDefined();
         // Check for content in various possible locations
-        const taskContent = 
-          task.content || 
-          task.title || 
+        const taskContent =
+          task.content ||
+          task.title ||
           task.values?.content?.[0]?.value ||
           task.values?.title?.[0]?.value ||
           task.content_plaintext;
-          
+
         expect(
           taskContent,
           `Task ${index} should have content/title`
