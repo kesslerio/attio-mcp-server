@@ -313,10 +313,23 @@ export class UniversalCreateService {
       });
     }
 
+    // Fetch available attributes for attribute-aware mapping
+    let availableAttributes: string[] | undefined;
+    try {
+      const { UniversalMetadataService } = await import('./UniversalMetadataService.js');
+      const attributeResult = await UniversalMetadataService.discoverAttributesForResourceType(resource_type, {});
+      availableAttributes = (attributeResult.attributes as any[])?.map((attr: any) => attr.name) || [];
+    } catch (error) {
+      // If attribute discovery fails, proceed without it (fallback behavior)
+      console.warn(`Failed to fetch attributes for ${resource_type}:`, error);
+      availableAttributes = undefined;
+    }
+
     // Map field names to correct ones with collision detection
-    const mappingResult = mapRecordFields(
+    const mappingResult = await mapRecordFields(
       resource_type,
-      record_data.values || record_data
+      record_data.values || record_data,
+      availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
       throw new UniversalValidationError(
