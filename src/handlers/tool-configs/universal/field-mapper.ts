@@ -66,11 +66,12 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       company_name: 'name',
       company_domain: 'domains',
       primary_domain: 'domains',
-      description: 'notes',
-      note: 'notes',
+      // Note: Companies have a 'description' field - don't map to 'notes'
+      note: 'description',
       size: 'estimated_arr',
       revenue: 'estimated_arr',
-      typpe: 'type', // Common typo
+      // Remove harmful mappings that break valid fields
+      // typpe: 'type', // Don't map - 'typpe' is a valid field in Attio
       company_type: 'type',
       founded_date: 'founded',
       founding_date: 'founded',
@@ -97,7 +98,7 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       domain:
         'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
       website: 'Use "domains" field with an array of domain names',
-      description: 'Use "notes" field for company descriptions',
+      notes: 'Notes are separate objects linked to companies, not company attributes. Use "description" field for company descriptions',
       revenue: 'Use "estimated_arr" for revenue/ARR data',
     },
     requiredFields: ['name'],
@@ -127,26 +128,24 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       job_title: 'title',
       position: 'title',
       role: 'title',
-      // Company variations
-      company: 'company_id',
-      organization: 'company_id',
-      employer: 'company_id',
-      // Other fields
-      description: 'notes',
-      note: 'notes',
-      bio: 'notes',
+      // Company variations - use 'company' (correct field), not 'company_id'
+      organization: 'company',
+      employer: 'company',
+      // Other fields - 'description' exists on people, don't map to 'notes'
+      note: 'description',
+      bio: 'description',
     },
     validFields: [
       'name',
       'email_addresses',
       'phone_numbers',
       'title',
-      'company_id',
+      'company',
       'location',
       'twitter',
       'linkedin',
       'facebook',
-      'notes',
+      'description',
       'first_name',
       'last_name',
     ],
@@ -155,7 +154,8 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       phone: 'Use "phone_numbers" (plural) as an array',
       first_name:
         'Use "name" field with full name, or pass first_name/last_name in a name object',
-      company: 'Use "company_id" with the actual company record ID',
+      company_id: 'Use "company" field with the company record reference',
+      notes: 'Use "description" field for people descriptions',
     },
     requiredFields: ['name'],
     uniqueFields: ['email_addresses'],
@@ -354,30 +354,32 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
   [UniversalResourceType.NOTES]: {
     fieldMappings: {
       // Normalize universal/legacy field names to Attio Notes API fields
-      linked_record_type: 'parent_object', // 'companies' | 'people'
-      linked_record_id: 'parent_record_id', // UUID
+      parent_object_type: 'parent_object', // 'companies' | 'people' | 'deals'
+      parent_record_id: 'parent_record_id', // UUID
+      linked_record_type: 'parent_object', // Legacy compatibility
+      linked_record_id: 'parent_record_id', // Legacy compatibility
       note: 'content',
       description: 'content',
+      body: 'content',
+      text: 'content',
       // title and content pass through unchanged
     },
     validFields: [
       'title',
       'content',
       'format',
-      'linked_record_type',
-      'linked_record_id',
-      'parent_object',
-      'parent_record_id',
+      'parent_object', // companies, people, deals
+      'parent_record_id', // UUID of linked record
       'created_at',
       'meeting_id',
     ],
-    requiredFields: ['content', 'linked_record_type', 'linked_record_id'],
+    requiredFields: ['content', 'parent_object', 'parent_record_id'],
     commonMistakes: {
-      parentId: 'Use "linked_record_id" or "parent_record_id" with UUID',
-      parentType:
-        'Use "linked_record_type" or "parent_object" with resource slug',
+      linked_record_type: 'Use "parent_object" with resource type (companies, people, deals)',
+      linked_record_id: 'Use "parent_record_id" with record UUID',
       note: 'Use "content" for note body text',
       description: 'Use "content" for note body text',
+      notes: 'Notes are separate objects. Use "content" field for note text and link with parent_object/parent_record_id',
     },
     uniqueFields: [],
   },
@@ -385,13 +387,21 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
 
 /**
  * Maps an incorrect field name to the correct one for a resource type
+ * Now attribute-aware to prevent incorrect mappings like typpe->type
  */
-export function mapFieldName(
+export async function mapFieldName(
   resourceType: UniversalResourceType,
-  fieldName: string
-): string {
+  fieldName: string,
+  availableAttributes?: string[]
+): Promise<string> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
+    return fieldName;
+  }
+
+  // If we have available attributes, check if the original field exists
+  if (availableAttributes && availableAttributes.includes(fieldName)) {
+    // Original field exists, don't map it
     return fieldName;
   }
 
@@ -403,20 +413,29 @@ export function mapFieldName(
     return fieldName; // Return original, will trigger proper error
   }
 
+  // If there's a mapping, verify the target exists (if we have attributes)
+  if (mappedField && availableAttributes) {
+    if (!availableAttributes.includes(mappedField)) {
+      // Mapped field doesn't exist, return original
+      return fieldName;
+    }
+  }
+
   return mappedField || fieldName;
 }
 
 /**
  * Detects field name collisions where multiple input fields map to the same output field
  */
-export function detectFieldCollisions(
+export async function detectFieldCollisions(
   resourceType: UniversalResourceType,
-  recordData: Record<string, any>
-): {
+  recordData: Record<string, any>,
+  availableAttributes?: string[]
+): Promise<{
   hasCollisions: boolean;
   errors: string[];
   collisions: Record<string, string[]>;
-} {
+}> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { hasCollisions: false, errors: [], collisions: {} };
@@ -432,7 +451,7 @@ export function detectFieldCollisions(
       continue;
     }
 
-    const targetField = mapFieldName(resourceType, inputField);
+    const targetField = await mapFieldName(resourceType, inputField, availableAttributes);
 
     if (!targetToInputs[targetField]) {
       targetToInputs[targetField] = [];
@@ -509,17 +528,18 @@ function getFieldCollisionSuggestion(
 /**
  * Maps multiple field names in a record data object with collision detection
  */
-export function mapRecordFields(
+export async function mapRecordFields(
   resourceType: UniversalResourceType,
-  recordData: Record<string, any>
-): { mapped: Record<string, any>; warnings: string[]; errors?: string[] } {
+  recordData: Record<string, any>,
+  availableAttributes?: string[]
+): Promise<{ mapped: Record<string, any>; warnings: string[]; errors?: string[] }> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
   }
 
   // First pass: detect field collisions
-  const collisionResult = detectFieldCollisions(resourceType, recordData);
+  const collisionResult = await detectFieldCollisions(resourceType, recordData, availableAttributes);
   if (collisionResult.hasCollisions) {
     return {
       mapped: {},
@@ -532,7 +552,7 @@ export function mapRecordFields(
   const warnings: string[] = [];
 
   for (const [key, value] of Object.entries(recordData)) {
-    const mappedKey = mapFieldName(resourceType, key);
+    const mappedKey = await mapFieldName(resourceType, key, availableAttributes);
 
     // Skip null-mapped fields
     if (mapping.fieldMappings[key.toLowerCase()] === null) {
@@ -586,8 +606,9 @@ export function mapRecordFields(
 
         mapped[mappedKey] = categoryResult.processedValue;
       } else {
-        // Safe to assign since collision detection passed
-        mapped[mappedKey] = value;
+        // Apply field value transformation before assignment
+        const transformedValue = await transformFieldValue(resourceType, mappedKey, value);
+        mapped[mappedKey] = transformedValue;
       }
     }
   }
@@ -698,13 +719,13 @@ export function validateFields(
   const warnings: string[] = [];
   const suggestions: string[] = [];
 
-  // Check required fields
+  // Check required fields (simplified version without async mapping)
   if (mapping.requiredFields) {
     for (const required of mapping.requiredFields) {
       if (!(required in recordData)) {
-        // Check if a mapped version exists
+        // Check if a mapped version exists by checking mappings
         const hasMappedVersion = Object.keys(recordData).some(
-          (key) => mapFieldName(resourceType, key) === required
+          (key) => mapping.fieldMappings[key.toLowerCase()] === required
         );
 
         if (!hasMappedVersion) {
@@ -714,18 +735,20 @@ export function validateFields(
     }
   }
 
-  // Check for unknown fields
+  // Check for unknown fields (simplified version without async mapping)
   for (const field of Object.keys(recordData)) {
-    const mappedField = mapFieldName(resourceType, field);
-
     // If field maps to null, it's explicitly invalid
     if (mapping.fieldMappings[field.toLowerCase()] === null) {
       warnings.push(getFieldSuggestions(resourceType, field));
       continue;
     }
 
+    // Check if field exists in valid fields or mappings
+    const hasMapping = !!mapping.fieldMappings[field.toLowerCase()];
+    const isValidField = mapping.validFields.includes(field);
+    
     // If field doesn't map and isn't in valid fields, it might be wrong
-    if (mappedField === field && !mapping.validFields.includes(field)) {
+    if (!hasMapping && !isValidField) {
       // It could be a custom field, so just warn
       const suggestion = getFieldSuggestions(resourceType, field);
       if (suggestion.includes('Did you mean')) {
@@ -1085,6 +1108,138 @@ export function processCategories(
  */
 export function getValidCategories(): string[] {
   return [...VALID_COMPANY_CATEGORIES];
+}
+
+/**
+ * Checks if a domain already exists in the system to prevent uniqueness conflicts
+ */
+export async function checkDomainConflict(domain: string): Promise<{
+  exists: boolean;
+  existingCompany?: { name: string; id: string };
+}> {
+  try {
+    const client = getAttioClient();
+    
+    // Search for companies with this domain
+    const response = await client.post('/objects/companies/records/query', {
+      filter: {
+        domains: {
+          any_of: [{ domain: domain }]
+        }
+      },
+      limit: 1
+    });
+
+    const companies = response?.data?.data || [];
+    
+    if (companies.length > 0) {
+      const existingCompany = companies[0];
+      return {
+        exists: true,
+        existingCompany: {
+          name: existingCompany.values?.name?.[0]?.value || 'Unknown Company',
+          id: existingCompany.id?.record_id || existingCompany.id
+        }
+      };
+    }
+
+    return { exists: false };
+  } catch (error) {
+    console.warn('Failed to check domain conflict:', error);
+    // If we can't check, assume no conflict to avoid blocking legitimate creates
+    return { exists: false };
+  }
+}
+
+/**
+ * Transforms field values to match Attio API requirements
+ */
+export async function transformFieldValue(
+  resourceType: UniversalResourceType,
+  fieldName: string,
+  value: any,
+  options?: { skipDomainPreflight?: boolean }
+): Promise<any> {
+  // Handle domains field for companies
+  if (
+    resourceType === UniversalResourceType.COMPANIES &&
+    fieldName === 'domains'
+  ) {
+    // If value is already in correct format, return as-is
+    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'domain' in v)) {
+      return value;
+    }
+
+    // If value is an array of strings, transform to domain objects
+    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
+      return value.map(domain => ({ domain }));
+    }
+
+    // If value is a single string, transform to array with domain object
+    if (typeof value === 'string') {
+      return [{ domain: value }];
+    }
+
+    // If value is a single domain object, wrap in array
+    if (typeof value === 'object' && value !== null && 'domain' in value) {
+      return [value];
+    }
+  }
+
+  // Handle email_addresses field for people
+  if (
+    resourceType === UniversalResourceType.PEOPLE &&
+    fieldName === 'email_addresses'
+  ) {
+    // If value is already in correct format, return as-is
+    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'email_address' in v)) {
+      return value;
+    }
+
+    // If value is an array of strings, transform to email objects
+    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
+      return value.map(email => ({ email_address: email }));
+    }
+
+    // If value is a single string, transform to array with email object
+    if (typeof value === 'string') {
+      return [{ email_address: value }];
+    }
+
+    // If value is a single email object, wrap in array
+    if (typeof value === 'object' && value !== null && 'email_address' in value) {
+      return [value];
+    }
+  }
+
+  // Handle phone_numbers field for people
+  if (
+    resourceType === UniversalResourceType.PEOPLE &&
+    fieldName === 'phone_numbers'
+  ) {
+    // If value is already in correct format, return as-is
+    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'phone_number' in v)) {
+      return value;
+    }
+
+    // If value is an array of strings, transform to phone objects
+    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
+      return value.map(phone => ({ phone_number: phone }));
+    }
+
+    // If value is a single string, transform to array with phone object
+    if (typeof value === 'string') {
+      return [{ phone_number: value }];
+    }
+
+    // If value is a single phone object, wrap in array
+    if (typeof value === 'object' && value !== null && 'phone_number' in value) {
+      return [value];
+    }
+  }
+
+  // Default: return value unchanged
+  return value;
 }
 
 /**

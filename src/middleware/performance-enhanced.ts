@@ -313,19 +313,23 @@ export class EnhancedPerformanceTracker extends EventEmitter {
 
       // Log critical alerts immediately using structured logging
       if (level === AlertLevel.CRITICAL) {
-        process.stderr.write(JSON.stringify({
-          level: 'error',
-          message: `PERFORMANCE CRITICAL: ${alert.message}`,
-          type: 'performance_alert',
-          data: alert
-        }) + '\n');
+        process.stderr.write(
+          JSON.stringify({
+            level: 'error',
+            message: `PERFORMANCE CRITICAL: ${alert.message}`,
+            type: 'performance_alert',
+            data: alert,
+          }) + '\n'
+        );
       } else if (level === AlertLevel.WARNING) {
-        process.stderr.write(JSON.stringify({
-          level: 'warn', 
-          message: `PERFORMANCE WARNING: ${alert.message}`,
-          type: 'performance_alert',
-          data: alert
-        }) + '\n');
+        process.stderr.write(
+          JSON.stringify({
+            level: 'warn',
+            message: `PERFORMANCE WARNING: ${alert.message}`,
+            type: 'performance_alert',
+            data: alert,
+          }) + '\n'
+        );
       }
     }
   }
