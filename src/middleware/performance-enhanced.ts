@@ -311,11 +311,21 @@ export class EnhancedPerformanceTracker extends EventEmitter {
       this.alerts.push(alert);
       this.emit('performanceAlert', alert);
 
-      // Log critical alerts immediately
+      // Log critical alerts immediately using structured logging
       if (level === AlertLevel.CRITICAL) {
-        console.error(`🔴 PERFORMANCE CRITICAL: ${alert.message}`);
+        process.stderr.write(JSON.stringify({
+          level: 'error',
+          message: `PERFORMANCE CRITICAL: ${alert.message}`,
+          type: 'performance_alert',
+          data: alert
+        }) + '\n');
       } else if (level === AlertLevel.WARNING) {
-        console.warn(`🟡 PERFORMANCE WARNING: ${alert.message}`);
+        process.stderr.write(JSON.stringify({
+          level: 'warn', 
+          message: `PERFORMANCE WARNING: ${alert.message}`,
+          type: 'performance_alert',
+          data: alert
+        }) + '\n');
       }
     }
   }
