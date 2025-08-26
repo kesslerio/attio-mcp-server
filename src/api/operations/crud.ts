@@ -241,7 +241,7 @@ export async function createRecord<T extends AttioRecord>(
       return result;
     } catch (error) {
       // Robust fallback for { data: {} } responses - query the just-created record by name
-      const name = params?.attributes?.name?.value ?? params?.attributes?.name;
+      const name = (params?.attributes as any)?.name?.value ?? (params?.attributes as any)?.name;
       if (name && error instanceof Error && error.message.includes('missing ID structure')) {
         if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
           console.error('[createRecord] Fallback: querying just-created record by name:', name);

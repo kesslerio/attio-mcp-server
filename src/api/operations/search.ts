@@ -211,10 +211,9 @@ export async function advancedSearchObject<T extends AttioRecord>(
 
       // For all other errors, enhance them for consistency
       throw ErrorEnhancer.ensureEnhanced(err, {
-        endpoint: path,
         method: 'POST',
         resourceType: objectType,
-      });
+      } as any);
     }
   }, retryConfig);
 }

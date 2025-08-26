@@ -792,7 +792,11 @@ export const coreOperationsToolDefinitions = {
     description: 'Delete a record of any supported type',
     inputSchema: deleteRecordSchema,
   },
-  'get-attributes': getAttributesConfig,
+  'get-attributes': {
+    name: 'get-attributes',
+    description: 'Get attributes for any resource type (companies, people, lists, records, tasks, deals, notes)', 
+    inputSchema: getAttributesSchema,
+  },
   'discover-attributes': {
     name: 'discover-attributes',
     description: 'Discover available attributes for any resource type',
