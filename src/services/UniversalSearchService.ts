@@ -306,13 +306,37 @@ export class UniversalSearchService {
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
       return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
+      // Auto-detect domain-like queries and search domains field specifically
+      const looksLikeDomain = query.includes('.') || 
+                             query.includes('www') || 
+                             query.includes('http') ||
+                             /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
+
+      if (looksLikeDomain) {
+        // Use domain-specific search for better accuracy
+        const domainFilters = {
+          filters: [
+            {
+              attribute: { slug: 'domains' },
+              condition: 'contains',
+              value: query,
+            },
+          ],
+        };
+        const searchFn = await ensureAdvancedSearchCompanies();
+        if (!searchFn) {
+          throw new Error('Companies search function not available');
+        }
+        return await searchFn(domainFilters, limit, offset);
+      }
+
       // Handle content search vs basic search
       if (search_type === SearchType.CONTENT) {
-        // Content search - search across multiple text fields
+        // Content search - search across multiple text fields including domains
         const searchFields =
           fields && fields.length > 0
             ? fields
-            : ['name', 'description', 'notes']; // Default content fields for companies
+            : ['name', 'description', 'notes', 'domains']; // Default content fields for companies
 
         const contentFilters = {
           filters: searchFields.map((field) => ({
@@ -406,6 +430,32 @@ export class UniversalSearchService {
       });
       return paginatedResult.results;
     } else if (query && query.trim().length > 0) {
+      // Auto-detect email-like queries and search email field specifically
+      const looksLikeEmail = query.includes('@') && 
+                           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
+
+      if (looksLikeEmail) {
+        // Use email-specific search for better accuracy
+        const emailFilters = {
+          filters: [
+            {
+              attribute: { slug: 'email_addresses' },
+              condition: 'contains',
+              value: query,
+            },
+          ],
+        };
+        const searchFn = await ensureAdvancedSearchPeople();
+        if (!searchFn) {
+          throw new Error('People search function not available');
+        }
+        const paginatedResult = await searchFn(emailFilters, {
+          limit,
+          offset,
+        });
+        return paginatedResult.results;
+      }
+
       // Handle content search vs basic search
       if (search_type === SearchType.CONTENT) {
         // Content search - search across multiple text fields
