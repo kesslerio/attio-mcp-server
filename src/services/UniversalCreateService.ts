@@ -56,28 +56,8 @@ import {
 import { debug, OperationType } from '../utils/logger.js';
 
 // Field filtering to prevent test-only fields from reaching API
-const COMPANY_ALLOWED_FIELDS = [
-  'name',
-  'domain',
-  // 'industry', // Commented out - not available in Attio API schema
-  'description',
-  // 'annual_revenue', // Commented out - not available in Attio API schema
-  // 'employee_count', // Commented out - not available in Attio API schema
-  // 'categories', // Commented out - not available in Attio API schema
-  'domains',
-  'employees',
-];
-
-const PERSON_ALLOWED_FIELDS = [
-  'name',
-  // 'email_addresses', // Still causing 400 errors
-  // 'phone_numbers', // Commented out - not available in Attio API schema
-  // 'job_title', // Use 'title' instead for Attio API
-  // 'seniority', // Commented out - not available in Attio API schema
-  'company',
-  'emails',
-  // 'title', // Commented out - not available in Attio API schema
-];
+const COMPANY_ALLOWED_FIELDS = ['name', 'domains', 'description'];
+const PERSON_ALLOWED_FIELDS = ['name', 'email_addresses', 'title', 'company'];
 
 /**
  * Filter object to only include allowed fields for API calls
@@ -96,7 +76,7 @@ function filterAllowedFields(
 import { createCompany } from '../objects/companies/index.js';
 import { createList } from '../objects/lists.js';
 import { createPerson } from '../objects/people/index.js';
-import { createObjectRecord } from '../objects/records/index.js';
+import { createObjectRecord as createObjectRecordApi } from '../objects/records/index.js';
 import { createNote, normalizeNoteResponse } from '../objects/notes.js';
 
 /**
@@ -120,12 +100,12 @@ function shouldUseMockData(): boolean {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Filter out test-only fields before API call (prevents website/domain collision)
-  const filteredData = filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS);
-
-  // Delegate to production MockService to avoid TypeScript build errors
+  // Use filtering only when using MockService for E2E
+  const data = shouldUseMockData()
+    ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
+    : companyData;
   const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(filteredData);
+  return await MockService.createCompany(data);
 }
 
 /**
@@ -135,12 +115,12 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Filter out test-only fields before API call (prevents department field errors)
-  const filteredData = filterAllowedFields(personData, PERSON_ALLOWED_FIELDS);
-
-  // Delegate to production MockService to avoid TypeScript build errors
+  // Use filtering only when using MockService for E2E
+  const data = shouldUseMockData()
+    ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
+    : personData;
   const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(filteredData);
+  return await MockService.createPerson(data);
 }
 
 /**
@@ -313,12 +293,31 @@ export class UniversalCreateService {
       });
     }
 
-    // Fetch available attributes for attribute-aware mapping
+    // Fetch available attributes for attribute-aware mapping (both api_slug and title)
     let availableAttributes: string[] | undefined;
     try {
-      const { UniversalMetadataService } = await import('./UniversalMetadataService.js');
-      const attributeResult = await UniversalMetadataService.discoverAttributesForResourceType(resource_type, {});
-      availableAttributes = (attributeResult.attributes as any[])?.map((attr: any) => attr.name) || [];
+      const { UniversalMetadataService } = await import(
+        './UniversalMetadataService.js'
+      );
+      const attributeResult =
+        await UniversalMetadataService.discoverAttributesForResourceType(
+          resource_type,
+          {}
+        );
+
+      // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
+      const attrs = (attributeResult?.attributes as any[]) ?? [];
+      availableAttributes = Array.from(
+        new Set(
+          attrs.flatMap((a) =>
+            [
+              a?.api_slug,
+              a?.title,
+              a?.name, // accept all, some schemas use `title`, some `name`
+            ].filter((s: unknown): s is string => typeof s === 'string')
+          )
+        )
+      ).map((s) => s.toLowerCase());
     } catch (error) {
       // If attribute discovery fails, proceed without it (fallback behavior)
       console.warn(`Failed to fetch attributes for ${resource_type}:`, error);
@@ -626,7 +625,7 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      return await createObjectRecord('records', mappedData);
+      return createObjectRecordApi('records', { values: mappedData } as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -678,7 +677,7 @@ export class UniversalCreateService {
     dealData = await applyDealDefaultsWithValidation(dealData, false);
 
     try {
-      return await createObjectRecord('deals', dealData);
+      return await createObjectRecordApi('deals', { values: dealData } as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -701,7 +700,9 @@ export class UniversalCreateService {
           delete dealData.stage;
         }
 
-        return await createObjectRecord('deals', dealData);
+        return await createObjectRecordApi('deals', {
+          values: dealData,
+        } as any);
       }
       throw error;
     }
@@ -858,9 +859,12 @@ export class UniversalCreateService {
 
       // Validate parent_object (after field mapping)
       const parentObject = mappedData.parent_object as string;
-      if (!parentObject || !['companies', 'people'].includes(parentObject)) {
+      if (
+        !parentObject ||
+        !['companies', 'people', 'deals'].includes(parentObject)
+      ) {
         throw new UniversalValidationError(
-          'parent_object must be "companies" or "people"',
+          'parent_object must be "companies", "people", or "deals"',
           ErrorType.USER_ERROR,
           { field: 'parent_object' }
         );
@@ -878,7 +882,7 @@ export class UniversalCreateService {
 
       // Build create note body according to Attio API spec
       const noteBody = {
-        parent_object: parentObject as 'companies' | 'people',
+        parent_object: parentObject as 'companies' | 'people' | 'deals',
         parent_record_id: parentRecordId,
         content,
         title: mappedData.title as string | undefined,

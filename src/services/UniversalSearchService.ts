@@ -307,10 +307,11 @@ export class UniversalSearchService {
       return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Auto-detect domain-like queries and search domains field specifically
-      const looksLikeDomain = query.includes('.') || 
-                             query.includes('www') || 
-                             query.includes('http') ||
-                             /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
+      const looksLikeDomain =
+        query.includes('.') ||
+        query.includes('www') ||
+        query.includes('http') ||
+        /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
 
       if (looksLikeDomain) {
         // Use domain-specific search for better accuracy
@@ -431,8 +432,8 @@ export class UniversalSearchService {
       return paginatedResult.results;
     } else if (query && query.trim().length > 0) {
       // Auto-detect email-like queries and search email field specifically
-      const looksLikeEmail = query.includes('@') && 
-                           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
+      const looksLikeEmail =
+        query.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
 
       if (looksLikeEmail) {
         // Use email-specific search for better accuracy

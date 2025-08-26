@@ -184,12 +184,31 @@ export class UniversalUpdateService {
       console.error('Field suggestions:', truncated.join('\n'));
     }
 
-    // Fetch available attributes for attribute-aware mapping
+    // Fetch available attributes for attribute-aware mapping (both api_slug and title)
     let availableAttributes: string[] | undefined;
     try {
-      const { UniversalMetadataService } = await import('./UniversalMetadataService.js');
-      const attributeResult = await UniversalMetadataService.discoverAttributesForResourceType(resource_type, {});
-      availableAttributes = (attributeResult.attributes as any[])?.map((attr: any) => attr.name) || [];
+      const { UniversalMetadataService } = await import(
+        './UniversalMetadataService.js'
+      );
+      const attributeResult =
+        await UniversalMetadataService.discoverAttributesForResourceType(
+          resource_type,
+          {}
+        );
+
+      // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
+      const attrs = (attributeResult?.attributes as any[]) ?? [];
+      availableAttributes = Array.from(
+        new Set(
+          attrs.flatMap((a) =>
+            [
+              a?.api_slug,
+              a?.title,
+              a?.name, // accept all, some schemas use `title`, some `name`
+            ].filter((s: unknown): s is string => typeof s === 'string')
+          )
+        )
+      ).map((s) => s.toLowerCase());
     } catch (error) {
       // If attribute discovery fails, proceed without it (fallback behavior)
       console.warn(`Failed to fetch attributes for ${resource_type}:`, error);
@@ -197,7 +216,11 @@ export class UniversalUpdateService {
     }
 
     // Map field names to correct ones with collision detection
-    const mappingResult = await mapRecordFields(resource_type, values, availableAttributes);
+    const mappingResult = await mapRecordFields(
+      resource_type,
+      values,
+      availableAttributes
+    );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
       throw new UniversalValidationError(
         mappingResult.errors.join(' '),
@@ -215,20 +238,26 @@ export class UniversalUpdateService {
       console.error('Field mapping applied:', warnings.join('\n'));
     }
 
+    // Always wrap in Attio envelope format
+    const attioPayload = { values: mappedData };
+
     // Apply operation-specific field mapping for tasks (prevent content injection on update)
     if (resource_type === UniversalResourceType.TASKS) {
-      mappedData = mapTaskFields('update', mappedData);
+      const updatedTaskData = mapTaskFields('update', mappedData);
+      // Re-wrap after task field mapping
+      attioPayload.values = updatedTaskData;
     }
 
     // Sanitize special characters while preserving intended content (Issue #473)
-    const sanitizedData = this.sanitizeSpecialCharacters(mappedData);
+    const sanitizedData = this.sanitizeSpecialCharacters(attioPayload.values);
+    attioPayload.values = sanitizedData;
 
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
     // Will be re-enabled after tasks API validation is properly configured
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
       const validation = await validateRecordFields(
         resource_type,
-        sanitizedData as Record<string, unknown>,
+        attioPayload.values as Record<string, unknown>,
         false
       );
       if (!validation.isValid) {
@@ -246,7 +275,7 @@ export class UniversalUpdateService {
       case UniversalResourceType.COMPANIES:
         updatedRecord = await this.updateCompanyRecord(
           record_id,
-          sanitizedData,
+          attioPayload,
           resource_type
         );
         break;
@@ -254,7 +283,7 @@ export class UniversalUpdateService {
       case UniversalResourceType.LISTS:
         updatedRecord = await this.updateListRecord(
           record_id,
-          sanitizedData,
+          attioPayload,
           resource_type
         );
         break;
@@ -262,7 +291,7 @@ export class UniversalUpdateService {
       case UniversalResourceType.PEOPLE:
         updatedRecord = await this.updatePersonRecord(
           record_id,
-          sanitizedData,
+          attioPayload,
           resource_type
         );
         break;
@@ -271,16 +300,16 @@ export class UniversalUpdateService {
         updatedRecord = await updateObjectRecord(
           'records',
           record_id,
-          sanitizedData
+          attioPayload
         );
         break;
 
       case UniversalResourceType.DEALS:
-        updatedRecord = await this.updateDealRecord(record_id, sanitizedData);
+        updatedRecord = await this.updateDealRecord(record_id, attioPayload);
         break;
 
       case UniversalResourceType.TASKS:
-        updatedRecord = await this.updateTaskRecord(record_id, sanitizedData);
+        updatedRecord = await this.updateTaskRecord(record_id, attioPayload);
         break;
 
       default:
@@ -336,11 +365,12 @@ export class UniversalUpdateService {
    */
   private static async updateCompanyRecord(
     record_id: string,
-    mappedData: Record<string, unknown>,
+    attioPayload: { values: Record<string, unknown> },
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      return await updateCompany(record_id, mappedData);
+      // Extract values from Attio envelope for legacy updateCompany function
+      return await updateCompany(record_id, attioPayload.values);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -367,11 +397,11 @@ export class UniversalUpdateService {
    */
   private static async updateListRecord(
     record_id: string,
-    mappedData: Record<string, unknown>,
+    attioPayload: { values: Record<string, unknown> },
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      const list = await updateList(record_id, mappedData);
+      const list = await updateList(record_id, attioPayload.values);
       // Convert AttioList to AttioRecord format
       return {
         id: {
@@ -414,14 +444,14 @@ export class UniversalUpdateService {
    */
   private static async updatePersonRecord(
     record_id: string,
-    mappedData: Record<string, unknown>,
+    attioPayload: { values: Record<string, unknown> },
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
       // Validate email addresses for consistency with create operations
-      ValidationService.validateEmailAddresses(mappedData);
+      ValidationService.validateEmailAddresses(attioPayload.values);
 
-      return await updatePerson(record_id, mappedData as any);
+      return await updatePerson(record_id, attioPayload.values as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -448,14 +478,14 @@ export class UniversalUpdateService {
    */
   private static async updateDealRecord(
     record_id: string,
-    mappedData: Record<string, unknown>
+    attioPayload: { values: Record<string, unknown> }
   ): Promise<AttioRecord> {
     // Note: Updates are less likely to fail, but we still validate stages proactively
     const updatedDealData = await applyDealDefaultsWithValidation(
-      mappedData,
+      attioPayload.values,
       false
     );
-    return updateObjectRecord('deals', record_id, updatedDealData);
+    return updateObjectRecord('deals', record_id, { values: updatedDealData });
   }
 
   /**
@@ -463,11 +493,11 @@ export class UniversalUpdateService {
    */
   private static async updateTaskRecord(
     record_id: string,
-    mappedData: Record<string, unknown>
+    attioPayload: { values: Record<string, unknown> }
   ): Promise<AttioRecord> {
     // 1) Early input validation - check for forbidden content fields BEFORE existence check
     // This ensures proper error precedence: input validation → existence → immutability → update
-    const hasForbiddenFields = this.hasForbiddenContent(mappedData);
+    const hasForbiddenFields = this.hasForbiddenContent(attioPayload.values);
 
     // 2) Check existence - only if input validation passes
     let taskExists = false;
@@ -493,7 +523,7 @@ export class UniversalUpdateService {
     }
 
     // 4) Proceed with normal update path (safe; task exists and no illegal content fields)
-    return this.doUpdateTask(record_id, mappedData);
+    return this.doUpdateTask(record_id, attioPayload.values);
   }
 
   /**
