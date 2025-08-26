@@ -285,17 +285,21 @@ export async function createCompany(
       // Fallback: Try to find existing company by name if create returned empty/invalid result
       if (attributes.name) {
         // Extract the actual name value - might be in Attio format { value: "name" } or direct string
-        const nameValue = typeof attributes.name === 'object' && attributes.name.value 
-          ? attributes.name.value 
-          : attributes.name;
-          
+        const nameValue =
+          typeof attributes.name === 'object' && attributes.name.value
+            ? attributes.name.value
+            : attributes.name;
+
         try {
           const api = getAttioClient();
-          const queryResponse = await api.post(`/objects/companies/records/query`, {
-            filter: { name: nameValue },
-            limit: 1,
-          });
-          
+          const queryResponse = await api.post(
+            `/objects/companies/records/query`,
+            {
+              filter: { name: nameValue },
+              limit: 1,
+            }
+          );
+
           if (
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
@@ -303,21 +307,33 @@ export async function createCompany(
             console.error('[createCompany] Query fallback response:', {
               queryResponse: queryResponse?.data,
               hasData: !!queryResponse?.data?.data,
-              dataLength: Array.isArray(queryResponse?.data?.data) ? queryResponse.data.data.length : 'not array',
+              dataLength: Array.isArray(queryResponse?.data?.data)
+                ? queryResponse.data.data.length
+                : 'not array',
             });
           }
-          
+
           // If we found an existing company, use it
-          if (queryResponse?.data?.data && Array.isArray(queryResponse.data.data) && queryResponse.data.data.length > 0) {
+          if (
+            queryResponse?.data?.data &&
+            Array.isArray(queryResponse.data.data) &&
+            queryResponse.data.data.length > 0
+          ) {
             const foundCompany = queryResponse.data.data[0];
             if (
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              console.error('[createCompany] Found existing company via query fallback:', foundCompany);
+              console.error(
+                '[createCompany] Found existing company via query fallback:',
+                foundCompany
+              );
             }
             result = foundCompany; // Replace the empty result with the found company
-          } else if (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') {
+          } else if (
+            process.env.E2E_MODE === 'true' ||
+            process.env.NODE_ENV === 'test'
+          ) {
             // For testing: Create a mock company result when API returns empty
             // This allows integration tests to proceed when Attio API is not working properly
             const mockCompanyId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -334,21 +350,28 @@ export async function createCompany(
                   referenced_actor_id: null,
                 },
                 ...Object.fromEntries(
-                  Object.entries(attributes).filter(([key]) => key !== 'name').map(([key, value]) => [
-                    key, 
-                    typeof value === 'object' && value !== null ? value : { value }
-                  ])
-                )
+                  Object.entries(attributes)
+                    .filter(([key]) => key !== 'name')
+                    .map(([key, value]) => [
+                      key,
+                      typeof value === 'object' && value !== null
+                        ? value
+                        : { value },
+                    ])
+                ),
               },
               created_at: new Date().toISOString(),
               record_url: `https://app.attio.com/workspace/test-workspace/object/companies/${mockCompanyId}`,
             } as Company;
-            
+
             if (
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              console.error('[createCompany] Created mock company result for testing:', result);
+              console.error(
+                '[createCompany] Created mock company result for testing:',
+                result
+              );
             }
           }
         } catch (queryError) {
@@ -361,7 +384,7 @@ export async function createCompany(
           // Continue with original validation error
         }
       }
-      
+
       // After fallback attempt, check again
       if (!result.id || !result.id.record_id) {
         throw new CompanyOperationError(

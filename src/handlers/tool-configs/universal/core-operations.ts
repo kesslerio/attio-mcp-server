@@ -162,8 +162,11 @@ export const searchRecordsConfig: UniversalToolConfig = {
         };
 
         if (resourceType === UniversalResourceType.TASKS) {
-          // For tasks, prefer content field
-          identifier = getFirstValue(values.content) || 'Unnamed';
+          // For tasks, prefer content field (tasks have simple string content, not array)
+          identifier =
+            typeof values.content === 'string'
+              ? values.content
+              : getFirstValue(values.content) || 'Unnamed';
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
           // For people, prefer name with optional email
@@ -794,7 +797,8 @@ export const coreOperationsToolDefinitions = {
   },
   'get-attributes': {
     name: 'get-attributes',
-    description: 'Get attributes for any resource type (companies, people, lists, records, tasks, deals, notes)', 
+    description:
+      'Get attributes for any resource type (companies, people, lists, records, tasks, deals, notes)',
     inputSchema: getAttributesSchema,
   },
   'discover-attributes': {

@@ -57,7 +57,13 @@ import { debug, OperationType } from '../utils/logger.js';
 
 // Field filtering to prevent test-only fields from reaching API
 const COMPANY_ALLOWED_FIELDS = ['name', 'domains', 'description'];
-const PERSON_ALLOWED_FIELDS = ['name', 'email_addresses', 'title', 'company'];
+const PERSON_ALLOWED_FIELDS = [
+  'name',
+  'email_addresses',
+  'phone_numbers',
+  'title',
+  'company',
+];
 
 /**
  * Filter object to only include allowed fields for API calls
@@ -624,8 +630,21 @@ export class UniversalCreateService {
     mappedData: Record<string, unknown>,
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
+    // Validate required object slug
+    const objectSlug = mappedData.object || mappedData.object_api_slug;
+    if (!objectSlug || typeof objectSlug !== 'string') {
+      throw new UniversalValidationError(
+        'Creating a "records" item requires an object slug (e.g., object: "people")',
+        ErrorType.USER_ERROR,
+        { field: 'object' }
+      );
+    }
+
+    // Remove object slug from mapped data since it's used as the URL parameter
+    const { object, object_api_slug, ...recordData } = mappedData;
+
     try {
-      return createObjectRecordApi('records', { values: mappedData } as any);
+      return createObjectRecordApi(objectSlug, { values: recordData } as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =

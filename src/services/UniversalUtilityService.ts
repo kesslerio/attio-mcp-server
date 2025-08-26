@@ -179,6 +179,12 @@ export class UniversalUtilityService {
     const extractFieldValue = (field: unknown): string | null => {
       if (!field) return null;
 
+      // Handle simple string values (e.g., task content)
+      if (typeof field === 'string' && field.trim()) {
+        return field.trim();
+      }
+
+      // Handle array values (e.g., company names, person names)
       if (Array.isArray(field) && field.length > 0) {
         const firstItem = field[0] as AttioFieldValue;
         // For name field, check both 'value' and 'full_name' properties

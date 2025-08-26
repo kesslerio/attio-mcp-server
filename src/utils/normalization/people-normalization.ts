@@ -565,7 +565,7 @@ export class PeopleDataNormalizer {
           first_name: nameData.first_name,
           last_name: nameData.last_name,
         };
-        
+
         // Also add flattened fields for backward compatibility with attribute-format-helpers
         if (nameData.first_name) {
           normalized.first_name = nameData.first_name;

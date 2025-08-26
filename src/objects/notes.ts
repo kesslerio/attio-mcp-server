@@ -17,7 +17,7 @@ import { debug } from '../utils/logger.js';
  * Create note body for Attio API
  */
 export interface CreateNoteBody {
-  parent_object: 'people' | 'companies';
+  parent_object: 'people' | 'companies' | 'deals';
   parent_record_id: string;
   title?: string;
   content: string;
@@ -79,7 +79,7 @@ export async function createNote(
 
   if (!body.parent_object) {
     throw new UniversalValidationError(
-      'parent_object is required (companies or people)',
+      'parent_object is required (companies, people, or deals)',
       ErrorType.USER_ERROR,
       { field: 'parent_object' }
     );

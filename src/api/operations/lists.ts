@@ -48,15 +48,15 @@ export async function getAllLists(
   return callWithRetry(async () => {
     const response = await api.get<AttioListResponse<AttioList>>(path);
     // Ensure we always return an array, never undefined/null/objects - handle multiple shape variants
-    const items = Array.isArray(response?.data?.data) 
-      ? response.data.data 
-      : Array.isArray(response?.data?.lists) 
-      ? response.data.lists 
-      : Array.isArray(response?.data?.items)
-      ? response.data.items
-      : Array.isArray(response?.data)
-      ? response.data
-      : [];
+    const items = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : Array.isArray(response?.data?.lists)
+        ? response.data.lists
+        : Array.isArray(response?.data?.items)
+          ? response.data.items
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
     return items;
   }, retryConfig);
 }
