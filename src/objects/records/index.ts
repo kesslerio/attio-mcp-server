@@ -102,7 +102,12 @@ export async function createObjectRecord<T extends AttioRecord>(
       attributes?.name
     ) {
       // Extract the actual name value from the Attio format
-      const nameValue = attributes.name?.value || attributes.name;
+      const nameValue =
+        typeof attributes.name === 'object' &&
+        attributes.name !== null &&
+        'value' in attributes.name
+          ? (attributes.name as { value: string }).value
+          : String(attributes.name);
 
       if (
         process.env.NODE_ENV === 'development' ||

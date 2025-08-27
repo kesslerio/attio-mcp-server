@@ -286,8 +286,10 @@ export async function createCompany(
       if (attributes.name) {
         // Extract the actual name value - might be in Attio format { value: "name" } or direct string
         const nameValue =
-          typeof attributes.name === 'object' && attributes.name.value
-            ? attributes.name.value
+          typeof attributes.name === 'object' &&
+          attributes.name !== null &&
+          'value' in attributes.name
+            ? (attributes.name as { value: string }).value
             : attributes.name;
 
         try {
@@ -344,20 +346,11 @@ export async function createCompany(
                 record_id: mockCompanyId,
               },
               values: {
-                name: {
-                  value: nameValue,
-                  referenced_actor_type: null,
-                  referenced_actor_id: null,
-                },
+                name: nameValue,
                 ...Object.fromEntries(
                   Object.entries(attributes)
                     .filter(([key]) => key !== 'name')
-                    .map(([key, value]) => [
-                      key,
-                      typeof value === 'object' && value !== null
-                        ? value
-                        : { value },
-                    ])
+                    .map(([key, value]) => [key, String(value)])
                 ),
               },
               created_at: new Date().toISOString(),

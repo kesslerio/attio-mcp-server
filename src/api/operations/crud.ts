@@ -15,6 +15,19 @@ import {
 } from '../../types/attio.js';
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
+import {
+  debug,
+  error,
+  OperationType,
+  createScopedLogger,
+} from '../../utils/logger.js';
+
+// Create scoped logger for CRUD operations
+const logger = createScopedLogger(
+  'CRUDOperations',
+  undefined,
+  OperationType.API_CALL
+);
 
 /**
  * Helper function to construct object path
@@ -71,7 +84,7 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
     process.env.NODE_ENV === 'development' ||
     process.env.E2E_MODE === 'true'
   ) {
-    console.error('[ensureAttioRecordStructure] Raw data received:', {
+    logger.debug('Raw data received in ensureAttioRecordStructure', {
       type: typeof rawData,
       keys: Object.keys(rawData || {}),
       hasId: !!rawData.id,
@@ -187,7 +200,7 @@ export async function createRecord<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createRecord] Making API request:', {
+      logger.debug('Making API request for createRecord', {
         path,
         requestBody: {
           data: {
@@ -208,7 +221,7 @@ export async function createRecord<T extends AttioRecord>(
       process.env.NODE_ENV === 'development' ||
       process.env.E2E_MODE === 'true'
     ) {
-      console.error('[createRecord] Full API response:', {
+      logger.debug('Full API response for createRecord', {
         status: response?.status,
         statusText: response?.statusText,
         headers: response?.headers,
@@ -234,14 +247,18 @@ export async function createRecord<T extends AttioRecord>(
 
     // Final validation with debug logging
     if (!rawResult || typeof rawResult !== 'object') {
-      console.error('DEBUG: Failed response extraction. Response structure:', {
-        hasResponse: !!response,
-        hasData: !!response?.data,
-        hasNestedData: !!response?.data?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : [],
-        dataType: typeof response?.data,
-        rawDataType: typeof rawResult,
-      });
+      logger.error(
+        'Failed response extraction. Response structure:',
+        undefined,
+        {
+          hasResponse: !!response,
+          hasData: !!response?.data,
+          hasNestedData: !!response?.data?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+          dataType: typeof response?.data,
+          rawDataType: typeof rawResult,
+        }
+      );
       throw new Error('Invalid API response structure: no data found');
     }
 
@@ -269,10 +286,9 @@ export async function createRecord<T extends AttioRecord>(
           process.env.NODE_ENV === 'development' ||
           process.env.E2E_MODE === 'true'
         ) {
-          console.error(
-            '[createRecord] Fallback: querying just-created record by name:',
-            name
-          );
+          logger.debug('Fallback: querying just-created record by name', {
+            name,
+          });
         }
         try {
           // Use the documented query endpoint with exact name match
@@ -288,10 +304,9 @@ export async function createRecord<T extends AttioRecord>(
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              console.error(
-                '[createRecord] Fallback successful, found record:',
-                fallbackResult.id?.record_id
-              );
+              logger.debug('Fallback successful, found record', {
+                recordId: fallbackResult.id?.record_id,
+              });
             }
             return fallbackResult;
           }
@@ -300,7 +315,7 @@ export async function createRecord<T extends AttioRecord>(
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
           ) {
-            console.error('[createRecord] Fallback query failed:', lookupError);
+            logger.error('Fallback query failed', lookupError);
           }
         }
       }

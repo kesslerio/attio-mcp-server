@@ -74,12 +74,51 @@ interface LogContext {
 }
 
 /**
- * Current log level based on environment
+ * Parse log level from environment variable
  */
-export const CURRENT_LOG_LEVEL =
-  process.env.NODE_ENV === 'production'
-    ? LogLevel.INFO // In production, only log INFO and above
-    : LogLevel.DEBUG; // In development, log everything
+function parseLogLevel(envValue?: string): LogLevel {
+  if (!envValue) return LogLevel.DEBUG;
+
+  const normalized = envValue.toUpperCase();
+  switch (normalized) {
+    case 'DEBUG':
+      return LogLevel.DEBUG;
+    case 'INFO':
+      return LogLevel.INFO;
+    case 'WARN':
+    case 'WARNING':
+      return LogLevel.WARN;
+    case 'ERROR':
+      return LogLevel.ERROR;
+    case 'NONE':
+    case 'OFF':
+      return LogLevel.NONE;
+    default:
+      // If invalid, fallback to environment-based defaults
+      return process.env.NODE_ENV === 'production'
+        ? LogLevel.INFO
+        : LogLevel.DEBUG;
+  }
+}
+
+/**
+ * Current log level based on environment configuration
+ * Priority: MCP_LOG_LEVEL > LOG_LEVEL > NODE_ENV-based defaults
+ */
+export const CURRENT_LOG_LEVEL = (() => {
+  // First check MCP-specific log level
+  if (process.env.MCP_LOG_LEVEL) {
+    return parseLogLevel(process.env.MCP_LOG_LEVEL);
+  }
+
+  // Then check generic log level
+  if (process.env.LOG_LEVEL) {
+    return parseLogLevel(process.env.LOG_LEVEL);
+  }
+
+  // Finally fallback to NODE_ENV-based defaults
+  return process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+})();
 
 /**
  * Global log context storage

@@ -152,7 +152,7 @@ export const recordToolConfigs = {
       return `Found ${results.length} records:\n${results
         .map(
           (record: AttioRecord) =>
-            `- ${record.values?.name?.[0]?.value || '[Unnamed]'} (ID: ${
+            `- ${record.values?.name || '[Unnamed]'} (ID: ${
               record.id?.record_id || 'unknown'
             })`
         )

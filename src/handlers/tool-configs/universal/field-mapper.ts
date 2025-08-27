@@ -94,7 +94,6 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
   [UniversalResourceType.COMPANIES]: {
     fieldMappings: {
       // Common incorrect field names -> correct ones
-      domain: 'domains',
       website: 'domains',
       url: 'domains',
       company_name: 'name',
@@ -373,6 +372,10 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       // note: 'notes',         // Can incorrectly map People.description
     },
     validFields: [
+      'object', // Required: object slug for routing
+      'object_api_slug', // Alternative object slug
+      'object_slug', // Alternative object slug
+      'values', // When caller provides values wrapper
       'name',
       'notes',
       'created_at',

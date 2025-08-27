@@ -37,14 +37,22 @@ export function enforceExpectedRoute(
   }
 }
 
+import type { ListMembershipParams } from '../types/service-types.js';
+
 /**
  * Validates that list membership operations go through RECORDS route
  *
  * @param params - Search parameters
  * @throws {Error} If list_membership used with wrong resource type in E2E
  */
-export function assertListMembershipRoute(params: any): void {
-  if (process.env.E2E_MODE === 'true' && params?.filters?.list_membership) {
+export function assertListMembershipRoute(params: ListMembershipParams): void {
+  if (
+    process.env.E2E_MODE === 'true' &&
+    params?.filters &&
+    typeof params.filters === 'object' &&
+    params.filters !== null &&
+    'list_membership' in params.filters
+  ) {
     const resourceType = String(params.resource_type || '').toLowerCase();
     if (resourceType !== 'records') {
       throw new Error('Wrong route: list_membership must go through RECORDS');

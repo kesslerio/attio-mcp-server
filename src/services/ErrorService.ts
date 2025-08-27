@@ -15,6 +15,12 @@ import {
   getFieldSuggestions,
 } from '../handlers/tool-configs/universal/field-mapper.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
+import type {
+  AxiosErrorLike,
+  ValidationErrorContext,
+  UnknownRecord,
+  isRecord,
+} from '../types/service-types.js';
 
 /**
  * ErrorService provides centralized error handling and suggestion functionality
@@ -352,7 +358,7 @@ export class ErrorService {
    * @param error - Axios error object
    * @returns Universal error object with proper classification
    */
-  static fromAxios(error: any): {
+  static fromAxios(error: AxiosErrorLike): {
     code: number;
     type:
       | 'not_found'
@@ -368,12 +374,13 @@ export class ErrorService {
     const status = error?.response?.status || 500;
 
     // Extract validation message for 400/422 errors
-    const extractValidationMessage = (err: any): string => {
+    const extractValidationMessage = (err: ValidationErrorContext): string => {
       try {
         const responseData = err?.response?.data;
-        if (responseData?.message) return responseData.message;
-        if (responseData?.detail) return responseData.detail;
-        if (responseData?.error) return responseData.error;
+        if (responseData?.message) return String(responseData.message);
+        if (responseData?.detail) return String(responseData.detail);
+        if (responseData?.error && typeof responseData.error === 'string')
+          return responseData.error;
         return 'Invalid request';
       } catch {
         return 'Invalid request';
