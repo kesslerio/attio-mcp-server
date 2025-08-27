@@ -273,9 +273,9 @@ describe('UniversalCreateService', () => {
 
       const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.RECORDS,
-        record_data: { 
+        record_data: {
           object: 'companies', // Move object slug inside record_data
-          name: 'Test Record' // Flatten the data structure
+          name: 'Test Record', // Flatten the data structure
         },
       });
 

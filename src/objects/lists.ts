@@ -421,7 +421,7 @@ export async function addRecordToList(
         parent_object: objectType,
       },
     };
-    
+
     // Only include entry_values if initialValues is provided
     if (initialValues && Object.keys(initialValues).length > 0) {
       payload.data.entry_values = initialValues;
