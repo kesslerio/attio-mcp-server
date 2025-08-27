@@ -9,6 +9,40 @@
 
 import { UniversalResourceType } from './types.js';
 import { getAttioClient } from '../../../api/attio-client.js';
+import { strictModeFor } from './config.js';
+
+/**
+ * Helper function to convert various values to boolean
+ */
+function toBooleanish(v: any): boolean | undefined {
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'number') return v !== 0;
+  if (typeof v === 'string') {
+    const s = v.trim().toLowerCase();
+    if (
+      [
+        'done',
+        'complete',
+        'completed',
+        'true',
+        'yes',
+        'y',
+        '1',
+        'closed',
+      ].includes(s)
+    )
+      return true;
+    if (['open', 'pending', 'in progress', 'false', 'no', 'n', '0'].includes(s))
+      return false;
+  }
+  return undefined;
+}
+
+/**
+ * Helper function to check if attributes array contains a field (case-insensitive)
+ */
+const attrHas = (attrs?: string[], k?: string) =>
+  !!attrs && !!k && (attrs.includes(k) || attrs.includes(k.toLowerCase()));
 
 /**
  * Field mapping configuration for each resource type
@@ -60,7 +94,6 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
   [UniversalResourceType.COMPANIES]: {
     fieldMappings: {
       // Common incorrect field names -> correct ones
-      domain: 'domains',
       website: 'domains',
       url: 'domains',
       company_name: 'name',
@@ -98,7 +131,8 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       domain:
         'Use "domains" (plural) as an array, e.g., domains: ["example.com"]',
       website: 'Use "domains" field with an array of domain names',
-      notes: 'Notes are separate objects linked to companies, not company attributes. Use "description" field for company descriptions',
+      notes:
+        'Notes are separate objects linked to companies, not company attributes. Use "description" field for company descriptions',
       revenue: 'Use "estimated_arr" for revenue/ARR data',
     },
     requiredFields: ['name'],
@@ -333,10 +367,15 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
       // Generic record mappings
       title: 'name',
       record_name: 'name',
-      description: 'notes',
-      note: 'notes',
+      // ❌ Removed dangerous mappings that break People/Company fields:
+      // description: 'notes',  // Can incorrectly map People.description
+      // note: 'notes',         // Can incorrectly map People.description
     },
     validFields: [
+      'object', // Required: object slug for routing
+      'object_api_slug', // Alternative object slug
+      'object_slug', // Alternative object slug
+      'values', // When caller provides values wrapper
       'name',
       'notes',
       'created_at',
@@ -375,11 +414,13 @@ export const FIELD_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
     ],
     requiredFields: ['content', 'parent_object', 'parent_record_id'],
     commonMistakes: {
-      linked_record_type: 'Use "parent_object" with resource type (companies, people, deals)',
+      linked_record_type:
+        'Use "parent_object" with resource type (companies, people, deals)',
       linked_record_id: 'Use "parent_record_id" with record UUID',
       note: 'Use "content" for note body text',
       description: 'Use "content" for note body text',
-      notes: 'Notes are separate objects. Use "content" field for note text and link with parent_object/parent_record_id',
+      notes:
+        'Notes are separate objects. Use "content" field for note text and link with parent_object/parent_record_id',
     },
     uniqueFields: [],
   },
@@ -399,26 +440,28 @@ export async function mapFieldName(
     return fieldName;
   }
 
-  // If we have available attributes, check if the original field exists
-  if (availableAttributes && availableAttributes.includes(fieldName)) {
+  // If we have available attributes, check if the original field exists (compare lowercase)
+  if (availableAttributes && attrHas(availableAttributes, fieldName)) {
     // Original field exists, don't map it
     return fieldName;
   }
 
   // Check if there's a direct mapping
-  const mappedField = mapping.fieldMappings[fieldName.toLowerCase()];
+  const mappedField = mapping.fieldMappings[fieldName.toLowerCase()] || null;
 
   // If mapped to null, it means the field doesn't exist
   if (mappedField === null) {
     return fieldName; // Return original, will trigger proper error
   }
 
-  // If there's a mapping, verify the target exists (if we have attributes)
-  if (mappedField && availableAttributes) {
-    if (!availableAttributes.includes(mappedField)) {
-      // Mapped field doesn't exist, return original
-      return fieldName;
-    }
+  // If there's a mapping, verify the target exists (if we have attributes, compare lowercase)
+  if (
+    mappedField &&
+    availableAttributes &&
+    !attrHas(availableAttributes, mappedField)
+  ) {
+    // Mapped field doesn't exist, return original
+    return fieldName;
   }
 
   return mappedField || fieldName;
@@ -451,7 +494,20 @@ export async function detectFieldCollisions(
       continue;
     }
 
-    const targetField = await mapFieldName(resourceType, inputField, availableAttributes);
+    const targetField = await mapFieldName(
+      resourceType,
+      inputField,
+      availableAttributes
+    );
+
+    // Harden against Promise-as-key bugs: validate targetField is a valid string
+    if (typeof targetField !== 'string' || !targetField) {
+      errors.push(
+        `Internal mapping error: non-string target for "${inputField}". ` +
+          `Got ${Object.prototype.toString.call(targetField)}`
+      );
+      continue;
+    }
 
     if (!targetToInputs[targetField]) {
       targetToInputs[targetField] = [];
@@ -532,14 +588,22 @@ export async function mapRecordFields(
   resourceType: UniversalResourceType,
   recordData: Record<string, any>,
   availableAttributes?: string[]
-): Promise<{ mapped: Record<string, any>; warnings: string[]; errors?: string[] }> {
+): Promise<{
+  mapped: Record<string, any>;
+  warnings: string[];
+  errors?: string[];
+}> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { mapped: recordData, warnings: [] };
   }
 
   // First pass: detect field collisions
-  const collisionResult = await detectFieldCollisions(resourceType, recordData, availableAttributes);
+  const collisionResult = await detectFieldCollisions(
+    resourceType,
+    recordData,
+    availableAttributes
+  );
   if (collisionResult.hasCollisions) {
     return {
       mapped: {},
@@ -552,7 +616,17 @@ export async function mapRecordFields(
   const warnings: string[] = [];
 
   for (const [key, value] of Object.entries(recordData)) {
-    const mappedKey = await mapFieldName(resourceType, key, availableAttributes);
+    const mappedKey = await mapFieldName(
+      resourceType,
+      key,
+      availableAttributes
+    );
+
+    // Harden against Promise-as-key bugs: validate mappedKey is a valid string
+    if (typeof mappedKey !== 'string' || !mappedKey) {
+      warnings.push(`Skipped field "${key}" due to invalid mapped key.`);
+      continue;
+    }
 
     // Skip null-mapped fields
     if (mapping.fieldMappings[key.toLowerCase()] === null) {
@@ -607,7 +681,11 @@ export async function mapRecordFields(
         mapped[mappedKey] = categoryResult.processedValue;
       } else {
         // Apply field value transformation before assignment
-        const transformedValue = await transformFieldValue(resourceType, mappedKey, value);
+        const transformedValue = await transformFieldValue(
+          resourceType,
+          mappedKey,
+          value
+        );
         mapped[mappedKey] = transformedValue;
       }
     }
@@ -738,22 +816,28 @@ export function validateFields(
   // Check for unknown fields (simplified version without async mapping)
   for (const field of Object.keys(recordData)) {
     // If field maps to null, it's explicitly invalid
-    if (mapping.fieldMappings[field.toLowerCase()] === null) {
-      warnings.push(getFieldSuggestions(resourceType, field));
+    const lower = field.toLowerCase();
+    const invalidExplicit = mapping.fieldMappings[lower] === null;
+    if (invalidExplicit) {
+      const msg = getFieldSuggestions(resourceType, field);
+      if (strictModeFor(resourceType)) errors.push(msg);
+      else warnings.push(msg);
       continue;
     }
 
     // Check if field exists in valid fields or mappings
-    const hasMapping = !!mapping.fieldMappings[field.toLowerCase()];
-    const isValidField = mapping.validFields.includes(field);
-    
+    const hasMapping = !!mapping.fieldMappings[lower];
+    const isValidField =
+      mapping.validFields.includes(field) ||
+      mapping.validFields.includes(lower);
+
     // If field doesn't map and isn't in valid fields, it might be wrong
     if (!hasMapping && !isValidField) {
-      // It could be a custom field, so just warn
       const suggestion = getFieldSuggestions(resourceType, field);
-      if (suggestion.includes('Did you mean')) {
+      if (strictModeFor(resourceType))
+        errors.push(`Unknown field "${field}". ${suggestion}`);
+      else if (suggestion.includes('Did you mean'))
         suggestions.push(suggestion);
-      }
     }
   }
 
@@ -1119,27 +1203,27 @@ export async function checkDomainConflict(domain: string): Promise<{
 }> {
   try {
     const client = getAttioClient();
-    
+
     // Search for companies with this domain
     const response = await client.post('/objects/companies/records/query', {
       filter: {
         domains: {
-          any_of: [{ domain: domain }]
-        }
+          any_of: [{ domain: domain }],
+        },
       },
-      limit: 1
+      limit: 1,
     });
 
     const companies = response?.data?.data || [];
-    
+
     if (companies.length > 0) {
       const existingCompany = companies[0];
       return {
         exists: true,
         existingCompany: {
           name: existingCompany.values?.name?.[0]?.value || 'Unknown Company',
-          id: existingCompany.id?.record_id || existingCompany.id
-        }
+          id: existingCompany.id?.record_id || existingCompany.id,
+        },
       };
     }
 
@@ -1166,13 +1250,16 @@ export async function transformFieldValue(
     fieldName === 'domains'
   ) {
     // If value is already in correct format, return as-is
-    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'domain' in v)) {
+    if (
+      Array.isArray(value) &&
+      value.every((v) => typeof v === 'object' && 'domain' in v)
+    ) {
       return value;
     }
 
     // If value is an array of strings, transform to domain objects
-    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
-      return value.map(domain => ({ domain }));
+    if (Array.isArray(value) && value.every((v) => typeof v === 'string')) {
+      return value.map((domain) => ({ domain }));
     }
 
     // If value is a single string, transform to array with domain object
@@ -1192,13 +1279,16 @@ export async function transformFieldValue(
     fieldName === 'email_addresses'
   ) {
     // If value is already in correct format, return as-is
-    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'email_address' in v)) {
+    if (
+      Array.isArray(value) &&
+      value.every((v) => typeof v === 'object' && 'email_address' in v)
+    ) {
       return value;
     }
 
     // If value is an array of strings, transform to email objects
-    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
-      return value.map(email => ({ email_address: email }));
+    if (Array.isArray(value) && value.every((v) => typeof v === 'string')) {
+      return value.map((email) => ({ email_address: email }));
     }
 
     // If value is a single string, transform to array with email object
@@ -1207,7 +1297,11 @@ export async function transformFieldValue(
     }
 
     // If value is a single email object, wrap in array
-    if (typeof value === 'object' && value !== null && 'email_address' in value) {
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'email_address' in value
+    ) {
       return [value];
     }
   }
@@ -1218,13 +1312,16 @@ export async function transformFieldValue(
     fieldName === 'phone_numbers'
   ) {
     // If value is already in correct format, return as-is
-    if (Array.isArray(value) && value.every(v => typeof v === 'object' && 'phone_number' in v)) {
+    if (
+      Array.isArray(value) &&
+      value.every((v) => typeof v === 'object' && 'phone_number' in v)
+    ) {
       return value;
     }
 
     // If value is an array of strings, transform to phone objects
-    if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
-      return value.map(phone => ({ phone_number: phone }));
+    if (Array.isArray(value) && value.every((v) => typeof v === 'string')) {
+      return value.map((phone) => ({ phone_number: phone }));
     }
 
     // If value is a single string, transform to array with phone object
@@ -1233,8 +1330,60 @@ export async function transformFieldValue(
     }
 
     // If value is a single phone object, wrap in array
-    if (typeof value === 'object' && value !== null && 'phone_number' in value) {
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'phone_number' in value
+    ) {
       return [value];
+    }
+  }
+
+  // People.company → [{ record_id }] (normalize all formats to array-of-refs)
+  if (
+    resourceType === UniversalResourceType.PEOPLE &&
+    fieldName === 'company'
+  ) {
+    const toRef = (v: any) => {
+      if (typeof v === 'string') return { record_id: v };
+      if (v?.record_id) return { record_id: v.record_id };
+      if (v?.id?.record_id) return { record_id: v.id.record_id };
+      if (v?.id) return { record_id: v.id };
+      return v; // last-resort passthrough
+    };
+
+    if (Array.isArray(value)) return value.map(toRef);
+    return [toRef(value)];
+  }
+
+  // Deals.associated_company / associated_people → [{ record_id }]
+  if (
+    resourceType === UniversalResourceType.DEALS &&
+    (fieldName === 'associated_company' || fieldName === 'associated_people')
+  ) {
+    const toRef = (v: any) =>
+      (typeof v === 'string' && { record_id: v }) ||
+      (v && typeof v === 'object' && 'record_id' in v ? v : null);
+
+    const arr = Array.isArray(value) ? value : [value];
+    const refs = arr.map(toRef).filter(Boolean);
+    return refs.length ? refs : value;
+  }
+
+  // Tasks field transformations
+  if (resourceType === UniversalResourceType.TASKS) {
+    if (fieldName === 'is_completed') {
+      const b = toBooleanish(value);
+      return b === undefined ? value : b;
+    }
+    if (fieldName === 'deadline_at') {
+      // accept Date, number (ms), or string; output ISO
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value === 'number') return new Date(value).toISOString();
+      if (typeof value === 'string') {
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? value : d.toISOString();
+      }
     }
   }
 

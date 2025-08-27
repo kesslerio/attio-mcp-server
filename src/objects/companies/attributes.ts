@@ -336,7 +336,11 @@ export async function discoverCompanyAttributes(): Promise<{
         return {
           standard: testAttributes.map((a) => a.slug),
           custom: [],
-          all: testAttributes,
+          all: testAttributes.map((a) => ({
+            name: a.slug,
+            type: a.type,
+            isCustom: false,
+          })),
         };
       }
       // Return an empty structure rather than throwing an error
@@ -508,7 +512,7 @@ export async function getCompanyAttributes(
       // Return specific attribute value
       const values = fullCompany.values || {};
       const value = values[attributeName];
-      const companyName = fullCompany.values?.name?.[0]?.value || companyId;
+      const companyName = fullCompany.values?.name || companyId;
 
       if (value === undefined) {
         throw new Error(
@@ -540,7 +544,7 @@ export async function getCompanyAttributes(
 
       return {
         attributes,
-        company: fullCompany.values?.name?.[0]?.value || companyId,
+        company: fullCompany.values?.name || companyId,
       };
     }
   } catch (error: unknown) {

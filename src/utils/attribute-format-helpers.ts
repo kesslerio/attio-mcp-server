@@ -67,11 +67,32 @@ function convertCompanyAttributes(attributes: any): any {
 function convertPeopleAttributes(attributes: any): any {
   const corrected = { ...attributes };
 
-  // Ensure name is in proper Attio personal-name format
-  if (corrected.first_name || corrected.last_name || corrected.full_name) {
-    // Create proper personal-name object for Attio API
+  // Handle name conversion to personal-name array format
+  if (
+    corrected.name ||
+    corrected.first_name ||
+    corrected.last_name ||
+    corrected.full_name
+  ) {
     const nameObj: Record<string, string> = {};
 
+    // Handle string name input (e.g., "Jane Smith")
+    if (typeof corrected.name === 'string') {
+      const parts = corrected.name.trim().split(' ');
+      if (parts.length >= 2) {
+        nameObj.first_name = parts[0];
+        nameObj.last_name = parts.slice(1).join(' ');
+      } else {
+        nameObj.first_name = parts[0] || '';
+        nameObj.last_name = '';
+      }
+      nameObj.full_name = corrected.name;
+      console.error(
+        `[Format Helper] Parsed string name "${corrected.name}" into components`
+      );
+    }
+
+    // Handle individual name components
     if (corrected.first_name) {
       nameObj.first_name = corrected.first_name;
     }
@@ -82,8 +103,15 @@ function convertPeopleAttributes(attributes: any): any {
       nameObj.full_name = corrected.full_name;
     }
 
-    // Create name field in personal-name format expected by Attio
-    corrected.name = nameObj;
+    // Ensure full_name is always present for Attio's personal-name validation
+    if (!nameObj.full_name) {
+      nameObj.full_name = [nameObj.first_name, nameObj.last_name]
+        .filter(Boolean)
+        .join(' ');
+    }
+
+    // Create name field as ARRAY in personal-name format expected by Attio
+    corrected.name = [nameObj];
 
     // Remove the flattened fields since they're now in the name object
     delete corrected.first_name;
@@ -91,8 +119,8 @@ function convertPeopleAttributes(attributes: any): any {
     delete corrected.full_name;
 
     console.error(
-      `[Format Helper] Created name object in personal-name format:`,
-      nameObj
+      `[Format Helper] Created name ARRAY in personal-name format:`,
+      JSON.stringify(corrected.name)
     );
   }
 
@@ -131,6 +159,50 @@ function convertPeopleAttributes(attributes: any): any {
   }
 
   return corrected;
+}
+
+/**
+ * Validates people attributes before POST to ensure correct Attio format
+ * Throws validation errors if required formats are not met
+ */
+export function validatePeopleAttributesPrePost(attributes: any): void {
+  // Validate name format if present
+  if (attributes.name) {
+    if (!Array.isArray(attributes.name)) {
+      throw new Error('People name must be an array of personal-name objects');
+    }
+
+    if (attributes.name.length > 0 && !attributes.name[0].full_name) {
+      throw new Error('People name[0].full_name must be a non-empty string');
+    }
+
+    if (
+      attributes.name.length > 0 &&
+      typeof attributes.name[0].full_name !== 'string'
+    ) {
+      throw new Error('People name[0].full_name must be a string');
+    }
+
+    if (
+      attributes.name.length > 0 &&
+      attributes.name[0].full_name.trim() === ''
+    ) {
+      throw new Error('People name[0].full_name must be a non-empty string');
+    }
+  }
+
+  // Validate email_addresses format if present
+  if (attributes.email_addresses) {
+    if (!Array.isArray(attributes.email_addresses)) {
+      throw new Error('People email_addresses must be an array of strings');
+    }
+
+    for (const email of attributes.email_addresses) {
+      if (typeof email !== 'string') {
+        throw new Error('All email_addresses must be strings, not objects');
+      }
+    }
+  }
 }
 
 /**

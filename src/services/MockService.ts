@@ -14,6 +14,12 @@
 
 import type { AttioRecord } from '../types/attio.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
+import { debug, error } from '../utils/logger.js';
+import type {
+  E2EMeta,
+  UnknownRecord,
+  isRecord,
+} from '../types/service-types.js';
 
 /**
  * Environment detection for mock injection
@@ -58,9 +64,9 @@ function shouldUseViMocks(): boolean {
 /**
  * Apply consistent E2E test markers to mock data
  */
-function applyE2EMarkers(data: any, meta?: { runId?: string }): any {
+function applyE2EMarkers(data: UnknownRecord, meta?: E2EMeta): UnknownRecord {
   const baseTags = new Set([
-    ...(data.tags || []),
+    ...(Array.isArray(data.tags) ? data.tags : []),
     'e2e-test',
     'e2e-suite:notes',
   ]);
@@ -89,7 +95,7 @@ export class MockService {
     companyData: Record<string, unknown>
   ): Promise<AttioRecord> {
     const useMocks = shouldUseMockData();
-    console.error('[MockService.createCompany] Environment check:', {
+    debug('MockService', 'createCompany Environment check', {
       E2E_MODE: process.env.E2E_MODE,
       useMocks,
       companyDataKeys: Object.keys(companyData || {}),
@@ -101,9 +107,7 @@ export class MockService {
     if (!useMocks) {
       try {
         // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        console.error(
-          '[MockService.createCompany] Making raw axios API call...'
-        );
+        debug('MockService', 'createCompany Making raw axios API call');
 
         // Create a completely fresh axios instance to bypass any mocking
         const axios = (await import('axios')).default;
@@ -116,7 +120,7 @@ export class MockService {
           timeout: 30000,
         });
 
-        console.error('[MockService.createCompany] Raw axios instance created');
+        debug('MockService', 'createCompany Raw axios instance created');
 
         const response = await api.post('/objects/companies/records', {
           data: {
@@ -124,7 +128,7 @@ export class MockService {
           },
         });
 
-        console.error('[MockService.createCompany] Raw API response:', {
+        debug('MockService', 'createCompany Raw API response', {
           status: response?.status,
           statusText: response?.statusText,
           hasData: !!response?.data,
@@ -157,9 +161,9 @@ export class MockService {
         }
 
         return result;
-      } catch (error) {
-        console.error('[MockService.createCompany] Direct API error:', error);
-        throw error; // Re-throw the error instead of swallowing it
+      } catch (err) {
+        error('MockService', 'createCompany Direct API error', err);
+        throw err; // Re-throw the error instead of swallowing it
       }
     }
 
@@ -198,9 +202,7 @@ export class MockService {
     if (!shouldUseMockData()) {
       try {
         // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        console.error(
-          '[MockService.createPerson] Making raw axios API call...'
-        );
+        debug('MockService', 'createPerson Making raw axios API call');
 
         // Create a completely fresh axios instance to bypass any mocking
         const axios = (await import('axios')).default;
@@ -213,7 +215,10 @@ export class MockService {
           timeout: 30000,
         });
 
-        console.error('[MockService.createPerson] Raw axios instance created');
+        debug('MockService', 'createPerson Raw axios instance created');
+        debug('MockService', 'createPerson EXACT PAYLOAD', {
+          data: { values: personData },
+        });
 
         const response = await api.post('/objects/people/records', {
           data: {
@@ -221,7 +226,7 @@ export class MockService {
           },
         });
 
-        console.error('[MockService.createPerson] Raw API response:', {
+        debug('MockService', 'createPerson Raw API response', {
           status: response?.status,
           statusText: response?.statusText,
           hasData: !!response?.data,
@@ -253,9 +258,9 @@ export class MockService {
         }
 
         return result;
-      } catch (error) {
-        console.error('[MockService.createPerson] Direct API error:', error);
-        throw error; // Re-throw the error instead of swallowing it
+      } catch (err) {
+        error('MockService', 'createPerson Direct API error', err);
+        throw err; // Re-throw the error instead of swallowing it
       }
     }
 
@@ -396,8 +401,8 @@ export class MockService {
         workspace_id: 'mock-workspace-id',
       },
       values: {
-        content: [{ value: taskContent }],
-        title: [{ value: taskContent }], // Issue #480: Dual field support
+        content: taskContent,
+        title: taskContent, // Issue #480: Dual field support
         status: [{ value: (taskData.status as string) || 'pending' }],
         due_date: taskData.due_date
           ? [{ value: taskData.due_date as string }]
@@ -493,8 +498,8 @@ export class MockService {
         workspace_id: 'mock-workspace-id',
       },
       values: {
-        content: [{ value: taskContent }],
-        title: [{ value: taskContent }], // Issue #480: Dual field support
+        content: taskContent,
+        title: taskContent, // Issue #480: Dual field support
         status: [{ value: (updateData.status as string) || 'updated' }],
         due_date: updateData.due_date
           ? [{ value: updateData.due_date as string }]

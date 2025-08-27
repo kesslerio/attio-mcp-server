@@ -48,15 +48,15 @@ export async function getAllLists(
   return callWithRetry(async () => {
     const response = await api.get<AttioListResponse<AttioList>>(path);
     // Ensure we always return an array, never undefined/null/objects - handle multiple shape variants
-    const items = Array.isArray(response?.data?.data) 
-      ? response.data.data 
-      : Array.isArray(response?.data?.lists) 
-      ? response.data.lists 
-      : Array.isArray(response?.data?.items)
-      ? response.data.items
-      : Array.isArray(response?.data)
-      ? response.data
-      : [];
+    const items = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : Array.isArray(response?.data?.lists)
+        ? response.data.lists
+        : Array.isArray(response?.data?.items)
+          ? response.data.items
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
     return items;
   }, retryConfig);
 }
@@ -229,13 +229,13 @@ export async function addRecordToList(
   return callWithRetry(async () => {
     try {
       // Construct proper API payload according to Attio API requirements
-      // The API expects parent_record_id, parent_object, and optionally entry_values
+      // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
       const payload = {
         data: {
           parent_record_id: recordId,
           parent_object: safeObjectType,
-          // Only include entry_values if initialValues is provided
-          ...(initialValues && { entry_values: initialValues }),
+          // entry_values is required by the API, use empty object if no initial values provided
+          entry_values: initialValues || {},
         },
       };
 

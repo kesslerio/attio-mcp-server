@@ -18,7 +18,7 @@
  * - Progress tracking and detailed reporting
  * - Dry-run mode for safety
  * - Configurable test prefixes
- * - Support for all resource types: companies, people, tasks, lists, notes
+ * - Support for all resource types: companies, people, tasks, lists, notes, deals
  */
 
 import dotenv from 'dotenv';
@@ -46,6 +46,7 @@ type ResourceType =
   | 'tasks'
   | 'lists'
   | 'notes'
+  | 'deals'
   | 'all';
 
 interface CleanupStats {
@@ -80,7 +81,7 @@ class TestDataCleanup {
 
     // Initialize stats
     const resourceTypes = options.resourceTypes.includes('all' as ResourceType)
-      ? ['companies', 'people', 'tasks', 'lists', 'notes']
+      ? ['companies', 'people', 'tasks', 'lists', 'notes', 'deals']
       : options.resourceTypes;
 
     resourceTypes.forEach((type) => {
@@ -130,7 +131,7 @@ class TestDataCleanup {
     const resourceTypes = this.options.resourceTypes.includes(
       'all' as ResourceType
     )
-      ? ['companies', 'people', 'tasks', 'lists', 'notes']
+      ? ['companies', 'people', 'tasks', 'lists', 'notes', 'deals']
       : this.options.resourceTypes.filter((t) => t !== 'all');
 
     // Process each resource type
@@ -155,6 +156,9 @@ class TestDataCleanup {
             break;
           case 'notes':
             await this.cleanupNotes();
+            break;
+          case 'deals':
+            await this.cleanupDeals();
             break;
         }
       } catch (error) {
@@ -561,6 +565,130 @@ class TestDataCleanup {
       console.error('  ❌ Error during notes cleanup:', error);
       this.stats.notes = { found: 0, deleted: 0, errors: 1 };
     }
+  }
+
+  /**
+   * Clean up test deals
+   */
+  private async cleanupDeals(): Promise<void> {
+    const deals = await this.findTestDeals();
+    this.stats.deals.found = deals.length;
+
+    if (deals.length === 0) {
+      console.log('  ✅ No test deals found');
+      return;
+    }
+
+    console.log(`  🔍 Found ${deals.length} test deals`);
+
+    if (this.options.dryRun) {
+      deals.forEach((deal, index) => {
+        console.log(
+          `    ${index + 1}. ${deal.name || 'Unknown'} (${deal.id.record_id})`
+        );
+      });
+      return;
+    }
+
+    // Process in parallel chunks
+    const chunks = this.chunkArray(deals, this.options.parallel);
+
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map(async (deal) => {
+          try {
+            await retryWithBackoff(async () => {
+              await this.client.delete(`/objects/deals/records/${deal.id.record_id}`);
+            });
+
+            this.stats.deals.deleted++;
+            if (this.options.verbose) {
+              console.log(
+                `    ✅ Deleted: ${deal.name || deal.id.record_id}`
+              );
+            }
+          } catch (error) {
+            this.stats.deals.errors++;
+            console.error(
+              `    ❌ Failed to delete deal ${deal.id.record_id}:`,
+              getDetailedErrorMessage(error)
+            );
+          }
+        })
+      );
+
+      // Rate limiting between chunks
+      if (chunks.indexOf(chunk) < chunks.length - 1) {
+        await waitForRateLimit(200);
+      }
+    }
+  }
+
+  /**
+   * Find test deals using configured prefixes and common test patterns
+   */
+  private async findTestDeals(): Promise<any[]> {
+    const allDeals: any[] = [];
+
+    // Standard prefixes from options
+    for (const prefix of this.options.prefixes) {
+      try {
+        const response = await retryWithBackoff(async () => {
+          return this.client.post('/objects/deals/records/query', {
+            filter: {
+              name: { $starts_with: prefix },
+            },
+            limit: 500, // Batch size
+          });
+        });
+
+        const deals = response.data?.data ?? [];
+        allDeals.push(...deals);
+      } catch (error) {
+        console.error(
+          `    ❌ Error querying deals with prefix ${prefix}:`,
+          getDetailedErrorMessage(error)
+        );
+      }
+    }
+
+    // Common test patterns (case-insensitive)
+    const testPatterns = ['Test', 'Mock', 'Demo', 'Sample', 'Example'];
+    for (const pattern of testPatterns) {
+      try {
+        // Try both exact prefix and case variations
+        for (const variant of [
+          pattern,
+          pattern.toUpperCase(),
+          pattern.toLowerCase(),
+        ]) {
+          const response = await retryWithBackoff(async () => {
+            return this.client.post('/objects/deals/records/query', {
+              filter: {
+                name: { $starts_with: variant },
+              },
+              limit: 500,
+            });
+          });
+
+          const deals = response.data?.data ?? [];
+          allDeals.push(...deals);
+        }
+      } catch (error) {
+        console.error(
+          `    ❌ Error querying deals with pattern ${pattern}:`,
+          getDetailedErrorMessage(error)
+        );
+      }
+    }
+
+    // Remove duplicates by deal_id
+    const uniqueDeals = allDeals.filter(
+      (deal, index, self) =>
+        index === self.findIndex((d) => d.id.record_id === deal.id.record_id)
+    );
+
+    return uniqueDeals;
   }
 
   /**
@@ -971,7 +1099,7 @@ OPTIONS:
   --dry-run             Preview what would be deleted (default: true)
   --live                Perform actual deletion (same as --dry-run=false)
   --prefix=PREFIX,...   Comma-separated list of test prefixes (default: TEST_,QA_,E2E_)
-  --resource-type=TYPE  Resource types to clean: companies,people,tasks,lists,notes,all (default: all)
+  --resource-type=TYPE  Resource types to clean: companies,people,tasks,lists,notes,deals,all (default: all)
   --parallel=N          Number of parallel operations (default: 5)
   --verbose, -v         Verbose output
   --help, -h            Show this help

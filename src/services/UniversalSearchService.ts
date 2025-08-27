@@ -14,6 +14,7 @@ import {
 import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
+import { debug, error } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -49,23 +50,25 @@ import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
 const ensureAdvancedSearchCompanies = async () => {
   try {
     // Log more details about what's happening
-    console.log(
-      'Checking advancedSearchCompanies availability:',
-      typeof advancedSearchCompanies
+    debug(
+      'UniversalSearchService',
+      'Checking advancedSearchCompanies availability',
+      { type: typeof advancedSearchCompanies }
     );
     if (typeof advancedSearchCompanies !== 'function') {
-      console.error(
-        'advancedSearchCompanies is not a function:',
-        advancedSearchCompanies
+      error(
+        'UniversalSearchService',
+        'advancedSearchCompanies is not a function',
+        { advancedSearchCompanies }
       );
       return null;
     }
     return advancedSearchCompanies;
-  } catch (error) {
-    console.error('Error accessing advancedSearchCompanies:', error);
-    console.error(
-      'Error stack:',
-      error instanceof Error ? error.stack : 'No stack'
+  } catch (err) {
+    error(
+      'UniversalSearchService',
+      'Error accessing advancedSearchCompanies',
+      err
     );
     return null;
   }
@@ -73,23 +76,25 @@ const ensureAdvancedSearchCompanies = async () => {
 
 const ensureAdvancedSearchPeople = async () => {
   try {
-    console.log(
-      'Checking advancedSearchPeople availability:',
-      typeof advancedSearchPeople
+    debug(
+      'UniversalSearchService',
+      'Checking advancedSearchPeople availability',
+      { type: typeof advancedSearchPeople }
     );
     if (typeof advancedSearchPeople !== 'function') {
-      console.error(
-        'advancedSearchPeople is not a function:',
-        advancedSearchPeople
+      error(
+        'UniversalSearchService',
+        'advancedSearchPeople is not a function',
+        { advancedSearchPeople }
       );
       return null;
     }
     return advancedSearchPeople;
-  } catch (error) {
-    console.error('Error accessing advancedSearchPeople:', error);
-    console.error(
-      'Error stack:',
-      error instanceof Error ? error.stack : 'No stack'
+  } catch (err) {
+    error(
+      'UniversalSearchService',
+      'Error accessing advancedSearchPeople',
+      err
     );
     return null;
   }
@@ -307,10 +312,11 @@ export class UniversalSearchService {
       return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Auto-detect domain-like queries and search domains field specifically
-      const looksLikeDomain = query.includes('.') || 
-                             query.includes('www') || 
-                             query.includes('http') ||
-                             /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
+      const looksLikeDomain =
+        query.includes('.') ||
+        query.includes('www') ||
+        query.includes('http') ||
+        /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
 
       if (looksLikeDomain) {
         // Use domain-specific search for better accuracy
@@ -431,8 +437,8 @@ export class UniversalSearchService {
       return paginatedResult.results;
     } else if (query && query.trim().length > 0) {
       // Auto-detect email-like queries and search email field specifically
-      const looksLikeEmail = query.includes('@') && 
-                           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
+      const looksLikeEmail =
+        query.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
 
       if (looksLikeEmail) {
         // Use email-specific search for better accuracy

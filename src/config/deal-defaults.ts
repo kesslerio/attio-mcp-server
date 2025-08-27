@@ -18,9 +18,9 @@
  * - probability: Use custom number field or encode in stage names
  * - source/lead_source: Use custom field
  * - type/deal_type: Use custom field or stages
- * - tags/labels: Use custom fields
- * - currency: Automatically set by workspace (just provide number for value)
  */
+
+import { warn, error } from '../utils/logger.js';
 
 export interface DealDefaults {
   stage?: string;
@@ -369,13 +369,14 @@ export async function validateDealStage(
 
     // Stage not found, log warning and return default
     const defaults = getDealDefaults();
-    console.error(
+    warn(
+      'deal-defaults',
       `Deal stage "${stage}" not found. Available stages: ${availableStages.join(', ')}. Using default: "${defaults.stage}"`
     );
 
     return defaults.stage;
-  } catch (error: unknown) {
-    console.error('Stage validation failed:', error);
+  } catch (err: unknown) {
+    error('deal-defaults', 'Stage validation failed', err);
     return stage; // Return original stage if validation fails
   }
 }

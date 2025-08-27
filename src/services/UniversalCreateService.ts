@@ -34,6 +34,7 @@ import { validateRecordFields } from '../utils/validation-utils.js';
 import {
   convertAttributeFormats,
   getFormatErrorHelp,
+  validatePeopleAttributesPrePost,
 } from '../utils/attribute-format-helpers.js';
 
 // Import deal defaults configuration
@@ -52,31 +53,223 @@ import {
   ErrorEnhancer,
 } from '../errors/enhanced-api-errors.js';
 
-// Import debug utilities
-import { debug, OperationType } from '../utils/logger.js';
+// Import logging utilities
+import {
+  debug,
+  error,
+  warn,
+  info,
+  OperationType,
+  createScopedLogger,
+} from '../utils/logger.js';
+
+// Import constants for better maintainability
+import {
+  ERROR_MESSAGES,
+  MAX_VALIDATION_SUGGESTIONS,
+  MAX_SUGGESTION_TEXT_LENGTH,
+} from '../constants/universal.constants.js';
+
+// Import enhanced types for better type safety
+import type {
+  PersonFieldInput,
+  AllowedPersonFields,
+  E2EMeta,
+  UnknownRecord,
+  isRecord,
+} from '../types/service-types.js';
+
+// Create scoped logger for this service
+const logger = createScopedLogger(
+  'UniversalCreateService',
+  undefined,
+  OperationType.TOOL_EXECUTION
+);
+
+/**
+ * Enhanced error categories for better error handling
+ */
+enum ErrorCategory {
+  VALIDATION = 'VALIDATION',
+  AUTHENTICATION = 'AUTHENTICATION',
+  PERMISSION = 'PERMISSION',
+  NETWORK = 'NETWORK',
+  RATE_LIMIT = 'RATE_LIMIT',
+  DATA_INTEGRITY = 'DATA_INTEGRITY',
+  EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+  CONFIGURATION = 'CONFIGURATION',
+}
+
+/**
+ * Enhanced error details with specific context
+ */
+interface EnhancedErrorDetails {
+  category: ErrorCategory;
+  field?: string;
+  expectedType?: string;
+  receivedType?: string;
+  expectedValue?: unknown;
+  receivedValue?: unknown;
+  suggestion?: string;
+  remediation?: string[];
+  relatedFields?: string[];
+  errorCode?: string;
+}
+
+/**
+ * Create an enhanced validation error with specific details and context
+ *
+ * @param message - The primary error message to display to users
+ * @param details - Additional context and metadata about the error
+ * @param details.category - The error category for proper classification
+ * @param details.field - The specific field that caused the error
+ * @param details.expectedType - The expected data type for the field
+ * @param details.receivedType - The actual data type that was provided
+ * @param details.suggestion - A helpful suggestion for fixing the error
+ * @param details.remediation - Step-by-step instructions for resolving the error
+ * @param details.relatedFields - Other fields that might be related to this error
+ * @param details.errorCode - A machine-readable error code for programmatic handling
+ * @returns Enhanced validation error with rich context for better debugging
+ *
+ * @example
+ * ```typescript
+ * throw createEnhancedValidationError(
+ *   'Invalid field type for "team_size"',
+ *   {
+ *     field: 'team_size',
+ *     expectedType: 'number',
+ *     receivedType: 'string',
+ *     suggestion: 'Convert team_size to a number',
+ *     remediation: ['Use team_size: 50 instead of team_size: "50"']
+ *   }
+ * );
+ * ```
+ */
+function createEnhancedValidationError(
+  message: string,
+  details: Partial<EnhancedErrorDetails>
+): UniversalValidationError {
+  return new UniversalValidationError(message, ErrorType.USER_ERROR, {
+    ...details,
+  });
+}
+
+/**
+ * Create field-specific error with comprehensive type information and examples
+ *
+ * This function generates detailed error messages for type mismatches, including
+ * the expected type, received type, and practical examples of correct usage.
+ *
+ * @param field - The name of the field that has the type error
+ * @param expectedType - The expected data type (e.g., 'string', 'number', 'array')
+ * @param receivedValue - The actual value that was provided (used to determine received type)
+ * @param resourceType - Optional resource type context for better error messages
+ * @returns Enhanced validation error with type-specific guidance
+ *
+ * @example
+ * ```typescript
+ * // For a field that should be a number but received a string
+ * throw createFieldTypeError('team_size', 'number', '50', 'companies');
+ * // Results in: "Invalid type for field "team_size": expected number, received string"
+ * // With remediation: ["Convert team_size to number", "Example: team_size: 42"]
+ * ```
+ */
+function createFieldTypeError(
+  field: string,
+  expectedType: string,
+  receivedValue: unknown,
+  resourceType?: string
+): UniversalValidationError {
+  const receivedType = typeof receivedValue;
+  const message = ERROR_MESSAGES.INVALID_FIELD_TYPE(
+    field,
+    expectedType,
+    receivedType
+  );
+
+  return createEnhancedValidationError(message, {
+    field,
+    expectedType,
+    receivedType,
+    errorCode: 'FIELD_TYPE_MISMATCH',
+    suggestion: `Convert ${field} to ${expectedType}`,
+    remediation: [
+      `Convert ${field} to ${expectedType}`,
+      `Example: ${field}: ${getExampleValue(expectedType)}`,
+    ],
+  });
+}
+
+/**
+ * Get example value for a given type
+ */
+function getExampleValue(type: string): string {
+  switch (type) {
+    case 'string':
+      return '"example string"';
+    case 'number':
+      return '42';
+    case 'boolean':
+      return 'true';
+    case 'array':
+      return '["item1", "item2"]';
+    case 'object':
+      return '{ "key": "value" }';
+    default:
+      return `<${type}>`;
+  }
+}
+
+/**
+ * Create collision error with detailed field information and resolution guidance
+ *
+ * Field collisions occur when multiple input fields map to the same target field
+ * in Attio's schema. This function provides clear guidance on which fields are
+ * conflicting and how to resolve the collision.
+ *
+ * @param collidingFields - Array of input field names that map to the same target
+ * @param targetField - The target field name in Attio's schema
+ * @param resourceType - The resource type context (e.g., 'companies', 'people')
+ * @returns Enhanced validation error with collision resolution steps
+ *
+ * @example
+ * ```typescript
+ * // When both 'website' and 'url' map to 'domains'
+ * throw createFieldCollisionError(
+ *   ['website', 'url', 'homepage'],
+ *   'domains',
+ *   'companies'
+ * );
+ * // Results in clear guidance about which field to keep and which to remove
+ * ```
+ */
+function createFieldCollisionError(
+  collidingFields: string[],
+  targetField: string,
+  resourceType: string
+): UniversalValidationError {
+  const message = ERROR_MESSAGES.FIELD_COLLISION(collidingFields, targetField);
+
+  return createEnhancedValidationError(message, {
+    field: targetField,
+    errorCode: 'FIELD_COLLISION',
+    relatedFields: collidingFields,
+    suggestion: `Use only one field: "${targetField}"`,
+    remediation: [
+      `Remove conflicting fields: ${collidingFields.slice(0, -1).join(', ')}`,
+      `Keep only: "${collidingFields[collidingFields.length - 1]}" (or use the target field "${targetField}" directly)`,
+    ],
+  });
+}
 
 // Field filtering to prevent test-only fields from reaching API
-const COMPANY_ALLOWED_FIELDS = [
-  'name',
-  'domain',
-  // 'industry', // Commented out - not available in Attio API schema
-  'description',
-  // 'annual_revenue', // Commented out - not available in Attio API schema
-  // 'employee_count', // Commented out - not available in Attio API schema
-  // 'categories', // Commented out - not available in Attio API schema
-  'domains',
-  'employees',
-];
-
+const COMPANY_ALLOWED_FIELDS = ['name', 'domains', 'description'];
 const PERSON_ALLOWED_FIELDS = [
   'name',
-  // 'email_addresses', // Still causing 400 errors
-  // 'phone_numbers', // Commented out - not available in Attio API schema
-  // 'job_title', // Use 'title' instead for Attio API
-  // 'seniority', // Commented out - not available in Attio API schema
+  'email_addresses',
+  'phone_numbers',
+  'title',
   'company',
-  'emails',
-  // 'title', // Commented out - not available in Attio API schema
 ];
 
 /**
@@ -96,8 +289,12 @@ function filterAllowedFields(
 import { createCompany } from '../objects/companies/index.js';
 import { createList } from '../objects/lists.js';
 import { createPerson } from '../objects/people/index.js';
-import { createObjectRecord } from '../objects/records/index.js';
-import { createNote, normalizeNoteResponse } from '../objects/notes.js';
+import { createObjectRecord as createObjectRecordApi } from '../objects/records/index.js';
+import {
+  createNote,
+  normalizeNoteResponse,
+  CreateNoteBody,
+} from '../objects/notes.js';
 
 /**
  * Helper function to check if we should use mock data based on environment
@@ -120,12 +317,12 @@ function shouldUseMockData(): boolean {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Filter out test-only fields before API call (prevents website/domain collision)
-  const filteredData = filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS);
-
-  // Delegate to production MockService to avoid TypeScript build errors
+  // Use filtering only when using MockService for E2E
+  const data = shouldUseMockData()
+    ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
+    : companyData;
   const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(filteredData);
+  return await MockService.createCompany(data);
 }
 
 /**
@@ -135,12 +332,12 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Filter out test-only fields before API call (prevents department field errors)
-  const filteredData = filterAllowedFields(personData, PERSON_ALLOWED_FIELDS);
-
-  // Delegate to production MockService to avoid TypeScript build errors
+  // Use filtering only when using MockService for E2E
+  const data = shouldUseMockData()
+    ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
+    : personData;
   const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(filteredData);
+  return await MockService.createPerson(data);
 }
 
 /**
@@ -190,22 +387,23 @@ async function enhanceUniquenessError(
  * Uses smallest safe set to avoid 422 rejections in full test runs
  * Based on user guidance for maximum test stability
  */
-function pickAllowedPersonFields(input: any): any {
-  const out: any = {};
+function pickAllowedPersonFields(input: PersonFieldInput): AllowedPersonFields {
+  const out: AllowedPersonFields = {};
 
   // Core required field
-  if (input.name) out.name = input.name;
+  if (input.name && typeof input.name === 'string') out.name = input.name;
 
   // Email handling - prefer array form to avoid uniqueness flakiness
   if (Array.isArray(input.email_addresses) && input.email_addresses.length) {
     out.email_addresses = input.email_addresses;
-  } else if (input.email) {
-    out.email_addresses = [{ email_address: String(input.email) }]; // normalize to Attio API format
+  } else if (input.email && typeof input.email === 'string') {
+    out.email_addresses = [String(input.email)]; // Convert to string array format
   }
 
   // Professional information (minimal set)
-  if (input.title) out.title = input.title;
-  if (input.job_title) out.job_title = input.job_title;
+  if (input.title && typeof input.title === 'string') out.title = input.title;
+  if (input.job_title && typeof input.job_title === 'string')
+    out.job_title = input.job_title;
 
   // DO NOT forward department/website/phones/location/socials for E2E
   // Keep test factories generating them but never send to API layer
@@ -218,10 +416,39 @@ function pickAllowedPersonFields(input: any): any {
  */
 export class UniversalCreateService {
   /**
-   * Create a record across any supported resource type
+   * Universal record creation with comprehensive field validation, mapping, and type safety
    *
-   * @param params - Create operation parameters
-   * @returns Promise resolving to created AttioRecord
+   * This is the main entry point for creating records of any type in the Attio MCP Server.
+   * It provides a unified interface that handles field mapping, validation, type conversion,
+   * and error handling across all resource types.
+   *
+   * ## Features:
+   * - **Field Mapping**: Automatically maps common field name variations to Attio schema
+   * - **Attribute Discovery**: Fetches live schema information with caching for validation
+   * - **Type Safety**: Validates and converts field types to match Attio expectations
+   * - **Collision Detection**: Prevents multiple fields from mapping to the same target
+   * - **Enhanced Errors**: Provides detailed, actionable error messages with suggestions
+   * - **Performance Tracking**: Records metrics for monitoring and optimization
+   *
+   * @param params - The record creation parameters
+   * @param params.resource_type - Type of record to create (companies, people, etc.)
+   * @param params.record_data - The data for the new record
+   * @returns Promise resolving to the created AttioRecord with full metadata
+   *
+   * @throws {UniversalValidationError} When field validation fails with enhanced details
+   * @throws {Error} For authentication, network, or other system errors
+   *
+   * @example Basic company creation:
+   * ```typescript
+   * const company = await UniversalCreateService.createRecord({
+   *   resource_type: UniversalResourceType.COMPANIES,
+   *   record_data: {
+   *     name: "Acme Corporation",
+   *     domains: ["acme.com"],
+   *     description: "A software company"
+   *   }
+   * });
+   * ```
    */
   static async createRecord(
     params: UniversalCreateParams
@@ -244,50 +471,64 @@ export class UniversalCreateService {
       throw new UniversalValidationError('record_data must be a JSON object');
     }
 
-    console.error(
-      '[UniversalCreateService.createRecord] DEBUG - Entry point:',
-      {
-        resource_type,
-        record_data: JSON.stringify(record_data, null, 2),
-      }
-    );
+    logger.debug('Entry point - createRecord', {
+      resource_type,
+      record_data: JSON.stringify(record_data, null, 2),
+    });
 
     // Pre-validate fields and provide helpful suggestions
-    const fieldValidation = validateFields(
-      resource_type,
-      record_data.values || record_data
-    );
-    console.error(
-      '[UniversalCreateService.createRecord] DEBUG - Field validation result:',
-      {
-        valid: fieldValidation.valid,
-        warnings: fieldValidation.warnings,
-        errors: fieldValidation.errors,
-        suggestions: fieldValidation.suggestions,
-      }
-    );
+    // For records, only validate top-level fields (don't validate inside values)
+    let fieldsToValidate: Record<string, unknown>;
+    if (resource_type === UniversalResourceType.RECORDS) {
+      // Only validate top-level keys for records (exclude inner values)
+      const { values, ...topLevelFields } = record_data;
+      fieldsToValidate =
+        Object.keys(topLevelFields).length > 0
+          ? (topLevelFields as Record<string, unknown>)
+          : ({ object: 'placeholder' } as Record<string, unknown>); // Ensure non-empty object for validation
+      logger.debug('Records validation: checking only top-level fields', {
+        topLevelKeys: Object.keys(topLevelFields),
+        excludedValuesKeys: values
+          ? Object.keys(values as Record<string, unknown>)
+          : [],
+      });
+    } else {
+      fieldsToValidate = (record_data.values || record_data) as Record<
+        string,
+        unknown
+      >; // Normal validation for other types
+    }
+
+    const fieldValidation = validateFields(resource_type, fieldsToValidate);
+    logger.debug('Field validation result', {
+      valid: fieldValidation.valid,
+      warnings: fieldValidation.warnings,
+      errors: fieldValidation.errors,
+      suggestions: fieldValidation.suggestions,
+    });
 
     if (fieldValidation.warnings.length > 0) {
-      console.error(
-        'Field validation warnings:',
-        fieldValidation.warnings.join('\n')
-      );
+      logger.warn('Field validation warnings', {
+        warnings: fieldValidation.warnings,
+      });
     }
     if (fieldValidation.suggestions.length > 0) {
       const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
-      console.error('Field suggestions:', truncated.join('\n'));
+      logger.info('Field suggestions available', {
+        suggestions: truncated,
+      });
     }
     if (!fieldValidation.valid) {
       // Build a clear, helpful error message
-      let errorMessage = `Field validation failed for ${resource_type}:\n`;
+      let errorMessage = ERROR_MESSAGES.VALIDATION_FAILED(resource_type);
+      let remediation: string[] = [];
 
       // Add each error on its own line for clarity
       if (fieldValidation.errors.length > 0) {
-        errorMessage += fieldValidation.errors
-          .map((err) => `  ❌ ${err}`)
-          .join('\n');
+        errorMessage +=
+          '\n' + fieldValidation.errors.map((err) => `  ❌ ${err}`).join('\n');
       }
 
       // Add suggestions if available (truncated to prevent buffer overflow)
@@ -297,42 +538,165 @@ export class UniversalCreateService {
         );
         errorMessage += '\n\n💡 Suggestions:\n';
         errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
+
+        remediation = truncated.slice(0, MAX_VALIDATION_SUGGESTIONS);
       }
 
       // List available fields for this resource type
       const mapping = FIELD_MAPPINGS[resource_type];
       if (mapping && mapping.validFields.length > 0) {
         errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(', ')}`;
+        remediation.push(
+          `Use valid fields: ${mapping.validFields.slice(0, 5).join(', ')}`
+        );
       }
 
-      throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
+      throw createEnhancedValidationError(errorMessage, {
+        field: 'record_data',
+        errorCode: 'FIELD_VALIDATION_FAILED',
         suggestion: ValidationService.truncateSuggestions(
           fieldValidation.suggestions
-        ).join('. '),
-        field: 'record_data',
+        )
+          .join('. ')
+          .substring(0, MAX_SUGGESTION_TEXT_LENGTH),
+        remediation,
+      });
+    }
+
+    // Fetch available attributes for attribute-aware mapping (both api_slug and title)
+    // Skip attribute discovery for notes (they don't have /objects/notes/attributes endpoint)
+    let availableAttributes: string[] | undefined;
+    if (resource_type === UniversalResourceType.NOTES) {
+      logger.debug('Skipping attribute discovery for notes', {
+        reason:
+          'Notes are not under /objects/ and do not have attributes endpoint',
+      });
+      availableAttributes = undefined;
+    } else {
+      try {
+        const { UniversalMetadataService } = await import(
+          './UniversalMetadataService.js'
+        );
+        // For records, we need to extract the objectSlug for metadata discovery
+        const options: { objectSlug?: string } = {};
+        if (resource_type === UniversalResourceType.RECORDS) {
+          const objectSlug = record_data.object || record_data.object_api_slug;
+          if (objectSlug && typeof objectSlug === 'string') {
+            options.objectSlug = objectSlug;
+          }
+        }
+
+        const attributeResult =
+          await UniversalMetadataService.discoverAttributesForResourceType(
+            resource_type,
+            options
+          );
+
+        // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
+        const attrs = (attributeResult?.attributes as any[]) ?? [];
+        availableAttributes = Array.from(
+          new Set(
+            attrs.flatMap((a) =>
+              [
+                a?.api_slug,
+                a?.title,
+                a?.name, // accept all, some schemas use `title`, some `name`
+              ].filter((s: unknown): s is string => typeof s === 'string')
+            )
+          )
+        ).map((s) => s.toLowerCase());
+      } catch (error) {
+        // If attribute discovery fails, proceed without it (fallback behavior)
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.warn(ERROR_MESSAGES.ATTRIBUTE_DISCOVERY_FAILED(resource_type), {
+          resource_type,
+          fallback: 'proceeding without attributes',
+          error: errorMessage,
+          category: ErrorCategory.EXTERNAL_SERVICE,
+        });
+        availableAttributes = undefined;
+
+        // If this is a critical error (auth, network), consider throwing
+        if (errorMessage.includes('401') || errorMessage.includes('403')) {
+          throw createEnhancedValidationError(
+            `Authentication failed during attribute discovery for ${resource_type}`,
+            {
+              category: ErrorCategory.AUTHENTICATION,
+              errorCode: 'ATTR_DISCOVERY_AUTH_FAILED',
+              suggestion: 'Check API credentials and permissions',
+              remediation: [
+                'Verify ATTIO_API_KEY is valid and has proper permissions',
+              ],
+            }
+          );
+        }
+      }
+    }
+
+    // For records, extract objectSlug BEFORE mapping to ensure it doesn't get stripped
+    let recordsObjectSlug: string | undefined;
+    if (resource_type === UniversalResourceType.RECORDS) {
+      const original = record_data;
+      recordsObjectSlug = (original.object_api_slug ||
+        original.object_slug ||
+        original.object) as string;
+
+      if (!recordsObjectSlug || typeof recordsObjectSlug !== 'string') {
+        throw new UniversalValidationError(
+          'Creating a "records" item requires an object slug (e.g., object: "companies")',
+          ErrorType.USER_ERROR,
+          { field: 'object' }
+        );
+      }
+      logger.debug('RECORDS objectSlug extracted', {
+        recordsObjectSlug,
       });
     }
 
     // Map field names to correct ones with collision detection
-    const mappingResult = mapRecordFields(
+    const mappingResult = await mapRecordFields(
       resource_type,
-      record_data.values || record_data
+      record_data.values || record_data,
+      availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
-      throw new UniversalValidationError(
-        mappingResult.errors.join(' '),
-        ErrorType.USER_ERROR,
+      // Check if this is a field collision error
+      const firstError = mappingResult.errors[0];
+      const collisionMatch = firstError.match(
+        /Multiple fields map to "([^"]+)": (.+)/
+      );
+
+      if (collisionMatch) {
+        const [, targetField, fieldsStr] = collisionMatch;
+        const collidingFields = fieldsStr.split(', ');
+        throw createFieldCollisionError(
+          collidingFields,
+          targetField,
+          resource_type
+        );
+      }
+
+      // Generic mapping error with enhanced details
+      throw createEnhancedValidationError(
+        `Field mapping failed for ${resource_type}: ${mappingResult.errors.join('; ')}`,
         {
           field: 'record_data',
-          suggestion:
-            'Please use only one field for each target. Multiple aliases mapping to the same field are not allowed.',
+          errorCode: 'FIELD_MAPPING_ERROR',
+          suggestion: 'Check field names and resolve any conflicts',
+          remediation: mappingResult.errors.slice(
+            0,
+            MAX_VALIDATION_SUGGESTIONS
+          ),
         }
       );
     }
 
     const { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
-      console.error('Field mapping applied:', warnings.join('\n'));
+      logger.info('Field mapping applied with warnings', {
+        warnings,
+      });
     }
 
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
@@ -389,7 +753,7 @@ export class UniversalCreateService {
     try {
       // Validate required name field for companies
       if (!mappedData.name && !mappedData.company_name) {
-        throw new UniversalValidationError('Required field "name" is missing');
+        throw createFieldTypeError('name', 'string', undefined, resource_type);
       }
 
       // Apply format conversions for common mistakes
@@ -532,6 +896,17 @@ export class UniversalCreateService {
       // Apply format conversions for common mistakes
       const correctedData = convertAttributeFormats('people', normalizedData);
 
+      // Validate people attributes before POST to ensure correct Attio format
+      validatePeopleAttributesPrePost(correctedData);
+      logger.debug('People validation passed, final payload shape', {
+        name: Array.isArray(correctedData.name)
+          ? 'ARRAY'
+          : typeof correctedData.name,
+        email_addresses: Array.isArray(correctedData.email_addresses)
+          ? 'ARRAY'
+          : typeof correctedData.email_addresses,
+      });
+
       // Use mock injection for test environments (Issue #480 compatibility)
       const result = await createPersonWithMockSupport(correctedData);
 
@@ -565,6 +940,54 @@ export class UniversalCreateService {
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
+
+      // Handle uniqueness conflicts with helpful guidance
+      if (
+        errorObj?.code === 'uniqueness_conflict' ||
+        errorMessage.includes('uniqueness_conflict')
+      ) {
+        // Check if it's an email uniqueness conflict
+        if (
+          errorMessage.includes('email') ||
+          errorMessage.includes('email_address')
+        ) {
+          const emailAddresses = (mappedData as any)
+            .email_addresses as string[];
+          const emailText =
+            emailAddresses?.length > 0
+              ? emailAddresses.join(', ')
+              : 'the provided email';
+
+          // Optional preflight check (behind feature flag) - disabled for now due to import issues
+          // TODO: Re-enable after fixing search import path
+
+          throw new UniversalValidationError(
+            `A person with email "${emailText}" already exists. Try searching for existing records first or use different email addresses.`,
+            ErrorType.USER_ERROR,
+            {
+              suggestion:
+                'Use search-records to find the existing person, or provide different email addresses',
+              field: 'email_addresses',
+            }
+          );
+        }
+
+        // Generic uniqueness conflict
+        const enhancedMessage = await enhanceUniquenessError(
+          resource_type,
+          errorMessage,
+          mappedData
+        );
+        throw new UniversalValidationError(
+          enhancedMessage,
+          ErrorType.USER_ERROR,
+          {
+            suggestion:
+              'Try searching for existing records first or use different unique values',
+          }
+        );
+      }
+
       // Enhance error messages with format help
       if (
         errorMessage.includes('invalid value') ||
@@ -585,7 +1008,8 @@ export class UniversalCreateService {
           );
         }
       }
-      // Check for uniqueness constraint violations
+
+      // Check for uniqueness constraint violations (fallback)
       if (errorMessage.includes('uniqueness constraint')) {
         const enhancedMessage = await enhanceUniquenessError(
           resource_type,
@@ -612,8 +1036,88 @@ export class UniversalCreateService {
     mappedData: Record<string, unknown>,
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
+    // Validate required object slug
+    const objectSlug = mappedData.object || mappedData.object_api_slug;
+    logger.debug('Creating object record', {
+      objectSlug,
+      mappedDataKeys: Object.keys(mappedData),
+      fullMappedData: JSON.stringify(mappedData, null, 2),
+    });
+    if (!objectSlug || typeof objectSlug !== 'string') {
+      throw new UniversalValidationError(
+        'Creating a "records" item requires an object slug (e.g., object: "people")',
+        ErrorType.USER_ERROR,
+        { field: 'object' }
+      );
+    }
+
+    // Remove object slug from mapped data since it's used as the URL parameter
+    const { object, object_api_slug, values, ...recordData } = mappedData;
+
+    // Use values if provided, otherwise use the remaining data
+    let recordValues = values || recordData;
+
+    // Apply field mapping and format conversion to inner values using the resolved objectSlug
     try {
-      return await createObjectRecord('records', mappedData);
+      // Fetch attributes for the specific object type
+      const { UniversalMetadataService } = await import(
+        './UniversalMetadataService.js'
+      );
+      const attributeResult =
+        await UniversalMetadataService.discoverAttributesForResourceType(
+          UniversalResourceType.RECORDS, // Use records as resource type but pass objectSlug
+          { objectSlug }
+        );
+
+      // Build available attributes list
+      const attrs = (attributeResult?.attributes as any[]) ?? [];
+      const availableAttributes = Array.from(
+        new Set(
+          attrs.flatMap((a) =>
+            [a?.api_slug, a?.title, a?.name].filter(
+              (s: unknown): s is string => typeof s === 'string'
+            )
+          )
+        )
+      ).map((s) => s.toLowerCase());
+
+      // Apply field mapping to inner values using the objectSlug
+      const mappingResult = await mapRecordFields(
+        objectSlug as UniversalResourceType, // Use objectSlug as resource type for inner mapping
+        recordValues,
+        availableAttributes
+      );
+
+      if (mappingResult.warnings.length > 0) {
+        logger.info('Records inner field mapping applied with warnings', {
+          objectSlug,
+          warnings: mappingResult.warnings,
+        });
+      }
+
+      // Apply format conversions for the specific object type
+      recordValues = convertAttributeFormats(objectSlug, mappingResult.mapped);
+
+      logger.debug('Records inner values processed', {
+        objectSlug,
+        originalKeys: Object.keys(values || recordData),
+        mappedKeys: Object.keys(recordValues),
+        hasFieldMapping: mappingResult.warnings.length > 0,
+      });
+    } catch (attributeError) {
+      // If attribute discovery or mapping fails, proceed with original values
+      logger.warn('Failed to apply field mapping for records inner values', {
+        objectSlug,
+        error:
+          attributeError instanceof Error
+            ? attributeError.message
+            : String(attributeError),
+        fallback: 'using original values',
+      });
+    }
+
+    try {
+      return createObjectRecordApi(objectSlug, { values: recordValues } as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -665,7 +1169,7 @@ export class UniversalCreateService {
     dealData = await applyDealDefaultsWithValidation(dealData, false);
 
     try {
-      return await createObjectRecord('deals', dealData);
+      return await createObjectRecordApi('deals', { values: dealData } as any);
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage =
@@ -688,7 +1192,9 @@ export class UniversalCreateService {
           delete dealData.stage;
         }
 
-        return await createObjectRecord('deals', dealData);
+        return await createObjectRecordApi('deals', {
+          values: dealData,
+        } as any);
       }
       throw error;
     }
@@ -715,13 +1221,9 @@ export class UniversalCreateService {
           mappedData.name.trim()) ||
         'New task';
 
-      // Validate field mapping - only suggest using content instead of title
-      // if the user actually provided a title field but no content
-      if (mappedData.title !== undefined && mappedData.content === undefined) {
-        throw ErrorTemplates.TASK_FIELD_MAPPING(
-          'title', // Show 'title' as the field they tried to use
-          'content' // Suggest 'content' as the correct field
-        );
+      // If content is missing but we have title, synthesize content from title
+      if (mappedData.title !== undefined && !mappedData.content) {
+        mappedData.content = content;
       }
 
       // Handle field mappings: The field mapper transforms to API field names
@@ -810,7 +1312,7 @@ export class UniversalCreateService {
       return convertedRecord;
     } catch (error: unknown) {
       // Log original error for debugging
-      console.error('[Tasks] Original error:', error);
+      logger.error('Task creation failed', error, { resource_type: 'tasks' });
 
       // Issue #417: Enhanced task error handling with field mapping guidance
       const errorObj: Error =
@@ -836,18 +1338,23 @@ export class UniversalCreateService {
       if (typeof mappedData.content === 'string' && mappedData.content.trim()) {
         content = mappedData.content.trim();
       } else {
-        throw new UniversalValidationError(
-          'Content is required and must be a non-empty string',
-          ErrorType.USER_ERROR,
-          { field: 'content' }
+        throw createFieldTypeError(
+          'content',
+          'string (non-empty)',
+          mappedData.content,
+          'notes'
         );
       }
 
       // Validate parent_object (after field mapping)
       const parentObject = mappedData.parent_object as string;
-      if (!parentObject || !['companies', 'people'].includes(parentObject)) {
+      if (
+        !parentObject ||
+        typeof parentObject !== 'string' ||
+        !parentObject.trim()
+      ) {
         throw new UniversalValidationError(
-          'parent_object must be "companies" or "people"',
+          'parent_object is required and must be a valid object slug',
           ErrorType.USER_ERROR,
           { field: 'parent_object' }
         );
@@ -863,16 +1370,29 @@ export class UniversalCreateService {
         );
       }
 
+      // Require or synthesize title (Attio requires this field)
+      let title: string;
+      if (typeof mappedData.title === 'string' && mappedData.title.trim()) {
+        title = mappedData.title.trim();
+      } else {
+        // Synthesize title from content (first 80 characters)
+        title = content.slice(0, 80);
+        logger.debug('Synthesized note title from content', {
+          originalContent: content.slice(0, 100),
+          synthesizedTitle: title,
+        });
+      }
+
       // Build create note body according to Attio API spec
       const noteBody = {
-        parent_object: parentObject as 'companies' | 'people',
+        parent_object: parentObject,
         parent_record_id: parentRecordId,
         content,
-        title: mappedData.title as string | undefined,
+        title, // Required field, now guaranteed to be present
         format: (mappedData.format as 'markdown' | 'plaintext') || 'plaintext',
         created_at: mappedData.created_at as string | undefined,
         meeting_id: mappedData.meeting_id as string | undefined,
-      };
+      } as CreateNoteBody;
 
       debug(
         'universal.createNote',
@@ -882,7 +1402,10 @@ export class UniversalCreateService {
           parent_record_id: noteBody.parent_record_id,
           hasContent: !!noteBody.content,
           hasTitle: !!noteBody.title,
+          titleLength: title.length,
+          contentPreview: content.slice(0, 40),
           format: noteBody.format,
+          skippedAttributeDiscovery: true,
         },
         'createNote',
         OperationType.API_CALL
@@ -910,7 +1433,7 @@ export class UniversalCreateService {
       return normalizedRecord as AttioRecord;
     } catch (error: unknown) {
       // Log original error for debugging
-      console.error('[Notes] Original error:', error);
+      logger.error('Note creation failed', error, { resource_type: 'notes' });
 
       // Enhanced error handling for notes
       const errorObj: Error =
@@ -935,9 +1458,10 @@ export class UniversalCreateService {
     const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
-      console.error(
-        `Resource type corrected from "${resource_type}" to "${resourceValidation.corrected}"`
-      );
+      logger.info('Resource type corrected', {
+        originalType: resource_type,
+        correctedType: resourceValidation.corrected,
+      });
       return this.createRecord({
         ...params,
         resource_type: resourceValidation.corrected,

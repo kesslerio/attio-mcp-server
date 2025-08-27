@@ -15,6 +15,19 @@ import {
 } from '../../types/attio.js';
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
+import {
+  debug,
+  error,
+  OperationType,
+  createScopedLogger,
+} from '../../utils/logger.js';
+
+// Create scoped logger for CRUD operations
+const logger = createScopedLogger(
+  'CRUDOperations',
+  undefined,
+  OperationType.API_CALL
+);
 
 /**
  * Helper function to construct object path
@@ -50,7 +63,10 @@ function extractAnyId(obj: any): string | undefined {
  * Transforms raw API response to ensure proper AttioRecord structure
  * @private
  */
-function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any, allowEmpty = false): T {
+function ensureAttioRecordStructure<T extends AttioRecord>(
+  rawData: any,
+  allowEmpty = false
+): T {
   if (!rawData || typeof rawData !== 'object') {
     throw new Error('Invalid API response: no data found');
   }
@@ -64,8 +80,11 @@ function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any, allowEm
   }
 
   // Debug logging to understand the actual API response structure
-  if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-    console.error('[ensureAttioRecordStructure] Raw data received:', {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.E2E_MODE === 'true'
+  ) {
+    logger.debug('Raw data received in ensureAttioRecordStructure', {
       type: typeof rawData,
       keys: Object.keys(rawData || {}),
       hasId: !!rawData.id,
@@ -74,7 +93,7 @@ function ensureAttioRecordStructure<T extends AttioRecord>(rawData: any, allowEm
       idValue: rawData.id,
       hasValues: !!rawData.values,
       valuesType: typeof rawData.values,
-      fullData: JSON.stringify(rawData, null, 2)
+      fullData: JSON.stringify(rawData, null, 2),
     });
   }
 
@@ -177,32 +196,38 @@ export async function createRecord<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     // Debug log the request being made
-    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-      console.error('[createRecord] Making API request:', {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.E2E_MODE === 'true'
+    ) {
+      logger.debug('Making API request for createRecord', {
         path,
         requestBody: {
           data: {
             values: params.attributes,
           },
-        }
+        },
       });
     }
-    
+
     const response = await api.post<AttioSingleResponse<T>>(path, {
       data: {
         values: params.attributes,
       },
     });
-    
+
     // Debug log the full response
-    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-      console.error('[createRecord] Full API response:', {
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.E2E_MODE === 'true'
+    ) {
+      logger.debug('Full API response for createRecord', {
         status: response?.status,
         statusText: response?.statusText,
         headers: response?.headers,
         data: response?.data,
         dataType: typeof response?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : []
+        dataKeys: response?.data ? Object.keys(response.data) : [],
       });
     }
 
@@ -222,29 +247,48 @@ export async function createRecord<T extends AttioRecord>(
 
     // Final validation with debug logging
     if (!rawResult || typeof rawResult !== 'object') {
-      console.error('DEBUG: Failed response extraction. Response structure:', {
-        hasResponse: !!response,
-        hasData: !!response?.data,
-        hasNestedData: !!response?.data?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : [],
-        dataType: typeof response?.data,
-        rawDataType: typeof rawResult,
-      });
+      logger.error(
+        'Failed response extraction. Response structure:',
+        undefined,
+        {
+          hasResponse: !!response,
+          hasData: !!response?.data,
+          hasNestedData: !!response?.data?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+          dataType: typeof response?.data,
+          rawDataType: typeof rawResult,
+        }
+      );
       throw new Error('Invalid API response structure: no data found');
     }
 
     // Transform to proper AttioRecord structure with id.record_id
     try {
       // Allow empty objects for companies to enable fallback handling at higher levels
-      const isCompaniesRequest = params.objectSlug === 'companies' || params.objectId === 'companies';
-      const result = ensureAttioRecordStructure<T>(rawResult, isCompaniesRequest);
+      const isCompaniesRequest =
+        params.objectSlug === 'companies' || params.objectId === 'companies';
+      const result = ensureAttioRecordStructure<T>(
+        rawResult,
+        isCompaniesRequest
+      );
       return result;
     } catch (error) {
       // Robust fallback for { data: {} } responses - query the just-created record by name
-      const name = (params?.attributes as any)?.name?.value ?? (params?.attributes as any)?.name;
-      if (name && error instanceof Error && error.message.includes('missing ID structure')) {
-        if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-          console.error('[createRecord] Fallback: querying just-created record by name:', name);
+      const name =
+        (params?.attributes as any)?.name?.value ??
+        (params?.attributes as any)?.name;
+      if (
+        name &&
+        error instanceof Error &&
+        error.message.includes('missing ID structure')
+      ) {
+        if (
+          process.env.NODE_ENV === 'development' ||
+          process.env.E2E_MODE === 'true'
+        ) {
+          logger.debug('Fallback: querying just-created record by name', {
+            name,
+          });
         }
         try {
           // Use the documented query endpoint with exact name match
@@ -252,22 +296,30 @@ export async function createRecord<T extends AttioRecord>(
             filter: { name },
             limit: 1,
           });
-          
+
           const found = queryResponse?.data?.data?.[0];
           if (found) {
             const fallbackResult = ensureAttioRecordStructure<T>(found);
-            if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-              console.error('[createRecord] Fallback successful, found record:', fallbackResult.id?.record_id);
+            if (
+              process.env.NODE_ENV === 'development' ||
+              process.env.E2E_MODE === 'true'
+            ) {
+              logger.debug('Fallback successful, found record', {
+                recordId: fallbackResult.id?.record_id,
+              });
             }
             return fallbackResult;
           }
         } catch (lookupError) {
-          if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-            console.error('[createRecord] Fallback query failed:', lookupError);
+          if (
+            process.env.NODE_ENV === 'development' ||
+            process.env.E2E_MODE === 'true'
+          ) {
+            logger.error('Fallback query failed', lookupError);
           }
         }
       }
-      
+
       // If fallback didn't work, rethrow original error
       throw error;
     }
@@ -417,13 +469,13 @@ export async function listRecords<T extends AttioRecord>(
   return callWithRetry(async () => {
     const response = await api.get<AttioListResponse<T>>(path);
     // Ensure we always return an array, never undefined/null/objects
-    const items = Array.isArray(response?.data?.data) 
-      ? response.data.data 
-      : Array.isArray(response?.data?.records) 
-      ? response.data.records 
-      : Array.isArray(response?.data)
-      ? response.data
-      : [];
+    const items = Array.isArray(response?.data?.data)
+      ? response.data.data
+      : Array.isArray(response?.data?.records)
+        ? response.data.records
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
     return items;
   }, retryConfig);
 }

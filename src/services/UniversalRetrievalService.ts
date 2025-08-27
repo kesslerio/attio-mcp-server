@@ -181,7 +181,7 @@ export class UniversalRetrievalService {
         );
 
         // URS suite expects createRecordNotFoundError for generic 404s
-        throw createRecordNotFoundError();
+        throw createRecordNotFoundError(record_id, resource_type);
       }
 
       if (statusCode === 400) {
@@ -359,7 +359,11 @@ export class UniversalRetrievalService {
           };
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        throw withEnumerableMessage(error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : `HTTP Error ${httpError.status}`;
+        throw withEnumerableMessage(new Error(errorMessage));
       }
 
       // For non-HTTP errors, treat as not found only if it's a typical not-found error
@@ -417,7 +421,11 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        throw withEnumerableMessage(error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : `HTTP Error ${httpError.status}`;
+        throw withEnumerableMessage(new Error(errorMessage));
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
@@ -426,7 +434,7 @@ export class UniversalRetrievalService {
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         CachingService.cache404Response(resource_type, record_id);
         // URS test expects createRecordNotFoundError for consistent message
-        throw createRecordNotFoundError();
+        throw createRecordNotFoundError(record_id, resource_type);
       }
 
       // Re-throw other errors to avoid masking legitimate issues
@@ -470,7 +478,11 @@ export class UniversalRetrievalService {
           });
         }
         // Re-throw other HTTP errors (auth, network, etc.) as-is
-        throw withEnumerableMessage(error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : `HTTP Error ${httpError.status}`;
+        throw withEnumerableMessage(new Error(errorMessage));
       }
 
       // For non-HTTP errors, only treat as 404 if it's clearly a not-found error
@@ -588,7 +600,9 @@ export class UniversalRetrievalService {
 
       // For HTTP errors, enhance via ErrorEnhancer (URS test expects "Enhanced error")
       if (Number.isFinite(statusCode)) {
-        const enhanced = ErrorEnhancer.autoEnhance(error);
+        const errorObj =
+          error instanceof Error ? error : new Error(String(error));
+        const enhanced = ErrorEnhancer.autoEnhance(errorObj);
         throw enhanced;
       }
 

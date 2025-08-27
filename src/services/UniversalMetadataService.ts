@@ -9,6 +9,21 @@ import { UniversalResourceType } from '../handlers/tool-configs/universal/types.
 import type { UniversalAttributesParams } from '../handlers/tool-configs/universal/types.js';
 import { getAttioClient } from '../api/attio-client.js';
 import { secureValidateCategories } from '../utils/validation/field-validation.js';
+import { CachingService } from './CachingService.js';
+import { OBJECT_SLUG_MAP } from '../constants/universal.constants.js';
+import type {
+  AttioAttribute,
+  AttributeResponse,
+  UnknownRecord,
+} from '../types/service-types.js';
+import { isAttioAttribute } from '../types/service-types.js';
+import {
+  debug,
+  error,
+  info,
+  OperationType,
+  createScopedLogger,
+} from '../utils/logger.js';
 
 // Import resource-specific attribute functions
 import {
@@ -17,38 +32,392 @@ import {
 } from '../objects/companies/index.js';
 import { getListAttributes } from '../objects/lists.js';
 
+// Create scoped logger for this service
+const logger = createScopedLogger(
+  'UniversalMetadataService',
+  undefined,
+  OperationType.DATA_PROCESSING
+);
+
+/**
+ * Performance metrics tracking for attribute discovery operations
+ */
+class AttributeDiscoveryMetrics {
+  private static metrics: Array<{
+    timestamp: number;
+    resourceType: string;
+    objectSlug?: string;
+    duration: number;
+    cacheHit: boolean;
+    attributeCount: number;
+    error?: string;
+  }> = [];
+
+  static recordDiscovery(
+    resourceType: string,
+    duration: number,
+    options?: {
+      objectSlug?: string;
+      cacheHit?: boolean;
+      attributeCount?: number;
+      error?: string;
+    }
+  ): void {
+    this.metrics.push({
+      timestamp: Date.now(),
+      resourceType,
+      objectSlug: options?.objectSlug,
+      duration,
+      cacheHit: options?.cacheHit || false,
+      attributeCount: options?.attributeCount || 0,
+      error: options?.error,
+    });
+
+    // Keep only last 1000 entries to prevent memory growth
+    if (this.metrics.length > 1000) {
+      this.metrics.shift();
+    }
+
+    // Log performance info
+    if (options?.cacheHit) {
+      debug('UniversalMetadataService', 'Attribute discovery cache hit', {
+        resourceType,
+        objectSlug: options.objectSlug,
+        duration,
+        attributeCount: options.attributeCount,
+      });
+    } else {
+      info('UniversalMetadataService', 'Attribute discovery completed', {
+        resourceType,
+        objectSlug: options?.objectSlug,
+        duration,
+        attributeCount: options?.attributeCount,
+        performance:
+          duration < 1000 ? 'good' : duration < 3000 ? 'moderate' : 'slow',
+      });
+    }
+  }
+
+  static getMetrics(options?: {
+    resourceType?: string;
+    since?: number; // timestamp
+    includeErrors?: boolean;
+  }) {
+    let filtered = this.metrics;
+
+    if (options?.resourceType) {
+      filtered = filtered.filter(
+        (m) => m.resourceType === options.resourceType
+      );
+    }
+
+    if (options?.since) {
+      filtered = filtered.filter((m) => m.timestamp >= options.since!);
+    }
+
+    if (!options?.includeErrors) {
+      filtered = filtered.filter((m) => !m.error);
+    }
+
+    const totalRequests = filtered.length;
+    const cacheHits = filtered.filter((m) => m.cacheHit).length;
+    const totalDuration = filtered.reduce((sum, m) => sum + m.duration, 0);
+    const avgDuration = totalRequests > 0 ? totalDuration / totalRequests : 0;
+    const errors = filtered.filter((m) => m.error).length;
+
+    return {
+      totalRequests,
+      cacheHits,
+      cacheHitRate: totalRequests > 0 ? cacheHits / totalRequests : 0,
+      avgDuration,
+      totalDuration,
+      errors,
+      errorRate: totalRequests > 0 ? errors / totalRequests : 0,
+      slowRequests: filtered.filter((m) => m.duration > 3000).length,
+      byResourceType: this.getResourceTypeBreakdown(filtered),
+    };
+  }
+
+  private static getResourceTypeBreakdown(metrics: typeof this.metrics) {
+    const breakdown: Record<
+      string,
+      {
+        count: number;
+        avgDuration: number;
+        cacheHitRate: number;
+        errorRate: number;
+      }
+    > = {};
+
+    for (const metric of metrics) {
+      if (!breakdown[metric.resourceType]) {
+        breakdown[metric.resourceType] = {
+          count: 0,
+          avgDuration: 0,
+          cacheHitRate: 0,
+          errorRate: 0,
+        };
+      }
+
+      const stats = breakdown[metric.resourceType];
+      stats.count++;
+      stats.avgDuration =
+        (stats.avgDuration * (stats.count - 1) + metric.duration) / stats.count;
+
+      if (metric.cacheHit) {
+        stats.cacheHitRate =
+          (stats.cacheHitRate * (stats.count - 1) + 1) / stats.count;
+      } else {
+        stats.cacheHitRate =
+          (stats.cacheHitRate * (stats.count - 1)) / stats.count;
+      }
+
+      if (metric.error) {
+        stats.errorRate =
+          (stats.errorRate * (stats.count - 1) + 1) / stats.count;
+      } else {
+        stats.errorRate = (stats.errorRate * (stats.count - 1)) / stats.count;
+      }
+    }
+
+    return breakdown;
+  }
+
+  static clearMetrics(): void {
+    this.metrics = [];
+  }
+}
+
 /**
  * UniversalMetadataService provides centralized metadata and attribute operations
  */
 export class UniversalMetadataService {
   /**
-   * Discover attributes for a specific resource type
+   * Discover attributes for a specific resource type with caching support
    * Special handling for tasks which use /tasks API instead of /objects/tasks
+   *
+   * @param resourceType - The resource type to discover attributes for
+   * @param options - Optional configuration including categories and object slug
+   * @returns Promise resolving to attribute discovery results with caching metadata
    */
   static async discoverAttributesForResourceType(
     resourceType: UniversalResourceType,
     options?: {
-      categories?: string[]; // NEW: Category filtering support
+      categories?: string[]; // Category filtering support
+      objectSlug?: string; // Object slug for records routing
+      useCache?: boolean; // Whether to use caching (default: true)
+      cacheTtl?: number; // Custom cache TTL in milliseconds
     }
   ): Promise<Record<string, unknown>> {
+    // Check if caching should be used (default: true)
+    const useCache = options?.useCache !== false;
+    const startTime = Date.now();
+
     // Handle tasks as special case - they don't use /objects/{type}/attributes
     if (resourceType === UniversalResourceType.TASKS) {
-      return this.discoverTaskAttributes(options);
+      if (useCache) {
+        return CachingService.getOrLoadAttributes(
+          async () => {
+            const result = await this.discoverTaskAttributes(options);
+            const duration = Date.now() - startTime;
+            const attributeCount = Array.isArray(result?.attributes)
+              ? result.attributes.length
+              : 0;
+
+            AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+              cacheHit: false,
+              attributeCount,
+            });
+
+            return result;
+          },
+          resourceType,
+          undefined,
+          options?.cacheTtl
+        ).then((result) => {
+          if (result.fromCache) {
+            const duration = Date.now() - startTime;
+            const attributeCount = Array.isArray(result.data?.attributes)
+              ? result.data.attributes.length
+              : 0;
+
+            AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+              cacheHit: true,
+              attributeCount,
+            });
+          }
+          return result.data;
+        });
+      }
+
+      const result = await this.discoverTaskAttributes(options);
+      const duration = Date.now() - startTime;
+      const attributeCount = Array.isArray(result?.attributes)
+        ? result.attributes.length
+        : 0;
+
+      AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+        cacheHit: false,
+        attributeCount,
+      });
+
+      return result;
     }
 
+    // Handle records as special case - they need object-specific routing
+    if (resourceType === UniversalResourceType.RECORDS) {
+      if (!options?.objectSlug) {
+        throw new Error(
+          'discoverAttributesForResourceType(records) requires objectSlug in options'
+        );
+      }
+
+      if (useCache) {
+        return CachingService.getOrLoadAttributes(
+          async () => {
+            const result = await this.discoverObjectAttributes(
+              options.objectSlug!,
+              options
+            );
+            const duration = Date.now() - startTime;
+            const attributeCount = Array.isArray(result?.attributes)
+              ? result.attributes.length
+              : 0;
+
+            AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+              objectSlug: options.objectSlug,
+              cacheHit: false,
+              attributeCount,
+            });
+
+            return result;
+          },
+          resourceType,
+          options.objectSlug,
+          options?.cacheTtl
+        ).then((result) => {
+          if (result.fromCache) {
+            const duration = Date.now() - startTime;
+            const attributeCount = Array.isArray(result.data?.attributes)
+              ? result.data.attributes.length
+              : 0;
+
+            AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+              objectSlug: options.objectSlug,
+              cacheHit: true,
+              attributeCount,
+            });
+          }
+          return result.data;
+        });
+      }
+
+      const result = await this.discoverObjectAttributes(
+        options.objectSlug,
+        options
+      );
+      const duration = Date.now() - startTime;
+      const attributeCount = Array.isArray(result?.attributes)
+        ? result.attributes.length
+        : 0;
+
+      AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+        objectSlug: options.objectSlug,
+        cacheHit: false,
+        attributeCount,
+      });
+
+      return result;
+    }
+
+    // For standard resource types, use caching if enabled
+    if (useCache) {
+      return CachingService.getOrLoadAttributes(
+        async () => {
+          const result = await this.performAttributeDiscovery(
+            resourceType,
+            options
+          );
+          const duration = Date.now() - startTime;
+          const attributeCount = Array.isArray(result?.attributes)
+            ? result.attributes.length
+            : 0;
+
+          AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+            cacheHit: false,
+            attributeCount,
+          });
+
+          return result;
+        },
+        resourceType,
+        undefined,
+        options?.cacheTtl
+      ).then((result) => {
+        if (result.fromCache) {
+          const duration = Date.now() - startTime;
+          const attributeCount = Array.isArray(result.data?.attributes)
+            ? result.data.attributes.length
+            : 0;
+
+          AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+            cacheHit: true,
+            attributeCount,
+          });
+        }
+        return result.data;
+      });
+    }
+
+    // Perform direct attribute discovery without caching
+    try {
+      const result = await this.performAttributeDiscovery(
+        resourceType,
+        options
+      );
+      const duration = Date.now() - startTime;
+      const attributeCount = Array.isArray(result?.attributes)
+        ? result.attributes.length
+        : 0;
+
+      AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+        cacheHit: false,
+        attributeCount,
+      });
+
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
+        cacheHit: false,
+        attributeCount: 0,
+        error: errorMessage,
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Perform the actual attribute discovery API call
+   * Extracted to support both cached and non-cached execution paths
+   *
+   * @private
+   */
+  private static async performAttributeDiscovery(
+    resourceType: UniversalResourceType,
+    options?: {
+      categories?: string[];
+    }
+  ): Promise<Record<string, unknown>> {
     const client = getAttioClient();
 
     try {
       // Convert resource type to API slug for schema discovery (uses plural object api_slugs)
       // Note: Attio's schema discovery uses /objects/{api_slug}/attributes where api_slug is plural
-      const OBJECT_SLUG_MAP: Record<string, string> = {
-        companies: 'companies',
-        people: 'people',
-        deals: 'deals',
-        tasks: 'tasks',
-        records: 'records',
-        lists: 'lists',
-      };
       const resourceSlug =
         OBJECT_SLUG_MAP[resourceType.toLowerCase()] ||
         resourceType.toLowerCase();
@@ -68,18 +437,24 @@ export class UniversalMetadataService {
         }
       }
 
-      const response = await client.get(path);
+      const response = await client.get<AttributeResponse>(path);
 
       const attributes = response?.data?.data || [];
 
       // Validate we got an array of attributes
       if (!Array.isArray(attributes)) {
         if (process.env.E2E_MODE === 'true') {
-          console.error(`[DEBUG] Expected array, got:`, {
-            attributes,
-            type: typeof attributes,
-            responseData: response?.data,
-          });
+          debug(
+            'UniversalMetadataService',
+            'Expected array, got different type',
+            {
+              attributes,
+              type: typeof attributes,
+              responseData: response?.data,
+            },
+            'discoverAttributesForResourceType',
+            OperationType.DATA_PROCESSING
+          );
         }
         throw {
           status: 500,
@@ -92,13 +467,8 @@ export class UniversalMetadataService {
 
       // Create mapping from title to api_slug for compatibility
       const mappings: Record<string, string> = {};
-      attributes.forEach((attr: Record<string, unknown>) => {
-        if (
-          attr.title &&
-          attr.api_slug &&
-          typeof attr.title === 'string' &&
-          typeof attr.api_slug === 'string'
-        ) {
+      attributes.forEach((attr: unknown) => {
+        if (isAttioAttribute(attr)) {
           mappings[attr.title] = attr.api_slug;
         }
       });
@@ -110,10 +480,10 @@ export class UniversalMetadataService {
         resource_type: resourceType,
       };
     } catch (error: unknown) {
-      console.error(
-        `Failed to discover attributes for ${resourceType}:`,
-        error
-      );
+      logger.error(`Failed to discover attributes for ${resourceType}`, error, {
+        resourceType,
+        options,
+      });
 
       // If it's a 404 or similar API error, convert to structured error for MCP error detection
       if (error && typeof error === 'object' && 'response' in error) {
@@ -294,9 +664,10 @@ export class UniversalMetadataService {
 
       return result;
     } catch (error: unknown) {
-      console.error(
-        `Failed to get attributes for ${resourceType} record ${recordId}:`,
-        error
+      logger.error(
+        `Failed to get attributes for ${resourceType} record ${recordId}`,
+        error,
+        { resourceType, recordId }
       );
       const msg =
         error instanceof Error
@@ -481,5 +852,74 @@ export class UniversalMetadataService {
           `Unsupported resource type for discover attributes: ${resource_type}`
         );
     }
+  }
+
+  /**
+   * Discover attributes for a specific object type (used by records)
+   */
+  private static async discoverObjectAttributes(
+    objectSlug: string,
+    options?: {
+      categories?: string[];
+    }
+  ): Promise<Record<string, unknown>> {
+    const client = getAttioClient();
+
+    try {
+      let path = `/objects/${objectSlug}/attributes`;
+
+      // Add category filtering if specified
+      if (options?.categories && options.categories.length > 0) {
+        const validatedCategories = secureValidateCategories(
+          options.categories,
+          'category filtering in discover-object-attributes'
+        );
+
+        if (validatedCategories.length > 0) {
+          const categoriesParam = validatedCategories.join(',');
+          path += `?categories=${encodeURIComponent(categoriesParam)}`;
+        }
+      }
+
+      const response = await client.get(path);
+      const attributes = response?.data?.data || [];
+
+      // Validate we got an array of attributes
+      if (!Array.isArray(attributes)) {
+        throw new Error(`Invalid attributes response for object ${objectSlug}`);
+      }
+
+      return {
+        attributes,
+        resourceType: 'records',
+        objectSlug,
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number }; message?: string };
+      throw new Error(
+        `Failed to discover attributes for object ${objectSlug}: ${err.message || 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Get performance metrics for attribute discovery operations
+   *
+   * @param options - Filtering options for metrics
+   * @returns Comprehensive performance statistics
+   */
+  static getPerformanceMetrics(options?: {
+    resourceType?: string;
+    since?: number; // timestamp
+    includeErrors?: boolean;
+  }) {
+    return AttributeDiscoveryMetrics.getMetrics(options);
+  }
+
+  /**
+   * Clear all performance metrics (useful for testing)
+   */
+  static clearPerformanceMetrics(): void {
+    AttributeDiscoveryMetrics.clearMetrics();
   }
 }
