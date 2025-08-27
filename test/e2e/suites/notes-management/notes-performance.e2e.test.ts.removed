@@ -1,0 +1,366 @@
+/**
+ * Notes Performance and Integration E2E Tests
+ *
+ * Focused testing of note performance characteristics, scalability,
+ * data consistency, and integration with the broader test suite.
+ *
+ * Tools tested:
+ * - Performance characteristics of note operations
+ * - Concurrent operation handling
+ * - Data consistency across resource types
+ * - Test data cleanup and integration
+ */
+
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  AttioRecord,
+  NoteRecord,
+  testCompanies,
+  testPeople,
+  createdNotes,
+  createSharedSetup,
+  createTestCompany,
+  createTestPerson,
+  callNotesTool,
+  E2EAssertions,
+  performanceNotes,
+} from './shared-setup.js';
+import type { McpToolResponse } from '../../types/index.js';
+
+describe
+  .skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')
+  .sequential('Notes Performance and Integration E2E Tests', () => {
+    const setup = createSharedSetup();
+
+    beforeAll(async () => {
+      await setup.beforeAll();
+      // Ensure we have test data
+      if (testCompanies.length === 0) await createTestCompany();
+      if (testPeople.length === 0) await createTestPerson();
+    }, 30000);
+
+    afterAll(setup.afterAll, 30000);
+    beforeEach(setup.beforeEach);
+
+    describe('Performance and Scalability', () => {
+      it('should handle concurrent note creation', async () => {
+        if (testCompanies.length === 0 || testPeople.length === 0) {
+          console.error('⏭️ Skipping concurrent test - insufficient test data');
+          return;
+        }
+
+        const testCompany = testCompanies[0] as unknown as AttioRecord;
+        const testPerson = testPeople[0] as unknown as AttioRecord;
+        if (!testCompany?.id?.record_id || !testPerson?.id?.record_id) {
+          console.error('⏭️ Skipping concurrent test - invalid test data');
+          return;
+        }
+
+        const promises = [
+          callNotesTool('create-note', {
+            resource_type: 'companies',
+            record_id: testCompany.id.record_id,
+            title: 'Concurrent Note 1',
+            content: 'First concurrent note',
+          }) as Promise<McpToolResponse>,
+          callNotesTool('create-note', {
+            resource_type: 'people',
+            record_id: testPerson.id.record_id,
+            title: 'Concurrent Note 2',
+            content: 'Second concurrent note',
+          }) as Promise<McpToolResponse>,
+          callNotesTool('create-note', {
+            resource_type: 'companies',
+            record_id: testCompany.id.record_id,
+            title: 'Concurrent Note 3',
+            content: 'Third concurrent note',
+          }) as Promise<McpToolResponse>,
+        ];
+
+        const responses = await Promise.all(promises);
+
+        responses.forEach((response, index) => {
+          E2EAssertions.expectMcpSuccess(
+            response,
+            `Concurrent note ${index + 1} should succeed`
+          );
+          const note = E2EAssertions.expectMcpData(
+            response
+          ) as unknown as NoteRecord;
+          createdNotes.push(note);
+        });
+
+        console.error('🚀 Concurrent note creation completed successfully');
+      }, 45000);
+
+      it('should validate execution times', async () => {
+        if (testCompanies.length === 0) {
+          console.error(
+            '⏭️ Skipping execution time test - no test companies available'
+          );
+          return;
+        }
+
+        const testCompany = testCompanies[0] as unknown as AttioRecord;
+        if (!testCompany?.id?.record_id) {
+          console.error(
+            '⏭️ Skipping execution time test - invalid company data'
+          );
+          return;
+        }
+        const startTime = Date.now();
+
+        const response = (await callNotesTool('list-notes', {
+          resource_type: 'companies',
+          record_id: testCompany.id.record_id,
+          limit: 10,
+        })) as McpToolResponse;
+
+        const endTime = Date.now();
+        const executionTime = endTime - startTime;
+
+        E2EAssertions.expectMcpSuccess(response);
+        expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
+
+        console.error(`⚡ Note retrieval completed in ${executionTime}ms`);
+      }, 15000);
+
+      it('should handle batch note creation for performance testing', async () => {
+        if (testCompanies.length === 0) {
+          console.error(
+            '⏭️ Skipping batch creation test - no test companies available'
+          );
+          return;
+        }
+
+        const testCompany = testCompanies[0] as unknown as AttioRecord;
+        if (!testCompany?.id?.record_id) {
+          console.error(
+            '⏭️ Skipping batch creation test - invalid company data'
+          );
+          return;
+        }
+        const batchNotes = performanceNotes.generateBatch(
+          testCompany.id.record_id,
+          'companies',
+          3
+        );
+
+        const startTime = Date.now();
+
+        for (const noteData of batchNotes) {
+          const response = (await callNotesTool('create-note', {
+            resource_type: 'companies',
+            record_id: testCompany.id.record_id,
+            title: noteData.title,
+            content: noteData.content,
+          })) as McpToolResponse;
+
+          if (response.isError) {
+            console.warn('Batch note creation failed:', response.error);
+          } else {
+            const note = E2EAssertions.expectMcpData(
+              response
+            ) as unknown as NoteRecord;
+            createdNotes.push(note);
+          }
+        }
+
+        const endTime = Date.now();
+        const totalTime = endTime - startTime;
+        const avgTime = totalTime / batchNotes.length;
+
+        console.error(
+          `📊 Batch creation: ${batchNotes.length} notes in ${totalTime}ms (avg: ${avgTime}ms per note)`
+        );
+        expect(avgTime).toBeLessThan(5000); // Average should be under 5 seconds per note
+      }, 60000);
+    });
+
+    describe('Data Consistency and Integration', () => {
+      it('should maintain note structure consistency across different record types', async () => {
+        if (testCompanies.length === 0 || testPeople.length === 0) {
+          console.error(
+            '⏭️ Skipping consistency test - insufficient test data'
+          );
+          return;
+        }
+
+        const testCompany = testCompanies[0] as unknown as AttioRecord;
+        const testPerson = testPeople[0] as unknown as AttioRecord;
+        if (!testCompany?.id?.record_id || !testPerson?.id?.record_id) {
+          console.error('⏭️ Skipping consistency test - invalid test data');
+          return;
+        }
+
+        // Create similar notes for both record types
+        const companyResponse = (await callNotesTool('create-note', {
+          resource_type: 'companies',
+          record_id: testCompany.id.record_id,
+          title: 'Consistency Test Note',
+          content: 'Testing structural consistency across record types',
+        })) as McpToolResponse;
+
+        const personResponse = (await callNotesTool('create-note', {
+          resource_type: 'people',
+          record_id: testPerson.id.record_id,
+          title: 'Consistency Test Note',
+          content: 'Testing structural consistency across record types',
+        })) as McpToolResponse;
+
+        E2EAssertions.expectMcpSuccess(companyResponse);
+        E2EAssertions.expectMcpSuccess(personResponse);
+
+        const companyNote = E2EAssertions.expectMcpData(
+          companyResponse
+        ) as unknown as NoteRecord;
+        const personNote = E2EAssertions.expectMcpData(
+          personResponse
+        ) as unknown as NoteRecord;
+
+        // Both notes should have consistent structure
+        E2EAssertions.expectValidNoteStructure(companyNote);
+        E2EAssertions.expectValidNoteStructure(personNote);
+
+        // Core fields should be present in both
+        expect(companyNote.title).toBeDefined();
+        expect(personNote.title).toBeDefined();
+        expect(companyNote.content).toBeDefined();
+        expect(personNote.content).toBeDefined();
+
+        createdNotes.push(companyNote, personNote);
+
+        console.error('🧪 Validated note structure consistency');
+      }, 30000);
+
+      it('should validate test data cleanup tracking', async () => {
+        // Verify that created notes are being tracked for cleanup
+        expect(createdNotes.length).toBeGreaterThan(0);
+
+        createdNotes.forEach((note, index) => {
+          expect(note.title, `Note ${index} should have title`).toBeDefined();
+          expect(
+            note.content,
+            `Note ${index} should have content`
+          ).toBeDefined();
+
+          // Verify test data characteristics
+          const isTestNote =
+            note.title.includes('E2E') ||
+            note.title.includes('Test') ||
+            note.content.includes('E2E') ||
+            note.content.includes('testing purposes') ||
+            (note.tags &&
+              Array.isArray(note.tags) &&
+              note.tags.includes('e2e-test'));
+
+          expect(
+            isTestNote,
+            `Note ${index} should be identifiable as test data`
+          ).toBe(true);
+        });
+
+        console.error(
+          '🧹 Validated cleanup tracking for',
+          createdNotes.length,
+          'notes'
+        );
+      }, 10000);
+
+      it('should validate integration with universal tools migration', async () => {
+        if (testCompanies.length === 0) {
+          console.error(
+            '⏭️ Skipping migration test - no test companies available'
+          );
+          return;
+        }
+
+        const testCompany = testCompanies[0] as unknown as AttioRecord;
+        if (!testCompany?.id?.record_id) {
+          console.error('⏭️ Skipping migration test - invalid company data');
+          return;
+        }
+
+        // Test that both legacy and universal tool formats work
+        const universalResponse = (await callNotesTool('create-note', {
+          resource_type: 'companies',
+          record_id: testCompany.id.record_id,
+          title: 'Universal Tool Integration Test',
+          content: 'Testing universal tool integration for notes',
+        })) as McpToolResponse;
+
+        E2EAssertions.expectMcpSuccess(universalResponse);
+        const universalNote = E2EAssertions.expectMcpData(
+          universalResponse
+        ) as unknown as NoteRecord;
+
+        E2EAssertions.expectValidNoteStructure(universalNote);
+        expect(universalNote.title).toContain('Universal Tool Integration');
+
+        createdNotes.push(universalNote);
+
+        console.error('🔄 Validated universal tools integration');
+      }, 30000);
+
+      it('should validate cross-test-suite data integrity', async () => {
+        // Verify that our test data is properly isolated and doesn't interfere
+        // with other test suites by checking data structure consistency
+        const allTestData = [...testCompanies, ...testPeople, ...createdNotes];
+
+        expect(allTestData.length).toBeGreaterThan(0);
+
+        allTestData.forEach((data, index) => {
+          // Each test data item should have identifiable characteristics
+          expect(data, `Test data ${index} should be defined`).toBeDefined();
+
+          if (data.id) {
+            expect(
+              data.id.record_id || data.id,
+              `Test data ${index} should have valid ID`
+            ).toBeDefined();
+          }
+        });
+
+        console.error('🔗 Validated cross-test-suite data integrity');
+      }, 15000);
+    });
+
+    describe('Cleanup and Resource Management', () => {
+      it('should validate proper resource cleanup preparation', async () => {
+        // This test ensures all created resources are tracked for cleanup
+        const totalCreatedResources =
+          testCompanies.length + testPeople.length + createdNotes.length;
+
+        expect(totalCreatedResources).toBeGreaterThan(0);
+
+        // Log cleanup statistics for monitoring
+        console.error(`📊 Resource cleanup summary:
+          - Test Companies: ${testCompanies.length}
+          - Test People: ${testPeople.length}
+          - Created Notes: ${createdNotes.length}
+          - Total Resources: ${totalCreatedResources}`);
+
+        // Validate that each resource type has proper identification for cleanup
+        testCompanies.forEach((company, index) => {
+          expect(
+            company.id?.record_id,
+            `Company ${index} should have record ID for cleanup`
+          ).toBeDefined();
+        });
+
+        testPeople.forEach((person, index) => {
+          expect(
+            person.id?.record_id,
+            `Person ${index} should have record ID for cleanup`
+          ).toBeDefined();
+        });
+
+        createdNotes.forEach((note, index) => {
+          expect(
+            note.id,
+            `Note ${index} should have ID for cleanup`
+          ).toBeDefined();
+        });
+      }, 10000);
+    });
+  });
