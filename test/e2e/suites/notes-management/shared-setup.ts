@@ -3,17 +3,10 @@
  */
 
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
   vi,
 } from 'vitest';
 import { E2ETestBase } from '../../setup.js';
 import { E2EAssertions } from '../../utils/assertions.js';
-import { loadE2EConfig } from '../../utils/config-loader.js';
 import {
   CompanyFactory,
   PersonFactory,

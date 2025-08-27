@@ -27,8 +27,8 @@ import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.j
 
 describe('CachingService', () => {
   const mockTasks: AttioRecord[] = [
-    { id: { record_id: '1' }, values: { name: [{ value: 'Task 1' }] } },
-    { id: { record_id: '2' }, values: { name: [{ value: 'Task 2' }] } },
+    { id: { record_id: '1' }, values: { name: 'Task 1' } },
+    { id: { record_id: '2' }, values: { name: 'Task 2' } },
   ];
 
   beforeEach(() => {
@@ -133,16 +133,16 @@ describe('CachingService', () => {
     it('should provide cache statistics', () => {
       // Initially empty
       let stats = CachingService.getCacheStats();
-      expect(stats.tasksCacheSize).toBe(0);
-      expect(stats.tasksCacheEntries).toEqual([]);
+      expect(stats.tasks.entries).toBe(0);
+      expect(stats.totalEntries).toBe(0);
 
       // Add some entries
       CachingService.setCachedTasks('test1', mockTasks);
       CachingService.setCachedTasks('test2', mockTasks);
 
       stats = CachingService.getCacheStats();
-      expect(stats.tasksCacheSize).toBe(2);
-      expect(stats.tasksCacheEntries).toEqual(['test1', 'test2']);
+      expect(stats.tasks.entries).toBe(2);
+      expect(stats.totalEntries).toBe(2);
     });
   });
 
@@ -268,7 +268,7 @@ describe('CachingService', () => {
     it('should reload data when cache expires', async () => {
       const shortTTL = 50;
       const freshTasks = [
-        { id: { record_id: '3' }, values: { name: [{ value: 'Fresh Task' }] } },
+        { id: { record_id: '3' }, values: { name: 'Fresh Task' } },
       ];
 
       mockDataLoader
@@ -343,7 +343,7 @@ describe('CachingService', () => {
         { length: 1000 },
         (_, i) => ({
           id: { record_id: `task-${i}` },
-          values: { name: [{ value: `Task ${i}` }] },
+          values: { name: `Task ${i}` },
         })
       );
 
@@ -381,7 +381,7 @@ describe('CachingService', () => {
 
       // Verify stats
       const stats = CachingService.getCacheStats();
-      expect(stats.tasksCacheSize).toBe(numKeys);
+      expect(stats.tasks.entries).toBe(numKeys);
     });
   });
 });

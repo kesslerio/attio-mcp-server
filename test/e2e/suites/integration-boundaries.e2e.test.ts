@@ -14,18 +14,18 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { 
+import {
   callUniversalTool,
   callTasksTool,
   callNotesTool,
-  validateTestEnvironment 
+  validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
-import { 
+import {
   extractRecordId,
   createTestRecord,
-  cleanupTestRecords 
+  cleanupTestRecords,
 } from '../utils/error-handling-utils.js';
 
 describe.skipIf(
@@ -36,7 +36,10 @@ describe.skipIf(
   beforeAll(async () => {
     const validation = await validateTestEnvironment();
     if (!validation.valid) {
-      console.warn('⚠️ Integration boundary test warnings:', validation.warnings);
+      console.warn(
+        '⚠️ Integration boundary test warnings:',
+        validation.warnings
+      );
     }
   });
 
@@ -49,13 +52,28 @@ describe.skipIf(
   describe('Cross-System API Integration', () => {
     it('should handle concurrent cross-resource operations', async () => {
       const operations = [
-        () => callUniversalTool('search-records', { resource_type: 'companies', query: 'integration-test', limit: 5 }),
-        () => callUniversalTool('search-records', { resource_type: 'people', query: 'integration-test', limit: 5 }),
-        () => callUniversalTool('search-records', { resource_type: 'tasks', query: 'integration-test', limit: 5 }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'integration-test',
+            limit: 5,
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'people',
+            query: 'integration-test',
+            limit: 5,
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'tasks',
+            query: 'integration-test',
+            limit: 5,
+          }),
       ];
 
-      const results = await Promise.allSettled(operations.map(op => op()));
-      
+      const results = await Promise.allSettled(operations.map((op) => op()));
+
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           expect(result.value).toBeDefined();
@@ -67,13 +85,15 @@ describe.skipIf(
     }, 45000);
 
     it('should handle API rate limiting gracefully', async () => {
-      const rapidRequests = Array(10).fill(null).map((_, i) => 
-        callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: `rate-limit-test-${i}`,
-          limit: 1,
-        })
-      );
+      const rapidRequests = Array(10)
+        .fill(null)
+        .map((_, i) =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: `rate-limit-test-${i}`,
+            limit: 1,
+          })
+        );
 
       const results = await Promise.allSettled(rapidRequests);
       let successCount = 0;
@@ -84,24 +104,30 @@ describe.skipIf(
           const response = result.value;
           if (!response.isError) {
             successCount++;
-          } else if (response.error.toLowerCase().includes('rate') || response.error.toLowerCase().includes('limit')) {
+          } else if (
+            response.error.toLowerCase().includes('rate') ||
+            response.error.toLowerCase().includes('limit')
+          ) {
             rateLimitCount++;
           }
         }
       });
 
       expect(successCount + rateLimitCount).toBeGreaterThan(0);
-      console.error(`✅ Rate limiting test: ${successCount} succeeded, ${rateLimitCount} rate limited`);
+      console.error(
+        `✅ Rate limiting test: ${successCount} succeeded, ${rateLimitCount} rate limited`
+      );
     }, 60000);
 
     it('should validate cross-resource data consistency', async () => {
       // Create a company
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
-        (resourceType, data) => callUniversalTool('create-record', {
-          resource_type: resourceType as any,
-          record_data: data,
-        }),
+        (resourceType, data) =>
+          callUniversalTool('create-record', {
+            resource_type: resourceType as any,
+            record_data: data,
+          }),
         'companies',
         companyData
       );
@@ -139,14 +165,20 @@ describe.skipIf(
       // Send malformed requests and ensure system recovery
       const malformedRequests = [
         () => callUniversalTool('search-records', {} as any), // Missing required fields
-        () => callUniversalTool('get-record-details', { resource_type: 'companies' } as any), // Missing record_id
-        () => callUniversalTool('create-record', { resource_type: 'companies' } as any), // Missing record_data
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+          } as any), // Missing record_id
+        () =>
+          callUniversalTool('create-record', {
+            resource_type: 'companies',
+          } as any), // Missing record_data
       ];
 
       for (const request of malformedRequests) {
         const response = await request();
         expect(response).toBeDefined();
-        
+
         // After malformed request, system should still respond to valid request
         const validResponse = await callUniversalTool('search-records', {
           resource_type: 'companies',
@@ -161,7 +193,7 @@ describe.skipIf(
 
     it('should handle resource type boundaries', async () => {
       const resourceTypes = ['companies', 'people', 'tasks', 'lists'];
-      
+
       for (const resourceType of resourceTypes) {
         // Test basic operations on each resource type
         const searchResponse = await callUniversalTool('search-records', {
@@ -186,9 +218,15 @@ describe.skipIf(
               query: 'tool-boundary',
               limit: 1,
             });
-            
-            if (searchResponse && !searchResponse.isError && searchResponse.data) {
-              const results = Array.isArray(searchResponse.data) ? searchResponse.data : [searchResponse.data];
+
+            if (
+              searchResponse &&
+              !searchResponse.isError &&
+              searchResponse.data
+            ) {
+              const results = Array.isArray(searchResponse.data)
+                ? searchResponse.data
+                : [searchResponse.data];
               if (results.length > 0) {
                 const taskId = extractRecordId({ data: results[0] });
                 if (taskId) {
@@ -200,7 +238,7 @@ describe.skipIf(
               }
             }
             return searchResponse;
-          }
+          },
         },
         {
           name: 'Universal → Notes Tool',
@@ -210,9 +248,15 @@ describe.skipIf(
               query: 'tool-boundary',
               limit: 1,
             });
-            
-            if (companyResponse && !companyResponse.isError && companyResponse.data) {
-              const results = Array.isArray(companyResponse.data) ? companyResponse.data : [companyResponse.data];
+
+            if (
+              companyResponse &&
+              !companyResponse.isError &&
+              companyResponse.data
+            ) {
+              const results = Array.isArray(companyResponse.data)
+                ? companyResponse.data
+                : [companyResponse.data];
               if (results.length > 0) {
                 const companyId = extractRecordId({ data: results[0] });
                 if (companyId) {
@@ -225,14 +269,16 @@ describe.skipIf(
               }
             }
             return companyResponse;
-          }
-        }
+          },
+        },
       ];
 
       for (const interaction of toolInteractions) {
         const result = await interaction.operation();
         expect(result).toBeDefined();
-        console.error(`✅ Tool boundary interaction validated: ${interaction.name}`);
+        console.error(
+          `✅ Tool boundary interaction validated: ${interaction.name}`
+        );
       }
     }, 60000);
   });
@@ -249,10 +295,10 @@ describe.skipIf(
       const endTime = Date.now();
 
       expect(response).toBeDefined();
-      
+
       // Should complete within reasonable time
       expect(endTime - startTime).toBeLessThan(60000); // 1 minute max
-      
+
       console.error('✅ Network timeout scenario handled');
     }, 65000);
 
@@ -265,7 +311,7 @@ describe.skipIf(
       });
 
       expect(versionTestResponse).toBeDefined();
-      
+
       // Response should have expected structure
       if (!versionTestResponse.isError) {
         expect(versionTestResponse.data).toBeDefined();
@@ -286,19 +332,25 @@ describe.skipIf(
       ];
 
       for (const loadTest of loadTests) {
-        const operations = Array(loadTest.operations).fill(null).map((_, i) =>
-          callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: `load-test-${i}`,
-            limit: 1,
-          })
-        );
+        const operations = Array(loadTest.operations)
+          .fill(null)
+          .map((_, i) =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: `load-test-${i}`,
+              limit: 1,
+            })
+          );
 
         const results = await Promise.allSettled(operations);
-        const successRate = results.filter(r => r.status === 'fulfilled').length / results.length;
+        const successRate =
+          results.filter((r) => r.status === 'fulfilled').length /
+          results.length;
 
         expect(successRate).toBeGreaterThan(0.5); // At least 50% success rate expected
-        console.error(`✅ ${loadTest.name} service degradation test: ${(successRate * 100).toFixed(1)}% success rate`);
+        console.error(
+          `✅ ${loadTest.name} service degradation test: ${(successRate * 100).toFixed(1)}% success rate`
+        );
       }
     }, 60000);
   });
@@ -309,27 +361,31 @@ describe.skipIf(
       const errorRecoveryTests = [
         {
           name: 'Invalid resource type recovery',
-          errorOp: () => callUniversalTool('search-records', {
-            resource_type: 'invalid_type' as any,
-            query: 'test',
-          }),
-          recoveryOp: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'recovery-test',
-            limit: 1,
-          }),
+          errorOp: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'invalid_type' as any,
+              query: 'test',
+            }),
+          recoveryOp: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'recovery-test',
+              limit: 1,
+            }),
         },
         {
           name: 'Invalid record ID recovery',
-          errorOp: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: 'invalid-id-12345',
-          }),
-          recoveryOp: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'recovery-test',
-            limit: 1,
-          }),
+          errorOp: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+              record_id: 'invalid-id-12345',
+            }),
+          recoveryOp: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'recovery-test',
+              limit: 1,
+            }),
         },
       ];
 
@@ -349,24 +405,49 @@ describe.skipIf(
     it('should validate system state consistency after errors', async () => {
       // Ensure system maintains consistent state even after errors
       const consistencyTests = [
-        () => callUniversalTool('search-records', { resource_type: 'companies', query: 'consistency-1', limit: 1 }),
-        () => callUniversalTool('search-records', { resource_type: 'invalid' as any, query: 'error-trigger' }),
-        () => callUniversalTool('search-records', { resource_type: 'people', query: 'consistency-2', limit: 1 }),
-        () => callUniversalTool('get-record-details', { resource_type: 'companies', record_id: 'invalid-id' }),
-        () => callUniversalTool('search-records', { resource_type: 'tasks', query: 'consistency-3', limit: 1 }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'consistency-1',
+            limit: 1,
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'invalid' as any,
+            query: 'error-trigger',
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'people',
+            query: 'consistency-2',
+            limit: 1,
+          }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: 'invalid-id',
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'tasks',
+            query: 'consistency-3',
+            limit: 1,
+          }),
       ];
 
-      const results = await Promise.all(consistencyTests.map(test => test()));
-      
+      const results = await Promise.all(consistencyTests.map((test) => test()));
+
       // Should have mix of success and error responses
-      const successCount = results.filter(r => !r.isError).length;
-      const errorCount = results.filter(r => r.isError).length;
+      const successCount = results.filter((r) => !r.isError).length;
+      const errorCount = results.filter((r) => r.isError).length;
 
       expect(successCount).toBeGreaterThan(0);
       expect(errorCount).toBeGreaterThan(0);
       expect(successCount + errorCount).toBe(results.length);
 
-      console.error(`✅ System consistency maintained: ${successCount} success, ${errorCount} errors`);
+      console.error(
+        `✅ System consistency maintained: ${successCount} success, ${errorCount} errors`
+      );
     }, 45000);
   });
 });

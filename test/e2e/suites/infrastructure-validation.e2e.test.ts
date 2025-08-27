@@ -25,9 +25,9 @@ import {
   E2ETestDataValidator,
 } from '../utils/test-data.js';
 import { E2EAssertions } from '../utils/assertions.js';
-import { 
+import {
   callUniversalTool,
-  validateTestEnvironment 
+  validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 
 describe.skipIf(
@@ -41,14 +41,17 @@ describe.skipIf(
   describe('System Health Checks', () => {
     it('should validate test environment setup', async () => {
       const validation = await validateTestEnvironment();
-      
+
       expect(validation).toBeDefined();
       expect(typeof validation.valid).toBe('boolean');
-      
+
       if (!validation.valid) {
-        console.warn('⚠️ Test environment warnings detected:', validation.warnings);
+        console.warn(
+          '⚠️ Test environment warnings detected:',
+          validation.warnings
+        );
       }
-      
+
       console.error('✅ Test environment validation completed');
     });
 
@@ -73,7 +76,7 @@ describe.skipIf(
       expect(config.testData).toBeDefined();
       expect(config.workspace).toBeDefined();
       expect(config.features).toBeDefined();
-      
+
       console.error('✅ E2E configuration loaded successfully');
     });
 
@@ -83,7 +86,7 @@ describe.skipIf(
       expect(config.testData.testDataPrefix).toBeDefined();
       expect(config.testData.testEmailDomain).toBeDefined();
       expect(config.testData.testCompanyDomain).toBeDefined();
-      
+
       console.error('✅ Critical configuration fields validated');
     });
 
@@ -94,7 +97,7 @@ describe.skipIf(
       expect(id1).not.toBe(id2);
       expect(id1).toContain('E2E_TEST_');
       expect(id2).toContain('E2E_TEST_');
-      
+
       console.error('✅ Test identifier generation validated');
     });
   });
@@ -107,7 +110,7 @@ describe.skipIf(
       expect(company.name).toContain('E2E_TEST_');
       expect(company.domain).toBeDefined();
       expect(company.website).toBeDefined();
-      
+
       console.error('✅ Company test data factory validated');
     });
 
@@ -119,8 +122,10 @@ describe.skipIf(
       expect(person.name).toContain('E2E_TEST_');
       expect(person.email_addresses).toBeDefined();
       expect(Array.isArray(person.email_addresses)).toBe(true);
-      expect(person.email_addresses[0]).toContain(config.testData.testEmailDomain);
-      
+      expect(person.email_addresses[0]).toContain(
+        config.testData.testEmailDomain
+      );
+
       console.error('✅ Person test data factory validated');
     });
 
@@ -134,7 +139,7 @@ describe.skipIf(
 
       expect(companyValidation.isValid).toBe(true);
       expect(personValidation.isValid).toBe(true);
-      
+
       console.error('✅ Test data integrity validated');
     });
   });
@@ -143,12 +148,12 @@ describe.skipIf(
     it('should validate assertion utilities', () => {
       const mockSuccessResponse = {
         isError: false,
-        data: { id: { record_id: 'test-123' }, name: 'Test Company' }
+        data: { id: { record_id: 'test-123' }, name: 'Test Company' },
       };
 
       const mockErrorResponse = {
         isError: true,
-        error: 'Test error message'
+        error: 'Test error message',
       };
 
       // Test success assertion
@@ -189,22 +194,24 @@ describe.skipIf(
     it('should validate minimal tool integration', async () => {
       // Quick validation that tools can be called without errors
       const tools = ['search-records', 'get-record-details'];
-      
+
       for (const tool of tools) {
         try {
           const response = await callUniversalTool(tool as any, {
             resource_type: 'companies',
-            ...(tool === 'search-records' 
+            ...(tool === 'search-records'
               ? { query: 'minimal-test', limit: 1 }
-              : { record_id: 'non-existent-test-id' }
-            ),
+              : { record_id: 'non-existent-test-id' }),
           });
-          
+
           // Tool should respond (success or error is acceptable)
           expect(response).toBeDefined();
         } catch (error) {
           // Even errors are acceptable in smoke tests - we just want to ensure tools are callable
-          console.warn(`⚠️ Tool ${tool} threw error (acceptable in smoke test):`, error);
+          console.warn(
+            `⚠️ Tool ${tool} threw error (acceptable in smoke test):`,
+            error
+          );
         }
       }
 

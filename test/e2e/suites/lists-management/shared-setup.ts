@@ -77,9 +77,4 @@ export function createSharedSetup() {
 }
 
 // Export shared utilities
-export {
-  callListTool,
-  callUniversalTool,
-  E2EAssertions,
-  listFixtures,
-};
+export { callListTool, callUniversalTool, E2EAssertions, listFixtures };

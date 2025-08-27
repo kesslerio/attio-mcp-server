@@ -113,9 +113,7 @@ describe.skipIf(
     // End comprehensive logging for this test suite
     endTestSuite();
 
-    console.error(
-      '✅ Record Management E2E Tests completed'
-    );
+    console.error('✅ Record Management E2E Tests completed');
   }, 60000);
 
   beforeEach(() => {
@@ -178,7 +176,9 @@ describe.skipIf(
 
     it('should retrieve record details across resource types', async () => {
       if (createdRecords.length < 3) {
-        console.error('⏭️ Skipping retrieval test - insufficient created records');
+        console.error(
+          '⏭️ Skipping retrieval test - insufficient created records'
+        );
         return;
       }
 
@@ -187,15 +187,19 @@ describe.skipIf(
         let resourceType = '';
         if ((record as any).id?.record_id && (record as any).values?.name) {
           resourceType = 'companies';
-        } else if ((record as any).id?.record_id && (record as any).values?.first_name) {
+        } else if (
+          (record as any).id?.record_id &&
+          (record as any).values?.first_name
+        ) {
           resourceType = 'people';
         } else if ((record as any).id?.task_id) {
           resourceType = 'tasks';
         }
 
         if (resourceType) {
-          const recordId = (record as any).id?.record_id || (record as any).id?.task_id;
-          
+          const recordId =
+            (record as any).id?.record_id || (record as any).id?.task_id;
+
           const response = asToolResponse(
             await callUniversalTool('get-record-details', {
               resource_type: resourceType as any,
@@ -206,7 +210,7 @@ describe.skipIf(
           E2EAssertions.expectMcpSuccess(response);
           const retrievedRecord = E2EAssertions.expectMcpData(response);
           expect(retrievedRecord).toBeDefined();
-          
+
           console.error(`✅ Retrieved ${resourceType} record details`);
         }
       }
@@ -245,7 +249,7 @@ describe.skipIf(
 
     it('should search records across resource types', async () => {
       const resourceTypes = ['companies', 'people', 'tasks'];
-      
+
       for (const resourceType of resourceTypes) {
         const response = asToolResponse(
           await callUniversalTool('search-records', {
@@ -283,7 +287,9 @@ describe.skipIf(
       }
 
       expect(createdCompanies.length).toBeGreaterThan(0);
-      console.error(`✅ Created bulk records: ${createdCompanies.length} companies`);
+      console.error(
+        `✅ Created bulk records: ${createdCompanies.length} companies`
+      );
 
       // Test bulk retrieval
       for (const company of createdCompanies.slice(0, 2)) {
@@ -400,7 +406,7 @@ describe.skipIf(
 
       // Progress through lifecycle: pending -> in_progress -> completed
       const statuses = ['in_progress', 'completed'];
-      
+
       for (const status of statuses) {
         const updateResponse = asToolResponse(
           await callTasksTool('update-record', {
@@ -421,8 +427,17 @@ describe.skipIf(
       // Test creating task with various data configurations
       const taskConfigs = [
         { content: 'Basic task', due_date: '2024-12-31' },
-        { content: 'Task with long content that tests field limits and validation', due_date: '2024-12-31' },
-        { content: 'Urgent task', due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+        {
+          content:
+            'Task with long content that tests field limits and validation',
+          due_date: '2024-12-31',
+        },
+        {
+          content: 'Urgent task',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+        },
       ];
 
       for (const config of taskConfigs) {
@@ -435,7 +450,7 @@ describe.skipIf(
 
         // Should handle all configurations appropriately
         expect(response).toBeDefined();
-        
+
         if (!response.isError) {
           const task = E2EAssertions.expectMcpData(response);
           E2EAssertions.expectTaskRecord(task);
@@ -475,7 +490,8 @@ describe.skipIf(
         },
         {
           title: 'Markdown Note',
-          content: '# Header\n\n**Bold text** and *italic text*\n\n- List item 1\n- List item 2',
+          content:
+            '# Header\n\n**Bold text** and *italic text*\n\n- List item 1\n- List item 2',
           format: 'markdown',
         },
         {
@@ -582,7 +598,9 @@ describe.skipIf(
         const notes = E2EAssertions.expectMcpData(response);
         expect(notes).toBeDefined();
 
-        console.error(`✅ Note pagination test: limit=${params.limit}, offset=${params.offset}`);
+        console.error(
+          `✅ Note pagination test: limit=${params.limit}, offset=${params.offset}`
+        );
       }
 
       console.error('✅ Note retrieval and pagination validation completed');
@@ -591,8 +609,14 @@ describe.skipIf(
 
   describe('Cross-Resource Integration Validation', () => {
     it('should validate record relationships across types', async () => {
-      if (testCompaniesRecord.length === 0 || testPeopleRecord.length === 0 || createdTasks.length === 0) {
-        console.error('⏭️ Skipping cross-resource validation - insufficient test data');
+      if (
+        testCompaniesRecord.length === 0 ||
+        testPeopleRecord.length === 0 ||
+        createdTasks.length === 0
+      ) {
+        console.error(
+          '⏭️ Skipping cross-resource validation - insufficient test data'
+        );
         return;
       }
 
@@ -651,7 +675,9 @@ describe.skipIf(
     it('should validate data consistency across operations', async () => {
       // Test that operations across different tools maintain consistency
       if (testCompaniesRecord.length === 0) {
-        console.error('⏭️ Skipping consistency validation - no company records');
+        console.error(
+          '⏭️ Skipping consistency validation - no company records'
+        );
         return;
       }
 
@@ -659,7 +685,9 @@ describe.skipIf(
       const companyId = (company as any).id?.record_id;
 
       if (!companyId) {
-        console.error('⏭️ Skipping consistency validation - invalid company ID');
+        console.error(
+          '⏭️ Skipping consistency validation - invalid company ID'
+        );
         return;
       }
 
@@ -698,7 +726,9 @@ describe.skipIf(
       expect(noteResponse).toBeDefined();
       expect(taskResponse).toBeDefined();
 
-      console.error('✅ Data consistency validation across operations completed');
+      console.error(
+        '✅ Data consistency validation across operations completed'
+      );
     }, 45000);
   });
 });

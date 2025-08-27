@@ -3,7 +3,7 @@
  *
  * Consolidates all critical error handling tests from multiple sources:
  * - error-handling.e2e.test.ts (Score: 37)
- * - error-handling/cross-tool-errors.test.ts (Score: 38) 
+ * - error-handling/cross-tool-errors.test.ts (Score: 38)
  * - error-handling/validation-errors.test.ts (Score: 33)
  * - error-handling/resource-not-found.test.ts (Score: 28)
  *
@@ -32,10 +32,10 @@ import {
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions, type McpToolResponse } from '../utils/assertions.js';
-import { 
+import {
   testDataGenerator,
   errorScenarios,
-  errorDataGenerators 
+  errorDataGenerators,
 } from '../fixtures/index.js';
 import {
   extractRecordId,
@@ -105,7 +105,6 @@ describe.skipIf(
       if (testPersonId) {
         console.error(`✅ Created test person: ${testPersonId}`);
       }
-
     } catch (error) {
       console.warn(
         '⚠️  Error during test data setup:',
@@ -117,12 +116,11 @@ describe.skipIf(
   afterAll(async () => {
     // Cleanup test records
     if (testCompanyId || testPersonId || testListId || testTaskId) {
-      await cleanupTestRecords([
-        testCompanyId,
-        testPersonId,
-        testListId,
-        testTaskId,
-      ].filter(Boolean) as string[]);
+      await cleanupTestRecords(
+        [testCompanyId, testPersonId, testListId, testTaskId].filter(
+          Boolean
+        ) as string[]
+      );
     }
 
     console.error('✅ Critical Error Handling E2E Tests completed');
@@ -140,9 +138,11 @@ describe.skipIf(
 
       // Should handle any authentication-related errors gracefully
       expect(response).toBeDefined();
-      
+
       if (response.isError) {
-        expect(response.error).toMatch(/(auth|permission|unauthorized|forbidden|invalid|validation)/i);
+        expect(response.error).toMatch(
+          /(auth|permission|unauthorized|forbidden|invalid|validation)/i
+        );
       }
 
       console.error('✅ Handled authentication scenario gracefully');
@@ -150,23 +150,29 @@ describe.skipIf(
 
     it('should handle rate limiting scenarios', async () => {
       // Test with multiple rapid requests to potentially trigger rate limiting
-      const requests = Array(5).fill(null).map(() => 
-        callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: 'test-rate-limit',
-          limit: 1,
-        })
-      );
+      const requests = Array(5)
+        .fill(null)
+        .map(() =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'test-rate-limit',
+            limit: 1,
+          })
+        );
 
       const responses = await Promise.allSettled(requests);
-      
+
       // All requests should complete (either succeed or fail gracefully)
       responses.forEach((result, index) => {
         expect(result.status).toMatch(/(fulfilled|rejected)/);
         if (result.status === 'fulfilled' && result.value.isError) {
           // Rate limit errors are acceptable
           const error = (result.value as McpToolResponse).error;
-          if (error.includes('rate') || error.includes('limit') || error.includes('too many')) {
+          if (
+            error.includes('rate') ||
+            error.includes('limit') ||
+            error.includes('too many')
+          ) {
             console.error(`✅ Detected rate limiting on request ${index + 1}`);
           }
         }
@@ -412,30 +418,35 @@ describe.skipIf(
 
     it('should handle concurrent operation conflicts', async () => {
       if (!testCompanyId) {
-        console.error('⏭️ Skipping concurrent operations test - no test company');
+        console.error(
+          '⏭️ Skipping concurrent operations test - no test company'
+        );
         return;
       }
 
       // Attempt concurrent updates to the same record
       const operations = [
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: testCompanyId!,
-          record_data: { name: 'Updated Name 1' },
-        }),
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: testCompanyId!,
-          record_data: { name: 'Updated Name 2' },
-        }),
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: testCompanyId!,
-        }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: testCompanyId!,
+            record_data: { name: 'Updated Name 1' },
+          }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: testCompanyId!,
+            record_data: { name: 'Updated Name 2' },
+          }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: testCompanyId!,
+          }),
       ];
 
       const results = await executeConcurrentOperations(operations);
-      
+
       // All operations should complete (some may fail due to conflicts, which is acceptable)
       results.forEach((result, index) => {
         expect(result).toBeDefined();
@@ -449,34 +460,39 @@ describe.skipIf(
       // Create a mix of valid and invalid operations
       const batchOperations = [
         // Valid operation
-        () => callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: 'test',
-          limit: 1,
-        }),
-        // Invalid operation  
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: errorScenarios.invalidIds.generic,
-        }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'test',
+            limit: 1,
+          }),
+        // Invalid operation
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: errorScenarios.invalidIds.generic,
+          }),
         // Another valid operation
-        () => callUniversalTool('search-records', {
-          resource_type: 'people',
-          query: 'test',
-          limit: 1,
-        }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'people',
+            query: 'test',
+            limit: 1,
+          }),
       ];
 
       const results = await Promise.allSettled(
-        batchOperations.map(op => op())
+        batchOperations.map((op) => op())
       );
 
       const analysis = analyzeBatchResults(results);
-      
+
       expect(analysis.total).toBe(3);
       expect(analysis.succeeded + analysis.failed).toBe(3);
 
-      console.error(`✅ Batch operations: ${analysis.succeeded} succeeded, ${analysis.failed} failed`);
+      console.error(
+        `✅ Batch operations: ${analysis.succeeded} succeeded, ${analysis.failed} failed`
+      );
     });
   });
 
@@ -491,7 +507,7 @@ describe.skipIf(
 
       if (hasValidContent(createResponse)) {
         const companyId = extractRecordId(createResponse);
-        
+
         if (companyId) {
           // Immediately try to create a note for the company
           const noteResponse = (await callNotesTool('create-note', {

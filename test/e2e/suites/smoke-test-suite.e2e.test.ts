@@ -17,11 +17,11 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { 
+import {
   callUniversalTool,
   callTasksTool,
   callNotesTool,
-  validateTestEnvironment 
+  validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
@@ -53,16 +53,18 @@ describe.skipIf(
 
     it('should validate test environment setup', async () => {
       const validation = await validateTestEnvironment();
-      
+
       expect(validation).toBeDefined();
       expect(typeof validation.valid).toBe('boolean');
-      
-      console.error(`✅ Test environment setup: ${validation.valid ? 'PASS' : 'WARN'}`);
+
+      console.error(
+        `✅ Test environment setup: ${validation.valid ? 'PASS' : 'WARN'}`
+      );
     }, 10000);
 
     it('should validate core resource types accessibility', async () => {
       const resourceTypes = ['companies', 'people', 'tasks'];
-      
+
       for (const resourceType of resourceTypes) {
         const response = await callUniversalTool('search-records', {
           resource_type: resourceType as any,
@@ -81,18 +83,20 @@ describe.skipIf(
       const operations = [
         {
           name: 'Search Records',
-          operation: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'universal-smoke-test',
-            limit: 1,
-          })
+          operation: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'universal-smoke-test',
+              limit: 1,
+            }),
         },
         {
           name: 'Get Record Details (with error handling)',
-          operation: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: 'smoke-test-non-existent-id',
-          })
+          operation: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+              record_id: 'smoke-test-non-existent-id',
+            }),
         },
       ];
 
@@ -144,14 +148,14 @@ describe.skipIf(
   describe('Essential Workflow Smoke Tests', () => {
     it('should validate basic record creation workflow', async () => {
       const companyData = testDataGenerator.companies.basicCompany();
-      
+
       const response = await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
       });
 
       expect(response).toBeDefined();
-      
+
       if (!response.isError) {
         const data = E2EAssertions.expectMcpData(response);
         expect(data).toBeDefined();
@@ -168,13 +172,18 @@ describe.skipIf(
           });
         }
       } else {
-        console.error('✅ Basic record creation workflow handled error gracefully');
+        console.error(
+          '✅ Basic record creation workflow handled error gracefully'
+        );
       }
     }, 30000);
 
     it('should validate basic search workflow', async () => {
       const searchQueries = [
-        { resource_type: 'companies' as const, query: 'smoke-search-companies' },
+        {
+          resource_type: 'companies' as const,
+          query: 'smoke-search-companies',
+        },
         { resource_type: 'people' as const, query: 'smoke-search-people' },
         { resource_type: 'tasks' as const, query: 'smoke-search-tasks' },
       ];
@@ -186,7 +195,9 @@ describe.skipIf(
         });
 
         expect(response).toBeDefined();
-        console.error(`✅ Search workflow validated for ${searchQuery.resource_type}`);
+        console.error(
+          `✅ Search workflow validated for ${searchQuery.resource_type}`
+        );
       }
     }, 25000);
 
@@ -195,29 +206,32 @@ describe.skipIf(
       const errorScenarios = [
         {
           name: 'Invalid resource type',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'invalid_resource_type' as any,
-            query: 'smoke-test',
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'invalid_resource_type' as any,
+              query: 'smoke-test',
+            }),
         },
         {
           name: 'Missing required parameters',
-          test: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-          } as any)
+          test: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+            } as any),
         },
         {
           name: 'Non-existent record',
-          test: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: 'definitely-does-not-exist',
-          })
+          test: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+              record_id: 'definitely-does-not-exist',
+            }),
         },
       ];
 
       for (const scenario of errorScenarios) {
         const response = await scenario.test();
-        
+
         expect(response).toBeDefined();
         expect(response.isError).toBe(true);
         expect(response.error).toBeDefined();
@@ -254,21 +268,24 @@ describe.skipIf(
     it('should detect tool registration regressions', async () => {
       // Test that expected tools are still available
       const toolTests = [
-        () => callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: 'tool-reg-test',
-          limit: 1,
-        }),
-        () => callTasksTool('search-records', {
-          resource_type: 'tasks',
-          query: 'tool-reg-test',
-          limit: 1,
-        }),
-        () => callNotesTool('list-notes', {
-          resource_type: 'companies',
-          record_id: 'tool-reg-test-id',
-          limit: 1,
-        }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'tool-reg-test',
+            limit: 1,
+          }),
+        () =>
+          callTasksTool('search-records', {
+            resource_type: 'tasks',
+            query: 'tool-reg-test',
+            limit: 1,
+          }),
+        () =>
+          callNotesTool('list-notes', {
+            resource_type: 'companies',
+            record_id: 'tool-reg-test-id',
+            limit: 1,
+          }),
       ];
 
       for (const toolTest of toolTests) {
@@ -290,8 +307,8 @@ describe.skipIf(
               query: 'functionality-test',
               limit: 1,
             });
-            return response.isError || (response.data !== null);
-          }
+            return response.isError || response.data !== null;
+          },
         },
         {
           name: 'Error handling functionality',
@@ -301,7 +318,7 @@ describe.skipIf(
               record_id: 'non-existent-for-func-test',
             });
             return response.isError && response.error.length > 0;
-          }
+          },
         },
         {
           name: 'Parameter validation functionality',
@@ -311,14 +328,16 @@ describe.skipIf(
               query: 'func-test',
             });
             return response.isError;
-          }
+          },
         },
       ];
 
       for (const funcTest of functionalityTests) {
         const result = await funcTest.test();
         expect(result).toBe(true);
-        console.error(`✅ Functionality regression check passed: ${funcTest.name}`);
+        console.error(
+          `✅ Functionality regression check passed: ${funcTest.name}`
+        );
       }
     }, 35000);
   });
@@ -328,19 +347,21 @@ describe.skipIf(
       const performanceTests = [
         {
           name: 'Basic search performance',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'performance-test',
-            limit: 5,
-          }),
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'performance-test',
+              limit: 5,
+            }),
           maxTime: 10000, // 10 seconds
         },
         {
           name: 'Record detail performance',
-          test: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: 'performance-test-id',
-          }),
+          test: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+              record_id: 'performance-test-id',
+            }),
           maxTime: 8000, // 8 seconds
         },
       ];
@@ -354,18 +375,22 @@ describe.skipIf(
         expect(response).toBeDefined();
         expect(duration).toBeLessThan(perfTest.maxTime);
 
-        console.error(`✅ Performance smoke test passed: ${perfTest.name} (${duration}ms)`);
+        console.error(
+          `✅ Performance smoke test passed: ${perfTest.name} (${duration}ms)`
+        );
       }
     }, 25000);
 
     it('should validate system remains responsive under load', async () => {
-      const loadTest = Array(5).fill(null).map((_, i) =>
-        callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: `load-smoke-test-${i}`,
-          limit: 1,
-        })
-      );
+      const loadTest = Array(5)
+        .fill(null)
+        .map((_, i) =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: `load-smoke-test-${i}`,
+            limit: 1,
+          })
+        );
 
       const startTime = Date.now();
       const results = await Promise.allSettled(loadTest);
@@ -374,11 +399,15 @@ describe.skipIf(
 
       // Should complete all requests within reasonable time
       expect(totalDuration).toBeLessThan(30000); // 30 seconds for 5 requests
-      
-      const successCount = results.filter(r => r.status === 'fulfilled').length;
+
+      const successCount = results.filter(
+        (r) => r.status === 'fulfilled'
+      ).length;
       expect(successCount).toBeGreaterThan(0); // At least some should succeed
 
-      console.error(`✅ Load responsiveness validated: ${successCount}/5 succeeded in ${totalDuration}ms`);
+      console.error(
+        `✅ Load responsiveness validated: ${successCount}/5 succeeded in ${totalDuration}ms`
+      );
     }, 35000);
   });
 });

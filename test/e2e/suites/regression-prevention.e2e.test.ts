@@ -14,19 +14,19 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { 
+import {
   callUniversalTool,
   callTasksTool,
   callNotesTool,
-  validateTestEnvironment 
+  validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import { testDataGenerator, errorScenarios } from '../fixtures/index.js';
-import { 
+import {
   extractRecordId,
   createTestRecord,
   cleanupTestRecords,
-  hasValidContent 
+  hasValidContent,
 } from '../utils/error-handling-utils.js';
 
 describe.skipIf(
@@ -37,7 +37,10 @@ describe.skipIf(
   beforeAll(async () => {
     const validation = await validateTestEnvironment();
     if (!validation.valid) {
-      console.warn('⚠️ Regression prevention test warnings:', validation.warnings);
+      console.warn(
+        '⚠️ Regression prevention test warnings:',
+        validation.warnings
+      );
     }
   });
 
@@ -69,37 +72,40 @@ describe.skipIf(
       const edgeCaseRequests = [
         {
           name: 'Empty query string',
-          request: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: '',
-            limit: 1,
-          })
+          request: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: '',
+              limit: 1,
+            }),
         },
         {
           name: 'Very long query string',
-          request: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'A'.repeat(1000),
-            limit: 1,
-          })
+          request: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'A'.repeat(1000),
+              limit: 1,
+            }),
         },
         {
           name: 'Special characters in query',
-          request: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: '{"test": "value", "special": "chars!@#$%"}',
-            limit: 1,
-          })
+          request: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: '{"test": "value", "special": "chars!@#$%"}',
+              limit: 1,
+            }),
         },
       ];
 
       for (const testCase of edgeCaseRequests) {
         const response = await testCase.request();
-        
+
         // Should handle all cases without JSON parsing errors
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
-        
+
         console.error(`✅ JSON handling validated for: ${testCase.name}`);
       }
     }, 45000);
@@ -108,16 +114,19 @@ describe.skipIf(
       // Create test record for concurrent operations
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
-        (resourceType, data) => callUniversalTool('create-record', {
-          resource_type: resourceType as any,
-          record_data: data,
-        }),
+        (resourceType, data) =>
+          callUniversalTool('create-record', {
+            resource_type: resourceType as any,
+            record_data: data,
+          }),
         'companies',
         companyData
       );
 
       if (!companyId) {
-        console.error('⏭️ Skipping concurrent operations test - could not create company');
+        console.error(
+          '⏭️ Skipping concurrent operations test - could not create company'
+        );
         return;
       }
 
@@ -125,29 +134,36 @@ describe.skipIf(
 
       // Perform concurrent updates
       const concurrentUpdates = [
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: companyId,
-          record_data: { description: 'Update 1 - Concurrent Test' },
-        }),
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: companyId,
-          record_data: { description: 'Update 2 - Concurrent Test' },
-        }),
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: companyId,
-        }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: companyId,
+            record_data: { description: 'Update 1 - Concurrent Test' },
+          }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: companyId,
+            record_data: { description: 'Update 2 - Concurrent Test' },
+          }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: companyId,
+          }),
       ];
 
-      const results = await Promise.allSettled(concurrentUpdates.map(op => op()));
-      
+      const results = await Promise.allSettled(
+        concurrentUpdates.map((op) => op())
+      );
+
       // Should handle concurrent operations without data corruption
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           expect(result.value).toBeDefined();
-          console.error(`✅ Concurrent operation ${index + 1} completed safely`);
+          console.error(
+            `✅ Concurrent operation ${index + 1} completed safely`
+          );
         }
       });
 
@@ -181,7 +197,7 @@ describe.skipIf(
       }
 
       const results = await Promise.allSettled(batchOperations);
-      
+
       // All operations should complete without memory issues
       results.forEach((result, index) => {
         expect(result.status).toMatch(/(fulfilled|rejected)/);
@@ -247,7 +263,10 @@ describe.skipIf(
           console.error('✅ Core CRUD workflow integrity preserved');
         }
       } catch (error) {
-        console.error('❌ CRITICAL: Core CRUD workflow integrity compromised:', error);
+        console.error(
+          '❌ CRITICAL: Core CRUD workflow integrity compromised:',
+          error
+        );
         throw error;
       }
     }, 45000);
@@ -256,16 +275,19 @@ describe.skipIf(
       // Test relationships between resources that must remain stable
       const companyData = testDataGenerator.companies.basicCompany();
       const companyId = await createTestRecord(
-        (resourceType, data) => callUniversalTool('create-record', {
-          resource_type: resourceType as any,
-          record_data: data,
-        }),
+        (resourceType, data) =>
+          callUniversalTool('create-record', {
+            resource_type: resourceType as any,
+            record_data: data,
+          }),
         'companies',
         companyData
       );
 
       if (!companyId) {
-        console.error('⏭️ Skipping relationship test - could not create company');
+        console.error(
+          '⏭️ Skipping relationship test - could not create company'
+        );
         return;
       }
 
@@ -304,7 +326,10 @@ describe.skipIf(
 
         console.error('✅ Cross-resource relationship integrity preserved');
       } catch (error) {
-        console.error('❌ CRITICAL: Cross-resource relationship integrity compromised:', error);
+        console.error(
+          '❌ CRITICAL: Cross-resource relationship integrity compromised:',
+          error
+        );
         throw error;
       }
     }, 60000);
@@ -322,11 +347,11 @@ describe.skipIf(
                 description: 'Test company without name',
               },
             });
-            
+
             // Should either succeed with generated name or fail with validation error
             expect(response).toBeDefined();
             return response;
-          }
+          },
         },
         {
           name: 'Data type validation',
@@ -336,11 +361,11 @@ describe.skipIf(
               query: 'validation-test',
               limit: 'invalid-number' as any, // Wrong data type
             });
-            
+
             // Should handle invalid data type gracefully
             expect(response).toBeDefined();
             return response;
-          }
+          },
         },
       ];
 
@@ -359,34 +384,37 @@ describe.skipIf(
       const boundaryTests = [
         {
           name: 'Zero limit search',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'boundary-test',
-            limit: 0,
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'boundary-test',
+              limit: 0,
+            }),
         },
         {
           name: 'Maximum limit search',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'boundary-test',
-            limit: 1000,
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'boundary-test',
+              limit: 1000,
+            }),
         },
         {
           name: 'Negative offset search',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'boundary-test',
-            limit: 10,
-            offset: -1,
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'boundary-test',
+              limit: 10,
+              offset: -1,
+            }),
         },
       ];
 
       for (const boundaryTest of boundaryTests) {
         const response = await boundaryTest.test();
-        
+
         // Should handle all boundary conditions without crashing
         expect(response).toBeDefined();
         console.error(`✅ ${boundaryTest.name} handled safely`);
@@ -412,7 +440,9 @@ describe.skipIf(
       expect(executionTime).toBeLessThan(30000); // 30 seconds max
       expect(response).toBeDefined();
 
-      console.error(`✅ Infinite loop prevention validated (${executionTime}ms)`);
+      console.error(
+        `✅ Infinite loop prevention validated (${executionTime}ms)`
+      );
     }, 35000);
 
     it('should handle resource exhaustion gracefully', async () => {
@@ -420,24 +450,27 @@ describe.skipIf(
       const resourceTests = [
         {
           name: 'Large query processing',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'X'.repeat(500), // Large query string
-            limit: 50,
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'X'.repeat(500), // Large query string
+              limit: 50,
+            }),
         },
         {
           name: 'Multiple concurrent searches',
           test: async () => {
-            const searches = Array(8).fill(null).map((_, i) =>
-              callUniversalTool('search-records', {
-                resource_type: 'companies',
-                query: `concurrent-${i}`,
-                limit: 10,
-              })
-            );
+            const searches = Array(8)
+              .fill(null)
+              .map((_, i) =>
+                callUniversalTool('search-records', {
+                  resource_type: 'companies',
+                  query: `concurrent-${i}`,
+                  limit: 10,
+                })
+              );
             return Promise.allSettled(searches);
-          }
+          },
         },
       ];
 
@@ -460,42 +493,46 @@ describe.skipIf(
     it('should maintain system stability under error conditions', async () => {
       // Test that errors don't destabilize the system
       const stabilityTests = [
-        () => callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: 'definitely-does-not-exist',
-        }),
-        () => callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: 'stability-test-1',
-          limit: 1,
-        }),
-        () => callUniversalTool('update-record', {
-          resource_type: 'companies',
-          record_id: 'non-existent-id',
-          record_data: { name: 'Update test' },
-        }),
-        () => callUniversalTool('search-records', {
-          resource_type: 'companies',
-          query: 'stability-test-2',
-          limit: 1,
-        }),
+        () =>
+          callUniversalTool('get-record-details', {
+            resource_type: 'companies',
+            record_id: 'definitely-does-not-exist',
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'stability-test-1',
+            limit: 1,
+          }),
+        () =>
+          callUniversalTool('update-record', {
+            resource_type: 'companies',
+            record_id: 'non-existent-id',
+            record_data: { name: 'Update test' },
+          }),
+        () =>
+          callUniversalTool('search-records', {
+            resource_type: 'companies',
+            query: 'stability-test-2',
+            limit: 1,
+          }),
       ];
 
       for (const test of stabilityTests) {
         const response = await test();
-        
+
         // Each operation should complete and return a valid response structure
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect('isError' in response).toBe(true);
-        
+
         // System should remain stable after each operation
         const healthCheck = await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'health-check',
           limit: 1,
         });
-        
+
         expect(healthCheck).toBeDefined();
       }
 
@@ -507,29 +544,31 @@ describe.skipIf(
       const contractTests = [
         {
           name: 'Search response structure',
-          test: () => callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'contract-test',
-            limit: 1,
-          })
+          test: () =>
+            callUniversalTool('search-records', {
+              resource_type: 'companies',
+              query: 'contract-test',
+              limit: 1,
+            }),
         },
         {
           name: 'Detail response structure',
-          test: () => callUniversalTool('get-record-details', {
-            resource_type: 'companies',
-            record_id: 'contract-test-id',
-          })
+          test: () =>
+            callUniversalTool('get-record-details', {
+              resource_type: 'companies',
+              record_id: 'contract-test-id',
+            }),
         },
       ];
 
       for (const contractTest of contractTests) {
         const response = await contractTest.test();
-        
+
         // Verify consistent response structure
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect(response).toHaveProperty('isError');
-        
+
         if (response.isError) {
           expect(response).toHaveProperty('error');
           expect(typeof response.error).toBe('string');
@@ -537,7 +576,9 @@ describe.skipIf(
           expect(response).toHaveProperty('data');
         }
 
-        console.error(`✅ API contract consistency validated: ${contractTest.name}`);
+        console.error(
+          `✅ API contract consistency validated: ${contractTest.name}`
+        );
       }
 
       console.error('✅ API contract consistency preservation validated');

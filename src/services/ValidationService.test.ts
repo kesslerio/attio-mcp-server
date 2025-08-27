@@ -5,13 +5,11 @@
  * as part of Issue #489 Phase 2.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ValidationService } from '../services/ValidationService.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
+import { UniversalValidationError } from '../handlers/tool-configs/universal/schemas.js';
+import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 
 // Mock the dependencies
 vi.mock('../utils/validation/email-validation.js', () => ({
@@ -268,7 +266,7 @@ describe('ValidationService', () => {
     it('should throw for invalid UUIDs in non-task resources', () => {
       vi.mocked(isValidUUID).mockReturnValue(false);
       vi.mocked(createInvalidUUIDError).mockImplementation(
-        () => new Error('Invalid UUID')
+        () => new EnhancedApiError('Invalid UUID', 400, '/test', 'TEST')
       );
 
       expect(() => {
@@ -524,9 +522,15 @@ describe('ValidationService', () => {
 
     it('should handle null or undefined record data', () => {
       expect(() => {
-        ValidationService.validateEmailAddresses(null as any);
-        ValidationService.validateEmailAddresses(undefined as any);
-        ValidationService.validateEmailAddresses('not-an-object' as any);
+        ValidationService.validateEmailAddresses(
+          null as unknown as Record<string, unknown>
+        );
+        ValidationService.validateEmailAddresses(
+          undefined as unknown as Record<string, unknown>
+        );
+        ValidationService.validateEmailAddresses(
+          'not-an-object' as unknown as Record<string, unknown>
+        );
       }).not.toThrow();
     });
   });
@@ -676,7 +680,7 @@ describe('ValidationService', () => {
     it('should collect all validation errors', () => {
       vi.mocked(isValidUUID).mockReturnValue(false);
       vi.mocked(createInvalidUUIDError).mockImplementation(
-        () => new Error('Invalid UUID')
+        () => new EnhancedApiError('Invalid UUID', 400, '/test', 'TEST')
       );
       vi.mocked(validateFields).mockReturnValue({
         valid: false,

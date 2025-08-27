@@ -295,7 +295,9 @@ describe.skipIf(
         const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(createdTask.assignee_id || createdTask.assignee?.id).toBeDefined();
+        expect(
+          createdTask.assignee_id || createdTask.assignee?.id
+        ).toBeDefined();
 
         createdTasks.push(createdTask);
         console.error('👥 Created task with assignee:', createdTask.id.task_id);
@@ -460,7 +462,9 @@ describe.skipIf(
     describe('Task Deletion and Cleanup', () => {
       it('should delete individual tasks', async () => {
         if (createdTasks.length === 0) {
-          console.error('⏭️ Skipping deletion test - no created tasks available');
+          console.error(
+            '⏭️ Skipping deletion test - no created tasks available'
+          );
           return;
         }
 
@@ -877,10 +881,7 @@ describe.skipIf(
 
       createdNotes.push(createdNote);
 
-      console.error(
-        '🔄 Created task and note for same company:',
-        companyId
-      );
+      console.error('🔄 Created task and note for same company:', companyId);
     }, 45000);
 
     it('should demonstrate task-note workflow integration', async () => {
@@ -908,9 +909,7 @@ describe.skipIf(
 
       E2EAssertions.expectMcpSuccess(taskUpdateResponse);
 
-      console.error(
-        '✅ Demonstrated integrated task-note workflow completion'
-      );
+      console.error('✅ Demonstrated integrated task-note workflow completion');
     }, 30000);
   });
 });
