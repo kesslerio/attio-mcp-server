@@ -14,9 +14,9 @@ import {
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 describe('Tasks Field Mapping Fix - Issue #417', () => {
-  it('should map common task field variations to correct field names', () => {
+  it('should map common task field variations to correct field names', async () => {
     // Test individual mappings to avoid collisions
-    const titleMapping = mapRecordFields(UniversalResourceType.TASKS, {
+    const titleMapping = await mapRecordFields(UniversalResourceType.TASKS, {
       title: 'Q4 Follow-up: Test Task',
       due: '2025-02-15',
       assignee: 'user-123',
@@ -26,9 +26,9 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
 
     expect(titleMapping.mapped).toEqual({
       content: 'Q4 Follow-up: Test Task',
-      deadline_at: '2025-02-15',
+      deadline_at: '2025-02-15T00:00:00.000Z',
       assignees: 'user-123',
-      is_completed: 'pending',
+      is_completed: false, // 'pending' gets transformed to boolean false
       linked_records: 'record-456',
     });
 
@@ -44,7 +44,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     expect(titleMapping.warnings.some((w) => w.includes('record'))).toBe(true);
   });
 
-  it('should handle camelCase field variations correctly', () => {
+  it('should handle camelCase field variations correctly', async () => {
     const recordData = {
       content: 'Test task content',
       dueDate: '2025-02-15',
@@ -52,12 +52,12 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
       recordId: 'record-456',
     };
 
-    const result = mapRecordFields(UniversalResourceType.TASKS, recordData);
+    const result = await mapRecordFields(UniversalResourceType.TASKS, recordData);
 
     // The camelCase variants should be mapped to new Attio API field names
     expect(result.mapped).toEqual({
       content: 'Test task content',
-      deadline_at: '2025-02-15',
+      deadline_at: '2025-02-15T00:00:00.000Z',
       assignees: 'user-123',
       linked_records: 'record-456',
     });
@@ -118,7 +118,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     expect(unknownSuggestion).toContain('content'); // Should suggest valid fields
   });
 
-  it('should prevent field mapping collisions', () => {
+  it('should prevent field mapping collisions', async () => {
     // Test collision detection when multiple fields map to the same target
     const collisionData = {
       title: 'Task Title',
@@ -127,7 +127,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
       // All three map to 'content'
     };
 
-    const result = mapRecordFields(UniversalResourceType.TASKS, collisionData);
+    const result = await mapRecordFields(UniversalResourceType.TASKS, collisionData);
 
     // Should detect collision and return errors
     expect(result.errors).toBeDefined();

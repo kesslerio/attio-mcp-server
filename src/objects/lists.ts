@@ -414,15 +414,18 @@ export async function addRecordToList(
     const path = `/lists/${listId}/entries`;
 
     // Construct the proper API payload according to Attio API requirements
-    // The API expects parent_record_id, parent_object, and entry_values (required, even if empty)
-    const payload = {
+    // The API expects parent_record_id, parent_object, and optionally entry_values
+    const payload: any = {
       data: {
         parent_record_id: recordId,
         parent_object: objectType,
-        // entry_values is required by the API, use empty object if no initial values provided
-        entry_values: initialValues || {},
       },
     };
+    
+    // Only include entry_values if initialValues is provided
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      payload.data.entry_values = initialValues;
+    }
 
     if (process.env.NODE_ENV === 'development') {
       console.error(

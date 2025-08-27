@@ -179,32 +179,39 @@ export class UniversalUtilityService {
     const extractFieldValue = (field: unknown): string | null => {
       if (!field) return null;
 
-      // Handle simple string values (e.g., task content)
-      if (typeof field === 'string' && field.trim()) {
-        return field.trim();
-      }
-
-      // Handle array values (e.g., company names, person names)
+      // Handle array values first (e.g., company names, person names)
       if (Array.isArray(field) && field.length > 0) {
         const firstItem = field[0] as AttioFieldValue;
         // For name field, check both 'value' and 'full_name' properties
         return firstItem?.value || firstItem?.full_name || null;
       }
 
+      // Handle simple string values as fallback (e.g., task content)
+      if (typeof field === 'string' && field.trim()) {
+        return field.trim();
+      }
+
       return null;
     };
 
-    // Check fields in priority order
+    // Check fields in priority order, collecting valid values
     const fieldPriority = ['name', 'full_name', 'title', 'content'] as const;
+    const validValues: string[] = [];
 
     for (const fieldName of fieldPriority) {
       const fieldValue = extractFieldValue(values[fieldName]);
       if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim()) {
-        return fieldValue.trim();
+        // Prefer array-based values over string fallbacks
+        const isArrayValue = Array.isArray(values[fieldName]);
+        if (isArrayValue) {
+          return fieldValue.trim(); // Return immediately for valid array values
+        }
+        validValues.push(fieldValue.trim());
       }
     }
 
-    return 'Unnamed';
+    // Return first valid value (including string fallbacks) or 'Unnamed'
+    return validValues[0] || 'Unnamed';
   }
 
   /**

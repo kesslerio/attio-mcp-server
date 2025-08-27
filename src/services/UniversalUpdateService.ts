@@ -190,10 +190,16 @@ export class UniversalUpdateService {
       const { UniversalMetadataService } = await import(
         './UniversalMetadataService.js'
       );
+      // For RECORDS and DEALS types, we need to pass the object slug
+      const options = resource_type === UniversalResourceType.RECORDS 
+        ? { objectSlug: actualRecordData?.object || actualRecordData?.object_api_slug || 'records' }
+        : resource_type === UniversalResourceType.DEALS
+        ? { objectSlug: 'deals' }
+        : {};
       const attributeResult =
         await UniversalMetadataService.discoverAttributesForResourceType(
           resource_type,
-          {}
+          options
         );
 
       // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
@@ -297,8 +303,10 @@ export class UniversalUpdateService {
         break;
 
       case UniversalResourceType.RECORDS:
+        // Extract object slug from record_data if available
+        const recordsObjectSlug = actualRecordData?.object || actualRecordData?.object_api_slug || 'records';
         updatedRecord = await updateObjectRecord(
-          'records',
+          recordsObjectSlug,
           record_id,
           attioPayload
         );
