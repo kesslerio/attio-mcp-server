@@ -218,6 +218,15 @@ PR: `gh pr create -R kesslerio/attio-mcp-server -t "Type: Description" -b "Detai
 RULE: One feature per PR | WHEN: Creating PR | DO: Keep focused and small | ELSE: Review rejection
 RULE: Docs update required | WHEN: Significant changes | DO: Run docs-architect agent | ELSE: Outdated documentation
 
+## GITHUB CLI ADVANCED USAGE
+
+**Workflow Operations**: `gh workflow run workflow.yml` | `gh run list` | `gh run watch <run-id>` | `gh run rerun <run-id>`
+**API Direct Access**: `gh api repos/:owner/:repo/issues -F title="Bug" -F body="Details"` (POST) | `gh api repos/:owner/:repo/pulls/123 --method PATCH -F state=closed`
+**JSON Output**: `gh pr list --json number,title,state --jq '.[] | select(.state=="OPEN")'` | `gh issue list --json number,title --template '{{range .}}#{{.number}} {{.title}}{{"\n"}}{{end}}'`
+**Secret Management**: `gh secret set SECRET_NAME` | `gh secret list` | `gh variable set VAR_NAME --body "value"`
+**Useful Aliases**: `gh alias set prc 'pr create --title "$1" --body "$2" -R kesslerio/attio-mcp-server'` | `gh alias set iv 'issue view --json body --jq .body'`
+**Batch Operations**: `gh issue list --state open --json number | jq -r '.[].number' | xargs -I {} gh issue close {}`
+
 ## CI/CD PIPELINE [OPTIMIZED - 40% FASTER]
 
 RULE: Efficient CI execution | WHEN: PR created | DO: Run optimized pipeline | ELSE: Wasted CI minutes
