@@ -1,0 +1,118 @@
+{
+  "version": "1.0.0",
+  "description": "Performance budgets for CI/CD optimization and regression detection",
+  "budgets": {
+    "test_execution": {
+      "smoke": {
+        "max_duration": "30s",
+        "description": "Ultra-fast critical path validation",
+        "tests": 4,
+        "target_per_test": "7s"
+      },
+      "core": {
+        "max_duration": "2m",
+        "description": "Core services and handlers",
+        "tests": 8,
+        "target_per_test": "15s"
+      },
+      "extended": {
+        "max_duration": "5m", 
+        "description": "Complete offline test suite",
+        "tests": 25,
+        "target_per_test": "12s"
+      },
+      "integration": {
+        "max_duration": "10m",
+        "description": "API-dependent tests",
+        "tests": 15,
+        "target_per_test": "40s"
+      }
+    },
+    "api_response": {
+      "search": {
+        "max_duration": "3s",
+        "description": "Advanced search operations",
+        "endpoints": ["search-records", "advanced-search"]
+      },
+      "crud": {
+        "max_duration": "2s",
+        "description": "Create, read, update, delete operations",
+        "endpoints": ["create-record", "get-record-details", "update-record", "delete-record"]
+      },
+      "batch": {
+        "max_duration": "10s",
+        "description": "Batch operations",
+        "endpoints": ["batch-operations", "batch-update"]
+      },
+      "404_responses": {
+        "max_duration": "2s",
+        "description": "Error handling for non-existent resources",
+        "endpoints": ["get-record-details", "update-record", "delete-record"]
+      }
+    },
+    "build_performance": {
+      "typescript_compilation": {
+        "max_duration": "45s",
+        "description": "TypeScript compilation time",
+        "files_target": 200
+      },
+      "lint_check": {
+        "max_duration": "30s", 
+        "description": "ESLint analysis time",
+        "files_target": 200
+      },
+      "dependency_install": {
+        "max_duration": "60s",
+        "description": "npm ci execution time",
+        "node_modules_size": "500MB"
+      }
+    },
+    "memory_usage": {
+      "test_execution": {
+        "max_memory": "512MB",
+        "description": "Memory usage during test execution"
+      },
+      "build_process": {
+        "max_memory": "1GB",
+        "description": "Memory usage during TypeScript compilation"
+      }
+    }
+  },
+  "thresholds": {
+    "warning": {
+      "percentage": 80,
+      "description": "Warn when approaching budget limits"
+    },
+    "critical": {
+      "percentage": 100,
+      "description": "Fail when exceeding budget limits"
+    },
+    "regression": {
+      "percentage": 120,
+      "description": "Significant regression threshold"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "baseline_runs": 3,
+    "comparison_window": "7d",
+    "alert_channels": ["console", "github-comment"],
+    "retention_days": 30
+  },
+  "ci_optimization": {
+    "parallel_jobs": {
+      "max_concurrent": 4,
+      "description": "Maximum parallel CI jobs"
+    },
+    "early_termination": {
+      "enabled": true,
+      "fail_fast": true,
+      "description": "Stop on first critical failure"
+    },
+    "conditional_execution": {
+      "docs_only": ["lint:check"],
+      "tests_only": ["typecheck", "build"],
+      "source_changes": ["full_pipeline"]
+    }
+  }
+}

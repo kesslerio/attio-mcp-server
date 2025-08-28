@@ -70,14 +70,19 @@ jobs:
       - name: Check format
         run: npm run check:format
 
-  # Job 2: Unit and Integration Tests
+  # Job 2: Smart Test Execution with Matrix Strategy
   test:
-    name: Test (Node ${{ matrix.node-version }})
+    name: Test (Node ${{ matrix.node-version }}, ${{ matrix.test-category }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       matrix:
         node-version: [20.x, 22.x]
+        test-category: [smoke, core, extended]
+        exclude:
+          # Only run extended tests on Node 22.x to save CI minutes
+          - node-version: 20.x
+            test-category: extended
       fail-fast: false
       
     steps:
@@ -131,11 +136,22 @@ jobs:
       - name: Build project
         run: npm run build
         
-      - name: Run unit tests with coverage
-        run: npm run test:coverage:offline
+      - name: Run ${{ matrix.test-category }} tests
+        run: |
+          case "${{ matrix.test-category }}" in
+            smoke)
+              npm run test:smoke
+              ;;
+            core)
+              npm run test:core
+              ;;
+            extended)
+              npm run test:extended
+              ;;
+          esac
         
       - name: Upload coverage reports to Codecov
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '20.x' && matrix.test-category == 'extended'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage/lcov.info
@@ -146,12 +162,16 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # Job 3: Integration Tests (with API credentials)
+  # Job 3: Integration Tests (conditional execution)
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-integration-tests')
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      contains(github.event.pull_request.labels.*.name, 'run-integration-tests') ||
+      contains(github.event.pull_request.files.*.filename, 'src/api/') ||
+      contains(github.event.pull_request.files.*.filename, 'src/services/')
     
     steps:
       - name: Checkout code
