@@ -77,7 +77,7 @@ Show me all overdue tasks assigned to the sales team
 - **[User Guide](docs/user-guide.md)** - Common workflows and examples  
 - **[API Reference](docs/universal-tools/api-reference.md)** - Complete tool documentation
 - **[Field Mapping Guide](docs/api/field-mapping-improvements.md)** - Field validation, categories, and special characters
-- **[Phase IV Smart Testing](docs/phase-iv-smart-testing.md)** - Intelligent CI/CD system for solo developers
+- **[Smart Testing & CI/CD](docs/development/ci-cd/smart-testing.md)** - Intelligent testing and CI/CD optimization
 - **[Deployment](docs/deployment/README.md)** - Docker and production deployment
 - **[Development](docs/development/README.md)** - Contributing and extending
 

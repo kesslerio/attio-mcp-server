@@ -18,6 +18,13 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-
 ⚠️ CRITICAL: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
 NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
 
+### SMART TEST CATEGORIES [PHASE IV]
+RULE: Use smart test selection | WHEN: Local development | DO: `npm run test:affected` | ELSE: Slower CI cycles
+- **Smoke** (`npm run test:smoke`): <30s critical path - runs on doc changes
+- **Core** (`npm run test:core`): <2m services/handlers - runs on source changes  
+- **Extended** (`npm run test:extended`): <5m full suite - runs on API changes
+- **Affected** (`npm run test:affected`): Git-based smart selection - auto-categorizes
+
 ## TEST DATA CLEANUP
 
 RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
@@ -44,6 +51,18 @@ FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/
 RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: Check `scripts/debug/README.md` | ELSE: Slower debugging cycles
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
+
+## CI/CD OPTIMIZATION [PHASE IV]
+
+RULE: Local CI validation | WHEN: Before pushing | DO: `npm run ci:local` | ELSE: CI failures after push
+RULE: Auto-fix issues | WHEN: Lint/format errors | DO: `npm run fix:all` | ELSE: Manual fixes take longer
+RULE: Performance monitoring | WHEN: Adding features | DO: `npm run perf:budgets` | ELSE: Performance regressions
+KEY COMMANDS:
+- `ci:local`: Simulate GitHub Actions locally (40% faster than remote)
+- `fix:all`: Auto-fix formatting, lint, imports (saves 5-10 min/day)
+- `perf:budgets`: Check performance against thresholds
+- `report:generate`: Development metrics dashboard
+- `emergency:rollback`: Quick recovery from bad commits
 
 ## CODE STANDARDS [PR #483 ENHANCED]
 

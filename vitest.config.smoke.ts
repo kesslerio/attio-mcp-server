@@ -10,36 +10,36 @@ export default defineConfig({
     include: [
       // Critical path tests only - these must pass for basic functionality
       'test/services/UniversalCreateService.test.ts',
-      'test/services/UniversalSearchService.test.ts', 
+      'test/services/UniversalSearchService.test.ts',
       'test/api/advanced-search.test.ts',
-      'test/utils/domain-utils.test.ts'
+      'test/utils/domain-utils.test.ts',
     ],
     exclude: [
       // Exclude slow integration tests
       'test/integration/**/*.test.ts',
       'test/e2e/**/*.test.ts',
       // Exclude performance tests
-      'test/performance/**/*.test.ts'
+      'test/performance/**/*.test.ts',
     ],
     globals: true,
     testTimeout: 10000, // 10s max per test (shorter than default)
-    hookTimeout: 5000,  // 5s max for setup/teardown
+    hookTimeout: 5000, // 5s max for setup/teardown
     setupFiles: ['./test/setup.ts'],
-    
+
     // Optimized for speed
-    threads: false,     // Single thread for predictable timing
-    isolate: false,     // Faster but less isolated
-    
+    threads: false, // Single thread for predictable timing
+    isolate: false, // Faster but less isolated
+
     // Minimal coverage for smoke tests
     coverage: {
-      enabled: false  // Skip coverage in smoke tests for speed
+      enabled: false, // Skip coverage in smoke tests for speed
     },
-    
+
     // Fast reporter
     reporter: ['dot'],
-    
+
     // Fail fast on first error
-    bail: 1
+    bail: 1,
   },
   resolve: {
     alias: {
@@ -47,3 +47,4 @@ export default defineConfig({
     },
   },
 });
+
