@@ -93,6 +93,10 @@ vi.mock('../../src/objects/tasks.js', () => ({
   getTask: vi.fn(),
 }));
 
+vi.mock('../../src/objects/notes.js', () => ({
+  getNote: vi.fn(),
+}));
+
 import { ValidationService } from '../../src/services/ValidationService.js';
 import { CachingService } from '../../src/services/CachingService.js';
 import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
@@ -101,9 +105,11 @@ import { createRecordNotFoundError } from '../../src/utils/validation/uuid-valid
 import { ErrorEnhancer } from '../../src/errors/enhanced-api-errors.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
 import { getPersonDetails } from '../../src/objects/people/index.js';
-import { getListDetails } from '../../src/objects/lists.js';
+import * as lists from '../../src/objects/lists.js';
 import { getObjectRecord } from '../../src/objects/records/index.js';
-import { getTask } from '../../src/objects/tasks.js';
+import * as tasks from '../../src/objects/tasks.js';
+import * as notes from '../../src/objects/notes.js';
+import * as companies from '../../src/objects/companies/index.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
@@ -165,14 +171,14 @@ describe('UniversalRetrievalService', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
-      vi.mocked(getListDetails).mockResolvedValue(mockList);
+      vi.mocked(lists.getListDetails).mockResolvedValue(mockList);
 
       const result = await UniversalRetrievalService.getRecordDetails({
         resource_type: UniversalResourceType.LISTS,
         record_id: 'list_789',
       });
 
-      expect(getListDetails).toHaveBeenCalledWith('list_789');
+      expect(lists.getListDetails).toHaveBeenCalledWith('list_789');
       expect(result).toEqual({
         id: {
           record_id: 'list_789',
@@ -222,7 +228,7 @@ describe('UniversalRetrievalService', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       };
-      vi.mocked(getTask).mockResolvedValue(mockTask);
+      vi.mocked(tasks.getTask).mockResolvedValue(mockTask);
       vi.mocked(UniversalUtilityService.convertTaskToRecord).mockReturnValue(
         mockRecord
       );
@@ -232,7 +238,7 @@ describe('UniversalRetrievalService', () => {
         record_id: 'task_ghi',
       });
 
-      expect(getTask).toHaveBeenCalledWith('task_ghi');
+      expect(tasks.getTask).toHaveBeenCalledWith('task_ghi');
       expect(UniversalUtilityService.convertTaskToRecord).toHaveBeenCalledWith(
         mockTask
       );
@@ -303,7 +309,7 @@ describe('UniversalRetrievalService', () => {
 
     it('should handle task retrieval errors and cache 404s', async () => {
       const taskError = new Error('Task not found');
-      vi.mocked(getTask).mockRejectedValue(taskError);
+      vi.mocked(tasks.getTask).mockRejectedValue(taskError);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
         new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
           resourceType: 'record',
@@ -785,9 +791,9 @@ describe('UniversalRetrievalService', () => {
 
     describe('Non-HTTP Error Handling', () => {
       it('should handle TypeError exceptions without masking as 404', async () => {
-        vi.mocked(companies.getCompanyDetails).mockRejectedValue(
-          new TypeError('Cannot read properties of null')
-        );
+        const typeError = new TypeError('Cannot read properties of null');
+        vi.mocked(companies.getCompanyDetails).mockRejectedValue(typeError);
+        vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(typeError);
 
         await expect(
           UniversalRetrievalService.getRecordDetails({
