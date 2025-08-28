@@ -166,6 +166,7 @@ MILESTONES:
 - Format functions: Always return string (never conditional types)
 - Configuration objects: Define specific interfaces
 - Legacy integration: Gradually migrate `any` → `unknown` → specific types
+LINT CHECK: `npx eslint src/path/ 2>&1 | grep -c "any"` to count any warnings in specific directories
 
 ## TESTING CONFIGURATION [PR #483 ARCHITECTURE]
 
