@@ -27,7 +27,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     expect(titleMapping.mapped).toEqual({
       content: 'Q4 Follow-up: Test Task',
       deadline_at: '2025-02-15T00:00:00.000Z',
-      assignees: 'user-123',
+      assignees: ['user-123'], // Single value converted to array
       is_completed: false, // 'pending' gets transformed to boolean false
       linked_records: 'record-456',
     });
@@ -58,7 +58,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     expect(result.mapped).toEqual({
       content: 'Test task content',
       deadline_at: '2025-02-15T00:00:00.000Z',
-      assignees: 'user-123',
+      assignees: ['user-123'], // Single value converted to array
       linked_records: 'record-456',
     });
 
