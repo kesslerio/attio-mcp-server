@@ -41,6 +41,7 @@ export {
   ERROR_MESSAGES,
   TEST_LOGGING,
   TEST_DATA_PATTERNS,
+  performanceBudgetSoftCheck,
 } from './test-constants.js';
 
 // Mock Data Factories

@@ -165,6 +165,19 @@ export const TEST_LOGGING = {
   },
 } as const;
 
+/**
+ * Performance Budget Soft Check
+ * Validates performance budgets without failing tests during Phase A1
+ * Returns boolean for test logic without console logging
+ */
+export const performanceBudgetSoftCheck = (
+  actual: number, 
+  expected: number, 
+  isGreaterThan = true
+): boolean => {
+  return isGreaterThan ? actual > expected : actual < expected;
+};
+
 // Clean-up Delays
 export const CLEANUP_DELAYS = {
   apiIndexing: 2000, // Wait for API to index new records
