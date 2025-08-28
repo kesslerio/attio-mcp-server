@@ -17,10 +17,10 @@ import { transformFieldValue } from './value-transformer.js';
  */
 export async function mapRecordFields(
   resourceType: UniversalResourceType,
-  recordData: Record<string, any>,
+  recordData: Record<string, unknown>,
   availableAttributes?: string[]
 ): Promise<{
-  mapped: Record<string, any>;
+  mapped: Record<string, unknown>;
   warnings: string[];
   errors?: string[];
 }> {
@@ -43,7 +43,7 @@ export async function mapRecordFields(
     };
   }
 
-  const mapped: Record<string, any> = {};
+  const mapped: Record<string, unknown> = {};
   const warnings: string[] = [];
 
   for (const [key, value] of Object.entries(recordData)) {

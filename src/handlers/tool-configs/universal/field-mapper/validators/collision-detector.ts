@@ -45,7 +45,7 @@ function getFieldCollisionSuggestion(
  */
 export async function detectFieldCollisions(
   resourceType: UniversalResourceType,
-  recordData: Record<string, any>,
+  recordData: Record<string, unknown>,
   availableAttributes?: string[]
 ): Promise<{
   hasCollisions: boolean;

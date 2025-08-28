@@ -51,7 +51,7 @@ export function getFieldSuggestions(
  */
 export function validateFields(
   resourceType: UniversalResourceType,
-  recordData: Record<string, any>
+  recordData: Record<string, unknown>
 ): {
   valid: boolean;
   errors: string[];

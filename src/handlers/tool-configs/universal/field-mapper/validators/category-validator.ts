@@ -148,9 +148,9 @@ export function validateCategories(input: string | string[]): {
 export function processCategories(
   resourceType: UniversalResourceType,
   fieldName: string,
-  value: any
+  value: unknown
 ): {
-  processedValue: any;
+  processedValue: unknown;
   warnings: string[];
   errors: string[];
 } {
@@ -169,7 +169,12 @@ export function processCategories(
   }
 
   // Validate categories
-  const validation = validateCategories(value);
+  if (typeof value !== 'string' && !Array.isArray(value)) {
+    result.errors.push(`Categories must be a string or array of strings, got: ${typeof value}`);
+    return result;
+  }
+  
+  const validation = validateCategories(value as string | string[]);
 
   if (validation.autoConverted) {
     result.warnings.push(

@@ -657,7 +657,7 @@ export class UniversalCreateService {
     // Map field names to correct ones with collision detection
     const mappingResult = await mapRecordFields(
       resource_type,
-      record_data.values || record_data,
+      (record_data.values || record_data) as Record<string, unknown>,
       availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
@@ -1094,7 +1094,7 @@ export class UniversalCreateService {
       // Apply field mapping to inner values using the objectSlug
       const mappingResult = await mapRecordFields(
         objectSlug as UniversalResourceType, // Use objectSlug as resource type for inner mapping
-        recordValues,
+        (recordValues || {}) as Record<string, unknown>,
         availableAttributes
       );
 

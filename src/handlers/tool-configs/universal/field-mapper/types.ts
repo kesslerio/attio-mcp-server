@@ -29,7 +29,7 @@ export interface FieldMapping {
  */
 export interface MappingResult {
   /** The mapped record data */
-  mapped: Record<string, any>;
+  mapped: Record<string, unknown>;
   /** Warnings about mappings that were applied */
   warnings: string[];
   /** Errors that occurred during mapping */
@@ -105,7 +105,7 @@ export interface DomainConflictResult {
 export interface CategoryObject {
   name: string;
   id?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -115,5 +115,5 @@ export interface TransformOptions {
   /** Skip domain preflight checks */
   skipDomainPreflight?: boolean;
   /** Additional context for transformation */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }

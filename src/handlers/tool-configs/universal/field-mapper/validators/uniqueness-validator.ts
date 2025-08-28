@@ -14,7 +14,7 @@ import { getAttioClient } from '../../../../../api/attio-client.js';
 export async function enhanceUniquenessError(
   resourceType: UniversalResourceType,
   errorMessage: string,
-  recordData: Record<string, any>
+  recordData: Record<string, unknown>
 ): Promise<string> {
   const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping || !mapping.uniqueFields) {
@@ -36,7 +36,7 @@ export async function enhanceUniquenessError(
     const attributes = response.data.data || [];
 
     const attribute = attributes.find(
-      (attr: any) => attr.id === attributeId || attr.api_slug === attributeId
+      (attr: Record<string, unknown>) => attr.id === attributeId || attr.api_slug === attributeId
     );
 
     if (attribute) {

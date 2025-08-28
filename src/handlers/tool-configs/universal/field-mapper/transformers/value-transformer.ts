@@ -9,7 +9,7 @@ import { UniversalResourceType } from '../types.js';
  * Converts various value types to boolean for task completion status
  * Supports common task status strings and values
  */
-function toBooleanish(v: any): boolean | undefined {
+function toBooleanish(v: unknown): boolean | undefined {
   if (typeof v === 'boolean') return v;
   if (typeof v === 'number') return v !== 0;
   if (typeof v === 'string') {
@@ -40,9 +40,8 @@ function toBooleanish(v: any): boolean | undefined {
 export async function transformFieldValue(
   resourceType: UniversalResourceType,
   fieldName: string,
-  value: any,
-  options?: { skipDomainPreflight?: boolean }
-): Promise<any> {
+  value: unknown
+): Promise<unknown> {
   // Handle domains field for companies
   if (
     resourceType === UniversalResourceType.COMPANIES &&
@@ -143,11 +142,17 @@ export async function transformFieldValue(
     resourceType === UniversalResourceType.PEOPLE &&
     fieldName === 'company'
   ) {
-    const toRef = (v: any) => {
+    const toRef = (v: unknown): unknown => {
       if (typeof v === 'string') return { record_id: v };
-      if (v?.record_id) return { record_id: v.record_id };
-      if (v?.id?.record_id) return { record_id: v.id.record_id };
-      if (v?.id) return { record_id: v.id };
+      if (v && typeof v === 'object') {
+        const obj = v as Record<string, unknown>;
+        if (obj.record_id) return { record_id: obj.record_id };
+        if (obj.id && typeof obj.id === 'object') {
+          const idObj = obj.id as Record<string, unknown>;
+          if (idObj.record_id) return { record_id: idObj.record_id };
+        }
+        if (obj.id) return { record_id: obj.id };
+      }
       return v; // last-resort passthrough
     };
 
@@ -160,7 +165,7 @@ export async function transformFieldValue(
     resourceType === UniversalResourceType.DEALS &&
     (fieldName === 'associated_company' || fieldName === 'associated_people')
   ) {
-    const toRef = (v: any) =>
+    const toRef = (v: unknown): unknown =>
       (typeof v === 'string' && { record_id: v }) ||
       (v && typeof v === 'object' && 'record_id' in v ? v : null);
 
