@@ -1,0 +1,117 @@
+{
+  "sourceFiles": {
+    "src/services/UniversalCreateService.ts": [
+      "test/services/UniversalCreateService.test.ts",
+      "test/integration/company-write-operations.test.ts"
+    ],
+    "src/services/UniversalSearchService.ts": [
+      "test/services/UniversalSearchService.test.ts",
+      "test/api/advanced-search.test.ts",
+      "test/integration/companies-advanced-search.integration.test.ts"
+    ],
+    "src/services/UniversalUpdateService.ts": [
+      "test/services/UniversalUpdateService.test.ts",
+      "test/services/UniversalUpdateService-edge-cases.test.ts",
+      "test/integration/batch-update-companies.integration.test.ts"
+    ],
+    "src/services/UniversalDeleteService.ts": [
+      "test/services/UniversalDeleteService.test.ts"
+    ],
+    "src/services/UniversalMetadataService.ts": [
+      "test/services/UniversalMetadataService.test.ts"
+    ],
+    "src/services/UniversalUtilityService.ts": [
+      "test/services/UniversalUtilityService.test.ts"
+    ],
+    "src/services/CachingService.ts": [
+      "test/services/CachingService.test.ts"
+    ],
+    "src/handlers/tools.ts": [
+      "test/handlers/tools.test.ts"
+    ],
+    "src/api/client.ts": [
+      "test/api/api-call-flow-test.js",
+      "test/api/attribute-validation-real-api.test.ts"
+    ],
+    "src/utils/domain-utils.ts": [
+      "test/utils/domain-utils.test.ts"
+    ],
+    "src/utils/validation.ts": [
+      "test/utils/validation.test.ts"
+    ],
+    "src/objects/lists.ts": [
+      "test/objects/lists.add-record.test.ts",
+      "test/api/list-details.api.test.ts"
+    ]
+  },
+  "testFiles": {
+    "test/services/UniversalCreateService.test.ts": [
+      "src/services/UniversalCreateService.ts"
+    ],
+    "test/services/UniversalSearchService.test.ts": [
+      "src/services/UniversalSearchService.ts"
+    ],
+    "test/services/UniversalUpdateService.test.ts": [
+      "src/services/UniversalUpdateService.ts"
+    ],
+    "test/services/UniversalDeleteService.test.ts": [
+      "src/services/UniversalDeleteService.ts"
+    ],
+    "test/services/UniversalMetadataService.test.ts": [
+      "src/services/UniversalMetadataService.ts"
+    ],
+    "test/services/UniversalUtilityService.test.ts": [
+      "src/services/UniversalUtilityService.ts"
+    ],
+    "test/services/CachingService.test.ts": [
+      "src/services/CachingService.ts"
+    ],
+    "test/api/advanced-search.test.ts": [
+      "src/services/UniversalSearchService.ts",
+      "src/api/operations/search.ts"
+    ],
+    "test/utils/domain-utils.test.ts": [
+      "src/utils/domain-utils.ts"
+    ],
+    "test/objects/lists.add-record.test.ts": [
+      "src/objects/lists.ts"
+    ]
+  },
+  "categories": {
+    "smoke": [
+      "test/services/UniversalCreateService.test.ts",
+      "test/services/UniversalSearchService.test.ts",
+      "test/api/advanced-search.test.ts",
+      "test/utils/domain-utils.test.ts"
+    ],
+    "core": [
+      "test/services/UniversalCreateService.test.ts",
+      "test/services/UniversalSearchService.test.ts",
+      "test/services/UniversalUpdateService.test.ts",
+      "test/services/UniversalDeleteService.test.ts",
+      "test/services/UniversalMetadataService.test.ts",
+      "test/services/UniversalUtilityService.test.ts",
+      "test/services/CachingService.test.ts",
+      "test/handlers/tools.test.ts"
+    ],
+    "extended": [
+      "test/api/advanced-search.test.ts",
+      "test/api/attribute-validation-real-api.test.ts",
+      "test/api/boolean-attribute-update.test.ts",
+      "test/api/list-details.api.test.ts",
+      "test/objects/lists.add-record.test.ts",
+      "test/objects/records.test.ts",
+      "test/utils/domain-utils.test.ts",
+      "test/utils/validation.test.ts",
+      "test/utils/response-formatter.test.ts"
+    ],
+    "integration": [
+      "test/integration/companies-advanced-search.integration.test.ts",
+      "test/integration/company-write-operations.test.ts",
+      "test/integration/batch-update-companies.integration.test.ts",
+      "test/integration/concurrent-operations.test.ts",
+      "test/integration/error-handling.test.ts",
+      "test/integration/special-character-handling.test.ts"
+    ]
+  }
+}

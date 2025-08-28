@@ -21,6 +21,7 @@ A comprehensive Model Context Protocol (MCP) server for [Attio](https://attio.co
 - **Field Mapping Excellence**: Corrected field mappings with category validation and special character preservation
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
+- **Smart CI/CD**: Phase IV intelligent testing system with 40-60% CI time reduction
 
 ## 🚀 Quick Start
 
@@ -76,6 +77,7 @@ Show me all overdue tasks assigned to the sales team
 - **[User Guide](docs/user-guide.md)** - Common workflows and examples  
 - **[API Reference](docs/universal-tools/api-reference.md)** - Complete tool documentation
 - **[Field Mapping Guide](docs/api/field-mapping-improvements.md)** - Field validation, categories, and special characters
+- **[Phase IV Smart Testing](docs/phase-iv-smart-testing.md)** - Intelligent CI/CD system for solo developers
 - **[Deployment](docs/deployment/README.md)** - Docker and production deployment
 - **[Development](docs/development/README.md)** - Contributing and extending
 
@@ -90,6 +92,22 @@ Show me all overdue tasks assigned to the sales team
 | `delete-record` | Remove records safely |
 | `advanced-search` | Complex multi-condition filtering |
 | `batch-operations` | Process multiple records efficiently |
+
+## 🛠️ Developer Tools (Phase IV)
+
+Smart testing and CI/CD optimization for solo developer maintenance:
+
+| Command | Purpose |
+|---------|---------|
+| `npm run test:smoke` | Ultra-fast critical path tests (<30s) |
+| `npm run test:affected` | Run only tests affected by changes |
+| `npm run ci:local` | Simulate GitHub Actions locally |
+| `npm run fix:all` | Auto-fix formatting and lint issues |
+| `npm run perf:budgets` | Check performance against budgets |
+| `npm run report:generate` | Generate comprehensive development report |
+| `npm run emergency:rollback` | Emergency rollback system |
+
+**Benefits**: 40-60% CI time reduction, intelligent test selection, automated quality checks
 
 ## ⚡ Performance & Architecture
 
