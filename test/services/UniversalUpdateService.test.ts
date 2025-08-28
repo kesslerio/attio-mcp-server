@@ -206,7 +206,9 @@ describe('UniversalUpdateService', () => {
       });
 
       expect(updateObjectRecord).toHaveBeenCalledWith('records', 'record_abc', {
-        name: 'Test Company',
+        values: {
+          name: 'Test Company',
+        },
       });
 
       // Expect normalized response format with additional fields
@@ -238,11 +240,9 @@ describe('UniversalUpdateService', () => {
         { name: 'Test Company' },
         false
       );
-      expect(updateObjectRecord).toHaveBeenCalledWith(
-        'deals',
-        'deal_def',
-        mockDealData
-      );
+      expect(updateObjectRecord).toHaveBeenCalledWith('deals', 'deal_def', {
+        values: mockDealData,
+      });
 
       // Expect normalized response format with additional fields
       expect(result.id.record_id).toBe('deal_def');

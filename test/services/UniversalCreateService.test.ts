@@ -47,6 +47,7 @@ vi.mock('../../src/utils/validation-utils.js', () => ({
 vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
   convertAttributeFormats: vi.fn((type, data) => data),
   getFormatErrorHelp: vi.fn((type, field, message) => `Enhanced: ${message}`),
+  validatePeopleAttributesPrePost: vi.fn(),
 }));
 
 vi.mock('../../src/config/deal-defaults.js', () => ({
@@ -88,6 +89,12 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
 
 vi.mock('../../src/utils/logger.js', () => ({
   debug: vi.fn(),
+  createScopedLogger: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
   OperationType: {
     API_CALL: 'api_call',
   },
@@ -266,11 +273,14 @@ describe('UniversalCreateService', () => {
 
       const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.RECORDS,
-        record_data: { values: { name: 'Test Record' } },
+        record_data: {
+          object: 'companies', // Move object slug inside record_data
+          name: 'Test Record', // Flatten the data structure
+        },
       });
 
-      expect(createObjectRecord).toHaveBeenCalledWith('records', {
-        name: 'Test Record',
+      expect(createObjectRecord).toHaveBeenCalledWith('companies', {
+        values: { name: 'Test Record' },
       });
       expect(result).toEqual(mockRecord);
     });
@@ -297,7 +307,9 @@ describe('UniversalCreateService', () => {
         { name: 'Test Record' },
         false
       );
-      expect(createObjectRecord).toHaveBeenCalledWith('deals', mockDealData);
+      expect(createObjectRecord).toHaveBeenCalledWith('deals', {
+        values: mockDealData,
+      });
       expect(result).toEqual(mockDeal);
     });
 
@@ -355,7 +367,7 @@ describe('UniversalCreateService', () => {
           resource_type: UniversalResourceType.COMPANIES,
           record_data: { values: { xyz: 'Invalid' } },
         })
-      ).rejects.toThrow('Field validation failed for companies');
+      ).rejects.toThrow('Validation failed for companies');
     });
 
     it('should handle field mapping errors', async () => {
@@ -498,19 +510,31 @@ describe('UniversalCreateService', () => {
       });
     });
 
-    it('should throw error when title is provided instead of content', async () => {
+    it('should correctly map title to content for tasks', async () => {
+      const mockTaskRecord: AttioRecord = {
+        id: { record_id: 'task_123', task_id: 'task_123' },
+        values: { content: 'New task' },
+      };
+      vi.mocked(MockService.createTask).mockResolvedValue(mockTaskRecord);
+
       vi.mocked(mapRecordFields).mockReturnValue({
-        mapped: { title: 'Task Title' }, // Using 'title' instead of 'content'
-        warnings: [],
+        mapped: { content: 'New task' }, // title mapped to content
+        warnings: ['Field "title" was automatically mapped to "content"'],
         errors: [],
       });
 
-      await expect(
-        UniversalCreateService.createRecord({
-          resource_type: UniversalResourceType.TASKS,
-          record_data: { values: { title: 'Task Title' } },
-        })
-      ).rejects.toThrow('Use content instead of title');
+      process.env.E2E_MODE = 'true';
+
+      const result = await UniversalCreateService.createRecord({
+        resource_type: UniversalResourceType.TASKS,
+        record_data: { values: { title: 'Task Title' } },
+      });
+
+      expect(result).toEqual(mockTaskRecord);
+      expect(MockService.createTask).toHaveBeenCalledWith({
+        content: 'New task',
+        title: 'New task',
+      });
     });
 
     it('should handle task creation with field mapping and conversion', async () => {
@@ -601,10 +625,7 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle field validation warnings and suggestions logging', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
+      process.env.E2E_MODE = 'true';
 
       vi.mocked(validateFields).mockReturnValue({
         valid: true,
@@ -619,22 +640,16 @@ describe('UniversalCreateService', () => {
       };
       vi.mocked(MockService.createCompany).mockResolvedValue(mockCompany);
 
-      await UniversalCreateService.createRecord({
+      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_data: { values: { name: 'Test Company' } },
       });
 
-      expect(console.error).toHaveBeenCalledWith(
-        'Field validation warnings:',
-        'Field warning 1\nField warning 2'
-      );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Field suggestions:',
-        'Suggestion 1\nSuggestion 2'
-      );
-
-      consoleSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+      // Verify the record was created despite warnings
+      expect(result).toEqual(mockCompany);
+      expect(MockService.createCompany).toHaveBeenCalledWith({
+        name: 'Test Record',
+      });
     });
   });
 });

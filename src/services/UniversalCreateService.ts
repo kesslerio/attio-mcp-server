@@ -727,6 +727,16 @@ export class UniversalCreateService {
         return this.createPersonRecord(mappedData, resource_type);
 
       case UniversalResourceType.RECORDS:
+        // Ensure object slug is available in mappedData for createObjectRecord
+        if (
+          recordsObjectSlug &&
+          !mappedData.object &&
+          !mappedData.object_api_slug
+        ) {
+          // Create a copy to avoid mutating the original mappedData
+          const recordsData = { ...mappedData, object: recordsObjectSlug };
+          return this.createObjectRecord(recordsData, resource_type);
+        }
         return this.createObjectRecord(mappedData, resource_type);
 
       case UniversalResourceType.DEALS:

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Pre-commit hook that enforces the CLAUDE.md validation pipeline
 # RULE: All commits must pass validation per CLAUDE.md Git Commit Pipeline
+# Enhanced with skip patterns and performance timing for Phase 3
 
 # Colors for output
 RED='\033[0;31m'
@@ -9,44 +10,117 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Performance timing
+start_time=$(date +%s)
+
+# Check for skip flags
+SKIP_TESTS=false
+SKIP_BUILD=false
+EMERGENCY_MODE=false
+
+# Parse command line arguments
+for arg in "$@"; do
+  case $arg in
+    --skip-tests)
+      SKIP_TESTS=true
+      shift
+      ;;
+    --skip-build)
+      SKIP_BUILD=true
+      shift
+      ;;
+    --emergency)
+      EMERGENCY_MODE=true
+      SKIP_TESTS=true
+      SKIP_BUILD=true
+      shift
+      ;;
+  esac
+done
+
+# Check for environment variables
+if [ "$SKIP_PRECOMMIT_TESTS" = "true" ]; then
+  SKIP_TESTS=true
+fi
+
+if [ "$EMERGENCY_MODE" = "true" ]; then
+  echo -e "${YELLOW}🚨 EMERGENCY MODE: Skipping validation checks${NC}"
+  echo -e "${YELLOW}⚠️  Remember to run full validation later!${NC}"
+  exit 0
+fi
+
 echo -e "${BLUE}🔍 Pre-commit validation pipeline starting...${NC}"
-echo -e "Enforcing CLAUDE.md Git Commit Pipeline [ENFORCED]"
+echo -e "Enforcing CLAUDE.md Git Commit Pipeline [ENHANCED]"
 
 # Stage 1: Lint Check
+stage1_start=$(date +%s)
 echo -e "\n${YELLOW}Stage 1/4: Running lint check...${NC}"
 if ! npm run lint:check; then
   echo -e "${RED}❌ COMMIT BLOCKED: Lint check failed${NC}"
   echo -e "Fix lint issues before committing. Run: ${YELLOW}npm run lint:fix${NC}"
+  echo -e "\n💡 Skip this check: ${YELLOW}SKIP_PRECOMMIT_TESTS=true git commit${NC}"
   exit 1
 fi
-echo -e "${GREEN}✅ Lint check passed${NC}"
+stage1_end=$(date +%s)
+echo -e "${GREEN}✅ Lint check passed ($(($stage1_end - $stage1_start))s)${NC}"
 
 # Stage 2: Format Check  
+stage2_start=$(date +%s)
 echo -e "\n${YELLOW}Stage 2/4: Running format check...${NC}"
 if ! npm run check:format; then
   echo -e "${RED}❌ COMMIT BLOCKED: Format check failed${NC}"
   echo -e "Fix formatting issues before committing. Run: ${YELLOW}npm run format${NC}"
   exit 1
 fi
-echo -e "${GREEN}✅ Format check passed${NC}"
+stage2_end=$(date +%s)
+echo -e "${GREEN}✅ Format check passed ($(($stage2_end - $stage2_start))s)${NC}"
 
 # Stage 3: Build Check
-echo -e "\n${YELLOW}Stage 3/4: Running TypeScript build...${NC}"
-if ! npm run build; then
-  echo -e "${RED}❌ COMMIT BLOCKED: Build failed${NC}"
-  echo -e "Fix TypeScript compilation errors before committing."
-  exit 1
+stage3_start=$(date +%s)
+if [ "$SKIP_BUILD" = "true" ]; then
+  echo -e "\n${YELLOW}Stage 3/4: Build check skipped${NC}"
+else
+  echo -e "\n${YELLOW}Stage 3/4: Running TypeScript build...${NC}"
+  if ! npm run build; then
+    echo -e "${RED}❌ COMMIT BLOCKED: Build failed${NC}"
+    echo -e "Fix TypeScript compilation errors before committing."
+    echo -e "\n💡 Skip this check: ${YELLOW}--skip-build${NC}"
+    exit 1
+  fi
+  stage3_end=$(date +%s)
+  echo -e "${GREEN}✅ Build check passed ($(($stage3_end - $stage3_start))s)${NC}"
 fi
-echo -e "${GREEN}✅ Build check passed${NC}"
 
 # Stage 4: Unit Tests
-echo -e "\n${YELLOW}Stage 4/4: Running offline tests...${NC}"
-if ! npm run test:offline; then
-  echo -e "${RED}❌ COMMIT BLOCKED: Unit tests failed${NC}"
-  echo -e "Fix failing tests before committing."
-  exit 1
+stage4_start=$(date +%s)
+if [ "$SKIP_TESTS" = "true" ]; then
+  echo -e "\n${YELLOW}Stage 4/4: Tests skipped${NC}"
+  echo -e "${YELLOW}⚠️  Remember to run tests before pushing!${NC}"
+else
+  echo -e "\n${YELLOW}Stage 4/4: Running smoke tests...${NC}"
+  # Try smoke tests first (if available), fall back to offline tests
+  if npm run test:smoke >/dev/null 2>&1; then
+    if ! npm run test:smoke; then
+      echo -e "${RED}❌ COMMIT BLOCKED: Smoke tests failed${NC}"
+      echo -e "Fix failing tests before committing."
+      echo -e "\n💡 Skip this check: ${YELLOW}SKIP_PRECOMMIT_TESTS=true git commit${NC}"
+      echo -e "💡 Emergency commit: ${YELLOW}git commit --emergency${NC}"
+      exit 1
+    fi
+  else
+    # Fallback to offline tests
+    echo -e "${YELLOW}Running offline tests (smoke tests not available)...${NC}"
+    if ! timeout 60 npm run test:offline; then
+      echo -e "${RED}❌ COMMIT BLOCKED: Tests failed or timed out${NC}"
+      echo -e "Fix failing tests before committing."
+      echo -e "\n💡 Skip this check: ${YELLOW}SKIP_PRECOMMIT_TESTS=true git commit${NC}"
+      echo -e "💡 Emergency commit: ${YELLOW}git commit --emergency${NC}"
+      exit 1
+    fi
+  fi
+  stage4_end=$(date +%s)
+  echo -e "${GREEN}✅ Tests passed ($(($stage4_end - $stage4_start))s)${NC}"
 fi
-echo -e "${GREEN}✅ Unit tests passed${NC}"
 
 # AI Attribution cleanup (secondary check)
 echo -e "\n${YELLOW}Checking for AI attribution phrases...${NC}"

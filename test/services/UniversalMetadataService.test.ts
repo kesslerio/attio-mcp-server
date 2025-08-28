@@ -421,11 +421,12 @@ describe('UniversalMetadataService', () => {
       vi.mocked(getAttioClient).mockReturnValue(mockClient as any);
 
       const result = await UniversalMetadataService.discoverAttributes(
-        UniversalResourceType.RECORDS
+        UniversalResourceType.RECORDS,
+        { objectSlug: 'companies' }
       );
 
       expect(mockClient.get).toHaveBeenCalledWith(
-        '/objects/records/attributes'
+        '/objects/companies/attributes'
       );
       expect(result).toHaveProperty('attributes', mockAttributes);
     });

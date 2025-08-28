@@ -513,6 +513,8 @@ export class CachingService {
    */
   static getCacheStats(): CacheStats & {
     totalEntries: number;
+    tasksCacheSize: number;
+    tasksCacheEntries: string[];
     cacheEfficiency: {
       tasks: number;
       attributes: number;
@@ -536,6 +538,8 @@ export class CachingService {
         this.tasksCache.size +
         this.attributesCache.size +
         this.notFoundCache.size,
+      tasksCacheSize: this.tasksCache.size,
+      tasksCacheEntries: Array.from(this.tasksCache.keys()),
       cacheEfficiency: {
         tasks:
           this.stats.tasks.hits + this.stats.tasks.misses > 0
