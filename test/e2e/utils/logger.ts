@@ -69,8 +69,8 @@ class E2ELogger {
   private runId?: string;
 
   constructor() {
-    // Create logs directory in test/e2e/logs
-    this.logsDir = join(process.cwd(), 'test', 'e2e', 'logs');
+    // Create logs directory in test/e2e/outputs (logs was removed in cleanup)
+    this.logsDir = join(process.cwd(), 'test', 'e2e', 'outputs');
     this.ensureLogsDirectory();
   }
 

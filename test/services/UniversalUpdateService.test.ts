@@ -677,14 +677,14 @@ describe('UniversalUpdateService', () => {
           warnings: [],
           suggestions: [],
         });
-        
+
         // Ensure mapRecordFields returns content unchanged
         vi.mocked(mapRecordFields).mockReturnValue({
           mapped: { content: 'Updated content' },
           warnings: [],
-          errors: []
+          errors: [],
         });
-        
+
         // Mock getTask to return existing task (this should succeed)
         vi.mocked(tasks.getTask).mockResolvedValue({
           id: { task_id: 'existing-task' },
@@ -709,11 +709,13 @@ describe('UniversalUpdateService', () => {
             record_id: 'existing-task',
             record_data: { content: 'Updated content' },
           })
-        ).rejects.toThrow(/Task content cannot be updated|Content is immutable/);
+        ).rejects.toThrow(
+          /Task content cannot be updated|Content is immutable/
+        );
 
         // Verify that getTask was called to check existence
         expect(tasks.getTask).toHaveBeenCalledWith('existing-task');
-        
+
         // updateTask should NOT be called because immutability check fails
         expect(tasks.updateTask).not.toHaveBeenCalled();
       });
@@ -748,7 +750,7 @@ describe('UniversalUpdateService', () => {
           record_id: 'test-company',
           record_data: {},
         });
-        
+
         // Should still return a valid result even with empty data
         expect(result).toBeDefined();
         expect(result.id).toMatchObject({
