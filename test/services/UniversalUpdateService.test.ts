@@ -31,6 +31,10 @@ vi.mock('../../src/config/deal-defaults.js', () => ({
   applyDealDefaultsWithValidation: vi.fn(),
 }));
 
+vi.mock('../../src/objects/tasks.js', () => ({
+  getTask: vi.fn(),
+}));
+
 vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   mapRecordFields: vi.fn(),
   mapTaskFields: vi.fn((operation, input) => input), // Return input unchanged for tests
@@ -73,6 +77,7 @@ import {
 import { validateRecordFields } from '../../src/utils/validation-utils.js';
 import { ValidationService } from '../../src/services/ValidationService.js';
 import { MockService } from '../../src/services/MockService.js';
+import * as tasks from '../../src/objects/tasks.js';
 
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
@@ -615,6 +620,123 @@ describe('UniversalUpdateService', () => {
       expect(result.values.title).toBeDefined(); // Issue #480 compatibility
       expect(result.created_at).toBe('2024-01-01T00:00:00Z');
       expect(result.updated_at).toBeDefined(); // May be original or normalized timestamp
+    });
+  });
+
+  describe('Edge Cases and Error Scenarios', () => {
+    describe('Task Content Immutability Edge Cases', () => {
+      it('should defer immutability check and return 404 for non-existent task', async () => {
+        // Mock getTask to throw 404 error
+        vi.mocked(tasks.getTask).mockRejectedValue({
+          status: 404,
+          body: { code: 'not_found', message: 'Task not found' },
+        });
+
+        await expect(
+          UniversalUpdateService.updateRecord({
+            resource_type: UniversalResourceType.TASKS,
+            record_id: 'non-existent-task',
+            record_data: { content: 'New content' },
+          })
+        ).rejects.toMatchObject({
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: 'Task record with ID "non-existent-task" not found.',
+          },
+        });
+
+        // Verify existence check was performed
+        expect(tasks.getTask).toHaveBeenCalledWith('non-existent-task');
+      });
+
+      it('should return 404 when task existence check fails with generic error', async () => {
+        // Mock getTask to throw generic error (simulating network issues)
+        vi.mocked(tasks.getTask).mockRejectedValue(
+          new Error('Network timeout')
+        );
+
+        await expect(
+          UniversalUpdateService.updateRecord({
+            resource_type: UniversalResourceType.TASKS,
+            record_id: 'network-error-task',
+            record_data: { content: 'New content' },
+          })
+        ).rejects.toMatchObject({
+          status: 404,
+          body: {
+            code: 'not_found',
+            message: 'Task record with ID "network-error-task" not found.',
+          },
+        });
+      });
+
+      it('should validate immutability for existing task updates with new content', async () => {
+        // Mock getTask to return existing task
+        vi.mocked(tasks.getTask).mockResolvedValue({
+          id: { task_id: 'existing-task' },
+          content: 'Original content',
+          status: 'pending',
+          created_at: '2024-01-01T00:00:00Z',
+        });
+
+        // Mock updateTask to succeed
+        vi.mocked(tasks.updateTask).mockResolvedValue({
+          id: { task_id: 'existing-task' },
+          content: 'Updated content',
+          status: 'pending',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-02T00:00:00Z',
+        });
+
+        const result = await UniversalUpdateService.updateRecord({
+          resource_type: UniversalResourceType.TASKS,
+          record_id: 'existing-task',
+          record_data: { content: 'Updated content' },
+        });
+
+        expect(result).toBeDefined();
+        expect(tasks.getTask).toHaveBeenCalledWith('existing-task');
+        expect(tasks.updateTask).toHaveBeenCalledWith('existing-task', {
+          content: 'Updated content',
+        });
+      });
+    });
+
+    describe('Resource Type Edge Cases', () => {
+      it('should handle unsupported resource types gracefully', async () => {
+        await expect(
+          UniversalUpdateService.updateRecord({
+            resource_type: 'UNSUPPORTED' as UniversalResourceType,
+            record_id: 'test-record',
+            record_data: { name: 'Test' },
+          })
+        ).rejects.toMatchObject({
+          status: 400,
+          body: {
+            code: 'validation_failed',
+            message: expect.stringMatching(
+              /unsupported.{0,20}resource.{0,20}type/i
+            ),
+          },
+        });
+      });
+
+      it('should handle empty record data', async () => {
+        await expect(
+          UniversalUpdateService.updateRecord({
+            resource_type: UniversalResourceType.COMPANIES,
+            record_id: 'test-company',
+            record_data: {},
+          })
+        ).rejects.toMatchObject({
+          status: 400,
+          body: {
+            code: 'validation_failed',
+            message: expect.stringMatching(/no.{0,10}update.{0,10}data/i),
+          },
+        });
+      });
     });
   });
 });

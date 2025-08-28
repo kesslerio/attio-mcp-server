@@ -1,1 +1,0 @@
-{"timestamp":"2025-08-06T05:46:50.314Z","testSuite":"unknown","operation":"tool_call","toolName":"search-records","parameters":{"resource_type":"companies","query":"test","limit":1},"response":"[Response logging disabled]","timing":{"start":1754459208720,"end":1754459210314,"duration":1594},"success":true}

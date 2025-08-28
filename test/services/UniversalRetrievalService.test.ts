@@ -657,4 +657,147 @@ describe('UniversalRetrievalService', () => {
       expect(result.values).toEqual({ name: 'Test Company' });
     });
   });
+
+  describe('Error Recovery Scenarios', () => {
+    describe('Authentication Error Handling', () => {
+      it('should re-throw authentication errors without caching', async () => {
+        // Mock an authentication error
+        vi.mocked(companies.getCompanyDetails).mockRejectedValue(
+          new EnhancedApiError(
+            'Invalid API key',
+            401,
+            '/objects/companies/records/12345678-1234-4000-a000-123456789012',
+            'GET',
+            {
+              httpStatus: 401,
+              resourceType: 'companies',
+            }
+          )
+        );
+
+        await expect(
+          UniversalRetrievalService.getRecordDetails({
+            resource_type: UniversalResourceType.COMPANIES,
+            record_id: '12345678-1234-4000-a000-123456789012',
+          })
+        ).rejects.toMatchObject({
+          name: 'EnhancedApiError',
+          statusCode: 401,
+          message: expect.stringMatching(/unauthorized|invalid api key/i),
+        });
+
+        // Verify 404 was not cached for auth errors
+        expect(CachingService.cache404Response).not.toHaveBeenCalled();
+      });
+
+      it('should re-throw network errors without caching', async () => {
+        // Mock a network error
+        vi.mocked(lists.getListDetails).mockRejectedValue(
+          new EnhancedApiError(
+            'Service unavailable',
+            503,
+            '/lists/87654321-4321-4000-b000-987654321098',
+            'GET',
+            {
+              httpStatus: 503,
+              resourceType: 'lists',
+            }
+          )
+        );
+
+        await expect(
+          UniversalRetrievalService.getRecordDetails({
+            resource_type: UniversalResourceType.LISTS,
+            record_id: '87654321-4321-4000-b000-987654321098',
+          })
+        ).rejects.toMatchObject({
+          name: 'EnhancedApiError',
+          statusCode: 503,
+          message: expect.stringMatching(/service.{0,10}unavailable/i),
+        });
+
+        expect(CachingService.cache404Response).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Rate Limit Error Handling', () => {
+      it('should re-throw rate limit errors without caching', async () => {
+        vi.mocked(tasks.getTask).mockRejectedValue(
+          new EnhancedApiError(
+            'Too many requests',
+            429,
+            '/tasks/11111111-1111-4000-a000-111111111111',
+            'GET',
+            {
+              httpStatus: 429,
+              resourceType: 'tasks',
+            }
+          )
+        );
+
+        await expect(
+          UniversalRetrievalService.getRecordDetails({
+            resource_type: UniversalResourceType.TASKS,
+            record_id: '11111111-1111-4000-a000-111111111111',
+          })
+        ).rejects.toMatchObject({
+          name: 'EnhancedApiError',
+          statusCode: 429,
+          message: expect.stringMatching(/rate.{0,10}limit|too many requests/i),
+        });
+
+        expect(CachingService.cache404Response).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Legitimate 404 Error Handling', () => {
+      it('should cache legitimate 404 errors and convert to structured response', async () => {
+        vi.mocked(notes.getNote).mockRejectedValue(
+          new EnhancedApiError(
+            'Note not found',
+            404,
+            '/notes/22222222-2222-4000-a000-222222222222',
+            'GET',
+            {
+              httpStatus: 404,
+              resourceType: 'notes',
+            }
+          )
+        );
+
+        await expect(
+          UniversalRetrievalService.getRecordDetails({
+            resource_type: UniversalResourceType.NOTES,
+            record_id: '22222222-2222-4000-a000-222222222222',
+          })
+        ).rejects.toMatchObject({
+          name: 'EnhancedApiError',
+          statusCode: 404,
+          message: expect.stringMatching(/note.*not found/i),
+        });
+
+        expect(CachingService.cache404Response).toHaveBeenCalledWith(
+          'notes',
+          '22222222-2222-4000-a000-222222222222'
+        );
+      });
+    });
+
+    describe('Non-HTTP Error Handling', () => {
+      it('should handle TypeError exceptions without masking as 404', async () => {
+        vi.mocked(companies.getCompanyDetails).mockRejectedValue(
+          new TypeError('Cannot read properties of null')
+        );
+
+        await expect(
+          UniversalRetrievalService.getRecordDetails({
+            resource_type: UniversalResourceType.COMPANIES,
+            record_id: '33333333-3333-4000-a000-333333333333',
+          })
+        ).rejects.toThrow('Cannot read properties of null');
+
+        expect(CachingService.cache404Response).not.toHaveBeenCalled();
+      });
+    });
+  });
 });
