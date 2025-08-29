@@ -80,6 +80,7 @@ import { MockService } from '../../src/services/MockService.js';
 import {
   mapRecordFields,
   getFieldSuggestions,
+  validateFields,
 } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { getFormatErrorHelp } from '../../src/utils/attribute-format-helpers.js';
 
@@ -87,6 +88,23 @@ describe('UniversalCreateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.E2E_MODE;
+
+    // Setup default mock returns
+    vi.mocked(validateFields).mockReturnValue({
+      valid: true,
+      warnings: [],
+      suggestions: [],
+      errors: [],
+    } as any);
+
+    vi.mocked(mapRecordFields).mockImplementation(
+      (resourceType: string, data: any) =>
+        ({
+          mapped: data,
+          warnings: [],
+          errors: [],
+        }) as any
+    );
   });
 
   describe('createRecord - objects/deals/tasks', () => {
@@ -98,9 +116,9 @@ describe('UniversalCreateService', () => {
       vi.mocked(createObjectRecord).mockResolvedValue(mockRecord);
       const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.RECORDS,
-        record_data: { values: { name: 'Test Record' } },
+        record_data: { values: { name: 'Test Record' }, object: 'companies' },
       });
-      expect(createObjectRecord).toHaveBeenCalledWith('records', {
+      expect(createObjectRecord).toHaveBeenCalledWith('companies', {
         values: { name: 'Test Record' },
       });
       expect(result).toEqual(mockRecord);
@@ -120,7 +138,7 @@ describe('UniversalCreateService', () => {
         resource_type: UniversalResourceType.DEALS,
         record_data: { values: { name: 'Test Deal' } },
       });
-      expect(validateDealInput).toHaveBeenCalledWith({ name: 'Test Record' });
+      expect(validateDealInput).toHaveBeenCalledWith({ name: 'Test Deal' });
       expect(applyDealDefaultsWithValidation).toHaveBeenCalled();
       expect(result).toEqual(mockDeal);
     });

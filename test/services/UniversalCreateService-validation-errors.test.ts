@@ -78,6 +78,23 @@ describe('UniversalCreateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.ENABLE_ENHANCED_VALIDATION;
+
+    // Setup default mock returns
+    vi.mocked(validateFields).mockReturnValue({
+      valid: true,
+      warnings: [],
+      suggestions: [],
+      errors: [],
+    } as any);
+
+    vi.mocked(mapRecordFields).mockImplementation(
+      (resourceType: string, data: any) =>
+        ({
+          mapped: data,
+          warnings: [],
+          errors: [],
+        }) as any
+    );
   });
 
   describe('createRecord - validation/errors', () => {

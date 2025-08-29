@@ -107,6 +107,10 @@ import { PeopleDataNormalizer } from '../../src/utils/normalization/people-norma
 import { convertAttributeFormats } from '../../src/utils/attribute-format-helpers.js';
 import { createList } from '../../src/objects/lists.js';
 import { MockService } from '../../src/services/MockService.js';
+import {
+  validateFields,
+  mapRecordFields,
+} from '../../src/handlers/tool-configs/universal/field-mapper.js';
 
 describe('UniversalCreateService', () => {
   beforeEach(() => {
@@ -116,6 +120,23 @@ describe('UniversalCreateService', () => {
     delete process.env.OFFLINE_MODE;
     delete process.env.PERFORMANCE_TEST;
     delete process.env.ENABLE_ENHANCED_VALIDATION;
+
+    // Setup default mock returns
+    vi.mocked(validateFields).mockReturnValue({
+      valid: true,
+      warnings: [],
+      suggestions: [],
+      errors: [],
+    } as any);
+
+    vi.mocked(mapRecordFields).mockImplementation(
+      (resourceType: string, data: any) =>
+        ({
+          mapped: data,
+          warnings: [],
+          errors: [],
+        }) as any
+    );
   });
 
   describe('createRecord', () => {
@@ -132,7 +153,7 @@ describe('UniversalCreateService', () => {
       });
 
       expect(convertAttributeFormats).toHaveBeenCalledWith('companies', {
-        name: 'Test Record',
+        name: 'Test Company',
       });
       expect(MockService.createCompany).toHaveBeenCalled();
       expect(result).toEqual(mockCompany);
@@ -151,11 +172,11 @@ describe('UniversalCreateService', () => {
       });
 
       expect(ValidationService.validateEmailAddresses).toHaveBeenCalledWith({
-        name: 'Test Record',
+        name: 'John Doe',
       });
       expect(PeopleDataNormalizer.normalizePeopleData).toHaveBeenCalled();
       expect(convertAttributeFormats).toHaveBeenCalledWith('people', {
-        name: 'Test Record',
+        name: 'John Doe',
       });
       expect(MockService.createPerson).toHaveBeenCalled();
       expect(result).toEqual(mockPerson);
@@ -181,7 +202,7 @@ describe('UniversalCreateService', () => {
         record_data: { values: { name: 'Test List' } },
       });
 
-      expect(createList).toHaveBeenCalledWith({ name: 'Test Record' });
+      expect(createList).toHaveBeenCalledWith({ name: 'Test List' });
       expect(result).toEqual({
         id: { record_id: 'list_789', list_id: 'list_789' },
         values: {

@@ -10,7 +10,10 @@ vi.mock('../../src/services/ValidationService.js', () => ({
   },
 }));
 vi.mock('../../src/services/CachingService.js', () => ({
-  CachingService: { getOrLoadTasks: vi.fn(), getCachedTasks: vi.fn() },
+  CachingService: {
+    getOrLoadTasks: vi.fn().mockResolvedValue({ data: [], fromCache: false }),
+    getCachedTasks: vi.fn(),
+  },
 }));
 vi.mock('../../src/services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertTaskToRecord: vi.fn() },
@@ -38,6 +41,7 @@ import { AttioRecord, AttioTask } from '../../src/types/attio.js';
 import { listObjectRecords } from '../../src/objects/records/index.js';
 import { listTasks } from '../../src/objects/tasks.js';
 import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+import { CachingService } from '../../src/services/CachingService.js';
 
 describe('UniversalSearchService - records/tasks', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -63,6 +67,12 @@ describe('UniversalSearchService - records/tasks', () => {
     vi.mocked(UniversalUtilityService.convertTaskToRecord).mockReturnValue(
       converted[0] as any
     );
+    // Mock CachingService to return the converted records
+    vi.mocked(CachingService.getOrLoadTasks).mockResolvedValue({
+      data: converted,
+      fromCache: false,
+    });
+
     const result = await UniversalSearchService.searchRecords({
       resource_type: UniversalResourceType.TASKS,
       query: 'foo',

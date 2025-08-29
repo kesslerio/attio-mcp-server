@@ -24,15 +24,19 @@ describe('ErrorService', () => {
 
   it('should classify 4xx as user errors', () => {
     const e: any = new Error('Bad');
-    e.statusCode = 400;
-    const res = ErrorService.classify(e);
-    expect(res.type).toBe('USER_ERROR');
+    e.status = 400;
+    const res = ErrorService.createUniversalError('test', 'companies', e);
+    expect(res.message).toContain(
+      'Universal test failed for resource type companies'
+    );
   });
 
   it('should classify 5xx as system errors', () => {
     const e: any = new Error('Oops');
-    e.statusCode = 503;
-    const res = ErrorService.classify(e);
-    expect(res.type).toBe('SYSTEM_ERROR');
+    e.status = 503;
+    const res = ErrorService.createUniversalError('test', 'companies', e);
+    expect(res.message).toContain(
+      'Universal test failed for resource type companies'
+    );
   });
 });

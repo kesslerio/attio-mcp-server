@@ -31,6 +31,9 @@ vi.mock('../../src/objects/lists.js', () => ({ searchLists: vi.fn() }));
 vi.mock('../../src/services/MockService.js', () => ({
   MockService: { isUsingMockData: vi.fn().mockReturnValue(false) },
 }));
+vi.mock('../../src/services/UniversalUtilityService.js', () => ({
+  UniversalUtilityService: { convertListToRecord: vi.fn() },
+}));
 
 import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
@@ -38,6 +41,7 @@ import { AttioRecord } from '../../src/types/attio.js';
 import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
 import { advancedSearchPeople } from '../../src/objects/people/index.js';
 import { searchLists } from '../../src/objects/lists.js';
+import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 
 describe('UniversalSearchService', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -50,7 +54,7 @@ describe('UniversalSearchService', () => {
           values: { name: 'Test Company' },
         } as any,
       ];
-      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
+      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
@@ -71,7 +75,7 @@ describe('UniversalSearchService', () => {
       const filters = {
         filters: [{ attribute: { slug: 'domain' }, value: 'test.com' }],
       };
-      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
+      vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         filters,
@@ -85,7 +89,9 @@ describe('UniversalSearchService', () => {
       const mockResults: AttioRecord[] = [
         { id: { record_id: 'person_1' }, values: { name: 'Jane' } } as any,
       ];
-      vi.mocked(advancedSearchPeople).mockResolvedValue(mockResults);
+      vi.mocked(advancedSearchPeople).mockResolvedValue({
+        results: mockResults,
+      } as any);
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.PEOPLE,
         query: 'Jane',
@@ -95,15 +101,27 @@ describe('UniversalSearchService', () => {
     });
 
     it('should search lists by title', async () => {
-      const mockResults: AttioRecord[] = [
-        { id: { record_id: 'list_1' }, values: { name: 'Prospects' } } as any,
+      const mockListResults = [
+        {
+          id: { list_id: 'list_1' },
+          title: 'Prospects',
+          name: 'Prospects',
+          description: 'Prospect list',
+        } as any,
       ];
-      vi.mocked(searchLists).mockResolvedValue(mockResults as any);
+      vi.mocked(searchLists).mockResolvedValue(mockListResults);
+
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
         query: 'Prospects',
       });
-      expect(result).toEqual(mockResults as any);
+
+      expect(searchLists).toHaveBeenCalledWith('Prospects', 10, 0);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: { record_id: 'list_1', list_id: 'list_1' },
+        values: { name: 'Prospects' },
+      });
     });
   });
 });
