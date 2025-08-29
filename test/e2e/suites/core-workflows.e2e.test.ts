@@ -285,7 +285,12 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              assigneeId: assignee.id.record_id,
+              assignees: [
+                {
+                  referenced_actor_type: 'workspace-member',
+                  referenced_actor_id: assignee.id.record_id,
+                }
+              ],
               due_date: taskData.due_date,
             },
           })
@@ -296,7 +301,7 @@ describe.skipIf(
 
         E2EAssertions.expectTaskRecord(createdTask);
         expect(
-          createdTask.assignee_id || createdTask.assignee?.id
+          createdTask.assignees?.[0]?.referenced_actor_id
         ).toBeDefined();
 
         createdTasks.push(createdTask);
@@ -386,7 +391,7 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              status: 'completed',
+              is_completed: true,
             },
           })
         );
@@ -415,7 +420,12 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              assigneeId: newAssignee.id.record_id,
+              assignees: [
+                {
+                  referenced_actor_type: 'workspace-member',
+                  referenced_actor_id: newAssignee.id.record_id,
+                }
+              ],
             },
           })
         );
@@ -445,8 +455,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              status: 'in_progress',
-              due_date: newDueDate.toISOString().split('T')[0],
+              is_completed: false,
+              deadline_at: newDueDate.toISOString(),
             },
           })
         );

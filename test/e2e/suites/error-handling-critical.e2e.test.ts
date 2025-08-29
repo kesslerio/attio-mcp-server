@@ -459,10 +459,10 @@ describe.skipIf(
       const analysis = analyzeBatchResults(results);
 
       expect(analysis.total).toBe(3);
-      expect(analysis.succeeded + analysis.failed).toBe(3);
+      expect(analysis.successful + analysis.failed).toBe(3);
 
       console.error(
-        `✅ Batch operations: ${analysis.succeeded} succeeded, ${analysis.failed} failed`
+        `✅ Batch operations: ${analysis.successful} succeeded, ${analysis.failed} failed`
       );
     });
   });
