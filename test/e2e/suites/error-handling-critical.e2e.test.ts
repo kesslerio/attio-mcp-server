@@ -126,6 +126,7 @@ describe.skipIf(
     console.error('✅ Critical Error Handling E2E Tests completed');
   }, 60000);
 
+  /* moved: Authentication and Authorization Errors
   describe('Authentication and Authorization Errors', () => {
     it('should handle authentication failures gracefully', async () => {
       // This test would require invalid API key setup which might not be feasible
@@ -148,7 +149,7 @@ describe.skipIf(
       console.error('✅ Handled authentication scenario gracefully');
     });
 
-    it('should handle rate limiting scenarios', async () => {
+    it('should handle rate limiting scenarios', async () => { /* moved */
       // Test with multiple rapid requests to potentially trigger rate limiting
       const requests = Array(5)
         .fill(null)
@@ -182,6 +183,7 @@ describe.skipIf(
     });
   });
 
+  */
   describe('Parameter Validation and Data Format Errors', () => {
     it('should handle missing required parameters gracefully', async () => {
       // Test search without required resource_type
