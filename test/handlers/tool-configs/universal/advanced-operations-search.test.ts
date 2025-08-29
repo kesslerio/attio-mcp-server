@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
-  advancedSearchConfig,
-  searchByRelationshipConfig,
-} from '../../../../src/handlers/tool-configs/universal/advanced-operations.js';
-import {
   UniversalResourceType,
   RelationshipType,
   AdvancedSearchParams,
@@ -16,8 +12,18 @@ import {
 } from './helpers/index.js';
 
 describe('Universal Advanced Operations - Search Tests', () => {
+  let advancedSearchConfig: any;
+  let searchByRelationshipConfig: any;
+
   beforeEach(async () => {
     await setupUnitTestMocks();
+    
+    // Import after mocks are set up
+    const advancedOps = await import(
+      '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
+    );
+    advancedSearchConfig = advancedOps.advancedSearchConfig;
+    searchByRelationshipConfig = advancedOps.searchByRelationshipConfig;
   });
 
   afterEach(() => {

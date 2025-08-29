@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
-  searchByContentConfig,
-  searchByTimeframeConfig,
-} from '../../../../src/handlers/tool-configs/universal/advanced-operations.js';
-import {
   UniversalResourceType,
   ContentSearchType,
   TimeframeType,
@@ -17,8 +13,18 @@ import {
 } from './helpers/index.js';
 
 describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
+  let searchByContentConfig: any;
+  let searchByTimeframeConfig: any;
+
   beforeEach(async () => {
     await setupUnitTestMocks();
+    
+    // Import after mocks are set up
+    const advancedOps = await import(
+      '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
+    );
+    searchByContentConfig = advancedOps.searchByContentConfig;
+    searchByTimeframeConfig = advancedOps.searchByTimeframeConfig;
   });
 
   afterEach(() => {

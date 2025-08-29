@@ -146,6 +146,9 @@ export const mockSpecializedHandlers = () => {
     return {
       ...actual,
       searchPeopleByActivity: vi.fn(),
+      searchPeopleByCreationDate: vi.fn(),
+      searchPeopleByModificationDate: vi.fn(),
+      searchPeopleByLastInteraction: vi.fn(),
     };
   });
 };
@@ -353,38 +356,38 @@ export const initializeMockInstances = async () => {
   
   mockInstances = {
     mockHandlers: {
-      handleUniversalSearch: vi.mocked(sharedHandlers.handleUniversalSearch),
-      handleUniversalGetDetails: vi.mocked(sharedHandlers.handleUniversalGetDetails),
-      handleUniversalCreate: vi.mocked(sharedHandlers.handleUniversalCreate),
-      handleUniversalUpdate: vi.mocked(sharedHandlers.handleUniversalUpdate),
-      handleUniversalDelete: vi.mocked(sharedHandlers.handleUniversalDelete),
-      handleUniversalGetAttributes: vi.mocked(sharedHandlers.handleUniversalGetAttributes),
-      handleUniversalDiscoverAttributes: vi.mocked(sharedHandlers.handleUniversalDiscoverAttributes),
-      handleUniversalGetDetailedInfo: vi.mocked(sharedHandlers.handleUniversalGetDetailedInfo),
-      formatResourceType: vi.mocked(sharedHandlers.formatResourceType),
-      getSingularResourceType: vi.mocked(sharedHandlers.getSingularResourceType),
-      createUniversalError: vi.mocked(sharedHandlers.createUniversalError),
+      handleUniversalSearch: sharedHandlers.handleUniversalSearch,
+      handleUniversalGetDetails: sharedHandlers.handleUniversalGetDetails,
+      handleUniversalCreate: sharedHandlers.handleUniversalCreate,
+      handleUniversalUpdate: sharedHandlers.handleUniversalUpdate,
+      handleUniversalDelete: sharedHandlers.handleUniversalDelete,
+      handleUniversalGetAttributes: sharedHandlers.handleUniversalGetAttributes,
+      handleUniversalDiscoverAttributes: sharedHandlers.handleUniversalDiscoverAttributes,
+      handleUniversalGetDetailedInfo: sharedHandlers.handleUniversalGetDetailedInfo,
+      formatResourceType: sharedHandlers.formatResourceType,
+      getSingularResourceType: sharedHandlers.getSingularResourceType,
+      createUniversalError: sharedHandlers.createUniversalError,
     },
     mockSchemas: {
-      validateUniversalToolParams: vi.mocked(schemas.validateUniversalToolParams),
+      validateUniversalToolParams: schemas.validateUniversalToolParams,
     },
     mockUtils: {
-      validateAndCreateDateRange: vi.mocked(dateUtils.validateAndCreateDateRange),
-      isValidISODateString: vi.mocked(dateUtils.isValidISODateString),
+      validateAndCreateDateRange: dateUtils.validateAndCreateDateRange,
+      isValidISODateString: dateUtils.isValidISODateString,
     },
     mockSpecialized: {
       // Companies
-      searchCompaniesByNotes: vi.mocked(companiesHandlers.searchCompaniesByNotes),
-      searchCompaniesByPeople: vi.mocked(companiesHandlers.searchCompaniesByPeople),
-      advancedSearchCompanies: vi.mocked(companiesHandlers.advancedSearchCompanies),
+      searchCompaniesByNotes: companiesHandlers.searchCompaniesByNotes,
+      searchCompaniesByPeople: companiesHandlers.searchCompaniesByPeople,
+      advancedSearchCompanies: companiesHandlers.advancedSearchCompanies,
       // People  
-      searchPeopleByCompany: vi.mocked(peopleHandlers.searchPeopleByCompany),
-      searchPeopleByActivity: vi.mocked(peopleSearchHandlers.searchPeopleByActivity),
-      searchPeopleByNotes: vi.mocked(peopleHandlers.searchPeopleByNotes),
-      advancedSearchPeople: vi.mocked(peopleHandlers.advancedSearchPeople),
-      searchPeopleByCreationDate: vi.mocked(peopleHandlers.searchPeopleByCreationDate),
-      searchPeopleByModificationDate: vi.mocked(peopleHandlers.searchPeopleByModificationDate),
-      searchPeopleByLastInteraction: vi.mocked(peopleHandlers.searchPeopleByLastInteraction),
+      searchPeopleByCompany: peopleHandlers.searchPeopleByCompany,
+      searchPeopleByActivity: peopleSearchHandlers.searchPeopleByActivity,
+      searchPeopleByNotes: peopleHandlers.searchPeopleByNotes,
+      advancedSearchPeople: peopleHandlers.advancedSearchPeople,
+      searchPeopleByCreationDate: peopleSearchHandlers.searchPeopleByCreationDate,
+      searchPeopleByModificationDate: peopleSearchHandlers.searchPeopleByModificationDate,
+      searchPeopleByLastInteraction: peopleSearchHandlers.searchPeopleByLastInteraction,
     },
   };
 };
