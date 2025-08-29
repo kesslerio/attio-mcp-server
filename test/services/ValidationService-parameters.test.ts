@@ -22,6 +22,9 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
 }));
 import { ValidationService } from '../../src/services/ValidationService.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
+import { isValidUUID } from '../../src/utils/validation/uuid-validation.js';
+import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { isValidEmail } from '../../src/utils/validation/email-validation.js';
 
 describe('ValidationService', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -204,15 +207,6 @@ describe('ValidationService', () => {
 
   describe('validateUniversalOperation', () => {
     it('should return valid for successful validation', () => {
-      const {
-        isValidUUID,
-      } = require('../../src/utils/validation/uuid-validation.js');
-      const {
-        validateFields,
-      } = require('../../src/handlers/tool-configs/universal/field-mapper.js');
-      const {
-        isValidEmail,
-      } = require('../../src/utils/validation/email-validation.js');
       vi.mocked(isValidUUID).mockReturnValue(true);
       vi.mocked(validateFields).mockReturnValue({
         valid: true,

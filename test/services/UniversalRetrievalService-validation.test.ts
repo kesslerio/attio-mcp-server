@@ -32,6 +32,10 @@ vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
   ),
 }));
 vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
+  ErrorEnhancer: {
+    autoEnhance: (e: any) => e,
+    getErrorMessage: (e: any) => (e && e.message) || String(e),
+  },
   EnhancedApiError: class EnhancedApiError extends Error {
     statusCode: number;
     constructor(m: string, s = 500) {
