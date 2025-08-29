@@ -87,6 +87,19 @@ export class UniversalUpdateService {
   static async updateRecord(
     params: UniversalUpdateParams
   ): Promise<AttioRecord> {
+    // Validate resource type is supported
+    const validResourceTypes = Object.values(UniversalResourceType);
+    if (!validResourceTypes.includes(params.resource_type)) {
+      throw new UniversalValidationError(
+        `Unsupported resource type: ${params.resource_type}`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: `Valid resource types are: ${validResourceTypes.join(', ')}`,
+        }
+      );
+    }
+
     try {
       return await this._updateRecordInternal(params);
     } catch (error: unknown) {
