@@ -13,6 +13,7 @@
  */
 
 import type { AttioRecord } from '../types/attio.js';
+import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
 import { debug, error } from '../utils/logger.js';
 import type {
@@ -185,8 +186,21 @@ export class MockService {
 
         return result;
       } catch (err) {
-        error('MockService', 'createCompany Direct API error', err);
-        throw err; // Re-throw the error instead of swallowing it
+        const anyErr = err as any;
+        const status = anyErr?.response?.status ?? 500;
+        const data = anyErr?.response?.data;
+        error('MockService', 'createCompany Direct API error', { status, data });
+        const msg =
+          status && data
+            ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
+            : (anyErr?.message as string) || 'createCompany error';
+        throw new EnhancedApiError(
+          msg,
+          status,
+          '/objects/companies/records',
+          'POST',
+          { httpStatus: status, resourceType: 'companies', operation: 'create', originalError: anyErr }
+        );
       }
     }
 
@@ -426,7 +440,7 @@ export class MockService {
       } catch (err) {
         // Enhance error with HTTP response details when available (helps E2E diagnosis)
         const anyErr = err as any;
-        const status = anyErr?.response?.status;
+        const status = anyErr?.response?.status ?? 500;
         const data = anyErr?.response?.data;
         error('MockService', 'createPerson Direct API error', {
           status,
@@ -436,7 +450,13 @@ export class MockService {
           status && data
             ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
             : (anyErr?.message as string) || 'createPerson error';
-        throw new Error(msg);
+        throw new EnhancedApiError(
+          msg,
+          status,
+          '/objects/people/records',
+          'POST',
+          { httpStatus: status, resourceType: 'people', operation: 'create', originalError: anyErr }
+        );
       }
     }
 

@@ -68,7 +68,7 @@ export abstract class E2ETestDataFactory {
   protected static getTestEmail(prefix: string = 'person'): string {
     const uniq = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
     const testId = this.getTestId(prefix);
-    const defaultDomain = (process.env.E2E_TEST_EMAIL_DOMAIN || 'shapescale.com').toLowerCase();
+    const defaultDomain = (process.env.E2E_TEST_EMAIL_DOMAIN || 'example.com').toLowerCase();
 
     const sanitizeLocal = (s: string) =>
       s
