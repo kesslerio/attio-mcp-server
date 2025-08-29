@@ -496,6 +496,7 @@ describe.skipIf(
     });
   });
 
+  /* moved: Data Consistency and Recovery
   describe('Data Consistency and Recovery', () => {
     it('should handle incomplete transaction scenarios', async () => {
       // Test creating a record and then immediately trying to reference it
@@ -556,6 +557,7 @@ describe.skipIf(
     });
   });
 
+  /* moved: Error Message Consistency
   describe('Error Message Consistency', () => {
     it('should provide consistent error formats across tools', async () => {
       const errorResponses = await Promise.all([
@@ -602,4 +604,5 @@ describe.skipIf(
       }
     });
   });
+*/
 });
