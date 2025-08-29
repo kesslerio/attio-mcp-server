@@ -4,16 +4,20 @@ import { config } from 'dotenv';
 // Load environment variables from .env file for integration tests
 config();
 
-// Also load test-specific environment variables
-config({ path: '.env.test' });
+// Also load test-specific environment variables if it exists
+try {
+  config({ path: '.env.test' });
+} catch (error) {
+  // .env.test is optional
+}
 
 export default defineConfig({
   test: {
     environment: 'node',
     include: [
       'test/integration/**/*.test.ts',
-      'test/handlers/tool-configs/universal/integration.test.ts',
-      'test/handlers/tool-configs/universal/performance.test.ts',
+      'test/handlers/tool-configs/universal/integration-*.test.ts',
+      'test/real-api-validation.test.ts',
     ],
     globals: true,
     testTimeout: 60000, // Extended timeout for API calls

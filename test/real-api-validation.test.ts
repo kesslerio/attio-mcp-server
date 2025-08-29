@@ -1,8 +1,8 @@
 /**
- * Phase 1 Integration Tests
+ * Real API Validation Tests
  *
- * These tests validate the Phase 1 fixes with real API calls when ATTIO_API_KEY is available.
- * They complement the unit tests in phase1-fixes-verification.test.ts
+ * These tests validate core functionality against the live Attio API when ATTIO_API_KEY is available.
+ * Tests schema validation, performance monitoring, and data normalization with real API responses.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -16,7 +16,7 @@ import { EmailValidationMode } from '../src/utils/normalization/email-validation
 const SKIP_INTEGRATION =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
-describe.skipIf(SKIP_INTEGRATION)('Phase 1 Integration Tests', () => {
+describe.skipIf(SKIP_INTEGRATION)('Real API Validation Tests', () => {
   let performanceMonitor: any;
 
   beforeAll(() => {

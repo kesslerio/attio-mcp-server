@@ -40,11 +40,25 @@ RULE: Mock factory architecture | WHEN: Creating test mocks | DO: Use `/test/uti
 RULE: Issue #480 compatibility | WHEN: Task mocks needed | DO: Include both content and title fields, preserve task_id | ELSE: E2E test failures
 SUCCESS METRICS: E2E success rate >75% (29/38 tests passing) | Mock data validation 100% | Production safety verified
 
+### TEST COMMAND REFERENCE
+
+| **Test Type** | **Command** | **Requirements** | **Purpose** |
+|---------------|-------------|------------------|-------------|
+| **Unit Tests** | `npm test` | None | Fast offline tests with mocks |
+| **Integration** | `npm run test:integration` | ATTIO_API_KEY | Real API validation (`test/real-api-validation.test.ts`) |
+| **E2E Tests** | `npm run test:e2e` | ATTIO_API_KEY | End-to-end workflows |
+| **Performance** | `npm run test:performance:all` | None | All performance tests |
+| **Smoke Tests** | `npm run test:smoke` | None | Critical path validation |
+| **Offline Mode** | `npm run test:offline` | None | Skip all API-dependent tests |
+
 ### PERFORMANCE TESTING
 
 RULE: Environment-aware budgets | WHEN: Performance tests | DO: Auto CI multiplier (2.5x) | ELSE: CI failures
-COMMANDS: `npm test test/performance/regression.test.ts` | `CI=true npm test test/performance/regression.test.ts`
-FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance.test.ts` (benchmarking)
+COMMANDS: 
+- `npm run test:performance` - Regression tests only
+- `npm run test:performance:all` - All performance tests (regression + tools)
+- `npm run test:performance:tools` - Tool-specific performance tests
+FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance-*.test.ts` (tool benchmarking)
 
 ## DEBUG UTILITIES
 

@@ -43,6 +43,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
     "test:performance": "vitest --run test/performance/regression.test.ts",
+    "test:performance:all": "vitest --config vitest.config.performance.ts --run",
+    "test:performance:tools": "vitest --config vitest.config.performance.ts --run test/handlers/tool-configs/universal/performance-*.test.ts",
     "perf:monitor": "node scripts/performance-monitor.cjs",
     "perf:report": "npm run test:performance -- --reporter=json > performance-results.json",
     "perf:budgets": "node scripts/check-performance-budgets.cjs",
