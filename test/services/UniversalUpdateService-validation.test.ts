@@ -19,6 +19,21 @@ vi.mock('../../src/utils/validation-utils.js', () => ({
 vi.mock('../../src/services/MockService.js', () => ({
   MockService: { updateTask: vi.fn() },
 }));
+vi.mock('../../src/objects/companies/index.js', () => ({
+  updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
+}));
+vi.mock('../../src/objects/lists.js', () => ({
+  updateList: vi.fn(() => ({ id: { record_id: 'list_123' }, values: {} })),
+}));
+vi.mock('../../src/objects/people-write.js', () => ({
+  updatePerson: vi.fn(() => ({ id: { record_id: 'person_123' }, values: {} })),
+}));
+vi.mock('../../src/objects/records/index.js', () => ({
+  updateObjectRecord: vi.fn(() => ({
+    id: { record_id: 'record_123' },
+    values: {},
+  })),
+}));
 import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import {
@@ -349,10 +364,24 @@ describe('UniversalUpdateService', () => {
     });
 
     it('should handle empty record data', async () => {
+      // Reset the updateCompany mock from previous tests
+      const { updateCompany } = await import(
+        '../../src/objects/companies/index.js'
+      );
+      vi.mocked(updateCompany).mockResolvedValue({
+        id: { record_id: 'comp_123' },
+        values: {},
+      } as any);
+
       vi.mocked(validateFields).mockReturnValue({
         warnings: [],
         suggestions: [],
       } as any);
+      vi.mocked(mapRecordFields).mockResolvedValue({
+        mapped: {},
+        warnings: [],
+        errors: [],
+      });
       const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'test-company',

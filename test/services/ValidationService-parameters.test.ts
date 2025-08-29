@@ -25,6 +25,7 @@ import { enhancedPerformanceTracker } from '../../src/middleware/performance-enh
 import { isValidUUID } from '../../src/utils/validation/uuid-validation.js';
 import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { isValidEmail } from '../../src/utils/validation/email-validation.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 describe('ValidationService', () => {
   beforeEach(() => vi.clearAllMocks());

@@ -38,10 +38,23 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
   },
   EnhancedApiError: class EnhancedApiError extends Error {
     statusCode: number;
-    constructor(m: string, s = 500) {
-      super(m);
+    endpoint: string;
+    method: string;
+    constructor(
+      message: string,
+      statusCode = 500,
+      endpoint = '/test',
+      method = 'GET',
+      context?: Record<string, unknown>
+    ) {
+      super(message);
       this.name = 'EnhancedApiError';
-      this.statusCode = s;
+      this.statusCode = statusCode;
+      this.endpoint = endpoint;
+      this.method = method;
+      if (context) {
+        Object.assign(this, context);
+      }
     }
   },
 }));
@@ -107,6 +120,7 @@ describe('UniversalRetrievalService', () => {
     });
 
     it('should handle 404 errors and cache them', async () => {
+      vi.mocked(CachingService.isCached404).mockReturnValue(false);
       const notFoundError = {
         response: { status: 404 },
         message: 'Company not found',
@@ -132,6 +146,7 @@ describe('UniversalRetrievalService', () => {
     });
 
     it('should handle task retrieval errors and cache 404s', async () => {
+      vi.mocked(CachingService.isCached404).mockReturnValue(false);
       const taskError = new Error('Task not found');
       vi.mocked(tasks.getTask).mockRejectedValue(taskError);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
@@ -156,6 +171,7 @@ describe('UniversalRetrievalService', () => {
 
   describe('Auth Error Handling', () => {
     it('should re-throw auth errors without caching', async () => {
+      vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(lists.getListDetails).mockRejectedValue(
         new EnhancedApiError('Unauthorized', 401, '/lists/123', 'GET', {
           httpStatus: 401,
@@ -180,6 +196,7 @@ describe('UniversalRetrievalService', () => {
 
   describe('Rate Limit Error Handling', () => {
     it('should re-throw rate limit errors without caching', async () => {
+      vi.mocked(CachingService.isCached404).mockReturnValue(false);
       vi.mocked(tasks.getTask).mockRejectedValue(
         new EnhancedApiError('Too many requests', 429, '/tasks/111', 'GET', {
           httpStatus: 429,
@@ -231,6 +248,7 @@ describe('UniversalRetrievalService', () => {
 
   describe('Non-HTTP Error Handling', () => {
     it('should handle TypeError exceptions without masking as 404', async () => {
+      vi.mocked(CachingService.isCached404).mockReturnValue(false);
       const typeError = new TypeError('Cannot read properties of null');
       vi.mocked(companies.getCompanyDetails).mockRejectedValue(typeError);
 
