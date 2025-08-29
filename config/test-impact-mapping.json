@@ -114,7 +114,7 @@
     ],
     "test/services/ValidationService-uuid-and-id.test.ts": [
       "src/services/ValidationService.ts"
-    ]
+    ],
     "test/services/CachingService.test.ts": [
       "src/services/CachingService.ts"
     ],

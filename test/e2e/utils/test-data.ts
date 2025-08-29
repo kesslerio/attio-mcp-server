@@ -66,18 +66,29 @@ export abstract class E2ETestDataFactory {
   }
 
   protected static getTestEmail(prefix: string = 'person'): string {
-    const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const uniq = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
     const testId = this.getTestId(prefix);
-    const defaultDomain = process.env.E2E_TEST_EMAIL_DOMAIN || 'e2e.test';
+    const defaultDomain = (process.env.E2E_TEST_EMAIL_DOMAIN || 'shapescale.com').toLowerCase();
+
+    const sanitizeLocal = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '.')
+        .replace(/\.+/g, '.');
 
     const build = (local: string, domain: string) =>
-      `${local}+${uniq}@${domain}`.toLowerCase();
+      `${sanitizeLocal(local)}.${uniq}@${domain}`.toLowerCase();
 
     try {
       const baseEmail = (configLoader.getTestEmail(prefix) || '').trim();
       if (baseEmail.includes('@')) {
-        const [local, domain] = baseEmail.split('@', 2);
-        const out = build(local || testId, domain || defaultDomain);
+        const [local, rawDomain] = baseEmail.split('@', 2);
+        let domain = (rawDomain || defaultDomain).toLowerCase();
+        // Avoid .test and other non-routable domains by default
+        if (/\.test$/.test(domain) || domain === 'e2e.test') {
+          domain = defaultDomain;
+        }
+        const out = build(local || testId, domain);
         return out.includes('@') ? out : build(testId, defaultDomain);
       }
       // Misconfigured (no "@"): treat entire string as local part

@@ -101,6 +101,11 @@ describe.skipIf(
     // Initialize notes validation setup
     await notesSetup.beforeAll();
 
+    // Ensure consistent backend for create + read flows in this suite
+    // Force real API if key is present to avoid mock-created IDs that cannot be read
+    (globalThis as any).__prevForceRealApi = process.env.FORCE_REAL_API;
+    if (process.env.ATTIO_API_KEY) process.env.FORCE_REAL_API = 'true';
+
     console.error(
       '🚀 Starting Record Management E2E Tests - Universal Operations'
     );
@@ -114,6 +119,9 @@ describe.skipIf(
     endTestSuite();
 
     console.error('✅ Record Management E2E Tests completed');
+    // Restore environment flag
+    const prev = (globalThis as any).__prevForceRealApi as string | undefined;
+    if (prev === undefined) delete process.env.FORCE_REAL_API; else process.env.FORCE_REAL_API = prev;
   }, 60000);
 
   beforeEach(() => {
@@ -247,25 +255,7 @@ describe.skipIf(
       console.error('✅ Updated record with universal pattern');
     }, 30000);
 
-    it('should search records across resource types', async () => {
-      const resourceTypes = ['companies', 'people', 'tasks'];
-
-      for (const resourceType of resourceTypes) {
-        const response = asToolResponse(
-          await callUniversalTool('search-records', {
-            resource_type: resourceType as any,
-            query: 'test',
-            limit: 5,
-          })
-        );
-
-        E2EAssertions.expectMcpSuccess(response);
-        const results = E2EAssertions.expectMcpData(response);
-        expect(results).toBeDefined();
-
-        console.error(`✅ Searched ${resourceType} records successfully`);
-      }
-    }, 45000);
+    // Search tests moved to: record-management-search.e2e.test.ts
 
     it('should handle bulk record operations', async () => {
       // Create multiple records of the same type
@@ -607,128 +597,5 @@ describe.skipIf(
     }, 30000);
   });
 
-  describe('Cross-Resource Integration Validation', () => {
-    it('should validate record relationships across types', async () => {
-      if (
-        testCompaniesRecord.length === 0 ||
-        testPeopleRecord.length === 0 ||
-        createdTasks.length === 0
-      ) {
-        console.error(
-          '⏭️ Skipping cross-resource validation - insufficient test data'
-        );
-        return;
-      }
-
-      const company = testCompaniesRecord[0];
-      const person = testPeopleRecord[0];
-      const task = createdTasks[0];
-
-      const companyId = (company as any).id?.record_id;
-      const personId = (person as any).id?.record_id;
-      const taskId = (task as any).id?.task_id;
-
-      // Test linking task to both company and person
-      if (taskId && companyId) {
-        const linkResponse = asToolResponse(
-          await callTasksTool('update-record', {
-            resource_type: 'tasks',
-            record_id: taskId,
-            record_data: {
-              recordId: companyId,
-            },
-          })
-        );
-
-        expect(linkResponse).toBeDefined();
-      }
-
-      // Test creating notes for both company and person
-      if (companyId && personId) {
-        const companyNoteResponse = asToolResponse(
-          await callNotesTool('create-note', {
-            resource_type: 'companies',
-            record_id: companyId,
-            title: 'Cross-validation company note',
-            content: 'Testing cross-resource relationships',
-            format: 'markdown',
-          })
-        );
-
-        const personNoteResponse = asToolResponse(
-          await callNotesTool('create-note', {
-            resource_type: 'people',
-            record_id: personId,
-            title: 'Cross-validation person note',
-            content: 'Testing cross-resource relationships',
-            format: 'markdown',
-          })
-        );
-
-        expect(companyNoteResponse).toBeDefined();
-        expect(personNoteResponse).toBeDefined();
-      }
-
-      console.error('✅ Cross-resource relationship validation completed');
-    }, 60000);
-
-    it('should validate data consistency across operations', async () => {
-      // Test that operations across different tools maintain consistency
-      if (testCompaniesRecord.length === 0) {
-        console.error(
-          '⏭️ Skipping consistency validation - no company records'
-        );
-        return;
-      }
-
-      const company = testCompaniesRecord[0];
-      const companyId = (company as any).id?.record_id;
-
-      if (!companyId) {
-        console.error(
-          '⏭️ Skipping consistency validation - invalid company ID'
-        );
-        return;
-      }
-
-      // Get record details via universal tool
-      const detailsResponse = asToolResponse(
-        await callUniversalTool('get-record-details', {
-          resource_type: 'companies',
-          record_id: companyId,
-        })
-      );
-
-      // Create a note for the company
-      const noteResponse = asToolResponse(
-        await callNotesTool('create-note', {
-          resource_type: 'companies',
-          record_id: companyId,
-          title: 'Consistency validation note',
-          content: 'Testing data consistency',
-          format: 'markdown',
-        })
-      );
-
-      // Create a task linked to the company
-      const taskResponse = asToolResponse(
-        await callTasksTool('create-record', {
-          resource_type: 'tasks',
-          record_data: {
-            content: 'Consistency validation task',
-            recordId: companyId,
-          },
-        })
-      );
-
-      // All operations should be consistent
-      expect(detailsResponse).toBeDefined();
-      expect(noteResponse).toBeDefined();
-      expect(taskResponse).toBeDefined();
-
-      console.error(
-        '✅ Data consistency validation across operations completed'
-      );
-    }, 45000);
-  });
+  // Cross-Resource Integration Validation moved to: record-management-relationships.e2e.test.ts
 });

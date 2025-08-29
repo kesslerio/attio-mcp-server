@@ -29,11 +29,15 @@ import { testDataGenerator } from '../fixtures/index.js';
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Smoke Test Suite - Fast Validation', () => {
+  let prevForceRealApi: string | undefined;
   beforeAll(async () => {
     const validation = await validateTestEnvironment();
     if (!validation.valid) {
       console.warn('⚠️ Smoke test warnings:', validation.warnings);
     }
+    // For any create+read checks in smoke, keep backend consistent
+    prevForceRealApi = process.env.FORCE_REAL_API;
+    if (process.env.ATTIO_API_KEY) process.env.FORCE_REAL_API = 'true';
   });
 
   describe('System Health Smoke Tests', () => {
@@ -76,6 +80,10 @@ describe.skipIf(
         console.error(`✅ Resource type ${resourceType} accessible`);
       }
     }, 20000);
+  });
+
+  afterAll(async () => {
+    if (prevForceRealApi === undefined) delete process.env.FORCE_REAL_API; else process.env.FORCE_REAL_API = prevForceRealApi;
   });
 
   describe('Core Tool Functionality Smoke Tests', () => {
@@ -259,7 +267,7 @@ describe.skipIf(
         expect(response).toHaveProperty('error');
         expect(typeof response.error).toBe('string');
       } else {
-        expect(response).toHaveProperty('data');
+        expect(response).toHaveProperty('content');
       }
 
       console.error('✅ API response structure regression check passed');
@@ -307,7 +315,7 @@ describe.skipIf(
               query: 'functionality-test',
               limit: 1,
             });
-            return response.isError || response.data !== null;
+            return response.isError || response.content !== undefined;
           },
         },
         {
