@@ -13,6 +13,7 @@
  */
 
 import type { AttioRecord } from '../types/attio.js';
+import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
 import { debug, error } from '../utils/logger.js';
 import type {
@@ -122,9 +123,32 @@ export class MockService {
 
         debug('MockService', 'createCompany Raw axios instance created');
 
+        // Normalize company domains to string array
+        const normalizedCompany: Record<string, unknown> = { ...companyData };
+        const rawDomain = (companyData as any).domain;
+        const rawDomains = (companyData as any).domains;
+        if (rawDomains) {
+          if (Array.isArray(rawDomains)) {
+            (normalizedCompany as any).domains = rawDomains.map((d: any) =>
+              typeof d === 'string' ? d : (d?.domain ?? d?.value ?? String(d))
+            );
+          } else {
+            (normalizedCompany as any).domains = [
+              typeof rawDomains === 'string'
+                ? rawDomains
+                : ((rawDomains as any)?.domain ??
+                  (rawDomains as any)?.value ??
+                  String(rawDomains)),
+            ];
+          }
+        } else if (rawDomain) {
+          (normalizedCompany as any).domains = [String(rawDomain)];
+          delete (normalizedCompany as any).domain;
+        }
+
         const response = await api.post('/objects/companies/records', {
           data: {
-            values: companyData,
+            values: normalizedCompany,
           },
         });
 
@@ -162,8 +186,29 @@ export class MockService {
 
         return result;
       } catch (err) {
-        error('MockService', 'createCompany Direct API error', err);
-        throw err; // Re-throw the error instead of swallowing it
+        const anyErr = err as any;
+        const status = anyErr?.response?.status ?? 500;
+        const data = anyErr?.response?.data;
+        error('MockService', 'createCompany Direct API error', {
+          status,
+          data,
+        });
+        const msg =
+          status && data
+            ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
+            : (anyErr?.message as string) || 'createCompany error';
+        throw new EnhancedApiError(
+          msg,
+          status,
+          '/objects/companies/records',
+          'POST',
+          {
+            httpStatus: status,
+            resourceType: 'companies',
+            operation: 'create',
+            originalError: anyErr,
+          }
+        );
       }
     }
 
@@ -216,15 +261,157 @@ export class MockService {
         });
 
         debug('MockService', 'createPerson Raw axios instance created');
+
+        // Normalize to Attio API schema for people values
+        const filteredPersonData: Record<string, unknown> = {};
+
+        // 1) Name normalization: array of personal-name objects
+        const rawName = (personData as any).name;
+        if (rawName) {
+          if (typeof rawName === 'string') {
+            const parts = rawName.trim().split(/\s+/);
+            const first = parts.shift() || rawName;
+            const last = parts.join(' ');
+            const full = [first, last].filter(Boolean).join(' ');
+            filteredPersonData.name = [
+              {
+                first_name: first,
+                ...(last ? { last_name: last } : {}),
+                full_name: full,
+              },
+            ];
+          } else if (Array.isArray(rawName)) {
+            filteredPersonData.name = rawName;
+          } else if (typeof rawName === 'object') {
+            const obj = rawName as Record<string, unknown>;
+            if (
+              'first_name' in obj ||
+              'last_name' in obj ||
+              'full_name' in obj
+            ) {
+              filteredPersonData.name = [obj];
+            }
+          }
+        }
+
+        // 2) Emails: Attio create accepts string array; prefer plain strings
+        const rawEmails = (personData as any).email_addresses;
+        if (Array.isArray(rawEmails) && rawEmails.length) {
+          const normalized = rawEmails.map((e: any) =>
+            e && typeof e === 'object' && 'email_address' in e
+              ? String(e.email_address)
+              : String(e)
+          );
+          filteredPersonData.email_addresses = normalized;
+        } else if (typeof (personData as any).email === 'string') {
+          filteredPersonData.email_addresses = [
+            String((personData as any).email),
+          ];
+        }
+
+        // Ensure required fields exist: name and email_addresses
+        if (
+          !filteredPersonData.email_addresses ||
+          !(filteredPersonData as any).email_addresses.length
+        ) {
+          throw new Error('missing required parameter: email_addresses');
+        }
+        if (!filteredPersonData.name) {
+          // Derive a safe name from email local part
+          const firstEmail = (
+            (filteredPersonData as any).email_addresses[0] || {}
+          ).email_address as string;
+          const local =
+            typeof firstEmail === 'string'
+              ? firstEmail.split('@')[0]
+              : 'Test Person';
+          const parts = local
+            .replace(/[^a-zA-Z]+/g, ' ')
+            .trim()
+            .split(/\s+/);
+          const first = parts[0] || 'Test';
+          const last = parts.slice(1).join(' ') || 'User';
+          (filteredPersonData as any).name = [
+            {
+              first_name: first,
+              last_name: last,
+              full_name: `${first} ${last}`,
+            },
+          ];
+        }
+
+        // 3) Optional professional info
+        if (typeof (personData as any).title === 'string') {
+          filteredPersonData.title = (personData as any).title;
+        }
+        if (typeof (personData as any).job_title === 'string') {
+          filteredPersonData.job_title = (personData as any).job_title;
+        }
+        if (typeof (personData as any).description === 'string') {
+          filteredPersonData.description = (personData as any).description;
+        }
+
+        // 4) Exclude unsupported/test-only fields (department, seniority, phones, socials, etc.)
+
         debug('MockService', 'createPerson EXACT PAYLOAD', {
-          data: { values: personData },
+          data: { values: filteredPersonData },
         });
 
-        const response = await api.post('/objects/people/records', {
-          data: {
-            values: personData,
-          },
-        });
+        if (process.env.E2E_MODE === 'true') {
+          // TEMP: Console log payload for E2E debugging only
+          console.log(
+            '🔍 EXACT API PAYLOAD:',
+            JSON.stringify({ data: { values: filteredPersonData } }, null, 2)
+          );
+        }
+
+        const doCreate = async (values: Record<string, unknown>) =>
+          api.post('/objects/people/records', { data: { values } });
+
+        let response;
+        try {
+          // Attempt #1
+          response = await doCreate(filteredPersonData);
+        } catch (firstErr: any) {
+          const status = firstErr?.response?.status;
+          const data = firstErr?.response?.data;
+          // Only retry on 400 with alternate email schema
+          if (status === 400) {
+            const alt: Record<string, unknown> = { ...filteredPersonData };
+            const emails = (alt as any).email_addresses as any[] | undefined;
+            if (emails && emails.length) {
+              if (typeof emails[0] === 'string') {
+                (alt as any).email_addresses = emails.map((e: any) => ({
+                  email_address: String(e),
+                }));
+              } else if (
+                emails[0] &&
+                typeof emails[0] === 'object' &&
+                'email_address' in emails[0]
+              ) {
+                (alt as any).email_addresses = emails.map((e: any) =>
+                  String(e.email_address)
+                );
+              }
+              response = await doCreate(alt);
+            } else {
+              // No emails available to toggle; rethrow with context
+              error(
+                'MockService',
+                'createPerson 1st attempt failed (no emails to toggle)',
+                { status, data }
+              );
+              throw firstErr;
+            }
+          } else {
+            // Non-400 or unknown error; rethrow
+            error('MockService', 'createPerson 1st attempt failed', {
+              status,
+              data,
+            });
+            throw firstErr;
+          }
+        }
 
         debug('MockService', 'createPerson Raw API response', {
           status: response?.status,
@@ -259,8 +446,30 @@ export class MockService {
 
         return result;
       } catch (err) {
-        error('MockService', 'createPerson Direct API error', err);
-        throw err; // Re-throw the error instead of swallowing it
+        // Enhance error with HTTP response details when available (helps E2E diagnosis)
+        const anyErr = err as any;
+        const status = anyErr?.response?.status ?? 500;
+        const data = anyErr?.response?.data;
+        error('MockService', 'createPerson Direct API error', {
+          status,
+          data,
+        });
+        const msg =
+          status && data
+            ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
+            : (anyErr?.message as string) || 'createPerson error';
+        throw new EnhancedApiError(
+          msg,
+          status,
+          '/objects/people/records',
+          'POST',
+          {
+            httpStatus: status,
+            resourceType: 'people',
+            operation: 'create',
+            originalError: anyErr,
+          }
+        );
       }
     }
 

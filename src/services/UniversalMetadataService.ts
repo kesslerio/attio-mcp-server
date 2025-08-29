@@ -439,44 +439,23 @@ export class UniversalMetadataService {
 
       const response = await client.get<AttributeResponse>(path);
 
-      const attributes = response?.data?.data || [];
-
-      // Validate we got an array of attributes
-      if (!Array.isArray(attributes)) {
-        if (process.env.E2E_MODE === 'true') {
-          debug(
-            'UniversalMetadataService',
-            'Expected array, got different type',
-            {
-              attributes,
-              type: typeof attributes,
-              responseData: response?.data,
-            },
-            'discoverAttributesForResourceType',
-            OperationType.DATA_PROCESSING
-          );
-        }
-        throw {
-          status: 500,
-          body: {
-            code: 'invalid_schema',
-            message: `Expected array of attributes for ${resourceType}, got ${typeof attributes}`,
-          },
-        };
-      }
+      // Tolerant parsing: Attio may return arrays, or objects with attributes/all/standard/custom
+      const parsed = UniversalMetadataService.parseAttributesResponse(
+        response?.data as unknown
+      );
 
       // Create mapping from title to api_slug for compatibility
       const mappings: Record<string, string> = {};
-      attributes.forEach((attr: unknown) => {
+      parsed.forEach((attr: unknown) => {
         if (isAttioAttribute(attr)) {
           mappings[attr.title] = attr.api_slug;
         }
       });
 
       return {
-        attributes: attributes,
-        mappings: mappings,
-        count: attributes.length,
+        attributes: parsed,
+        mappings,
+        count: parsed.length,
         resource_type: resourceType,
       };
     } catch (error: unknown) {
@@ -881,15 +860,12 @@ export class UniversalMetadataService {
       }
 
       const response = await client.get(path);
-      const attributes = response?.data?.data || [];
-
-      // Validate we got an array of attributes
-      if (!Array.isArray(attributes)) {
-        throw new Error(`Invalid attributes response for object ${objectSlug}`);
-      }
+      const parsed = UniversalMetadataService.parseAttributesResponse(
+        response?.data as unknown
+      );
 
       return {
-        attributes,
+        attributes: parsed,
         resourceType: 'records',
         objectSlug,
       };
@@ -920,5 +896,61 @@ export class UniversalMetadataService {
    */
   static clearPerformanceMetrics(): void {
     AttributeDiscoveryMetrics.clearMetrics();
+  }
+
+  /**
+   * Robustly parse attribute discovery responses from multiple possible shapes
+   */
+  private static parseAttributesResponse(data: unknown): any[] {
+    // Common shapes:
+    // - { data: AttioAttribute[] }
+    // - { attributes: AttioAttribute[] }
+    // - { all: AttioAttribute[], custom?: AttioAttribute[], standard?: AttioAttribute[] }
+    // - AttioAttribute[]
+    // Fallback: []
+
+    // Direct array
+    if (Array.isArray(data)) return data as any[];
+
+    // Object with nested arrays
+    if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>;
+
+      // Prefer .data if it is an array
+      const dataArr = obj.data as unknown;
+      if (Array.isArray(dataArr)) return dataArr as any[];
+
+      // .attributes array
+      const attrs = obj.attributes as unknown;
+      if (Array.isArray(attrs)) return attrs as any[];
+
+      // Combined shape with .all / .custom / .standard
+      const all = obj.all as unknown;
+      const custom = obj.custom as unknown;
+      const standard = obj.standard as unknown;
+      const merged: any[] = [];
+      if (Array.isArray(all)) merged.push(...all);
+      if (Array.isArray(custom)) merged.push(...custom);
+      if (Array.isArray(standard)) merged.push(...standard);
+      if (merged.length > 0) return merged;
+    }
+
+    // In E2E/debug, log unexpected shapes
+    if (process.env.E2E_MODE === 'true') {
+      debug(
+        'UniversalMetadataService',
+        'Unrecognized attribute response shape, returning empty array',
+        {
+          receivedKeys:
+            data && typeof data === 'object'
+              ? Object.keys(data as any)
+              : typeof data,
+        },
+        'parseAttributesResponse',
+        OperationType.DATA_PROCESSING
+      );
+    }
+
+    return [];
   }
 }

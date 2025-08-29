@@ -9,6 +9,7 @@ export * from './people.js';
 export * from './lists.js';
 export * from './tasks.js';
 export * from './notes.js';
+export * from './error-scenarios.js';
 
 // Re-export the factories from test-data for convenience
 export {

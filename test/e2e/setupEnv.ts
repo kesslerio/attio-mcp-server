@@ -74,9 +74,9 @@ export function setupE2EEnvironment(): void {
   // E2E Test Configuration defaults
   process.env.E2E_TEST_PREFIX = process.env.E2E_TEST_PREFIX || 'E2E_TEST_';
   process.env.E2E_TEST_EMAIL_DOMAIN =
-    process.env.E2E_TEST_EMAIL_DOMAIN || 'e2e.test';
+    process.env.E2E_TEST_EMAIL_DOMAIN || 'example.com';
   process.env.E2E_TEST_COMPANY_DOMAIN =
-    process.env.E2E_TEST_COMPANY_DOMAIN || 'e2e-company.test';
+    process.env.E2E_TEST_COMPANY_DOMAIN || 'example.com';
   process.env.E2E_CLEANUP_AFTER_TESTS =
     process.env.E2E_CLEANUP_AFTER_TESTS || 'true';
   process.env.E2E_SKIP_CLEANUP = process.env.E2E_SKIP_CLEANUP || 'false';

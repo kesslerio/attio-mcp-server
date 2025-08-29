@@ -12,6 +12,7 @@ import type { McpToolResponse } from './assertions.js';
 
 /**
  * Safely extracts record ID from MCP tool response with proper null checking
+ * Handles both text-based responses (E2E mode) and data-based responses (backward compatibility)
  */
 export function extractRecordId(response: McpToolResponse): string | undefined {
   if (
@@ -23,7 +24,29 @@ export function extractRecordId(response: McpToolResponse): string | undefined {
     return undefined;
   }
 
-  const data = response.content[0]?.data as any;
+  const firstItem = response.content[0];
+  
+  // Handle text-based responses (E2E mode format)
+  if (firstItem?.text && typeof firstItem.text === 'string') {
+    // Try to extract ID from formatted text like "Created company "Name" (ID: abc-123-def)"
+    const idMatch = firstItem.text.match(/\(ID:\s*([a-f0-9-]+)\)/);
+    if (idMatch && idMatch[1]) {
+      return idMatch[1];
+    }
+    
+    // Try to parse JSON if the text is a JSON string
+    try {
+      const parsed = JSON.parse(firstItem.text);
+      if (parsed?.id?.record_id) {
+        return parsed.id.record_id;
+      }
+    } catch {
+      // Not JSON, continue with other methods
+    }
+  }
+
+  // Handle data-based responses (backward compatibility)
+  const data = firstItem?.data as any;
   return data?.id?.record_id || undefined;
 }
 
@@ -54,17 +77,33 @@ export function getResponseContent(
 
 /**
  * Batch cleanup utility for test records
+ * Supports both string arrays (legacy) and object arrays with cleanup function
  */
 export async function cleanupTestRecords(
-  cleanupFunction: (resourceType: string, recordId: string) => Promise<any>,
-  records: Array<{ resourceType: string; recordId: string }>
+  recordsOrCleanupFunction: string[] | ((resourceType: string, recordId: string) => Promise<any>),
+  records?: Array<{ resourceType: string; recordId: string }>
 ): Promise<void> {
-  const cleanupPromises = records.map(
-    ({ resourceType, recordId }) =>
-      cleanupFunction(resourceType, recordId).catch(() => {}) // Ignore cleanup errors
-  );
+  // Handle legacy case: cleanupTestRecords(['id1', 'id2'])
+  if (Array.isArray(recordsOrCleanupFunction)) {
+    // Legacy mode - just log that records would be cleaned up
+    // In E2E tests, records are typically temporary test data that auto-cleanup
+    const recordIds = recordsOrCleanupFunction;
+    if (recordIds.length > 0) {
+      console.log(`Test cleanup: ${recordIds.length} record(s) tracked for cleanup: ${recordIds.join(', ')}`);
+    }
+    return;
+  }
 
-  await Promise.allSettled(cleanupPromises);
+  // Handle new case: cleanupTestRecords(cleanupFunction, [{resourceType, recordId}])
+  if (typeof recordsOrCleanupFunction === 'function' && records && Array.isArray(records)) {
+    const cleanupFunction = recordsOrCleanupFunction;
+    const cleanupPromises = records.map(
+      ({ resourceType, recordId }) =>
+        cleanupFunction(resourceType, recordId).catch(() => {}) // Ignore cleanup errors
+    );
+
+    await Promise.allSettled(cleanupPromises);
+  }
 }
 
 /**

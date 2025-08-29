@@ -185,7 +185,7 @@ export class UniversalUpdateService {
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
     const fieldValidation = validateFields(resource_type, values);
     if (fieldValidation.warnings.length > 0) {
-      console.error(
+      console.warn(
         'Field validation warnings:',
         fieldValidation.warnings.join('\n')
       );
