@@ -149,38 +149,7 @@ describe.skipIf(
       console.error('✅ Handled authentication scenario gracefully');
     });
 
-    it('should handle rate limiting scenarios', async () => { /* moved */
-      // Test with multiple rapid requests to potentially trigger rate limiting
-      const requests = Array(5)
-        .fill(null)
-        .map(() =>
-          callUniversalTool('search-records', {
-            resource_type: 'companies',
-            query: 'test-rate-limit',
-            limit: 1,
-          })
-        );
-
-      const responses = await Promise.allSettled(requests);
-
-      // All requests should complete (either succeed or fail gracefully)
-      responses.forEach((result, index) => {
-        expect(result.status).toMatch(/(fulfilled|rejected)/);
-        if (result.status === 'fulfilled' && result.value.isError) {
-          // Rate limit errors are acceptable
-          const error = (result.value as McpToolResponse).error;
-          if (
-            error.includes('rate') ||
-            error.includes('limit') ||
-            error.includes('too many')
-          ) {
-            console.error(`✅ Detected rate limiting on request ${index + 1}`);
-          }
-        }
-      });
-
-      console.error('✅ Rate limiting scenario test completed');
-    });
+    // Moved to test/e2e/suites/error-handling-rate-limit.e2e.test.ts
   });
 
   */
