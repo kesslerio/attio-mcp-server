@@ -189,7 +189,10 @@ export class MockService {
         const anyErr = err as any;
         const status = anyErr?.response?.status ?? 500;
         const data = anyErr?.response?.data;
-        error('MockService', 'createCompany Direct API error', { status, data });
+        error('MockService', 'createCompany Direct API error', {
+          status,
+          data,
+        });
         const msg =
           status && data
             ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
@@ -199,7 +202,12 @@ export class MockService {
           status,
           '/objects/companies/records',
           'POST',
-          { httpStatus: status, resourceType: 'companies', operation: 'create', originalError: anyErr }
+          {
+            httpStatus: status,
+            resourceType: 'companies',
+            operation: 'create',
+            originalError: anyErr,
+          }
         );
       }
     }
@@ -455,7 +463,12 @@ export class MockService {
           status,
           '/objects/people/records',
           'POST',
-          { httpStatus: status, resourceType: 'people', operation: 'create', originalError: anyErr }
+          {
+            httpStatus: status,
+            resourceType: 'people',
+            operation: 'create',
+            originalError: anyErr,
+          }
         );
       }
     }
