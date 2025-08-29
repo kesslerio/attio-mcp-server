@@ -77,6 +77,8 @@
     "syncpack:check": "syncpack list-mismatches",
     "syncpack:fix": "syncpack fix-mismatches",
     "check:all": "npm run check && npm run build && npm run test:offline",
+    "e2e:gates": "node scripts/aggregate-ci-quality-gates.mjs --vitest-json vitest-report.json --suite core-workflows",
+    "e2e:gates:enforce": "ENFORCE_GATES=true node scripts/aggregate-ci-quality-gates.mjs --vitest-json vitest-report.json --suite core-workflows",
     "setup:dev": "npm install && npm run build",
     "setup:tdd": "./scripts/setup-tdd.sh",
     "test:affected": "node scripts/test-affected.cjs",

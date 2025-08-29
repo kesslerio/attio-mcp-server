@@ -8,6 +8,7 @@ import {
   validateTestEnvironment,
   getDetailedErrorMessage,
 } from './utils/test-cleanup';
+import { clearMockCompanies } from '../src/utils/mock-state';
 
 // Validate environment for integration tests
 if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
@@ -112,7 +113,17 @@ if (process.env.E2E_MODE !== 'true') {
         return [];
       }),
       listCompanies: vi.fn(async () => []),
-      getCompanyDetails: vi.fn(async () => ({})),
+      getCompanyDetails: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/index'
+          );
+          return actual.getCompanyDetails(...args);
+        }
+        // Otherwise return mock
+        return {};
+      }),
       createCompany: vi.fn(async (...args) => {
         // In E2E mode, use the actual implementation
         if (process.env.E2E_MODE === 'true') {
@@ -124,7 +135,17 @@ if (process.env.E2E_MODE !== 'true') {
         // Otherwise return mock
         return {};
       }),
-      updateCompany: vi.fn(async () => ({})),
+      updateCompany: vi.fn(async (...args) => {
+        // In E2E mode, use the actual implementation
+        if (process.env.E2E_MODE === 'true') {
+          const actual = await vi.importActual(
+            '../src/objects/companies/index'
+          );
+          return actual.updateCompany(...args);
+        }
+        // Otherwise return mock
+        return {};
+      }),
       deleteCompany: vi.fn(async () => true),
       smartSearchCompanies: vi.fn(async () => []),
     };
@@ -190,6 +211,10 @@ beforeEach(() => {
 
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
+  
+  // Clear mock company state for clean test isolation
+  clearMockCompanies();
+  
   // Reset console methods to original implementation to avoid interference
   console.log = originalConsole.log;
   console.error = originalConsole.error;
