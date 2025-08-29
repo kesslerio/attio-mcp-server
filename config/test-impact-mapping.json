@@ -10,7 +10,8 @@
       "test/integration/companies-advanced-search.integration.test.ts"
     ],
     "src/services/UniversalUpdateService.ts": [
-      "test/services/UniversalUpdateService.test.ts",
+      "test/services/UniversalUpdateService-core-operations.test.ts",
+      "test/services/UniversalUpdateService-validation.test.ts",
       "test/services/UniversalUpdateService-edge-cases.test.ts",
       "test/integration/batch-update-companies.integration.test.ts"
     ],
@@ -21,7 +22,19 @@
       "test/services/UniversalMetadataService.test.ts"
     ],
     "src/services/UniversalUtilityService.ts": [
-      "test/services/UniversalUtilityService.test.ts"
+      "test/services/UniversalUtilityService-resource-types.test.ts",
+      "test/services/UniversalUtilityService-conversion.test.ts",
+      "test/services/UniversalUtilityService-display-name.test.ts"
+    ],
+    "src/services/UniversalRetrievalService.ts": [
+      "test/services/UniversalRetrievalService-core-operations.test.ts",
+      "test/services/UniversalRetrievalService-validation.test.ts",
+      "test/services/UniversalRetrievalService-search-filter.test.ts"
+    ],
+    "src/services/ValidationService.ts": [
+      "test/services/ValidationService-parameters.test.ts",
+      "test/services/ValidationService-fields-and-emails.test.ts",
+      "test/services/ValidationService-uuid-and-id.test.ts"
     ],
     "src/services/CachingService.ts": [
       "test/services/CachingService.test.ts"
@@ -51,7 +64,10 @@
     "test/services/UniversalSearchService.test.ts": [
       "src/services/UniversalSearchService.ts"
     ],
-    "test/services/UniversalUpdateService.test.ts": [
+    "test/services/UniversalUpdateService-core-operations.test.ts": [
+      "src/services/UniversalUpdateService.ts"
+    ],
+    "test/services/UniversalUpdateService-validation.test.ts": [
       "src/services/UniversalUpdateService.ts"
     ],
     "test/services/UniversalDeleteService.test.ts": [
@@ -60,9 +76,33 @@
     "test/services/UniversalMetadataService.test.ts": [
       "src/services/UniversalMetadataService.ts"
     ],
-    "test/services/UniversalUtilityService.test.ts": [
+    "test/services/UniversalUtilityService-resource-types.test.ts": [
       "src/services/UniversalUtilityService.ts"
     ],
+    "test/services/UniversalUtilityService-conversion.test.ts": [
+      "src/services/UniversalUtilityService.ts"
+    ],
+    "test/services/UniversalUtilityService-display-name.test.ts": [
+      "src/services/UniversalUtilityService.ts"
+    ],
+    "test/services/UniversalRetrievalService-core-operations.test.ts": [
+      "src/services/UniversalRetrievalService.ts"
+    ],
+    "test/services/UniversalRetrievalService-validation.test.ts": [
+      "src/services/UniversalRetrievalService.ts"
+    ],
+    "test/services/UniversalRetrievalService-search-filter.test.ts": [
+      "src/services/UniversalRetrievalService.ts"
+    ],
+    "test/services/ValidationService-parameters.test.ts": [
+      "src/services/ValidationService.ts"
+    ],
+    "test/services/ValidationService-fields-and-emails.test.ts": [
+      "src/services/ValidationService.ts"
+    ],
+    "test/services/ValidationService-uuid-and-id.test.ts": [
+      "src/services/ValidationService.ts"
+    ]
     "test/services/CachingService.test.ts": [
       "src/services/CachingService.ts"
     ],
@@ -87,10 +127,19 @@
     "core": [
       "test/services/UniversalCreateService.test.ts",
       "test/services/UniversalSearchService.test.ts",
-      "test/services/UniversalUpdateService.test.ts",
+      "test/services/UniversalUpdateService-core-operations.test.ts",
+      "test/services/UniversalUpdateService-validation.test.ts",
       "test/services/UniversalDeleteService.test.ts",
       "test/services/UniversalMetadataService.test.ts",
-      "test/services/UniversalUtilityService.test.ts",
+      "test/services/UniversalUtilityService-resource-types.test.ts",
+      "test/services/UniversalUtilityService-conversion.test.ts",
+      "test/services/UniversalUtilityService-display-name.test.ts",
+      "test/services/UniversalRetrievalService-core-operations.test.ts",
+      "test/services/UniversalRetrievalService-validation.test.ts",
+      "test/services/UniversalRetrievalService-search-filter.test.ts",
+      "test/services/ValidationService-parameters.test.ts",
+      "test/services/ValidationService-fields-and-emails.test.ts",
+      "test/services/ValidationService-uuid-and-id.test.ts",
       "test/services/CachingService.test.ts",
       "test/handlers/tools.test.ts"
     ],
