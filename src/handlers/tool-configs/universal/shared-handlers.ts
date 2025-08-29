@@ -152,7 +152,10 @@ export async function handleUniversalGetNotes(
   }
 
   try {
-    const response = await client.get(`/v2/notes?${queryParams}`);
+    // Lightweight debug trace to aid E2E diagnostics
+    console.error('[list-notes] GET', `/notes?${queryParams.toString()}`);
+    // Base URL already includes /v2, so use relative path
+    const response = await client.get(`/notes?${queryParams}`);
     const rawList = unwrapAttio<any>(response);
 
     // Handle both array responses and nested data arrays

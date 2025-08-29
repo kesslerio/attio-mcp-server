@@ -10,6 +10,11 @@ import {
 import { callWithRetry, RetryConfig } from './retry.js';
 import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 import { debug, OperationType } from '../../utils/logger.js';
+import {
+  logTaskDebug,
+  sanitizePayload,
+  inspectTaskRecordShape,
+} from '../../utils/task-debug.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -124,6 +129,11 @@ export async function createTask(
   };
 
   return callWithRetry(async () => {
+    logTaskDebug(
+      'createTask',
+      'Prepared create payload',
+      sanitizePayload({ path, payload: requestPayload })
+    );
     // Debug logging for request
     debug(
       'tasks.createTask',
@@ -358,7 +368,13 @@ export async function createTask(
     }
 
     // Note: Only transform content field for create response (status not returned on create)
-    return transformTaskResponse(task);
+    const transformed = transformTaskResponse(task);
+    logTaskDebug(
+      'createTask',
+      'Create response shape',
+      inspectTaskRecordShape(transformed)
+    );
+    return transformed;
   }, retryConfig);
 }
 
@@ -381,13 +397,38 @@ export async function updateTask(
     // Map status string to is_completed boolean
     data.is_completed = updates.status === 'completed';
   }
-  if (updates.assigneeId)
-    data.assignee = { id: updates.assigneeId, type: 'workspace-member' };
+  // Assignees: API expects an array in the request envelope
+  if (updates.assigneeId) {
+    // Use the same shape as createTask request payloads
+    (data as any).assignees = [
+      { id: updates.assigneeId, type: 'workspace-member' },
+    ];
+  }
   if (updates.dueDate) data.deadline_at = updates.dueDate; // Use deadline_at instead of due_date
   if (updates.recordIds)
     data.linked_records = updates.recordIds.map((id) => ({ id }));
+
+  // Wrap in Attio envelope as per API requirements
+  const requestPayload = { data };
   return callWithRetry(async () => {
-    const res = await api.patch<AttioSingleResponse<AttioTask>>(path, data);
+    // Debug request for tracing
+    debug(
+      'tasks.updateTask',
+      'PATCH payload',
+      { path, payload: requestPayload },
+      'updateTask',
+      OperationType.API_CALL
+    );
+    logTaskDebug(
+      'updateTask',
+      'Prepared update payload',
+      sanitizePayload({ path, payload: requestPayload })
+    );
+
+    const res = await api.patch<AttioSingleResponse<AttioTask>>(
+      path,
+      requestPayload
+    );
     // Enhanced response handling with more robust structure detection
     let task: AttioTask;
 
@@ -401,7 +442,20 @@ export async function updateTask(
       throw new Error('Invalid API response structure: missing task data');
     }
 
-    return transformTaskResponse(task);
+    const transformed = transformTaskResponse(task);
+    logTaskDebug(
+      'updateTask',
+      'Update response shape',
+      inspectTaskRecordShape(transformed)
+    );
+    debug(
+      'tasks.updateTask',
+      'PATCH response received',
+      { status: (res as any)?.status, hasData: !!res?.data },
+      'updateTask',
+      OperationType.API_CALL
+    );
+    return transformed;
   }, retryConfig);
 }
 

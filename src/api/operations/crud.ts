@@ -517,7 +517,7 @@ export async function updateRecord<T extends AttioRecord>(
               }
             } catch (importError) {
               // If mock-state import fails, continue without storing (for compatibility)
-              logger.warn('Could not import mock-state for shared storage:', importError);
+              logger.warn('Could not import mock-state for shared storage', { error: importError });
             }
             
             if (

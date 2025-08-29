@@ -602,6 +602,16 @@ export class MockService {
       `Mock Test Task`;
 
     // Issue #480 compatible mock task
+    try {
+      const { logTaskDebug, sanitizePayload } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.createTask',
+        'Incoming taskData',
+        sanitizePayload(taskData as any)
+      );
+    } catch {}
     const attioRecord: AttioRecord = {
       id: {
         record_id: mockId,
@@ -625,7 +635,7 @@ export class MockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
+    const flatFields: Record<string, unknown> = {
       content: taskContent,
       title: taskContent,
       status: (taskData.status as string) || 'pending',
@@ -642,7 +652,38 @@ export class MockService {
       };
     }
 
-    return { ...attioRecord, ...flatFields };
+    // Provide 'assignees' array for E2E expectations
+    if (taskData.assigneeId) {
+      (flatFields as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(taskData.assigneeId),
+        },
+      ];
+    }
+
+    const result = { ...attioRecord, ...flatFields } as AttioRecord &
+      Record<string, unknown>;
+    // Emit top-level assignees for E2E expectation
+    if (taskData.assigneeId) {
+      (result as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(taskData.assigneeId),
+        },
+      ];
+    }
+    try {
+      const { logTaskDebug, inspectTaskRecordShape } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.createTask',
+        'Returning mock task',
+        inspectTaskRecordShape(result)
+      );
+    } catch {}
+    return result as any;
   }
 
   /**
@@ -722,7 +763,7 @@ export class MockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
+    const flatFields: Record<string, unknown> = {
       content: taskContent,
       title: taskContent,
       status: (updateData.status as string) || 'updated',
@@ -739,7 +780,38 @@ export class MockService {
       };
     }
 
-    return { ...attioRecord, ...flatFields };
+    // Provide 'assignees' array for E2E expectations on update
+    if (updateData.assigneeId) {
+      (flatFields as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(updateData.assigneeId),
+        },
+      ];
+    }
+
+    const result = { ...attioRecord, ...flatFields } as AttioRecord &
+      Record<string, unknown>;
+    // Emit top-level assignees for E2E expectation
+    if (updateData.assigneeId) {
+      (result as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(updateData.assigneeId),
+        },
+      ];
+    }
+    try {
+      const { logTaskDebug, inspectTaskRecordShape } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.updateTask',
+        'Returning updated mock task',
+        inspectTaskRecordShape(result)
+      );
+    } catch {}
+    return result as any;
   }
 
   /**

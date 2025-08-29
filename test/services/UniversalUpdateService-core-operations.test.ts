@@ -38,7 +38,10 @@ vi.mock('../../src/services/ValidationService.js', () => ({
   },
 }));
 vi.mock('../../src/services/MockService.js', () => ({
-  MockService: { updateTask: vi.fn() },
+  MockService: {
+    updateTask: vi.fn(),
+    isUsingMockData: vi.fn().mockReturnValue(true),
+  },
 }));
 import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';

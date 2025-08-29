@@ -249,7 +249,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              due_date: taskData.due_date,
+              format: 'plaintext',
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -285,13 +286,14 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
+              format: 'plaintext',
               assignees: [
                 {
                   referenced_actor_type: 'workspace-member',
                   referenced_actor_id: assignee.id.record_id,
                 }
               ],
-              due_date: taskData.due_date,
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -324,8 +326,9 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
+              format: 'plaintext',
               recordId: company.id.record_id,
-              due_date: taskData.due_date,
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -350,7 +353,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              due_date: taskData.due_date,
+              format: 'plaintext',
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -571,8 +575,8 @@ describe.skipIf(
           return;
         }
         const response = (await notesToolCaller('list-notes', {
-          resource_type: 'companies',
-          record_id: testCompany.id.record_id,
+          parent_object: 'companies',
+          parent_record_id: testCompany.id.record_id,
           limit: 10,
           offset: 0,
         })) as McpToolResponse;
@@ -734,8 +738,8 @@ describe.skipIf(
           return;
         }
         const response = (await notesToolCaller('list-notes', {
-          resource_type: 'people',
-          record_id: testPerson.id.record_id,
+          parent_object: 'people',
+          parent_record_id: testPerson.id.record_id,
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
@@ -864,8 +868,9 @@ describe.skipIf(
           resource_type: 'tasks',
           record_data: {
             content: `Follow up on integration for ${company.values.name?.[0]?.value || 'company'}`,
+            format: 'plaintext',
             recordId: companyId,
-            due_date: taskData.due_date,
+            deadline_at: taskData.due_date,
           },
         })
       );

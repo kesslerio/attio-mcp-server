@@ -1243,9 +1243,34 @@ export class UniversalCreateService {
       const options: Record<string, unknown> = {};
 
       // Only add fields that have actual values (not undefined)
-      const assigneeId =
+      // Normalize assignee inputs: accept string, array of strings, or array of objects
+      const assigneesInput =
         mappedData.assignees || mappedData.assignee_id || mappedData.assigneeId;
-      if (assigneeId) options.assigneeId = assigneeId;
+      if (assigneesInput !== undefined) {
+        let assigneeId: string | undefined;
+        if (typeof assigneesInput === 'string') {
+          assigneeId = assigneesInput;
+        } else if (Array.isArray(assigneesInput)) {
+          const first = assigneesInput[0] as any;
+          if (typeof first === 'string') assigneeId = first;
+          else if (first && typeof first === 'object') {
+            assigneeId =
+              first.referenced_actor_id ||
+              first.id ||
+              first.record_id ||
+              first.value ||
+              undefined;
+          }
+        } else if (
+          assigneesInput &&
+          typeof assigneesInput === 'object' &&
+          'referenced_actor_id' in (assigneesInput as any)
+        ) {
+          assigneeId = (assigneesInput as any).referenced_actor_id as string;
+        }
+
+        if (assigneeId) options.assigneeId = assigneeId;
+      }
 
       const dueDate =
         mappedData.deadline_at || mappedData.due_date || mappedData.dueDate;
@@ -1318,6 +1343,18 @@ export class UniversalCreateService {
         'createTask',
         OperationType.API_CALL
       );
+
+      // Debugging shape insight
+      try {
+        const { logTaskDebug, inspectTaskRecordShape } = await import(
+          '../utils/task-debug.js'
+        );
+        logTaskDebug('createRecord', 'Created task record shape', {
+          mappedKeys: Object.keys(mappedData || {}),
+          optionsKeys: Object.keys(options || {}),
+          shape: inspectTaskRecordShape(convertedRecord),
+        });
+      } catch {}
 
       return convertedRecord;
     } catch (error: unknown) {

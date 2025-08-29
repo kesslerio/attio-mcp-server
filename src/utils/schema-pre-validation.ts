@@ -174,17 +174,40 @@ export class SchemaPreValidator {
       return [];
     }
 
-    const normalizedAttrs = attributesList.map((attr: any) => ({
-      id: attr.id || attr.slug,
-      slug: attr.slug || attr.id,
-      name: attr.name || attr.title || attr.slug,
-      type: attr.value_type || attr.type || 'text',
-      is_system: attr.is_system || false,
-      is_writable: attr.is_writable !== false,
-      is_required: attr.slug === 'name' ? true : attr.is_required || false, // Name is always required
-      allowed_values: attr.allowed_values || attr.options,
-      format: attr.format,
-    }));
+    // Helper to create a safe slug from any string
+    const toSlug = (input: unknown): string | undefined => {
+      if (typeof input !== 'string' || input.length === 0) return undefined;
+      return input
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/_{2,}/g, '_');
+    };
+
+    // Normalize and filter invalid entries defensively
+    const normalizedAttrs = attributesList
+      .map((attr: any) => {
+        const rawSlug = attr?.slug ?? attr?.id ?? attr?.name ?? attr?.title;
+        const slug = toSlug(rawSlug);
+        if (!slug) return undefined;
+        return {
+          id: attr?.id || slug,
+          slug,
+          name: (attr?.name || attr?.title || slug) as string,
+          type: (attr?.value_type || attr?.type || 'text') as string,
+          is_system: Boolean(attr?.is_system) || false,
+          is_writable: attr?.is_writable !== false,
+          // Treat name as required by default
+          is_required:
+            slug === 'name' ? true : Boolean(attr?.is_required) || false,
+          allowed_values: attr?.allowed_values || attr?.options,
+          format: attr?.format,
+        } as AttributeMetadata;
+      })
+      .filter((a: AttributeMetadata | undefined): a is AttributeMetadata =>
+        Boolean(a && a.slug)
+      );
 
     // Add employee_count if missing (for test compatibility)
     const hasEmployeeCount = normalizedAttrs.some(
@@ -495,13 +518,18 @@ export class SchemaPreValidator {
 
     // Get available attributes with context for multi-tenant support
     const attributes = await this.getAttributes(resourceType, context);
+    // Filter out any malformed attributes (defensive)
+    const safeAttributes = (attributes || []).filter(
+      (a): a is AttributeMetadata =>
+        Boolean(a && typeof a.slug === 'string' && a.slug.length > 0)
+    );
     const attributeMap = new Map(
-      attributes.map((attr) => [attr.slug.toLowerCase(), attr])
+      safeAttributes.map((attr) => [attr.slug.toLowerCase(), attr])
     );
 
     // Also create a map of common variations
     const variationMap = new Map<string, string>();
-    for (const attr of attributes) {
+    for (const attr of safeAttributes) {
       // Add common variations
       variationMap.set(attr.slug.replace(/_/g, ''), attr.slug);
       variationMap.set(attr.slug.replace(/_/g, '-'), attr.slug);
@@ -512,6 +540,21 @@ export class SchemaPreValidator {
         letter.toUpperCase()
       );
       variationMap.set(camelCase, attr.slug);
+
+      // Add common alias mappings for known fields
+      // Singular/plural variations
+      if (attr.slug === 'domains') variationMap.set('domain', 'domains');
+      if (attr.slug === 'email_addresses')
+        variationMap.set('email_address', 'email_addresses');
+      if (attr.slug === 'phone_numbers') {
+        variationMap.set('phone', 'phone_numbers');
+        variationMap.set('phone_number', 'phone_numbers');
+      }
+      // Company size synonyms
+      if (attr.slug === 'employee_range' || attr.slug === 'employees') {
+        variationMap.set('team_size', attr.slug);
+        variationMap.set('employee_count', attr.slug);
+      }
     }
 
     // Check each field in record data
@@ -551,7 +594,7 @@ export class SchemaPreValidator {
     }
 
     // Check for required fields
-    const requiredFields = attributes.filter((attr) => attr.is_required);
+    const requiredFields = safeAttributes.filter((attr) => attr.is_required);
     for (const attr of requiredFields) {
       if (
         !(attr.slug in recordData) &&

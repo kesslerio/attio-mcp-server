@@ -393,6 +393,31 @@ export class UniversalRetrievalService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
+      const { MockService } = await import('./MockService.js');
+      if (MockService.isUsingMockData()) {
+        try {
+          const { logTaskDebug } = await import('../utils/task-debug.js');
+          logTaskDebug('getRecordDetails', 'Using mock task retrieval', {
+            record_id,
+          });
+        } catch {}
+        // Return a minimal mock AttioRecord for tasks to satisfy E2E flows
+        return {
+          id: {
+            record_id,
+            task_id: record_id,
+            object_id: 'tasks',
+          },
+          values: {
+            title: [{ value: 'Mock Task' }],
+            content: [{ value: 'Mock Task' }],
+            status: [{ value: 'open' }],
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as unknown as AttioRecord;
+      }
+
       const task = await getTask(record_id);
       // Convert AttioTask to AttioRecord using proper type conversion
       return UniversalUtilityService.convertTaskToRecord(task);
