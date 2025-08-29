@@ -1,11 +1,14 @@
 {
   "sourceFiles": {
     "src/services/UniversalCreateService.ts": [
-      "test/services/UniversalCreateService.test.ts",
+      "test/services/UniversalCreateService-core-resources.test.ts",
+      "test/services/UniversalCreateService-objects-deals-tasks.test.ts",
+      "test/services/UniversalCreateService-validation-errors.test.ts",
       "test/integration/company-write-operations.test.ts"
     ],
     "src/services/UniversalSearchService.ts": [
-      "test/services/UniversalSearchService.test.ts",
+      "test/services/UniversalSearchService-companies-people-lists.test.ts",
+      "test/services/UniversalSearchService-records-tasks.test.ts",
       "test/api/advanced-search.test.ts",
       "test/integration/companies-advanced-search.integration.test.ts"
     ],
@@ -58,10 +61,19 @@
     ]
   },
   "testFiles": {
-    "test/services/UniversalCreateService.test.ts": [
+    "test/services/UniversalCreateService-core-resources.test.ts": [
       "src/services/UniversalCreateService.ts"
     ],
-    "test/services/UniversalSearchService.test.ts": [
+    "test/services/UniversalCreateService-objects-deals-tasks.test.ts": [
+      "src/services/UniversalCreateService.ts"
+    ],
+    "test/services/UniversalCreateService-validation-errors.test.ts": [
+      "src/services/UniversalCreateService.ts"
+    ],
+    "test/services/UniversalSearchService-companies-people-lists.test.ts": [
+      "src/services/UniversalSearchService.ts"
+    ],
+    "test/services/UniversalSearchService-records-tasks.test.ts": [
       "src/services/UniversalSearchService.ts"
     ],
     "test/services/UniversalUpdateService-core-operations.test.ts": [
