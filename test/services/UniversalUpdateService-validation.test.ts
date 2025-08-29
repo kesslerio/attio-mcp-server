@@ -31,8 +31,6 @@ import { validateRecordFields } from '../../src/utils/validation-utils.js';
 import { MockService } from '../../src/services/MockService.js';
 import * as tasks from '../../src/objects/tasks.js';
 
-import '../_helpers/services/universal-update-mocks.js';
-
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();

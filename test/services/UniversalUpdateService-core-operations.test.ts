@@ -56,9 +56,6 @@ import {
 } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { validateRecordFields } from '../../src/utils/validation-utils.js';
 
-// register side-effect mocks
-import '../_helpers/services/universal-update-mocks.js';
-
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();

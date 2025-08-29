@@ -23,8 +23,6 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
 import { ValidationService } from '../../src/services/ValidationService.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 
-import '../_helpers/services/validation-service-mocks.js';
-
 describe('ValidationService', () => {
   beforeEach(() => vi.clearAllMocks());
 

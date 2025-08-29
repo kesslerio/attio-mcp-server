@@ -25,8 +25,6 @@ import { UniversalResourceType } from '../../src/handlers/tool-configs/universal
 import { validateFields } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { isValidEmail } from '../../src/utils/validation/email-validation.js';
 
-import '../_helpers/services/validation-service-mocks.js';
-
 describe('ValidationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();

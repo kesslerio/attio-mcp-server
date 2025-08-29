@@ -25,8 +25,6 @@ import {
 } from '../../src/utils/validation/uuid-validation.js';
 import { isValidId } from '../../src/utils/validation.js';
 
-import '../_helpers/services/validation-service-mocks.js';
-
 describe('ValidationService', () => {
   beforeEach(() => vi.clearAllMocks());
 

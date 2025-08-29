@@ -14,8 +14,6 @@ import { AttioRecord } from '../../src/types/attio.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
 import { CachingService } from '../../src/services/CachingService.js';
 
-import '../_helpers/services/universal-retrieval-mocks.js';
-
 describe('UniversalRetrievalService', () => {
   describe('Field filtering', () => {
     beforeEach(() => {

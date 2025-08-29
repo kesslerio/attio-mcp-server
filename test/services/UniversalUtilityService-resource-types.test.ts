@@ -367,7 +367,7 @@ describe('UniversalUtilityService', () => {
         UniversalUtilityService.getResourceTypeDescription(
           UniversalResourceType.TASKS
         )
-      ).toBe('Task records with assignees and due dates');
+      ).toBe('Task records for activity tracking');
     });
   });
 });

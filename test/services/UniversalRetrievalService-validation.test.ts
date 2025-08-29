@@ -55,9 +55,6 @@ import * as lists from '../../src/objects/lists.js';
 import * as companies from '../../src/objects/companies/index.js';
 import * as notes from '../../src/objects/notes.js';
 
-// side-effect mocks
-import '../_helpers/services/universal-retrieval-mocks.js';
-
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
