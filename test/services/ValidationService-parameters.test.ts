@@ -204,23 +204,23 @@ describe('ValidationService', () => {
 
   describe('validateUniversalOperation', () => {
     it('should return valid for successful validation', () => {
-      // minimal mock via any to avoid extra imports
-      // these functions are mocked in validation-service-mocks
-      (vi.mocked as any)(
-        require('../../src/utils/validation/uuid-validation.js').isValidUUID
-      ).mockReturnValue(true);
-      (vi.mocked as any)(
-        require('../../src/handlers/tool-configs/universal/field-mapper.js')
-          .validateFields
-      ).mockReturnValue({
+      const {
+        isValidUUID,
+      } = require('../../src/utils/validation/uuid-validation.js');
+      const {
+        validateFields,
+      } = require('../../src/handlers/tool-configs/universal/field-mapper.js');
+      const {
+        isValidEmail,
+      } = require('../../src/utils/validation/email-validation.js');
+      vi.mocked(isValidUUID).mockReturnValue(true);
+      vi.mocked(validateFields).mockReturnValue({
         valid: true,
         errors: [],
         warnings: [],
         suggestions: [],
       });
-      (vi.mocked as any)(
-        require('../../src/utils/validation/email-validation.js').isValidEmail
-      ).mockReturnValue(true);
+      vi.mocked(isValidEmail).mockReturnValue(true);
 
       const result = ValidationService.validateUniversalOperation({
         resourceType: UniversalResourceType.COMPANIES,

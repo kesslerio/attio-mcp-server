@@ -6,6 +6,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('../../src/services/CachingService.js', () => ({
   CachingService: { isCached404: vi.fn(), cache404Response: vi.fn() },
 }));
+vi.mock('../../src/services/ValidationService.js', () => ({
+  ValidationService: { validateUUID: vi.fn() },
+}));
 vi.mock('../../src/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     startOperation: vi.fn(() => 'perf-123'),
@@ -16,6 +19,7 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
   },
 }));
 vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
+  isValidUUID: vi.fn(() => true),
   createRecordNotFoundError: vi.fn(
     () =>
       new (class EnhancedApiError extends Error {

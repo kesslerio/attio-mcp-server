@@ -5,6 +5,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('../../src/services/CachingService.js', () => ({
   CachingService: { isCached404: vi.fn() },
 }));
+vi.mock('../../src/services/ValidationService.js', () => ({
+  ValidationService: { validateUUID: vi.fn() },
+}));
 vi.mock('../../src/objects/companies/index.js', () => ({
   getCompanyDetails: vi.fn(),
 }));

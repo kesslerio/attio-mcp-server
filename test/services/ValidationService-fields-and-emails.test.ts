@@ -106,7 +106,7 @@ describe('ValidationService', () => {
   });
 
   describe('validateEmailAddresses', () => {
-    it('should validate complex email structures and skip invalid formats', () => {
+    it('should validate complex email structures and throw on invalid formats', () => {
       const recordData = {
         email_addresses: [
           { value: 'valid@email.com' },
@@ -120,11 +120,11 @@ describe('ValidationService', () => {
 
       expect(() => {
         ValidationService.validateEmailAddresses(recordData);
-      }).not.toThrow();
+      }).toThrow(/Invalid email format/i);
 
-      expect(isValidEmail).toHaveBeenCalledTimes(2);
+      // Called on both valid and invalid string emails
       expect(isValidEmail).toHaveBeenCalledWith('valid@email.com');
-      expect(isValidEmail).toHaveBeenCalledWith('another@email.com');
+      expect(isValidEmail).toHaveBeenCalledWith('invalid-email');
     });
 
     it('should handle null or undefined record data', () => {
