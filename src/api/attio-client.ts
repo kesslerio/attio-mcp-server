@@ -1,3 +1,11 @@
+// module banner – shows up as soon as the file is evaluated
+console.log('📦 LOADED attio-client', {
+  file: __filename,
+  E2E_MODE: process.env.E2E_MODE,
+  USE_MOCK_DATA: process.env.USE_MOCK_DATA,
+});
+export const __MODULE_PATH__ = __filename;
+
 /**
  * Attio API client and related utilities
  */
@@ -37,122 +45,83 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     );
   }
 
+  const baseURL =
+    (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, '');
+
   const client = axios.create({
-    baseURL: 'https://api.attio.com/v2',
+    baseURL,
+    timeout: 20000,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
+    // do NOT transform the response; we want raw server JSON
+    transformResponse: [(data) => {
+      try { return JSON.parse(data); } catch { return data; }
+    }],
+    validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
   });
 
-  // Add response interceptor for error handling
+  // TEMP DIAGNOSTICS (E2E only): show final URL + top-level shape
+  if (process.env.E2E_MODE === 'true') {
+    client.interceptors.request.use((config) => {
+      const redacted = { ...(config.headers || {}) };
+      if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
+      console.log('🌐 AttioClient request', {
+        baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted,
+      });
+      return config;
+    });
+    client.interceptors.response.use(
+      (res) => {
+        console.log('📥 AttioClient response', {
+          status: res.status,
+          url: res.config?.url,
+          keys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null,
+          rawType: typeof res.data,
+        });
+        return res;
+      },
+      (err) => {
+        const r = err?.response;
+        console.error('💥 AttioClient error', {
+          url: r?.config?.url,
+          status: r?.status,
+          data: r?.data,
+        });
+        return Promise.reject(err);
+      }
+    );
+  }
+
+  // Add unconditional diagnostics and passthrough error handling
+  console.log('⚙️ Attio client baseURL:', baseURL);
+  
+  client.interceptors.request.use((config) => {
+    const redacted = { ...(config.headers || {}) };
+    if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
+    console.log('🌐 Request', {
+      baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted
+    });
+    return config;
+  });
+  
   client.interceptors.response.use(
-    (response) => {
-      // Debug logging for ALL successful responses to understand what's happening
-      debug(
-        'attio-client',
-        'Response interceptor called',
-        {
-          url: response.config?.url,
-          method: response.config?.method,
-          status: response.status,
-          hasData: !!response.data,
-          isTasksRequest: response.config?.url?.includes('/tasks'),
-        },
-        'api-request',
-        OperationType.API_CALL
-      );
-
-      // More detailed logging for tasks requests
-      if (response.config?.url?.includes('/tasks')) {
-        debug(
-          'attio-client',
-          'Tasks request succeeded',
-          {
-            url: response.config?.url,
-            method: response.config?.method,
-            status: response.status,
-            responseData: response.data,
-            responseType: typeof response,
-            responseKeys: Object.keys(response),
-          },
-          'api-request',
-          OperationType.API_CALL
-        );
-      }
-      // IMPORTANT: Must return the response object for it to be available to the caller
-      return response;
+    (res) => {
+      console.log('📥 Response', {
+        status: res.status, url: res.config?.url,
+        topKeys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null
+      });
+      return res;
     },
-    (error: AxiosError) => {
-      // Log ALL errors to understand what's happening
-      const errorInfo = {
-        url: error.config?.url,
-        method: error.config?.method,
-        message: error.message,
-        code: error.code,
-        hasResponse: !!error.response,
-        responseStatus: error.response?.status,
-        isTasksRequest: error.config?.url?.includes('/tasks'),
-        responseData: error.response?.data,
-      };
-
-      debug(
-        'attio-client',
-        'Error interceptor called',
-        errorInfo,
-        'api-request',
-        OperationType.API_CALL
-      );
-
-      // Special handling for authentication errors
-      if (error.response?.status === 401) {
-        console.error(
-          '[attio-client] Authentication error - API key may be invalid or expired'
-        );
-        console.error('[attio-client] Response:', error.response?.data);
-      }
-
-      // Special handling for forbidden errors
-      if (error.response?.status === 403) {
-        console.error(
-          '[attio-client] Forbidden error - API key may not have required permissions'
-        );
-        console.error('[attio-client] Response:', error.response?.data);
-      }
-
-      // Log create operation failures specifically
-      if (
-        error.config?.method === 'post' &&
-        (process.env.NODE_ENV === 'development' ||
-          process.env.E2E_MODE === 'true')
-      ) {
-        console.error('[attio-client] CREATE operation failed:', errorInfo);
-      }
-
-      if (error.config?.url?.includes('/tasks')) {
-        const errorData = {
-          url: error.config?.url,
-          method: error.config?.method,
-          requestHeaders: error.config?.headers,
-          requestData: error.config?.data,
-          requestDataType: typeof error.config?.data,
-          responseStatus: error.response?.status,
-          responseData: error.response?.data,
-          validationErrors: (error.response?.data as Record<string, unknown>)
-            ?.validation_errors,
-        };
-
-        logError(
-          'attio-client',
-          'Tasks request failed',
-          error,
-          errorData,
-          'api-request',
-          OperationType.API_CALL
-        );
-      }
-      const enhancedError = createAttioError(error);
-      return Promise.reject(enhancedError);
+    (err) => {
+      const r = err?.response;
+      console.error('💥 HTTP Error', {
+        url: r?.config?.url, method: r?.config?.method,
+        status: r?.status, serverData: r?.data, requestPayload: r?.config?.data
+      });
+      return Promise.reject(err); // PRESERVE axios error (don't wrap)
     }
   );
 
@@ -182,6 +151,16 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
   const forceReal = isE2E && !useMocks;
 
   // Debug log the client mode selection
+  console.log('🔍 CLIENT MODE SELECTION', {
+    isE2E,
+    useMocks,
+    forceReal,
+    rawE2E: opts?.rawE2E,
+    NODE_ENV: process.env.NODE_ENV,
+    E2E_MODE: process.env.E2E_MODE,
+    USE_MOCK_DATA: process.env.USE_MOCK_DATA,
+    OFFLINE_MODE: process.env.OFFLINE_MODE,
+  });
   debug('AttioClient', 'mode', {
     isE2E,
     useMocks,
@@ -190,10 +169,74 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     NODE_ENV: process.env.NODE_ENV,
   });
 
+  // If we need the raw E2E client, do NOT reuse any cached instance
+  if (forceReal || opts?.rawE2E) {
+    console.log('🚨 E2E MODE: bypassing cache, creating fresh client');
+    apiInstance = null; // guarantee we don't return a stale client
+    console.log('🚨 CREATING RAW E2E CLIENT', { forceReal, rawE2E: opts?.rawE2E, isE2E, useMocks });
+    debug('AttioClient', 'Creating raw E2E client with http adapter');
+
+    // Create a fresh client instance with no interceptors for E2E
+    const apiKey = process.env.ATTIO_API_KEY;
+    if (!apiKey) {
+      throw new Error('ATTIO_API_KEY required for E2E mode');
+    }
+
+    const baseURL = (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, '');
+    
+    const rawClient = axios.create({
+      baseURL,
+      timeout: 20000,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      // do NOT transform the response; we want raw server JSON
+      transformResponse: [(data) => {
+        try { return JSON.parse(data); } catch { return data; }
+      }],
+      validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
+    });
+
+    // Add diagnostics and passthrough error handling
+    console.log('⚙️ RAW E2E client baseURL:', baseURL);
+    
+    rawClient.interceptors.request.use((config) => {
+      const redacted = { ...(config.headers || {}) };
+      if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
+      console.log('🌐 E2E Request', {
+        baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted
+      });
+      return config;
+    });
+    
+    rawClient.interceptors.response.use(
+      (res) => {
+        console.log('📥 E2E Response', {
+          status: res.status, url: res.config?.url,
+          topKeys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null
+        });
+        return res;
+      },
+      (err) => {
+        const r = err?.response;
+        console.error('💥 E2E HTTP Error', {
+          url: r?.config?.url, method: r?.config?.method,
+          status: r?.status, serverData: r?.data, requestPayload: r?.config?.data
+        });
+        return Promise.reject(err); // PRESERVE axios error (don't wrap)
+      }
+    );
+
+    return rawClient;
+  }
+
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
+      console.log('🆕 CREATING DEFAULT CLIENT (auto-init from env)');
       debug(
         'attio-client',
         'API client not initialized, auto-initializing from environment variable',
@@ -207,72 +250,8 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
       );
     }
-  }
-
-  // ⛔ turn off any test adapters / interceptors when forceReal or rawE2E
-  if (forceReal || opts?.rawE2E) {
-    debug('AttioClient', 'Creating raw E2E client with http adapter');
-
-    // Create a fresh client instance with no interceptors for E2E
-    const apiKey = process.env.ATTIO_API_KEY;
-    if (!apiKey) {
-      throw new Error('ATTIO_API_KEY required for E2E mode');
-    }
-
-    const rawClient = axios.create({
-      baseURL: process.env.ATTIO_BASE_URL ?? 'https://api.attio.com/v2',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      // keep transforms minimal & predictable
-      transformResponse: [
-        (data) => {
-          // axios default parses JSON already; this guards odd content-types
-          try {
-            return typeof data === 'string' && data ? JSON.parse(data) : data;
-          } catch {
-            return data;
-          }
-        },
-      ],
-      // ✅ force node http adapter; do not let axios pick fetch/undici
-      adapter: httpAdapter as any,
-      decompress: true as any, // harmless on http adapter
-      transitional: { silentJSONParsing: false, clarifyTimeoutError: true },
-      validateStatus: (s) => s >= 200 && s < 300,
-    });
-
-    // no interceptors
-    (rawClient.interceptors.request as any).handlers = [];
-    (rawClient.interceptors.response as any).handlers = [];
-
-    // Add minimal logging for E2E debugging only
-    if (isE2E) {
-      rawClient.interceptors.response.use(
-        (resp) => {
-          debug('RawE2EClient', 'Response', {
-            status: resp.status,
-            url: resp.config?.url,
-            hasData: !!resp.data,
-            dataIsObject: resp.data && typeof resp.data === 'object',
-            headerKeys: resp.headers ? Object.keys(resp.headers) : [],
-          });
-          return resp;
-        },
-        (err) => {
-          debug('RawE2EClient', 'Error', {
-            status: err?.response?.status,
-            url: err?.config?.url,
-            message: err?.message,
-          });
-          return Promise.reject(err);
-        }
-      );
-    }
-
-    return rawClient;
+  } else {
+    console.log('↩️ getAttioClient returning cached instance');
   }
 
   return apiInstance;

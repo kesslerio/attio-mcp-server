@@ -273,6 +273,12 @@ describe.skipIf(
       }, 30000);
 
       it('should create task with assignee', async () => {
+        console.log('🔍 ASSIGNEE TEST DEBUG', {
+          taskTestPeopleLength: taskTestPeople.length,
+          hasFirstPerson: !!taskTestPeople[0],
+          firstPersonId: taskTestPeople[0]?.id?.record_id,
+        });
+        
         if (taskTestPeople.length === 0) {
           console.error('⏭️ Skipping assignee test - no test people available');
           return;
@@ -280,6 +286,11 @@ describe.skipIf(
 
         const taskData = TaskFactory.create();
         const assignee = taskTestPeople[0];
+        
+        console.log('🎯 ASSIGNEE DEBUG', {
+          assigneeId: assignee?.id?.record_id,
+          assigneeKeys: Object.keys(assignee || {}),
+        });
 
         const response = asToolResponse(
           await callTasksTool('create-record', {
@@ -300,10 +311,18 @@ describe.skipIf(
 
         E2EAssertions.expectMcpSuccess(response);
         const createdTask = extractTaskData(response);
+        
+        console.log('📋 TASK RESPONSE DEBUG', {
+          hasAssignee: !!createdTask.assignee,
+          hasAssignees: !!createdTask.assignees,
+          assigneeKeys: createdTask.assignee ? Object.keys(createdTask.assignee) : null,
+          assigneesLength: Array.isArray(createdTask.assignees) ? createdTask.assignees.length : null,
+          taskKeys: Object.keys(createdTask || {}),
+        });
 
         E2EAssertions.expectTaskRecord(createdTask);
         expect(
-          createdTask.assignee?.referenced_actor_id
+          createdTask.assignees[0]?.referenced_actor_id
         ).toBeDefined();
 
         createdTasks.push(createdTask);
@@ -575,8 +594,9 @@ describe.skipIf(
           return;
         }
         const response = (await notesToolCaller('list-notes', {
+          resource_type: 'companies',
           parent_object: 'companies',
-          parent_record_id: testCompany.id.record_id,
+          record_id: testCompany.id.record_id,
           limit: 10,
           offset: 0,
         })) as McpToolResponse;
@@ -738,8 +758,9 @@ describe.skipIf(
           return;
         }
         const response = (await notesToolCaller('list-notes', {
+          resource_type: 'people',
           parent_object: 'people',
-          parent_record_id: testPerson.id.record_id,
+          record_id: testPerson.id.record_id,
         })) as McpToolResponse;
 
         NotesAssertions.expectMcpSuccess(response);
