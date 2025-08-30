@@ -19,12 +19,35 @@ import { debug, error } from '../utils/logger.js';
 
 // Normalizes axios responses regardless of interceptors and adapts id to { id: { record_id } }
 function extractAttioRecord(response: any) {
-  const payload = (response && (response.data ?? response)) ?? null; // axios resp or already-unwrapped
-  const rec = (payload && (payload.data ?? payload)) ?? null; // some clients nest a second 'data'
+  const payload = (response && (response.data ?? response)) ?? null; // axios resp or unwrapped
+  const maybeData = (payload && (payload.data ?? payload)) ?? null;
 
-  if (rec && typeof rec === 'object' && typeof (rec as any).id === 'string') {
-    // Adapt to the AttioRecord shape tests expect
-    return { ...rec, id: { record_id: (rec as any).id } };
+  // Common shapes we might see:
+  //  A) { id: string, ... }
+  //  B) { id: { record_id: string }, ... }
+  //  C) { record: { id: string | { record_id: string }, ... } }
+  //  D) { record_id: string, ... } (fallback)
+
+  let rec = maybeData;
+
+  if (rec && typeof rec === 'object' && 'record' in rec && rec.record) {
+    rec = (rec as any).record;
+  }
+
+  if (rec && typeof rec === 'object') {
+    const r: any = rec;
+
+    // id as string → adapt
+    if (typeof r.id === 'string') {
+      return { ...r, id: { record_id: r.id } };
+    }
+    // explicit record_id at top-level → adapt
+    if (
+      typeof r.record_id === 'string' &&
+      (!r.id || typeof r.id !== 'object')
+    ) {
+      return { ...r, id: { record_id: r.record_id } };
+    }
   }
 
   return rec;
@@ -182,7 +205,7 @@ export class MockService {
           process.env.E2E_MODE === 'true' ||
           process.env.NODE_ENV === 'test'
         ) {
-          debug('MockService', 'Normalized record', {
+          debug('MockService', 'Normalized company record', {
             hasIdObj: !!(record as any)?.id?.record_id,
             idType: typeof (record as any)?.id,
             keys: Object.keys(record || {}),
@@ -442,7 +465,7 @@ export class MockService {
           process.env.E2E_MODE === 'true' ||
           process.env.NODE_ENV === 'test'
         ) {
-          debug('MockService', 'Normalized record', {
+          debug('MockService', 'Normalized person record', {
             hasIdObj: !!(record as any)?.id?.record_id,
             idType: typeof (record as any)?.id,
             keys: Object.keys(record || {}),

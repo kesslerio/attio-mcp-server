@@ -151,7 +151,25 @@ export async function updateTask(
 }
 
 export async function deleteTask(taskId: string): Promise<boolean> {
-  return apiDelete(taskId);
+  try {
+    const result = await apiDelete(taskId);
+    // apiDelete typically returns boolean true on success
+    return result === true;
+  } catch (err: any) {
+    const status = err?.response?.status ?? err?.status;
+    const msg = (err?.response?.data?.message ?? err?.message ?? '')
+      .toString()
+      .toLowerCase();
+    // Normalize: if the API signals not found, convert to a soft-fail 'false'
+    if (
+      status === 404 ||
+      msg.includes('not found') ||
+      err?.code === 'not_found'
+    ) {
+      return false;
+    }
+    throw err; // bubble up genuine failures
+  }
 }
 
 export async function linkRecordToTask(
