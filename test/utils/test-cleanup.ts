@@ -5,6 +5,19 @@
 
 import { getAttioClient } from '../../src/api/attio-client.js';
 
+interface AttioClient {
+  get(url: string, params?: any): Promise<any>;
+  delete(url: string): Promise<any>;
+}
+
+/**
+ * Validates the test environment setup
+ */
+export function validateTestEnvironmentSetup(): void {
+  const apiKey = process.env.ATTIO_API_KEY;
+  const requiredVars = ['ATTIO_API_KEY'];
+  const missing: string[] = [];
+
   for (const varName of requiredVars) {
     if (!process.env[varName]) {
       missing.push(varName);
@@ -111,6 +124,7 @@ async function cleanupTestPeople(
   maxRetries: number = 3
 ): Promise<void> {
   try {
+    const records = await client.get('/objects/people/records', {
       filter: {
         $or: [
           { name: { $starts_with: testPrefix } },
@@ -137,6 +151,7 @@ async function cleanupTestCompanies(
   maxRetries: number = 3
 ): Promise<void> {
   try {
+    const records = await client.get('/objects/companies/records', {
       filter: {
         name: { $starts_with: testPrefix },
       },

@@ -122,6 +122,7 @@ export async function getObjectAttributeMetadata(
 function createTaskAttributeMetadata(): Map<string, AttioAttributeMetadata> {
 
   // Standard task fields based on Attio Tasks API
+  const createAttribute = (
     slug: string,
     type: string,
     title: string,
@@ -378,13 +379,14 @@ export async function getFieldValidationRules(
     }
 
     // Add enum values for select fields
+    const selectInfo:
       | {
           options?: Array<{ value: string | number | boolean }>;
           select?: {
             options?: Array<{ value: string | number | boolean }>;
           };
         }
-      | undefined;
+      | undefined = undefined;
     if (typeInfo.attioType === 'select') {
       // Handle both direct options and nested select.options
       if (options) {

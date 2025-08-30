@@ -10,6 +10,7 @@
 
 import { createTestUuid } from '../utils/error-handling-utils.js';
 
+const errorScenarios = {
   /**
    * Invalid data formats for validation testing
    */

@@ -20,6 +20,7 @@ export interface PreflightWarning {
 /**
  * API key validation patterns
  */
+const API_KEY_PATTERNS = {
   // Common API key formats
   BEARER_TOKEN: /^Bearer\s+[\w-]+$/,
   UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
@@ -75,6 +76,7 @@ export function validateApiKey(): PreflightResult {
   }
 
   // Check for common placeholder values
+  const placeholders = [
     'your_api_key',
     'your_api_key_here',
     'YOUR_API_KEY',

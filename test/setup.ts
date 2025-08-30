@@ -7,6 +7,14 @@ import { vi, beforeEach } from 'vitest';
 import { clearAttributeCache } from '../src/api/attribute-types';
 import { clearMockCompanies } from '../src/utils/mock-state';
 import { createMockApiClient } from './types/test-types';
+// Simple error message function to replace the broken import
+function getDetailedErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+import { validateTestEnvironment } from './e2e/setup/preflight';
 
 // Validate environment for integration tests
 if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {

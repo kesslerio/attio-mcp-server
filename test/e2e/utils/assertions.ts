@@ -671,8 +671,13 @@ export class E2EAssertions {
     }
 
     // Basic relevance check - at least some results should contain query terms
+    const queryTerms = query.toLowerCase().split(' ');
+    const relevantResults = results.filter((result) => {
+      const resultText = JSON.stringify(result).toLowerCase();
       return queryTerms.some((term) => resultText.includes(term));
     });
+
+    const relevanceScore = relevantResults.length / results.length;
 
     expect(
       relevanceScore,
@@ -870,7 +875,8 @@ export class E2EAssertions {
 
     // Alternative structure checks for different API implementations
     if (note.linked_to && Array.isArray(note.linked_to)) {
-        (link: unknown) =>
+      const linkFound = note.linked_to.some(
+        (link: any) =>
           link.target_object === expectedParentType ||
           (expectedParentId && link.target_record_id === expectedParentId)
       );

@@ -27,6 +27,16 @@ import { describe, beforeAll, afterAll, it, expect } from 'vitest';
 
 import { E2EAssertions, type McpToolResponse } from '../utils/assertions.js';
 import { loadE2EConfig } from '../utils/config-loader.js';
+import { errorScenarios } from '../fixtures/error-scenarios.js';
+import {
+  callUniversalTool,
+  callTasksTool,
+  callNotesTool,
+  validateTestEnvironment,
+  hasValidContent,
+  createTestRecord,
+  cleanupTestRecords
+} from '../utils/enhanced-tool-caller.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
@@ -37,6 +47,23 @@ describe.skipIf(
   let testListId: string | undefined;
   let testTaskId: string | undefined;
 
+  // Test data for error scenarios
+  const companyData = {
+    name: `Error Test Company ${Date.now()}`,
+    description: 'Test company for error handling scenarios',
+  };
+
+  const personData = {
+    first_name: 'Error',
+    last_name: 'Test Person',
+    email_address: `error.test.${Date.now()}@example.com`,
+  };
+
+  const taskData = {
+    content: `Error test task ${Date.now()}`,
+    due_date: '2024-12-31',
+  };
+
   beforeAll(async () => {
     config = loadE2EConfig();
     console.error(
@@ -44,6 +71,7 @@ describe.skipIf(
     );
 
     // Validate test environment is ready
+    const validation = validateTestEnvironment();
     if (!validation.valid) {
       console.warn('⚠️  Test environment warnings:', validation.warnings);
     }
@@ -133,6 +161,7 @@ describe.skipIf(
   describe('Parameter Validation and Data Format Errors', () => {
     it('should handle missing required parameters gracefully', async () => {
       // Test search without required resource_type
+      const response = (await callUniversalTool('search-records', {
         // Missing resource_type
         query: 'test',
       })) as McpToolResponse;
@@ -143,6 +172,7 @@ describe.skipIf(
     });
 
     it('should validate resource_type parameter values', async () => {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'invalid_resource_type_12345',
         query: 'test',
       })) as McpToolResponse;
@@ -154,6 +184,7 @@ describe.skipIf(
 
     it('should handle invalid record IDs gracefully', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.generic,
       })) as McpToolResponse;
@@ -166,6 +197,7 @@ describe.skipIf(
     });
 
     it('should validate limit parameters', async () => {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'test',
         limit: -5, // Invalid negative limit
@@ -178,6 +210,7 @@ describe.skipIf(
     });
 
     it('should handle malformed filter objects', async () => {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         filters: 'this_should_be_an_object_not_string', // Invalid filter format
       })) as McpToolResponse;
@@ -188,11 +221,13 @@ describe.skipIf(
     });
 
     it('should validate email format in person creation', async () => {
+      const personData = {
         first_name: 'Test',
         last_name: 'Person',
         email_address: errorScenarios.invalidFormats.email.malformed,
       };
 
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'people',
         record_data: personData,
       })) as McpToolResponse;
@@ -204,7 +239,9 @@ describe.skipIf(
     });
 
     it('should handle extremely long text values', async () => {
+      const longText = 'A'.repeat(10000); // Very long description
 
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: {
           name: 'Test Company',
@@ -221,6 +258,7 @@ describe.skipIf(
   describe('Resource Not Found Scenarios', () => {
     it('should handle company not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.company,
       })) as McpToolResponse;
@@ -234,6 +272,7 @@ describe.skipIf(
 
     it('should handle person not found errors', async () => {
       // Use a valid UUID format that doesn't exist to test 404 responses
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'people',
         record_id: errorScenarios.invalidIds.person,
       })) as McpToolResponse;
@@ -246,6 +285,7 @@ describe.skipIf(
     });
 
     it('should handle task not found errors', async () => {
+      const response = (await callUniversalTool('update-record', {
         resource_type: 'tasks',
         record_id: 'invalid-task-id-12345', // Use clearly invalid ID format instead of UUID-like
         record_data: {
@@ -261,6 +301,7 @@ describe.skipIf(
     });
 
     it('should handle list not found errors', async () => {
+      const response = (await callUniversalTool('get-record-details', {
         resource_type: 'lists',
         record_id: errorScenarios.invalidIds.list,
       })) as McpToolResponse;
@@ -273,6 +314,7 @@ describe.skipIf(
     });
 
     it('should handle note not found errors', async () => {
+      const response = (await callNotesTool('list-notes', {
         resource_type: 'companies',
         record_id: errorScenarios.invalidIds.note,
         limit: 50,
@@ -288,14 +330,17 @@ describe.skipIf(
   describe('Cross-Tool Error Propagation', () => {
     it('should handle errors when linking non-existent records', async () => {
       // First create a task
+      const taskResponse = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: taskData,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
+        const taskId = taskResponse.content?.id?.task_id;
 
         if (taskId) {
           // Try to link to non-existent company
+          const linkResponse = (await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
@@ -319,6 +364,7 @@ describe.skipIf(
 
     it('should handle cascading tool failures', async () => {
       // Test scenario where one tool failure could affect another
+      const companyResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: {
           // Missing required field to trigger error
@@ -331,6 +377,7 @@ describe.skipIf(
 
       if (companyResponse.isError) {
         // Try to create a note for the failed company creation
+        const noteResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: 'non-existent-company-id',
           title: 'Test Note',
@@ -353,6 +400,7 @@ describe.skipIf(
       }
 
       // Attempt concurrent updates to the same record
+      const operations = [
         () =>
           callUniversalTool('update-record', {
             resource_type: 'companies',
@@ -372,6 +420,7 @@ describe.skipIf(
           }),
       ];
 
+      const results = await Promise.allSettled(operations.map(op => op()));
 
       // All operations should complete (some may fail due to conflicts, which is acceptable)
       results.forEach((result, index) => {
@@ -384,6 +433,7 @@ describe.skipIf(
 
     it('should handle batch operation partial failures', async () => {
       // Create a mix of valid and invalid operations
+      const batchOperations = [
         // Valid operation
         () =>
           callUniversalTool('search-records', {
@@ -406,9 +456,15 @@ describe.skipIf(
           }),
       ];
 
+      const results = await Promise.allSettled(
         batchOperations.map((op) => op())
       );
 
+      const analysis = {
+        total: results.length,
+        successful: results.filter((r) => r.status === 'fulfilled').length,
+        failed: results.filter((r) => r.status === 'rejected').length,
+      };
 
       expect(analysis.total).toBe(3);
       expect(analysis.successful + analysis.failed).toBe(3);

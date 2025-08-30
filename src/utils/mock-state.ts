@@ -88,13 +88,14 @@ export function updateMockCompany(
   }
 
   // Merge the new attributes with existing values
+  const mergedValues = {
     ...existingCompany.values,
     ...attributes,
   };
 
   const updatedCompany: Company = {
     ...existingCompany,
-    values: updatedValues,
+    values: mergedValues,
   };
 
   mockCompanyStorage.set(companyId, updatedCompany);

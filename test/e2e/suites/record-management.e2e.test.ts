@@ -118,6 +118,12 @@ describe.skipIf(
   describe('Universal Record Operations', () => {
     it('should create records across different resource types', async () => {
       // Create company record
+      const companyData = {
+        name: `Universal Test Company ${Date.now()}`,
+        description: 'Test company for universal record operations',
+      };
+
+      const companyResponse = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'companies',
           record_data: companyData as any,
@@ -125,11 +131,19 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(companyResponse);
+      const company = companyResponse.content;
       E2EAssertions.expectCompanyRecord(company);
       testCompaniesRecord.push(company);
       createdRecords.push(company);
 
       // Create person record
+      const personData = {
+        first_name: 'Universal',
+        last_name: `Test Person ${Date.now()}`,
+        email_address: `universal.test.${Date.now()}@example.com`,
+      };
+
+      const personResponse = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'people',
           record_data: personData as any,
@@ -137,11 +151,18 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(personResponse);
+      const person = personResponse.content;
       E2EAssertions.expectPersonRecord(person);
       testPeopleRecord.push(person);
       createdRecords.push(person);
 
       // Create task record
+      const taskData = {
+        content: `Universal test task ${Date.now()}`,
+        due_date: '2024-12-31',
+      };
+
+      const taskResponse = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'tasks',
           record_data: {
@@ -152,6 +173,7 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(taskResponse);
+      const task = taskResponse.content;
       E2EAssertions.expectTaskRecord(task);
       createdTasks.push(task);
       createdRecords.push(task);
@@ -182,8 +204,9 @@ describe.skipIf(
         }
 
         if (resourceType) {
-            (record as any).id?.record_id || (record as any).id?.task_id;
+          const recordId = (record as any).id?.record_id || (record as any).id?.task_id;
 
+          const response = asToolResponse(
             await callUniversalTool('get-record-details', {
               resource_type: resourceType as any,
               record_id: recordId,
@@ -191,6 +214,7 @@ describe.skipIf(
           );
 
           E2EAssertions.expectMcpSuccess(response);
+          const retrievedRecord = response.content;
           expect(retrievedRecord).toBeDefined();
 
           console.error(`✅ Retrieved ${resourceType} record details`);
@@ -204,12 +228,13 @@ describe.skipIf(
         return;
       }
 
-
+      const companyId = testCompaniesRecord[0]?.id?.record_id;
       if (!companyId) {
         console.error('⏭️ Skipping update test - invalid company ID');
         return;
       }
 
+      const response = asToolResponse(
         await callUniversalTool('update-record', {
           resource_type: 'companies',
           record_id: companyId,
@@ -220,6 +245,7 @@ describe.skipIf(
       );
 
       E2EAssertions.expectMcpSuccess(response);
+      const updatedRecord = response.content;
       expect(updatedRecord).toBeDefined();
 
       console.error('✅ Updated record with universal pattern');

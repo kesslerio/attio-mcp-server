@@ -10,15 +10,28 @@
 
 import type { McpToolResponse } from './assertions.js';
 
+/**
+ * Safely extracts a record ID from MCP tool response
+ */
+export function extractRecordId(response: McpToolResponse): string | undefined {
+  const content = response.content;
+  if (!content) return undefined;
+
+  // Handle content array structure
+  const firstItem = Array.isArray(content) ? content[0] : content;
+  if (!firstItem) return undefined;
+
   // Handle text-based responses (E2E mode format)
   if (firstItem?.text && typeof firstItem.text === 'string') {
     // Try to extract ID from formatted text like "Created company "Name" (ID: abc-123-def)"
+    const idMatch = firstItem.text.match(/ID:\s*([a-zA-Z0-9-_]+)/);
     if (idMatch && idMatch[1]) {
       return idMatch[1];
     }
 
     // Try to parse JSON if the text is a JSON string
     try {
+      const parsed = JSON.parse(firstItem.text);
       if (parsed?.id?.record_id) {
         return parsed.id.record_id;
       }
@@ -28,7 +41,7 @@ import type { McpToolResponse } from './assertions.js';
   }
 
   // Handle data-based responses (backward compatibility)
-  return data?.id?.record_id || undefined;
+  return firstItem?.id?.record_id || undefined;
 }
 
 /**
@@ -42,6 +55,13 @@ export function hasValidContent(response: McpToolResponse): boolean {
     Array.isArray(response.content) &&
     response.content.length > 0
   );
+}
+
+/**
+ * Creates a test UUID for testing invalid ID scenarios
+ */
+export function createTestUuid(): string {
+  return 'invalid-test-uuid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 }
 
 /**
