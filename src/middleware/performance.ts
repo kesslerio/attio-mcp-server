@@ -17,7 +17,7 @@ export interface PerformanceMetrics {
   duration: number;
   success: boolean;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -83,7 +83,7 @@ export class PerformanceTracker {
    */
   static startOperation(
     toolName: string,
-    _metadata?: Record<string, any>
+    _metadata?: Record<string, unknown>
   ): number {
     if (!this.enabled) return 0;
 
@@ -120,7 +120,7 @@ export class PerformanceTracker {
     startTime: number,
     success: boolean = true,
     error?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): PerformanceMetrics {
     if (!this.enabled) {
       return {
@@ -289,7 +289,7 @@ export class PerformanceTracker {
   static async measureAsync<T>(
     toolName: string,
     fn: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     const startTime = this.startOperation(toolName, metadata);
 
@@ -315,7 +315,7 @@ export class PerformanceTracker {
   static measure<T>(
     toolName: string,
     fn: () => T,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): T {
     const startTime = this.startOperation(toolName, metadata);
 

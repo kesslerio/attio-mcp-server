@@ -133,7 +133,7 @@ export function extractBatchResults<T = AttioRecord>(
   }
 
   // Fallback for malformed responses
-  const obj = response as Record<string, unknown>;
+  const obj = response as Record<string, any>;
   if (Array.isArray(obj?.results)) {
     return obj.results as BatchItemResult<T>[];
   }

@@ -39,6 +39,7 @@ import { initializeAttioClient } from './api/attio-client.js';
 import { registerResourceHandlers } from './handlers/resources.js';
 import { registerToolHandlers } from './handlers/tools/index.js';
 import { registerPromptHandlers } from './prompts/handlers.js';
+import { error as logError, warn, OperationType } from './utils/logger.js';
 
 // Use /tmp directory for PID file, which is generally writable
 const PID_FILE_PATH = '/tmp/attio-mcp-server.pid'; // Define PID file path
@@ -222,14 +223,14 @@ async function main() {
       process.on('SIGTERM', cleanup);
     }
   } catch (error: unknown) {
-    console.error('[Main] Error starting server:', error); // Changed to console.error
+    logError('main', 'Server startup failed', error, { pid: process.pid }, 'server-startup', OperationType.SYSTEM);
     deletePidFile(); // Ensure PID file is deleted on error
     process.exit(1);
   }
 }
 
 main().catch((error) => {
-  console.error('[Main] Unhandled error in main:', error); // Changed log message
+  logError('main', 'Unhandled error in main process', error, { pid: process.pid }, 'main-unhandled', OperationType.SYSTEM);
   deletePidFile(); // Ensure PID file is deleted on error
   process.exit(1);
 });

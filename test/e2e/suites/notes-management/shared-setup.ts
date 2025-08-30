@@ -2,9 +2,7 @@
  * Shared setup and imports for Notes Management E2E Tests
  */
 
-import {
-  vi,
-} from 'vitest';
+import { vi } from 'vitest';
 import { E2ETestBase } from '../../setup.js';
 import { E2EAssertions } from '../../utils/assertions.js';
 import {

@@ -169,7 +169,10 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       if (failureCount > 0) {
         const failures = result.filter((r: any) => !r.success);
-        console.warn(`Batch operation failures:`, failures.map((f) => f.error).join(', '));
+        console.warn(
+          `Batch operation failures:`,
+          failures.map((f) => f.error).join(', ')
+        );
       }
 
       // 10 records should complete reasonably quickly with parallelization
@@ -221,7 +224,10 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       if (failureCount > 0) {
         const failures = result.filter((r: any) => !r.success);
-        console.warn(`Batch operation failures:`, failures.map((f) => f.error).join(', '));
+        console.warn(
+          `Batch operation failures:`,
+          failures.map((f) => f.error).join(', ')
+        );
       }
 
       // 25 records should still complete in reasonable time
@@ -273,7 +279,10 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       if (failureCount > 0) {
         const failures = result.filter((r: any) => !r.success);
-        console.warn(`Batch operation failures:`, failures.map((f) => f.error).join(', '));
+        console.warn(
+          `Batch operation failures:`,
+          failures.map((f) => f.error).join(', ')
+        );
       }
 
       // Maximum batch should complete within budget

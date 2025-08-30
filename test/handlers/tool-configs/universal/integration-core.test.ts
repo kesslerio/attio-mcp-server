@@ -4,9 +4,7 @@ import { config } from 'dotenv';
 // Load environment variables from .env file before any imports
 config();
 
-import {
-  coreOperationsToolConfigs,
-} from '../../../../src/handlers/tool-configs/universal/index.js';
+import { coreOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
 import {
   UniversalResourceType,
   DetailedInfoType,
@@ -33,7 +31,7 @@ describe('Universal Tools Core Integration Tests', () => {
   const integrationSetup = IntegrationTestSetup.getInstance();
   const dataManager = new IntegrationTestDataManager();
   const testIdentifiers = dataManager.getTestIdentifiers();
-  
+
   const testCompanyName = `Universal Test Company ${testIdentifiers.timestamp}-${testIdentifiers.randomId}`;
   const testPersonEmail = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}@example.com`;
   const testDomain = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}.com`;
@@ -45,7 +43,7 @@ describe('Universal Tools Core Integration Tests', () => {
     // Initialize the API client and verify tool configurations
     await integrationSetup.initializeApiClient();
     const toolConfigs = await integrationSetup.verifyToolConfigs();
-    
+
     console.log('Core operations tools:', toolConfigs.coreOperations);
     integrationConfig.logEnvironment();
   });
@@ -53,10 +51,16 @@ describe('Universal Tools Core Integration Tests', () => {
   afterAll(async () => {
     // Clean up created test data using the data manager
     if (createdCompanyId) {
-      dataManager.trackCreatedRecord(UniversalResourceType.COMPANIES, createdCompanyId);
+      dataManager.trackCreatedRecord(
+        UniversalResourceType.COMPANIES,
+        createdCompanyId
+      );
     }
     if (createdPersonId) {
-      dataManager.trackCreatedRecord(UniversalResourceType.PEOPLE, createdPersonId);
+      dataManager.trackCreatedRecord(
+        UniversalResourceType.PEOPLE,
+        createdPersonId
+      );
     }
 
     try {

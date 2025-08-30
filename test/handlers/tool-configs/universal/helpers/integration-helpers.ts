@@ -1,21 +1,21 @@
 /**
  * Integration and performance test helpers for universal tools
- * 
+ *
  * This file provides specialized helpers for real API integration tests
  * and performance testing scenarios. Unlike the mock-based helpers,
  * these work with real API calls and data.
- * 
+ *
  * Used by: integration.test.ts, performance.test.ts
  */
 
 import { config } from 'dotenv';
-import { 
+import {
   UniversalResourceType,
   BatchOperationType,
 } from '../../../../../src/handlers/tool-configs/universal/types.js';
-import { 
-  TEST_ENVIRONMENT, 
-  TEST_TIMEOUTS, 
+import {
+  TEST_ENVIRONMENT,
+  TEST_TIMEOUTS,
   PERFORMANCE_BUDGETS,
   BATCH_LIMITS,
   CLEANUP_DELAYS,
@@ -32,7 +32,7 @@ config();
 export class IntegrationTestSetup {
   private static instance: IntegrationTestSetup;
   private apiClient: any = null;
-  
+
   static getInstance(): IntegrationTestSetup {
     if (!IntegrationTestSetup.instance) {
       IntegrationTestSetup.instance = new IntegrationTestSetup();
@@ -45,7 +45,9 @@ export class IntegrationTestSetup {
    */
   async initializeApiClient(): Promise<void> {
     if (!process.env.ATTIO_API_KEY) {
-      throw new Error('ATTIO_API_KEY environment variable is required for integration tests');
+      throw new Error(
+        'ATTIO_API_KEY environment variable is required for integration tests'
+      );
     }
 
     const { initializeAttioClient } = await import(
@@ -72,9 +74,10 @@ export class IntegrationTestSetup {
     advancedOperations: string[];
   }> {
     try {
-      const { coreOperationsToolConfigs, advancedOperationsToolConfigs } = await import(
-        '../../../../../src/handlers/tool-configs/universal/index.js'
-      );
+      const { coreOperationsToolConfigs, advancedOperationsToolConfigs } =
+        await import(
+          '../../../../../src/handlers/tool-configs/universal/index.js'
+        );
 
       const coreTools = Object.keys(coreOperationsToolConfigs || {});
       const advancedTools = Object.keys(advancedOperationsToolConfigs || {});
@@ -159,7 +162,7 @@ export class IntegrationTestDataManager {
    */
   async cleanupTrackedRecords(toolConfigs: any): Promise<void> {
     const allRecords = this.getAllTrackedRecords();
-    
+
     for (const [resourceType, recordIds] of allRecords) {
       if (recordIds.length === 0) continue;
 
@@ -172,14 +175,18 @@ export class IntegrationTestDataManager {
    * Cleanup specific records in batches
    */
   private async cleanupRecords(
-    resourceType: string, 
-    recordIds: string[], 
+    resourceType: string,
+    recordIds: string[],
     toolConfigs: any
   ): Promise<void> {
     try {
       // Split into batches to respect API limits
       const batches = [];
-      for (let i = 0; i < recordIds.length; i += BATCH_LIMITS.cleanupBatchSize) {
+      for (
+        let i = 0;
+        i < recordIds.length;
+        i += BATCH_LIMITS.cleanupBatchSize
+      ) {
         batches.push(recordIds.slice(i, i + BATCH_LIMITS.cleanupBatchSize));
       }
 
@@ -191,7 +198,7 @@ export class IntegrationTestDataManager {
       const cleanupPromises = batches.map(async (batch, index) => {
         // Add staggered delay to avoid overwhelming the API
         if (index > 0) {
-          await new Promise(resolve => 
+          await new Promise((resolve) =>
             setTimeout(resolve, index * BATCH_LIMITS.staggerDelayMs)
           );
         }
@@ -205,7 +212,7 @@ export class IntegrationTestDataManager {
           });
         } else if (toolConfigs['delete-record']) {
           // Fallback to individual delete operations
-          const deletePromises = batch.map(recordId =>
+          const deletePromises = batch.map((recordId) =>
             toolConfigs['delete-record'].handler({
               resource_type: resourceType,
               record_id: recordId,
@@ -242,7 +249,7 @@ export class PerformanceTestRunner {
     budgetKey?: keyof typeof PERFORMANCE_BUDGETS
   ): Promise<{ result: T; duration: number }> {
     const startTime = Date.now();
-    
+
     try {
       const result = await testFn();
       const endTime = Date.now();
@@ -281,7 +288,11 @@ export class PerformanceTestRunner {
   /**
    * Assert performance meets budget requirements
    */
-  private assertPerformanceBudget(testName: string, duration: number, budget: number): void {
+  private assertPerformanceBudget(
+    testName: string,
+    duration: number,
+    budget: number
+  ): void {
     if (duration > budget) {
       const percentage = ((duration / budget) * 100).toFixed(1);
       throw new Error(
@@ -318,9 +329,10 @@ export class PerformanceTestRunner {
     const min = sorted[0];
     const max = sorted[sorted.length - 1];
     const average = results.reduce((sum, val) => sum + val, 0) / count;
-    const median = count % 2 === 0 
-      ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-      : sorted[Math.floor(count / 2)];
+    const median =
+      count % 2 === 0
+        ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
+        : sorted[Math.floor(count / 2)];
 
     return { count, min, max, average, median };
   }
@@ -330,7 +342,7 @@ export class PerformanceTestRunner {
    */
   generatePerformanceReport(): string {
     const lines = ['Performance Test Results:', '========================'];
-    
+
     for (const [testName, results] of this.results) {
       const stats = this.getPerformanceStats(testName);
       if (stats) {
@@ -402,7 +414,7 @@ export const integrationUtils = {
    * Wait for API indexing
    */
   waitForIndexing: (ms: number = CLEANUP_DELAYS.apiIndexing): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   },
 
   /**
@@ -415,48 +427,58 @@ export const integrationUtils = {
     operationName?: string
   ): Promise<T> => {
     let lastError: any;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error;
-        
+
         if (attempt === maxRetries) {
           if (operationName) {
-            console.error(`${operationName} failed after ${maxRetries} attempts:`, error);
+            console.error(
+              `${operationName} failed after ${maxRetries} attempts:`,
+              error
+            );
           }
           throw error;
         }
-        
+
         const delay = baseDelayMs * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
         if (operationName) {
-          console.log(`Retry ${operationName} (attempt ${attempt}/${maxRetries}) after ${delay}ms delay`);
+          console.log(
+            `Retry ${operationName} (attempt ${attempt}/${maxRetries}) after ${delay}ms delay`
+          );
         }
       }
     }
-    
+
     throw lastError;
   },
 
   /**
    * Extract successful batch operation results
    */
-  extractSuccessfulResults: (batchResults: Array<{ success: boolean; result?: any; error?: string }>): any[] => {
+  extractSuccessfulResults: (
+    batchResults: Array<{ success: boolean; result?: any; error?: string }>
+  ): any[] => {
     return batchResults
-      .filter(result => result.success && result.result)
-      .map(result => result.result);
+      .filter((result) => result.success && result.result)
+      .map((result) => result.result);
   },
 
   /**
    * Extract record IDs from batch results
    */
-  extractRecordIds: (batchResults: Array<{ success: boolean; result?: any }>): string[] => {
-    return integrationUtils.extractSuccessfulResults(batchResults)
-      .filter(result => result.id?.record_id)
-      .map(result => result.id.record_id);
+  extractRecordIds: (
+    batchResults: Array<{ success: boolean; result?: any }>
+  ): string[] => {
+    return integrationUtils
+      .extractSuccessfulResults(batchResults)
+      .filter((result) => result.id?.record_id)
+      .map((result) => result.id.record_id);
   },
 
   /**
@@ -468,19 +490,19 @@ export const integrationUtils = {
     duration?: number
   ): void => {
     const total = results.length;
-    const successful = results.filter(r => r.success).length;
+    const successful = results.filter((r) => r.success).length;
     const failed = total - successful;
-    
+
     console.log(
       `${operation}: ${successful}/${total} successful${duration ? ` (${duration}ms)` : ''}`
     );
-    
+
     if (failed > 0) {
       const errors = results
-        .filter(r => !r.success)
-        .map(r => r.error)
+        .filter((r) => !r.success)
+        .map((r) => r.error)
         .slice(0, 3); // Show first 3 errors
-      
+
       console.warn(`Failed operations (${failed}):`, errors.join(', '));
     }
   },

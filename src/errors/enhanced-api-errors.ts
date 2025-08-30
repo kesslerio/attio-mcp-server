@@ -37,6 +37,8 @@ export interface ErrorContext {
   retryable?: boolean;
   /** Original error for debugging */
   originalError?: Error;
+  /** Server response data for debugging */
+  serverData?: any;
 }
 
 /**

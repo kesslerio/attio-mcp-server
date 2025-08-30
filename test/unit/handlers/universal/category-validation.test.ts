@@ -15,8 +15,8 @@ import {
   validateCategories,
   processCategories,
   getValidCategories,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
+import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 describe('Category Validation System (Issues #220/#218)', () => {
   describe('validateCategories() - Core Validation Logic', () => {

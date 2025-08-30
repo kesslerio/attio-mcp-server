@@ -152,7 +152,10 @@ export async function handleUniversalGetNotes(
   }
 
   try {
-    const response = await client.get(`/v2/notes?${queryParams}`);
+    // Lightweight debug trace to aid E2E diagnostics
+    console.error('[list-notes] GET', `/notes?${queryParams.toString()}`);
+    // Base URL already includes /v2, so use relative path
+    const response = await client.get(`/notes?${queryParams}`);
     const rawList = unwrapAttio<any>(response);
 
     // Handle both array responses and nested data arrays
@@ -201,7 +204,7 @@ export async function handleUniversalUpdateNote(
   const { note_id, title, content, is_archived } = params;
   const client = getAttioClient();
 
-  const updateData: Record<string, any> = {};
+  const updateData: Record<string, unknown> = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;

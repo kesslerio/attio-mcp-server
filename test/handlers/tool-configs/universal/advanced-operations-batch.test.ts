@@ -1,51 +1,55 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Hoist mocks to the top level
-vi.mock('../../../../src/handlers/tool-configs/universal/shared-handlers.js', () => ({
-  handleUniversalSearch: vi.fn(),
-  handleUniversalGetDetails: vi.fn(),
-  handleUniversalCreate: vi.fn(),
-  handleUniversalUpdate: vi.fn(),
-  handleUniversalDelete: vi.fn(),
-  handleUniversalGetAttributes: vi.fn(),
-  handleUniversalDiscoverAttributes: vi.fn(),
-  handleUniversalGetDetailedInfo: vi.fn(),
-  formatResourceType: vi.fn((type: string) => {
-    switch (type) {
-      case 'companies':
-        return 'company';
-      case 'people':
-        return 'person';
-      case 'records':
-        return 'record';
-      case 'tasks':
-        return 'task';
-      default:
-        return type;
-    }
-  }),
-  getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
-  createUniversalError: vi.fn(
-    (operation: string, resourceType: string, error: any) =>
-      new Error(
-        `${operation} failed for ${resourceType}: ${error.message || error}`
-      )
-  ),
-}));
-
-vi.mock('../../../../src/handlers/tool-configs/universal/schemas.js', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    validateUniversalToolParams: vi.fn((operation: string, params: any) => {
-      return params || {};
+vi.mock(
+  '../../../../src/handlers/tool-configs/universal/shared-handlers.js',
+  () => ({
+    handleUniversalSearch: vi.fn(),
+    handleUniversalGetDetails: vi.fn(),
+    handleUniversalCreate: vi.fn(),
+    handleUniversalUpdate: vi.fn(),
+    handleUniversalDelete: vi.fn(),
+    handleUniversalGetAttributes: vi.fn(),
+    handleUniversalDiscoverAttributes: vi.fn(),
+    handleUniversalGetDetailedInfo: vi.fn(),
+    formatResourceType: vi.fn((type: string) => {
+      switch (type) {
+        case 'companies':
+          return 'company';
+        case 'people':
+          return 'person';
+        case 'records':
+          return 'record';
+        case 'tasks':
+          return 'task';
+        default:
+          return type;
+      }
     }),
-  };
-});
+    getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
+    createUniversalError: vi.fn(
+      (operation: string, resourceType: string, error: any) =>
+        new Error(
+          `${operation} failed for ${resourceType}: ${error.message || error}`
+        )
+    ),
+  })
+);
 
-import {
-  batchOperationsConfig,
-} from '../../../../src/handlers/tool-configs/universal/advanced-operations.js';
+vi.mock(
+  '../../../../src/handlers/tool-configs/universal/schemas.js',
+  async (importOriginal) => {
+    const actual = (await importOriginal()) as any;
+    return {
+      ...actual,
+      validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+        return params || {};
+      }),
+    };
+  }
+);
+
+import { batchOperationsConfig } from '../../../../src/handlers/tool-configs/universal/advanced-operations.js';
 import {
   UniversalResourceType,
   BatchOperationType,
@@ -63,8 +67,10 @@ describe('Universal Advanced Operations - Batch Tests', () => {
 
   describe('batch-operations tool', () => {
     it('should handle batch create operations', async () => {
-      const mockHandleUniversalCreate = vi.mocked(sharedHandlers.handleUniversalCreate);
-      
+      const mockHandleUniversalCreate = vi.mocked(
+        sharedHandlers.handleUniversalCreate
+      );
+
       mockHandleUniversalCreate
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
@@ -92,8 +98,10 @@ describe('Universal Advanced Operations - Batch Tests', () => {
     });
 
     it('should handle batch update operations', async () => {
-      const mockHandleUniversalUpdate = vi.mocked(sharedHandlers.handleUniversalUpdate);
-      
+      const mockHandleUniversalUpdate = vi.mocked(
+        sharedHandlers.handleUniversalUpdate
+      );
+
       mockHandleUniversalUpdate
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
@@ -118,8 +126,10 @@ describe('Universal Advanced Operations - Batch Tests', () => {
     });
 
     it('should handle batch delete operations', async () => {
-      const mockHandleUniversalDelete = vi.mocked(sharedHandlers.handleUniversalDelete);
-      
+      const mockHandleUniversalDelete = vi.mocked(
+        sharedHandlers.handleUniversalDelete
+      );
+
       mockHandleUniversalDelete
         .mockResolvedValueOnce({ success: true, record_id: 'comp-1' })
         .mockResolvedValueOnce({ success: true, record_id: 'comp-2' });
@@ -138,8 +148,10 @@ describe('Universal Advanced Operations - Batch Tests', () => {
     });
 
     it('should handle batch get operations', async () => {
-      const mockHandleUniversalGetDetails = vi.mocked(sharedHandlers.handleUniversalGetDetails);
-      
+      const mockHandleUniversalGetDetails = vi.mocked(
+        sharedHandlers.handleUniversalGetDetails
+      );
+
       mockHandleUniversalGetDetails
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
@@ -174,7 +186,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         },
       ];
 
-      const mockHandleUniversalSearch = vi.mocked(sharedHandlers.handleUniversalSearch);
+      const mockHandleUniversalSearch = vi.mocked(
+        sharedHandlers.handleUniversalSearch
+      );
       mockHandleUniversalSearch.mockResolvedValue(mockResults);
 
       const params: BatchOperationsParams = {
@@ -220,7 +234,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         },
       ];
 
-      const mockFormatResourceType = vi.mocked(sharedHandlers.formatResourceType);
+      const mockFormatResourceType = vi.mocked(
+        sharedHandlers.formatResourceType
+      );
       mockFormatResourceType.mockReturnValue('company');
 
       const formatted = batchOperationsConfig.formatResult(
@@ -250,7 +266,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         },
       ];
 
-      const mockFormatResourceType = vi.mocked(sharedHandlers.formatResourceType);
+      const mockFormatResourceType = vi.mocked(
+        sharedHandlers.formatResourceType
+      );
       mockFormatResourceType.mockReturnValue('company');
 
       const formatted = batchOperationsConfig.formatResult(
@@ -289,8 +307,10 @@ describe('Universal Advanced Operations - Batch Tests', () => {
 
   describe('Error handling and edge cases', () => {
     it('should handle validation errors in batch operations', async () => {
-      const mockValidateUniversalToolParams = vi.mocked(schemas.validateUniversalToolParams);
-      
+      const mockValidateUniversalToolParams = vi.mocked(
+        schemas.validateUniversalToolParams
+      );
+
       // Store the original mock implementation to restore it later
       const originalMock = mockValidateUniversalToolParams;
 
@@ -304,7 +324,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         records: [],
       };
 
-      await expect(batchOperationsConfig.handler(params)).rejects.toThrow('Validation failed');
+      await expect(batchOperationsConfig.handler(params)).rejects.toThrow(
+        'Validation failed'
+      );
 
       // Restore the original mock behavior to not affect other tests
       mockValidateUniversalToolParams.mockImplementation(
@@ -323,14 +345,16 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         BatchOperationType.SEARCH,
         UniversalResourceType.COMPANIES
       );
-      
+
       expect(formatted).toContain('Batch search found 0');
     });
   });
 
   describe('Concurrency and performance', () => {
     it('should handle batch operations with controlled concurrency', async () => {
-      const mockHandleUniversalCreate = vi.mocked(sharedHandlers.handleUniversalCreate);
+      const mockHandleUniversalCreate = vi.mocked(
+        sharedHandlers.handleUniversalCreate
+      );
 
       // Mock delay to test concurrency
       mockHandleUniversalCreate.mockImplementation(async () => {
@@ -360,7 +384,9 @@ describe('Universal Advanced Operations - Batch Tests', () => {
 
     it('should add delays between batch chunks', async () => {
       // This test ensures that delays are added between chunks for rate limiting
-      const mockHandleUniversalCreate = vi.mocked(sharedHandlers.handleUniversalCreate);
+      const mockHandleUniversalCreate = vi.mocked(
+        sharedHandlers.handleUniversalCreate
+      );
       mockHandleUniversalCreate.mockResolvedValue({
         id: { record_id: 'test' },
         values: {},

@@ -62,16 +62,40 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
       // Create the company with industry field
       const createdCompany = await createCompany(companyData);
-      testCompanies.push(createdCompany.id.record_id);
 
       // Verify the company was created with the industry
       expect(createdCompany).toBeDefined();
       expect(createdCompany.id?.record_id).toBeDefined();
 
+      // Add to cleanup list only if we have a valid record ID
+      if (createdCompany.id?.record_id) {
+        testCompanies.push(createdCompany.id.record_id);
+      } else {
+        console.error(
+          'WARNING: Created company missing ID structure:',
+          createdCompany
+        );
+      }
+
       // Get fresh company details to verify mapping
-      const companyDetails = await getCompanyDetails(
-        createdCompany.id.record_id
+      console.log(
+        'DEBUG: About to call getCompanyDetails with ID:',
+        createdCompany.id!.record_id
       );
+      const companyDetails = await getCompanyDetails(
+        createdCompany.id!.record_id
+      );
+      console.log('DEBUG: getCompanyDetails returned:', companyDetails);
+
+      // Debug: Log what getCompanyDetails returned
+      console.log('DEBUG: getCompanyDetails returned:', {
+        companyDetails,
+        hasValues: !!companyDetails?.values,
+        companyDetailsType: typeof companyDetails,
+        companyDetailsKeys: companyDetails
+          ? Object.keys(companyDetails)
+          : 'null/undefined',
+      });
 
       // Check if the industry field exists and has the correct value
       expect(companyDetails?.values).toBeDefined();
@@ -82,7 +106,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
       // Log for debugging
       console.log('Created company with industry:', {
-        companyId: createdCompany.id.record_id,
+        companyId: createdCompany.id?.record_id,
         industryValue: industryValue,
         allValues: companyDetails.values,
       });
@@ -114,21 +138,34 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       };
 
       const createdCompany = await createCompany(companyData);
-      testCompanies.push(createdCompany.id.record_id);
+
+      // Verify the company was created properly
+      expect(createdCompany).toBeDefined();
+      expect(createdCompany.id?.record_id).toBeDefined();
+
+      // Add to cleanup list only if we have a valid record ID
+      if (createdCompany.id?.record_id) {
+        testCompanies.push(createdCompany.id.record_id);
+      } else {
+        console.error(
+          'WARNING: Created company missing ID structure:',
+          createdCompany
+        );
+      }
 
       // Now update it with an industry
       const updateIndustry = 'Healthcare & Medical';
-      const updatedCompany = await updateCompany(createdCompany.id.record_id, {
+      const updatedCompany = await updateCompany(createdCompany.id!.record_id, {
         industry: updateIndustry,
       });
 
       // Verify the update was successful
       expect(updatedCompany).toBeDefined();
-      expect(updatedCompany.id?.record_id).toBe(createdCompany.id.record_id);
+      expect(updatedCompany.id?.record_id).toBe(createdCompany.id!.record_id);
 
       // Get fresh details to verify the industry mapping
       const companyDetails = await getCompanyDetails(
-        createdCompany.id.record_id
+        createdCompany.id!.record_id
       );
       const industryValue = companyDetails.values?.industry;
 
@@ -136,7 +173,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
       // Log for debugging
       console.log('Updated company industry:', {
-        companyId: createdCompany.id.record_id,
+        companyId: createdCompany.id?.record_id,
         industryValue: industryValue,
         updateIndustry: updateIndustry,
       });
@@ -171,15 +208,28 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
       try {
         const createdCompany = await createCompany(companyData);
-        testCompanies.push(createdCompany.id.record_id);
+
+        // Verify the company was created properly
+        expect(createdCompany).toBeDefined();
+        expect(createdCompany.id?.record_id).toBeDefined();
+
+        // Add to cleanup list only if we have a valid record ID
+        if (createdCompany.id?.record_id) {
+          testCompanies.push(createdCompany.id.record_id);
+        } else {
+          console.error(
+            'WARNING: Created company missing ID structure:',
+            createdCompany
+          );
+        }
 
         const companyDetails = await getCompanyDetails(
-          createdCompany.id.record_id
+          createdCompany.id!.record_id
         );
         const industryValue = companyDetails.values?.industry;
 
         console.log('Multi-industry company created:', {
-          companyId: createdCompany.id.record_id,
+          companyId: createdCompany.id?.record_id,
           inputIndustries: testIndustries,
           resultIndustry: industryValue,
         });
@@ -202,16 +252,29 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         };
 
         const createdCompany = await createCompany(singleIndustryData);
-        testCompanies.push(createdCompany.id.record_id);
+
+        // Verify the company was created properly
+        expect(createdCompany).toBeDefined();
+        expect(createdCompany.id?.record_id).toBeDefined();
+
+        // Add to cleanup list only if we have a valid record ID
+        if (createdCompany.id?.record_id) {
+          testCompanies.push(createdCompany.id.record_id);
+        } else {
+          console.error(
+            'WARNING: Created company missing ID structure:',
+            createdCompany
+          );
+        }
 
         const companyDetails = await getCompanyDetails(
-          createdCompany.id.record_id
+          createdCompany.id!.record_id
         );
         const industryFieldValues = companyDetails.values?.industry;
 
         expect(industryFieldValues).toBeDefined();
         console.log('Fallback single industry company:', {
-          companyId: createdCompany.id.record_id,
+          companyId: createdCompany.id?.record_id,
           industry: industryFieldValues,
         });
       }

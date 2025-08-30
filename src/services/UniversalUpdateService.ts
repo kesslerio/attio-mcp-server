@@ -530,10 +530,13 @@ export class UniversalUpdateService {
     const hasForbiddenFields = this.hasForbiddenContent(attioPayload.values);
 
     // 2) Check existence - only if input validation passes
-    let taskExists = false;
+    let taskExists = true;
     try {
-      await getTask(record_id); // calls GET /tasks/{id}
-      taskExists = true;
+      const { MockService } = await import('./MockService.js');
+      // In mock mode, skip live existence check; otherwise verify via API
+      if (!MockService.isUsingMockData()) {
+        await getTask(record_id); // calls GET /tasks/{id}
+      }
     } catch (error: unknown) {
       // Task doesn't exist → return 404 immediately, don't check immutability
       throw {
@@ -579,7 +582,28 @@ export class UniversalUpdateService {
 
     // Handle assignee field
     if (mappedData.assignees !== undefined) {
-      taskUpdateData.assigneeId = mappedData.assignees;
+      const value = mappedData.assignees as any;
+      let assigneeId: string | undefined;
+      if (Array.isArray(value)) {
+        const first = value[0];
+        if (typeof first === 'string') assigneeId = first;
+        else if (first && typeof first === 'object') {
+          assigneeId =
+            (first as any).referenced_actor_id ||
+            (first as any).id ||
+            (first as any).record_id ||
+            (first as any).value;
+        }
+      } else if (typeof value === 'string') {
+        assigneeId = value;
+      } else if (value && typeof value === 'object') {
+        assigneeId =
+          (value as any).referenced_actor_id ||
+          (value as any).id ||
+          (value as any).record_id ||
+          (value as any).value;
+      }
+      if (assigneeId) taskUpdateData.assigneeId = assigneeId;
     } else if (mappedData.assignee_id !== undefined) {
       taskUpdateData.assigneeId = mappedData.assignee_id;
     } else if (mappedData.assigneeId !== undefined) {
@@ -615,6 +639,22 @@ export class UniversalUpdateService {
       taskUpdateData.recordIds = [mappedData.record_id];
     }
 
+    // Debug before update
+    try {
+      const { logTaskDebug, sanitizePayload } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'updateRecord',
+        'Task update data',
+        sanitizePayload({
+          record_id,
+          mappedData,
+          taskUpdateData,
+        })
+      );
+    } catch {}
+
     // Use mock-enabled task update for test environments
     try {
       const updatedTask = await updateTaskWithMockSupport(
@@ -623,11 +663,20 @@ export class UniversalUpdateService {
       );
       // Convert AttioTask to AttioRecord using proper type conversion
       // Mock functions already return AttioRecord, so handle both cases
-      return shouldUseMockData()
+      const result = shouldUseMockData()
         ? updatedTask // Already an AttioRecord from mock
         : UniversalUtilityService.convertTaskToRecord(
             updatedTask as unknown as AttioTask
           );
+      try {
+        const { logTaskDebug, inspectTaskRecordShape } = await import(
+          '../utils/task-debug.js'
+        );
+        logTaskDebug('updateRecord', 'Updated task record shape', {
+          shape: inspectTaskRecordShape(result),
+        });
+      } catch {}
+      return result as AttioRecord;
     } catch (error: unknown) {
       // Handle task update API errors according to requirements
       if (error && typeof error === 'object' && 'status' in error) {

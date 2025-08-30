@@ -1,25 +1,25 @@
 /**
  * Universal Tool Test Helpers - Main Export Index
- * 
+ *
  * This file provides a centralized export point for all universal tool test helpers,
  * making it easy for test files to import exactly what they need.
- * 
+ *
  * Usage Examples:
- * 
+ *
  * // For unit tests with mocks
  * import { setupUnitTestMocks, MockRecordFactory, assertionHelpers } from './helpers';
- * 
+ *
  * // For integration tests
  * import { IntegrationTestSetup, IntegrationTestDataManager } from './helpers';
- * 
+ *
  * // For performance tests
  * import { PerformanceTestRunner, PERFORMANCE_BUDGETS } from './helpers';
- * 
+ *
  * // For mixed usage
- * import { 
- *   MockParamsFactory, 
- *   testDataHelpers, 
- *   integrationConfig 
+ * import {
+ *   MockParamsFactory,
+ *   testDataHelpers,
+ *   integrationConfig
  * } from './helpers';
  */
 
@@ -105,7 +105,7 @@ export const commonAssertions = {
   // Will be populated when needed
 };
 
-// Most commonly used test data factories  
+// Most commonly used test data factories
 export const commonFactories = {
   // Will be populated when needed
 };
@@ -113,7 +113,7 @@ export const commonFactories = {
 // Environment detection utilities
 export const testEnvironment = {
   isCI: process.env.CI === 'true',
-  shouldSkipIntegration: process.env.SKIP_INTEGRATION_TESTS === 'true', 
+  shouldSkipIntegration: process.env.SKIP_INTEGRATION_TESTS === 'true',
   shouldSkipPerformance: process.env.SKIP_PERFORMANCE_TESTS === 'true',
   multiplier: process.env.CI === 'true' ? 2.5 : 1,
 };
@@ -121,7 +121,9 @@ export const testEnvironment = {
 /**
  * Helper function to determine which helpers to use based on test type
  */
-export const getHelpersForTestType = (testType: 'unit' | 'integration' | 'performance') => {
+export const getHelpersForTestType = (
+  testType: 'unit' | 'integration' | 'performance'
+) => {
   switch (testType) {
     case 'unit':
       return {
@@ -130,7 +132,7 @@ export const getHelpersForTestType = (testType: 'unit' | 'integration' | 'perfor
         assertions: assertionHelpers,
         cleanup: cleanupMocks,
       };
-      
+
     case 'integration':
       return {
         setup: IntegrationTestSetup.getInstance(),
@@ -139,7 +141,7 @@ export const getHelpersForTestType = (testType: 'unit' | 'integration' | 'perfor
         utils: integrationUtils,
         assertions: assertionHelpers,
       };
-      
+
     case 'performance':
       return {
         runner: PerformanceTestRunner,
@@ -148,7 +150,7 @@ export const getHelpersForTestType = (testType: 'unit' | 'integration' | 'perfor
         utils: integrationUtils,
         dataFactory: IntegrationDataFactory,
       };
-      
+
     default:
       throw new Error(`Unknown test type: ${testType}`);
   }

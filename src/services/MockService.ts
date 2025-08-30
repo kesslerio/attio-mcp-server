@@ -16,6 +16,49 @@ import type { AttioRecord } from '../types/attio.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
 import { debug, error } from '../utils/logger.js';
+
+// Small utility: micro backoff for eventual consistency
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Normalizes client responses and adapts id → { id: { record_id } }.
+// Handles shapes: response | response.data | { data } | { record } | { id: string } | { record_id: string }
+function extractAttioRecord(response: any) {
+  const payload = (response && (response.data ?? response)) ?? null;
+  const maybeData = (payload && (payload.data ?? payload)) ?? null;
+
+  // Peel { record: {...} } if present
+  let rec =
+    maybeData && typeof maybeData === 'object' && 'record' in maybeData
+      ? (maybeData as any).record
+      : maybeData;
+
+  // If empty object, try to salvage from headers (e.g., Location)
+  const loc = response?.headers?.location || response?.headers?.Location;
+  if (
+    (!rec || (typeof rec === 'object' && Object.keys(rec).length === 0)) &&
+    typeof loc === 'string'
+  ) {
+    const rid = extractRecordId(loc);
+    if (rid) return { id: { record_id: rid } };
+  }
+
+  if (rec && typeof rec === 'object') {
+    const r: any = rec;
+
+    // id as string → adapt
+    if (typeof r.id === 'string') return { ...r, id: { record_id: r.id } };
+
+    // explicit record_id → adapt
+    if (
+      typeof r.record_id === 'string' &&
+      (!r.id || typeof r.id !== 'object')
+    ) {
+      return { ...r, id: { record_id: r.record_id } };
+    }
+  }
+
+  return rec;
+}
 import type {
   E2EMeta,
   UnknownRecord,
@@ -26,24 +69,22 @@ import type {
  * Environment detection for mock injection
  */
 function shouldUseMockData(): boolean {
-  // Align with objects/tasks.ts behavior: in E2E runs we prefer mocks to avoid live API dependency
-  // Allows offline CI and local runs while keeping real API available via explicit flags
-  if (process.env.E2E_MODE === 'true') {
-    // Allow forcing real API explicitly if needed
-    if (process.env.FORCE_REAL_API === 'true') return false;
-    return true;
-  }
-
-  // For other test modes, use mock data
-  if (
+  // Explicit-only: use mocks only when explicitly requested
+  // E2E runs should default to real API; offline runs use test:offline
+  const result =
     process.env.USE_MOCK_DATA === 'true' ||
     process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  ) {
-    return true;
-  }
+    process.env.PERFORMANCE_TEST === 'true';
 
-  return false;
+  console.error('[SHOULDUSEMOCKDATA]', {
+    result,
+    USE_MOCK_DATA: process.env.USE_MOCK_DATA,
+    OFFLINE_MODE: process.env.OFFLINE_MODE,
+    PERFORMANCE_TEST: process.env.PERFORMANCE_TEST,
+    E2E_MODE: process.env.E2E_MODE,
+  });
+
+  return result;
 }
 
 function shouldUseViMocks(): boolean {
@@ -95,6 +136,10 @@ export class MockService {
   static async createCompany(
     companyData: Record<string, unknown>
   ): Promise<AttioRecord> {
+    console.error(
+      '[CREATECOMPANY] ENTRY POINT - called with data:',
+      Object.keys(companyData)
+    );
     const useMocks = shouldUseMockData();
     debug('MockService', 'createCompany Environment check', {
       E2E_MODE: process.env.E2E_MODE,
@@ -106,22 +151,68 @@ export class MockService {
     });
 
     if (!useMocks) {
-      try {
-        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        debug('MockService', 'createCompany Making raw axios API call');
+      console.error('[CREATECOMPANY] Starting API call flow - not using mocks');
+      console.error('[CREATECOMPANY] Before try block');
 
-        // Create a completely fresh axios instance to bypass any mocking
+      // Declare path outside try block for scope in catch
+      let path = '/objects/companies/records';
+
+      try {
+        console.error('[CREATECOMPANY] Inside try block');
+        console.error('[CREATECOMPANY] Importing attio-client module');
+        // TEMP: Direct axios to bypass client issues and prove concept
         const axios = (await import('axios')).default;
-        const api = axios.create({
-          baseURL: 'https://api.attio.com/v2',
+        const client = axios.create({
+          baseURL: (
+            process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+          ).replace(/\/+$/, ''),
+          timeout: 20000,
           headers: {
             Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
             'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-          timeout: 30000,
+          transformResponse: [
+            (d) => {
+              try {
+                return JSON.parse(d);
+              } catch {
+                return d;
+              }
+            },
+          ],
+          validateStatus: (s) => s >= 200 && s < 300,
         });
 
-        debug('MockService', 'createCompany Raw axios instance created');
+        console.log('🧨 TEMP DIRECT CLIENT', {
+          baseURL: client.defaults.baseURL,
+        });
+        console.error('[CREATECOMPANY] Got direct client:', !!client);
+
+        // Test direct probe first
+        const probe = await client.get('/objects/companies');
+        console.log(
+          '🩺 /objects/companies body:',
+          JSON.stringify(probe.data).slice(0, 400)
+        );
+
+        // Resolve real object slug for this workspace
+        const { resolveObjectSlug } = await import('../api/attio-objects.js');
+        const companiesSlug = await resolveObjectSlug(client, 'companies');
+        path = `/objects/${companiesSlug}/records`;
+
+        // Debug the client configuration
+        debug('MockService', 'Client configuration check', {
+          hasClient: !!client,
+          baseURL: client?.defaults?.baseURL,
+          hasAuth: !!client?.defaults?.headers?.Authorization,
+          adapter:
+            (client?.defaults?.adapter as any)?.name ||
+            (client?.defaults?.adapter as any)?.toString()?.slice(0, 50) ||
+            'unknown',
+          interceptorCount:
+            (client?.interceptors?.response as any)?.handlers?.length || 0,
+        });
 
         // Normalize company domains to string array
         const normalizedCompany: Record<string, unknown> = { ...companyData };
@@ -129,28 +220,46 @@ export class MockService {
         const rawDomains = (companyData as any).domains;
         if (rawDomains) {
           if (Array.isArray(rawDomains)) {
-            (normalizedCompany as any).domains = rawDomains.map((d: any) =>
-              typeof d === 'string' ? d : (d?.domain ?? d?.value ?? String(d))
-            );
+            (normalizedCompany as any).domains = rawDomains.map((d: any) => {
+              if (typeof d === 'string') {
+                return { domain: d };
+              } else if (d?.domain) {
+                return { domain: d.domain };
+              } else if (d?.value) {
+                return { domain: d.value };
+              } else {
+                return { domain: String(d) };
+              }
+            });
           } else {
             (normalizedCompany as any).domains = [
-              typeof rawDomains === 'string'
-                ? rawDomains
-                : ((rawDomains as any)?.domain ??
-                  (rawDomains as any)?.value ??
-                  String(rawDomains)),
+              {
+                domain:
+                  typeof rawDomains === 'string'
+                    ? rawDomains
+                    : ((rawDomains as any)?.domain ??
+                      (rawDomains as any)?.value ??
+                      String(rawDomains)),
+              },
             ];
           }
         } else if (rawDomain) {
-          (normalizedCompany as any).domains = [String(rawDomain)];
+          (normalizedCompany as any).domains = [{ domain: String(rawDomain) }];
           delete (normalizedCompany as any).domain;
         }
 
-        const response = await api.post('/objects/companies/records', {
-          data: {
-            values: normalizedCompany,
-          },
+        const payload = { data: { values: normalizedCompany } };
+
+        debug('MockService', 'Making API call', {
+          url: path,
+          method: 'POST',
+          payload,
+          payloadSize: JSON.stringify(payload).length,
         });
+
+        // Create company with correct domain format
+        console.log('🔍 POST PATH + PAYLOAD', { path, payload });
+        const response = await client.post(path, payload);
 
         debug('MockService', 'createCompany Raw API response', {
           status: response?.status,
@@ -159,54 +268,179 @@ export class MockService {
           hasNestedData: !!response?.data?.data,
           dataKeys: response?.data ? Object.keys(response.data) : [],
           responseData: response?.data,
+          hasHeaders: !!response?.headers,
+          locationHeader:
+            response?.headers?.location || response?.headers?.Location,
+          headerKeys: response?.headers ? Object.keys(response.headers) : [],
         });
 
-        // Extract result following same logic as createRecord
-        const result = response?.data?.data || response?.data;
+        // Extract result following same logic as createRecord (safe)
+        let record: any;
+        try {
+          record = extractAttioRecord(response);
+        } catch (ex) {
+          debug('MockService', 'createCompany extract failed', {
+            message: (ex as any)?.message,
+            hasData: !!response?.data,
+            dataType: typeof response?.data,
+            dataKeys:
+              response?.data && typeof response?.data === 'object'
+                ? Object.keys(response.data)
+                : [],
+          });
+          record = null as any;
+        }
+
+        // Add payload logging for debugging
+        debug('MockService', 'createCompany EXACT PAYLOAD', {
+          data: { values: normalizedCompany },
+        });
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
-          result &&
-          typeof result === 'object' &&
-          (('id' in result && (result as any).id?.record_id) ||
-            'record_id' in result ||
-            'web_url' in result ||
-            'created_at' in result);
+          record &&
+          typeof record === 'object' &&
+          (('id' in record && (record as any).id?.record_id) ||
+            'record_id' in record ||
+            'web_url' in record ||
+            'created_at' in record);
 
-        if (
-          !result ||
-          (typeof result === 'object' &&
-            Object.keys(result).length === 0 &&
-            !looksLikeCreatedRecord)
-        ) {
-          throw new Error(
-            'Company creation failed: API returned empty response'
-          );
+        const mustRecover = !record || !record.id || !record.id.record_id;
+        if (mustRecover) {
+          // 0) Try Location header (direct ID fetch) – works even if search is not indexed yet
+          const location =
+            (response?.headers as any)?.location ||
+            (response?.headers as any)?.Location;
+          const idMatch =
+            location && String(location).match(/\/records\/([^/?#]+)/);
+          if (idMatch?.[1]) {
+            const rid = idMatch[1];
+            for (const wait of [0, 150, 300]) {
+              if (wait) await sleep(wait);
+              try {
+                const { data: fetched } = await client.get(
+                  `${path}/${encodeURIComponent(rid)}`
+                );
+                const rec = extractAttioRecord(fetched);
+                if (rec?.id?.record_id) {
+                  record = rec;
+                  break;
+                }
+              } catch {
+                // keep trying
+              }
+            }
+          }
+
+          // 1) If still not found, do a few search retries (eventual consistency)
+          if (!record?.id?.record_id) {
+            const domain = Array.isArray(normalizedCompany.domains)
+              ? (normalizedCompany.domains[0] as string)
+              : undefined;
+            const name = normalizedCompany.name as string | undefined;
+
+            for (const wait of [50, 200, 450, 900]) {
+              await sleep(wait);
+              try {
+                // domain first (stronger uniqueness). Try contains then eq.
+                if (domain && !record?.id?.record_id) {
+                  const attempts = [
+                    { filter: { domains: { contains: domain } } },
+                    { filter: { domains: { eq: domain } } },
+                  ];
+                  for (const attempt of attempts) {
+                    const { data } = await client.post(
+                      `/objects/${companiesSlug}/records/search`,
+                      { ...attempt, limit: 1, order: { created_at: 'desc' } }
+                    );
+                    const rec = extractAttioRecord(data);
+                    if (rec?.id?.record_id) {
+                      record = rec;
+                      break;
+                    }
+                  }
+                }
+
+                // name exact match as fallback
+                if (name && !record?.id?.record_id) {
+                  const { data } = await client.post(
+                    `/objects/${companiesSlug}/records/search`,
+                    {
+                      filter: { name: { eq: name } },
+                      limit: 1,
+                      order: { created_at: 'desc' },
+                    }
+                  );
+                  const rec = extractAttioRecord(data);
+                  if (rec?.id?.record_id) {
+                    record = rec;
+                    break;
+                  }
+                }
+              } catch {
+                // keep retrying
+              }
+            }
+          }
+
+          if (!record?.id?.record_id) {
+            throw new EnhancedApiError(
+              'Attio createCompany returned an empty/invalid record payload',
+              500,
+              path,
+              'POST',
+              {
+                httpStatus: 500,
+                resourceType: 'companies',
+                operation: 'create',
+              }
+            );
+          }
         }
 
-        return result;
-      } catch (err) {
-        const anyErr = err as any;
-        const status = anyErr?.response?.status ?? 500;
-        const data = anyErr?.response?.data;
+        if (
+          process.env.E2E_MODE === 'true' ||
+          process.env.NODE_ENV === 'test'
+        ) {
+          debug('MockService', 'Normalized company record', {
+            hasIdObj: !!(record as any)?.id?.record_id,
+            idType: typeof (record as any)?.id,
+            keys: Object.keys(record || {}),
+          });
+        }
+
+        return record;
+      } catch (err: any) {
+        const r = err?.response;
+        const status = r?.status || err?.status || 500;
+        const data = r?.data;
+        const url = r?.config?.url;
+        const method = r?.config?.method;
+        const payload = r?.config?.data;
         error('MockService', 'createCompany Direct API error', {
           status,
-          data,
+          url,
+          method,
+          serverData: data, // <-- this is what we need to see
+          requestPayload: payload, // <-- confirm the exact body that axios sent
         });
         const msg =
           status && data
             ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
-            : (anyErr?.message as string) || 'createCompany error';
+            : (err?.message as string) || 'createCompany error';
+
         throw new EnhancedApiError(
           msg,
           status,
-          '/objects/companies/records',
-          'POST',
+          url ||
+            (typeof path === 'string' ? path : '/objects/companies/records'),
+          (method || 'POST').toUpperCase(),
           {
             httpStatus: status,
             resourceType: 'companies',
             operation: 'create',
-            originalError: anyErr,
+            serverData: data,
+            originalError: err,
           }
         );
       }
@@ -245,22 +479,44 @@ export class MockService {
     personData: Record<string, unknown>
   ): Promise<AttioRecord> {
     if (!shouldUseMockData()) {
-      try {
-        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        debug('MockService', 'createPerson Making raw axios API call');
+      // Declare path outside try block for scope in catch
+      let path = '/objects/people/records';
 
-        // Create a completely fresh axios instance to bypass any mocking
+      try {
+        // Use centralized Attio client for consistent authentication
+        debug('MockService', 'createPerson Using centralized Attio client');
+        // TEMP: Direct axios to bypass client issues and prove concept
         const axios = (await import('axios')).default;
-        const api = axios.create({
-          baseURL: 'https://api.attio.com/v2',
+        const client = axios.create({
+          baseURL: (
+            process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+          ).replace(/\/+$/, ''),
+          timeout: 20000,
           headers: {
             Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
             'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-          timeout: 30000,
+          transformResponse: [
+            (d) => {
+              try {
+                return JSON.parse(d);
+              } catch {
+                return d;
+              }
+            },
+          ],
+          validateStatus: (s) => s >= 200 && s < 300,
         });
 
-        debug('MockService', 'createPerson Raw axios instance created');
+        console.log('🧨 TEMP DIRECT CLIENT (createPerson)', {
+          baseURL: client.defaults.baseURL,
+        });
+
+        // Resolve real object slug for this workspace
+        const { resolveObjectSlug } = await import('../api/attio-objects.js');
+        const peopleSlug = await resolveObjectSlug(client, 'people');
+        path = `/objects/${peopleSlug}/records`;
 
         // Normalize to Attio API schema for people values
         const filteredPersonData: Record<string, unknown> = {};
@@ -366,7 +622,7 @@ export class MockService {
         }
 
         const doCreate = async (values: Record<string, unknown>) =>
-          api.post('/objects/people/records', { data: { values } });
+          client.post(path, { data: { values } });
 
         let response;
         try {
@@ -421,53 +677,147 @@ export class MockService {
           dataKeys: response?.data ? Object.keys(response.data) : [],
         });
 
-        // Extract result following same logic as createRecord
-        const result = response?.data?.data || response?.data;
+        // Extract result following same logic as createRecord (safe)
+        let record: any;
+        try {
+          record = extractAttioRecord(response);
+        } catch (ex) {
+          debug('MockService', 'createPerson extract failed', {
+            message: (ex as any)?.message,
+            hasData: !!response?.data,
+            dataType: typeof response?.data,
+            dataKeys:
+              response?.data && typeof response?.data === 'object'
+                ? Object.keys(response.data)
+                : [],
+          });
+          record = null as any;
+        }
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
-          result &&
-          typeof result === 'object' &&
-          (('id' in result && (result as any).id?.record_id) ||
-            'record_id' in result ||
-            'web_url' in result ||
-            'created_at' in result);
+          record &&
+          typeof record === 'object' &&
+          (('id' in record && (record as any).id?.record_id) ||
+            'record_id' in record ||
+            'web_url' in record ||
+            'created_at' in record);
 
-        if (
-          !result ||
-          (typeof result === 'object' &&
-            Object.keys(result).length === 0 &&
-            !looksLikeCreatedRecord)
-        ) {
-          throw new Error(
-            'Person creation failed: API returned empty response'
-          );
+        const mustRecover = !record || !record.id || !record.id.record_id;
+        if (mustRecover) {
+          // 0) Try Location header (direct ID fetch)
+          const location =
+            (response?.headers as any)?.location ||
+            (response?.headers as any)?.Location;
+          const idMatch =
+            location && String(location).match(/\/records\/([^/?#]+)/);
+          if (idMatch?.[1]) {
+            const rid = idMatch[1];
+            for (const wait of [0, 150, 300]) {
+              if (wait) await sleep(wait);
+              try {
+                const { data: fetched } = await client.get(
+                  `${path}/${encodeURIComponent(rid)}`
+                );
+                const rec = extractAttioRecord(fetched);
+                if (rec?.id?.record_id) {
+                  record = rec;
+                  break;
+                }
+              } catch {
+                // keep trying
+              }
+            }
+          }
+
+          // 1) If still not found, search by primary email with small backoff and two operators
+          const email = Array.isArray(filteredPersonData.email_addresses)
+            ? (filteredPersonData.email_addresses[0] as string)
+            : undefined;
+
+          if (email && !record?.id?.record_id) {
+            for (const wait of [50, 200, 450, 900]) {
+              await sleep(wait);
+              try {
+                const attempts = [
+                  { filter: { email_addresses: { contains: email } } },
+                  { filter: { email_addresses: { eq: email } } },
+                ];
+                for (const attempt of attempts) {
+                  const { data } = await client.post(
+                    `/objects/${peopleSlug}/records/search`,
+                    { ...attempt, limit: 1, order: { created_at: 'desc' } }
+                  );
+                  const rec = extractAttioRecord(data);
+                  if (rec?.id?.record_id) {
+                    record = rec;
+                    break;
+                  }
+                }
+                if (record?.id?.record_id) break;
+              } catch {
+                // keep retrying
+              }
+            }
+          }
+
+          if (!record?.id?.record_id) {
+            throw new EnhancedApiError(
+              'Attio createPerson returned an empty/invalid record payload',
+              500,
+              path,
+              'POST',
+              {
+                httpStatus: 500,
+                resourceType: 'people',
+                operation: 'create',
+              }
+            );
+          }
         }
 
-        return result;
-      } catch (err) {
+        if (
+          process.env.E2E_MODE === 'true' ||
+          process.env.NODE_ENV === 'test'
+        ) {
+          debug('MockService', 'Normalized person record', {
+            hasIdObj: !!(record as any)?.id?.record_id,
+            idType: typeof (record as any)?.id,
+            keys: Object.keys(record || {}),
+          });
+        }
+
+        return record;
+      } catch (err: any) {
         // Enhance error with HTTP response details when available (helps E2E diagnosis)
-        const anyErr = err as any;
-        const status = anyErr?.response?.status ?? 500;
-        const data = anyErr?.response?.data;
+        const r = err?.response;
+        const status = r?.status || err?.status || 500;
+        const data = r?.data;
+        const url = r?.config?.url;
+        const method = r?.config?.method;
+        const payload = r?.config?.data;
         error('MockService', 'createPerson Direct API error', {
           status,
-          data,
+          url,
+          method,
+          serverData: data, // <-- this is what we need to see
+          requestPayload: payload, // <-- confirm the exact body that axios sent
         });
         const msg =
           status && data
             ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
-            : (anyErr?.message as string) || 'createPerson error';
+            : (err?.message as string) || 'createPerson error';
         throw new EnhancedApiError(
           msg,
           status,
-          '/objects/people/records',
-          'POST',
+          url || path,
+          (method || 'POST').toUpperCase(),
           {
             httpStatus: status,
             resourceType: 'people',
             operation: 'create',
-            originalError: anyErr,
+            serverData: data,
+            originalError: err as Error,
           }
         );
       }
@@ -602,6 +952,16 @@ export class MockService {
       `Mock Test Task`;
 
     // Issue #480 compatible mock task
+    try {
+      const { logTaskDebug, sanitizePayload } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.createTask',
+        'Incoming taskData',
+        sanitizePayload(taskData as any)
+      );
+    } catch {}
     const attioRecord: AttioRecord = {
       id: {
         record_id: mockId,
@@ -625,7 +985,7 @@ export class MockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
+    const flatFields: Record<string, unknown> = {
       content: taskContent,
       title: taskContent,
       status: (taskData.status as string) || 'pending',
@@ -642,7 +1002,38 @@ export class MockService {
       };
     }
 
-    return { ...attioRecord, ...flatFields };
+    // Provide 'assignees' array for E2E expectations
+    if (taskData.assigneeId) {
+      (flatFields as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(taskData.assigneeId),
+        },
+      ];
+    }
+
+    const result = { ...attioRecord, ...flatFields } as AttioRecord &
+      Record<string, unknown>;
+    // Emit top-level assignees for E2E expectation
+    if (taskData.assigneeId) {
+      (result as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(taskData.assigneeId),
+        },
+      ];
+    }
+    try {
+      const { logTaskDebug, inspectTaskRecordShape } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.createTask',
+        'Returning mock task',
+        inspectTaskRecordShape(result)
+      );
+    } catch {}
+    return result as any;
   }
 
   /**
@@ -722,7 +1113,7 @@ export class MockService {
     };
 
     // Add flat field compatibility for E2E tests (Issue #480)
-    const flatFields = {
+    const flatFields: Record<string, unknown> = {
       content: taskContent,
       title: taskContent,
       status: (updateData.status as string) || 'updated',
@@ -739,7 +1130,38 @@ export class MockService {
       };
     }
 
-    return { ...attioRecord, ...flatFields };
+    // Provide 'assignees' array for E2E expectations on update
+    if (updateData.assigneeId) {
+      (flatFields as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(updateData.assigneeId),
+        },
+      ];
+    }
+
+    const result = { ...attioRecord, ...flatFields } as AttioRecord &
+      Record<string, unknown>;
+    // Emit top-level assignees for E2E expectation
+    if (updateData.assigneeId) {
+      (result as any).assignees = [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: String(updateData.assigneeId),
+        },
+      ];
+    }
+    try {
+      const { logTaskDebug, inspectTaskRecordShape } = await import(
+        '../utils/task-debug.js'
+      );
+      logTaskDebug(
+        'mock.updateTask',
+        'Returning updated mock task',
+        inspectTaskRecordShape(result)
+      );
+    } catch {}
+    return result as any;
   }
 
   /**

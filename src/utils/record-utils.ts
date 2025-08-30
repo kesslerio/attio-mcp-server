@@ -289,7 +289,7 @@ export function createPathBasedFilter(
   parentAttributeSlug: string,
   condition: string,
   value: any
-): { path: string[][]; constraints: Record<string, any> } {
+): { path: string[][]; constraints: Record<string, unknown> } {
   // Create path array for drilling down through objects
   // First path element is [listSlug, "parent_record"] to navigate from list entry to its parent record
   // Second path element is [parentObjectType, parentAttributeSlug] to navigate to specific attribute
@@ -299,7 +299,7 @@ export function createPathBasedFilter(
   ];
 
   // Create constraints object based on condition and value
-  let constraints: Record<string, any> = {};
+  let constraints: Record<string, unknown> = {};
 
   // Handle different condition types appropriately
   if (condition === 'equals' || condition === 'eq') {

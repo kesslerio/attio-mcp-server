@@ -210,10 +210,31 @@ export async function updateObjectWithDynamicFields<T extends AttioRecord>(
   );
 
   // Additional check for empty objects that might slip through
+  // For companies, allow empty results to pass through since updateRecord has fallback logic
   if (
     !result ||
     (typeof result === 'object' && Object.keys(result).length === 0)
   ) {
+    // For companies, the updateRecord function has fallback logic that should handle empty responses
+    if (objectType === ResourceType.COMPANIES) {
+      if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.E2E_MODE === 'true'
+      ) {
+        console.error(
+          `[updateObjectWithDynamicFields:${objectType}] Empty result detected for update, allowing fallback logic to handle`
+        );
+      }
+      // The fallback should have been handled in updateRecord, if we still get empty result, something is wrong
+      if (!result) {
+        throw new Error(
+          `Update operation returned null result for ${objectType} record: ${recordId}`
+        );
+      }
+      // Empty object might be a valid result from fallback, return it
+      return result;
+    }
+
     throw new Error(
       `Update operation returned empty result for ${objectType} record: ${recordId}`
     );

@@ -9,7 +9,7 @@ import {
   hasCircularReferences,
   createSafeCopy,
   sanitizeMcpResponse,
-} from './json-serializer.js';
+} from '../../../src/utils/json-serializer.js';
 
 describe('JSON Serializer', () => {
   describe('safeJsonStringify', () => {

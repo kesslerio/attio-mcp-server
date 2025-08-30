@@ -15,18 +15,31 @@ vi.mock('../../../../src/api/attio-client.js', () => ({
   getAttioClient: vi.fn(() => ({
     objects: {
       companies: {
-        get: vi.fn(() => Promise.resolve({ data: { id: { record_id: 'mock-company-id' }, values: { domains: ['example.com'] } } })),
+        get: vi.fn(() =>
+          Promise.resolve({
+            data: {
+              id: { record_id: 'mock-company-id' },
+              values: { domains: ['example.com'] },
+            },
+          })
+        ),
       },
     },
     post: vi.fn(() => Promise.resolve({ data: { data: [] } })),
     get: vi.fn(() => Promise.resolve({ data: { data: [] } })),
   })),
 }));
-vi.mock('../../../../src/handlers/tool-configs/universal/config.js', () => ({ strictModeFor: vi.fn(() => false) }));
+vi.mock('../../../../src/handlers/tool-configs/universal/config.js', () => ({
+  strictModeFor: vi.fn(() => false),
+}));
 
 describe('field-mapper – mappings and basics', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
-  afterEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('FIELD_MAPPINGS constant', () => {
     it('contains mappings for all resource types', () => {
@@ -75,32 +88,53 @@ describe('field-mapper – mappings and basics', () => {
 
   describe('mapFieldName()', () => {
     it('returns original field when no mapping exists', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'unknown_field');
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'unknown_field'
+      );
       expect(result).toBe('unknown_field');
     });
 
     it('maps incorrect field names', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'website');
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'website'
+      );
       expect(result).toBe('domains');
     });
 
     it('respects available attributes (keeps original if present)', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'website', ['website', 'domains']);
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'website',
+        ['website', 'domains']
+      );
       expect(result).toBe('website');
     });
 
     it('maps when original not present in attributes', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'website', ['domains']);
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'website',
+        ['domains']
+      );
       expect(result).toBe('domains');
     });
 
     it('handles case-insensitive mapping', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'WEBSITE');
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'WEBSITE'
+      );
       expect(result).toBe('domains');
     });
 
     it('returns original when mapped field missing in attributes', async () => {
-      const result = await mapFieldName(UniversalResourceType.COMPANIES, 'website', ['name']);
+      const result = await mapFieldName(
+        UniversalResourceType.COMPANIES,
+        'website',
+        ['name']
+      );
       expect(result).toBe('website');
     });
   });
@@ -136,4 +170,3 @@ describe('field-mapper – mappings and basics', () => {
     });
   });
 });
-

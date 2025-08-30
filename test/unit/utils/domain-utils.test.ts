@@ -8,7 +8,7 @@ import {
   normalizeDomain,
   hasDomainIndicators,
   extractAllDomains,
-} from './domain-utils.js';
+} from '../../../src/utils/domain-utils.js';
 
 describe('Domain Utilities', () => {
   describe('extractDomain', () => {

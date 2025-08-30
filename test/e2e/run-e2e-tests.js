@@ -234,6 +234,10 @@ async function runVitest(pattern = 'all', options = {}) {
     console.error(colorize('⚠️  API key not found in environment!', 'yellow'));
   }
 
+  // Enforce real API for E2E by default (explicit-only mocks)
+  process.env.USE_MOCK_DATA = process.env.USE_MOCK_DATA || 'false';
+  process.env.FORCE_REAL_API = process.env.FORCE_REAL_API || 'true';
+
   return new Promise((resolve, reject) => {
     // Ensure environment variables are properly passed to child process
     // Using spread operator to create a new object with all current env vars

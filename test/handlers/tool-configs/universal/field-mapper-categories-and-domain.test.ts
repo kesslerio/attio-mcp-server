@@ -3,21 +3,43 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
-import { validateCategories, processCategories, getValidCategories, checkDomainConflict } from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
+import {
+  validateCategories,
+  processCategories,
+  getValidCategories,
+  checkDomainConflict,
+} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 // Matches original mocks
 vi.mock('../../../../src/api/attio-client.js', () => ({
   getAttioClient: vi.fn(() => ({
-    objects: { companies: { get: vi.fn(() => Promise.resolve({ data: { id: { record_id: 'mock-company-id' }, values: { domains: ['example.com'] } } })) } },
+    objects: {
+      companies: {
+        get: vi.fn(() =>
+          Promise.resolve({
+            data: {
+              id: { record_id: 'mock-company-id' },
+              values: { domains: ['example.com'] },
+            },
+          })
+        ),
+      },
+    },
     post: vi.fn(() => Promise.resolve({ data: { data: [] } })),
     get: vi.fn(() => Promise.resolve({ data: { data: [] } })),
   })),
 }));
-vi.mock('../../../../src/handlers/tool-configs/universal/config.js', () => ({ strictModeFor: vi.fn(() => false) }));
+vi.mock('../../../../src/handlers/tool-configs/universal/config.js', () => ({
+  strictModeFor: vi.fn(() => false),
+}));
 
 describe('field-mapper – categories and domain checks', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
-  afterEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('validateCategories()', () => {
     it('validates category strings', () => {
@@ -39,7 +61,11 @@ describe('field-mapper – categories and domain checks', () => {
 
   describe('processCategories()', () => {
     it('processes string categories with warnings', () => {
-      const result = processCategories(UniversalResourceType.COMPANIES, 'categories', 'Technology');
+      const result = processCategories(
+        UniversalResourceType.COMPANIES,
+        'categories',
+        'Technology'
+      );
       expect(Array.isArray(result.processedValue)).toBe(true);
       if ((result.processedValue as any).length > 0) {
         expect(typeof (result.processedValue as any)[0]).toBe('string');
@@ -48,13 +74,21 @@ describe('field-mapper – categories and domain checks', () => {
     });
 
     it('processes array categories', () => {
-      const result = processCategories(UniversalResourceType.COMPANIES, 'categories', ['Technology', 'Software']);
+      const result = processCategories(
+        UniversalResourceType.COMPANIES,
+        'categories',
+        ['Technology', 'Software']
+      );
       expect(Array.isArray(result.processedValue)).toBe(true);
       expect((result.processedValue as any).length).toBe(2);
     });
 
     it('handles empty input gracefully', () => {
-      const result = processCategories(UniversalResourceType.COMPANIES, 'categories', '');
+      const result = processCategories(
+        UniversalResourceType.COMPANIES,
+        'categories',
+        ''
+      );
       expect(typeof result.processedValue).toBe('string');
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -90,4 +124,3 @@ describe('field-mapper – categories and domain checks', () => {
     });
   });
 });
-

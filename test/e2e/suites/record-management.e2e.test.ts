@@ -121,7 +121,8 @@ describe.skipIf(
     console.error('✅ Record Management E2E Tests completed');
     // Restore environment flag
     const prev = (globalThis as any).__prevForceRealApi as string | undefined;
-    if (prev === undefined) delete process.env.FORCE_REAL_API; else process.env.FORCE_REAL_API = prev;
+    if (prev === undefined) delete process.env.FORCE_REAL_API;
+    else process.env.FORCE_REAL_API = prev;
   }, 60000);
 
   beforeEach(() => {

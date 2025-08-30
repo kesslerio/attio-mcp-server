@@ -53,6 +53,7 @@ test/e2e/config.local.json
 # E2E test results and reports
 test-results/
 test/e2e/outputs/
+vitest-report.json
 
 # Log files
 logs/

@@ -17,7 +17,10 @@ vi.mock('../../src/utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
 vi.mock('../../src/services/MockService.js', () => ({
-  MockService: { updateTask: vi.fn() },
+  MockService: {
+    updateTask: vi.fn(),
+    isUsingMockData: vi.fn().mockReturnValue(true),
+  },
 }));
 vi.mock('../../src/objects/companies/index.js', () => ({
   updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
@@ -293,6 +296,8 @@ describe('UniversalUpdateService', () => {
     });
 
     it('should return 404 when task not found', async () => {
+      // For this test, we want to test the real API path, so disable mock mode
+      vi.mocked(MockService.isUsingMockData).mockReturnValue(false);
       vi.mocked(tasks.getTask).mockRejectedValue(
         Object.assign(new Error('Not found'), { response: { status: 404 } })
       );
@@ -321,6 +326,8 @@ describe('UniversalUpdateService', () => {
     });
 
     it('should validate immutability for existing task content updates', async () => {
+      // For this test, we want to test the real API path for immutability validation
+      vi.mocked(MockService.isUsingMockData).mockReturnValue(false);
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: { content: 'Updated content' },
         warnings: [],

@@ -6,33 +6,33 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ValidationService } from '../services/ValidationService.js';
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import { UniversalValidationError } from '../handlers/tool-configs/universal/schemas.js';
-import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
+import { ValidationService } from '../../../src/services/ValidationService.js';
+import { UniversalResourceType } from '../../../src/handlers/tool-configs/universal/types.js';
+import { UniversalValidationError } from '../../../src/handlers/tool-configs/universal/schemas.js';
+import { EnhancedApiError } from '../../../src/errors/enhanced-api-errors.js';
 
 // Mock the dependencies
-vi.mock('../utils/validation/email-validation.js', () => ({
+vi.mock('../../../src/utils/validation/email-validation.js', () => ({
   isValidEmail: vi.fn(),
 }));
 
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../../src/utils/validation.js', () => ({
   isValidId: vi.fn(),
 }));
 
-vi.mock('../utils/validation/uuid-validation.js', () => ({
+vi.mock('../../../src/utils/validation/uuid-validation.js', () => ({
   isValidUUID: vi.fn(),
   createInvalidUUIDError: vi.fn(),
 }));
 
-vi.mock('../middleware/performance-enhanced.js', () => ({
+vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     markTiming: vi.fn(),
     endOperation: vi.fn(),
   },
 }));
 
-vi.mock('../handlers/tool-configs/universal/field-mapper.js', () => {
+vi.mock('../../../src/handlers/tool-configs/universal/field-mapper.js', () => {
   // Define the mock constants here to avoid circular dependency
   const mockFieldMappings = {
     companies: {
@@ -49,14 +49,14 @@ vi.mock('../handlers/tool-configs/universal/field-mapper.js', () => {
   };
 });
 
-import { isValidEmail } from '../utils/validation/email-validation.js';
-import { isValidId } from '../utils/validation.js';
+import { isValidEmail } from '../../../src/utils/validation/email-validation.js';
+import { isValidId } from '../../../src/utils/validation.js';
 import {
   isValidUUID,
   createInvalidUUIDError,
-} from '../utils/validation/uuid-validation.js';
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
-import { validateFields } from '../handlers/tool-configs/universal/field-mapper.js';
+} from '../../../src/utils/validation/uuid-validation.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
+import { validateFields } from '../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 describe('ValidationService', () => {
   beforeEach(() => {

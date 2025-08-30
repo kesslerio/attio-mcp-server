@@ -9,7 +9,7 @@
  * - Better maintainability through single responsibility modules
  * - Improved testability with focused unit tests
  * - Enhanced organization with feature-first structure
- * 
+ *
  * All exports maintain 100% backward compatibility.
  */
 

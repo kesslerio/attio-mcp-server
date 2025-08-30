@@ -157,7 +157,7 @@ describe.skipIf(
     console.error('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
-      requiresRealApi: false, // Use mock data for reliable testing
+      requiresRealApi: true, // 🔒 Real API only for E2E tests
       cleanupAfterTests: true,
       timeout: 120000,
     });
@@ -249,7 +249,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              due_date: taskData.due_date,
+              format: 'plaintext',
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -272,6 +273,12 @@ describe.skipIf(
       }, 30000);
 
       it('should create task with assignee', async () => {
+        console.log('🔍 ASSIGNEE TEST DEBUG', {
+          taskTestPeopleLength: taskTestPeople.length,
+          hasFirstPerson: !!taskTestPeople[0],
+          firstPersonId: taskTestPeople[0]?.id?.record_id,
+        });
+
         if (taskTestPeople.length === 0) {
           console.error('⏭️ Skipping assignee test - no test people available');
           return;
@@ -280,13 +287,24 @@ describe.skipIf(
         const taskData = TaskFactory.create();
         const assignee = taskTestPeople[0];
 
+        console.log('🎯 ASSIGNEE DEBUG', {
+          assigneeId: assignee?.id?.record_id,
+          assigneeKeys: Object.keys(assignee || {}),
+        });
+
         const response = asToolResponse(
           await callTasksTool('create-record', {
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              assigneeId: assignee.id.record_id,
-              due_date: taskData.due_date,
+              format: 'plaintext',
+              assignees: [
+                {
+                  referenced_actor_type: 'workspace-member',
+                  referenced_actor_id: assignee.id.record_id,
+                },
+              ],
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -294,10 +312,16 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const createdTask = extractTaskData(response);
 
+        console.log('📋 TASK RESPONSE DEBUG', {
+          hasAssignee: !!createdTask.assignee,
+          assigneeKeys: createdTask.assignee
+            ? Object.keys(createdTask.assignee)
+            : null,
+          taskKeys: Object.keys(createdTask || {}),
+        });
+
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(
-          createdTask.assignee_id || createdTask.assignee?.id
-        ).toBeDefined();
+        expect(createdTask.assignee?.referenced_actor_id).toBeDefined();
 
         createdTasks.push(createdTask);
         console.error('👥 Created task with assignee:', createdTask.id.task_id);
@@ -319,8 +343,9 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
+              format: 'plaintext',
               recordId: company.id.record_id,
-              due_date: taskData.due_date,
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -345,7 +370,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_data: {
               content: taskData.content,
-              due_date: taskData.due_date,
+              format: 'plaintext',
+              deadline_at: taskData.due_date,
             },
           })
         );
@@ -386,7 +412,7 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              status: 'completed',
+              is_completed: true,
             },
           })
         );
@@ -415,7 +441,12 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              assigneeId: newAssignee.id.record_id,
+              assignees: [
+                {
+                  referenced_actor_type: 'workspace-member',
+                  referenced_actor_id: newAssignee.id.record_id,
+                },
+              ],
             },
           })
         );
@@ -445,8 +476,8 @@ describe.skipIf(
             resource_type: 'tasks',
             record_id: taskId,
             record_data: {
-              status: 'in_progress',
-              due_date: newDueDate.toISOString().split('T')[0],
+              is_completed: false,
+              deadline_at: newDueDate.toISOString(),
             },
           })
         );
@@ -562,6 +593,7 @@ describe.skipIf(
         }
         const response = (await notesToolCaller('list-notes', {
           resource_type: 'companies',
+          parent_object: 'companies',
           record_id: testCompany.id.record_id,
           limit: 10,
           offset: 0,
@@ -725,6 +757,7 @@ describe.skipIf(
         }
         const response = (await notesToolCaller('list-notes', {
           resource_type: 'people',
+          parent_object: 'people',
           record_id: testPerson.id.record_id,
         })) as McpToolResponse;
 
@@ -854,8 +887,9 @@ describe.skipIf(
           resource_type: 'tasks',
           record_data: {
             content: `Follow up on integration for ${company.values.name?.[0]?.value || 'company'}`,
+            format: 'plaintext',
             recordId: companyId,
-            due_date: taskData.due_date,
+            deadline_at: taskData.due_date,
           },
         })
       );

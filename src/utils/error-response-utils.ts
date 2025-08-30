@@ -15,7 +15,7 @@ export interface EnhancedErrorResponse {
   field?: string; // Field that caused the error
   suggestions?: string[]; // Actionable suggestions
   help_url?: string; // Link to documentation
-  context?: Record<string, any>; // Additional context
+  context?: Record<string, unknown>; // Additional context
 }
 
 /**

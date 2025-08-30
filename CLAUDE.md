@@ -15,13 +15,12 @@ RULE: Avoid buggy paths | WHEN: Third-party bugs found | DO: mcp**clear-thought-
 
 ## BUILD & TEST GOTCHAS
 
-⚠️ CRITICAL: DO NOT use `npm test -- test/integration/` as it uses wrong config. Use `npm run test:integration` or `npm run test:integration:only` instead.
-NOTE: `npm run check` no longer runs tests (40% faster CI). Use `npm test` separately when needed.
-
 ### SMART TEST CATEGORIES [PHASE IV]
+
 RULE: Use smart test selection | WHEN: Local development | DO: `npm run test:affected` | ELSE: Slower CI cycles
+
 - **Smoke** (`npm run test:smoke`): <30s critical path - runs on doc changes
-- **Core** (`npm run test:core`): <2m services/handlers - runs on source changes  
+- **Core** (`npm run test:core`): <2m services/handlers - runs on source changes
 - **Extended** (`npm run test:extended`): <5m full suite - runs on API changes
 - **Affected** (`npm run test:affected`): Git-based smart selection - auto-categorizes
 
@@ -42,23 +41,32 @@ SUCCESS METRICS: E2E success rate >75% (29/38 tests passing) | Mock data validat
 
 ### TEST COMMAND REFERENCE
 
-| **Test Type** | **Command** | **Requirements** | **Purpose** |
-|---------------|-------------|------------------|-------------|
-| **Unit Tests** | `npm test` | None | Fast offline tests with mocks |
-| **Integration** | `npm run test:integration` | ATTIO_API_KEY | Real API validation (`test/real-api-validation.test.ts`) |
-| **E2E Tests** | `npm run test:e2e` | ATTIO_API_KEY | End-to-end workflows |
-| **Performance** | `npm run test:performance:all` | None | All performance tests |
-| **Smoke Tests** | `npm run test:smoke` | None | Critical path validation |
-| **Offline Mode** | `npm run test:offline` | None | Skip all API-dependent tests |
+| **Test Type**    | **Command**                    | **Requirements** | **Purpose**                                              |
+| ---------------- | ------------------------------ | ---------------- | -------------------------------------------------------- |
+| **Unit Tests**   | `npm test`                     | None             | Fast offline tests with mocks                            |
+| **Integration**  | `npm run test:integration`     | ATTIO_API_KEY    | Real API validation (`test/real-api-validation.test.ts`) |
+| **E2E Tests**    | `npm run test:e2e`             | ATTIO_API_KEY    | End-to-end workflows                                     |
+| **Performance**  | `npm run test:performance:all` | None             | All performance tests                                    |
+| **Smoke Tests**  | `npm run test:smoke`           | None             | Critical path validation                                 |
+| **Offline Mode** | `npm run test:offline`         | None             | Skip all API-dependent tests                             |
+| **CI Quality Gates** | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | ATTIO_API_KEY | E2E + real API + JSON for quality gates |
+
+### CI vs OFFLINE TESTING
+
+RULE: Different test scopes for different purposes | WHEN: Running tests | DO: Choose appropriate command | ELSE: Missing critical issues
+- **`test:offline`**: Validates code logic correctness (10s timeout, mocks only, excludes E2E/integration)
+- **`test:ci`**: Validates production readiness (30s timeout, real APIs, E2E workflows, JSON output for quality gates)
+- **Key insight**: Code can pass offline but fail in production due to API changes, performance regressions, E2E workflow breaks
 
 ### PERFORMANCE TESTING
 
 RULE: Environment-aware budgets | WHEN: Performance tests | DO: Auto CI multiplier (2.5x) | ELSE: CI failures
-COMMANDS: 
+COMMANDS:
+
 - `npm run test:performance` - Regression tests only
 - `npm run test:performance:all` - All performance tests (regression + tools)
 - `npm run test:performance:tools` - Tool-specific performance tests
-FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance-*.test.ts` (tool benchmarking)
+  FILES: `test/performance/regression.test.ts` (CI) | `test/handlers/tool-configs/universal/performance-*.test.ts` (tool benchmarking)
 
 ## DEBUG UTILITIES
 
@@ -66,12 +74,39 @@ RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: 
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
+### E2E Debugging: Disable Bail and Capture Logs
+
+- Why: Vitest’s default bail can stop later tests after early failures. For end‑to‑end debugging you want every test to run so you can see all failing paths and payload/response traces.
+- Command (full suite, no bail, real API):
+
+```
+TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
+  npx vitest run test/e2e/suites/core-workflows.e2e.test.ts \
+  --reporter=verbose --reporter=json --bail=0 \
+  |& tee test-results/e2e-console.core-workflows.realapi.full.log
+```
+
+- Capture both stdout+stderr (|&). LOG_FORMAT=json makes logs grep/parse‑friendly.
+- Grep examples:
+
+```
+rg -n "tasks\\.createTask|tasks\\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced_actor" \
+  test-results/e2e-console.core-workflows.realapi.full.log
+```
+
+- When to use: Anytime E2E tests appear to “skip” code paths (silent failures) or you need to confirm request/response shapes emitted to Attio.
+
+### Policy: E2E ≠ Mocks
+- E2E runs always use the real Attio API. Mock injection is disabled by default in E2E.
+- Use `npm run test:offline` for mock‑only smoke/iteration. Don’t mix mocks into E2E.
+
 ## CI/CD OPTIMIZATION [PHASE IV]
 
 RULE: Local CI validation | WHEN: Before pushing | DO: `npm run ci:local` | ELSE: CI failures after push
 RULE: Auto-fix issues | WHEN: Lint/format errors | DO: `npm run fix:all` | ELSE: Manual fixes take longer
 RULE: Performance monitoring | WHEN: Adding features | DO: `npm run perf:budgets` | ELSE: Performance regressions
 KEY COMMANDS:
+
 - `ci:local`: Simulate GitHub Actions locally (40% faster than remote)
 - `fix:all`: Auto-fix formatting, lint, imports (saves 5-10 min/day)
 - `perf:budgets`: Check performance against thresholds
@@ -180,7 +215,7 @@ MILESTONES:
 - Format functions: Always return string (never conditional types)
 - Configuration objects: Define specific interfaces
 - Legacy integration: Gradually migrate `any` → `unknown` → specific types
-LINT CHECK: `npx eslint src/path/ 2>&1 | grep -c "any"` to count any warnings in specific directories
+  LINT CHECK: `npx eslint src/path/ 2>&1 | grep -c "any"` to count any warnings in specific directories
 
 ## TESTING CONFIGURATION [PR #483 ARCHITECTURE]
 

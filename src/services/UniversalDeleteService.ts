@@ -28,14 +28,9 @@ import { getPersonDetails } from '../objects/people/basic.js';
  * Helper function to check if we should use mock data based on environment
  */
 function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
+  // Only use mocks when explicitly requested
   return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    (process.env.NODE_ENV === 'test' &&
-      process.env.SKIP_INTEGRATION_TESTS !== 'true' &&
-      !process.env.VITEST)
+    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true'
   );
 }
 
@@ -46,29 +41,20 @@ export class UniversalDeleteService {
   /**
    * Helper to detect 404 errors from various API error formats
    */
-  private static is404Error(error: unknown): boolean {
-    if (!error || typeof error !== 'object') return false;
+  private static is404Error(err: unknown): boolean {
+    const anyErr = err as any;
+    const status = anyErr?.response?.status ?? anyErr?.status;
+    const code = anyErr?.response?.data?.code ?? anyErr?.code;
+    const msg = (anyErr?.response?.data?.message ?? anyErr?.message ?? '')
+      .toString()
+      .toLowerCase();
 
-    const errorObj = error as Record<string, unknown>;
-
-    // Check status field
-    if (errorObj.status === 404) return true;
-
-    // Check nested status
-    if (errorObj.response && typeof errorObj.response === 'object') {
-      const response = errorObj.response as Record<string, unknown>;
-      if (response.status === 404) return true;
-    }
-
-    // Check error message patterns
-    const message = errorObj.message || errorObj.error || '';
-    if (typeof message === 'string') {
-      return (
-        message.toLowerCase().includes('not found') || message.includes('404')
-      );
-    }
-
-    return false;
+    return (
+      status === 404 ||
+      code === 'not_found' ||
+      msg.includes('not found') ||
+      msg.includes('404')
+    );
   }
   /**
    * Delete a record across any supported resource type
@@ -163,8 +149,38 @@ export class UniversalDeleteService {
           return { success: true, record_id };
         }
 
-        await deleteTask(record_id);
-        return { success: true, record_id };
+        try {
+          const resp = await deleteTask(record_id);
+
+          // deleteTask returns boolean - if false, treat as not found
+          if (resp === false) {
+            const err: any = new Error(
+              `Task with ID "${record_id}" not found.`
+            );
+            err.status = 404;
+            err.body = {
+              code: 'not_found',
+              message: `Task with ID "${record_id}" not found.`,
+            };
+            throw err;
+          }
+
+          return { success: true, record_id };
+        } catch (error: unknown) {
+          // Map API errors to structured format
+          if (this.is404Error(error)) {
+            const err: any = new Error(
+              `Task with ID "${record_id}" not found.`
+            );
+            err.status = 404;
+            err.body = {
+              code: 'not_found',
+              message: `Task with ID "${record_id}" not found.`,
+            };
+            throw err; // dispatcher should mark isError=true
+          }
+          throw error;
+        }
 
       case UniversalResourceType.NOTES:
         const result = await deleteNote(record_id);

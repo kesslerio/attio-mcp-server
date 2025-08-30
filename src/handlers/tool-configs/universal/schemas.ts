@@ -746,6 +746,28 @@ export const batchOperationsSchema = {
 };
 
 /**
+ * Universal list notes schema
+ * Supports both record_id and parent_record_id for backward compatibility
+ */
+export const listNotesSchema = {
+  type: 'object' as const,
+  properties: {
+    resource_type: resourceTypeProperty,
+    record_id: {
+      type: 'string' as const,
+      description: 'Unique identifier of the record to list notes for',
+    },
+    parent_record_id: {
+      type: 'string' as const,
+      description: 'Alternative parameter name for record_id (backward compatibility)',
+    },
+    ...paginationProperties,
+  },
+  required: ['resource_type' as const],
+  additionalProperties: false,
+};
+
+/**
  * Cross-resource validation utilities
  */
 export class CrossResourceValidator {
@@ -1424,6 +1446,11 @@ export function validateUniversalToolParams(
       break;
 
     case 'list-notes':
+      // Alias parent_record_id → record_id for backward compatibility
+      if (!sanitizedParams.record_id && sanitizedParams.parent_record_id) {
+        sanitizedParams.record_id = sanitizedParams.parent_record_id;
+      }
+      
       if (!sanitizedParams.resource_type) {
         throw new UniversalValidationError(
           'Missing required parameter: resource_type',

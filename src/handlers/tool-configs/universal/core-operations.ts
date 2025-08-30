@@ -51,6 +51,7 @@ import {
   getAttributesSchema,
   discoverAttributesSchema,
   getDetailedInfoSchema,
+  listNotesSchema,
   validateUniversalToolParams,
 } from './schemas.js';
 
@@ -366,6 +367,16 @@ export const createRecordConfig: UniversalToolConfig = {
       );
 
       const result = await handleUniversalCreate(sanitizedParams);
+      try {
+        if (sanitizedParams.resource_type === 'tasks') {
+          const { logTaskDebug, inspectTaskRecordShape } = await import(
+            '../../../utils/task-debug.js'
+          );
+          logTaskDebug('mcp.create-record', 'Returning MCP task record', {
+            shape: inspectTaskRecordShape(result),
+          });
+        }
+      } catch {}
 
       return result;
     } catch (error: unknown) {
@@ -425,7 +436,18 @@ export const updateRecordConfig: UniversalToolConfig = {
         sanitizedParams.record_data
       );
 
-      return await handleUniversalUpdate(sanitizedParams);
+      const result = await handleUniversalUpdate(sanitizedParams);
+      try {
+        if (sanitizedParams.resource_type === 'tasks') {
+          const { logTaskDebug, inspectTaskRecordShape } = await import(
+            '../../../utils/task-debug.js'
+          );
+          logTaskDebug('mcp.update-record', 'Returning MCP task record', {
+            shape: inspectTaskRecordShape(result),
+          });
+        }
+      } catch {}
+      return result;
     } catch (error: unknown) {
       // Check if this is a structured HTTP response from our services
       if (isHttpResponseLike(error)) {
@@ -820,7 +842,7 @@ export const coreOperationsToolDefinitions = {
   'list-notes': {
     name: 'list-notes',
     description: 'Get notes for any record type (companies, people, deals)',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: listNotesSchema,
   },
 };
 

@@ -467,10 +467,32 @@ export class E2EAssertions {
         Array.isArray(person.values.name),
         'Person name should be array format'
       ).toBe(true);
-      expect(
-        person.values.name[0]?.value,
-        'Person should have name value'
-      ).toBeDefined();
+
+      const nameEntry = person.values.name[0];
+      expect(nameEntry, 'Person should have name entry').toBeDefined();
+
+      // Check for new API structure with structured name fields
+      if (
+        nameEntry &&
+        typeof nameEntry === 'object' &&
+        'attribute_type' in nameEntry
+      ) {
+        // New API structure: personal-name attribute type
+        expect(
+          nameEntry.attribute_type,
+          'Person name should have personal-name type'
+        ).toBe('personal-name');
+        expect(
+          nameEntry.full_name || nameEntry.first_name || nameEntry.last_name,
+          'Person should have at least one name component (full_name, first_name, or last_name)'
+        ).toBeDefined();
+      } else {
+        // Legacy API structure: direct value property
+        expect(
+          nameEntry?.value,
+          'Person should have name value (legacy structure)'
+        ).toBeDefined();
+      }
     }
   }
 

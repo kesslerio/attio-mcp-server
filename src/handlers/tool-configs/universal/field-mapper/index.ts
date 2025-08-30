@@ -1,9 +1,9 @@
 /**
  * Field mapping orchestration layer with backward compatibility
- * 
+ *
  * This module maintains the exact same public API as the original field-mapper.ts
  * file while delegating to the new modular architecture.
- * 
+ *
  * Extracted during Issue #529 modular refactoring following Strangler Fig pattern.
  */
 

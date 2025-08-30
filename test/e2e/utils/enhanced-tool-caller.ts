@@ -27,7 +27,7 @@ import {
   logInfo,
 } from './logger.js';
 import { configLoader } from './config-loader.js';
-import type { ToolParameters, ApiResponse } from '../types';
+import type { ToolParameters, ApiResponse } from '../types.js';
 import { extractRecordId } from '../../../src/utils/validation/uuid-validation.js';
 
 export interface ToolCallOptions {
@@ -239,7 +239,7 @@ export async function callToolWithEnhancements(
       success: !isErrorResponse,
       isError: isErrorResponse,
       content: finalResponse.content,
-      error: errorInfo,
+      error: errorInfo ? new Error(errorInfo) : undefined,
       timing,
       toolName: actualToolName,
       originalToolName,
@@ -282,7 +282,7 @@ export async function callToolWithEnhancements(
     return {
       success: false,
       isError: true,
-      error: errorInfo,
+      error: typeof errorInfo === 'string' ? new Error(errorInfo) : errorInfo,
       timing,
       toolName: actualToolName,
       originalToolName,
