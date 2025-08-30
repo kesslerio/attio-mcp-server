@@ -1,17 +1,13 @@
 /**
  * MockCreateService - Pure mock implementation
- *
+ * 
  * Pure mock implementation with no API calls or environment checks.
  * Generates synthetic data for testing environments.
  */
 
 import type { CreateService } from './types.js';
 import type { AttioRecord } from '../../types/attio.js';
-import type {
-  E2EMeta,
-  UnknownRecord,
-  isRecord,
-} from '../../types/service-types.js';
+import type { E2EMeta, UnknownRecord, isRecord } from '../../types/service-types.js';
 import { extractRecordId } from '../../utils/validation/uuid-validation.js';
 import { isValidId } from '../../utils/validation.js';
 import { generateMockId } from './extractor.js';
@@ -38,8 +34,7 @@ export class MockCreateService implements CreateService {
           : [{ value: `${mockId}.example.com` }],
         industry: (input.industry as string) || 'Technology',
         description:
-          (input.description as string) ||
-          `Mock company for testing - ${mockId}`,
+          (input.description as string) || `Mock company for testing - ${mockId}`,
       },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -59,9 +54,7 @@ export class MockCreateService implements CreateService {
       values: {
         name: (input.name as string) || `Mock Person ${mockId.slice(-4)}`,
         email_addresses: Array.isArray(input.email_addresses)
-          ? (input.email_addresses as string[]).map((email) => ({
-              value: email,
-            }))
+          ? (input.email_addresses as string[]).map((email) => ({ value: email }))
           : [{ value: `${mockId}@example.com` }],
       },
       created_at: new Date().toISOString(),
@@ -71,18 +64,17 @@ export class MockCreateService implements CreateService {
 
   async createTask(input: Record<string, unknown>): Promise<AttioRecord> {
     // Use deterministic ID if record_id is provided (for test compatibility)
-    const mockId = input.record_id
+    const mockId = input.record_id 
       ? (input.record_id as string)
       : generateMockId('12345678-1234-4000-a000');
-
-    const taskContent =
-      (input.content as string) || (input.title as string) || 'Mock Test Task';
+    
+    const taskContent = (input.content as string) || 
+                       (input.title as string) || 
+                       'Mock Test Task';
 
     // Issue #480 compatible mock task
     try {
-      const { logTaskDebug, sanitizePayload } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, sanitizePayload } = await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Incoming taskData',
@@ -101,12 +93,8 @@ export class MockCreateService implements CreateService {
         content: taskContent,
         title: taskContent, // Issue #480: Dual field support
         status: [{ value: (input.status as string) || 'pending' }],
-        due_date: input.due_date
-          ? [{ value: input.due_date as string }]
-          : undefined,
-        assignee: input.assigneeId
-          ? [{ value: input.assigneeId as string }]
-          : undefined,
+        due_date: input.due_date ? [{ value: input.due_date as string }] : undefined,
+        assignee: input.assigneeId ? [{ value: input.assigneeId as string }] : undefined,
       },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -140,8 +128,7 @@ export class MockCreateService implements CreateService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
-      Record<string, unknown>;
+    const result = { ...attioRecord, ...flatFields } as AttioRecord & Record<string, unknown>;
 
     // Emit top-level assignees for E2E expectation
     if (input.assigneeId) {
@@ -154,9 +141,7 @@ export class MockCreateService implements CreateService {
     }
 
     try {
-      const { logTaskDebug, inspectTaskRecordShape } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, inspectTaskRecordShape } = await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.createTask',
         'Returning mock task',
@@ -167,12 +152,9 @@ export class MockCreateService implements CreateService {
     return result as any;
   }
 
-  async updateTask(
-    taskId: string,
-    updateData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  async updateTask(taskId: string, updateData: Record<string, unknown>): Promise<AttioRecord> {
     // Validation for mock environment
-    if (!isValidId(taskId) || taskId === 'invalid') {
+    if (!isValidId(taskId)) {
       throw new Error(`Task not found: ${taskId}`);
     }
 
@@ -188,10 +170,9 @@ export class MockCreateService implements CreateService {
       }
     }
 
-    const taskContent =
-      (updateData.content as string) ||
-      (updateData.title as string) ||
-      `Updated Mock Test Task ${taskId.slice(-4)}`;
+    const taskContent = (updateData.content as string) || 
+                       (updateData.title as string) || 
+                       `Updated Mock Test Task ${taskId.slice(-4)}`;
 
     // Issue #480 compatible updated mock task
     const attioRecord: AttioRecord = {
@@ -205,12 +186,8 @@ export class MockCreateService implements CreateService {
         content: taskContent,
         title: taskContent, // Issue #480: Dual field support
         status: [{ value: (updateData.status as string) || 'updated' }],
-        due_date: updateData.due_date
-          ? [{ value: updateData.due_date as string }]
-          : undefined,
-        assignee: updateData.assigneeId
-          ? [{ value: updateData.assigneeId as string }]
-          : undefined,
+        due_date: updateData.due_date ? [{ value: updateData.due_date as string }] : undefined,
+        assignee: updateData.assigneeId ? [{ value: updateData.assigneeId as string }] : undefined,
       },
       created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
       updated_at: new Date().toISOString(),
@@ -244,8 +221,7 @@ export class MockCreateService implements CreateService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
-      Record<string, unknown>;
+    const result = { ...attioRecord, ...flatFields } as AttioRecord & Record<string, unknown>;
 
     // Emit top-level assignees for E2E expectation
     if (updateData.assigneeId) {
@@ -258,9 +234,7 @@ export class MockCreateService implements CreateService {
     }
 
     try {
-      const { logTaskDebug, inspectTaskRecordShape } = await import(
-        '../../utils/task-debug.js'
-      );
+      const { logTaskDebug, inspectTaskRecordShape } = await import('../../utils/task-debug.js');
       logTaskDebug(
         'mock.updateTask',
         'Returning updated mock task',
@@ -336,7 +310,7 @@ export class MockCreateService implements CreateService {
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<unknown[]> {
+  }): Promise<any[]> {
     // Return empty array for mock mode (tests focus on creation)
     return [];
   }
