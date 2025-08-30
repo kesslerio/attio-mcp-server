@@ -3,7 +3,6 @@ import {
   getTask as apiGet,
   createTask as apiCreate,
   updateTask as apiUpdate,
-  deleteTask as apiDelete,
   linkRecordToTask as apiLink,
   unlinkRecordFromTask as apiUnlink,
 } from '../api/operations/index.js';
@@ -151,24 +150,43 @@ export async function updateTask(
 }
 
 export async function deleteTask(taskId: string): Promise<boolean> {
+  // Check if we should use mock data for testing
+  if (shouldUseMockData()) {
+    // Validate task ID
+    if (!isValidId(taskId)) {
+      throw new Error(`Task not found: ${taskId}`);
+    }
+
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.VERBOSE_TESTS === 'true'
+    ) {
+      console.error('[MockInjection] Using mock data for task deletion');
+    }
+
+    // Return mock success response
+    return true;
+  }
+
+  // Use centralized Attio client for consistent authentication and 404 handling
+  const { getAttioClient } = await import('../api/attio-client.js');
+  const client = getAttioClient();
+
   try {
-    const result = await apiDelete(taskId);
-    // apiDelete typically returns boolean true on success
-    return result === true;
+    const resp = await client.delete(`/objects/tasks/records/${taskId}`);
+    const status = resp?.status ?? 0;
+    // Attio typically returns 204 on success (some gateways return 200)
+    return status === 204 || status === 200;
   } catch (err: any) {
     const status = err?.response?.status ?? err?.status;
+    const code = err?.response?.data?.code ?? err?.code;
     const msg = (err?.response?.data?.message ?? err?.message ?? '')
       .toString()
       .toLowerCase();
-    // Normalize: if the API signals not found, convert to a soft-fail 'false'
-    if (
-      status === 404 ||
-      msg.includes('not found') ||
-      err?.code === 'not_found'
-    ) {
+    // Normalize soft "not found" to boolean false so the service maps it to a structured 404
+    if (status === 404 || code === 'not_found' || msg.includes('not found'))
       return false;
-    }
-    throw err; // bubble up genuine failures
+    throw err;
   }
 }
 

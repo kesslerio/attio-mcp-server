@@ -2,6 +2,8 @@
  * Attio API client and related utilities
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
+// @ts-ignore
+import httpAdapter from 'axios/lib/adapters/http.js';
 import { createAttioError } from '../utils/error-handler.js';
 import { debug, error as logError, OperationType } from '../utils/logger.js';
 
@@ -173,7 +175,21 @@ export function initializeAttioClient(apiKey: string): AxiosInstance {
  * @returns The Axios instance for the Attio API
  * @throws If the API client hasn't been initialized and no API key is available
  */
-export function getAttioClient(): AxiosInstance {
+export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
+  const isE2E = process.env.E2E_MODE === 'true';
+  const useMocks =
+    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true';
+  const forceReal = isE2E && !useMocks;
+
+  // Debug log the client mode selection
+  debug('AttioClient', 'mode', {
+    isE2E,
+    useMocks,
+    forceReal,
+    rawE2E: opts?.rawE2E,
+    NODE_ENV: process.env.NODE_ENV,
+  });
+
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
     const apiKey = process.env.ATTIO_API_KEY;
@@ -185,11 +201,79 @@ export function getAttioClient(): AxiosInstance {
         'initialization',
         OperationType.SYSTEM
       );
-      return initializeAttioClient(apiKey);
+      apiInstance = createAttioClient(apiKey);
+    } else {
+      throw new Error(
+        'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
+      );
     }
-    throw new Error(
-      'API client not initialized. Call initializeAttioClient first or set ATTIO_API_KEY environment variable.'
-    );
   }
+
+  // ⛔ turn off any test adapters / interceptors when forceReal or rawE2E
+  if (forceReal || opts?.rawE2E) {
+    debug('AttioClient', 'Creating raw E2E client with http adapter');
+
+    // Create a fresh client instance with no interceptors for E2E
+    const apiKey = process.env.ATTIO_API_KEY;
+    if (!apiKey) {
+      throw new Error('ATTIO_API_KEY required for E2E mode');
+    }
+
+    const rawClient = axios.create({
+      baseURL: process.env.ATTIO_BASE_URL ?? 'https://api.attio.com/v2',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      // keep transforms minimal & predictable
+      transformResponse: [
+        (data) => {
+          // axios default parses JSON already; this guards odd content-types
+          try {
+            return typeof data === 'string' && data ? JSON.parse(data) : data;
+          } catch {
+            return data;
+          }
+        },
+      ],
+      // ✅ force node http adapter; do not let axios pick fetch/undici
+      adapter: httpAdapter as any,
+      decompress: true as any, // harmless on http adapter
+      transitional: { silentJSONParsing: false, clarifyTimeoutError: true },
+      validateStatus: (s) => s >= 200 && s < 300,
+    });
+
+    // no interceptors
+    (rawClient.interceptors.request as any).handlers = [];
+    (rawClient.interceptors.response as any).handlers = [];
+
+    // Add minimal logging for E2E debugging only
+    if (isE2E) {
+      rawClient.interceptors.response.use(
+        (resp) => {
+          debug('RawE2EClient', 'Response', {
+            status: resp.status,
+            url: resp.config?.url,
+            hasData: !!resp.data,
+            dataIsObject: resp.data && typeof resp.data === 'object',
+            headerKeys: resp.headers ? Object.keys(resp.headers) : [],
+          });
+          return resp;
+        },
+        (err) => {
+          debug('RawE2EClient', 'Error', {
+            status: err?.response?.status,
+            url: err?.config?.url,
+            message: err?.message,
+          });
+          return Promise.reject(err);
+        }
+      );
+    }
+
+    return rawClient;
+  }
+
   return apiInstance;
 }
