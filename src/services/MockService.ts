@@ -16,6 +16,19 @@ import type { AttioRecord } from '../types/attio.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
 import { debug, error } from '../utils/logger.js';
+
+// Normalizes axios responses regardless of interceptors and adapts id to { id: { record_id } }
+function extractAttioRecord(response: any) {
+  const payload = (response && (response.data ?? response)) ?? null; // axios resp or already-unwrapped
+  const rec = (payload && (payload.data ?? payload)) ?? null; // some clients nest a second 'data'
+
+  if (rec && typeof rec === 'object' && typeof (rec as any).id === 'string') {
+    // Adapt to the AttioRecord shape tests expect
+    return { ...rec, id: { record_id: (rec as any).id } };
+  }
+
+  return rec;
+}
 import type {
   E2EMeta,
   UnknownRecord,
@@ -143,7 +156,7 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord
-        const record = response?.data?.data || response?.data;
+        const record = extractAttioRecord(response);
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
@@ -161,8 +174,19 @@ export class MockService {
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
-            'Company creation failed: API returned empty response'
+            'Attio createCompany returned an empty/invalid record payload'
           );
+        }
+
+        if (
+          process.env.E2E_MODE === 'true' ||
+          process.env.NODE_ENV === 'test'
+        ) {
+          debug('MockService', 'Normalized record', {
+            hasIdObj: !!(record as any)?.id?.record_id,
+            idType: typeof (record as any)?.id,
+            keys: Object.keys(record || {}),
+          });
         }
 
         return record;
@@ -392,7 +416,7 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord
-        const record = response?.data?.data || response?.data;
+        const record = extractAttioRecord(response);
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
@@ -410,8 +434,19 @@ export class MockService {
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
-            'Person creation failed: API returned empty response'
+            'Attio createPerson returned an empty/invalid record payload'
           );
+        }
+
+        if (
+          process.env.E2E_MODE === 'true' ||
+          process.env.NODE_ENV === 'test'
+        ) {
+          debug('MockService', 'Normalized record', {
+            hasIdObj: !!(record as any)?.id?.record_id,
+            idType: typeof (record as any)?.id,
+            keys: Object.keys(record || {}),
+          });
         }
 
         return record;

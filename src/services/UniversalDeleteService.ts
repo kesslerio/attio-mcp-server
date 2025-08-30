@@ -150,7 +150,21 @@ export class UniversalDeleteService {
         }
 
         try {
-          await deleteTask(record_id);
+          const resp = await deleteTask(record_id);
+
+          // deleteTask returns boolean - if false, treat as not found
+          if (resp === false) {
+            const err: any = new Error(
+              `Task with ID "${record_id}" not found.`
+            );
+            err.status = 404;
+            err.body = {
+              code: 'not_found',
+              message: `Task with ID "${record_id}" not found.`,
+            };
+            throw err;
+          }
+
           return { success: true, record_id };
         } catch (error: unknown) {
           // Map API errors to structured format
