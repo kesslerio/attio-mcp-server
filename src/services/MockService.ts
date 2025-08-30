@@ -150,6 +150,10 @@ export class MockService {
     if (!useMocks) {
       console.error('[CREATECOMPANY] Starting API call flow - not using mocks');
       console.error('[CREATECOMPANY] Before try block');
+
+      // Declare path outside try block for scope in catch
+      let path = '/objects/companies/records';
+
       try {
         console.error('[CREATECOMPANY] Inside try block');
         console.error('[CREATECOMPANY] Importing attio-client module');
@@ -159,6 +163,11 @@ export class MockService {
         );
         const client = getAttioClient({ rawE2E: true });
         console.error('[CREATECOMPANY] Got client:', !!client);
+
+        // Resolve real object slug for this workspace
+        const { resolveObjectSlug } = await import('../api/attio-objects.js');
+        const companiesSlug = await resolveObjectSlug(client, 'companies');
+        path = `/objects/${companiesSlug}/records`;
 
         // Debug the client configuration
         debug('MockService', 'Client configuration check', {
@@ -203,16 +212,13 @@ export class MockService {
         };
 
         debug('MockService', 'Making API call', {
-          url: '/objects/companies/records',
+          url: path,
           method: 'POST',
           payload,
           payloadSize: JSON.stringify(payload).length,
         });
 
-        const response = await client.post(
-          '/objects/companies/records',
-          payload
-        );
+        const response = await client.post(path, payload);
 
         debug('MockService', 'createCompany Raw API response', {
           status: response?.status,
@@ -254,7 +260,7 @@ export class MockService {
           try {
             if (domain) {
               const { data: searchByDomain } = await client.post(
-                '/objects/companies/records/search',
+                `/objects/${companiesSlug}/records/search`,
                 {
                   filter: { domains: { contains: domain } },
                   limit: 1,
@@ -269,7 +275,7 @@ export class MockService {
               const name = normalizedCompany.name as string;
               if (name) {
                 const { data: searchByName } = await client.post(
-                  '/objects/companies/records/search',
+                  `/objects/${companiesSlug}/records/search`,
                   {
                     filter: { name: { eq: name } },
                     limit: 1,
@@ -290,7 +296,7 @@ export class MockService {
             throw new EnhancedApiError(
               'Attio createCompany returned an empty/invalid record payload',
               500,
-              '/objects/companies/records',
+              path,
               'POST',
               {
                 httpStatus: 500,
@@ -328,7 +334,8 @@ export class MockService {
         throw new EnhancedApiError(
           msg,
           status,
-          '/objects/companies/records',
+          // use the resolved path
+          path,
           'POST',
           {
             httpStatus: status,
@@ -373,11 +380,19 @@ export class MockService {
     personData: Record<string, unknown>
   ): Promise<AttioRecord> {
     if (!shouldUseMockData()) {
+      // Declare path outside try block for scope in catch
+      let path = '/objects/people/records';
+
       try {
         // Use centralized Attio client for consistent authentication
         debug('MockService', 'createPerson Using centralized Attio client');
         const { getAttioClient } = await import('../api/attio-client.js');
         const client = getAttioClient({ rawE2E: true });
+
+        // Resolve real object slug for this workspace
+        const { resolveObjectSlug } = await import('../api/attio-objects.js');
+        const peopleSlug = await resolveObjectSlug(client, 'people');
+        path = `/objects/${peopleSlug}/records`;
 
         // Normalize to Attio API schema for people values
         const filteredPersonData: Record<string, unknown> = {};
@@ -483,7 +498,7 @@ export class MockService {
         }
 
         const doCreate = async (values: Record<string, unknown>) =>
-          client.post('/objects/people/records', { data: { values } });
+          client.post(path, { data: { values } });
 
         let response;
         try {
@@ -560,7 +575,7 @@ export class MockService {
           try {
             if (email) {
               const { data: search } = await client.post(
-                '/objects/people/records/search',
+                `/objects/${peopleSlug}/records/search`,
                 {
                   filter: { email_addresses: { contains: email } },
                   limit: 1,
@@ -580,7 +595,7 @@ export class MockService {
             throw new EnhancedApiError(
               'Attio createPerson returned an empty/invalid record payload',
               500,
-              '/objects/people/records',
+              path,
               'POST',
               {
                 httpStatus: 500,
@@ -616,18 +631,12 @@ export class MockService {
           status && data
             ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
             : (anyErr?.message as string) || 'createPerson error';
-        throw new EnhancedApiError(
-          msg,
-          status,
-          '/objects/people/records',
-          'POST',
-          {
-            httpStatus: status,
-            resourceType: 'people',
-            operation: 'create',
-            originalError: anyErr,
-          }
-        );
+        throw new EnhancedApiError(msg, status, path, 'POST', {
+          httpStatus: status,
+          resourceType: 'people',
+          operation: 'create',
+          originalError: anyErr,
+        });
       }
     }
 
