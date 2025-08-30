@@ -26,7 +26,7 @@ class PerformanceMonitorInstance {
   }
 
   // Instance methods that delegate to static PerformanceTracker methods
-  startOperation(toolName: string, metadata?: Record<string, any>): number {
+  startOperation(toolName: string, metadata?: Record<string, unknown>): number {
     const startTime = PerformanceTracker.startOperation(toolName, metadata);
     this.activeOperations.set(toolName, startTime);
     return startTime;
@@ -37,7 +37,7 @@ class PerformanceMonitorInstance {
     startTimeOrSuccess?: number | boolean,
     success: boolean = true,
     error?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): PerformanceMetrics {
     // Support both patterns:
     // 1. endOperation(toolName, startTime, success, error, metadata) - explicit startTime
@@ -46,7 +46,7 @@ class PerformanceMonitorInstance {
     let startTime: number;
     let actualSuccess: boolean;
     let actualError: string | undefined;
-    let actualMetadata: Record<string, any> | undefined;
+    let actualMetadata: Record<string, unknown> | undefined;
 
     if (typeof startTimeOrSuccess === 'number') {
       // Pattern 1: explicit startTime provided
@@ -123,12 +123,16 @@ class PerformanceMonitorInstance {
   async measureAsync<T>(
     toolName: string,
     fn: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     return PerformanceTracker.measureAsync(toolName, fn, metadata);
   }
 
-  measure<T>(toolName: string, fn: () => T, metadata?: Record<string, any>): T {
+  measure<T>(
+    toolName: string,
+    fn: () => T,
+    metadata?: Record<string, unknown>
+  ): T {
     return PerformanceTracker.measure(toolName, fn, metadata);
   }
 

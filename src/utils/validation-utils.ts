@@ -154,7 +154,7 @@ export async function validateMultiSelectField(
  */
 export async function validateReadOnlyFields(
   resourceType: string,
-  updateFields: Record<string, any>
+  updateFields: Record<string, unknown>
 ): Promise<ValidationResult> {
   try {
     const attributes = await getResourceAttributes(resourceType);
@@ -298,7 +298,7 @@ export async function validateFieldExistence(
  */
 export async function validateRecordFields(
   resourceType: string,
-  fields: Record<string, any>,
+  fields: Record<string, unknown>,
   isUpdate: boolean = false
 ): Promise<ValidationResult> {
   const fieldNames = Object.keys(fields);

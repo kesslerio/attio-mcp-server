@@ -301,12 +301,12 @@ export interface AttioListEntry {
     };
     record_id?: string; // Sometimes directly on record object
     reference_id?: string; // Alternative ID field
-    values?: Record<string, any>;
+    values?: Record<string, unknown>;
     object_slug?: string;
     uri?: string; // URI that might contain record ID
     [key: string]: unknown;
   };
-  values?: Record<string, any>; // May contain record information
+  values?: Record<string, unknown>; // May contain record information
   [key: string]: unknown; // Additional fields that vary by API response
 }
 

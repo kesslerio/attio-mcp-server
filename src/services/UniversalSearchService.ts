@@ -806,7 +806,7 @@ export class UniversalSearchService {
   ): Promise<AttioRecord[]> {
     try {
       // Build query parameters for Attio Notes API
-      const queryParams: Record<string, any> = {};
+      const queryParams: Record<string, unknown> = {};
 
       // Apply filters (mapped from universal filter names)
       if (filters) {

@@ -336,7 +336,7 @@ export class MockCreateService implements CreateService {
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     // Return empty array for mock mode (tests focus on creation)
     return [];
   }

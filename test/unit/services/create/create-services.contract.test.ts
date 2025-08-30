@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AttioCreateService } from './attio-create.service.js';
-import { MockCreateService } from './mock-create.service.js';
-import type { CreateService } from './types.js';
+import { AttioCreateService } from '../../../../src/services/create/attio-create.service.js';
+import { MockCreateService } from '../../../../src/services/create/mock-create.service.js';
+import type { CreateService } from '../../../../src/services/create/types.js';
 
 describe('Create Services Contract', () => {
   let attioService: CreateService;

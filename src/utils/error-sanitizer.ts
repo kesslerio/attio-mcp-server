@@ -195,7 +195,7 @@ export interface SanitizationOptions {
   /** Operation name for logging */
   operation?: string;
   /** Additional safe metadata to include */
-  safeMetadata?: Record<string, any>;
+  safeMetadata?: Record<string, unknown>;
 }
 
 /**
@@ -322,7 +322,7 @@ export interface SanitizedError {
   message: string;
   type: string;
   statusCode?: number;
-  safeMetadata?: Record<string, any>;
+  safeMetadata?: Record<string, unknown>;
 }
 
 /**

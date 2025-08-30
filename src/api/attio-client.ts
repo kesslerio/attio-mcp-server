@@ -12,7 +12,7 @@ export const __MODULE_PATH__ = __filename;
 import axios, { AxiosInstance } from 'axios';
 // @ts-expect-error: axios internal adapter import
 import httpAdapter from 'axios/lib/adapters/http.js';
-import { debug, OperationType } from '../utils/logger.js';
+import { debug, error, OperationType } from '../utils/logger.js';
 
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
@@ -100,11 +100,18 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       },
       (err) => {
         const r = err?.response;
-        console.error('💥 AttioClient error', {
-          url: r?.config?.url,
-          status: r?.status,
-          data: r?.data,
-        });
+        error(
+          'attio-client',
+          'HTTP request failed',
+          err,
+          {
+            url: r?.config?.url,
+            status: r?.status,
+            method: r?.config?.method,
+          },
+          'http-request',
+          OperationType.API_CALL
+        );
         return Promise.reject(err);
       }
     );
@@ -139,7 +146,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     },
     (err) => {
       const r = err?.response;
-      console.error('💥 HTTP Error', {
+      error('attio-client', 'HTTP response error', err, {
         url: r?.config?.url,
         method: r?.config?.method,
         status: r?.status,
@@ -266,7 +273,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       },
       (err) => {
         const r = err?.response;
-        console.error('💥 E2E HTTP Error', {
+        error('attio-client', 'E2E HTTP error', err, {
           url: r?.config?.url,
           method: r?.config?.method,
           status: r?.status,

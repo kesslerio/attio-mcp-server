@@ -80,7 +80,7 @@ export function getMockCompany(companyId: string): Company | null {
  */
 export function updateMockCompany(
   companyId: string,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ): Company | null {
   if (!shouldUseMockState() || !companyId || !attributes) {
     return null;
@@ -197,10 +197,10 @@ export function createAttioApiValue(
  */
 export function createMockCompanyWithApiStructure(
   companyId: string,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ): Company {
   // Convert simple attributes to Attio API format
-  const apiFormattedValues: Record<string, any> = {};
+  const apiFormattedValues: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(attributes)) {
     if (value !== null && value !== undefined) {

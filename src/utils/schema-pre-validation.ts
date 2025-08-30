@@ -503,7 +503,7 @@ export class SchemaPreValidator {
    */
   static async validateRecordData(
     resourceType: UniversalResourceType,
-    recordData: Record<string, any>,
+    recordData: Record<string, unknown>,
     context?: { workspaceId?: string; tenantId?: string }
   ): Promise<{
     isValid: boolean;
@@ -758,7 +758,7 @@ export class SchemaPreValidator {
    */
   static async withPreValidation<T>(
     resourceType: UniversalResourceType,
-    recordData: Record<string, any>,
+    recordData: Record<string, unknown>,
     operation: () => Promise<T>
   ): Promise<T> {
     // Validate record data

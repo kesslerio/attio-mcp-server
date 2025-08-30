@@ -3,7 +3,7 @@
  * Tests the actual parsing function without API dependencies
  */
 import { describe, it, expect } from 'vitest';
-import { parsePersonalName } from '../../src/utils/personal-name-parser';
+import { parsePersonalName } from '../../../src/utils/personal-name-parser.js';
 
 describe('Personal Name Parser', () => {
   it('should parse simple string name "John Doe" into structured format', () => {

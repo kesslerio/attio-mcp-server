@@ -204,7 +204,7 @@ export async function handleUniversalUpdateNote(
   const { note_id, title, content, is_archived } = params;
   const client = getAttioClient();
 
-  const updateData: Record<string, any> = {};
+  const updateData: Record<string, unknown> = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;

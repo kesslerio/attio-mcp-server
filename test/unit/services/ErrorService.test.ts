@@ -6,15 +6,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ErrorService } from './ErrorService.js';
+import { ErrorService } from '../../../src/services/ErrorService.js';
 import {
   UniversalValidationError,
   ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
+} from '../../../src/handlers/tool-configs/universal/schemas.js';
+import { EnhancedApiError } from '../../../src/errors/enhanced-api-errors.js';
 
 // Mock the dependencies
-vi.mock('../handlers/tool-configs/universal/field-mapper.js', () => ({
+vi.mock('../../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   validateResourceType: vi.fn(),
   getFieldSuggestions: vi.fn(),
 }));
@@ -22,7 +22,7 @@ vi.mock('../handlers/tool-configs/universal/field-mapper.js', () => ({
 import {
   validateResourceType,
   getFieldSuggestions,
-} from '../handlers/tool-configs/universal/field-mapper.js';
+} from '../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 describe('ErrorService', () => {
   beforeEach(() => {

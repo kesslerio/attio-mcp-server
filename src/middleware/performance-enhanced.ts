@@ -37,7 +37,7 @@ export interface EnhancedPerformanceMetrics {
   error?: string;
   statusCode?: number;
   recordCount?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -141,7 +141,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   startOperation(
     toolName: string,
     operationType: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): string {
     if (!this.enabled) return '';
 

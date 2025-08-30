@@ -6,24 +6,24 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { CachingService } from './CachingService.js';
-import type { AttioRecord } from '../types/attio.js';
+import { CachingService } from '../../../src/services/CachingService.js';
+import type { AttioRecord } from '../../../src/types/attio.js';
 
 // Mock the dependencies
-vi.mock('../middleware/performance-enhanced.js', () => ({
+vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
   enhancedPerformanceTracker: {
     getCached404: vi.fn(),
     cache404Response: vi.fn(),
   },
 }));
 
-vi.mock('../utils/validation/id-validation.js', () => ({
+vi.mock('../../../src/utils/validation/id-validation.js', () => ({
   generateIdCacheKey: vi.fn(
     (resourceType: string, recordId: string) => `${resourceType}:${recordId}`
   ),
 }));
 
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
 
 describe('CachingService', () => {
   const mockTasks: AttioRecord[] = [

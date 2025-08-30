@@ -8,7 +8,7 @@ export interface EnhancedApiErrorLike extends Error {
   statusCode?: number;
   endpoint?: string;
   method?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export function isEnhancedApiError(e: unknown): e is EnhancedApiErrorLike {

@@ -16,7 +16,7 @@ import { wrapError, getErrorMessage } from '../../utils/error-utilities.js';
 function logAttributeError(
   functionName: string,
   error: unknown,
-  context: Record<string, any> = {}
+  context: Record<string, unknown> = {}
 ) {
   console.error(`[${functionName}] Error:`, error);
   console.error(
@@ -65,7 +65,7 @@ export async function getCompanyFields(
     const fullCompany = await getCompanyDetails(companyIdOrUri);
 
     // Filter to only requested fields
-    const filteredValues: Record<string, any> = {};
+    const filteredValues: Record<string, unknown> = {};
     const allValues = fullCompany.values || {};
 
     for (const field of fields) {
@@ -276,7 +276,7 @@ export async function getCompanyCustomFields(
   ]);
 
   // Extract custom fields
-  const customFields: Record<string, any> = {};
+  const customFields: Record<string, unknown> = {};
   const values = allData.values || {};
 
   for (const [fieldName, fieldValue] of Object.entries(values)) {
