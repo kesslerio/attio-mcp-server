@@ -9,6 +9,7 @@ import {
   getDetailedErrorMessage,
 } from './utils/test-cleanup';
 import { clearMockCompanies } from '../src/utils/mock-state';
+import { clearAttributeCache } from '../src/api/attribute-types';
 
 // Validate environment for integration tests
 if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
@@ -214,6 +215,9 @@ beforeEach(() => {
   
   // Clear mock company state for clean test isolation
   clearMockCompanies();
+  
+  // Clear attribute cache to ensure fresh metadata fetching in each test
+  clearAttributeCache();
   
   // Reset console methods to original implementation to avoid interference
   console.log = originalConsole.log;

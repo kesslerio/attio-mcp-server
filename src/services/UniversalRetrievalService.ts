@@ -51,6 +51,8 @@ export class UniversalRetrievalService {
   ): Promise<AttioRecord> {
     const { resource_type, record_id, fields } = params;
 
+    // NOTE: E2E tests should use real API by default. Mock shortcuts are reserved for offline smoke tests.
+
     // Start performance tracking
     const perfId = enhancedPerformanceTracker.startOperation(
       'get-record-details',

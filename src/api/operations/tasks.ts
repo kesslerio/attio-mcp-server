@@ -102,28 +102,26 @@ export async function createTask(
     format: 'plaintext', // Required field for Attio API
   };
 
-  // Add optional fields only if provided
-  if (options.assigneeId) {
-    taskData.assignee = { id: options.assigneeId, type: 'workspace-member' };
-  }
-
   if (options.dueDate) {
     taskData.deadline_at = options.dueDate;
   }
-
-  // Add linked records if provided
-  if (options.recordId) {
-    taskData.linked_records = [{ id: options.recordId }];
-  }
+  // Do not include linked_records here; use /linked-records endpoint after create if needed
 
   // Build the full request payload with all required fields for the API
-  // The API requires these fields to be present even if empty
+  // Assignees: Attio v2 expects referenced actor references
+  const assignees = options.assigneeId
+    ? [
+        {
+          referenced_actor_type: 'workspace-member',
+          referenced_actor_id: options.assigneeId,
+        },
+      ]
+    : [];
   const requestPayload = {
     data: {
       ...taskData,
       is_completed: false, // Always false for new tasks
-      assignees: taskData.assignee ? [taskData.assignee] : [], // Convert to array format
-      linked_records: taskData.linked_records || [],
+      assignees,
       deadline_at: taskData.deadline_at || null, // Explicitly null if not provided
     },
   };
@@ -399,14 +397,15 @@ export async function updateTask(
   }
   // Assignees: API expects an array in the request envelope
   if (updates.assigneeId) {
-    // Use the same shape as createTask request payloads
     (data as any).assignees = [
-      { id: updates.assigneeId, type: 'workspace-member' },
+      {
+        referenced_actor_type: 'workspace-member',
+        referenced_actor_id: updates.assigneeId,
+      },
     ];
   }
   if (updates.dueDate) data.deadline_at = updates.dueDate; // Use deadline_at instead of due_date
-  if (updates.recordIds)
-    data.linked_records = updates.recordIds.map((id) => ({ id }));
+  // Do not include linked_records in PATCH; call /linked-records after update
 
   // Wrap in Attio envelope as per API requirements
   const requestPayload = { data };
@@ -455,6 +454,22 @@ export async function updateTask(
       'updateTask',
       OperationType.API_CALL
     );
+    // If linking records was requested, call the linked-records endpoint per Attio v2
+    if (updates.recordIds && updates.recordIds.length) {
+      try {
+        for (const rid of updates.recordIds) {
+          if (!rid) continue;
+          await api.post(`/tasks/${taskId}/linked-records`, { record_id: rid });
+        }
+      } catch (e) {
+        // Non-blocking: log and continue
+        logTaskDebug('updateTask', 'linked-records post failed', {
+          taskId,
+          count: updates.recordIds.length,
+        });
+      }
+    }
+
     return transformed;
   }, retryConfig);
 }

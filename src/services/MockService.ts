@@ -26,15 +26,8 @@ import type {
  * Environment detection for mock injection
  */
 function shouldUseMockData(): boolean {
-  // Align with objects/tasks.ts behavior: in E2E runs we prefer mocks to avoid live API dependency
-  // Allows offline CI and local runs while keeping real API available via explicit flags
-  if (process.env.E2E_MODE === 'true') {
-    // Allow forcing real API explicitly if needed
-    if (process.env.FORCE_REAL_API === 'true') return false;
-    return true;
-  }
-
-  // For other test modes, use mock data
+  // Explicit-only: use mocks only when explicitly requested
+  // E2E runs should default to real API; offline runs use test:offline
   if (
     process.env.USE_MOCK_DATA === 'true' ||
     process.env.OFFLINE_MODE === 'true' ||
@@ -42,7 +35,6 @@ function shouldUseMockData(): boolean {
   ) {
     return true;
   }
-
   return false;
 }
 

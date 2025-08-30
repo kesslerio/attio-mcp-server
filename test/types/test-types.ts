@@ -138,6 +138,160 @@ export function createMockApiClient(): MockApiClient {
         return { status: 200, data: { data: found } };
       }
 
+      // Handle attribute metadata requests for different object types
+      if (path.match(/^\/objects\/\w+\/attributes$/)) {
+        const objectSlug = path.split('/')[2]; // Extract objectSlug from /objects/{objectSlug}/attributes
+
+        // Mock attribute metadata based on object type
+        const attributeData = [];
+
+        if (objectSlug === 'companies') {
+          attributeData.push(
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_1',
+              },
+              api_slug: 'name',
+              title: 'Name',
+              type: 'text',
+              is_required: true,
+              is_unique: false,
+              allow_multiple_values: false,
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_2',
+              },
+              api_slug: 'categories',
+              title: 'Categories',
+              type: 'select',
+              is_required: false,
+              is_unique: false,
+              allow_multiple_values: true,
+              config: {
+                select: {
+                  options: [
+                    {
+                      id: 'opt1',
+                      title: 'Software & Technology',
+                      value: 'software',
+                    },
+                    {
+                      id: 'opt2',
+                      title: 'Healthcare & Medical',
+                      value: 'healthcare',
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_3',
+              },
+              api_slug: 'revenue',
+              title: 'Revenue',
+              type: 'currency',
+              is_required: false,
+              is_unique: false,
+              allow_multiple_values: false,
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_4',
+              },
+              api_slug: 'active',
+              title: 'Active',
+              type: 'checkbox',
+              is_required: false,
+              is_unique: false,
+              allow_multiple_values: false,
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_5',
+              },
+              api_slug: 'website',
+              title: 'Website',
+              type: 'url',
+              is_required: false,
+              is_unique: false,
+              allow_multiple_values: false,
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'companies',
+                attribute_id: 'attr_6',
+              },
+              api_slug: 'status',
+              title: 'Status',
+              type: 'select',
+              is_required: false,
+              is_unique: false,
+              allow_multiple_values: false,
+              config: {
+                select: {
+                  options: [
+                    { id: 'opt_active', title: 'Active', value: 'active' },
+                    {
+                      id: 'opt_inactive',
+                      title: 'Inactive',
+                      value: 'inactive',
+                    },
+                    { id: 'opt_pending', title: 'Pending', value: 'pending' },
+                  ],
+                },
+              },
+            }
+          );
+        } else if (objectSlug === 'people') {
+          attributeData.push(
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'people',
+                attribute_id: 'attr_p1',
+              },
+              api_slug: 'email',
+              title: 'Email',
+              type: 'email',
+              is_required: true,
+              is_unique: true,
+              allow_multiple_values: false,
+            },
+            {
+              id: {
+                workspace_id: 'ws-1',
+                object_id: 'people',
+                attribute_id: 'attr_p2',
+              },
+              api_slug: 'first_name',
+              title: 'First Name',
+              type: 'text',
+              is_required: true,
+              is_unique: false,
+              allow_multiple_values: false,
+            }
+          );
+        }
+
+        return {
+          status: 200,
+          data: { data: attributeData },
+        };
+      }
+
       // default ok
       return { status: 200, data: { data: {} } };
     }),
