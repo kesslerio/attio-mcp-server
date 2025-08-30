@@ -314,18 +314,14 @@ describe.skipIf(
 
         console.log('📋 TASK RESPONSE DEBUG', {
           hasAssignee: !!createdTask.assignee,
-          hasAssignees: !!createdTask.assignees,
           assigneeKeys: createdTask.assignee
             ? Object.keys(createdTask.assignee)
-            : null,
-          assigneesLength: Array.isArray(createdTask.assignees)
-            ? createdTask.assignees.length
             : null,
           taskKeys: Object.keys(createdTask || {}),
         });
 
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(createdTask.assignees[0]?.referenced_actor_id).toBeDefined();
+        expect(createdTask.assignee?.referenced_actor_id).toBeDefined();
 
         createdTasks.push(createdTask);
         console.error('👥 Created task with assignee:', createdTask.id.task_id);
