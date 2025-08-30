@@ -85,7 +85,7 @@ export function isTestRun(): boolean {
   return process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 }
 
-export function debugRecordShape(record: any): Record<string, any> {
+export function debugRecordShape(record: any): Record<string, unknown> {
   return {
     hasIdObj: !!(record as any)?.id?.record_id,
     idType: typeof (record as any)?.id,
