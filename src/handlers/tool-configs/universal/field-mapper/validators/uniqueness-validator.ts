@@ -36,7 +36,8 @@ export async function enhanceUniquenessError(
     const attributes = response.data.data || [];
 
     const attribute = attributes.find(
-      (attr: Record<string, unknown>) => attr.id === attributeId || attr.api_slug === attributeId
+      (attr: Record<string, unknown>) =>
+        attr.id === attributeId || attr.api_slug === attributeId
     );
 
     if (attribute) {

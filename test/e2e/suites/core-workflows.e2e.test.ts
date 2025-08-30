@@ -278,7 +278,7 @@ describe.skipIf(
           hasFirstPerson: !!taskTestPeople[0],
           firstPersonId: taskTestPeople[0]?.id?.record_id,
         });
-        
+
         if (taskTestPeople.length === 0) {
           console.error('⏭️ Skipping assignee test - no test people available');
           return;
@@ -286,7 +286,7 @@ describe.skipIf(
 
         const taskData = TaskFactory.create();
         const assignee = taskTestPeople[0];
-        
+
         console.log('🎯 ASSIGNEE DEBUG', {
           assigneeId: assignee?.id?.record_id,
           assigneeKeys: Object.keys(assignee || {}),
@@ -302,7 +302,7 @@ describe.skipIf(
                 {
                   referenced_actor_type: 'workspace-member',
                   referenced_actor_id: assignee.id.record_id,
-                }
+                },
               ],
               deadline_at: taskData.due_date,
             },
@@ -311,19 +311,21 @@ describe.skipIf(
 
         E2EAssertions.expectMcpSuccess(response);
         const createdTask = extractTaskData(response);
-        
+
         console.log('📋 TASK RESPONSE DEBUG', {
           hasAssignee: !!createdTask.assignee,
           hasAssignees: !!createdTask.assignees,
-          assigneeKeys: createdTask.assignee ? Object.keys(createdTask.assignee) : null,
-          assigneesLength: Array.isArray(createdTask.assignees) ? createdTask.assignees.length : null,
+          assigneeKeys: createdTask.assignee
+            ? Object.keys(createdTask.assignee)
+            : null,
+          assigneesLength: Array.isArray(createdTask.assignees)
+            ? createdTask.assignees.length
+            : null,
           taskKeys: Object.keys(createdTask || {}),
         });
 
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(
-          createdTask.assignees[0]?.referenced_actor_id
-        ).toBeDefined();
+        expect(createdTask.assignees[0]?.referenced_actor_id).toBeDefined();
 
         createdTasks.push(createdTask);
         console.error('👥 Created task with assignee:', createdTask.id.task_id);
@@ -447,7 +449,7 @@ describe.skipIf(
                 {
                   referenced_actor_type: 'workspace-member',
                   referenced_actor_id: newAssignee.id.record_id,
-                }
+                },
               ],
             },
           })

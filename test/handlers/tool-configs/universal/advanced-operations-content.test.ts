@@ -18,7 +18,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
   beforeEach(async () => {
     await setupUnitTestMocks();
-    
+
     // Import after mocks are set up
     const advancedOps = await import(
       '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
@@ -54,7 +54,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchCompaniesByNotes).toHaveBeenCalledWith('important meeting');
+      expect(mockSpecialized.searchCompaniesByNotes).toHaveBeenCalledWith(
+        'important meeting'
+      );
     });
 
     it('should search people by notes content', async () => {
@@ -79,7 +81,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByContentConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchPeopleByNotes).toHaveBeenCalledWith('follow up');
+      expect(mockSpecialized.searchPeopleByNotes).toHaveBeenCalledWith(
+        'follow up'
+      );
     });
 
     it('should search people by activity content', async () => {
@@ -204,7 +208,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       ];
 
       const { mockSpecialized } = getMockInstances();
-      mockSpecialized.searchPeopleByModificationDate.mockResolvedValue(mockResults);
+      mockSpecialized.searchPeopleByModificationDate.mockResolvedValue(
+        mockResults
+      );
 
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.PEOPLE,
@@ -215,7 +221,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
 
       const result = await searchByTimeframeConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchPeopleByModificationDate).toHaveBeenCalledWith({
+      expect(
+        mockSpecialized.searchPeopleByModificationDate
+      ).toHaveBeenCalledWith({
         start: '2023-12-01T00:00:00Z',
         end: '2023-12-31T23:59:59Z',
       });
@@ -232,12 +240,14 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       ];
 
       const { mockUtils, mockSpecialized } = getMockInstances();
-      
+
       mockUtils.validateAndCreateDateRange.mockReturnValue({
         start: '2023-12-01T00:00:00Z',
         end: '2023-12-31T23:59:59Z',
       });
-      mockSpecialized.searchPeopleByLastInteraction.mockResolvedValue(mockResults);
+      mockSpecialized.searchPeopleByLastInteraction.mockResolvedValue(
+        mockResults
+      );
 
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.PEOPLE,
@@ -252,7 +262,9 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
         '2023-12-01T00:00:00Z',
         '2023-12-31T23:59:59Z'
       );
-      expect(mockSpecialized.searchPeopleByLastInteraction).toHaveBeenCalledWith({
+      expect(
+        mockSpecialized.searchPeopleByLastInteraction
+      ).toHaveBeenCalledWith({
         start: '2023-12-01T00:00:00Z',
         end: '2023-12-31T23:59:59Z',
       });
@@ -314,7 +326,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
   describe('Content and Timeframe validation and edge cases', () => {
     it('should handle validation errors in content and timeframe tools', async () => {
       const { mockSchemas } = getMockInstances();
-      
+
       // Store the original mock implementation to restore it later
       const originalMock = mockSchemas.validateUniversalToolParams;
 

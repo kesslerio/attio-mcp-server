@@ -37,7 +37,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
   const integrationSetup = IntegrationTestSetup.getInstance();
   const dataManager = new IntegrationTestDataManager();
   const testIdentifiers = dataManager.getTestIdentifiers();
-  
+
   const testCompanyName = `Universal Test Company ${testIdentifiers.timestamp}-${testIdentifiers.randomId}`;
   const testPersonEmail = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}@example.com`;
   const testDomain = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}.com`;
@@ -49,12 +49,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
     // Initialize the API client and verify tool configurations
     await integrationSetup.initializeApiClient();
     const toolConfigs = await integrationSetup.verifyToolConfigs();
-    
+
     console.log('Advanced operations tools:', toolConfigs.advancedOperations);
     integrationConfig.logEnvironment();
 
     // Create test records for advanced operations
-    const companyResult = await coreOperationsToolConfigs['create-record'].handler({
+    const companyResult = await coreOperationsToolConfigs[
+      'create-record'
+    ].handler({
       resource_type: UniversalResourceType.COMPANIES,
       record_data: {
         name: testCompanyName,
@@ -63,9 +65,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
       return_details: true,
     });
     createdCompanyId = companyResult.id.record_id;
-    dataManager.trackCreatedRecord(UniversalResourceType.COMPANIES, createdCompanyId);
+    dataManager.trackCreatedRecord(
+      UniversalResourceType.COMPANIES,
+      createdCompanyId
+    );
 
-    const personResult = await coreOperationsToolConfigs['create-record'].handler({
+    const personResult = await coreOperationsToolConfigs[
+      'create-record'
+    ].handler({
       resource_type: UniversalResourceType.PEOPLE,
       record_data: {
         email_addresses: [testPersonEmail],
@@ -74,7 +81,10 @@ describe('Universal Tools Advanced Integration Tests', () => {
       return_details: true,
     });
     createdPersonId = personResult.id.record_id;
-    dataManager.trackCreatedRecord(UniversalResourceType.PEOPLE, createdPersonId);
+    dataManager.trackCreatedRecord(
+      UniversalResourceType.PEOPLE,
+      createdPersonId
+    );
 
     // Allow API indexing
     await integrationUtils.waitForIndexing(3000);
@@ -83,9 +93,9 @@ describe('Universal Tools Advanced Integration Tests', () => {
   afterAll(async () => {
     // Clean up created test data using the data manager
     try {
-      await dataManager.cleanupTrackedRecords({ 
-        ...coreOperationsToolConfigs, 
-        ...advancedOperationsToolConfigs 
+      await dataManager.cleanupTrackedRecords({
+        ...coreOperationsToolConfigs,
+        ...advancedOperationsToolConfigs,
       });
     } catch (error: unknown) {
       console.error('Cleanup failed:', error);
@@ -302,7 +312,10 @@ describe('Universal Tools Advanced Integration Tests', () => {
         // Clean up batch created companies using helper
         const createdIds = integrationUtils.extractRecordIds(result);
         if (createdIds.length > 0) {
-          dataManager.trackCreatedRecords(UniversalResourceType.COMPANIES, createdIds);
+          dataManager.trackCreatedRecords(
+            UniversalResourceType.COMPANIES,
+            createdIds
+          );
         }
       });
 
@@ -387,7 +400,10 @@ describe('Universal Tools Advanced Integration Tests', () => {
         // Clean up any successful creations using helper
         const successfulIds = integrationUtils.extractRecordIds(result);
         if (successfulIds.length > 0) {
-          dataManager.trackCreatedRecords(UniversalResourceType.COMPANIES, successfulIds);
+          dataManager.trackCreatedRecords(
+            UniversalResourceType.COMPANIES,
+            successfulIds
+          );
         }
       });
     });
@@ -480,12 +496,19 @@ describe('Universal Tools Advanced Integration Tests', () => {
       expect(endTime - startTime).toBeGreaterThan(100);
 
       // Log batch summary using helper
-      integrationUtils.logBatchSummary('Rate Limit Test', result, endTime - startTime);
+      integrationUtils.logBatchSummary(
+        'Rate Limit Test',
+        result,
+        endTime - startTime
+      );
 
       // Clean up created records using helper
       const createdIds = integrationUtils.extractRecordIds(result);
       if (createdIds.length > 0) {
-        dataManager.trackCreatedRecords(UniversalResourceType.COMPANIES, createdIds);
+        dataManager.trackCreatedRecords(
+          UniversalResourceType.COMPANIES,
+          createdIds
+        );
       }
     });
   });

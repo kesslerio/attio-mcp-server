@@ -61,8 +61,7 @@ export const DEALS_FIELD_MAPPING: FieldMapping = {
   commonMistakes: {
     company_id: 'Use "associated_company" to link deals to companies',
     company: 'Use "associated_company" with the company record ID',
-    amount:
-      'Use "value" for deal amounts (numeric only, no currency symbols)',
+    amount: 'Use "value" for deal amounts (numeric only, no currency symbols)',
     status: 'Use "stage" for deal pipeline stages',
     description:
       'Deals do not have a description field. Create notes separately after the deal',

@@ -83,7 +83,8 @@ describe.skipIf(
   });
 
   afterAll(async () => {
-    if (prevForceRealApi === undefined) delete process.env.FORCE_REAL_API; else process.env.FORCE_REAL_API = prevForceRealApi;
+    if (prevForceRealApi === undefined) delete process.env.FORCE_REAL_API;
+    else process.env.FORCE_REAL_API = prevForceRealApi;
   });
 
   describe('Core Tool Functionality Smoke Tests', () => {

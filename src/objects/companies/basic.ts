@@ -17,11 +17,11 @@ import {
   deleteObjectWithValidation,
 } from '../base-operations.js';
 import { findPersonReference } from '../../utils/person-lookup.js';
-import { 
+import {
   setMockCompany,
   createMockCompanyWithApiStructure,
   updateMockCompany,
-  getMockCompany
+  getMockCompany,
 } from '../../utils/mock-state.js';
 
 /**
@@ -65,16 +65,24 @@ export async function getCompanyDetails(
   // IMMEDIATE MOCK DETECTION for E2E tests - Check shared state first
   if (
     (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
-    (companyIdOrUri.includes('comp_') || companyIdOrUri.includes('test-') || companyIdOrUri.includes('mock'))
+    (companyIdOrUri.includes('comp_') ||
+      companyIdOrUri.includes('test-') ||
+      companyIdOrUri.includes('mock'))
   ) {
     // First, check if we have this company in shared mock state
     const sharedMockCompany = getMockCompany(companyIdOrUri);
     if (sharedMockCompany) {
-      if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-        console.log('[getCompanyDetails] Returning company from shared mock state:', {
-          companyId: companyIdOrUri,
-          values: sharedMockCompany.values
-        });
+      if (
+        process.env.NODE_ENV === 'development' ||
+        process.env.E2E_MODE === 'true'
+      ) {
+        console.log(
+          '[getCompanyDetails] Returning company from shared mock state:',
+          {
+            companyId: companyIdOrUri,
+            values: sharedMockCompany.values,
+          }
+        );
       }
       return sharedMockCompany;
     }
@@ -85,14 +93,20 @@ export async function getCompanyDetails(
       industry: 'Software & Technology',
       categories: 'Software & Technology',
     });
-    
-    if (process.env.NODE_ENV === 'development' || process.env.E2E_MODE === 'true') {
-      console.log('[getCompanyDetails] Returning static mock company (not found in shared state):', {
-        companyId: companyIdOrUri,
-        values: mockCompany.values
-      });
+
+    if (
+      process.env.NODE_ENV === 'development' ||
+      process.env.E2E_MODE === 'true'
+    ) {
+      console.log(
+        '[getCompanyDetails] Returning static mock company (not found in shared state):',
+        {
+          companyId: companyIdOrUri,
+          values: mockCompany.values,
+        }
+      );
     }
-    
+
     return mockCompany;
   }
 
@@ -126,12 +140,18 @@ export async function getCompanyDetails(
       throw new Error(`Invalid company ID: ${companyIdOrUri}`);
     }
 
-    const result = await getObjectDetails<Company>(ResourceType.COMPANIES, companyId);
-    
+    const result = await getObjectDetails<Company>(
+      ResourceType.COMPANIES,
+      companyId
+    );
+
     // Return mock if result is empty in test environments
     if (
       (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
-      (!result || typeof result !== 'object' || Object.keys(result).length === 0 || !result.values)
+      (!result ||
+        typeof result !== 'object' ||
+        Object.keys(result).length === 0 ||
+        !result.values)
     ) {
       // Check shared state first
       const sharedMockCompany = getMockCompany(companyId);
@@ -146,13 +166,15 @@ export async function getCompanyDetails(
         categories: 'Software & Technology',
       });
     }
-    
+
     return result;
   } catch (error: unknown) {
     // Return mock for test environments when API fails
     if (
       (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
-      (companyIdOrUri.includes('comp_') || companyIdOrUri.includes('test-') || companyIdOrUri.includes('mock'))
+      (companyIdOrUri.includes('comp_') ||
+        companyIdOrUri.includes('test-') ||
+        companyIdOrUri.includes('mock'))
     ) {
       // Check shared state first
       const sharedMockCompany = getMockCompany(companyIdOrUri);
@@ -163,11 +185,11 @@ export async function getCompanyDetails(
       // Fallback to static mock
       return createMockCompanyWithApiStructure(companyIdOrUri, {
         name: `Mock Company ${companyIdOrUri}`,
-        industry: 'Software & Technology', 
+        industry: 'Software & Technology',
         categories: 'Software & Technology',
       });
     }
-    
+
     throw error;
   }
 }
@@ -236,15 +258,18 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error('[createCompany] Invalid ID structure detected, attempting fallback:', {
-          result,
-          hasId: !!result?.id,
-          idValue: result?.id,
-          hasRecordId: !!result?.id?.record_id,
-          recordIdValue: result?.id?.record_id,
-          resultType: typeof result,
-          resultKeys: result ? Object.keys(result) : [],
-        });
+        console.error(
+          '[createCompany] Invalid ID structure detected, attempting fallback:',
+          {
+            result,
+            hasId: !!result?.id,
+            idValue: result?.id,
+            hasRecordId: !!result?.id?.record_id,
+            recordIdValue: result?.id?.record_id,
+            resultType: typeof result,
+            resultKeys: result ? Object.keys(result) : [],
+          }
+        );
       }
 
       // Fallback: Try to find existing company by name if create returned empty/invalid result
@@ -304,7 +329,7 @@ export async function createCompany(
             // For testing: Create a mock company result when API returns empty
             // This allows integration tests to proceed when Attio API is not working properly
             const mockCompanyId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
+
             // Create mock with proper Attio API structure
             const mockAttributes = {
               name: nameValue,
@@ -314,9 +339,12 @@ export async function createCompany(
                   .map(([key, value]) => [key, String(value)])
               ),
             };
-            
-            result = createMockCompanyWithApiStructure(mockCompanyId, mockAttributes);
-            
+
+            result = createMockCompanyWithApiStructure(
+              mockCompanyId,
+              mockAttributes
+            );
+
             // Store in shared mock state for other functions to access
             setMockCompany(mockCompanyId, result);
 
@@ -339,11 +367,12 @@ export async function createCompany(
           }
           // Try creating mock even if query fails in test environments
           if (
-            (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
+            (process.env.E2E_MODE === 'true' ||
+              process.env.NODE_ENV === 'test') &&
             nameValue
           ) {
             const mockCompanyId = `comp_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
+
             const mockAttributes = {
               name: nameValue,
               ...Object.fromEntries(
@@ -352,9 +381,12 @@ export async function createCompany(
                   .map(([key, value]) => [key, String(value)])
               ),
             };
-            
-            result = createMockCompanyWithApiStructure(mockCompanyId, mockAttributes);
-            
+
+            result = createMockCompanyWithApiStructure(
+              mockCompanyId,
+              mockAttributes
+            );
+
             // Store in shared mock state
             setMockCompany(mockCompanyId, result);
 
@@ -375,16 +407,22 @@ export async function createCompany(
       ) {
         // If no name is provided but we're in test mode, create a mock anyway
         const mockCompanyId = `comp_noname_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
+
         const mockAttributes = {
           name: 'Test Company (No Name Provided)',
           ...Object.fromEntries(
-            Object.entries(attributes).map(([key, value]) => [key, String(value)])
+            Object.entries(attributes).map(([key, value]) => [
+              key,
+              String(value),
+            ])
           ),
         };
-        
-        result = createMockCompanyWithApiStructure(mockCompanyId, mockAttributes);
-        
+
+        result = createMockCompanyWithApiStructure(
+          mockCompanyId,
+          mockAttributes
+        );
+
         // Store in shared mock state
         setMockCompany(mockCompanyId, result);
 
@@ -423,20 +461,20 @@ export async function createCompany(
         process.env.NODE_ENV === 'development' ||
         process.env.E2E_MODE === 'true'
       ) {
-        console.error('[createCompany] CRITICAL: Result still missing ID structure before return:', {
-          result,
-          hasId: !!result?.id,
-          idValue: result?.id,
-          hasRecordId: !!result?.id?.record_id,
-          recordIdValue: result?.id?.record_id,
-        });
+        console.error(
+          '[createCompany] CRITICAL: Result still missing ID structure before return:',
+          {
+            result,
+            hasId: !!result?.id,
+            idValue: result?.id,
+            hasRecordId: !!result?.id?.record_id,
+            recordIdValue: result?.id?.record_id,
+          }
+        );
       }
-      
+
       // Last resort: Create a mock structure if we're in test mode
-      if (
-        process.env.E2E_MODE === 'true' ||
-        process.env.NODE_ENV === 'test'
-      ) {
+      if (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') {
         const emergencyMockId = `comp_emergency_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         result = {
           ...result,
@@ -532,11 +570,13 @@ export async function updateCompany(
     // Handle mock company updates in test environments using shared state
     if (
       (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
-      (companyId.includes('comp_') || companyId.includes('test-') || companyId.includes('mock'))
+      (companyId.includes('comp_') ||
+        companyId.includes('test-') ||
+        companyId.includes('mock'))
     ) {
       // Try to update existing mock company in shared state
       const updatedMockCompany = updateMockCompany(companyId, attributes);
-      
+
       if (updatedMockCompany) {
         if (
           process.env.NODE_ENV === 'development' ||
@@ -544,17 +584,24 @@ export async function updateCompany(
         ) {
           console.error(
             '[updateCompany] Updated mock company in shared state:',
-            { companyId, updatedAttributes: attributes, result: updatedMockCompany }
+            {
+              companyId,
+              updatedAttributes: attributes,
+              result: updatedMockCompany,
+            }
           );
         }
         return updatedMockCompany;
       } else {
         // If company doesn't exist in shared state, create a new mock
-        const mockUpdatedCompany = createMockCompanyWithApiStructure(companyId, {
-          name: `Mock Company ${companyId}`,
-          ...attributes
-        });
-        
+        const mockUpdatedCompany = createMockCompanyWithApiStructure(
+          companyId,
+          {
+            name: `Mock Company ${companyId}`,
+            ...attributes,
+          }
+        );
+
         // Store it in shared state for future calls
         setMockCompany(companyId, mockUpdatedCompany);
 

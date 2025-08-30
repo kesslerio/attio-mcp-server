@@ -30,7 +30,10 @@ export {
  * Unified resource type mappings - maintains backward compatibility
  * with the original FIELD_MAPPINGS object structure
  */
-export const RESOURCE_TYPE_MAPPINGS: Record<UniversalResourceType, FieldMapping> = {
+export const RESOURCE_TYPE_MAPPINGS: Record<
+  UniversalResourceType,
+  FieldMapping
+> = {
   [UniversalResourceType.COMPANIES]: COMPANIES_FIELD_MAPPING,
   [UniversalResourceType.PEOPLE]: PEOPLE_FIELD_MAPPING,
   [UniversalResourceType.DEALS]: DEALS_FIELD_MAPPING,

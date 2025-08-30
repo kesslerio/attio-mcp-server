@@ -1,15 +1,15 @@
 /**
  * Centralized mock data patterns for universal tool tests
- * 
+ *
  * This file follows the mock factory pattern from /test/utils/mock-factories/
  * and provides consistent test data structures across universal test files.
- * 
+ *
  * IMPORTANT: This file contains ONLY test data and should never be imported
  * by production code. It follows the clean architecture separation enforced
  * in the project.
  */
 
-import { 
+import {
   UniversalResourceType,
   DetailedInfoType,
   RelationshipType,
@@ -55,24 +55,28 @@ export const MockRecordFactory = {
   /**
    * Create a mock company record
    */
-  createCompany: (overrides: Partial<{ 
-    id: string; 
-    name: string; 
-    website: string; 
-    industry: string; 
-    location: string 
-  }> = {}): MockRecord => {
+  createCompany: (
+    overrides: Partial<{
+      id: string;
+      name: string;
+      website: string;
+      industry: string;
+      location: string;
+    }> = {}
+  ): MockRecord => {
     const timestamp = TEST_DATA_PATTERNS.timestamp();
     const id = overrides.id || `comp-${TEST_DATA_PATTERNS.randomId()}`;
-    
+
     return {
       id: { record_id: id },
       values: {
         name: [{ value: overrides.name || `Test Company ${timestamp}` }],
-        website: [{ value: overrides.website || `https://test-${timestamp}.com` }],
+        website: [
+          { value: overrides.website || `https://test-${timestamp}.com` },
+        ],
         industry: [{ value: overrides.industry || 'Technology' }],
         ...(overrides.location && {
-          location: [{ value: overrides.location }]
+          location: [{ value: overrides.location }],
         }),
       },
     };
@@ -81,24 +85,28 @@ export const MockRecordFactory = {
   /**
    * Create a mock person record
    */
-  createPerson: (overrides: Partial<{
-    id: string;
-    name: string;
-    email: string;
-    company?: string;
-  }> = {}): MockRecord => {
+  createPerson: (
+    overrides: Partial<{
+      id: string;
+      name: string;
+      email: string;
+      company?: string;
+    }> = {}
+  ): MockRecord => {
     const timestamp = TEST_DATA_PATTERNS.timestamp();
     const id = overrides.id || `person-${TEST_DATA_PATTERNS.randomId()}`;
-    
+
     return {
       id: { record_id: id },
       values: {
         name: [{ value: overrides.name || `Test Person ${timestamp}` }],
-        email_addresses: [{ 
-          email_address: overrides.email || `test-${timestamp}@example.com` 
-        }],
+        email_addresses: [
+          {
+            email_address: overrides.email || `test-${timestamp}@example.com`,
+          },
+        ],
         ...(overrides.company && {
-          company: [{ value: overrides.company }]
+          company: [{ value: overrides.company }],
         }),
       },
     };
@@ -107,20 +115,24 @@ export const MockRecordFactory = {
   /**
    * Create a mock task record
    */
-  createTask: (overrides: Partial<{
-    id: string;
-    title: string;
-    content: string;
-    status?: string;
-  }> = {}): MockRecord => {
+  createTask: (
+    overrides: Partial<{
+      id: string;
+      title: string;
+      content: string;
+      status?: string;
+    }> = {}
+  ): MockRecord => {
     const timestamp = TEST_DATA_PATTERNS.timestamp();
     const id = overrides.id || `task-${TEST_DATA_PATTERNS.randomId()}`;
-    
+
     return {
       id: { record_id: id },
       values: {
         title: [{ value: overrides.title || `Test Task ${timestamp}` }],
-        content: [{ value: overrides.content || `Test task content ${timestamp}` }],
+        content: [
+          { value: overrides.content || `Test task content ${timestamp}` },
+        ],
         status: [{ value: overrides.status || 'open' }],
       },
     };
@@ -130,33 +142,37 @@ export const MockRecordFactory = {
    * Create multiple mock records of the same type
    */
   createMultiple: <T extends MockRecord>(
-    factory: () => T, 
+    factory: () => T,
     count: number
   ): T[] => {
-    return Array(count).fill(0).map(() => factory());
+    return Array(count)
+      .fill(0)
+      .map(() => factory());
   },
 
   /**
    * Create advanced company record with more fields
    */
-  createAdvancedCompany: (overrides: Partial<{
-    id: string;
-    name: string;
-    website: string;
-    industry: string;
-    location: string;
-    employees?: number;
-    founded?: string;
-  }> = {}): MockRecord => {
+  createAdvancedCompany: (
+    overrides: Partial<{
+      id: string;
+      name: string;
+      website: string;
+      industry: string;
+      location: string;
+      employees?: number;
+      founded?: string;
+    }> = {}
+  ): MockRecord => {
     const base = MockRecordFactory.createCompany(overrides);
-    
+
     if (overrides.employees !== undefined) {
       base.values.employees = [{ value: overrides.employees }];
     }
     if (overrides.founded) {
       base.values.founded = [{ value: overrides.founded }];
     }
-    
+
     return base;
   },
 };
@@ -170,7 +186,9 @@ export const MockParamsFactory = {
   /**
    * Create mock search parameters
    */
-  createSearchParams: (overrides: Partial<UniversalSearchParams> = {}): UniversalSearchParams => ({
+  createSearchParams: (
+    overrides: Partial<UniversalSearchParams> = {}
+  ): UniversalSearchParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     query: 'test',
     limit: 10,
@@ -180,7 +198,9 @@ export const MockParamsFactory = {
   /**
    * Create mock record details parameters
    */
-  createDetailsParams: (overrides: Partial<UniversalRecordDetailsParams> = {}): UniversalRecordDetailsParams => ({
+  createDetailsParams: (
+    overrides: Partial<UniversalRecordDetailsParams> = {}
+  ): UniversalRecordDetailsParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     record_id: 'test-record-id',
     ...overrides,
@@ -189,7 +209,9 @@ export const MockParamsFactory = {
   /**
    * Create mock create parameters
    */
-  createCreateParams: (overrides: Partial<UniversalCreateParams> = {}): UniversalCreateParams => ({
+  createCreateParams: (
+    overrides: Partial<UniversalCreateParams> = {}
+  ): UniversalCreateParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     record_data: {
       name: 'Test Company',
@@ -202,7 +224,9 @@ export const MockParamsFactory = {
   /**
    * Create mock update parameters
    */
-  createUpdateParams: (overrides: Partial<UniversalUpdateParams> = {}): UniversalUpdateParams => ({
+  createUpdateParams: (
+    overrides: Partial<UniversalUpdateParams> = {}
+  ): UniversalUpdateParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     record_id: 'test-record-id',
     record_data: {
@@ -215,7 +239,9 @@ export const MockParamsFactory = {
   /**
    * Create mock delete parameters
    */
-  createDeleteParams: (overrides: Partial<UniversalDeleteParams> = {}): UniversalDeleteParams => ({
+  createDeleteParams: (
+    overrides: Partial<UniversalDeleteParams> = {}
+  ): UniversalDeleteParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     record_id: 'test-record-id',
     ...overrides,
@@ -224,7 +250,9 @@ export const MockParamsFactory = {
   /**
    * Create mock advanced search parameters
    */
-  createAdvancedSearchParams: (overrides: Partial<AdvancedSearchParams> = {}): AdvancedSearchParams => ({
+  createAdvancedSearchParams: (
+    overrides: Partial<AdvancedSearchParams> = {}
+  ): AdvancedSearchParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     query: 'technology',
     filters: [
@@ -243,7 +271,9 @@ export const MockParamsFactory = {
   /**
    * Create mock relationship search parameters
    */
-  createRelationshipSearchParams: (overrides: Partial<RelationshipSearchParams> = {}): RelationshipSearchParams => ({
+  createRelationshipSearchParams: (
+    overrides: Partial<RelationshipSearchParams> = {}
+  ): RelationshipSearchParams => ({
     resource_type: UniversalResourceType.PEOPLE,
     relationship_type: RelationshipType.BELONGS_TO,
     related_resource_type: UniversalResourceType.COMPANIES,
@@ -254,7 +284,9 @@ export const MockParamsFactory = {
   /**
    * Create mock content search parameters
    */
-  createContentSearchParams: (overrides: Partial<ContentSearchParams> = {}): ContentSearchParams => ({
+  createContentSearchParams: (
+    overrides: Partial<ContentSearchParams> = {}
+  ): ContentSearchParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     content_type: ContentSearchType.NOTES,
     search_query: 'important meeting',
@@ -264,7 +296,9 @@ export const MockParamsFactory = {
   /**
    * Create mock timeframe search parameters
    */
-  createTimeframeSearchParams: (overrides: Partial<TimeframeSearchParams> = {}): TimeframeSearchParams => ({
+  createTimeframeSearchParams: (
+    overrides: Partial<TimeframeSearchParams> = {}
+  ): TimeframeSearchParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     timeframe_type: TimeframeType.CREATED,
     start_date: '2024-01-01T00:00:00.000Z',
@@ -275,7 +309,9 @@ export const MockParamsFactory = {
   /**
    * Create mock batch operations parameters
    */
-  createBatchOperationsParams: (overrides: Partial<BatchOperationsParams> = {}): BatchOperationsParams => ({
+  createBatchOperationsParams: (
+    overrides: Partial<BatchOperationsParams> = {}
+  ): BatchOperationsParams => ({
     resource_type: UniversalResourceType.COMPANIES,
     operation_type: BatchOperationType.CREATE,
     records: [
@@ -284,7 +320,7 @@ export const MockParamsFactory = {
         website: 'https://batch1.com',
       },
       {
-        name: 'Batch Test Company 2', 
+        name: 'Batch Test Company 2',
         website: 'https://batch2.com',
       },
     ],
@@ -306,13 +342,15 @@ export const MockResponseFactory = {
   /**
    * Create a successful details response
    */
-  createDetailsResponse: (record?: MockRecord): MockRecord => 
+  createDetailsResponse: (record?: MockRecord): MockRecord =>
     record || MockRecordFactory.createCompany(),
 
   /**
    * Create a successful delete response
    */
-  createDeleteResponse: (recordId: string = 'test-record-id'): { success: true; record_id: string } => ({
+  createDeleteResponse: (
+    recordId: string = 'test-record-id'
+  ): { success: true; record_id: string } => ({
     success: true,
     record_id: recordId,
   }),
@@ -320,7 +358,9 @@ export const MockResponseFactory = {
   /**
    * Create a batch operation response
    */
-  createBatchResponse: (results: Array<{ success: boolean; result?: any; error?: string }>) => results,
+  createBatchResponse: (
+    results: Array<{ success: boolean; result?: any; error?: string }>
+  ) => results,
 
   /**
    * Create date range response (for date utils)
@@ -340,7 +380,10 @@ export const MockErrorFactory = {
   /**
    * Create a generic API error
    */
-  createApiError: (message: string = 'API error', code?: string): MockError => ({
+  createApiError: (
+    message: string = 'API error',
+    code?: string
+  ): MockError => ({
     message,
     ...(code && { code }),
     status: 500,
@@ -349,7 +392,9 @@ export const MockErrorFactory = {
   /**
    * Create a validation error
    */
-  createValidationError: (message: string = 'Validation failed'): MockError => ({
+  createValidationError: (
+    message: string = 'Validation failed'
+  ): MockError => ({
     message,
     code: 'VALIDATION_ERROR',
     status: 400,
@@ -386,7 +431,7 @@ export const IntegrationDataFactory = {
   generateTestIdentifiers: () => {
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(7);
-    
+
     return {
       timestamp,
       randomId,
@@ -400,9 +445,12 @@ export const IntegrationDataFactory = {
   /**
    * Create performance test records
    */
-  createPerformanceTestRecords: (count: number, prefix: string = 'Perf Test') => {
+  createPerformanceTestRecords: (
+    count: number,
+    prefix: string = 'Perf Test'
+  ) => {
     const timestamp = Date.now();
-    
+
     return Array(count)
       .fill(0)
       .map((_, i) => ({

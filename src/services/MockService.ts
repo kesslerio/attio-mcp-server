@@ -163,24 +163,39 @@ export class MockService {
         // TEMP: Direct axios to bypass client issues and prove concept
         const axios = (await import('axios')).default;
         const client = axios.create({
-          baseURL: (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, ''),
+          baseURL: (
+            process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+          ).replace(/\/+$/, ''),
           timeout: 20000,
           headers: {
             Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          transformResponse: [(d) => { try { return JSON.parse(d); } catch { return d; } }],
+          transformResponse: [
+            (d) => {
+              try {
+                return JSON.parse(d);
+              } catch {
+                return d;
+              }
+            },
+          ],
           validateStatus: (s) => s >= 200 && s < 300,
         });
-        
-        console.log('🧨 TEMP DIRECT CLIENT', { baseURL: client.defaults.baseURL });
+
+        console.log('🧨 TEMP DIRECT CLIENT', {
+          baseURL: client.defaults.baseURL,
+        });
         console.error('[CREATECOMPANY] Got direct client:', !!client);
 
         // Test direct probe first
         const probe = await client.get('/objects/companies');
-        console.log('🩺 /objects/companies body:', JSON.stringify(probe.data).slice(0, 400));
-        
+        console.log(
+          '🩺 /objects/companies body:',
+          JSON.stringify(probe.data).slice(0, 400)
+        );
+
         // Resolve real object slug for this workspace
         const { resolveObjectSlug } = await import('../api/attio-objects.js');
         const companiesSlug = await resolveObjectSlug(client, 'companies');
@@ -219,12 +234,13 @@ export class MockService {
           } else {
             (normalizedCompany as any).domains = [
               {
-                domain: typeof rawDomains === 'string'
-                  ? rawDomains
-                  : ((rawDomains as any)?.domain ??
-                    (rawDomains as any)?.value ??
-                    String(rawDomains))
-              }
+                domain:
+                  typeof rawDomains === 'string'
+                    ? rawDomains
+                    : ((rawDomains as any)?.domain ??
+                      (rawDomains as any)?.value ??
+                      String(rawDomains)),
+              },
             ];
           }
         } else if (rawDomain) {
@@ -402,19 +418,22 @@ export class MockService {
         const method = r?.config?.method;
         const payload = r?.config?.data;
         error('MockService', 'createCompany Direct API error', {
-          status, url, method,
-          serverData: data,        // <-- this is what we need to see
+          status,
+          url,
+          method,
+          serverData: data, // <-- this is what we need to see
           requestPayload: payload, // <-- confirm the exact body that axios sent
         });
         const msg =
           status && data
             ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
             : (err?.message as string) || 'createCompany error';
-        
+
         throw new EnhancedApiError(
           msg,
           status,
-          url || (typeof path === 'string' ? path : '/objects/companies/records'),
+          url ||
+            (typeof path === 'string' ? path : '/objects/companies/records'),
           (method || 'POST').toUpperCase(),
           {
             httpStatus: status,
@@ -469,18 +488,30 @@ export class MockService {
         // TEMP: Direct axios to bypass client issues and prove concept
         const axios = (await import('axios')).default;
         const client = axios.create({
-          baseURL: (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, ''),
+          baseURL: (
+            process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+          ).replace(/\/+$/, ''),
           timeout: 20000,
           headers: {
             Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          transformResponse: [(d) => { try { return JSON.parse(d); } catch { return d; } }],
+          transformResponse: [
+            (d) => {
+              try {
+                return JSON.parse(d);
+              } catch {
+                return d;
+              }
+            },
+          ],
           validateStatus: (s) => s >= 200 && s < 300,
         });
-        
-        console.log('🧨 TEMP DIRECT CLIENT (createPerson)', { baseURL: client.defaults.baseURL });
+
+        console.log('🧨 TEMP DIRECT CLIENT (createPerson)', {
+          baseURL: client.defaults.baseURL,
+        });
 
         // Resolve real object slug for this workspace
         const { resolveObjectSlug } = await import('../api/attio-objects.js');
@@ -766,21 +797,29 @@ export class MockService {
         const method = r?.config?.method;
         const payload = r?.config?.data;
         error('MockService', 'createPerson Direct API error', {
-          status, url, method,
-          serverData: data,        // <-- this is what we need to see
+          status,
+          url,
+          method,
+          serverData: data, // <-- this is what we need to see
           requestPayload: payload, // <-- confirm the exact body that axios sent
         });
         const msg =
           status && data
             ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
             : (err?.message as string) || 'createPerson error';
-        throw new EnhancedApiError(msg, status, url || path, (method || 'POST').toUpperCase(), {
-          httpStatus: status,
-          resourceType: 'people',
-          operation: 'create',
-          serverData: data,
-          originalError: err as Error,
-        });
+        throw new EnhancedApiError(
+          msg,
+          status,
+          url || path,
+          (method || 'POST').toUpperCase(),
+          {
+            httpStatus: status,
+            resourceType: 'people',
+            operation: 'create',
+            serverData: data,
+            originalError: err as Error,
+          }
+        );
       }
     }
 

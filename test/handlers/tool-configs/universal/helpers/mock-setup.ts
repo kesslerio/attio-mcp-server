@@ -1,9 +1,9 @@
 /**
  * Standardized mock configurations for universal tool tests
- * 
+ *
  * This file provides reusable mock setup functions that can be used across
  * different universal test files to ensure consistent mocking behavior.
- * 
+ *
  * Follows the mock factory pattern and maintains clean separation from
  * production code.
  */
@@ -21,7 +21,7 @@ export const mockSharedHandlers = () => {
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js',
     () => ({
       handleUniversalSearch: vi.fn(),
-      handleUniversalGetDetails: vi.fn(), 
+      handleUniversalGetDetails: vi.fn(),
       handleUniversalCreate: vi.fn(),
       handleUniversalUpdate: vi.fn(),
       handleUniversalDelete: vi.fn(),
@@ -126,31 +126,37 @@ export const mockSpecializedHandlers = () => {
   );
 
   // Mock people handlers
-  vi.mock('../../../../../src/objects/people/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
-    return {
-      ...actual,
-      searchPeopleByCompany: vi.fn(),
-      searchPeopleByActivity: vi.fn(),
-      searchPeopleByNotes: vi.fn(),
-      advancedSearchPeople: vi.fn(),
-      searchPeopleByCreationDate: vi.fn(),
-      searchPeopleByModificationDate: vi.fn(),
-      searchPeopleByLastInteraction: vi.fn(),
-    };
-  });
+  vi.mock(
+    '../../../../../src/objects/people/index.js',
+    async (importOriginal) => {
+      const actual = await importOriginal();
+      return {
+        ...actual,
+        searchPeopleByCompany: vi.fn(),
+        searchPeopleByActivity: vi.fn(),
+        searchPeopleByNotes: vi.fn(),
+        advancedSearchPeople: vi.fn(),
+        searchPeopleByCreationDate: vi.fn(),
+        searchPeopleByModificationDate: vi.fn(),
+        searchPeopleByLastInteraction: vi.fn(),
+      };
+    }
+  );
 
   // Mock people search module specifically
-  vi.mock('../../../../../src/objects/people/search.js', async (importOriginal) => {
-    const actual = await importOriginal();
-    return {
-      ...actual,
-      searchPeopleByActivity: vi.fn(),
-      searchPeopleByCreationDate: vi.fn(),
-      searchPeopleByModificationDate: vi.fn(),
-      searchPeopleByLastInteraction: vi.fn(),
-    };
-  });
+  vi.mock(
+    '../../../../../src/objects/people/search.js',
+    async (importOriginal) => {
+      const actual = await importOriginal();
+      return {
+        ...actual,
+        searchPeopleByActivity: vi.fn(),
+        searchPeopleByCreationDate: vi.fn(),
+        searchPeopleByModificationDate: vi.fn(),
+        searchPeopleByLastInteraction: vi.fn(),
+      };
+    }
+  );
 };
 
 /**
@@ -302,19 +308,19 @@ export const setupMocksWithConfig = (config: MockSetupConfig) => {
   if (config.sharedHandlers !== false) {
     mockSharedHandlers();
   }
-  
+
   if (config.errorService) {
     mockErrorService();
   }
-  
+
   if (config.schemas !== false) {
     mockSchemasAndValidation();
   }
-  
+
   if (config.specializedHandlers) {
     mockSpecializedHandlers();
   }
-  
+
   if (config.dateUtils) {
     mockDateUtils();
   }
@@ -333,27 +339,25 @@ export const initializeMockInstances = async () => {
   const sharedHandlers = await import(
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
   );
-  
+
   const schemas = await import(
     '../../../../../src/handlers/tool-configs/universal/schemas.js'
   );
-  
-  const dateUtils = await import(
-    '../../../../../src/utils/date-utils.js'
-  );
-  
+
+  const dateUtils = await import('../../../../../src/utils/date-utils.js');
+
   const companiesHandlers = await import(
     '../../../../../src/objects/companies/index.js'
   );
-  
+
   const peopleHandlers = await import(
     '../../../../../src/objects/people/index.js'
   );
-  
+
   const peopleSearchHandlers = await import(
     '../../../../../src/objects/people/search.js'
   );
-  
+
   mockInstances = {
     mockHandlers: {
       handleUniversalSearch: sharedHandlers.handleUniversalSearch,
@@ -362,8 +366,10 @@ export const initializeMockInstances = async () => {
       handleUniversalUpdate: sharedHandlers.handleUniversalUpdate,
       handleUniversalDelete: sharedHandlers.handleUniversalDelete,
       handleUniversalGetAttributes: sharedHandlers.handleUniversalGetAttributes,
-      handleUniversalDiscoverAttributes: sharedHandlers.handleUniversalDiscoverAttributes,
-      handleUniversalGetDetailedInfo: sharedHandlers.handleUniversalGetDetailedInfo,
+      handleUniversalDiscoverAttributes:
+        sharedHandlers.handleUniversalDiscoverAttributes,
+      handleUniversalGetDetailedInfo:
+        sharedHandlers.handleUniversalGetDetailedInfo,
       formatResourceType: sharedHandlers.formatResourceType,
       getSingularResourceType: sharedHandlers.getSingularResourceType,
       createUniversalError: sharedHandlers.createUniversalError,
@@ -380,14 +386,17 @@ export const initializeMockInstances = async () => {
       searchCompaniesByNotes: companiesHandlers.searchCompaniesByNotes,
       searchCompaniesByPeople: companiesHandlers.searchCompaniesByPeople,
       advancedSearchCompanies: companiesHandlers.advancedSearchCompanies,
-      // People  
+      // People
       searchPeopleByCompany: peopleHandlers.searchPeopleByCompany,
       searchPeopleByActivity: peopleSearchHandlers.searchPeopleByActivity,
       searchPeopleByNotes: peopleHandlers.searchPeopleByNotes,
       advancedSearchPeople: peopleHandlers.advancedSearchPeople,
-      searchPeopleByCreationDate: peopleSearchHandlers.searchPeopleByCreationDate,
-      searchPeopleByModificationDate: peopleSearchHandlers.searchPeopleByModificationDate,
-      searchPeopleByLastInteraction: peopleSearchHandlers.searchPeopleByLastInteraction,
+      searchPeopleByCreationDate:
+        peopleSearchHandlers.searchPeopleByCreationDate,
+      searchPeopleByModificationDate:
+        peopleSearchHandlers.searchPeopleByModificationDate,
+      searchPeopleByLastInteraction:
+        peopleSearchHandlers.searchPeopleByLastInteraction,
     },
   };
 };

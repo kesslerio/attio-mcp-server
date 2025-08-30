@@ -212,13 +212,13 @@ beforeEach(() => {
 
   // Clear all mocks before each test for isolation
   vi.clearAllMocks();
-  
+
   // Clear mock company state for clean test isolation
   clearMockCompanies();
-  
+
   // Clear attribute cache to ensure fresh metadata fetching in each test
   clearAttributeCache();
-  
+
   // Reset console methods to original implementation to avoid interference
   console.log = originalConsole.log;
   console.error = originalConsole.error;

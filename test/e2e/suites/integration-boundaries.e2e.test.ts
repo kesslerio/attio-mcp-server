@@ -315,8 +315,12 @@ describe.skipIf(
       // Response should have expected structure
       if (!versionTestResponse.isError) {
         // Check for either data or content property (different tools use different structures)
-        const hasValidResponse = versionTestResponse.data || versionTestResponse.content;
-        expect(hasValidResponse, 'Response should have either data or content').toBeDefined();
+        const hasValidResponse =
+          versionTestResponse.data || versionTestResponse.content;
+        expect(
+          hasValidResponse,
+          'Response should have either data or content'
+        ).toBeDefined();
       } else {
         expect(versionTestResponse.error).toBeDefined();
         expect(typeof versionTestResponse.error).toBe('string');

@@ -52,7 +52,10 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
       recordId: 'record-456',
     };
 
-    const result = await mapRecordFields(UniversalResourceType.TASKS, recordData);
+    const result = await mapRecordFields(
+      UniversalResourceType.TASKS,
+      recordData
+    );
 
     // The camelCase variants should be mapped to new Attio API field names
     expect(result.mapped).toEqual({
@@ -127,7 +130,10 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
       // All three map to 'content'
     };
 
-    const result = await mapRecordFields(UniversalResourceType.TASKS, collisionData);
+    const result = await mapRecordFields(
+      UniversalResourceType.TASKS,
+      collisionData
+    );
 
     // Should detect collision and return errors
     expect(result.errors).toBeDefined();

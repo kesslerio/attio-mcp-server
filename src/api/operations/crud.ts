@@ -16,8 +16,6 @@ import {
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
 import {
-  debug,
-  error,
   OperationType,
   createScopedLogger,
 } from '../../utils/logger.js';
@@ -42,20 +40,22 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
  * Extract ID from various API response shapes
  * @private
  */
-function extractAnyId(obj: any): string | undefined {
-  if (!obj) return;
+function extractAnyId(obj: Record<string, unknown> | unknown): string | undefined {
+  if (!obj || typeof obj !== 'object') return;
+  const record = obj as Record<string, unknown>;
+  const idObj = record.id as Record<string, unknown> | undefined;
   return (
-    obj?.id?.record_id ??
-    obj?.id?.company_id ??
-    obj?.id?.person_id ??
-    obj?.id?.list_id ??
-    obj?.id?.task_id ??
-    (typeof obj?.id === 'string' ? obj.id : undefined) ??
-    obj?.record_id ??
-    obj?.company_id ??
-    obj?.person_id ??
-    obj?.list_id ??
-    obj?.task_id
+    idObj?.record_id as string ??
+    idObj?.company_id as string ??
+    idObj?.person_id as string ??
+    idObj?.list_id as string ??
+    idObj?.task_id as string ??
+    (typeof record?.id === 'string' ? record.id : undefined) ??
+    record?.record_id as string ??
+    record?.company_id as string ??
+    record?.person_id as string ??
+    record?.list_id as string ??
+    record?.task_id as string
   );
 }
 
@@ -64,7 +64,7 @@ function extractAnyId(obj: any): string | undefined {
  * @private
  */
 function ensureAttioRecordStructure<T extends AttioRecord>(
-  rawData: any,
+  rawData: Record<string, unknown>,
   allowEmpty = false
 ): T {
   if (!rawData || typeof rawData !== 'object') {
@@ -98,29 +98,37 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
   }
 
   // If already has the proper structure, return as-is
-  if (rawData.id && rawData.id.record_id && rawData.values) {
+  const hasValidId = rawData.id && (rawData.id as Record<string, unknown>).record_id;
+  const hasValues = rawData.values;
+  if (hasValidId && hasValues) {
     return rawData as T;
   }
 
   // Transform to proper AttioRecord structure
-  let result: any = { ...rawData };
+  const result: Record<string, unknown> = { ...rawData };
 
   // Ensure id.record_id structure exists
-  if (!result.id || !result.id.record_id) {
+  const resultId = result.id as Record<string, unknown> | undefined;
+  if (!result.id || !resultId?.record_id) {
     // Probe across common wrappers in order using the helper
+    const resultData = result.data as Record<string, unknown> | undefined;
+    const resultDataData = resultData?.data as Record<string, unknown> | undefined;
+    const resultDataRecord = resultData?.record as Record<string, unknown> | undefined;
+    const resultDataItems = resultData?.items as unknown[] | undefined;
+    
     const extractedId =
       extractAnyId(result) ??
-      extractAnyId(result?.data) ??
-      extractAnyId(result?.data?.data) ??
-      extractAnyId(result?.data?.record) ??
-      extractAnyId(result?.data?.items?.[0]);
+      extractAnyId(resultData) ??
+      extractAnyId(resultDataData) ??
+      extractAnyId(resultDataRecord) ??
+      extractAnyId(resultDataItems?.[0]);
 
     if (extractedId) {
       // Ensure canonical shape
       result.id = { record_id: extractedId };
       // Also use nested data structure if available
-      if (result.data?.values) {
-        result.values = result.data.values;
+      if (resultData?.values) {
+        result.values = resultData.values;
       }
     } else {
       throw new Error('Invalid API response: record missing ID structure');
@@ -129,8 +137,9 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
 
   // Ensure values object exists
   if (!result.values) {
-    if (result.data?.values) {
-      result.values = result.data.values;
+    const resultData = result.data as Record<string, unknown> | undefined;
+    if (resultData?.values) {
+      result.values = resultData.values;
     } else {
       result.values = {};
     }
@@ -435,9 +444,9 @@ export async function updateRecord<T extends AttioRecord>(
       if (
         params.recordId &&
         error instanceof Error &&
-        (error.message.includes('no data found') || 
-         error.message.includes('missing ID structure') ||
-         error.message.includes('empty data object'))
+        (error.message.includes('no data found') ||
+          error.message.includes('missing ID structure') ||
+          error.message.includes('empty data object'))
       ) {
         if (
           process.env.NODE_ENV === 'development' ||
@@ -455,7 +464,7 @@ export async function updateRecord<T extends AttioRecord>(
             undefined,
             params.objectId
           );
-          
+
           if (fallbackResult && fallbackResult.id) {
             if (
               process.env.NODE_ENV === 'development' ||
@@ -467,29 +476,30 @@ export async function updateRecord<T extends AttioRecord>(
             }
             return fallbackResult;
           }
-          
+
           // If getRecord also returns empty data and we're in test mode, create mock updated record
           if (
-            (process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test') &&
+            (process.env.E2E_MODE === 'true' ||
+              process.env.NODE_ENV === 'test') &&
             params.objectSlug === 'companies'
           ) {
             // Create the basic values object
             const basicValues = Object.fromEntries(
               Object.entries(params.attributes).map(([key, value]) => [
                 key,
-                typeof value === 'object' && value && 'value' in value 
-                  ? value.value 
-                  : value
+                typeof value === 'object' && value && 'value' in value
+                  ? value.value
+                  : value,
               ])
             );
-            
+
             // For test environments: if we have 'categories' field, also add 'industry' for test compatibility
             // This ensures tests that expect 'industry' field will still pass after attribute mapping
             const testCompatibleValues = { ...basicValues };
             if (basicValues.categories && !basicValues.industry) {
               testCompatibleValues.industry = basicValues.categories;
             }
-            
+
             const mockResult = {
               id: {
                 workspace_id: 'test-workspace',
@@ -500,34 +510,44 @@ export async function updateRecord<T extends AttioRecord>(
               created_at: new Date().toISOString(),
               record_url: `https://app.attio.com/workspace/test-workspace/object/companies/${params.recordId}`,
             } as unknown as T;
-            
+
             // Store the updated mock result in shared state so getCompanyDetails() can find it
             try {
-              const { setMockCompany } = await import('../../utils/mock-state.js');
+              const { setMockCompany } = await import(
+                '../../utils/mock-state.js'
+              );
               setMockCompany(params.recordId, mockResult);
-              
+
               if (
                 process.env.NODE_ENV === 'development' ||
                 process.env.E2E_MODE === 'true'
               ) {
-                logger.debug('Update fallback: stored mock updated record in shared state', {
-                  recordId: params.recordId,
-                  values: mockResult.values,
-                });
+                logger.debug(
+                  'Update fallback: stored mock updated record in shared state',
+                  {
+                    recordId: params.recordId,
+                    values: mockResult.values,
+                  }
+                );
               }
             } catch (importError) {
               // If mock-state import fails, continue without storing (for compatibility)
-              logger.warn('Could not import mock-state for shared storage', { error: importError });
+              logger.warn('Could not import mock-state for shared storage', {
+                error: importError,
+              });
             }
-            
+
             if (
               process.env.NODE_ENV === 'development' ||
               process.env.E2E_MODE === 'true'
             ) {
-              logger.debug('Update fallback: created mock updated record for testing', {
-                recordId: params.recordId,
-                mockResult,
-              });
+              logger.debug(
+                'Update fallback: created mock updated record for testing',
+                {
+                  recordId: params.recordId,
+                  mockResult,
+                }
+              );
             }
             return mockResult;
           }

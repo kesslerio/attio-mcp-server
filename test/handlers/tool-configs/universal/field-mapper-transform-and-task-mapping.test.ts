@@ -3,12 +3,19 @@
  */
 import { describe, it, expect } from 'vitest';
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
-import { transformFieldValue, mapTaskFields } from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
+import {
+  transformFieldValue,
+  mapTaskFields,
+} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 describe('field-mapper – transform + task mapping', () => {
   describe('transformFieldValue()', () => {
     it('transforms boolean-ish values for tasks', async () => {
-      const result = await transformFieldValue(UniversalResourceType.TASKS, 'is_completed', 'true');
+      const result = await transformFieldValue(
+        UniversalResourceType.TASKS,
+        'is_completed',
+        'true'
+      );
       expect(result).toBe(true);
     });
 
@@ -22,23 +29,39 @@ describe('field-mapper – transform + task mapping', () => {
         ['0', false],
       ];
       for (const [input, expected] of cases) {
-        const res = await transformFieldValue(UniversalResourceType.TASKS, 'is_completed', input);
+        const res = await transformFieldValue(
+          UniversalResourceType.TASKS,
+          'is_completed',
+          input
+        );
         expect(res).toBe(expected);
       }
     });
 
     it('handles arrays for assignees field', async () => {
-      const res = await transformFieldValue(UniversalResourceType.TASKS, 'assignees', 'user123');
+      const res = await transformFieldValue(
+        UniversalResourceType.TASKS,
+        'assignees',
+        'user123'
+      );
       expect(Array.isArray(res)).toBe(true);
     });
 
     it('returns original when no transformation needed', async () => {
-      const res = await transformFieldValue(UniversalResourceType.COMPANIES, 'name', 'Test Corp');
+      const res = await transformFieldValue(
+        UniversalResourceType.COMPANIES,
+        'name',
+        'Test Corp'
+      );
       expect(res).toBe('Test Corp');
     });
 
     it('handles date transformations', async () => {
-      const res = await transformFieldValue(UniversalResourceType.TASKS, 'deadline_at', '2024-12-31');
+      const res = await transformFieldValue(
+        UniversalResourceType.TASKS,
+        'deadline_at',
+        '2024-12-31'
+      );
       expect(typeof res === 'string' || res instanceof Date).toBe(true);
     });
   });
@@ -57,7 +80,10 @@ describe('field-mapper – transform + task mapping', () => {
     });
 
     it('preserves existing content during create', () => {
-      const result = mapTaskFields('create', { title: 'Task Title', content: 'Existing Content' });
+      const result = mapTaskFields('create', {
+        title: 'Task Title',
+        content: 'Existing Content',
+      });
       expect(result.content).toBe('Existing Content');
       expect(result.title).toBe('Task Title');
     });
@@ -68,7 +94,9 @@ describe('field-mapper – transform + task mapping', () => {
     });
 
     it('preserves unmapped fields', () => {
-      const result = mapTaskFields('create', { custom_field: 'custom_value' } as any);
+      const result = mapTaskFields('create', {
+        custom_field: 'custom_value',
+      } as any);
       expect((result as any).custom_field).toBe('custom_value');
     });
 
@@ -80,4 +108,3 @@ describe('field-mapper – transform + task mapping', () => {
     });
   });
 });
-

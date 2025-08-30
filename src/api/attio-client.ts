@@ -9,11 +9,10 @@ export const __MODULE_PATH__ = __filename;
 /**
  * Attio API client and related utilities
  */
-import axios, { AxiosInstance, AxiosError } from 'axios';
-// @ts-ignore
+import axios, { AxiosInstance } from 'axios';
+// @ts-expect-error: axios internal adapter import
 import httpAdapter from 'axios/lib/adapters/http.js';
-import { createAttioError } from '../utils/error-handler.js';
-import { debug, error as logError, OperationType } from '../utils/logger.js';
+import { debug, OperationType } from '../utils/logger.js';
 
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
@@ -45,8 +44,12 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     );
   }
 
-  const baseURL =
-    (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, '');
+  const baseURL = (
+    process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+  ).replace(/\/+$/, '');
+
+  // Log which client path is being used
+  console.log('⚙️ Attio client baseURL:', baseURL);
 
   const client = axios.create({
     baseURL,
@@ -57,9 +60,15 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       Accept: 'application/json',
     },
     // do NOT transform the response; we want raw server JSON
-    transformResponse: [(data) => {
-      try { return JSON.parse(data); } catch { return data; }
-    }],
+    transformResponse: [
+      (data) => {
+        try {
+          return JSON.parse(data);
+        } catch {
+          return data;
+        }
+      },
+    ],
     validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
   });
 
@@ -69,7 +78,10 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       console.log('🌐 AttioClient request', {
-        baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted,
+        baseURL: config.baseURL,
+        url: config.url,
+        method: config.method,
+        headers: redacted,
       });
       return config;
     });
@@ -78,7 +90,10 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         console.log('📥 AttioClient response', {
           status: res.status,
           url: res.config?.url,
-          keys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null,
+          keys:
+            res?.data && typeof res.data === 'object'
+              ? Object.keys(res.data)
+              : null,
           rawType: typeof res.data,
         });
         return res;
@@ -96,30 +111,40 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   }
 
   // Add unconditional diagnostics and passthrough error handling
-  console.log('⚙️ Attio client baseURL:', baseURL);
-  
+  console.log('⚙️ DEFAULT Attio client baseURL:', baseURL);
+
   client.interceptors.request.use((config) => {
     const redacted = { ...(config.headers || {}) };
     if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
     console.log('🌐 Request', {
-      baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted
+      baseURL: config.baseURL,
+      url: config.url,
+      method: config.method,
+      headers: redacted,
     });
     return config;
   });
-  
+
   client.interceptors.response.use(
     (res) => {
       console.log('📥 Response', {
-        status: res.status, url: res.config?.url,
-        topKeys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null
+        status: res.status,
+        url: res.config?.url,
+        topKeys:
+          res?.data && typeof res.data === 'object'
+            ? Object.keys(res.data)
+            : null,
       });
       return res;
     },
     (err) => {
       const r = err?.response;
       console.error('💥 HTTP Error', {
-        url: r?.config?.url, method: r?.config?.method,
-        status: r?.status, serverData: r?.data, requestPayload: r?.config?.data
+        url: r?.config?.url,
+        method: r?.config?.method,
+        status: r?.status,
+        serverData: r?.data,
+        requestPayload: r?.config?.data,
       });
       return Promise.reject(err); // PRESERVE axios error (don't wrap)
     }
@@ -173,7 +198,12 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
   if (forceReal || opts?.rawE2E) {
     console.log('🚨 E2E MODE: bypassing cache, creating fresh client');
     apiInstance = null; // guarantee we don't return a stale client
-    console.log('🚨 CREATING RAW E2E CLIENT', { forceReal, rawE2E: opts?.rawE2E, isE2E, useMocks });
+    console.log('🚨 CREATING RAW E2E CLIENT', {
+      forceReal,
+      rawE2E: opts?.rawE2E,
+      isE2E,
+      useMocks,
+    });
     debug('AttioClient', 'Creating raw E2E client with http adapter');
 
     // Create a fresh client instance with no interceptors for E2E
@@ -182,8 +212,10 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       throw new Error('ATTIO_API_KEY required for E2E mode');
     }
 
-    const baseURL = (process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2').replace(/\/+$/, '');
-    
+    const baseURL = (
+      process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
+    ).replace(/\/+$/, '');
+
     const rawClient = axios.create({
       baseURL,
       timeout: 20000,
@@ -193,42 +225,59 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         Accept: 'application/json',
       },
       // do NOT transform the response; we want raw server JSON
-      transformResponse: [(data) => {
-        try { return JSON.parse(data); } catch { return data; }
-      }],
+      transformResponse: [
+        (data) => {
+          try {
+            return JSON.parse(data);
+          } catch {
+            return data;
+          }
+        },
+      ],
       validateStatus: (s) => s >= 200 && s < 300, // don't swallow 4xx/5xx
     });
 
     // Add diagnostics and passthrough error handling
-    console.log('⚙️ RAW E2E client baseURL:', baseURL);
-    
+    console.log('⚙️ E2E RAW client baseURL:', baseURL);
+
     rawClient.interceptors.request.use((config) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       console.log('🌐 E2E Request', {
-        baseURL: config.baseURL, url: config.url, method: config.method, headers: redacted
+        baseURL: config.baseURL,
+        url: config.url,
+        method: config.method,
+        headers: redacted,
       });
       return config;
     });
-    
+
     rawClient.interceptors.response.use(
       (res) => {
         console.log('📥 E2E Response', {
-          status: res.status, url: res.config?.url,
-          topKeys: res?.data && typeof res.data === 'object' ? Object.keys(res.data) : null
+          status: res.status,
+          url: res.config?.url,
+          topKeys:
+            res?.data && typeof res.data === 'object'
+              ? Object.keys(res.data)
+              : null,
         });
         return res;
       },
       (err) => {
         const r = err?.response;
         console.error('💥 E2E HTTP Error', {
-          url: r?.config?.url, method: r?.config?.method,
-          status: r?.status, serverData: r?.data, requestPayload: r?.config?.data
+          url: r?.config?.url,
+          method: r?.config?.method,
+          status: r?.status,
+          serverData: r?.data,
+          requestPayload: r?.config?.data,
         });
         return Promise.reject(err); // PRESERVE axios error (don't wrap)
       }
     );
 
+    console.log('🚀 RETURNING E2E RAW CLIENT');
     return rawClient;
   }
 
@@ -251,7 +300,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       );
     }
   } else {
-    console.log('↩️ getAttioClient returning cached instance');
+    console.log('↩️ RETURNING CACHED DEFAULT CLIENT');
   }
 
   return apiInstance;

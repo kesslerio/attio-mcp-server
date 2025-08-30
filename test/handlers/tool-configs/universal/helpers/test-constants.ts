@@ -1,35 +1,42 @@
 /**
  * Shared constants and configuration for universal tool tests
- * 
+ *
  * This file centralizes constants used across multiple universal test files:
  * - advanced-operations.test.ts
- * - core-operations.test.ts  
+ * - core-operations.test.ts
  * - integration.test.ts
  * - performance.test.ts
  */
 
-import { 
+import {
   UniversalResourceType,
   DetailedInfoType,
   RelationshipType,
   ContentSearchType,
   TimeframeType,
-  BatchOperationType
+  BatchOperationType,
 } from '../../../../../src/handlers/tool-configs/universal/types.js';
 
 // Environment Detection
 export const TEST_ENVIRONMENT = {
   isCI: process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true',
   skipIntegrationTests: !process.env.ATTIO_API_KEY,
-  skipPerformanceTests: !process.env.ATTIO_API_KEY || process.env.SKIP_PERFORMANCE_TESTS === 'true',
-  ciMultiplier: process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' ? 2.5 : 1,
+  skipPerformanceTests:
+    !process.env.ATTIO_API_KEY || process.env.SKIP_PERFORMANCE_TESTS === 'true',
+  ciMultiplier:
+    process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+      ? 2.5
+      : 1,
 } as const;
 
 // Test Timeouts (with CI adjustments)
 export const TEST_TIMEOUTS = {
   default: Math.round(30000 * TEST_ENVIRONMENT.ciMultiplier), // 30s local, 75s CI
   integration: Math.round(30000 * TEST_ENVIRONMENT.ciMultiplier), // 30s local, 75s CI
-  performance: Math.max(120000, Math.round(60000 * TEST_ENVIRONMENT.ciMultiplier)), // At least 2 minutes, more in CI
+  performance: Math.max(
+    120000,
+    Math.round(60000 * TEST_ENVIRONMENT.ciMultiplier)
+  ), // At least 2 minutes, more in CI
   hook: Math.round(30000 * TEST_ENVIRONMENT.ciMultiplier), // For beforeAll/afterAll hooks
 } as const;
 
@@ -66,12 +73,20 @@ export const TEST_DATA_PATTERNS = {
     const id = randomId || Math.random().toString(36).substring(7);
     return `${type} Test ${ts}-${id}`;
   },
-  generateTestEmail: (prefix: string, timestamp?: number, randomId?: string) => {
+  generateTestEmail: (
+    prefix: string,
+    timestamp?: number,
+    randomId?: string
+  ) => {
     const ts = timestamp || Date.now();
     const id = randomId || Math.random().toString(36).substring(7);
     return `${prefix}-${ts}-${id}@example.com`;
   },
-  generateTestDomain: (prefix: string, timestamp?: number, randomId?: string) => {
+  generateTestDomain: (
+    prefix: string,
+    timestamp?: number,
+    randomId?: string
+  ) => {
     const ts = timestamp || Date.now();
     const id = randomId || Math.random().toString(36).substring(7);
     return `${prefix}-${ts}-${id}.com`;
@@ -146,7 +161,7 @@ export const DATE_PATTERNS = {
 
 // Error Messages and Types
 export const ERROR_MESSAGES = {
-  apiError: (operation: string, resourceType: string, message: string) => 
+  apiError: (operation: string, resourceType: string, message: string) =>
     `${operation} failed for ${resourceType}: ${message}`,
   universalError: (operation: string, resourceType: string, message: string) =>
     `Universal ${operation} failed for resource type ${resourceType}: ${message}`,
@@ -171,8 +186,8 @@ export const TEST_LOGGING = {
  * Returns boolean for test logic without console logging
  */
 export const performanceBudgetSoftCheck = (
-  actual: number, 
-  expected: number, 
+  actual: number,
+  expected: number,
   isGreaterThan = true
 ): boolean => {
   return isGreaterThan ? actual > expected : actual < expected;

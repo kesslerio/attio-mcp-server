@@ -51,6 +51,7 @@ import {
   getAttributesSchema,
   discoverAttributesSchema,
   getDetailedInfoSchema,
+  listNotesSchema,
   validateUniversalToolParams,
 } from './schemas.js';
 
@@ -841,7 +842,7 @@ export const coreOperationsToolDefinitions = {
   'list-notes': {
     name: 'list-notes',
     description: 'Get notes for any record type (companies, people, deals)',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: listNotesSchema,
   },
 };
 

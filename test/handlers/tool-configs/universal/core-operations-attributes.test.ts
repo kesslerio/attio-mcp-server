@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Import shared helpers
-import {
-  setupUnitTestMocks,
-  cleanupMocks,
-} from './helpers/index.js';
+import { setupUnitTestMocks, cleanupMocks } from './helpers/index.js';
 
 // Enhanced error types will be imported when needed in error handling tests
 

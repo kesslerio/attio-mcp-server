@@ -17,7 +17,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
   beforeEach(async () => {
     await setupUnitTestMocks();
-    
+
     // Import after mocks are set up
     const advancedOps = await import(
       '../../../../src/handlers/tool-configs/universal/advanced-operations.js'
@@ -143,7 +143,9 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
       const result = await searchByRelationshipConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchPeopleByCompany).toHaveBeenCalledWith('comp-1');
+      expect(mockSpecialized.searchPeopleByCompany).toHaveBeenCalledWith(
+        'comp-1'
+      );
     });
 
     it('should search people to company relationships', async () => {
@@ -168,7 +170,9 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
       const result = await searchByRelationshipConfig.handler(params);
       expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchCompaniesByPeople).toHaveBeenCalledWith('person-1');
+      expect(mockSpecialized.searchCompaniesByPeople).toHaveBeenCalledWith(
+        'person-1'
+      );
     });
 
     it('should handle unsupported task relationships with helpful error', async () => {
@@ -210,7 +214,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
   describe('Search tool validation and edge cases', () => {
     it('should handle validation errors in search tools', async () => {
       const { mockSchemas } = getMockInstances();
-      
+
       // Store the original mock implementation to restore it later
       const originalMock = mockSchemas.validateUniversalToolParams;
 

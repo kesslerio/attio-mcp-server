@@ -93,6 +93,40 @@ Show me all overdue tasks assigned to the sales team
 | `advanced-search` | Complex multi-condition filtering |
 | `batch-operations` | Process multiple records efficiently |
 
+## 📋 Data Structures
+
+### Canonical Task Shape
+
+Tasks follow a consistent structure with standardized field names:
+
+```typescript
+interface AttioTask {
+  id: {
+    task_id: string;
+  };
+  content: string;         // Task description/title
+  status: string;          // Task status
+  assignee?: {             // Single assignee (NOT assignees)
+    id: string;
+    type: string;
+    name?: string;
+    email?: string;
+  };
+  due_date?: string;
+  linked_records?: Array<{
+    id: string;
+    object_id?: string;
+    title?: string;
+  }>;
+}
+```
+
+**Key Points:**
+- Use `assignee` (singular), not `assignees` (plural)
+- Tasks support a single assignee per task
+- Use `assigneeId` in create/update operations
+- `content` field contains the task description
+
 ## 🛠️ Developer Tools (Phase IV)
 
 Smart testing and CI/CD optimization for solo developer maintenance:

@@ -170,10 +170,12 @@ export function processCategories(
 
   // Validate categories
   if (typeof value !== 'string' && !Array.isArray(value)) {
-    result.errors.push(`Categories must be a string or array of strings, got: ${typeof value}`);
+    result.errors.push(
+      `Categories must be a string or array of strings, got: ${typeof value}`
+    );
     return result;
   }
-  
+
   const validation = validateCategories(value as string | string[]);
 
   if (validation.autoConverted) {
