@@ -6,12 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ErrorService } from '../../../src/services/ErrorService.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../../../src/handlers/tool-configs/universal/schemas.js';
+
 import { EnhancedApiError } from '../../../src/errors/enhanced-api-errors.js';
+import { ErrorService } from '../../../src/services/ErrorService.js';
 
 // Mock the dependencies
 vi.mock('../../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
@@ -39,12 +36,10 @@ describe('ErrorService', () => {
     });
 
     it('should pass through UniversalValidationError unchanged', () => {
-      const originalError = new UniversalValidationError(
         'Test error',
         ErrorType.USER_ERROR
       );
 
-      const result = ErrorService.createUniversalError(
         'create',
         'companies',
         originalError
@@ -54,14 +49,12 @@ describe('ErrorService', () => {
     });
 
     it('should pass through EnhancedApiError unchanged', () => {
-      const originalError = new EnhancedApiError(
         'Test error',
         400,
         '/api/test',
         'GET'
       );
 
-      const result = ErrorService.createUniversalError(
         'update',
         'people',
         originalError
@@ -71,9 +64,7 @@ describe('ErrorService', () => {
     });
 
     it('should extract message from Error objects', () => {
-      const originalError = new Error('Test error message');
 
-      const result = ErrorService.createUniversalError(
         'search',
         'tasks',
         originalError
@@ -87,9 +78,7 @@ describe('ErrorService', () => {
     });
 
     it('should extract message from objects with message property', () => {
-      const originalError = { message: 'Object error message', status: 400 };
 
-      const result = ErrorService.createUniversalError(
         'delete',
         'deals',
         originalError
@@ -100,9 +89,7 @@ describe('ErrorService', () => {
     });
 
     it('should handle string errors', () => {
-      const originalError = 'String error message';
 
-      const result = ErrorService.createUniversalError(
         'create',
         'companies',
         originalError
@@ -113,9 +100,7 @@ describe('ErrorService', () => {
     });
 
     it('should handle unknown error types', () => {
-      const originalError = 12345;
 
-      const result = ErrorService.createUniversalError(
         'update',
         'people',
         originalError
@@ -126,9 +111,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify USER_ERROR for not found messages', () => {
-      const originalError = new Error('Record not found');
 
-      const result = ErrorService.createUniversalError(
         'get',
         'companies',
         originalError
@@ -138,9 +121,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify USER_ERROR for invalid messages', () => {
-      const originalError = new Error('Invalid field name');
 
-      const result = ErrorService.createUniversalError(
         'create',
         'people',
         originalError
@@ -150,9 +131,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify USER_ERROR for required messages', () => {
-      const originalError = new Error('Required field missing');
 
-      const result = ErrorService.createUniversalError(
         'update',
         'tasks',
         originalError
@@ -162,9 +141,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify USER_ERROR for 400 status codes', () => {
-      const originalError = { message: 'Bad request', status: 400 };
 
-      const result = ErrorService.createUniversalError(
         'create',
         'deals',
         originalError
@@ -174,9 +151,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify API_ERROR for 500+ status codes', () => {
-      const originalError = { message: 'Internal server error', status: 500 };
 
-      const result = ErrorService.createUniversalError(
         'search',
         'companies',
         originalError
@@ -186,9 +161,7 @@ describe('ErrorService', () => {
     });
 
     it('should classify API_ERROR for network errors', () => {
-      const originalError = new Error('Network timeout occurred');
 
-      const result = ErrorService.createUniversalError(
         'get',
         'people',
         originalError
@@ -198,9 +171,7 @@ describe('ErrorService', () => {
     });
 
     it('should default to SYSTEM_ERROR for unclassified errors', () => {
-      const originalError = new Error('Some random error');
 
-      const result = ErrorService.createUniversalError(
         'create',
         'tasks',
         originalError
@@ -216,9 +187,7 @@ describe('ErrorService', () => {
       });
 
       // Use a specific error that will generate a suggestion
-      const originalError = new Error('Rate limit exceeded');
 
-      const result = ErrorService.createUniversalError(
         'create',
         'companies',
         originalError
@@ -229,9 +198,7 @@ describe('ErrorService', () => {
     });
 
     it('should include original error as cause', () => {
-      const originalError = new Error('Original error');
 
-      const result = ErrorService.createUniversalError(
         'update',
         'people',
         originalError
@@ -255,7 +222,6 @@ describe('ErrorService', () => {
         suggestion: 'Use "companies" instead of "company"',
       });
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'company',
         new Error('Invalid resource')
@@ -265,9 +231,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide date format suggestions for date parsing errors', () => {
-      const error = new Error('Unable to parse date format');
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'companies',
         error
@@ -278,9 +242,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide date range suggestions', () => {
-      const error = new Error('Invalid daterange specified');
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'people',
         error
@@ -291,9 +253,7 @@ describe('ErrorService', () => {
     });
 
     it('should suggest simpler filters for unsupported filter combinations', () => {
-      const error = new Error('Filter combination not supported');
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'tasks',
         error
@@ -304,9 +264,7 @@ describe('ErrorService', () => {
     });
 
     it('should suggest batch size limits', () => {
-      const error = new Error('Batch operation exceeds limit');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         error
@@ -317,9 +275,7 @@ describe('ErrorService', () => {
     });
 
     it('should suggest rate limit handling', () => {
-      const error = new Error('Rate limit exceeded');
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'people',
         error
@@ -330,11 +286,9 @@ describe('ErrorService', () => {
     });
 
     it('should provide deal-specific suggestions for company_id error', () => {
-      const error = new Error(
         'Cannot find attribute with slug/id "company_id"'
       );
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'deals',
         error
@@ -345,9 +299,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide deal-specific suggestions for deal_stage error', () => {
-      const error = new Error('Cannot find deal_stage field');
 
-      const result = ErrorService.getOperationSuggestion(
         'update',
         'deals',
         error
@@ -357,9 +309,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide deal-specific suggestions for deal_value error', () => {
-      const error = new Error('Unknown deal_value field');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'deals',
         error
@@ -369,11 +319,9 @@ describe('ErrorService', () => {
     });
 
     it('should provide deal-specific suggestions for invalid value format', () => {
-      const error = new Error(
         'Invalid value was passed to attribute with slug "value"'
       );
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'deals',
         error
@@ -384,14 +332,12 @@ describe('ErrorService', () => {
     });
 
     it('should suggest field discovery for unknown attributes', () => {
-      const error = new Error(
         'Cannot find attribute with slug/id "unknown_field"'
       );
       vi.mocked(getFieldSuggestions).mockReturnValue(
         'Try using "name" or "email"'
       );
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         error
@@ -405,9 +351,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide generic not found suggestions', () => {
-      const error = new Error('Record not found');
 
-      const result = ErrorService.getOperationSuggestion(
         'get',
         'people',
         error
@@ -418,9 +362,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide authentication suggestions for unauthorized errors', () => {
-      const error = new Error('Unauthorized access');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'tasks',
         error
@@ -431,9 +373,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide duplicate record suggestions for create operations', () => {
-      const error = new Error('Duplicate record found');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         error
@@ -444,9 +384,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide uniqueness constraint suggestions', () => {
-      const error = new Error('Uniqueness constraint violation');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'people',
         error
@@ -457,9 +395,7 @@ describe('ErrorService', () => {
     });
 
     it('should handle string errors', () => {
-      const error = 'Rate limit exceeded';
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'companies',
         error
@@ -469,9 +405,7 @@ describe('ErrorService', () => {
     });
 
     it('should handle object errors with message property', () => {
-      const error = { message: 'Invalid date format' };
 
-      const result = ErrorService.getOperationSuggestion(
         'search',
         'people',
         error
@@ -481,9 +415,7 @@ describe('ErrorService', () => {
     });
 
     it('should return undefined for unknown error patterns', () => {
-      const error = new Error('Some completely unknown error');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         error
@@ -493,7 +425,6 @@ describe('ErrorService', () => {
     });
 
     it('should provide deal-specific suggestions for various field errors', () => {
-      const testCases = [
         {
           error: 'description field not found',
           expected: 'do not have a "description" field',
@@ -530,7 +461,6 @@ describe('ErrorService', () => {
       ];
 
       testCases.forEach(({ error, expected }) => {
-        const result = ErrorService.getOperationSuggestion(
           'create',
           'deals',
           new Error(error)
@@ -540,9 +470,7 @@ describe('ErrorService', () => {
     });
 
     it('should provide field suggestions for deal attribute errors', () => {
-      const error = new Error('Cannot find attribute with slug/id "bad_field"');
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'deals',
         error
@@ -553,13 +481,11 @@ describe('ErrorService', () => {
     });
 
     it('should provide generic field suggestions for non-deal resources', () => {
-      const error = new Error('Cannot find attribute with slug/id "bad_field"');
       // Clear the mock return to get the fallback suggestion
       vi.mocked(getFieldSuggestions).mockReturnValue(
         'Unable to provide suggestions for resource type companies'
       );
 
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         error
@@ -579,7 +505,6 @@ describe('ErrorService', () => {
     });
 
     it('should handle empty error messages', () => {
-      const result = ErrorService.getOperationSuggestion(
         'create',
         'companies',
         new Error('')
@@ -590,9 +515,7 @@ describe('ErrorService', () => {
     });
 
     it('should handle malformed error objects', () => {
-      const malformedError = { notMessage: 'test', randomField: 123 };
 
-      const result = ErrorService.createUniversalError(
         'create',
         'companies',
         malformedError

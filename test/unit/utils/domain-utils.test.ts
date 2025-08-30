@@ -2,22 +2,6 @@
  * Unit tests for domain utility functions
  */
 import { describe, it, test, expect } from 'vitest';
-import {
-  extractDomain,
-  isValidDomain,
-  normalizeDomain,
-  hasDomainIndicators,
-  extractAllDomains,
-} from '../../../src/utils/domain-utils.js';
-
-describe('Domain Utilities', () => {
-  describe('extractDomain', () => {
-    test('should extract domain from simple domain', () => {
-      expect(extractDomain('example.com')).toBe('example.com');
-      expect(extractDomain('subdomain.example.com')).toBe(
-        'subdomain.example.com'
-      );
-    });
 
     test('should extract domain from URLs', () => {
       expect(extractDomain('https://example.com')).toBe('example.com');
@@ -120,7 +104,6 @@ describe('Domain Utilities', () => {
     });
 
     test('should extract multiple domains', () => {
-      const result = extractAllDomains(
         'Contact user@example.com or visit https://another.org'
       );
       expect(result).toContain('example.com');
@@ -129,16 +112,13 @@ describe('Domain Utilities', () => {
     });
 
     test('should remove duplicates', () => {
-      const result = extractAllDomains(
         'user@example.com and https://example.com'
       );
       expect(result).toEqual(['example.com']);
     });
 
     test('should handle complex text', () => {
-      const text =
         'Email support@company.com, visit https://www.company.com or try api.company.com';
-      const result = extractAllDomains(text);
       expect(result).toContain('company.com');
       expect(result).toContain('api.company.com');
     });
@@ -149,7 +129,6 @@ describe('Domain Utilities', () => {
     });
 
     test('should normalize extracted domains', () => {
-      const result = extractAllDomains(
         'Visit WWW.Example.COM and API.Example.COM'
       );
       expect(result).toContain('example.com');

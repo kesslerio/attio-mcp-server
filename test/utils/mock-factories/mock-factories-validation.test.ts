@@ -6,15 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  TaskMockFactory,
-  CompanyMockFactory,
-  PersonMockFactory,
-  ListMockFactory,
-  TestEnvironment,
-  UniversalMockFactory,
-  MockDataInjector,
-} from './index.js';
+
+import { TaskMockInjector, UniversalMockInjector } from './mock-injector.js';
+import { TaskMockInjector, UniversalMockInjector } from './mock-injector.js';
 
 // Also import specific injectors to test them
 import { TaskMockInjector, UniversalMockInjector } from './mock-injector.js';
@@ -32,7 +26,6 @@ describe('Mock Factories Validation', () => {
 
   describe('TaskMockFactory', () => {
     it('should create valid AttioTask with Issue #480 compatibility', () => {
-      const task = TaskMockFactory.create({
         content: 'Test task content',
       });
 
@@ -53,8 +46,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create task with both content and title for E2E compatibility', () => {
-      const content = 'Test task for E2E compatibility';
-      const task = TaskMockFactory.create({ content });
 
       expect(task.content).toBe(content);
       // Issue #480: Task should work with both content and title expectations
@@ -62,7 +53,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create multiple tasks with valid structure', () => {
-      const tasks = TaskMockFactory.createMultiple(3);
 
       expect(tasks).toHaveLength(3);
 
@@ -81,29 +71,23 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create high priority task', () => {
-      const task = TaskMockFactory.createHighPriority();
 
       expect(task.status).toBeDefined();
       expect(task.content).toBeDefined();
     });
 
     it('should create completed task', () => {
-      const task = TaskMockFactory.createCompleted();
 
       expect(task.status).toBe('completed');
     });
 
     it('should create task with assignee', () => {
-      const assigneeId = 'test-assignee-123';
-      const task = TaskMockFactory.createWithAssignee(assigneeId);
 
       expect(task.assignee).toBeDefined();
       expect(task.assignee?.id).toBe(assigneeId);
     });
 
     it('should create task with linked records', () => {
-      const recordIds = ['record-1', 'record-2'];
-      const task = TaskMockFactory.createWithLinkedRecords(recordIds);
 
       expect(task.linked_records).toBeDefined();
       expect(task.linked_records).toHaveLength(2);
@@ -114,7 +98,6 @@ describe('Mock Factories Validation', () => {
 
   describe('CompanyMockFactory', () => {
     it('should create valid AttioRecord for company', () => {
-      const company = CompanyMockFactory.create({
         name: 'Test Company Inc.',
       });
 
@@ -136,7 +119,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create technology company', () => {
-      const company = CompanyMockFactory.createTechnology();
 
       expect(company.values.industry).toBeDefined();
       expect(Array.isArray(company.values.industry)).toBe(true);
@@ -144,7 +126,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create multiple companies with valid structure', () => {
-      const companies = CompanyMockFactory.createMultiple(3);
 
       expect(companies).toHaveLength(3);
 
@@ -165,7 +146,6 @@ describe('Mock Factories Validation', () => {
 
   describe('PersonMockFactory', () => {
     it('should create valid AttioRecord for person', () => {
-      const person = PersonMockFactory.create({
         name: 'John Smith',
       });
 
@@ -188,15 +168,12 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create executive person', () => {
-      const person = PersonMockFactory.createExecutive();
 
       expect(person.values.seniority).toBeDefined();
       expect((person.values.seniority as any)[0].value).toBe('Executive');
     });
 
     it('should create person with company association', () => {
-      const companyId = 'test-company-123';
-      const person = PersonMockFactory.createWithCompany(companyId);
 
       expect(person.values.company).toBeDefined();
       expect((person.values.company as any)[0].value).toBe(companyId);
@@ -205,7 +182,6 @@ describe('Mock Factories Validation', () => {
 
   describe('ListMockFactory', () => {
     it('should create valid AttioList', () => {
-      const list = ListMockFactory.create({
         name: 'Test List',
       });
 
@@ -225,15 +201,11 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create company list', () => {
-      const list = ListMockFactory.createCompanyList();
 
       expect(list.object_slug).toBe('companies');
     });
 
     it('should create list entry', () => {
-      const listId = 'test-list-123';
-      const recordId = 'test-record-456';
-      const entry = ListMockFactory.createListEntry(listId, recordId);
 
       expect(entry.list_id).toBe(listId);
       expect(entry.record_id).toBe(recordId);
@@ -251,25 +223,20 @@ describe('Mock Factories Validation', () => {
 
   describe('UniversalMockFactory', () => {
     it('should create mock data for all supported resource types', () => {
-      const task = UniversalMockFactory.create('tasks');
       expect(task).toHaveProperty('id');
       expect(task).toHaveProperty('content');
 
-      const company = UniversalMockFactory.create('companies');
       expect(company).toHaveProperty('id');
       expect(company).toHaveProperty('values');
 
-      const person = UniversalMockFactory.create('people');
       expect(person).toHaveProperty('id');
       expect(person).toHaveProperty('values');
 
-      const list = UniversalMockFactory.create('lists');
       expect(list).toHaveProperty('id');
       expect(list).toHaveProperty('title');
     });
 
     it('should support all expected resource types', () => {
-      const supportedTypes = UniversalMockFactory.getSupportedTypes();
       expect(supportedTypes).toContain('tasks');
       expect(supportedTypes).toContain('companies');
       expect(supportedTypes).toContain('people');
@@ -279,7 +246,6 @@ describe('Mock Factories Validation', () => {
 
   describe('MockDataInjector', () => {
     it('should inject mock data in test environment', async () => {
-      const result = await UniversalMockInjector.inject('tasks', 'create', {
         content: 'Test task',
       });
 
@@ -289,7 +255,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should create task using TaskMockInjector', async () => {
-      const result = await TaskMockInjector.createTask('Test task content', {
         assigneeId: 'test-assignee',
       });
 
@@ -302,7 +267,6 @@ describe('Mock Factories Validation', () => {
   describe('Compatibility with Existing E2E Patterns', () => {
     it('should be compatible with existing E2ETaskFactory patterns', () => {
       // Test that our mock factory produces similar structure to E2ETaskFactory
-      const mockTask = TaskMockFactory.create({
         title: 'E2E Test Task',
         content: 'Test content for E2E',
         priority: 'high',
@@ -316,7 +280,6 @@ describe('Mock Factories Validation', () => {
     });
 
     it('should maintain Issue #480 task_id preservation', () => {
-      const task = TaskMockFactory.create({
         content: 'Issue #480 test task',
       });
 

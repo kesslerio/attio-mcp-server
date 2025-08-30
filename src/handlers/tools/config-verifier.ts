@@ -16,10 +16,9 @@
  */
 export function verifyToolConfigsWithRequiredTools(
   resourceName: string,
-  combinedConfigs: any,
+  combinedConfigs: unknown,
   requiredToolTypes: string[]
 ): boolean {
-  const debugMode =
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
 
@@ -40,7 +39,6 @@ export function verifyToolConfigsWithRequiredTools(
       'name' in config &&
       typeof config.name === 'string'
     ) {
-      const toolName = config.name;
       if (!toolNameMap[toolName]) {
         toolNameMap[toolName] = [];
       }
@@ -49,7 +47,6 @@ export function verifyToolConfigsWithRequiredTools(
   }
 
   // Check for duplicates
-  const duplicates = Object.entries(toolNameMap).filter(
     ([, configTypes]) => configTypes.length > 1
   );
 
@@ -75,7 +72,6 @@ export function verifyToolConfigsWithRequiredTools(
   // Verify each required tool type is present
   for (const toolType of requiredToolTypes) {
     if (toolType in combinedConfigs) {
-      const config = combinedConfigs[toolType];
       console.error(
         `[${resourceName}ToolConfigs] Found ${toolType} with name: ${config.name}`
       );
@@ -127,11 +123,10 @@ export function verifyToolConfigsWithRequiredTools(
  */
 export function verifySpecificTool(
   resourceName: string,
-  configs: any,
+  configs: unknown,
   toolType: string,
-  subConfigs: any = null
+  subConfigs: unknown = null
 ): boolean {
-  const debugMode =
     process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
   if (!debugMode) return true;
 

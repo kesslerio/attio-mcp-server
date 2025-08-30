@@ -5,15 +5,8 @@
  * including MCP response validation and Attio API response checking.
  */
 import { expect } from 'vitest';
+
 import { configLoader } from './config-loader.js';
-import type {
-  McpResponseData,
-  ExpectedDataShape,
-  AttioRecordValues,
-  TestDataObject,
-  SearchResultItem,
-  BatchOperationResult,
-} from '../types/index.js';
 
 /**
  * MCP Tool Response Interface
@@ -72,7 +65,6 @@ export class E2EAssertions {
     this.expectMcpSuccess(response);
 
     if (expectedLimit && response.content) {
-      const text = response.content[0]?.text || '';
       // Check if response mentions pagination limits
       if (
         text.includes('limit') ||
@@ -98,7 +90,6 @@ export class E2EAssertions {
     this.expectMcpSuccess(response);
 
     if (requestedFields && requestedFields.length > 0 && response.content) {
-      const responseText = response.content[0]?.text || '';
 
       // Verify that response contains some indication of field filtering
       if (requestedFields.length === 1) {
@@ -125,7 +116,6 @@ export class E2EAssertions {
   ): void {
     this.expectMcpSuccess(response);
 
-    const responseText = response.content?.[0]?.text || '';
 
     switch (operation) {
       case 'search':
@@ -166,7 +156,6 @@ export class E2EAssertions {
       'Response should indicate error state'
     ).toBe(true);
 
-    const errorText = response.error || response.content?.[0]?.text || '';
 
     switch (errorType) {
       case 'validation':
@@ -214,7 +203,6 @@ export class E2EAssertions {
 
     // Validate response size is reasonable
     if (response.content) {
-      const responseSize = JSON.stringify(response).length;
       expect(
         responseSize,
         'Response size should be reasonable (< 1MB)'
@@ -227,12 +215,11 @@ export class E2EAssertions {
    */
   static expectValidUniversalToolParams(
     response: McpToolResponse,
-    expectedParams: Record<string, any>
+    expectedParams: Record<string, unknown>
   ): void {
     this.expectMcpSuccess(response);
 
     // Basic validation that the tool accepted the parameters
-    const responseText = response.content?.[0]?.text || '';
 
     if (expectedParams.resource_type) {
       // Should not contain resource type errors
@@ -268,7 +255,6 @@ export class E2EAssertions {
   ): void {
     this.expectMcpSuccess(response);
 
-    const responseText = response.content?.[0]?.text || '';
 
     // Should indicate batch processing
     expect(
@@ -283,7 +269,6 @@ export class E2EAssertions {
    * Assert that MCP tool response is successful
    */
   static expectMcpSuccess(response: McpToolResponse, message?: string): void {
-    const errorMsg = message || 'Expected MCP tool response to be successful';
 
     // Add debug logging for error analysis
     if (response.isError) {
@@ -325,18 +310,15 @@ export class E2EAssertions {
   ): McpResponseData | undefined {
     this.expectMcpSuccess(response);
 
-    const content = response.content!;
     expect(
       content.length,
       'Response should have at least one content item'
     ).toBeGreaterThan(0);
 
-    const dataContent = content.find((c) => c.type === 'text' && c.text);
     expect(dataContent, 'Response should contain text content').toBeDefined();
 
     if (dataContent?.text) {
       try {
-        const parsedData = JSON.parse(dataContent.text);
 
         if (expectedDataShape) {
           this.expectObjectShape(parsedData, expectedDataShape);
@@ -392,7 +374,6 @@ export class E2EAssertions {
         ).toContain(expectedErrorPattern);
       } else if (expectedErrorPattern instanceof RegExp) {
         // Convert error message to string before regex matching
-        const messageString = String(errorMessage);
         expect(
           messageString,
           `Error message should match pattern ${expectedErrorPattern}`
@@ -468,7 +449,6 @@ export class E2EAssertions {
         'Person name should be array format'
       ).toBe(true);
 
-      const nameEntry = person.values.name[0];
       expect(nameEntry, 'Person should have name entry').toBeDefined();
 
       // Check for new API structure with structured name fields
@@ -597,11 +577,8 @@ export class E2EAssertions {
    * Assert that test data has proper prefixing
    */
   static expectTestDataPrefix(data: TestDataObject, prefix?: string): void {
-    const config = configLoader.getConfig();
-    const expectedPrefix =
       prefix || (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
-    const hasPrefix = this.hasTestPrefix(data, expectedPrefix);
     expect(
       hasPrefix,
       `Data should contain test prefix "${expectedPrefix}"`
@@ -612,10 +589,7 @@ export class E2EAssertions {
    * Assert that test data does NOT have test prefixing (for production data)
    */
   static expectNoTestDataPrefix(data: TestDataObject): void {
-    const config = configLoader.getConfig();
-    const testPrefix = (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
-    const hasPrefix = this.hasTestPrefix(data, testPrefix);
     expect(
       hasPrefix,
       `Data should NOT contain test prefix "${testPrefix}"`
@@ -647,7 +621,6 @@ export class E2EAssertions {
    * Assert that email follows test domain pattern
    */
   static expectTestEmail(email: string): void {
-    const config = configLoader.getConfig();
     expect(email, 'Email should be defined').toBeDefined();
     expect(
       email.includes(config.testData.testEmailDomain),
@@ -659,7 +632,6 @@ export class E2EAssertions {
    * Assert that domain follows test domain pattern
    */
   static expectTestDomain(domain: string): void {
-    const config = configLoader.getConfig();
     expect(domain, 'Domain should be defined').toBeDefined();
     expect(
       domain.includes(config.testData.testCompanyDomain),
@@ -699,13 +671,9 @@ export class E2EAssertions {
     }
 
     // Basic relevance check - at least some results should contain query terms
-    const queryTerms = query.toLowerCase().split(/\s+/);
-    const relevantResults = results.filter((result) => {
-      const resultText = JSON.stringify(result).toLowerCase();
       return queryTerms.some((term) => resultText.includes(term));
     });
 
-    const relevanceScore = relevantResults.length / results.length;
     expect(
       relevanceScore,
       `Search relevance score ${relevanceScore} should be at least ${minRelevance}`
@@ -749,9 +717,7 @@ export class E2EAssertions {
 
     // All results should have consistent structure
     if (results.length > 1) {
-      const firstResultKeys = Object.keys(results[0] || {}).sort();
       results.forEach((result, index) => {
-        const resultKeys = Object.keys(result || {}).sort();
         expect(
           resultKeys.join(','),
           `Result ${index} should have consistent structure`
@@ -763,7 +729,7 @@ export class E2EAssertions {
   /**
    * Assert that note response has valid structure
    */
-  static expectValidNoteStructure(note: any): void {
+  static expectValidNoteStructure(note: unknown): void {
     expect(note, 'Note should be defined').toBeDefined();
     expect(typeof note, 'Note should be object').toBe('object');
 
@@ -800,13 +766,13 @@ export class E2EAssertions {
   /**
    * Assert that note collection response is valid
    */
-  static expectValidNoteCollection(response: any, minCount: number = 0): void {
+  static expectValidNoteCollection(response: unknown, minCount: number = 0): void {
     expect(
       response,
       'Note collection response should be defined'
     ).toBeDefined();
 
-    let notes: any[];
+    let notes: unknown[];
     if (Array.isArray(response)) {
       notes = response;
     } else if (response.data && Array.isArray(response.data)) {
@@ -840,7 +806,7 @@ export class E2EAssertions {
    * Assert that note content matches expected format
    */
   static expectNoteContentFormat(
-    note: any,
+    note: unknown,
     expectedFormat: 'plaintext' | 'html' | 'markdown'
   ): void {
     this.expectValidNoteStructure(note);
@@ -881,7 +847,7 @@ export class E2EAssertions {
    * Assert that note is properly linked to parent record
    */
   static expectNoteLinkedToRecord(
-    note: any,
+    note: unknown,
     expectedParentType: string,
     expectedParentId?: string
   ): void {
@@ -904,8 +870,7 @@ export class E2EAssertions {
 
     // Alternative structure checks for different API implementations
     if (note.linked_to && Array.isArray(note.linked_to)) {
-      const linkFound = note.linked_to.some(
-        (link: any) =>
+        (link: unknown) =>
           link.target_object === expectedParentType ||
           (expectedParentId && link.target_record_id === expectedParentId)
       );
@@ -919,13 +884,13 @@ export class E2EAssertions {
   /**
    * Assert that note has valid test data characteristics
    */
-  static expectTestNote(note: any): void {
+  static expectTestNote(note: unknown): void {
     this.expectValidNoteStructure(note);
 
     let config;
     try {
       config = configLoader.getConfig();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.message?.includes('Configuration not loaded')) {
         // Use fallback if config not loaded
         config = { testData: { testDataPrefix: 'E2E_TEST_' } };
@@ -933,7 +898,6 @@ export class E2EAssertions {
         throw error;
       }
     }
-    const testPrefix = (config as any).testData?.testDataPrefix || 'E2E_TEST_';
 
     // Check if note title indicates it's test data
     expect(
@@ -942,9 +906,7 @@ export class E2EAssertions {
     ).toBe(true);
 
     // Check content for test indicators - accept tags as alternative
-    const hasContentMarker =
       note.content.includes('E2E') || note.content.includes('test');
-    const hasTagMarker =
       note.tags && Array.isArray(note.tags) && note.tags.includes('e2e-test');
     expect(
       hasContentMarker || hasTagMarker,

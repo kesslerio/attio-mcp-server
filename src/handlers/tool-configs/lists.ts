@@ -4,26 +4,6 @@
 import { AttioList, AttioListEntry } from '../../types/attio.js';
 import { getRecordNameFromEntry } from '../../utils/record-utils.js';
 import { isValidUUID } from '../../utils/validation/uuid-validation.js';
-import {
-  getLists,
-  getListDetails,
-  getListEntries,
-  filterListEntries,
-  advancedFilterListEntries,
-  addRecordToList,
-  removeRecordFromList,
-  updateListEntry,
-  getRecordListMemberships,
-  filterListEntriesByParent,
-  filterListEntriesByParentId,
-  ListMembership,
-} from '../../objects/lists.js';
-import {
-  GetListsToolConfig,
-  ToolConfig,
-  GetListEntriesToolConfig,
-  ListActionToolConfig,
-} from '../tool-types.js';
 
 // Lists tool configurations
 export const listsToolConfigs = {
@@ -72,7 +52,7 @@ export const listsToolConfigs = {
       return await getListEntries(listId, limit, offset);
     },
     formatResult: (
-      results: AttioListEntry[] | { isError: boolean; content: any[] }
+      results: AttioListEntry[] | { isError: boolean; content: unknown[] }
     ) => {
       // Handle validation error response
       if (results && typeof results === 'object' && 'isError' in results) {
@@ -124,7 +104,7 @@ export const listsToolConfigs = {
     },
     idParams: ['listId', 'recordId'],
     formatResult: (
-      result: AttioListEntry | { isError: boolean; content: any[] }
+      result: AttioListEntry | { isError: boolean; content: unknown[] }
     ) => {
       // Handle validation error response
       if (result && typeof result === 'object' && 'isError' in result) {

@@ -1,32 +1,15 @@
 /**
  * Split: Record Management E2E – Relationships slice
  */
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest';
-import { E2ETestBase } from '../setup.js';
-import { E2EAssertions } from '../utils/assertions.js';
 import { CompanyFactory, PersonFactory } from '../fixtures/index.js';
-import type { McpToolResponse } from '../types/index.js';
-import {
-  callUniversalTool,
-  callTasksTool,
-  callNotesTool,
-  validateTestEnvironment,
-  getToolMigrationStats,
-} from '../utils/enhanced-tool-caller.js';
+import { E2EAssertions } from '../utils/assertions.js';
+import { E2ETestBase } from '../setup.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
+import type { McpToolResponse } from '../types/index.js';
 
 function asToolResponse(response: unknown): McpToolResponse {
   return response as McpToolResponse;
 }
-const T45 = 45000,
   T60 = 60000;
 
 describe.skipIf(
@@ -35,7 +18,6 @@ describe.skipIf(
   let prevForceRealApi: string | undefined;
   beforeAll(async () => {
     startTestSuite('record-management-relationships');
-    const envValidation = await validateTestEnvironment();
     if (!envValidation.valid)
       console.warn('⚠️ Test environment warnings:', envValidation.warnings);
     console.error('📊 Tool migration stats:', getToolMigrationStats());
@@ -65,41 +47,31 @@ describe.skipIf(
     'validates record relationships across types',
     async () => {
       // Ensure we have a company, a person and a task to relate
-      const companyResp = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'companies',
           record_data: CompanyFactory.create() as any,
         })
       );
       E2EAssertions.expectMcpSuccess(companyResp);
-      const company = E2EAssertions.expectMcpData(companyResp)!;
-      const companyId = (company as any).id?.record_id;
 
-      const personResp = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'people',
           record_data: PersonFactory.create() as any,
         })
       );
       E2EAssertions.expectMcpSuccess(personResp);
-      const person = E2EAssertions.expectMcpData(personResp)!;
-      const personId = (person as any).id?.record_id;
 
-      const taskCreate = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: { content: 'Relationship validation task' },
         })
       );
       E2EAssertions.expectMcpSuccess(taskCreate);
-      const task = E2EAssertions.expectMcpData(taskCreate)!;
-      const taskId = (task as any).id?.task_id;
 
       expect(companyId && personId && taskId).toBeTruthy();
 
       if (taskId && companyId) {
         // Use correct schema for linking: recordIds expects an array
-        const linkResponse = asToolResponse(
           await callTasksTool('update-record', {
             resource_type: 'tasks',
             record_id: taskId,
@@ -110,7 +82,6 @@ describe.skipIf(
       }
 
       if (companyId) {
-        const companyNote = asToolResponse(
           await callNotesTool('create-note', {
             resource_type: 'companies',
             record_id: companyId,
@@ -123,7 +94,6 @@ describe.skipIf(
       }
 
       if (personId) {
-        const personNote = asToolResponse(
           await callNotesTool('create-note', {
             resource_type: 'people',
             record_id: personId,
@@ -143,15 +113,12 @@ describe.skipIf(
   it(
     'validates data consistency across operations',
     async () => {
-      const companyResp = asToolResponse(
         await callUniversalTool('create-record', {
           resource_type: 'companies',
           record_data: CompanyFactory.create() as any,
         })
       );
       E2EAssertions.expectMcpSuccess(companyResp);
-      const company = E2EAssertions.expectMcpData(companyResp)!;
-      const companyId = (company as any).id?.record_id;
 
       if (!companyId) {
         console.error(
@@ -160,13 +127,11 @@ describe.skipIf(
         return;
       }
 
-      const detailsResponse = asToolResponse(
         await callUniversalTool('get-record-details', {
           resource_type: 'companies',
           record_id: companyId,
         })
       );
-      const noteResponse = asToolResponse(
         await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: companyId,
@@ -175,7 +140,6 @@ describe.skipIf(
           format: 'markdown',
         })
       );
-      const taskResponse = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {

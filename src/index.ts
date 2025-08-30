@@ -2,22 +2,41 @@
 
 // Load environment variables from .env file manually to avoid dotenv banner output
 // This ensures MCP JSON-RPC protocol compliance by preventing stdout contamination
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import fs from 'fs';
 import path from 'path';
 
+import { error as logError, warn, OperationType } from './utils/logger.js';
+import { error as logError, warn, OperationType } from './utils/logger.js';
+import { initializeAttioClient } from './api/attio-client.js';
+import { initializeAttioClient } from './api/attio-client.js';
+import { registerPromptHandlers } from './prompts/handlers.js';
+import { registerPromptHandlers } from './prompts/handlers.js';
+import { registerResourceHandlers } from './handlers/resources.js';
+import { registerResourceHandlers } from './handlers/resources.js';
+import { registerToolHandlers } from './handlers/tools/index.js';
+import { registerToolHandlers } from './handlers/tools/index.js';
+import { startHealthServer } from './health/http-server.js';
+import { startHealthServer } from './health/http-server.js';
+
+import { error as logError, warn, OperationType } from './utils/logger.js';
+import { initializeAttioClient } from './api/attio-client.js';
+import { registerPromptHandlers } from './prompts/handlers.js';
+import { registerResourceHandlers } from './handlers/resources.js';
+import { registerToolHandlers } from './handlers/tools/index.js';
+import { startHealthServer } from './health/http-server.js';
+
 function loadEnvFile() {
   try {
-    const envPath = path.resolve(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const lines = envContent.split('\n');
 
       for (const line of lines) {
-        const trimmedLine = line.trim();
         if (trimmedLine && !trimmedLine.startsWith('#')) {
           const [key, ...valueParts] = trimmedLine.split('=');
           if (key && valueParts.length > 0) {
-            const value = valueParts.join('=').replace(/^["']|["']$/g, '');
             if (!process.env[key.trim()]) {
               process.env[key.trim()] = value;
             }
@@ -42,13 +61,11 @@ import { registerPromptHandlers } from './prompts/handlers.js';
 import { error as logError, warn, OperationType } from './utils/logger.js';
 
 // Use /tmp directory for PID file, which is generally writable
-const PID_FILE_PATH = '/tmp/attio-mcp-server.pid'; // Define PID file path
 
 // Function to read PID from file
 function readPidFile(): number | null {
   try {
     if (fs.existsSync(PID_FILE_PATH)) {
-      const pid = parseInt(fs.readFileSync(PID_FILE_PATH, 'utf-8'), 10);
       return isNaN(pid) ? null : pid;
     }
   } catch (error: unknown) {
@@ -92,7 +109,6 @@ async function main() {
   console.error('[Main] Main function started. Current PID:', process.pid);
 
   try {
-    const oldPid = readPidFile();
     if (oldPid) {
       console.error(
         `[Main] Found PID file. PID in file: ${oldPid}. Current PID: ${process.pid}.`
@@ -147,7 +163,6 @@ async function main() {
     initializeAttioClient(process.env.ATTIO_API_KEY);
 
     // Register handlers
-    const mcpServer = new Server(
       {
         name: 'attio-mcp-server',
         version: '0.0.2',
@@ -170,7 +185,6 @@ async function main() {
     registerPromptHandlers(mcpServer);
 
     // Connect to MCP transport FIRST - critical for Smithery
-    const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
 
     // Write PID file after successful MCP connection
@@ -187,7 +201,6 @@ async function main() {
         healthCheckPort = parseInt(process.env.HEALTH_PORT, 10);
       }
 
-      const healthServer = startHealthServer({
         port: healthCheckPort,
         maxRetries: 2,
         maxRetryTime: 5000, // Reduced for faster startup
@@ -195,9 +208,7 @@ async function main() {
       });
 
       // Handle graceful shutdown
-      const shutdown = (signal: string) => {
         console.error(`[Shutdown] Received ${signal}. Shutting down...`);
-        const healthSrv = healthServer as any;
 
         if (healthSrv && typeof healthSrv.shutdown === 'function') {
           healthSrv.shutdown(() => {
@@ -214,7 +225,6 @@ async function main() {
       process.on('SIGTERM', () => shutdown('SIGTERM'));
     } else {
       // Minimal shutdown handling for stdio mode
-      const cleanup = () => {
         deletePidFile();
         process.exit(0);
       };

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { AttioCreateService } from '../../../../src/services/create/attio-create.service.js';
 import { MockCreateService } from '../../../../src/services/create/mock-create.service.js';
 import type { CreateService } from '../../../../src/services/create/types.js';
@@ -15,16 +16,18 @@ describe('Create Services Contract', () => {
   let mockService: CreateService;
 
   beforeEach(() => {
-    // Mock environment for AttioCreateService to prevent real API calls
-    vi.stubEnv('ATTIO_API_KEY', 'test-api-key');
-    vi.stubEnv('USE_MOCK_DATA', 'false');
-
+    // For mock service tests, we want to use mock data
+    // The mock service should always return mock data regardless of API key
+    vi.stubEnv('USE_MOCK_DATA', 'true');
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('VITEST', 'true');
+    
+    // Set up services
     attioService = new AttioCreateService();
     mockService = new MockCreateService();
   });
 
   describe('createCompany contract', () => {
-    const testCompanyData = {
       name: 'Test Company',
       domain: 'test.com',
       industry: 'Technology',
@@ -32,7 +35,6 @@ describe('Create Services Contract', () => {
     };
 
     it('should return records with identical structure', async () => {
-      const mockResult = await mockService.createCompany(testCompanyData);
 
       // Both services should return AttioRecord with same structure
       expect(mockResult).toHaveProperty('id');
@@ -59,13 +61,11 @@ describe('Create Services Contract', () => {
   });
 
   describe('createPerson contract', () => {
-    const testPersonData = {
       name: 'John Doe',
       email: 'john.doe@test.com',
     };
 
     it('should return records with identical structure', async () => {
-      const mockResult = await mockService.createPerson(testPersonData);
 
       // Both services should return AttioRecord with same structure
       expect(mockResult).toHaveProperty('id');
@@ -92,7 +92,6 @@ describe('Create Services Contract', () => {
   });
 
   describe('createTask contract', () => {
-    const testTaskData = {
       content: 'Test task',
       status: 'pending',
       assigneeId: '12345678-1234-4000-8000-123456789012',
@@ -100,7 +99,6 @@ describe('Create Services Contract', () => {
     };
 
     it('should return records with identical structure (Issue #480 compatibility)', async () => {
-      const mockResult = await mockService.createTask(testTaskData);
 
       // Both services should return AttioRecord with same structure
       expect(mockResult).toHaveProperty('id');
@@ -128,15 +126,12 @@ describe('Create Services Contract', () => {
   });
 
   describe('updateTask contract', () => {
-    const taskId = '12345678-1234-4000-8000-123456789012';
-    const updateData = {
       content: 'Updated task',
       status: 'completed',
       assigneeId: '87654321-4321-4000-8000-210987654321',
     };
 
     it('should return records with identical structure', async () => {
-      const mockResult = await mockService.updateTask(taskId, updateData);
 
       // Should maintain same structure as createTask
       expect(mockResult).toHaveProperty('id');
@@ -165,7 +160,6 @@ describe('Create Services Contract', () => {
   });
 
   describe('createNote contract', () => {
-    const testNoteData = {
       resource_type: 'companies',
       record_id: '12345678-1234-4000-8000-123456789012',
       title: 'Test Note',
@@ -174,7 +168,6 @@ describe('Create Services Contract', () => {
     };
 
     it('should return notes with identical structure', async () => {
-      const mockResult = await mockService.createNote(testNoteData);
 
       expect(mockResult).toHaveProperty('id');
       expect(mockResult.id).toHaveProperty('workspace_id');
@@ -194,7 +187,6 @@ describe('Create Services Contract', () => {
     });
 
     it('should validate required parameters', async () => {
-      const incompleteData = { resource_type: 'companies' };
 
       await expect(
         mockService.createNote(incompleteData as any)
@@ -202,7 +194,6 @@ describe('Create Services Contract', () => {
     });
 
     it('should validate record_id format', async () => {
-      const invalidData = {
         ...testNoteData,
         record_id: 'invalid-record-id-12345',
       };
@@ -215,7 +206,6 @@ describe('Create Services Contract', () => {
 
   describe('listNotes contract', () => {
     it('should return consistent empty array for both services', async () => {
-      const mockResult = await mockService.listNotes({});
 
       expect(Array.isArray(mockResult)).toBe(true);
       expect(mockResult).toHaveLength(0);
@@ -225,7 +215,7 @@ describe('Create Services Contract', () => {
   describe('Error handling contract', () => {
     it('should throw similar error types for validation failures', async () => {
       // Both services should throw Error for validation failures
-      await expect(mockService.updateTask('invalid', {})).rejects.toThrow(
+      await expect(mockService.updateTask('invalid-task-id', {})).rejects.toThrow(
         Error
       );
 

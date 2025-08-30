@@ -9,6 +9,7 @@
  */
 
 import { vi } from 'vitest';
+
 import { DATE_PATTERNS, MOCK_SCHEMAS } from './test-constants.js';
 import { MockResponseFactory, MockErrorFactory } from './mock-data.js';
 
@@ -44,7 +45,7 @@ export const mockSharedHandlers = () => {
       }),
       getSingularResourceType: vi.fn((type: string) => type.slice(0, -1)),
       createUniversalError: vi.fn(
-        (operation: string, resourceType: string, error: any) =>
+        (operation: string, resourceType: string, error: unknown) =>
           new Error(
             `${operation} failed for ${resourceType}: ${error.message || error}`
           )
@@ -61,7 +62,7 @@ export const mockErrorService = () => {
   vi.mock('../../../../../src/services/ErrorService.js', () => ({
     ErrorService: {
       createUniversalError: vi.fn(
-        (operation: string, resourceType: string, error: any) =>
+        (operation: string, resourceType: string, error: unknown) =>
           new Error(
             `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`
           )
@@ -78,10 +79,9 @@ export const mockSchemasAndValidation = () => {
   vi.mock(
     '../../../../../src/handlers/tool-configs/universal/schemas.js',
     async (importOriginal) => {
-      const actual = (await importOriginal()) as any;
       return {
         ...actual,
-        validateUniversalToolParams: vi.fn((operation: string, params: any) => {
+        validateUniversalToolParams: vi.fn((operation: string, params: unknown) => {
           // Just return the params as-is (simulating successful validation)
           // This matches the expected behavior in tests
           return params || {};
@@ -115,7 +115,6 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/companies/index.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
       return {
         ...actual,
         searchCompaniesByNotes: vi.fn(),
@@ -129,7 +128,6 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/index.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
       return {
         ...actual,
         searchPeopleByCompany: vi.fn(),
@@ -147,7 +145,6 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/search.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
       return {
         ...actual,
         searchPeopleByActivity: vi.fn(),
@@ -165,7 +162,6 @@ export const mockSpecializedHandlers = () => {
  */
 export const mockDateUtils = () => {
   vi.mock('../../../../../src/utils/date-utils.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       validateAndCreateDateRange: vi.fn((start?: string, end?: string) => {
@@ -232,7 +228,7 @@ export const setupMockHandlers = async () => {
 
   // Set up error creation
   vi.mocked(createUniversalError).mockImplementation(
-    (operation: string, resourceType: string, error: any) =>
+    (operation: string, resourceType: string, error: unknown) =>
       new Error(
         `${operation} failed for ${resourceType}: ${error.message || error}`
       )
@@ -250,7 +246,7 @@ export const setupMockErrorService = async () => {
 
   // Set up default error creation behavior
   vi.mocked(ErrorService.createUniversalError).mockImplementation(
-    (operation: string, resourceType: string, error: any) =>
+    (operation: string, resourceType: string, error: unknown) =>
       new Error(
         `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`
       )
@@ -330,31 +326,25 @@ export const setupMocksWithConfig = (config: MockSetupConfig) => {
  * Global mock instances to be accessed by tests
  * These are populated during mock setup
  */
-let mockInstances: any = {};
+let mockInstances: unknown = {};
 
 /**
  * Initialize mock instances (called by setupUnitTestMocks)
  */
 export const initializeMockInstances = async () => {
-  const sharedHandlers = await import(
     '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
   );
 
-  const schemas = await import(
     '../../../../../src/handlers/tool-configs/universal/schemas.js'
   );
 
-  const dateUtils = await import('../../../../../src/utils/date-utils.js');
 
-  const companiesHandlers = await import(
     '../../../../../src/objects/companies/index.js'
   );
 
-  const peopleHandlers = await import(
     '../../../../../src/objects/people/index.js'
   );
 
-  const peopleSearchHandlers = await import(
     '../../../../../src/objects/people/search.js'
   );
 

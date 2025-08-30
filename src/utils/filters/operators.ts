@@ -21,7 +21,6 @@ export function isOperatorSupportedForField(
   fieldSlug: string,
   operator: string
 ): boolean {
-  const specialHandling = FIELD_SPECIAL_HANDLING[fieldSlug];
 
   if (!specialHandling || !specialHandling.operators) {
     // No special handling defined, assume all operators are supported
@@ -43,7 +42,6 @@ export function mapOperatorForField(
   fieldSlug: string,
   operator: string
 ): string {
-  const specialHandling = FIELD_SPECIAL_HANDLING[fieldSlug];
 
   if (!specialHandling) {
     return operator;
@@ -87,7 +85,6 @@ export function invertCondition(
  * @returns Negated filter set
  */
 export function createNotFilter(filters: ListEntryFilters): ListEntryFilters {
-  const negatedFilters =
     (filters.filters &&
       filters.filters.map((filter) => ({
         ...filter,
@@ -111,7 +108,6 @@ export function createNotFilter(filters: ListEntryFilters): ListEntryFilters {
 export function conditionRequiresValue(
   condition: FilterConditionType
 ): boolean {
-  const noValueConditions = [
     FilterConditionType.IS_EMPTY,
     FilterConditionType.IS_NOT_EMPTY,
     FilterConditionType.IS_SET,
@@ -128,26 +124,22 @@ export function conditionRequiresValue(
  * @returns The comparison type (equality, range, text, etc.)
  */
 export function getComparisonType(condition: FilterConditionType): string {
-  const equalityConditions = [
     FilterConditionType.EQUALS,
     FilterConditionType.NOT_EQUALS,
   ];
 
-  const rangeConditions = [
     FilterConditionType.GREATER_THAN,
     FilterConditionType.GREATER_THAN_OR_EQUALS,
     FilterConditionType.LESS_THAN,
     FilterConditionType.LESS_THAN_OR_EQUALS,
   ];
 
-  const textConditions = [
     FilterConditionType.CONTAINS,
     FilterConditionType.NOT_CONTAINS,
     FilterConditionType.STARTS_WITH,
     FilterConditionType.ENDS_WITH,
   ];
 
-  const existenceConditions = [
     FilterConditionType.IS_EMPTY,
     FilterConditionType.IS_NOT_EMPTY,
     FilterConditionType.IS_SET,
@@ -173,8 +165,6 @@ export function areConditionsCompatible(
   condition1: FilterConditionType,
   condition2: FilterConditionType
 ): boolean {
-  const type1 = getComparisonType(condition1);
-  const type2 = getComparisonType(condition2);
 
   // Same types are generally compatible
   if (type1 === type2) return true;
@@ -197,11 +187,9 @@ export function areConditionsCompatible(
  */
 export function simplifyFilters(filters: ListEntryFilters): ListEntryFilters {
   const simplifiedFilters: ListEntryFilter[] = [];
-  const filterMap = new Map<string, ListEntryFilter[]>();
 
   // Group filters by attribute
   filters.filters?.forEach((filter) => {
-    const key = filter.attribute.slug;
     if (!filterMap.has(key)) {
       filterMap.set(key, []);
     }
@@ -215,7 +203,6 @@ export function simplifyFilters(filters: ListEntryFilters): ListEntryFilters {
       simplifiedFilters.push(...filterGroup);
     } else {
       // Multiple filters for same attribute, check if they can be combined
-      const rangeFilters = filterGroup.filter(
         (f) => getComparisonType(f.condition as FilterConditionType) === 'range'
       );
 

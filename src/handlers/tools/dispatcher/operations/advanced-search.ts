@@ -5,12 +5,13 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
+
 import { AdvancedSearchToolConfig } from '../../../tool-types.js';
+import { createErrorResult } from '../../../../utils/error-handler.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
 import { ListEntryFilters } from '../../../../api/operations/index.js';
+import { ResourceType } from '../../../../types/attio.js';
 
 /**
  * Handle advanced search operations
@@ -25,9 +26,6 @@ export async function handleAdvancedSearch(
   toolConfig: AdvancedSearchToolConfig,
   resourceType: ResourceType
 ) {
-  const filters = request.params.arguments?.filters as ListEntryFilters;
-  const limit = request.params.arguments?.limit as number | undefined;
-  const offset = request.params.arguments?.offset as number | undefined;
 
   // Validate filters parameter
   if (!filters) {
@@ -87,8 +85,6 @@ export async function handleAdvancedSearch(
   }
 
   try {
-    const results = await toolConfig.handler(filters, limit, offset);
-    const formattedResults = toolConfig.formatResult(results);
 
     return formatResponse(formattedResults);
   } catch (error: unknown) {

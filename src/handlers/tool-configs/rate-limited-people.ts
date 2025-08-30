@@ -1,24 +1,7 @@
 /**
  * Rate-limited people-related tool configurations
  */
-import {
-  paginatedPeopleToolConfigs,
-  paginatedPeopleToolDefinitions,
-} from './paginated-people.js';
 import { withRateLimiting } from '../rate-limited-handler.js';
-
-/**
- * Rate-limited versions of paginated people tool configs
- */
-export const rateLimitedPeopleToolConfigs = {
-  advancedSearch: {
-    ...paginatedPeopleToolConfigs.advancedSearch,
-    name: 'rate-limited-search-people',
-    handler: withRateLimiting(
-      paginatedPeopleToolConfigs.advancedSearch.handler,
-      'people-advanced-search'
-    ),
-  },
 
   searchByCreationDate: {
     ...paginatedPeopleToolConfigs.searchByCreationDate,

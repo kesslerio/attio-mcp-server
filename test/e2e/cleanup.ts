@@ -4,12 +4,9 @@
  * Provides utilities for cleaning up test data from Attio workspace,
  * including bulk cleanup operations and orphaned data detection.
  */
-import {
-  getAttioClient,
-  initializeAttioClient,
-} from '../../src/api/attio-client.js';
-import { loadE2EConfig, type E2EConfig } from './utils/config-loader.js';
 import type { AxiosInstance } from 'axios';
+
+import { loadE2EConfig, type E2EConfig } from './utils/config-loader.js';
 
 export interface CleanupOptions {
   dryRun?: boolean;
@@ -41,8 +38,8 @@ export interface OrphanedObject {
  * Main cleanup utility class
  */
 export class E2ECleanup {
-  private config: E2EConfig;
-  private apiClient: AxiosInstance;
+  private config!: E2EConfig;
+  private apiClient!: AxiosInstance;
   private options: Required<CleanupOptions>;
 
   constructor(options: CleanupOptions = {}) {
@@ -64,7 +61,7 @@ export class E2ECleanup {
   async initialize(): Promise<void> {
     try {
       this.config = await loadE2EConfig();
-      await initializeAttioClient();
+      await initializeAttioClient(this.config.attio.apiKey);
       this.apiClient = getAttioClient();
 
       this.log('✅ Cleanup utility initialized');
@@ -86,11 +83,9 @@ export class E2ECleanup {
     this.log('🧹 Starting E2E test data cleanup...');
 
     const results: CleanupResult[] = [];
-    const types = this.getTypesToClean();
 
     for (const type of types) {
       this.log(`\n📋 Cleaning ${type}...`);
-      const result = await this.cleanupObjectType(type);
       results.push(result);
     }
 
@@ -105,11 +100,9 @@ export class E2ECleanup {
     this.log('🔍 Searching for orphaned test objects...');
 
     const orphanedObjects: OrphanedObject[] = [];
-    const types = this.getTypesToClean();
 
     for (const type of types) {
       this.log(`Scanning ${type}...`);
-      const objects = await this.findOrphanedObjectsOfType(type);
       orphanedObjects.push(...objects);
     }
 
@@ -130,7 +123,6 @@ export class E2ECleanup {
     };
 
     try {
-      const orphanedObjects = await this.findOrphanedObjectsOfType(type);
       result.attempted = orphanedObjects.length;
 
       if (orphanedObjects.length === 0) {
@@ -149,18 +141,15 @@ export class E2ECleanup {
       }
 
       // Process in batches
-      const batches = this.createBatches(
         orphanedObjects,
         this.options.batchSize
       );
 
       for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
         this.log(
           `Processing batch ${i + 1}/${batches.length} (${batch.length} items)`
         );
 
-        const batchResults = await Promise.allSettled(
           batch.map((obj) => this.deleteObject(type, obj.id))
         );
 
@@ -200,7 +189,6 @@ export class E2ECleanup {
     const orphanedObjects: OrphanedObject[] = [];
 
     try {
-      const objects = await this.fetchAllObjectsOfType(type);
 
       for (const obj of objects) {
         if (this.isOrphanedObject(obj, type)) {
@@ -230,8 +218,7 @@ export class E2ECleanup {
 
     while (hasMore) {
       try {
-        const response = await this.rateLimitedCall(async () => {
-          const params: any = { limit: 100 };
+          const params: unknown = { limit: 100 };
           if (cursor) params.cursor = cursor;
 
           switch (type) {
@@ -254,7 +241,6 @@ export class E2ECleanup {
           }
         });
 
-        const data = response.data.data || [];
         allObjects.push(...data);
 
         // Check for pagination
@@ -276,7 +262,7 @@ export class E2ECleanup {
   /**
    * Check if object is orphaned (matches test patterns and age criteria)
    */
-  private isOrphanedObject(obj: any, type: string): boolean {
+  private isOrphanedObject(obj: unknown, type: string): boolean {
     // Check if object matches test pattern
     if (!this.matchesTestPattern(obj)) {
       return false;
@@ -284,9 +270,7 @@ export class E2ECleanup {
 
     // Check age if specified
     if (this.options.maxAge > 0) {
-      const createdAt = this.extractCreatedAt(obj);
       if (createdAt) {
-        const ageInHours =
           (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
         if (ageInHours < this.options.maxAge) {
           return false;
@@ -300,13 +284,9 @@ export class E2ECleanup {
   /**
    * Check if object matches test data patterns
    */
-  private matchesTestPattern(obj: any): boolean {
-    const testPrefix = this.config.testData.testDataPrefix;
-    const testDomain = this.config.testData.testEmailDomain;
-    const testCompanyDomain = this.config.testData.testCompanyDomain;
+  private matchesTestPattern(obj: unknown): boolean {
 
     // Convert object to string for pattern matching
-    const objString = JSON.stringify(obj).toLowerCase();
 
     return (
       objString.includes(testPrefix.toLowerCase()) ||
@@ -318,7 +298,7 @@ export class E2ECleanup {
   /**
    * Extract object ID based on type
    */
-  private extractObjectId(obj: any, type: string): string {
+  private extractObjectId(obj: unknown, type: string): string {
     switch (type) {
       case 'companies':
       case 'people':
@@ -337,7 +317,7 @@ export class E2ECleanup {
   /**
    * Extract object name for logging
    */
-  private extractObjectName(obj: any, type: string): string | undefined {
+  private extractObjectName(obj: unknown, type: string): string | undefined {
     switch (type) {
       case 'companies':
       case 'people':
@@ -356,8 +336,7 @@ export class E2ECleanup {
   /**
    * Extract created date
    */
-  private extractCreatedAt(obj: any): Date | undefined {
-    const dateString = obj.created_at || obj.createdAt;
+  private extractCreatedAt(obj: unknown): Date | undefined {
     return dateString ? new Date(dateString) : undefined;
   }
 
@@ -416,7 +395,6 @@ export class E2ECleanup {
    * Rate limited API call
    */
   private async rateLimitedCall<T>(operation: () => Promise<T>): Promise<T> {
-    const delay = 1000 / this.config.api.rateLimit.requestsPerSecond;
     await this.sleep(delay);
     return await operation();
   }
@@ -441,10 +419,6 @@ export class E2ECleanup {
    * Log cleanup summary
    */
   private logCleanupSummary(results: CleanupResult[]): void {
-    const totalAttempted = results.reduce((sum, r) => sum + r.attempted, 0);
-    const totalSuccessful = results.reduce((sum, r) => sum + r.successful, 0);
-    const totalFailed = results.reduce((sum, r) => sum + r.failed, 0);
-    const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0);
 
     console.error('\n📊 Cleanup Summary:');
     console.error(`   Total objects processed: ${totalAttempted}`);
@@ -474,7 +448,6 @@ export class E2ECleanup {
 export async function runE2ECleanup(
   options: CleanupOptions = {}
 ): Promise<void> {
-  const cleanup = new E2ECleanup(options);
 
   try {
     await cleanup.initialize();
@@ -491,7 +464,6 @@ export async function runE2ECleanup(
 export async function findOrphanedE2EObjects(
   options: CleanupOptions = {}
 ): Promise<OrphanedObject[]> {
-  const cleanup = new E2ECleanup(options);
 
   try {
     await cleanup.initialize();

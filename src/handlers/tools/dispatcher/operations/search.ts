@@ -5,11 +5,12 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { SearchToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { ResourceType } from '../../../../types/attio.js';
+import { SearchToolConfig } from '../../../tool-types.js';
 
 /**
  * Check if the formatted results already contain a header to avoid duplication
@@ -34,7 +35,6 @@ function formatSearchResults(
     return formattedResults;
   }
 
-  const header = searchContext
     ? `Found ${results.length} ${resourceType} ${searchContext}:`
     : `Found ${results.length} ${resourceType}:`;
 
@@ -57,12 +57,7 @@ export async function handleSearchOperation(
   resourceType: ResourceType
 ) {
   try {
-    const results = await searchConfig.handler(searchParam);
-    const formattedResults = searchConfig.formatResult(results);
 
-    const searchType = toolType.replace('searchBy', '').toLowerCase();
-    const searchContext = `matching ${searchType} "${searchParam}"`;
-    const responseText = formatSearchResults(
       formattedResults,
       results,
       resourceType,
@@ -88,8 +83,6 @@ export async function handleBasicSearch(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const queryFromArgs = request.params.arguments?.query as string;
-  const domainFromArgs = request.params.arguments?.domain as string;
 
   let effectiveQuery = queryFromArgs;
 
@@ -109,11 +102,7 @@ export async function handleBasicSearch(
     );
   }
 
-  const query = effectiveQuery; // Use 'query' as the variable name for the rest of the function for minimal changes
   try {
-    const results = await toolConfig.handler(query);
-    const formattedResults = toolConfig.formatResult(results);
-    const responseText = formatSearchResults(
       formattedResults,
       results,
       resourceType
@@ -138,7 +127,6 @@ export async function handleSearchByEmail(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const email = request.params.arguments?.email as string;
   return handleSearchOperation(
     'searchByEmail',
     toolConfig,
@@ -155,7 +143,6 @@ export async function handleSearchByPhone(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const phone = request.params.arguments?.phone as string;
   return handleSearchOperation(
     'searchByPhone',
     toolConfig,
@@ -172,7 +159,6 @@ export async function handleSearchByDomain(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const domain = request.params.arguments?.domain as string;
   return handleSearchOperation(
     'searchByDomain',
     toolConfig,
@@ -189,7 +175,6 @@ export async function handleSearchByCompany(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const companyFilter = request.params.arguments?.companyFilter;
 
   // Extract company identifier from filter
   let companyIdentifier: string;
@@ -202,13 +187,11 @@ export async function handleSearchByCompany(
       Array.isArray(companyFilter.filters) &&
       companyFilter.filters.length > 0
     ) {
-      const firstFilter = companyFilter.filters[0];
       if (
         typeof firstFilter === 'object' &&
         firstFilter !== null &&
         'value' in firstFilter
       ) {
-        const value = firstFilter.value;
         // Extract record_id if it's an object with record_id, otherwise use the value directly
         if (
           typeof value === 'object' &&
@@ -224,7 +207,6 @@ export async function handleSearchByCompany(
       }
     } else if ('value' in companyFilter) {
       // Handle direct value format
-      const value = companyFilter.value;
       if (typeof value === 'object' && value !== null && 'record_id' in value) {
         companyIdentifier = value.record_id as string;
       } else {
@@ -237,13 +219,11 @@ export async function handleSearchByCompany(
     }
   } else if (Array.isArray(companyFilter) && companyFilter.length > 0) {
     // Handle array format - use the first valid filter
-    const firstFilter = companyFilter[0];
     if (
       typeof firstFilter === 'object' &&
       firstFilter !== null &&
       'value' in firstFilter
     ) {
-      const value = firstFilter.value;
       if (typeof value === 'object' && value !== null && 'record_id' in value) {
         companyIdentifier = value.record_id as string;
       } else {
@@ -271,7 +251,6 @@ export async function handleSmartSearch(
   toolConfig: SearchToolConfig,
   resourceType: ResourceType
 ) {
-  const query = request.params.arguments?.query as string;
 
   // Validate query parameter
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -286,9 +265,6 @@ export async function handleSmartSearch(
   }
 
   try {
-    const results = await toolConfig.handler(query);
-    const formattedResults = toolConfig.formatResult(results);
-    const responseText = formatSearchResults(
       formattedResults,
       results,
       resourceType,

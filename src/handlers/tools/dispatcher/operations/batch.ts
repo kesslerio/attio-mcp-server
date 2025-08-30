@@ -5,11 +5,12 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { ToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { ResourceType } from '../../../../types/attio.js';
+import { ToolConfig } from '../../../tool-types.js';
 
 /**
  * Handle batchUpdate operations
@@ -19,8 +20,6 @@ export async function handleBatchUpdateOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const updates = request.params.arguments?.updates;
-  const config = request.params.arguments?.config;
 
   if (!updates || !Array.isArray(updates)) {
     return createErrorResult(
@@ -42,7 +41,6 @@ export async function handleBatchUpdateOperation(
 
   // Validate each update has required fields
   for (let i = 0; i < updates.length; i++) {
-    const update = updates[i];
     if (!update.id || !update.attributes) {
       return createErrorResult(
         new Error(
@@ -56,8 +54,6 @@ export async function handleBatchUpdateOperation(
   }
 
   try {
-    const result = await toolConfig.handler(updates, config);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -80,11 +76,9 @@ export async function handleBatchCreateOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const items =
     request.params.arguments?.companies ||
     request.params.arguments?.people ||
     request.params.arguments?.items;
-  const config = request.params.arguments?.config;
 
   if (!items || !Array.isArray(items)) {
     return createErrorResult(
@@ -105,8 +99,6 @@ export async function handleBatchCreateOperation(
   }
 
   try {
-    const result = await toolConfig.handler(items, config);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -129,11 +121,9 @@ export async function handleBatchDeleteOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const ids =
     request.params.arguments?.companyIds ||
     request.params.arguments?.personIds ||
     request.params.arguments?.ids;
-  const config = request.params.arguments?.config;
 
   if (!ids || !Array.isArray(ids)) {
     return createErrorResult(
@@ -154,8 +144,6 @@ export async function handleBatchDeleteOperation(
   }
 
   try {
-    const result = await toolConfig.handler(ids, config);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -178,8 +166,6 @@ export async function handleBatchSearchOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const queries = request.params.arguments?.queries;
-  const config = request.params.arguments?.config;
 
   if (!queries || !Array.isArray(queries)) {
     return createErrorResult(
@@ -200,8 +186,6 @@ export async function handleBatchSearchOperation(
   }
 
   try {
-    const result = await toolConfig.handler(queries, config);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 
@@ -224,11 +208,9 @@ export async function handleBatchGetDetailsOperation(
   toolConfig: ToolConfig,
   resourceType: ResourceType
 ) {
-  const ids =
     request.params.arguments?.companyIds ||
     request.params.arguments?.personIds ||
     request.params.arguments?.ids;
-  const config = request.params.arguments?.config;
 
   if (!ids || !Array.isArray(ids)) {
     return createErrorResult(
@@ -249,8 +231,6 @@ export async function handleBatchGetDetailsOperation(
   }
 
   try {
-    const result = await toolConfig.handler(ids, config);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : result;
 

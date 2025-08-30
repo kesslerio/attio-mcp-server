@@ -1,25 +1,15 @@
 /**
  * Write operations for People with dynamic field detection
  */
-import { Person, PersonCreateAttributes } from '../types/attio.js';
-import { ResourceType } from '../types/attio.js';
-import {
-  createObjectWithDynamicFields,
-  updateObjectWithDynamicFields,
-  updateObjectAttributeWithDynamicFields,
-  deleteObjectWithValidation,
-} from './base-operations.js';
 import { AttioApiError } from '../utils/error-handler.js';
-import { getAttributeSlugById } from '../api/attribute-types.js';
-import { searchPeopleByEmail } from './people/search.js';
-import { searchCompanies } from './companies/search.js';
 import { getAttioClient } from '../api/attio-client.js';
+import { getAttributeSlugById } from '../api/attribute-types.js';
 import { isValidEmail } from '../utils/validation/email-validation.js';
+import { Person, PersonCreateAttributes } from '../types/attio.js';
 import { PersonAttributes } from './people/types.js';
-import {
-  PersonOperationError,
-  InvalidPersonDataError,
-} from './people/errors.js';
+import { ResourceType } from '../types/attio.js';
+import { searchCompanies } from './companies/search.js';
+import { searchPeopleByEmail } from './people/search.js';
 
 // Type definition for email input formats
 type EmailInput =
@@ -28,7 +18,7 @@ type EmailInput =
       value?: string;
       email?: string;
       email_address?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     };
 
 // Re-export error classes for backward compatibility
@@ -48,12 +38,10 @@ export async function searchPeopleByEmails(
     return [];
   }
 
-  const client = getAttioClient();
   const results: { email: string; exists: boolean; personId?: string }[] = [];
 
   try {
     // Create a filter that searches for any of the provided email addresses
-    const response = await client.post('/objects/people/records/query', {
       filter: {
         $or: emails.map((email) => ({
           email_addresses: { $contains: email },
@@ -63,12 +51,9 @@ export async function searchPeopleByEmails(
     });
 
     // Create a map of found emails to person data
-    const foundEmails = new Map<string, string>();
     // Handle both response.data.data and response.data structures
-    const peopleData = response.data?.data || response.data || [];
     if (Array.isArray(peopleData)) {
       for (const person of peopleData) {
-        const personEmails = person.values?.email_addresses || [];
         for (const emailObj of personEmails) {
           if (emailObj.value && emails.includes(emailObj.value)) {
             foundEmails.set(emailObj.value, person.id?.record_id);
@@ -79,7 +64,6 @@ export async function searchPeopleByEmails(
 
     // Build results for all requested emails
     for (const email of emails) {
-      const personId = foundEmails.get(email);
       results.push({
         email,
         exists: !!personId,
@@ -97,7 +81,6 @@ export async function searchPeopleByEmails(
 
     for (const email of emails) {
       try {
-        const existing = await searchPeopleByEmail(email);
         results.push({
           email,
           exists: existing.length > 0,
@@ -157,7 +140,6 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>)
             .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
@@ -171,7 +153,6 @@ export class PersonValidator {
           emailItem &&
           'email' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -184,7 +165,6 @@ export class PersonValidator {
           emailItem &&
           'value' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).value;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -208,11 +188,8 @@ export class PersonValidator {
       }
 
       // Check for duplicate emails using batch validation for better performance
-      const emailResults = await searchPeopleByEmails(extractedEmails);
-      const duplicateEmails = emailResults.filter((result) => result.exists);
 
       if (duplicateEmails.length > 0) {
-        const duplicateList = duplicateEmails
           .map((result) => result.email)
           .join(', ');
         throw new InvalidPersonDataError(
@@ -223,8 +200,6 @@ export class PersonValidator {
 
     // Resolve company name to record reference
     if (attributes.company && typeof attributes.company === 'string') {
-      const companyName = attributes.company;
-      const results = await searchCompanies(companyName);
       if (results.length === 1) {
         // TypeScript needs help understanding the type mutation here
         (
@@ -279,7 +254,6 @@ export class PersonValidator {
 
     // Special validation for email_addresses
     if (attributeName === 'email_addresses' && attributeValue) {
-      const emails = Array.isArray(attributeValue)
         ? attributeValue
         : [attributeValue];
 
@@ -294,7 +268,6 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>)
             .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
@@ -308,7 +281,6 @@ export class PersonValidator {
           emailItem &&
           'email' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -321,7 +293,6 @@ export class PersonValidator {
           emailItem &&
           'value' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).value;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -374,12 +345,8 @@ export async function createPerson(
     }
 
     if (error instanceof AttioApiError) {
-      const detail = typeof error.detail === 'string' ? error.detail : '';
-      const match = detail.match(/attribute with ID "([^"]+)"/);
       if (match) {
-        const slug = await getAttributeSlugById(ResourceType.PEOPLE, match[1]);
         if (slug) {
-          const friendly = detail.replace(match[1], slug);
           throw new PersonOperationError('create', undefined, friendly);
         }
       }

@@ -5,30 +5,6 @@
 
 import { describe, it, expect } from 'vitest';
 
-// Mock the formatter function based on the actual implementation
-function mockNotesFormatter(notes: any[]) {
-  if (!notes || notes.length === 0) {
-    return 'No notes found for this company.';
-  }
-
-  return `Found ${notes.length} notes:\n${notes
-    .map((note: any) => {
-      // Handle different possible field structures from the API
-      const title =
-        note.title || note.data?.title || note.values?.title || 'Untitled';
-      const content =
-        note.content ||
-        note.data?.content ||
-        note.values?.content ||
-        note.text ||
-        note.body;
-      const timestamp =
-        note.timestamp ||
-        note.created_at ||
-        note.data?.created_at ||
-        note.values?.created_at ||
-        'unknown';
-
       return `- ${title} (Created: ${timestamp})\n  ${
         content
           ? content.length > 200
@@ -43,7 +19,6 @@ function mockNotesFormatter(notes: any[]) {
 describe('Company Notes Formatter', () => {
   describe('Content Extraction', () => {
     it('should extract content from standard note structure', () => {
-      const notes = [
         {
           id: { note_id: 'note1' },
           title: 'Test Note',
@@ -52,7 +27,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Test Note');
       expect(result).toContain('This is the note content');
@@ -61,7 +35,6 @@ describe('Company Notes Formatter', () => {
     });
 
     it('should extract content from nested data structure', () => {
-      const notes = [
         {
           id: { note_id: 'note2' },
           title: 'Nested Note',
@@ -72,7 +45,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Nested Note');
       expect(result).toContain('Content in data field');
@@ -80,7 +52,6 @@ describe('Company Notes Formatter', () => {
     });
 
     it('should extract content from values structure (Attio-style)', () => {
-      const notes = [
         {
           id: { note_id: 'note3' },
           title: 'Values Note',
@@ -91,7 +62,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Values Note');
       expect(result).toContain('Content in values field');
@@ -99,7 +69,6 @@ describe('Company Notes Formatter', () => {
     });
 
     it('should handle alternative content field names', () => {
-      const notes = [
         {
           id: { note_id: 'note4' },
           title: 'Text Note',
@@ -108,7 +77,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Text Note');
       expect(result).toContain('Content in text field');
@@ -116,7 +84,6 @@ describe('Company Notes Formatter', () => {
     });
 
     it('should handle body field as content source', () => {
-      const notes = [
         {
           id: { note_id: 'note5' },
           title: 'Body Note',
@@ -125,7 +92,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Body Note');
       expect(result).toContain('Content in body field');
@@ -135,7 +101,6 @@ describe('Company Notes Formatter', () => {
 
   describe('Fallback Handling', () => {
     it('should show "No content" when no content fields are present', () => {
-      const notes = [
         {
           id: { note_id: 'note6' },
           title: 'Empty Note',
@@ -143,14 +108,12 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Empty Note');
       expect(result).toContain('No content');
     });
 
     it('should handle missing title gracefully', () => {
-      const notes = [
         {
           id: { note_id: 'note7' },
           content: 'Content without title',
@@ -158,14 +121,12 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Untitled');
       expect(result).toContain('Content without title');
     });
 
     it('should handle missing timestamp gracefully', () => {
-      const notes = [
         {
           id: { note_id: 'note8' },
           title: 'Note without timestamp',
@@ -173,7 +134,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Note without timestamp');
       expect(result).toContain('Content without timestamp');
@@ -183,8 +143,6 @@ describe('Company Notes Formatter', () => {
 
   describe('Content Truncation', () => {
     it('should truncate long content at 200 characters', () => {
-      const longContent = 'A'.repeat(250);
-      const notes = [
         {
           id: { note_id: 'note9' },
           title: 'Long Note',
@@ -193,7 +151,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Long Note');
       expect(result).toContain('A'.repeat(200) + '...');
@@ -201,8 +158,6 @@ describe('Company Notes Formatter', () => {
     });
 
     it('should not truncate short content', () => {
-      const shortContent = 'Short content';
-      const notes = [
         {
           id: { note_id: 'note10' },
           title: 'Short Note',
@@ -211,7 +166,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Short Note');
       expect(result).toContain('Short content');
@@ -221,7 +175,6 @@ describe('Company Notes Formatter', () => {
 
   describe('Multiple Notes', () => {
     it('should handle multiple notes with different structures', () => {
-      const notes = [
         {
           id: { note_id: 'note11' },
           title: 'Standard Note',
@@ -238,7 +191,6 @@ describe('Company Notes Formatter', () => {
         },
       ];
 
-      const result = mockNotesFormatter(notes);
 
       expect(result).toContain('Found 2 notes');
       expect(result).toContain('Standard Note');
@@ -250,17 +202,14 @@ describe('Company Notes Formatter', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty notes array', () => {
-      const result = mockNotesFormatter([]);
       expect(result).toBe('No notes found for this company.');
     });
 
     it('should handle null notes', () => {
-      const result = mockNotesFormatter(null);
       expect(result).toBe('No notes found for this company.');
     });
 
     it('should handle undefined notes', () => {
-      const result = mockNotesFormatter(undefined);
       expect(result).toBe('No notes found for this company.');
     });
   });

@@ -10,33 +10,15 @@
 
 import type { McpToolResponse } from './assertions.js';
 
-/**
- * Safely extracts record ID from MCP tool response with proper null checking
- * Handles both text-based responses (E2E mode) and data-based responses (backward compatibility)
- */
-export function extractRecordId(response: McpToolResponse): string | undefined {
-  if (
-    response.isError ||
-    !response.content ||
-    !Array.isArray(response.content) ||
-    response.content.length === 0
-  ) {
-    return undefined;
-  }
-
-  const firstItem = response.content[0];
-
   // Handle text-based responses (E2E mode format)
   if (firstItem?.text && typeof firstItem.text === 'string') {
     // Try to extract ID from formatted text like "Created company "Name" (ID: abc-123-def)"
-    const idMatch = firstItem.text.match(/\(ID:\s*([a-f0-9-]+)\)/);
     if (idMatch && idMatch[1]) {
       return idMatch[1];
     }
 
     // Try to parse JSON if the text is a JSON string
     try {
-      const parsed = JSON.parse(firstItem.text);
       if (parsed?.id?.record_id) {
         return parsed.id.record_id;
       }
@@ -46,7 +28,6 @@ export function extractRecordId(response: McpToolResponse): string | undefined {
   }
 
   // Handle data-based responses (backward compatibility)
-  const data = firstItem?.data as any;
   return data?.id?.record_id || undefined;
 }
 
@@ -68,7 +49,7 @@ export function hasValidContent(response: McpToolResponse): boolean {
  */
 export function getResponseContent(
   response: McpToolResponse
-): any[] | undefined {
+): unknown[] | undefined {
   if (!hasValidContent(response)) {
     return undefined;
   }
@@ -89,7 +70,6 @@ export async function cleanupTestRecords(
   if (Array.isArray(recordsOrCleanupFunction)) {
     // Legacy mode - just log that records would be cleaned up
     // In E2E tests, records are typically temporary test data that auto-cleanup
-    const recordIds = recordsOrCleanupFunction;
     if (recordIds.length > 0) {
       console.log(
         `Test cleanup: ${recordIds.length} record(s) tracked for cleanup: ${recordIds.join(', ')}`
@@ -104,8 +84,6 @@ export async function cleanupTestRecords(
     records &&
     Array.isArray(records)
   ) {
-    const cleanupFunction = recordsOrCleanupFunction;
-    const cleanupPromises = records.map(
       ({ resourceType, recordId }) =>
         cleanupFunction(resourceType, recordId).catch(() => {}) // Ignore cleanup errors
     );
@@ -118,13 +96,11 @@ export async function cleanupTestRecords(
  * Creates test record and returns ID safely
  */
 export async function createTestRecord(
-  createFunction: (resourceType: string, data: any) => Promise<unknown>,
+  createFunction: (resourceType: string, data: unknown) => Promise<unknown>,
   resourceType: string,
   recordData: any
 ): Promise<string | undefined> {
   try {
-    const response = await createFunction(resourceType, recordData);
-    const recordId = extractRecordId(response as McpToolResponse);
     return recordId ?? undefined;
   } catch (error) {
     console.warn(`Failed to create test ${resourceType} record:`, error);
@@ -164,9 +140,6 @@ export interface BatchOperationResult {
 export function analyzeBatchResults(
   results: PromiseSettledResult<any>[]
 ): BatchOperationResult {
-  const successful = results.filter((r) => r.status === 'fulfilled').length;
-  const failed = results.filter((r) => r.status === 'rejected').length;
-  const total = results.length;
 
   return {
     total,
@@ -201,7 +174,6 @@ export async function executeConcurrentOperations<T>(
   const allResults: PromiseSettledResult<T>[] = [];
 
   for (const batch of batches) {
-    const batchResults = await Promise.allSettled(batch.map((op) => op()));
     allResults.push(...batchResults);
   }
 
@@ -217,12 +189,11 @@ export async function retryOperation<T>(
   delay: number = 100
 ): Promise<{ result: T | null; attempts: number; success: boolean }> {
   let attempts = 0;
-  let lastError: any;
+  let lastError: unknown;
 
   while (attempts < maxAttempts) {
     attempts++;
     try {
-      const result = await operation();
       return { result, attempts, success: true };
     } catch (error) {
       lastError = error;

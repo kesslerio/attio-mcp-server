@@ -12,23 +12,12 @@
  * while using the correct universal tools and comprehensive logging.
  */
 
-import { executeToolRequest } from '../../../src/handlers/tools/dispatcher.js';
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import {
-  transformToolCall,
-  transformResponse,
-  isLegacyTool,
-  getMappingStats,
-} from './tool-migration.js';
-import {
-  logToolCall,
-  logTestDataCreation,
-  logError,
-  logInfo,
-} from './logger.js';
+
 import { configLoader } from './config-loader.js';
-import type { ToolParameters, ApiResponse } from '../types.js';
+import { executeToolRequest } from '../../../src/handlers/tools/dispatcher.js';
 import { extractRecordId } from '../../../src/utils/validation/uuid-validation.js';
+import type { ToolParameters, ApiResponse } from '../types.js';
 
 export interface ToolCallOptions {
   testName?: string;
@@ -65,8 +54,6 @@ function preprocessParameters(
     'uri' in parameters &&
     !('record_id' in parameters)
   ) {
-    const uri = parameters.uri as string;
-    const recordId = extractRecordId(uri);
 
     if (recordId) {
       const { uri: _uri, ...otherParams } = parameters;
@@ -103,17 +90,13 @@ export async function callToolWithEnhancements(
   parameters: ToolParameters,
   options: ToolCallOptions = {}
 ): Promise<ToolCallResult> {
-  const startTime = Date.now();
-  const originalToolName = toolName;
   let actualToolName = toolName;
   let actualParams = parameters;
   let wasTransformed = false;
 
   try {
     // Step 0: Check if API key is available for API-dependent operations
-    const apiKeyStatus = configLoader.getApiKeyStatus();
     if (!apiKeyStatus.available && isApiDependentTool(toolName)) {
-      const errorMessage = `Skipping API-dependent tool call: ${apiKeyStatus.message}`;
       logInfo(errorMessage, { toolName, skipped: true }, options.testName);
 
       return {
@@ -135,7 +118,6 @@ export async function callToolWithEnhancements(
 
     // Step 1: Check if this is a legacy tool that needs migration
     if (isLegacyTool(toolName)) {
-      const transformation = transformToolCall(toolName, parameters);
       if (transformation) {
         actualToolName = transformation.toolName;
         actualParams = transformation.params;
@@ -162,14 +144,10 @@ export async function callToolWithEnhancements(
       },
     };
 
-    const response = await executeToolRequest(request);
-    const endTime = Date.now();
 
     // Step 3: Transform response if needed
-    const finalResponse = transformResponse(originalToolName, response);
 
     // Step 4: Log the tool call
-    const timing = {
       start: startTime,
       end: endTime,
       duration: endTime - startTime,
@@ -223,9 +201,7 @@ export async function callToolWithEnhancements(
       options.trackAsTestData &&
       finalResponse?.content?.[0]
     ) {
-      const record = finalResponse.content[0];
       if (record.id?.record_id) {
-        const resourceType = actualParams.resource_type || 'unknown';
         logTestDataCreation(
           resourceType,
           record.id.record_id,
@@ -246,8 +222,6 @@ export async function callToolWithEnhancements(
       wasTransformed,
     };
   } catch (error: unknown) {
-    const endTime = Date.now();
-    const timing = {
       start: startTime,
       end: endTime,
       duration: endTime - startTime,
@@ -268,7 +242,6 @@ export async function callToolWithEnhancements(
 
     // If the error is an MCP response with error details, extract the message
     if (error && typeof error === 'object' && 'content' in error) {
-      const mcpError = error as {
         content?: Array<{ text?: string }>;
         error?: { message?: string };
       };
@@ -300,7 +273,6 @@ export async function callTool(
   parameters: ToolParameters,
   testName?: string
 ): Promise<unknown> {
-  const result = await callToolWithEnhancements(toolName, parameters, {
     testName,
     trackAsTestData: isCreationTool(toolName),
     logResponse: true,
@@ -308,7 +280,6 @@ export async function callTool(
 
   // Return response in the format expected by existing tests
   // Don't throw on error - let tests handle error responses
-  const response = {
     isError: !result.success,
     error:
       typeof result.error === 'string'
@@ -328,7 +299,6 @@ export async function callTool(
   ) {
     if (!response.isError && result.content?.[0]?.text) {
       try {
-        const parsedContent = JSON.parse(result.content[0].text);
         // If content is parsed successfully but not an array, wrap in array or provide empty array
         if (
           parsedContent === false ||
@@ -429,7 +399,6 @@ function isCreationTool(toolName: string): boolean {
  */
 function isApiDependentTool(toolName: string): boolean {
   // Tools that can work without API access (mostly validation and formatting tools)
-  const apiIndependentTools = [
     'validate-email',
     'format-phone',
     'parse-name',
@@ -447,7 +416,7 @@ function isApiDependentTool(toolName: string): boolean {
 /**
  * Get migration statistics for debugging
  */
-export function getToolMigrationStats(): any {
+export function getToolMigrationStats(): unknown {
   return getMappingStats();
 }
 
@@ -457,12 +426,10 @@ export function getToolMigrationStats(): any {
 export async function validateTestEnvironment(): Promise<{
   valid: boolean;
   warnings: string[];
-  stats: any;
+  stats: unknown;
   apiKeyStatus: { available: boolean; message?: string };
 }> {
   const warnings: string[] = [];
-  const stats = getMappingStats();
-  const apiKeyStatus = configLoader.getApiKeyStatus();
 
   // Check API key status
   if (!apiKeyStatus.available) {
@@ -472,7 +439,6 @@ export async function validateTestEnvironment(): Promise<{
   // Test a basic universal tool call (only if API key is available)
   if (apiKeyStatus.available) {
     try {
-      const result = await callToolWithEnhancements(
         'search-records',
         {
           resource_type: 'companies',

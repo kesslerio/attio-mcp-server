@@ -3,34 +3,11 @@
  */
 import { vi } from 'vitest';
 
-export interface TestCompanyData {
-  id?: { record_id: string };
-  values?: {
-    name?: [{ value: string }];
-    industry?: [{ value: string }];
-    categories?: [{ value: string }];
-    website?: [{ value: string }];
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
-
-export interface TestPersonData {
-  id?: { record_id: string };
-  values?: {
-    name?: [{ value: string }];
-    email_addresses?: [{ value: string }];
-    company?: [{ record_id: string }];
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
-
 export interface TestListData {
   id?: { list_id: string };
   name?: string;
   parent_object?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -71,8 +48,7 @@ export class CompanyFactory {
     );
   }
 
-  private static mergeDeep(target: any, source: any): any {
-    const result = { ...target };
+  private static mergeDeep(target: unknown, source: unknown): unknown {
     for (const key in source) {
       if (
         source[key] &&
@@ -125,8 +101,7 @@ export class PersonFactory {
     );
   }
 
-  private static mergeDeep(target: any, source: any): any {
-    const result = { ...target };
+  private static mergeDeep(target: unknown, source: unknown): unknown {
     for (const key in source) {
       if (
         source[key] &&
@@ -178,7 +153,10 @@ export class ListFactory {
  * Factory for creating mock API responses
  */
 export class ApiResponseFactory {
-  static createSuccess<T>(data: T, metadata: any = {}): { data: { data: T } } {
+  static createSuccess<T>(
+    data: T,
+    metadata: unknown = {}
+  ): { data: { data: T } } {
     return {
       data: {
         data,
@@ -188,7 +166,6 @@ export class ApiResponseFactory {
   }
 
   static createError(message: string, status: number = 400): Error {
-    const error = new Error(message);
     (error as any).response = {
       status,
       data: { message },
@@ -201,7 +178,7 @@ export class ApiResponseFactory {
     page: number = 1,
     pageSize: number = 20,
     total?: number
-  ): { data: { data: T[]; pagination: any } } {
+  ): { data: { data: T[]; pagination: unknown } } {
     return {
       data: {
         data,
@@ -220,7 +197,10 @@ export class ApiResponseFactory {
  * Mock request factory for MCP tool testing
  */
 export class MockRequestFactory {
-  static createToolRequest(toolName: string, args: Record<string, any> = {}) {
+  static createToolRequest(
+    toolName: string,
+    args: Record<string, unknown> = {}
+  ) {
     return {
       method: 'tools/call',
       params: {
@@ -230,18 +210,22 @@ export class MockRequestFactory {
     };
   }
 
-  static createSearchRequest(query: string, filters: any = {}) {
+  static createSearchRequest(query: string, filters: unknown = {}) {
     return this.createToolRequest('smart-search-companies', {
       query,
       ...filters,
     });
   }
 
-  static createCreateRequest(objectType: string, attributes: any) {
+  static createCreateRequest(objectType: string, attributes: unknown) {
     return this.createToolRequest(`create-${objectType}`, attributes);
   }
 
-  static createUpdateRequest(objectType: string, id: string, attributes: any) {
+  static createUpdateRequest(
+    objectType: string,
+    id: string,
+    attributes: unknown
+  ) {
     return this.createToolRequest(`update-${objectType}`, {
       [`${objectType}_id`]: id,
       ...attributes,

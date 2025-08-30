@@ -57,12 +57,8 @@ export function resolveRelativeDate(relativeDate: RelativeDate): string {
     throw new Error('RelativeDate value must be a positive number');
   }
 
-  const now = new Date();
-  const resultDate = new Date(now);
 
   // Determine the operation based on direction
-  const operation = relativeDate.direction === 'past' ? -1 : 1;
-  const value = relativeDate.value * operation;
 
   // Apply the operation based on unit
   switch (relativeDate.unit) {
@@ -104,10 +100,8 @@ export function createDateRangeFromPreset(preset: string): {
     throw new Error('Date preset must be a non-empty string');
   }
 
-  const normalizedPreset = preset.toLowerCase().trim();
 
   // Check if preset is a valid DateRangePreset value
-  const isValidPreset = Object.values(DateRangePreset).includes(
     normalizedPreset as DateRangePreset
   );
   if (!isValidPreset) {
@@ -117,8 +111,6 @@ export function createDateRangeFromPreset(preset: string): {
     );
   }
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let start = new Date(today);
   let end = new Date(today);
 
@@ -137,14 +129,12 @@ export function createDateRangeFromPreset(preset: string): {
 
     case DateRangePreset.THIS_WEEK: {
       // Set start to beginning of current week (Sunday)
-      const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
       start.setDate(today.getDate() - dayOfWeek);
       break;
     }
 
     case DateRangePreset.LAST_WEEK: {
       // Set start to beginning of last week
-      const lastWeekDay = today.getDay();
       start.setDate(today.getDate() - lastWeekDay - 7);
       end.setDate(today.getDate() - lastWeekDay - 1);
       break;
@@ -164,7 +154,6 @@ export function createDateRangeFromPreset(preset: string): {
 
     case DateRangePreset.THIS_QUARTER: {
       // Set start to beginning of current quarter
-      const currentQuarter = Math.floor(today.getMonth() / 3);
       start.setMonth(currentQuarter * 3);
       start.setDate(1);
       break;
@@ -172,10 +161,7 @@ export function createDateRangeFromPreset(preset: string): {
 
     case DateRangePreset.LAST_QUARTER: {
       // Set start to beginning of last quarter
-      const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
-      const lastQuarterYear =
         lastQuarter < 0 ? today.getFullYear() - 1 : today.getFullYear();
-      const normalizedLastQuarter = lastQuarter < 0 ? 3 : lastQuarter;
 
       start = new Date(lastQuarterYear, normalizedLastQuarter * 3, 1);
       end = new Date(
@@ -258,11 +244,9 @@ export function resolveDateRange(dateRange: DateRange): {
       }
 
       // Otherwise use the standard preset resolution
-      const presetRange = createDateRangeFromPreset(dateRange.preset);
       return presetRange;
     } catch (error: unknown) {
       // Throw a more descriptive error
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to resolve date range preset: ${errorMessage}`);
     }
@@ -274,7 +258,6 @@ export function resolveDateRange(dateRange: DateRange): {
       if (typeof dateRange.start === 'string') {
         // First try to parse as a relative date expression (e.g., "last 7 days")
         if (isRelativeDate(dateRange.start)) {
-          const relativeRange = parseRelativeDate(dateRange.start);
           result.start = relativeRange.start;
         }
         // Then check if it's a valid ISO date string
@@ -283,7 +266,6 @@ export function resolveDateRange(dateRange: DateRange): {
         }
         // Otherwise try to normalize it as a natural language date
         else {
-          const normalized = normalizeDate(dateRange.start);
           if (normalized) {
             result.start = normalized;
           } else {
@@ -295,7 +277,6 @@ export function resolveDateRange(dateRange: DateRange): {
         result.start = resolveRelativeDate(dateRange.start);
       }
     } catch (error: unknown) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to resolve start date: ${errorMessage}`);
     }
@@ -307,7 +288,6 @@ export function resolveDateRange(dateRange: DateRange): {
       if (typeof dateRange.end === 'string') {
         // First try to parse as a relative date expression (e.g., "last 7 days")
         if (isRelativeDate(dateRange.end)) {
-          const relativeRange = parseRelativeDate(dateRange.end);
           result.end = relativeRange.end;
         }
         // Then check if it's a valid ISO date string
@@ -316,7 +296,6 @@ export function resolveDateRange(dateRange: DateRange): {
         }
         // Otherwise try to normalize it as a natural language date
         else {
-          const normalized = normalizeDate(dateRange.end);
           if (normalized) {
             result.end = normalized;
           } else {
@@ -328,7 +307,6 @@ export function resolveDateRange(dateRange: DateRange): {
         result.end = resolveRelativeDate(dateRange.end);
       }
     } catch (error: unknown) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to resolve end date: ${errorMessage}`);
     }
@@ -336,8 +314,6 @@ export function resolveDateRange(dateRange: DateRange): {
 
   // Validate that if both dates are provided, start is before end
   if (result.start && result.end) {
-    const startDate = new Date(result.start);
-    const endDate = new Date(result.end);
 
     if (startDate > endDate) {
       throw new Error(
@@ -368,7 +344,6 @@ export function isValidISODateString(dateString: string): boolean {
   }
 
   // Check if it's a valid date
-  const date = new Date(dateString);
   return !isNaN(date.getTime());
 }
 
@@ -383,8 +358,6 @@ export function createRelativeDateRange(
   value: number,
   unit: RelativeDateUnit
 ): { start: string; end: string } {
-  const now = new Date();
-  const startDate = new Date(now);
 
   // Configure start date based on unit and value
   switch (unit) {
@@ -424,7 +397,6 @@ export function formatDate(
   dateString: string,
   format: 'short' | 'long' | 'relative' = 'short'
 ): string {
-  const date = new Date(dateString);
 
   switch (format) {
     case 'short':
@@ -437,9 +409,6 @@ export function formatDate(
         day: 'numeric',
       });
     case 'relative': {
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) return 'Today';
       if (diffDays === 1) return 'Yesterday';
@@ -478,7 +447,6 @@ export function validateAndCreateDateRange(
 
   // Validate and process start date
   if (startDate && startDate.trim() !== '') {
-    const trimmedStart = startDate.trim();
     if (!isValidISODateString(trimmedStart)) {
       throw new Error(
         `Invalid start date format. Expected ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ), got: "${trimmedStart}"`
@@ -489,7 +457,6 @@ export function validateAndCreateDateRange(
 
   // Validate and process end date
   if (endDate && endDate.trim() !== '') {
-    const trimmedEnd = endDate.trim();
     if (!isValidISODateString(trimmedEnd)) {
       throw new Error(
         `Invalid end date format. Expected ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ), got: "${trimmedEnd}"`
@@ -507,8 +474,6 @@ export function validateAndCreateDateRange(
 
   // Validate logical consistency if both dates are provided
   if (result.start && result.end) {
-    const startDate = new Date(result.start);
-    const endDate = new Date(result.end);
 
     if (startDate > endDate) {
       throw new Error(
@@ -517,8 +482,6 @@ export function validateAndCreateDateRange(
     }
 
     // Warn if the date range is suspiciously large
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365);
     if (diffYears > 10) {
       console.warn(
         `Large date range detected: ${diffYears.toFixed(1)} years. This may impact performance.`

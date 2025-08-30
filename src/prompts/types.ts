@@ -10,7 +10,7 @@ export interface PromptParameter {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   description: string;
   required: boolean;
-  default?: any;
+  default?: unknown;
   enum?: string[];
 }
 
@@ -38,7 +38,7 @@ export interface PromptExecutionRequest {
  */
 export interface PromptExecutionResponse {
   success: boolean;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 

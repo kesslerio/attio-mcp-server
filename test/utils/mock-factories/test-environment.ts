@@ -64,11 +64,6 @@ export function isTestEnvironment(): boolean {
  * ```
  */
 export function shouldUseMockData(): boolean {
-  const isTest = isTestEnvironment();
-  const useMock = process.env.USE_MOCK_DATA === 'true';
-  const offline = process.env.OFFLINE_MODE === 'true';
-  const e2eMode = process.env.E2E_MODE === 'true';
-  const result = isTest || useMock || offline || e2eMode;
 
   // Only log in development or when verbose testing is enabled
   if (isDevelopmentEnvironment() || process.env.VERBOSE_TESTS === 'true') {
@@ -220,7 +215,7 @@ export const TestEnvironment = {
   /**
    * Environment-specific logging helper
    */
-  log: (message: string, ...args: any[]) => {
+  log: (message: string, ...args: unknown[]) => {
     if (isDevelopmentEnvironment() || process.env.VERBOSE_TESTS === 'true') {
       console.log(`[${getTestContext().toUpperCase()}] ${message}`, ...args);
     }
@@ -229,7 +224,7 @@ export const TestEnvironment = {
   /**
    * Environment-specific warning helper
    */
-  warn: (message: string, ...args: any[]) => {
+  warn: (message: string, ...args: unknown[]) => {
     if (isDevelopmentEnvironment() || isTestEnvironment()) {
       console.warn(`[${getTestContext().toUpperCase()}] ${message}`, ...args);
     }

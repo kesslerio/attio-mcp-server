@@ -14,16 +14,10 @@
  * Set SKIP_INTEGRATION_TESTS=true to skip these tests
  */
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import {
-  createCompany,
-  updateCompany,
-  getCompanyDetails,
-  deleteCompany,
-} from '../../src/objects/companies/index';
+
 import { initializeAttioClient } from '../../src/api/attio-client';
 
 // These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Industry-Categories Mapping - E2E Tests', () => {
@@ -36,7 +30,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
   });
 
@@ -54,14 +47,11 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
   describe('Company Creation with Industry Field', () => {
     it('should create a company with industry field mapped to categories', async () => {
-      const testIndustry = 'Software & Technology';
-      const companyData = {
         name: `Industry Mapping Test ${Date.now()}`,
         industry: testIndustry,
       };
 
       // Create the company with industry field
-      const createdCompany = await createCompany(companyData);
 
       // Verify the company was created with the industry
       expect(createdCompany).toBeDefined();
@@ -82,7 +72,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         'DEBUG: About to call getCompanyDetails with ID:',
         createdCompany.id!.record_id
       );
-      const companyDetails = await getCompanyDetails(
         createdCompany.id!.record_id
       );
       console.log('DEBUG: getCompanyDetails returned:', companyDetails);
@@ -101,7 +90,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       expect(companyDetails?.values).toBeDefined();
 
       // The industry field should exist with the value we set
-      const industryValue = companyDetails.values?.industry;
       expect(industryValue).toBeDefined();
 
       // Log for debugging
@@ -115,7 +103,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       // This test will help us understand how the industry field is structured
       if (Array.isArray(industryValue)) {
         // If it's an array, check if our industry is in it
-        const hasOurIndustry = industryValue.some((val) =>
           typeof val === 'string'
             ? val.includes(testIndustry)
             : val &&
@@ -133,11 +120,9 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
     it('should update a company industry field and maintain categories mapping', async () => {
       // First create a company without industry
-      const companyData = {
         name: `Industry Update Test ${Date.now()}`,
       };
 
-      const createdCompany = await createCompany(companyData);
 
       // Verify the company was created properly
       expect(createdCompany).toBeDefined();
@@ -154,8 +139,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       }
 
       // Now update it with an industry
-      const updateIndustry = 'Healthcare & Medical';
-      const updatedCompany = await updateCompany(createdCompany.id!.record_id, {
         industry: updateIndustry,
       });
 
@@ -164,10 +147,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
       expect(updatedCompany.id?.record_id).toBe(createdCompany.id!.record_id);
 
       // Get fresh details to verify the industry mapping
-      const companyDetails = await getCompanyDetails(
         createdCompany.id!.record_id
       );
-      const industryValue = companyDetails.values?.industry;
 
       expect(industryValue).toBeDefined();
 
@@ -180,7 +161,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
 
       // Verify the industry field contains our updated value
       if (Array.isArray(industryValue)) {
-        const hasOurIndustry = industryValue.some((val) =>
           typeof val === 'string'
             ? val.includes(updateIndustry)
             : val &&
@@ -196,18 +176,15 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
     }, 30000);
 
     it('should handle multiple industry values correctly', async () => {
-      const testIndustries = [
         'Technology',
         'Software',
         'AI & Machine Learning',
       ];
-      const companyData = {
         name: `Multi-Industry Test ${Date.now()}`,
         industry: testIndustries, // Try passing multiple industries
       };
 
       try {
-        const createdCompany = await createCompany(companyData);
 
         // Verify the company was created properly
         expect(createdCompany).toBeDefined();
@@ -223,10 +200,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
           );
         }
 
-        const companyDetails = await getCompanyDetails(
           createdCompany.id!.record_id
         );
-        const industryValue = companyDetails.values?.industry;
 
         console.log('Multi-industry company created:', {
           companyId: createdCompany.id?.record_id,
@@ -238,7 +213,6 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         expect(industryValue).toBeDefined();
 
         // Test that our industries are represented somehow
-        const industryString = JSON.stringify(industryValue);
         testIndustries.forEach((industry) => {
           expect(industryString).toContain(industry);
         });
@@ -246,12 +220,10 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         // If multiple industries aren't supported, that's fine - log it
         console.log('Multiple industries not supported:', error.message);
         // Try with a single industry instead
-        const singleIndustryData = {
           name: `Single-Industry Fallback Test ${Date.now()}`,
           industry: testIndustries[0],
         };
 
-        const createdCompany = await createCompany(singleIndustryData);
 
         // Verify the company was created properly
         expect(createdCompany).toBeDefined();
@@ -267,10 +239,8 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
           );
         }
 
-        const companyDetails = await getCompanyDetails(
           createdCompany.id!.record_id
         );
-        const industryFieldValues = companyDetails.values?.industry;
 
         expect(industryFieldValues).toBeDefined();
         console.log('Fallback single industry company:', {

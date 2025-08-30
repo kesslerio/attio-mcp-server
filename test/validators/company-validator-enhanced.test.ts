@@ -2,13 +2,10 @@
  * Tests for the enhanced company validator with attribute type validation
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
+
 import { CompanyValidator } from '../../src/validators/company-validator.js';
 import { getAttributeTypeInfo } from '../../src/api/attribute-types.js';
 import { InvalidRequestError } from '../../src/errors/api-errors.js';
-import {
-  MissingCompanyFieldError,
-  InvalidCompanyDataError,
-} from '../../src/errors/company-errors.js';
 
 // Mock the attribute type modules
 vi.mock('../../src/api/attribute-types.js', () => ({
@@ -79,7 +76,6 @@ describe('Enhanced Company Validator', () => {
       );
 
       // Test attribute validation with various types
-      const attributes = {
         name: 'Acme Corporation',
         employees: '500', // String that should be converted to number
         is_active: 1, // Number that should be converted to boolean
@@ -87,7 +83,6 @@ describe('Enhanced Company Validator', () => {
         description: 'Test company', // Regular string
       };
 
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       // Verify the attributes were converted correctly
       expect(result).toEqual({
@@ -119,12 +114,10 @@ describe('Enhanced Company Validator', () => {
     });
 
     it('should handle null values correctly', async () => {
-      const attributes = {
         name: null,
         description: null,
       };
 
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       // Null values should remain null
       expect(result).toEqual({
@@ -147,7 +140,6 @@ describe('Enhanced Company Validator', () => {
         metadata: {},
       });
 
-      const attributes = {
         employees: 'not-a-number', // Invalid for number type
       };
 
@@ -169,12 +161,10 @@ describe('Enhanced Company Validator', () => {
         new Error('API error')
       );
 
-      const attributes = {
         custom_field: 'test value',
       };
 
       // Should not throw but use the original value
-      const result = await CompanyValidator.validateAttributeTypes(attributes);
 
       expect(result).toEqual({
         custom_field: 'test value',
@@ -206,13 +196,11 @@ describe('Enhanced Company Validator', () => {
         is_active: true,
       });
 
-      const attributes = {
         name: 'Acme Corp',
         employees: '250',
         is_active: 'yes',
       };
 
-      const result = await CompanyValidator.validateCreate(attributes);
 
       // Should return the validated and converted attributes
       expect(result).toEqual({
@@ -228,7 +216,6 @@ describe('Enhanced Company Validator', () => {
     });
 
     it('should throw MissingCompanyFieldError if name is missing', async () => {
-      const attributes = {
         employees: '250',
         // Missing required name field
       };
@@ -259,13 +246,10 @@ describe('Enhanced Company Validator', () => {
         employees: 300,
       });
 
-      const companyId = 'comp_123456';
-      const attributes = {
         name: 'Updated Corp',
         employees: '300',
       };
 
-      const result = await CompanyValidator.validateUpdate(
         companyId,
         attributes
       );
@@ -283,7 +267,6 @@ describe('Enhanced Company Validator', () => {
     });
 
     it('should throw InvalidCompanyDataError if company ID is invalid', async () => {
-      const attributes = {
         name: 'Updated Corp',
       };
 
@@ -311,11 +294,7 @@ describe('Enhanced Company Validator', () => {
         })
       );
 
-      const companyId = 'comp_123456';
-      const attributeName = 'revenue';
-      const attributeValue = '1000000';
 
-      const result = await CompanyValidator.validateAttributeUpdate(
         companyId,
         attributeName,
         attributeValue

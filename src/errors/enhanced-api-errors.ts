@@ -38,7 +38,7 @@ export interface ErrorContext {
   /** Original error for debugging */
   originalError?: Error;
   /** Server response data for debugging */
-  serverData?: any;
+  serverData?: unknown;
 }
 
 /**
@@ -87,7 +87,6 @@ export class EnhancedApiError extends AttioApiError {
     let msg = this.message;
 
     // Issue #416: Handle "Not Found" vs "Invalid Format" confusion
-    const notFoundMessage = this.getNotFoundErrorMessage();
     if (notFoundMessage) {
       return notFoundMessage;
     }
@@ -192,7 +191,6 @@ export class EnhancedApiError extends AttioApiError {
    * and common task-related errors.
    */
   private getTaskSpecificGuidance(): string {
-    const field = this.context?.field;
     if (!field) return '';
 
     // Task field mapping guidance
@@ -209,7 +207,6 @@ export class EnhancedApiError extends AttioApiError {
         ' For tasks, use "record_id" to link to a specific record, not "record".',
     };
 
-    const guidance = taskFieldMappings[field.toLowerCase()];
     if (guidance) {
       return guidance;
     }
@@ -227,7 +224,6 @@ export class EnhancedApiError extends AttioApiError {
     }
 
     // 429 (rate limit), 5xx errors are generally retryable
-    const retryableStatuses = [429, 500, 502, 503, 504];
     return retryableStatuses.includes(this.statusCode);
   }
 }
@@ -469,7 +465,6 @@ export class ErrorEnhancer {
     }
 
     // Handle generic errors with status codes
-    const errorObj = error as {
       message?: string;
       statusCode?: number;
       status?: number;
@@ -477,9 +472,6 @@ export class ErrorEnhancer {
       path?: string;
       method?: string;
     };
-    const statusCode = errorObj?.statusCode || errorObj?.status || 500;
-    const endpoint = errorObj?.endpoint || errorObj?.path || '/unknown';
-    const method = errorObj?.method || 'UNKNOWN';
 
     return new EnhancedApiError(
       errorObj?.message || 'An error occurred',
@@ -503,7 +495,6 @@ export class ErrorEnhancer {
     operation?: string,
     recordId?: string
   ): EnhancedApiError {
-    const message = error.message.toLowerCase();
 
     // Issue #416: Detect "not found" vs "invalid format" scenarios
     if (message.includes('not found') && recordId && isValidUUID(recordId)) {
@@ -526,10 +517,7 @@ export class ErrorEnhancer {
 
     // Issue #417: Detect task field mapping issues
     if (resourceType === 'tasks') {
-      const taskFieldMatch = message.match(/unknown field['\s]*([^']*)/i);
       if (taskFieldMatch) {
-        const field = taskFieldMatch[1].replace(/['"]/g, '').trim();
-        const correctField = this.getTaskFieldMapping(field);
         if (correctField) {
           return ErrorTemplates.TASK_FIELD_MAPPING(field, correctField);
         }
@@ -537,7 +525,6 @@ export class ErrorEnhancer {
     }
 
     // Issue #415: Detect invalid select options
-    const selectMatch = message.match(
       /invalid value['\s]*([^']*)['\s]*for field['\s]*([^']*)/i
     );
     if (selectMatch) {

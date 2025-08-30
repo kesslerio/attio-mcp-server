@@ -10,26 +10,12 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import {
-  AttioRecord,
-  NoteRecord,
-  testCompanies,
-  testPeople,
-  createdNotes,
-  createSharedSetup,
-  createTestCompany,
-  createTestPerson,
-  callNotesTool,
-  E2EAssertions,
-  noteScenarios,
-  edgeCaseNotes,
-} from './shared-setup.js';
+
 import type { McpToolResponse } from '../../types/index.js';
 
 describe
   .skipIf(!process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true')
   .sequential('Notes Validation and Complex Scenarios E2E Tests', () => {
-    const setup = createSharedSetup();
 
     beforeAll(async () => {
       await setup.beforeAll();
@@ -50,18 +36,15 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping special characters test - invalid company data'
           );
           return;
         }
-        const noteData = edgeCaseNotes.specialCharacters(
           testCompany.id.record_id
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -70,7 +53,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -91,17 +73,14 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error('⏭️ Skipping Unicode test - invalid person data');
           return;
         }
-        const noteData = edgeCaseNotes.unicode(
           testPerson.id.record_id,
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -110,7 +89,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -131,14 +109,11 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping long content test - invalid company data');
           return;
         }
-        const noteData = edgeCaseNotes.longContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -147,7 +122,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -172,14 +146,11 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping HTML content test - invalid company data');
           return;
         }
-        const noteData = edgeCaseNotes.htmlContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -188,7 +159,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -211,19 +181,16 @@ describe
           return;
         }
 
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping minimal content test - invalid person data'
           );
           return;
         }
-        const noteData = edgeCaseNotes.minimal(
           testPerson.id.record_id,
           'people'
         );
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: noteData.title,
@@ -232,7 +199,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);
-        const createdNote = E2EAssertions.expectMcpData(
           response
         ) as unknown as NoteRecord;
 
@@ -255,19 +221,15 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id || !testPerson?.id?.record_id) {
           console.error('⏭️ Skipping sales process test - invalid test data');
           return;
         }
-        const salesNotes = noteScenarios.salesProcess(
           testCompany.id.record_id,
           testPerson.id.record_id
         );
 
         // Create company notes
-        const companyNoteResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: salesNotes.initialMeeting.title,
@@ -275,13 +237,11 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(companyNoteResponse);
-        const companyNote = E2EAssertions.expectMcpData(
           companyNoteResponse
         ) as unknown as NoteRecord;
         createdNotes.push(companyNote);
 
         // Create person notes
-        const personNoteResponse = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: salesNotes.introduction.title,
@@ -289,7 +249,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(personNoteResponse);
-        const personNote = E2EAssertions.expectMcpData(
           personNoteResponse
         ) as unknown as NoteRecord;
         createdNotes.push(personNote);
@@ -305,21 +264,17 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
-        const testPerson = testPeople[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id || !testPerson?.id?.record_id) {
           console.error(
             '⏭️ Skipping customer success test - invalid test data'
           );
           return;
         }
-        const successNotes = noteScenarios.customerSuccess(
           testCompany.id.record_id,
           testPerson.id.record_id
         );
 
         // Create onboarding note
-        const onboardingResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: successNotes.onboardingSession.title,
@@ -327,13 +282,11 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(onboardingResponse);
-        const onboardingNote = E2EAssertions.expectMcpData(
           onboardingResponse
         ) as unknown as NoteRecord;
         createdNotes.push(onboardingNote);
 
         // Create user feedback note
-        const feedbackResponse = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: testPerson.id.record_id,
           title: successNotes.userFeedback.title,
@@ -341,7 +294,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(feedbackResponse);
-        const feedbackNote = E2EAssertions.expectMcpData(
           feedbackResponse
         ) as unknown as NoteRecord;
         createdNotes.push(feedbackNote);
@@ -357,19 +309,16 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping project management test - invalid company data'
           );
           return;
         }
-        const projectNotes = noteScenarios.projectManagement(
           testCompany.id.record_id
         );
 
         // Create project status note
-        const statusResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: projectNotes.statusUpdate.title,
@@ -377,7 +326,6 @@ describe
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(statusResponse);
-        const statusNote = E2EAssertions.expectMcpData(
           statusResponse
         ) as unknown as NoteRecord;
 
@@ -396,7 +344,6 @@ describe
 
     describe('Error Handling and Validation', () => {
       it('should handle invalid company ID gracefully', async () => {
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: 'invalid-company-id-12345',
           title: 'Test Note',
@@ -410,7 +357,6 @@ describe
       }, 15000);
 
       it('should handle invalid person ID gracefully', async () => {
-        const response = (await callNotesTool('create-note', {
           resource_type: 'people',
           record_id: 'invalid-person-id-12345',
           title: 'Test Note',
@@ -431,14 +377,12 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error('⏭️ Skipping validation test - invalid company data');
           return;
         }
 
         // Missing title
-        const missingTitleResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           content: 'Content without title',
@@ -447,7 +391,6 @@ describe
         E2EAssertions.expectMcpError(missingTitleResponse);
 
         // Missing content
-        const missingContentResponse = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: 'Title without content',
@@ -457,7 +400,6 @@ describe
       }, 20000);
 
       it('should handle notes retrieval for non-existent records', async () => {
-        const companyResponse = (await callNotesTool('list-notes', {
           resource_type: 'companies',
           record_id: 'non-existent-company-12345',
         })) as McpToolResponse;
@@ -466,11 +408,9 @@ describe
         if (companyResponse.isError) {
           E2EAssertions.expectMcpError(companyResponse, /not found|invalid/i);
         } else {
-          const notes = E2EAssertions.expectMcpData(companyResponse);
           expect(notes).toBeDefined();
         }
 
-        const personResponse = (await callNotesTool('list-notes', {
           resource_type: 'people',
           record_id: 'non-existent-person-12345',
         })) as McpToolResponse;
@@ -478,7 +418,6 @@ describe
         if (personResponse.isError) {
           E2EAssertions.expectMcpError(personResponse, /not found|invalid/i);
         } else {
-          const notes = E2EAssertions.expectMcpData(personResponse);
           expect(notes).toBeDefined();
         }
       }, 20000);
@@ -491,16 +430,13 @@ describe
           return;
         }
 
-        const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
           console.error(
             '⏭️ Skipping empty content test - invalid company data'
           );
           return;
         }
-        const noteData = edgeCaseNotes.emptyContent(testCompany.id.record_id);
 
-        const response = (await callNotesTool('create-note', {
           resource_type: 'companies',
           record_id: testCompany.id.record_id,
           title: noteData.title,
@@ -512,7 +448,6 @@ describe
         if (response.isError) {
           expect(response.error).toMatch(/content|required|empty/i);
         } else {
-          const createdNote = E2EAssertions.expectMcpData(
             response
           ) as unknown as NoteRecord;
           expect(createdNote.title).toBe(noteData.title);

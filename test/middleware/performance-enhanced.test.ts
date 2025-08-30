@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 
 describe('Enhanced Performance Tracker', () => {
@@ -16,7 +17,6 @@ describe('Enhanced Performance Tracker', () => {
 
   describe('Basic Operations', () => {
     it('should track operation timing', async () => {
-      const operationId = enhancedPerformanceTracker.startOperation(
         'test-tool',
         'test-operation',
         { test: true }
@@ -25,7 +25,6 @@ describe('Enhanced Performance Tracker', () => {
       // Simulate some work
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const metrics = enhancedPerformanceTracker.endOperation(
         operationId,
         true
       );
@@ -38,7 +37,6 @@ describe('Enhanced Performance Tracker', () => {
     });
 
     it('should track timing splits', async () => {
-      const operationId = enhancedPerformanceTracker.startOperation(
         'test-tool',
         'test-operation'
       );
@@ -48,11 +46,9 @@ describe('Enhanced Performance Tracker', () => {
       enhancedPerformanceTracker.markTiming(operationId, 'validation', 5);
 
       // Simulate API call
-      const apiStart = enhancedPerformanceTracker.markApiStart(operationId);
       await new Promise((resolve) => setTimeout(resolve, 20));
       enhancedPerformanceTracker.markApiEnd(operationId, apiStart);
 
-      const metrics = enhancedPerformanceTracker.endOperation(
         operationId,
         true
       );
@@ -65,18 +61,13 @@ describe('Enhanced Performance Tracker', () => {
 
   describe('404 Caching', () => {
     it('should cache 404 responses', () => {
-      const cacheKey = 'test-resource:test-id';
-      const cachedData = { error: 'Not found' };
 
       enhancedPerformanceTracker.cache404Response(cacheKey, cachedData, 1000);
 
-      const retrieved = enhancedPerformanceTracker.getCached404(cacheKey);
       expect(retrieved).toEqual(cachedData);
     });
 
     it('should expire cached 404 responses', async () => {
-      const cacheKey = 'test-resource:test-id-2';
-      const cachedData = { error: 'Not found' };
 
       // Cache with 50ms TTL
       enhancedPerformanceTracker.cache404Response(cacheKey, cachedData, 50);
@@ -96,10 +87,8 @@ describe('Enhanced Performance Tracker', () => {
 
   describe('Performance Budgets', () => {
     it('should detect budget violations', () => {
-      const alertSpy = vi.fn();
       enhancedPerformanceTracker.on('performanceAlert', alertSpy);
 
-      const operationId = enhancedPerformanceTracker.startOperation(
         'test-tool',
         'search'
       );
@@ -125,14 +114,12 @@ describe('Enhanced Performance Tracker', () => {
     it('should calculate performance statistics', () => {
       // Create some test operations
       for (let i = 0; i < 5; i++) {
-        const opId = enhancedPerformanceTracker.startOperation(
           'test-tool',
           'test-op'
         );
         enhancedPerformanceTracker.endOperation(opId, true);
       }
 
-      const stats = enhancedPerformanceTracker.getStatistics('test-tool');
 
       expect(stats).toBeDefined();
       expect(stats.count).toBe(5);
@@ -144,10 +131,8 @@ describe('Enhanced Performance Tracker', () => {
 
     it('should calculate percentiles correctly', () => {
       // Create operations with known durations
-      const durations = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
       durations.forEach((duration) => {
-        const opId = enhancedPerformanceTracker.startOperation(
           'percentile-test',
           'test'
         );
@@ -155,7 +140,6 @@ describe('Enhanced Performance Tracker', () => {
         enhancedPerformanceTracker.endOperation(opId, true);
       });
 
-      const stats = enhancedPerformanceTracker.getStatistics('percentile-test');
 
       expect(stats).toBeDefined();
       expect(stats.count).toBe(10);
@@ -168,13 +152,11 @@ describe('Enhanced Performance Tracker', () => {
   describe('Report Generation', () => {
     it('should generate a performance report', () => {
       // Create some test data
-      const opId = enhancedPerformanceTracker.startOperation(
         'report-test',
         'test'
       );
       enhancedPerformanceTracker.endOperation(opId, true);
 
-      const report = enhancedPerformanceTracker.generateReport();
 
       expect(report).toContain('Performance Report');
       expect(report).toContain('Total Operations');
@@ -183,13 +165,11 @@ describe('Enhanced Performance Tracker', () => {
     });
 
     it('should export metrics as JSON', () => {
-      const opId = enhancedPerformanceTracker.startOperation(
         'export-test',
         'test'
       );
       enhancedPerformanceTracker.endOperation(opId, true);
 
-      const exported = enhancedPerformanceTracker.exportMetrics();
 
       expect(exported).toBeDefined();
       expect(exported.timestamp).toBeDefined();

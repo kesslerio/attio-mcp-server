@@ -5,25 +5,6 @@
 
 import { UniversalResourceType } from '../types.js';
 
-// Re-export UniversalResourceType for module-internal use
-export { UniversalResourceType };
-
-/**
- * Field mapping configuration for each resource type
- */
-export interface FieldMapping {
-  /** Maps incorrect field names to correct ones (null means invalid field) */
-  fieldMappings: Record<string, string | null>;
-  /** List of valid fields for this resource type */
-  validFields: string[];
-  /** Common mistakes and their explanations */
-  commonMistakes: Record<string, string>;
-  /** Required fields for creation */
-  requiredFields?: string[];
-  /** Fields that must be unique */
-  uniqueFields?: string[];
-}
-
 /**
  * Result of field mapping operation
  */

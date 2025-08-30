@@ -2,12 +2,9 @@
  * Tests for attribute mapping functionality
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  getAttributeSlug,
-  invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/attribute-mappers';
-import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
+
 import * as configLoader from '../../src/utils/config-loader';
+import * as mappingUtils from '../../src/utils/attribute-mapping/mapping-utils';
 
 // Mock the config loader to test with controlled configurations
 vi.mock('../../src/utils/config-loader', () => ({
@@ -73,7 +70,6 @@ describe('Attribute Mappers', () => {
 
     it('should handle snake case conversion without infinite recursion', () => {
       // Mock handleSpecialCases to simulate the problematic behavior
-      const originalHandleSpecialCases = mappingUtils.handleSpecialCases;
       vi.spyOn(mappingUtils, 'handleSpecialCases').mockImplementation((key) => {
         if (key.toLowerCase() === 'industry') return 'categories';
         if (key.toLowerCase() === 'categories') return 'industry'; // This creates a circular reference

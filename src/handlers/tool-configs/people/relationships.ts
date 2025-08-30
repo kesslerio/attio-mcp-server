@@ -1,13 +1,8 @@
 import { AttioRecord } from '../../../types/attio.js';
-import {
-  searchPeopleByCompany,
-  searchPeopleByCompanyList,
-  searchPeopleByNotes,
-} from '../../../objects/people/index.js';
-import { searchCompanies } from '../../../objects/companies/index.js';
-import { ToolRequestArguments } from '../../../types/tool-types.js';
-import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
+import { searchCompanies } from '../../../objects/companies/index.js';
+import { ToolConfig, SearchToolConfig } from '../../tool-types.js';
+import { ToolRequestArguments } from '../../../types/tool-types.js';
 
 // Type definitions for filter values
 interface CompanyFilterValue {
@@ -27,7 +22,6 @@ export const relationshipToolConfigs = {
   searchByCompany: {
     name: 'search-people-by-company',
     handler: async (args: ToolRequestArguments) => {
-      const companyFilter = args.companyFilter as any;
       if (
         !companyFilter?.filters ||
         !Array.isArray(companyFilter.filters) ||
@@ -40,8 +34,6 @@ export const relationshipToolConfigs = {
 
       // Process the filters to extract company identifiers
       for (const filter of companyFilter.filters) {
-        const typedFilter = filter as CompanyFilter;
-        const slug = typedFilter.attribute?.slug;
         if (slug === 'companies.id') {
           let recordId: string;
           if (
@@ -57,12 +49,9 @@ export const relationshipToolConfigs = {
           // Use the searchPeopleByCompany function
           return await searchPeopleByCompany(recordId);
         } else if (slug === 'companies.name') {
-          const searchValue = String(typedFilter.value);
-          const companies = await searchCompanies(searchValue);
           if (companies.length === 0) {
             throw new Error(`No company found with name: ${searchValue}`);
           }
-          const companyId = companies[0].id?.record_id;
           if (!companyId) {
             throw new Error(
               `Company found but has no record ID: ${searchValue}`

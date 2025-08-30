@@ -28,19 +28,8 @@
 
 // Core mock factory classes
 import { TaskMockFactory, type MockTaskOptions } from './TaskMockFactory.js';
-import {
-  CompanyMockFactory,
-  type MockCompanyOptions,
-} from './CompanyMockFactory.js';
-import {
-  PersonMockFactory,
-  type MockPersonOptions,
-} from './PersonMockFactory.js';
-import {
-  ListMockFactory,
-  type MockListOptions,
-  type MockListEntryOptions,
-} from './ListMockFactory.js';
+import { UniversalMockService } from './UniversalMockService.js';
+import { UniversalMockService } from './UniversalMockService.js';
 
 export { TaskMockFactory, type MockTaskOptions };
 export { CompanyMockFactory, type MockCompanyOptions };

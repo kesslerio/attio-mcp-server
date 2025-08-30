@@ -2,71 +2,19 @@
  * Split: UniversalCreateService objects/deals/tasks operations
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: {
-    truncateSuggestions: vi.fn((s: string[]) => s),
-    validateEmailAddresses: vi.fn(),
-  },
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  mapRecordFields: vi.fn(),
-  validateResourceType: vi.fn(),
-  getFieldSuggestions: vi.fn(),
-  validateFields: vi.fn(),
-  getValidResourceTypes: vi.fn(
-    () => 'companies, people, lists, records, deals, tasks'
-  ),
-  FIELD_MAPPINGS: {},
-}));
-vi.mock('../../src/utils/validation-utils.js', () => ({
-  validateRecordFields: vi.fn(),
-}));
-vi.mock('../../src/utils/attribute-format-helpers.js', () => ({
-  convertAttributeFormats: vi.fn((t: string, d: any) => d),
-  getFormatErrorHelp: vi.fn(
-    (t: string, f: string, m: string) => `Enhanced: ${m}`
-  ),
-}));
-vi.mock('../../src/config/deal-defaults.js', () => ({
-  applyDealDefaultsWithValidation: vi.fn(),
-  getDealDefaults: vi.fn(() => ({ stage: 'default-stage' })),
-  validateDealInput: vi.fn(() => ({
-    isValid: true,
-    suggestions: [],
-    warnings: [],
-  })),
-}));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  EnhancedApiError: vi
-    .fn()
-    .mockImplementation(
-      (
-        message: string,
-        statusCode: number,
-        endpoint: string,
-        method: string
-      ) => {
-        const e: any = new Error(message);
-        e.statusCode = statusCode;
-        e.endpoint = endpoint;
-        e.method = method;
-        e.name = 'EnhancedApiError';
-        return e;
-      }
-    ),
-  ErrorEnhancer: { autoEnhance: vi.fn((e: any) => e) },
-  ErrorTemplates: {
-    TASK_FIELD_MAPPING: vi.fn(
-      (a: string, b: string) => new Error(`Use ${b} instead of ${a}`)
-    ),
-  },
-}));
-vi.mock('../../src/objects/records/index.js', () => ({
-  createObjectRecord: vi.fn(),
-}));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: { createTask: vi.fn(), createCompany: vi.fn() },
-}));
+
+import { AttioRecord } from '../../src/types/attio.js';
+import { AttioRecord } from '../../src/types/attio.js';
+import { createObjectRecord } from '../../src/objects/records/index.js';
+import { createObjectRecord } from '../../src/objects/records/index.js';
+import { getFormatErrorHelp } from '../../src/utils/attribute-format-helpers.js';
+import { getFormatErrorHelp } from '../../src/utils/attribute-format-helpers.js';
+import { MockService } from '../../src/services/MockService.js';
+import { MockService } from '../../src/services/MockService.js';
+import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
+import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
@@ -98,7 +46,7 @@ describe('UniversalCreateService', () => {
     } as any);
 
     vi.mocked(mapRecordFields).mockImplementation(
-      (resourceType: string, data: any) =>
+      (resourceType: string, data: unknown) =>
         ({
           mapped: data,
           warnings: [],
@@ -114,7 +62,6 @@ describe('UniversalCreateService', () => {
         values: { name: 'Test Record' },
       } as any;
       vi.mocked(createObjectRecord).mockResolvedValue(mockRecord);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.RECORDS,
         record_data: { values: { name: 'Test Record' }, object: 'companies' },
       });
@@ -129,12 +76,10 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'deal_def' },
         values: { name: 'Test Deal' },
       } as any;
-      const mockDealData = { name: 'Test Deal', stage: 'qualified' } as any;
       vi.mocked(applyDealDefaultsWithValidation).mockResolvedValue(
         mockDealData
       );
       vi.mocked(createObjectRecord).mockResolvedValue(mockDeal);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.DEALS,
         record_data: { values: { name: 'Test Deal' } },
       });
@@ -159,7 +104,6 @@ describe('UniversalCreateService', () => {
         warnings: [],
         errors: [],
       } as any);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.TASKS,
         record_data: {
           values: {
@@ -181,8 +125,6 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle deals with stage validation failure and retry', async () => {
-      const originalData = { name: 'Test Deal', stage: 'invalid-stage' } as any;
-      const defaultData = { name: 'Test Deal', stage: 'default-stage' } as any;
       const mockDeal: AttioRecord = {
         id: { record_id: 'deal_123' },
         values: { name: 'Test Deal' },
@@ -193,7 +135,6 @@ describe('UniversalCreateService', () => {
       vi.mocked(createObjectRecord)
         .mockRejectedValueOnce(new Error('Cannot find Status "invalid-stage"'))
         .mockResolvedValueOnce(mockDeal);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.DEALS,
         record_data: { values: { name: 'Test Deal', stage: 'invalid-stage' } },
       });
@@ -213,7 +154,6 @@ describe('UniversalCreateService', () => {
         warnings: [],
         errors: [],
       } as any);
-      const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.TASKS,
         record_data: { values: { content: '' } },
       });

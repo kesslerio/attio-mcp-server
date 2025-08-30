@@ -1,15 +1,10 @@
 /**
  * CRUD operations for people
  */
-import {
-  AttioRecord,
-  Person,
-  PersonCreateAttributes,
-} from '../../../types/attio.js';
 import { createPerson } from '../../../objects/people-write.js';
+import { formatPersonDetails, getPersonName } from './formatters.js';
 import { getPersonDetails } from '../../../objects/people/index.js';
 import { ToolConfig } from '../../tool-types.js';
-import { formatPersonDetails, getPersonName } from './formatters.js';
 
 export const crudToolConfigs = {
   create: {
@@ -18,9 +13,7 @@ export const crudToolConfigs = {
       try {
         return await createPerson(attributes);
       } catch (error: unknown) {
-        const errorMessage =
           error instanceof Error ? error.message : String(error);
-        const contextualError = new Error(
           `Failed to create person via adapter: ${errorMessage}`
         );
         (contextualError as any).cause = error;

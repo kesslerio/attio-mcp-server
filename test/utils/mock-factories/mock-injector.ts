@@ -14,22 +14,10 @@
  * - Issue #480 compatibility for E2E tests
  */
 
-import type {
-  AttioTask,
-  AttioRecord,
-  AttioList,
-} from '../../../src/types/attio.js';
-import {
-  TaskMockFactory,
-  CompanyMockFactory,
-  PersonMockFactory,
-  ListMockFactory,
-} from './index.js';
 import { TestEnvironment, shouldUseMockData } from './test-environment.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
 
 // In-memory storage for created mock records (persists during test session)
-const mockStorage = new Map<string, any>();
 
 // Helper to generate persistent mock IDs in UUID format
 // Addresses PR #483: Use UUID-compliant IDs for validation compatibility
@@ -49,16 +37,16 @@ function generateMockId(prefix: string = 'mock'): string {
 }
 
 // Helper to store and retrieve mock objects
-function storeMock(id: string, object: any): void {
+function storeMock(id: string, object: unknown): void {
   mockStorage.set(id, object);
 }
 
-function retrieveMock(id: string): any | undefined {
+function retrieveMock(id: string): unknown | undefined {
   return mockStorage.get(id);
 }
 
-function getAllMocksByType(type: string): any[] {
-  const results: any[] = [];
+function getAllMocksByType(type: string): unknown[] {
+  const results: unknown[] = [];
   for (const [id, obj] of mockStorage.entries()) {
     if (id.startsWith(`${type}-`)) {
       results.push(obj);
@@ -104,10 +92,8 @@ export class TaskMockInjector {
       });
 
       // Generate a persistent task ID
-      const taskId = generateMockId('task');
 
       // Issue #480: Create mock task with E2E test compatibility
-      const mockTask = TaskMockFactory.create({
         content,
         title: content, // Issue #480: Provide both fields for test compatibility
         assignee_id: options.assigneeId as string,
@@ -162,16 +148,13 @@ export class TaskMockInjector {
       });
 
       // Try to retrieve existing task
-      const existingTask = retrieveMock(taskId);
       if (!existingTask) {
         // Task not found - create appropriate error
-        const error = new Error(`Task not found: ${taskId}`);
         error.name = 'TaskNotFoundError';
         throw error;
       }
 
       // Update the existing task with new data
-      const updatedTask = {
         ...existingTask,
         ...updateData,
         content: updateData.content || existingTask.content,
@@ -214,10 +197,8 @@ export class TaskMockInjector {
       TestEnvironment.log('Using mock data for task retrieval', { taskId });
 
       // Try to retrieve existing task
-      const existingTask = retrieveMock(taskId);
       if (!existingTask) {
         // Task not found - create appropriate error
-        const error = new Error(`Task not found: ${taskId}`);
         error.name = 'TaskNotFoundError';
         throw error;
       }
@@ -244,7 +225,6 @@ export class TaskMockInjector {
       TestEnvironment.log('Using mock data for task listing');
 
       // Return all stored tasks
-      const storedTasks = getAllMocksByType('task');
 
       // If no tasks stored, return empty array (not create new ones)
       return storedTasks;
@@ -272,10 +252,8 @@ export class TaskMockInjector {
       TestEnvironment.log('Using mock data for task deletion', { taskId });
 
       // Check if task exists
-      const existingTask = retrieveMock(taskId);
       if (!existingTask) {
         // Task not found - create appropriate error
-        const error = new Error(`Task not found: ${taskId}`);
         error.name = 'TaskNotFoundError';
         throw error;
       }
@@ -329,7 +307,6 @@ export class CompanyMockInjector {
         companyId,
       });
 
-      const mockCompany = CompanyMockFactory.create({
         name: `Mock Company ${companyId.slice(-4)}`,
       });
 
@@ -382,7 +359,6 @@ export class PersonMockInjector {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for person retrieval', { personId });
 
-      const mockPerson = PersonMockFactory.create({
         name: `Mock Person ${personId.slice(-4)}`,
       });
 
@@ -433,7 +409,6 @@ export class ListMockInjector {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for list retrieval', { listId });
 
-      const mockList = ListMockFactory.create({
         name: `Mock List ${listId.slice(-4)}`,
       });
 
@@ -461,8 +436,6 @@ export class ListMockInjector {
     if (shouldUseMockData()) {
       TestEnvironment.log('Using mock data for list listing', options);
 
-      const count = Math.min(options.limit || 5, 10);
-      const mockLists = ListMockFactory.createMultiple(count, {
         object_slug: options.objectSlug,
       });
 
@@ -490,7 +463,7 @@ export class UniversalMockInjector {
     resourceType: string,
     operation: string,
     data: Record<string, unknown> = {},
-    realOperation?: (...args: any[]) => Promise<any>
+    realOperation?: (...args: unknown[]) => Promise<any>
   ): Promise<any> {
     if (!shouldUseMockData()) {
       if (!realOperation) {
@@ -525,7 +498,7 @@ export class UniversalMockInjector {
   private static handleTaskOperation(
     operation: string,
     data: Record<string, unknown>
-  ): any {
+  ): unknown {
     switch (operation) {
       case 'create':
         return TaskMockFactory.create(data);
@@ -544,7 +517,7 @@ export class UniversalMockInjector {
   private static handleCompanyOperation(
     operation: string,
     data: Record<string, unknown>
-  ): any {
+  ): unknown {
     switch (operation) {
       case 'create':
         return CompanyMockFactory.create(data);
@@ -563,7 +536,7 @@ export class UniversalMockInjector {
   private static handlePersonOperation(
     operation: string,
     data: Record<string, unknown>
-  ): any {
+  ): unknown {
     switch (operation) {
       case 'create':
         return PersonMockFactory.create(data);
@@ -582,7 +555,7 @@ export class UniversalMockInjector {
   private static handleListOperation(
     operation: string,
     data: Record<string, unknown>
-  ): any {
+  ): unknown {
     switch (operation) {
       case 'create':
         return ListMockFactory.create(data);

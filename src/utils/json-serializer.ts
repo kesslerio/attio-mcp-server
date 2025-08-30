@@ -13,33 +13,6 @@
 import fastSafeStringify from 'fast-safe-stringify';
 
 /**
- * Interface for serialization options
- */
-export interface SerializationOptions {
-  /** Maximum depth for nested objects (only used in the legacy implementation) */
-  maxDepth?: number;
-  /** Maximum string length before truncation */
-  maxStringLength?: number;
-  /** Whether to include stack traces in error objects */
-  includeStackTraces?: boolean;
-  /** Custom replacer function */
-  replacer?: (key: string, value: any) => any;
-  /** Indent spaces for pretty printing (default: 2) */
-  indent?: number;
-}
-
-/**
- * Default serialization options
- */
-const DEFAULT_OPTIONS: Required<SerializationOptions> = {
-  maxDepth: 20, // Kept for backward compatibility
-  maxStringLength: 25000, // 25KB max string length - more reasonable for MCP
-  includeStackTraces: false,
-  replacer: (key, value) => value,
-  indent: 2,
-};
-
-/**
  * Safe JSON stringify that handles circular references and non-serializable values
  *
  * Uses fast-safe-stringify for high performance and reliability
@@ -49,17 +22,14 @@ const DEFAULT_OPTIONS: Required<SerializationOptions> = {
  * @returns Safe JSON string
  */
 export function safeJsonStringify(
-  obj: any,
+  obj: unknown,
   options: SerializationOptions = {}
 ): string {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
 
   // Performance monitoring for large objects
-  const startTime = performance.now();
 
   try {
     // Create a custom replacer to handle non-standard values
-    const customReplacer = (key: string, value: any): any => {
       // First apply user-provided replacer if any
       value = opts.replacer(key, value);
 
@@ -75,7 +45,7 @@ export function safeJsonStringify(
 
       // Handle special object types more gracefully
       if (value instanceof Error) {
-        const errorObj: any = {
+        const errorObj: unknown = {
           name: value.name,
           message: value.message,
         };
@@ -104,10 +74,8 @@ export function safeJsonStringify(
     };
 
     // Use fast-safe-stringify with our custom replacer
-    const result = fastSafeStringify(obj, customReplacer, opts.indent);
 
     // Performance monitoring and logging
-    const duration = performance.now() - startTime;
     if (duration > 100) {
       console.error(
         `[safeJsonStringify] Slow serialization detected: ${duration.toFixed(
@@ -119,7 +87,6 @@ export function safeJsonStringify(
     return result;
   } catch (error: unknown) {
     // Enhanced error context
-    const duration = performance.now() - startTime;
     console.error(
       `[safeJsonStringify] Serialization failed after ${duration.toFixed(
         2
@@ -150,14 +117,12 @@ export function safeJsonStringify(
  */
 export function validateJsonString(jsonString: string): {
   isValid: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   size: number;
 } {
-  const size = Buffer.byteLength(jsonString, 'utf8');
 
   try {
-    const data = JSON.parse(jsonString);
     return {
       isValid: true,
       data,
@@ -183,12 +148,11 @@ export function validateJsonString(jsonString: string): {
  * @returns True if circular references are detected
  */
 export function hasCircularReferences(
-  obj: any,
+  obj: unknown,
   maxDepth: number = 10
 ): boolean {
-  const seen = new WeakSet();
 
-  function check(value: any, depth: number): boolean {
+  function check(value: unknown, depth: number): boolean {
     if (depth > maxDepth) return false;
     if (value === null || typeof value !== 'object') return false;
 
@@ -220,12 +184,11 @@ export function hasCircularReferences(
  * @returns Safe copy of the object
  */
 export function createSafeCopy(
-  obj: any,
+  obj: unknown,
   options: SerializationOptions = {}
-): any {
+): unknown {
   try {
     // Fast path: directly use fast-safe-stringify to create a JSON string
-    const jsonString = safeJsonStringify(obj, options);
 
     // Parse it back to create the safe copy
     return JSON.parse(jsonString);
@@ -252,7 +215,7 @@ export function createSafeCopy(
  * @param response - The MCP response object to sanitize
  * @returns Sanitized response object
  */
-export function sanitizeMcpResponse(response: any): any {
+export function sanitizeMcpResponse(response: unknown): unknown {
   // Ensure response has the correct structure
   if (!response || typeof response !== 'object') {
     return {

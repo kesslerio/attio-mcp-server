@@ -5,32 +5,6 @@
  */
 import { E2ETaskFactory, type E2ETestTask } from '../utils/test-data.js';
 
-/**
- * Standard task fixtures for E2E testing
- */
-export const taskFixtures = {
-  /**
-   * Sales tasks
-   */
-  sales: {
-    followUp: (): E2ETestTask =>
-      E2ETaskFactory.create({
-        title: 'E2E Follow up with prospect',
-        content:
-          'Follow up on the initial sales conversation and answer any questions',
-        priority: 'high',
-        status: 'open',
-      }),
-
-    demo: (): E2ETestTask =>
-      E2ETaskFactory.create({
-        title: 'E2E Schedule product demo',
-        content:
-          'Schedule and conduct a product demonstration for the prospect',
-        priority: 'high',
-        status: 'open',
-      }),
-
     proposal: (): E2ETestTask =>
       E2ETaskFactory.create({
         title: 'E2E Prepare sales proposal',
@@ -410,7 +384,6 @@ export const edgeCaseTasks = {
    * Task with past due date
    */
   pastDue: (): E2ETestTask => {
-    const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 7); // 7 days ago
 
     return E2ETaskFactory.create({
@@ -426,7 +399,6 @@ export const edgeCaseTasks = {
    * Task with far future due date
    */
   farFuture: (): E2ETestTask => {
-    const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 1); // 1 year from now
 
     return E2ETaskFactory.create({
@@ -473,7 +445,6 @@ export const performanceTasks = {
    */
   generateTimeline: (count: number = 30): E2ETestTask[] => {
     return Array.from({ length: count }, (_, i) => {
-      const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + i); // Spread tasks over next 30 days
 
       return E2ETaskFactory.create({

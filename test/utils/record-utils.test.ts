@@ -1,62 +1,10 @@
 import { describe, it, test, expect } from 'vitest';
-import {
-  processListEntries,
-  getRecordNameFromEntry,
-  API_PARAMS,
-} from '../../src/utils/record-utils';
-import { AttioListEntry } from '../../src/types/attio';
 
-describe('record-utils', () => {
-  // Test data for list entries
-  const mockListEntries: AttioListEntry[] = [
-    // Entry with direct record_id
-    {
-      id: { entry_id: 'entry1' },
-      list_id: 'list1',
-      record_id: 'record1',
-      created_at: '2025-01-01T00:00:00Z',
-    },
-    // Entry with nested record ID
-    {
-      id: { entry_id: 'entry2' },
-      list_id: 'list1',
-      created_at: '2025-01-01T00:00:00Z',
-      record: {
-        id: { record_id: 'record2' },
-        values: {},
-      },
-    },
-    // Entry with record ID in values
-    {
-      id: { entry_id: 'entry3' },
-      list_id: 'list1',
-      created_at: '2025-01-01T00:00:00Z',
-      values: {
-        record: {
-          id: { record_id: 'record3' },
-          values: {}, // Required by AttioRecord
-        },
-      },
-    },
-    // Entry with record ID as other property
-    {
-      id: { entry_id: 'entry4' },
-      list_id: 'list1',
-      created_at: '2025-01-01T00:00:00Z',
-      company_record_id: 'record4',
-    },
-    // Entry without record ID
-    {
-      id: { entry_id: 'entry5' },
-      list_id: 'list1',
-      created_at: '2025-01-01T00:00:00Z',
-    },
-  ];
+import { AttioListEntry } from '../../src/types/attio';
 
   describe('processListEntries', () => {
     it('should process entries and extract record IDs', () => {
       // Act
-      const processedEntries = processListEntries(mockListEntries);
 
       // Assert
       expect(processedEntries[0].record_id).toBe('record1'); // Unchanged (direct)
@@ -68,7 +16,6 @@ describe('record-utils', () => {
 
     it('should not modify entries when record_id is already defined', () => {
       // Entry with direct record_id
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'existing-record-id',
@@ -80,7 +27,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = processListEntries([entry])[0];
 
       // Assert - should keep the existing record_id
       expect(result.record_id).toBe('existing-record-id');
@@ -90,7 +36,6 @@ describe('record-utils', () => {
   describe('getRecordNameFromEntry', () => {
     it('should extract record name when available', () => {
       // Entry with record name
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -104,7 +49,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('Test Company');
@@ -112,7 +56,6 @@ describe('record-utils', () => {
 
     it('should return empty string when record data is not available', () => {
       // Entry without record data
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -120,7 +63,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('');
@@ -128,7 +70,6 @@ describe('record-utils', () => {
 
     it('should return empty string when name array is empty', () => {
       // Entry with empty name array
-      const entry = {
         id: { entry_id: 'entry1' },
         list_id: 'list1',
         record_id: 'record1',
@@ -142,7 +83,6 @@ describe('record-utils', () => {
       };
 
       // Act
-      const result = getRecordNameFromEntry(entry);
 
       // Assert
       expect(result.name).toBe('');

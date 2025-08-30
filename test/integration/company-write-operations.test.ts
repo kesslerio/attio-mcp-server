@@ -1,15 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import {
-  createCompany,
-  updateCompany,
-  updateCompanyAttribute,
-  deleteCompany,
-  getCompanyDetails,
-} from '../../src/objects/companies/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
-// These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;
+import { initializeAttioClient } from '../../src/api/attio-client';
 
 describe('Company Write Operations - Integration Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {
@@ -21,7 +12,6 @@ describe('Company Write Operations - Integration Tests', () => {
 
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
   });
 
@@ -39,13 +29,11 @@ describe('Company Write Operations - Integration Tests', () => {
 
   describe('createCompany', () => {
     it('should create a new company with basic attributes', async () => {
-      const companyData = {
         name: `Test Company ${Date.now()}`,
         website: 'https://test-company.com',
         description: 'A test company for integration testing',
       };
 
-      const result = await createCompany(companyData);
 
       expect(result).toBeDefined();
       expect(result.id?.record_id).toBeDefined();
@@ -60,13 +48,11 @@ describe('Company Write Operations - Integration Tests', () => {
     });
 
     it('should create a company with custom attributes', async () => {
-      const companyData = {
         name: `Test Custom Company ${Date.now()}`,
         // Industry field might not be included in API response or might have changed
         // Let's create without it to make test more robust
       };
 
-      const result = await createCompany(companyData);
 
       expect(result).toBeDefined();
       expect(result.values?.name?.[0]?.value).toBe(companyData.name);
@@ -86,23 +72,18 @@ describe('Company Write Operations - Integration Tests', () => {
   describe('updateCompany', () => {
     it('should update multiple attributes at once', async () => {
       // First create a company
-      const company = await createCompany({
         name: `Update Test Company ${Date.now()}`,
       });
       testCompanies.push(company.id.record_id);
 
-      const updates = {
         website: 'https://updated.com',
         description: 'Updated description',
         // Remove industry as it seems to have issues in the API
       };
 
-      const result = await updateCompany(company.id.record_id, updates);
 
       // Make expectations more flexible to handle API response variations
       // Check that the updated fields exist with correct values
-      const websiteValue = result.values?.website?.[0]?.value;
-      const descriptionValue = result.values?.description?.[0]?.value;
 
       // Check website and description from immediate result
       expect(websiteValue).toBe(updates.website);
@@ -118,13 +99,10 @@ describe('Company Write Operations - Integration Tests', () => {
 
   describe('updateCompanyAttribute', () => {
     it('should update a single attribute', async () => {
-      const company = await createCompany({
         name: `Attribute Test Company ${Date.now()}`,
       });
       testCompanies.push(company.id.record_id);
 
-      const newWebsite = 'https://attribute-updated.com';
-      const result = await updateCompanyAttribute(
         company.id.record_id,
         'website',
         newWebsite
@@ -142,11 +120,9 @@ describe('Company Write Operations - Integration Tests', () => {
 
   describe('deleteCompany', () => {
     it('should delete a company successfully', async () => {
-      const company = await createCompany({
         name: `Delete Test Company ${Date.now()}`,
       });
 
-      const deleteResult = await deleteCompany(company.id.record_id);
       expect(deleteResult).toBe(true);
 
       // Verify company is deleted
@@ -154,21 +130,18 @@ describe('Company Write Operations - Integration Tests', () => {
     });
 
     it('should handle deletion of non-existent company', async () => {
-      const fakeId = 'non-existent-id-' + Date.now();
       await expect(deleteCompany(fakeId)).rejects.toThrow();
     });
   });
 
   describe('Concurrent Operations', () => {
     it('should handle concurrent updates gracefully', async () => {
-      const company = await createCompany({
         name: `Concurrent Test Company ${Date.now()}`,
         // Remove counter_field since it's not a recognized field in the API
       });
       testCompanies.push(company.id.record_id);
 
       // Attempt concurrent updates
-      const updatePromises = Array(5)
         .fill(0)
         .map((_, i) =>
           updateCompanyAttribute(
@@ -178,20 +151,16 @@ describe('Company Write Operations - Integration Tests', () => {
           )
         );
 
-      const results = await Promise.allSettled(updatePromises);
 
       // All updates should succeed (no optimistic locking yet)
-      const successfulUpdates = results.filter((r) => r.status === 'fulfilled');
       expect(successfulUpdates.length).toBeGreaterThan(0);
     });
 
     it('should handle concurrent creation with same data', async () => {
-      const baseName = `Concurrent Create ${Date.now()}`;
 
       // Attempt to create multiple companies with same name concurrently
       // Use an existing field to make each company different - using description
       // Removed unique_id as it's not a recognized field in the API
-      const createPromises = Array(3)
         .fill(0)
         .map((_, i) =>
           createCompany({
@@ -202,7 +171,6 @@ describe('Company Write Operations - Integration Tests', () => {
           })
         );
 
-      const results = await Promise.allSettled(createPromises);
 
       // Track created companies for cleanup
       results.forEach((result) => {
@@ -212,20 +180,17 @@ describe('Company Write Operations - Integration Tests', () => {
       });
 
       // All should succeed since we don't have unique constraints on name
-      const successfulCreates = results.filter((r) => r.status === 'fulfilled');
       expect(successfulCreates.length).toBe(3);
     });
   });
 
   describe('Rate Limiting', () => {
     it('should handle rate limiting with retry logic', async () => {
-      const company = await createCompany({
         name: `Rate Limit Test ${Date.now()}`,
       });
       testCompanies.push(company.id.record_id);
 
       // Make multiple rapid requests to potentially trigger rate limiting
-      const rapidUpdatePromises = Array(10)
         .fill(0)
         .map((_, i) =>
           updateCompanyAttribute(
@@ -235,10 +200,8 @@ describe('Company Write Operations - Integration Tests', () => {
           )
         );
 
-      const results = await Promise.allSettled(rapidUpdatePromises);
 
       // With retry logic, most should succeed
-      const successfulUpdates = results.filter((r) => r.status === 'fulfilled');
       expect(successfulUpdates.length).toBeGreaterThan(5);
     });
   });

@@ -29,7 +29,6 @@ import {
 
 describe('Date Utils', () => {
   // Store original Date.now implementation
-  const originalDateNow = Date.now;
 
   // Since date mocking is complex with timezone considerations, we'll simplify
   // our tests to verify functionality rather than exact date values
@@ -46,13 +45,11 @@ describe('Date Utils', () => {
   describe('resolveRelativeDate', () => {
     it('should handle relative date calculations', () => {
       // Just test that the function returns valid ISO strings
-      const pastDate = resolveRelativeDate({
         value: 7,
         unit: RelativeDateUnit.DAY,
         direction: 'past',
       });
 
-      const futureDate = resolveRelativeDate({
         value: 7,
         unit: RelativeDateUnit.DAY,
         direction: 'future',
@@ -74,7 +71,7 @@ describe('Date Utils', () => {
     });
 
     it('should validate relative date inputs', () => {
-      const invalidCases: Array<{ input: any; errorContains: string }> = [
+      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'RelativeDate object is required',
@@ -118,8 +115,6 @@ describe('Date Utils', () => {
   describe('createDateRangeFromPreset', () => {
     it('should create ranges for standard presets', () => {
       // Test a few key presets to verify functionality
-      const today = createDateRangeFromPreset(DateRangePreset.TODAY);
-      const lastMonth = createDateRangeFromPreset(DateRangePreset.LAST_MONTH);
 
       // Verify each result has start and end dates
       expect(today).toHaveProperty('start');
@@ -149,16 +144,13 @@ describe('Date Utils', () => {
 
     it('should handle case-insensitive preset values', () => {
       // Test with different case variations
-      const result1 = createDateRangeFromPreset('TODAY');
-      const result2 = createDateRangeFromPreset('today');
-      const result3 = createDateRangeFromPreset('ToDay');
 
       expect(result1).toEqual(result2);
       expect(result1).toEqual(result3);
     });
 
     it('should validate preset inputs', () => {
-      const invalidCases: Array<{ input: any; errorContains: string }> = [
+      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'must be a non-empty string',
@@ -186,7 +178,6 @@ describe('Date Utils', () => {
         end: '2023-01-31T23:59:59.999Z',
       };
 
-      const result = resolveDateRange(dateRange);
 
       // Check structure
       expect(result).toHaveProperty('start');
@@ -203,7 +194,6 @@ describe('Date Utils', () => {
         end: { value: 0, unit: RelativeDateUnit.DAY, direction: 'past' },
       };
 
-      const result = resolveDateRange(dateRange);
 
       // Check structure
       expect(result).toHaveProperty('start');
@@ -228,7 +218,6 @@ describe('Date Utils', () => {
         preset: DateRangePreset.THIS_MONTH,
       };
 
-      const result = resolveDateRange(dateRange);
 
       // Check structure
       expect(result).toHaveProperty('start');
@@ -257,8 +246,6 @@ describe('Date Utils', () => {
         end: '2023-01-31T23:59:59.999Z',
       };
 
-      const startResult = resolveDateRange(startOnly);
-      const endResult = resolveDateRange(endOnly);
 
       // Check structure
       expect(startResult).toHaveProperty('start');
@@ -272,7 +259,7 @@ describe('Date Utils', () => {
     });
 
     it('should validate date ranges', () => {
-      const invalidCases: Array<{ input: any; errorContains: string }> = [
+      const invalidCases: Array<{ input: unknown; errorContains: string }> = [
         {
           input: undefined,
           errorContains: 'DateRange object is required',
@@ -310,7 +297,6 @@ describe('Date Utils', () => {
       };
 
       // Should use preset and ignore explicit dates
-      const result = resolveDateRange(dateRange);
 
       // Check structure
       expect(result).toHaveProperty('start');
@@ -329,13 +315,11 @@ describe('Date Utils', () => {
 
   describe('isValidISODateString', () => {
     it('should validate ISO date strings', () => {
-      const validCases = [
         '2023-01-15T12:00:00.000Z',
         '2023-01-15T12:00:00Z',
         '2023-01-15', // date-only format is also valid (intentionally)
       ];
 
-      const invalidCases = [
         '2023-01-15 12:00:00', // wrong format
         '2023-1-1T12:00:00Z', // incorrect padding
         '2023-01-15T25:00:00Z', // invalid hour
@@ -355,11 +339,6 @@ describe('Date Utils', () => {
   describe('createRelativeDateRange', () => {
     it('should create date ranges for different time units', () => {
       // Test each unit type
-      const dayRange = createRelativeDateRange(7, RelativeDateUnit.DAY);
-      const weekRange = createRelativeDateRange(2, RelativeDateUnit.WEEK);
-      const monthRange = createRelativeDateRange(1, RelativeDateUnit.MONTH);
-      const quarterRange = createRelativeDateRange(1, RelativeDateUnit.QUARTER);
-      const yearRange = createRelativeDateRange(1, RelativeDateUnit.YEAR);
 
       // Check they're all properly formatted
       expect(dayRange).toHaveProperty('start');
@@ -375,7 +354,6 @@ describe('Date Utils', () => {
 
       // All end dates should be approximately the same (now)
       // Allow for small timing differences (up to 100ms) between calls
-      const endTime = new Date(dayRange.end).getTime();
       expect(new Date(weekRange.end).getTime()).toBeCloseTo(endTime, -2); // within 100ms
       expect(new Date(monthRange.end).getTime()).toBeCloseTo(endTime, -2);
       expect(new Date(quarterRange.end).getTime()).toBeCloseTo(endTime, -2);
@@ -423,7 +401,6 @@ describe('Date Utils', () => {
 
   describe('formatDate', () => {
     it('should format dates in different styles', () => {
-      const date = '2023-01-15T12:00:00.000Z';
 
       // Test the basic functionality
       expect(typeof formatDate(date, 'short')).toBe('string');
@@ -435,10 +412,6 @@ describe('Date Utils', () => {
 
       // Since the formatter depends on locale, we can only verify it returns a string
       // and doesn't throw for our test cases
-      const yesterday = '2023-01-14T12:00:00.000Z';
-      const lastWeek = '2023-01-05T12:00:00.000Z';
-      const lastMonth = '2022-12-15T12:00:00.000Z';
-      const lastYear = '2022-01-15T12:00:00.000Z';
 
       expect(typeof formatDate(yesterday, 'relative')).toBe('string');
       expect(typeof formatDate(lastWeek, 'relative')).toBe('string');

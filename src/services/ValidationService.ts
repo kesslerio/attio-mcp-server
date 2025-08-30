@@ -6,22 +6,11 @@
  */
 
 import { performance } from 'perf_hooks';
+
+import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 import { isValidEmail } from '../utils/validation/email-validation.js';
 import { isValidId } from '../utils/validation.js';
-import {
-  isValidUUID,
-  createInvalidUUIDError,
-} from '../utils/validation/uuid-validation.js';
-import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  validateFields,
-  FIELD_MAPPINGS,
-} from '../handlers/tool-configs/universal/field-mapper.js';
 
 /**
  * ValidationService provides centralized validation functionality for universal handlers
@@ -164,7 +153,6 @@ export class ValidationService {
     operation: string = 'operation',
     perfId?: string
   ): void {
-    const validationStart = performance.now();
 
     // Skip UUID validation for tasks as they may use different ID formats
     if (
@@ -207,7 +195,6 @@ export class ValidationService {
     suggestions: string[],
     maxCount: number = 3
   ): string[] {
-    const limited = suggestions.slice(0, maxCount);
     if (suggestions.length > maxCount) {
       limited.push(`... and ${suggestions.length - maxCount} more suggestions`);
     }
@@ -227,7 +214,6 @@ export class ValidationService {
     recordData: Record<string, unknown>,
     throwOnInvalid: boolean = true
   ): { valid: boolean; errorMessage?: string } {
-    const fieldValidation = validateFields(
       resourceType as UniversalResourceType,
       recordData
     );
@@ -240,7 +226,6 @@ export class ValidationService {
     }
 
     if (fieldValidation.suggestions.length > 0) {
-      const truncated = this.truncateSuggestions(fieldValidation.suggestions);
       console.error('Field suggestions:', truncated.join('\n'));
     }
 
@@ -257,13 +242,11 @@ export class ValidationService {
 
       // Add suggestions if available (truncated to prevent buffer overflow)
       if (fieldValidation.suggestions.length > 0) {
-        const truncated = this.truncateSuggestions(fieldValidation.suggestions);
         errorMessage += '\n\n💡 Suggestions:\n';
         errorMessage += truncated.map((sug) => `  • ${sug}`).join('\n');
       }
 
       // List available fields for this resource type
-      const mapping = FIELD_MAPPINGS[resourceType as UniversalResourceType];
       if (mapping && mapping.validFields.length > 0) {
         errorMessage += `\n\n📋 Available fields for ${resourceType}:\n  ${mapping.validFields.join(', ')}`;
       }
@@ -293,11 +276,9 @@ export class ValidationService {
     if (!recordData || typeof recordData !== 'object') return;
 
     // Handle various email field formats
-    const emailFields = ['email_addresses', 'email', 'emails', 'emailAddress'];
 
     for (const field of emailFields) {
       if (field in recordData && recordData[field]) {
-        const emails = Array.isArray(recordData[field])
           ? recordData[field]
           : [recordData[field]];
 
@@ -312,7 +293,6 @@ export class ValidationService {
             emailItem &&
             'email_address' in emailItem
           ) {
-            const emailValue = (emailItem as Record<string, unknown>)
               .email_address;
             if (typeof emailValue === 'string') {
               emailAddress = emailValue;
@@ -332,7 +312,6 @@ export class ValidationService {
             emailItem &&
             'email' in emailItem
           ) {
-            const emailValue = (emailItem as Record<string, unknown>).email;
             if (typeof emailValue === 'string') {
               emailAddress = emailValue;
             } else {
@@ -350,7 +329,6 @@ export class ValidationService {
             emailItem &&
             'value' in emailItem
           ) {
-            const emailValue = (emailItem as Record<string, unknown>).value;
             if (typeof emailValue === 'string') {
               emailAddress = emailValue;
             } else {
@@ -440,7 +418,6 @@ export class ValidationService {
       );
     }
 
-    const filtersObj = filters as Record<string, unknown>;
 
     if ('advanced' in filtersObj) {
       if (!Array.isArray(filtersObj.advanced)) {
@@ -460,7 +437,6 @@ export class ValidationService {
           );
         }
 
-        const filterObj = filter as Record<string, unknown>;
         if (!filterObj.op || !filterObj.field) {
           throw new UniversalValidationError(
             `advanced[${index}] missing "op" or "field"`,
@@ -513,7 +489,6 @@ export class ValidationService {
 
       // Validate fields if record data is provided
       if (params.recordData) {
-        const fieldValidation = this.validateFieldsWithErrorHandling(
           params.resourceType,
           params.recordData,
           false // Don't throw, collect errors

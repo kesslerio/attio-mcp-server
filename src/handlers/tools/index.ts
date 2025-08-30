@@ -2,11 +2,11 @@
  * Main entry point for tool handlers - maintains backward compatibility
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  CallToolRequest,
-} from '@modelcontextprotocol/sdk/types.js';
+
+import { executeToolRequest } from './dispatcher.js';
+import { executeToolRequest } from './dispatcher.js';
+import { TOOL_DEFINITIONS } from './registry.js';
+import { TOOL_DEFINITIONS } from './registry.js';
 import { warn } from '../../utils/logger.js';
 
 // Import from modular components
@@ -14,8 +14,6 @@ import { TOOL_DEFINITIONS } from './registry.js';
 import { executeToolRequest } from './dispatcher.js';
 
 // Constants for configuration
-const DEBUG_ENV_VAR = 'MCP_DEBUG_REQUESTS';
-const MAX_ARGUMENT_SIZE = 1024 * 1024; // 1MB limit for arguments
 
 /**
  * Extended type to handle requests with loose arguments
@@ -50,7 +48,6 @@ function normalizeToolRequest(
   // Type guard to check if arguments are already properly wrapped
   if ('arguments' in request.params && request.params.arguments !== undefined) {
     // Validate argument size to prevent DoS
-    const argSize = JSON.stringify(request.params.arguments).length;
     if (argSize > MAX_ARGUMENT_SIZE) {
       throw new Error(
         `Tool arguments too large: ${argSize} bytes (max: ${MAX_ARGUMENT_SIZE})`
@@ -69,15 +66,12 @@ function normalizeToolRequest(
   }
 
   // Handle loose arguments format
-  const params = request.params as LooseCallToolRequest['params'];
   const { name, ...potentialArgs } = params;
 
   // If there are additional params beyond 'name', treat them as arguments
-  const hasAdditionalParams = Object.keys(potentialArgs).length > 0;
 
   if (hasAdditionalParams) {
     // Validate argument size
-    const argSize = JSON.stringify(potentialArgs).length;
     if (argSize > MAX_ARGUMENT_SIZE) {
       throw new Error(
         `Tool arguments too large: ${argSize} bytes (max: ${MAX_ARGUMENT_SIZE})`
@@ -128,7 +122,6 @@ export function registerToolHandlers(server: Server): void {
   // Handler for listing available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     // Dynamically collect all available tool definitions
-    const allTools = [];
 
     for (const toolDefs of Object.values(TOOL_DEFINITIONS)) {
       if (toolDefs) {
@@ -152,13 +145,11 @@ export function registerToolHandlers(server: Server): void {
     try {
       // Normalize request to handle missing arguments wrapper (Issue #344)
       // Cast is safe because we're handling the protocol mismatch
-      const normalizedRequest = normalizeToolRequest(
         request as CallToolRequest | LooseCallToolRequest
       );
       return await executeToolRequest(normalizedRequest);
     } catch (error: unknown) {
       // Handle normalization errors
-      const errorMessage =
         error instanceof Error ? error.message : 'Unknown normalization error';
       return {
         content: [

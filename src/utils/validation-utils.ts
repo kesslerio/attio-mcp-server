@@ -10,26 +10,9 @@
 
 import { getAttioClient } from '../api/attio-client.js';
 
-export interface ValidationResult {
-  isValid: boolean;
-  error?: string;
-}
-
-export interface AttributeInfo {
-  api_slug: string;
-  type: string;
-  title?: string;
-  read_only?: boolean;
-  options?: Array<{
-    title?: string;
-    value: string;
-  }>;
-}
-
 /**
  * Configuration from environment variables
  */
-const CONFIG = {
   CACHE_TTL: parseInt(process.env.ATTIO_CACHE_TTL || '300000', 10), // Default: 5 minutes
   SIMILARITY_THRESHOLD: parseInt(
     process.env.ATTIO_SIMILARITY_THRESHOLD || '3',
@@ -53,9 +36,6 @@ export async function getResourceAttributes(
   resourceType: string
 ): Promise<AttributeInfo[]> {
   // Enhanced cache key to include workspace/tenant context
-  const workspaceId = process.env.ATTIO_WORKSPACE_ID || 'default';
-  const cacheKey = `${workspaceId}:${resourceType}`;
-  const now = Date.now();
 
   // Check if we have cached data that's still valid
   if (
@@ -67,8 +47,6 @@ export async function getResourceAttributes(
   }
 
   try {
-    const client = getAttioClient();
-    const response = await client.get(`/objects/${resourceType}/attributes`);
     const attributes: AttributeInfo[] = response?.data?.data || [];
 
     // Cache the results
@@ -92,13 +70,9 @@ export async function validateSelectField(
   value: string
 ): Promise<ValidationResult> {
   try {
-    const attributes = await getResourceAttributes(resourceType);
-    const field = attributes.find((attr) => attr.api_slug === fieldName);
 
     if (field?.type === 'select' && field.options) {
       // Check if the value matches any option's value (not title)
-      const validValues = field.options.map((opt) => opt.value);
-      const validTitles = field.options.map((opt) => opt.title || opt.value);
 
       if (!validValues.includes(value)) {
         return {
@@ -125,14 +99,9 @@ export async function validateMultiSelectField(
   values: string[]
 ): Promise<ValidationResult> {
   try {
-    const attributes = await getResourceAttributes(resourceType);
-    const field = attributes.find((attr) => attr.api_slug === fieldName);
 
     if (field?.type === 'multi_select' && field.options) {
       // Check against actual values, not titles
-      const validValues = field.options.map((opt) => opt.value);
-      const validTitles = field.options.map((opt) => opt.title || opt.value);
-      const invalidValues = values.filter((val) => !validValues.includes(val));
 
       if (invalidValues.length > 0) {
         return {
@@ -157,20 +126,15 @@ export async function validateReadOnlyFields(
   updateFields: Record<string, unknown>
 ): Promise<ValidationResult> {
   try {
-    const attributes = await getResourceAttributes(resourceType);
-    const readOnlyFields = attributes
       .filter((attr) => attr.read_only === true)
       .map((attr) => attr.api_slug);
 
-    const attemptedReadOnlyUpdates = Object.keys(updateFields).filter(
       (fieldName) => readOnlyFields.includes(fieldName)
     );
 
     if (attemptedReadOnlyUpdates.length > 0) {
-      const fieldList = attemptedReadOnlyUpdates
         .map((field) => `'${field}'`)
         .join(', ');
-      const plural = attemptedReadOnlyUpdates.length > 1 ? 's' : '';
 
       return {
         isValid: false,
@@ -209,7 +173,6 @@ function calculateSimilarity(a: string, b: string): number {
     currRow[0] = j;
 
     for (let i = 1; i <= a.length; i++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       currRow[i] = Math.min(
         currRow[i - 1] + 1, // deletion
         prevRow[i] + 1, // insertion
@@ -232,11 +195,8 @@ export async function suggestFieldName(
   invalidFieldName: string
 ): Promise<string[]> {
   try {
-    const attributes = await getResourceAttributes(resourceType);
-    const validFieldNames = attributes.map((attr) => attr.api_slug);
 
     // Find similar field names using configurable threshold
-    const suggestions = validFieldNames
       .map((validName) => ({
         name: validName,
         distance: calculateSimilarity(
@@ -264,12 +224,9 @@ export async function validateFieldExistence(
   fieldNames: string[]
 ): Promise<ValidationResult> {
   try {
-    const attributes = await getResourceAttributes(resourceType);
-    const validFields = attributes.map((attr) => attr.api_slug);
 
     for (const fieldName of fieldNames) {
       if (!validFields.includes(fieldName)) {
-        const suggestions = await suggestFieldName(resourceType, fieldName);
 
         let errorMessage = `Unknown field '${fieldName}' for resource type '${resourceType}'.`;
 
@@ -301,10 +258,8 @@ export async function validateRecordFields(
   fields: Record<string, unknown>,
   isUpdate: boolean = false
 ): Promise<ValidationResult> {
-  const fieldNames = Object.keys(fields);
 
   // 1. Check if fields exist
-  const existenceValidation = await validateFieldExistence(
     resourceType,
     fieldNames
   );
@@ -314,7 +269,6 @@ export async function validateRecordFields(
 
   // 2. Check for read-only fields (only for updates)
   if (isUpdate) {
-    const readOnlyValidation = await validateReadOnlyFields(
       resourceType,
       fields
     );
@@ -326,7 +280,6 @@ export async function validateRecordFields(
   // 3. Validate select fields
   for (const [fieldName, value] of Object.entries(fields)) {
     if (typeof value === 'string') {
-      const selectValidation = await validateSelectField(
         resourceType,
         fieldName,
         value
@@ -338,7 +291,6 @@ export async function validateRecordFields(
       Array.isArray(value) &&
       value.every((v) => typeof v === 'string')
     ) {
-      const multiSelectValidation = await validateMultiSelectField(
         resourceType,
         fieldName,
         value

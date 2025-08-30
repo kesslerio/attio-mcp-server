@@ -7,24 +7,6 @@
 
 import type { AttioRecord } from '../../types/attio.js';
 
-/**
- * Core interface for all create service implementations
- */
-export interface CreateService {
-  /**
-   * Creates a company record
-   * @param input - Company data to create
-   * @returns Promise<AttioRecord> - Created company record
-   */
-  createCompany(input: Record<string, unknown>): Promise<AttioRecord>;
-
-  /**
-   * Creates a person record
-   * @param input - Person data to create
-   * @returns Promise<AttioRecord> - Created person record
-   */
-  createPerson(input: Record<string, unknown>): Promise<AttioRecord>;
-
   /**
    * Creates a task record
    * @param input - Task data to create

@@ -12,38 +12,33 @@
  * - Issue #480 compatibility maintained
  */
 
-import type { AttioRecord } from '../types/attio.js';
+import { debug, error } from '../utils/logger.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../utils/validation/uuid-validation.js';
-import { debug, error } from '../utils/logger.js';
+import { shouldUseMockData } from './create/index.js';
+import type { AttioRecord } from '../types/attio.js';
 
 // Small utility: micro backoff for eventual consistency
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Normalizes client responses and adapts id → { id: { record_id } }.
 // Handles shapes: response | response.data | { data } | { record } | { id: string } | { record_id: string }
-function extractAttioRecord(response: any) {
-  const payload = (response && (response.data ?? response)) ?? null;
-  const maybeData = (payload && (payload.data ?? payload)) ?? null;
+function extractAttioRecord(response: unknown) {
 
   // Peel { record: {...} } if present
-  let rec =
     maybeData && typeof maybeData === 'object' && 'record' in maybeData
       ? (maybeData as any).record
       : maybeData;
 
   // If empty object, try to salvage from headers (e.g., Location)
-  const loc = response?.headers?.location || response?.headers?.Location;
   if (
     (!rec || (typeof rec === 'object' && Object.keys(rec).length === 0)) &&
     typeof loc === 'string'
   ) {
-    const rid = extractRecordId(loc);
     if (rid) return { id: { record_id: rid } };
   }
 
   if (rec && typeof rec === 'object') {
-    const r: any = rec;
+    const r: unknown = rec;
 
     // id as string → adapt
     if (typeof r.id === 'string') return { ...r, id: { record_id: r.id } };
@@ -65,37 +60,13 @@ import type {
   isRecord,
 } from '../types/service-types.js';
 
-/**
- * Environment detection for mock injection
- */
-function shouldUseMockData(): boolean {
-  // Explicit-only: use mocks only when explicitly requested
-  // E2E runs should default to real API; offline runs use test:offline
-  const result =
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true';
-
-  console.error('[SHOULDUSEMOCKDATA]', {
-    result,
-    USE_MOCK_DATA: process.env.USE_MOCK_DATA,
-    OFFLINE_MODE: process.env.OFFLINE_MODE,
-    PERFORMANCE_TEST: process.env.PERFORMANCE_TEST,
-    E2E_MODE: process.env.E2E_MODE,
-  });
-
-  return result;
-}
-
 function shouldUseViMocks(): boolean {
   // Check if we're in a unit test environment with vi.mock()
   try {
-    const isVitest =
       typeof (globalThis as any).vi !== 'undefined' ||
       typeof (global as any).vi !== 'undefined';
 
     // Also check if NODE_ENV is test (unit tests)
-    const isUnitTest = process.env.NODE_ENV === 'test';
 
     return isVitest && isUnitTest;
   } catch {
@@ -107,7 +78,6 @@ function shouldUseViMocks(): boolean {
  * Apply consistent E2E test markers to mock data
  */
 function applyE2EMarkers(data: UnknownRecord, meta?: E2EMeta): UnknownRecord {
-  const baseTags = new Set([
     ...(Array.isArray(data.tags) ? data.tags : []),
     'e2e-test',
     'e2e-suite:notes',
@@ -140,7 +110,6 @@ export class MockService {
       '[CREATECOMPANY] ENTRY POINT - called with data:',
       Object.keys(companyData)
     );
-    const useMocks = shouldUseMockData();
     debug('MockService', 'createCompany Environment check', {
       E2E_MODE: process.env.E2E_MODE,
       useMocks,
@@ -161,8 +130,6 @@ export class MockService {
         console.error('[CREATECOMPANY] Inside try block');
         console.error('[CREATECOMPANY] Importing attio-client module');
         // TEMP: Direct axios to bypass client issues and prove concept
-        const axios = (await import('axios')).default;
-        const client = axios.create({
           baseURL: (
             process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
           ).replace(/\/+$/, ''),
@@ -190,7 +157,6 @@ export class MockService {
         console.error('[CREATECOMPANY] Got direct client:', !!client);
 
         // Test direct probe first
-        const probe = await client.get('/objects/companies');
         console.log(
           '🩺 /objects/companies body:',
           JSON.stringify(probe.data).slice(0, 400)
@@ -198,7 +164,6 @@ export class MockService {
 
         // Resolve real object slug for this workspace
         const { resolveObjectSlug } = await import('../api/attio-objects.js');
-        const companiesSlug = await resolveObjectSlug(client, 'companies');
         path = `/objects/${companiesSlug}/records`;
 
         // Debug the client configuration
@@ -216,11 +181,9 @@ export class MockService {
 
         // Normalize company domains to string array
         const normalizedCompany: Record<string, unknown> = { ...companyData };
-        const rawDomain = (companyData as any).domain;
-        const rawDomains = (companyData as any).domains;
         if (rawDomains) {
           if (Array.isArray(rawDomains)) {
-            (normalizedCompany as any).domains = rawDomains.map((d: any) => {
+            (normalizedCompany as any).domains = rawDomains.map((d: unknown) => {
               if (typeof d === 'string') {
                 return { domain: d };
               } else if (d?.domain) {
@@ -248,7 +211,6 @@ export class MockService {
           delete (normalizedCompany as any).domain;
         }
 
-        const payload = { data: { values: normalizedCompany } };
 
         debug('MockService', 'Making API call', {
           url: path,
@@ -259,7 +221,6 @@ export class MockService {
 
         // Create company with correct domain format
         console.log('🔍 POST PATH + PAYLOAD', { path, payload });
-        const response = await client.post(path, payload);
 
         debug('MockService', 'createCompany Raw API response', {
           status: response?.status,
@@ -275,7 +236,7 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord (safe)
-        let record: any;
+        let record: unknown;
         try {
           record = extractAttioRecord(response);
         } catch (ex) {
@@ -297,7 +258,6 @@ export class MockService {
         });
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
-        const looksLikeCreatedRecord =
           record &&
           typeof record === 'object' &&
           (('id' in record && (record as any).id?.record_id) ||
@@ -305,23 +265,18 @@ export class MockService {
             'web_url' in record ||
             'created_at' in record);
 
-        const mustRecover = !record || !record.id || !record.id.record_id;
         if (mustRecover) {
           // 0) Try Location header (direct ID fetch) – works even if search is not indexed yet
-          const location =
             (response?.headers as any)?.location ||
             (response?.headers as any)?.Location;
-          const idMatch =
             location && String(location).match(/\/records\/([^/?#]+)/);
           if (idMatch?.[1]) {
-            const rid = idMatch[1];
             for (const wait of [0, 150, 300]) {
               if (wait) await sleep(wait);
               try {
                 const { data: fetched } = await client.get(
                   `${path}/${encodeURIComponent(rid)}`
                 );
-                const rec = extractAttioRecord(fetched);
                 if (rec?.id?.record_id) {
                   record = rec;
                   break;
@@ -334,17 +289,14 @@ export class MockService {
 
           // 1) If still not found, do a few search retries (eventual consistency)
           if (!record?.id?.record_id) {
-            const domain = Array.isArray(normalizedCompany.domains)
               ? (normalizedCompany.domains[0] as string)
               : undefined;
-            const name = normalizedCompany.name as string | undefined;
 
             for (const wait of [50, 200, 450, 900]) {
               await sleep(wait);
               try {
                 // domain first (stronger uniqueness). Try contains then eq.
                 if (domain && !record?.id?.record_id) {
-                  const attempts = [
                     { filter: { domains: { contains: domain } } },
                     { filter: { domains: { eq: domain } } },
                   ];
@@ -353,7 +305,6 @@ export class MockService {
                       `/objects/${companiesSlug}/records/search`,
                       { ...attempt, limit: 1, order: { created_at: 'desc' } }
                     );
-                    const rec = extractAttioRecord(data);
                     if (rec?.id?.record_id) {
                       record = rec;
                       break;
@@ -371,7 +322,6 @@ export class MockService {
                       order: { created_at: 'desc' },
                     }
                   );
-                  const rec = extractAttioRecord(data);
                   if (rec?.id?.record_id) {
                     record = rec;
                     break;
@@ -410,13 +360,7 @@ export class MockService {
         }
 
         return record;
-      } catch (err: any) {
-        const r = err?.response;
-        const status = r?.status || err?.status || 500;
-        const data = r?.data;
-        const url = r?.config?.url;
-        const method = r?.config?.method;
-        const payload = r?.config?.data;
+      } catch (err: unknown) {
         error('MockService', 'createCompany Direct API error', {
           status,
           url,
@@ -424,7 +368,6 @@ export class MockService {
           serverData: data, // <-- this is what we need to see
           requestPayload: payload, // <-- confirm the exact body that axios sent
         });
-        const msg =
           status && data
             ? `Attio create company failed (${status}): ${JSON.stringify(data)}`
             : (err?.message as string) || 'createCompany error';
@@ -447,8 +390,6 @@ export class MockService {
     }
 
     // Generate valid UUID format for mock IDs (exactly 36 chars)
-    const timestamp = Date.now().toString().slice(-12);
-    const mockId = `12345678-1234-4000-8000-${timestamp}`;
 
     return {
       id: {
@@ -486,8 +427,6 @@ export class MockService {
         // Use centralized Attio client for consistent authentication
         debug('MockService', 'createPerson Using centralized Attio client');
         // TEMP: Direct axios to bypass client issues and prove concept
-        const axios = (await import('axios')).default;
-        const client = axios.create({
           baseURL: (
             process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
           ).replace(/\/+$/, ''),
@@ -515,20 +454,14 @@ export class MockService {
 
         // Resolve real object slug for this workspace
         const { resolveObjectSlug } = await import('../api/attio-objects.js');
-        const peopleSlug = await resolveObjectSlug(client, 'people');
         path = `/objects/${peopleSlug}/records`;
 
         // Normalize to Attio API schema for people values
         const filteredPersonData: Record<string, unknown> = {};
 
         // 1) Name normalization: array of personal-name objects
-        const rawName = (personData as any).name;
         if (rawName) {
           if (typeof rawName === 'string') {
-            const parts = rawName.trim().split(/\s+/);
-            const first = parts.shift() || rawName;
-            const last = parts.join(' ');
-            const full = [first, last].filter(Boolean).join(' ');
             filteredPersonData.name = [
               {
                 first_name: first,
@@ -539,7 +472,6 @@ export class MockService {
           } else if (Array.isArray(rawName)) {
             filteredPersonData.name = rawName;
           } else if (typeof rawName === 'object') {
-            const obj = rawName as Record<string, unknown>;
             if (
               'first_name' in obj ||
               'last_name' in obj ||
@@ -551,9 +483,7 @@ export class MockService {
         }
 
         // 2) Emails: Attio create accepts string array; prefer plain strings
-        const rawEmails = (personData as any).email_addresses;
         if (Array.isArray(rawEmails) && rawEmails.length) {
-          const normalized = rawEmails.map((e: any) =>
             e && typeof e === 'object' && 'email_address' in e
               ? String(e.email_address)
               : String(e)
@@ -574,19 +504,14 @@ export class MockService {
         }
         if (!filteredPersonData.name) {
           // Derive a safe name from email local part
-          const firstEmail = (
             (filteredPersonData as any).email_addresses[0] || {}
           ).email_address as string;
-          const local =
             typeof firstEmail === 'string'
               ? firstEmail.split('@')[0]
               : 'Test Person';
-          const parts = local
             .replace(/[^a-zA-Z]+/g, ' ')
             .trim()
             .split(/\s+/);
-          const first = parts[0] || 'Test';
-          const last = parts.slice(1).join(' ') || 'User';
           (filteredPersonData as any).name = [
             {
               first_name: first,
@@ -621,23 +546,19 @@ export class MockService {
           );
         }
 
-        const doCreate = async (values: Record<string, unknown>) =>
           client.post(path, { data: { values } });
 
         let response;
         try {
           // Attempt #1
           response = await doCreate(filteredPersonData);
-        } catch (firstErr: any) {
-          const status = firstErr?.response?.status;
-          const data = firstErr?.response?.data;
+        } catch (firstErr: unknown) {
           // Only retry on 400 with alternate email schema
           if (status === 400) {
             const alt: Record<string, unknown> = { ...filteredPersonData };
-            const emails = (alt as any).email_addresses as any[] | undefined;
             if (emails && emails.length) {
               if (typeof emails[0] === 'string') {
-                (alt as any).email_addresses = emails.map((e: any) => ({
+                (alt as any).email_addresses = emails.map((e: unknown) => ({
                   email_address: String(e),
                 }));
               } else if (
@@ -645,7 +566,7 @@ export class MockService {
                 typeof emails[0] === 'object' &&
                 'email_address' in emails[0]
               ) {
-                (alt as any).email_addresses = emails.map((e: any) =>
+                (alt as any).email_addresses = emails.map((e: unknown) =>
                   String(e.email_address)
                 );
               }
@@ -678,7 +599,7 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord (safe)
-        let record: any;
+        let record: unknown;
         try {
           record = extractAttioRecord(response);
         } catch (ex) {
@@ -695,7 +616,6 @@ export class MockService {
         }
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
-        const looksLikeCreatedRecord =
           record &&
           typeof record === 'object' &&
           (('id' in record && (record as any).id?.record_id) ||
@@ -703,23 +623,18 @@ export class MockService {
             'web_url' in record ||
             'created_at' in record);
 
-        const mustRecover = !record || !record.id || !record.id.record_id;
         if (mustRecover) {
           // 0) Try Location header (direct ID fetch)
-          const location =
             (response?.headers as any)?.location ||
             (response?.headers as any)?.Location;
-          const idMatch =
             location && String(location).match(/\/records\/([^/?#]+)/);
           if (idMatch?.[1]) {
-            const rid = idMatch[1];
             for (const wait of [0, 150, 300]) {
               if (wait) await sleep(wait);
               try {
                 const { data: fetched } = await client.get(
                   `${path}/${encodeURIComponent(rid)}`
                 );
-                const rec = extractAttioRecord(fetched);
                 if (rec?.id?.record_id) {
                   record = rec;
                   break;
@@ -731,7 +646,6 @@ export class MockService {
           }
 
           // 1) If still not found, search by primary email with small backoff and two operators
-          const email = Array.isArray(filteredPersonData.email_addresses)
             ? (filteredPersonData.email_addresses[0] as string)
             : undefined;
 
@@ -739,7 +653,6 @@ export class MockService {
             for (const wait of [50, 200, 450, 900]) {
               await sleep(wait);
               try {
-                const attempts = [
                   { filter: { email_addresses: { contains: email } } },
                   { filter: { email_addresses: { eq: email } } },
                 ];
@@ -748,7 +661,6 @@ export class MockService {
                     `/objects/${peopleSlug}/records/search`,
                     { ...attempt, limit: 1, order: { created_at: 'desc' } }
                   );
-                  const rec = extractAttioRecord(data);
                   if (rec?.id?.record_id) {
                     record = rec;
                     break;
@@ -788,14 +700,8 @@ export class MockService {
         }
 
         return record;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Enhance error with HTTP response details when available (helps E2E diagnosis)
-        const r = err?.response;
-        const status = r?.status || err?.status || 500;
-        const data = r?.data;
-        const url = r?.config?.url;
-        const method = r?.config?.method;
-        const payload = r?.config?.data;
         error('MockService', 'createPerson Direct API error', {
           status,
           url,
@@ -803,7 +709,6 @@ export class MockService {
           serverData: data, // <-- this is what we need to see
           requestPayload: payload, // <-- confirm the exact body that axios sent
         });
-        const msg =
           status && data
             ? `Attio create person failed (${status}): ${JSON.stringify(data)}`
             : (err?.message as string) || 'createPerson error';
@@ -824,8 +729,6 @@ export class MockService {
     }
 
     // Generate valid UUID format for mock IDs (exactly 36 chars)
-    const timestamp = Date.now().toString().slice(-12);
-    const mockId = `12345678-1234-4000-9000-${timestamp}`;
 
     return {
       id: {
@@ -857,7 +760,6 @@ export class MockService {
     if (!shouldUseMockData()) {
       try {
         const { createTask } = await import('../objects/tasks.js');
-        const createdTask = await createTask(taskData.content as string, {
           assigneeId: taskData.assigneeId as string,
           dueDate: taskData.dueDate as string,
           recordId: taskData.recordId as string,
@@ -869,7 +771,6 @@ export class MockService {
           typeof createdTask === 'object' &&
           'id' in createdTask
         ) {
-          const task = createdTask as any;
 
           // If it's already an AttioRecord with record_id, ensure flat fields exist and return
           if (task.values && task.id?.record_id) {
@@ -943,10 +844,8 @@ export class MockService {
     }
 
     // Use deterministic ID if record_id is provided (for test compatibility)
-    const mockId = taskData.record_id
       ? (taskData.record_id as string)
       : `12345678-1234-4000-a000-${Date.now().toString().slice(-12)}`;
-    const taskContent =
       (taskData.content as string) ||
       (taskData.title as string) ||
       `Mock Test Task`;
@@ -1012,7 +911,6 @@ export class MockService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
       Record<string, unknown>;
     // Emit top-level assignees for E2E expectation
     if (taskData.assigneeId) {
@@ -1084,7 +982,6 @@ export class MockService {
       }
     }
 
-    const taskContent =
       (updateData.content as string) ||
       (updateData.title as string) ||
       `Updated Mock Test Task ${taskId.slice(-4)}`;
@@ -1140,7 +1037,6 @@ export class MockService {
       ];
     }
 
-    const result = { ...attioRecord, ...flatFields } as AttioRecord &
       Record<string, unknown>;
     // Emit top-level assignees for E2E expectation
     if (updateData.assigneeId) {
@@ -1185,7 +1081,6 @@ export class MockService {
     }
 
     // Extract UUID from record_id (handles URIs and raw UUIDs)
-    const extractedRecordId = extractRecordId(noteData.record_id);
     if (!extractedRecordId) {
       throw new Error('record not found');
     }
@@ -1201,8 +1096,6 @@ export class MockService {
     }
 
     // Generate mock note response following Attio API format
-    const timestamp = Date.now();
-    const baseNote = {
       id: {
         workspace_id: 'ws_mock',
         note_id: `note_${timestamp}`,
@@ -1224,7 +1117,6 @@ export class MockService {
     };
 
     // Apply E2E markers for test data cleanup
-    const markedNote = applyE2EMarkers(baseNote);
 
     return markedNote;
   }

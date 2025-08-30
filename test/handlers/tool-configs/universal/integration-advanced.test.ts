@@ -1,29 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { config } from 'dotenv';
-
-// Load environment variables from .env file before any imports
-config();
-
-import {
-  coreOperationsToolConfigs,
-  advancedOperationsToolConfigs,
-} from '../../../../src/handlers/tool-configs/universal/index.js';
-import {
-  UniversalResourceType,
-  RelationshipType,
-  ContentSearchType,
-  TimeframeType,
-  BatchOperationType,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  IntegrationTestSetup,
-  IntegrationTestDataManager,
-  integrationConfig,
-  integrationUtils,
-} from './helpers/index.js';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 
 // These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS = !integrationConfig.shouldRun();
 
 // Increase timeout for real API calls
 vi.setConfig({ testTimeout: 30000 });
@@ -34,13 +12,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
     return;
   }
 
-  const integrationSetup = IntegrationTestSetup.getInstance();
-  const dataManager = new IntegrationTestDataManager();
-  const testIdentifiers = dataManager.getTestIdentifiers();
 
-  const testCompanyName = `Universal Test Company ${testIdentifiers.timestamp}-${testIdentifiers.randomId}`;
-  const testPersonEmail = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}@example.com`;
-  const testDomain = `universal-test-${testIdentifiers.timestamp}-${testIdentifiers.randomId}.com`;
 
   let createdCompanyId: string;
   let createdPersonId: string;
@@ -48,13 +20,11 @@ describe('Universal Tools Advanced Integration Tests', () => {
   beforeAll(async () => {
     // Initialize the API client and verify tool configurations
     await integrationSetup.initializeApiClient();
-    const toolConfigs = await integrationSetup.verifyToolConfigs();
 
     console.log('Advanced operations tools:', toolConfigs.advancedOperations);
     integrationConfig.logEnvironment();
 
     // Create test records for advanced operations
-    const companyResult = await coreOperationsToolConfigs[
       'create-record'
     ].handler({
       resource_type: UniversalResourceType.COMPANIES,
@@ -70,7 +40,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       createdCompanyId
     );
 
-    const personResult = await coreOperationsToolConfigs[
       'create-record'
     ].handler({
       resource_type: UniversalResourceType.PEOPLE,
@@ -105,7 +74,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
   describe('Advanced Operations Integration', () => {
     describe('advanced-search tool', () => {
       it('should perform advanced company search with complex filters', async () => {
-        const result = await advancedOperationsToolConfigs[
           'advanced-search'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -129,7 +97,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should perform advanced people search', async () => {
-        const result = await advancedOperationsToolConfigs[
           'advanced-search'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
@@ -147,7 +114,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
         // This test assumes we have some company-people relationships
         // In a real scenario, you'd link the person to the company first
         try {
-          const result = await advancedOperationsToolConfigs[
             'search-by-relationship'
           ].handler({
             relationship_type: RelationshipType.COMPANY_TO_PEOPLE,
@@ -181,7 +147,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       it('should search companies by notes content', async () => {
         // This test might not find results without notes, but tests the integration
         try {
-          const result = await advancedOperationsToolConfigs[
             'search-by-content'
           ].handler({
             resource_type: UniversalResourceType.COMPANIES,
@@ -201,7 +166,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       it('should search people by notes content', async () => {
         // Test people content search using the new search-records API
         try {
-          const result = await coreOperationsToolConfigs[
             'search-records'
           ].handler({
             resource_type: UniversalResourceType.PEOPLE,
@@ -221,7 +185,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
           }
         } catch (error: unknown) {
           // If error occurs, it should NOT be "Unknown attribute slug: bio"
-          const errorMessage = (error as Error).message;
           expect(errorMessage).not.toContain('Unknown attribute slug: bio');
 
           // Log other errors for debugging but don't fail the test
@@ -244,11 +207,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
     describe('search-by-timeframe tool', () => {
       it('should search people by creation date', async () => {
-        const today = new Date();
-        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-        const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-        const result = await advancedOperationsToolConfigs[
           'search-by-timeframe'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
@@ -261,8 +220,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
         // Should include our created person
-        const foundPerson = result.find(
-          (p: any) => p.id?.record_id === createdPersonId
+          (p: unknown) => p.id?.record_id === createdPersonId
         );
         expect(foundPerson).toBeDefined();
       });
@@ -282,7 +240,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
     describe('batch-operations tool', () => {
       it('should perform batch create operations', async () => {
-        const batchCompanies = [
           {
             name: `Batch Company 1 ${testIdentifiers.timestamp}`,
             website: `https://batch1-${testIdentifiers.timestamp}.com`,
@@ -293,7 +250,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
           },
         ];
 
-        const result = await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -306,11 +262,9 @@ describe('Universal Tools Advanced Integration Tests', () => {
         expect(result).toHaveLength(2);
 
         // Check that both operations succeeded
-        const successCount = result.filter((r: any) => r.success).length;
         expect(successCount).toBe(2);
 
         // Clean up batch created companies using helper
-        const createdIds = integrationUtils.extractRecordIds(result);
         if (createdIds.length > 0) {
           dataManager.trackCreatedRecords(
             UniversalResourceType.COMPANIES,
@@ -320,7 +274,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should perform batch get operations', async () => {
-        const result = await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -336,7 +289,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should perform batch search operations', async () => {
-        const result = await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -353,7 +305,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should validate batch size limits', async () => {
-        const largeRecordArray = Array(51).fill({ name: 'Test Company' });
 
         await expect(
           advancedOperationsToolConfigs['batch-operations'].handler({
@@ -367,7 +318,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should handle partial batch failures gracefully', async () => {
-        const mixedBatch = [
           {
             name: `Valid Batch Company ${testIdentifiers.timestamp}`,
             website: `https://valid-${testIdentifiers.timestamp}.com`,
@@ -378,7 +328,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
           } as any,
         ];
 
-        const result = await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -391,14 +340,11 @@ describe('Universal Tools Advanced Integration Tests', () => {
         expect(result).toHaveLength(2);
 
         // Should have at least one success and one failure
-        const successCount = result.filter((r: any) => r.success).length;
-        const failureCount = result.filter((r: any) => !r.success).length;
 
         expect(successCount).toBeGreaterThan(0);
         expect(failureCount).toBeGreaterThan(0);
 
         // Clean up any successful creations using helper
-        const successfulIds = integrationUtils.extractRecordIds(result);
         if (successfulIds.length > 0) {
           dataManager.trackCreatedRecords(
             UniversalResourceType.COMPANIES,
@@ -435,7 +381,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
     it('should handle network timeouts gracefully', async () => {
       // This test would require mocking network conditions
       // For now, we just verify that large batch operations don't hang
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -450,9 +395,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
   describe('Performance and scalability', () => {
     it('should handle reasonable batch sizes efficiently', async () => {
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -460,8 +403,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
         limit: 10,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
@@ -469,16 +410,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
     it('should respect API rate limits in batch operations', async () => {
       // Create a small batch to test rate limiting behavior
-      const batchRecords = Array(5)
         .fill(0)
         .map((_, i) => ({
           name: `Rate Limit Test Company ${testIdentifiers.timestamp}-${i}`,
           website: `https://ratelimit-test-${testIdentifiers.timestamp}-${i}.com`,
         }));
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -486,7 +424,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
         records: batchRecords,
       });
 
-      const endTime = Date.now();
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -503,7 +440,6 @@ describe('Universal Tools Advanced Integration Tests', () => {
       );
 
       // Clean up created records using helper
-      const createdIds = integrationUtils.extractRecordIds(result);
       if (createdIds.length > 0) {
         dataManager.trackCreatedRecords(
           UniversalResourceType.COMPANIES,

@@ -2,23 +2,18 @@
  * Split: Regression Prevention E2E – Search & Stability slice
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  callUniversalTool,
-  validateTestEnvironment,
-} from '../utils/enhanced-tool-caller.js';
+
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Regression Prevention – Search & Stability', () => {
-  const T30 = 30000,
     T35 = 35000,
     T45 = 45000,
     T60 = 60000,
     T75 = 75000;
   beforeAll(async () => {
     startTestSuite('regression-prevention-search-stability');
-    const validation = await validateTestEnvironment();
     if (!validation.valid)
       console.warn(
         '⚠️ Regression prevention test warnings:',
@@ -33,7 +28,6 @@ describe.skipIf(
   it(
     'handles malformed JSON-like queries gracefully',
     async () => {
-      const cases = [
         { name: 'Empty query', params: { query: '', limit: 1 } },
         {
           name: 'Very long query',
@@ -48,7 +42,6 @@ describe.skipIf(
         },
       ];
       for (const c of cases) {
-        const response = await callUniversalTool('search-records', {
           resource_type: 'companies',
           ...c.params,
         } as any);
@@ -63,13 +56,11 @@ describe.skipIf(
   it(
     'handles boundary value conditions for search safely',
     async () => {
-      const boundary = [
         { name: 'Zero limit', params: { limit: 0 } },
         { name: 'Maximum limit', params: { limit: 1000 } },
         { name: 'Negative offset', params: { limit: 10, offset: -1 } },
       ];
       for (const b of boundary) {
-        const response = await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'boundary-test',
           ...b.params,
@@ -85,13 +76,10 @@ describe.skipIf(
   it(
     'prevents infinite loops and long-running searches',
     async () => {
-      const start = Date.now();
-      const response = await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'recursion-test',
         limit: 10,
       } as any);
-      const duration = Date.now() - start;
       expect(duration).toBeLessThan(30000);
       expect(response).toBeDefined();
       console.error(`✅ Infinite loop prevention validated (${duration}ms)`);
@@ -102,7 +90,6 @@ describe.skipIf(
   it(
     'handles resource exhaustion gracefully',
     async () => {
-      const tests = [
         () =>
           callUniversalTool('search-records', {
             resource_type: 'companies',
@@ -110,7 +97,6 @@ describe.skipIf(
             limit: 50,
           } as any),
         async () => {
-          const searches = Array(8)
             .fill(null)
             .map((_, i) =>
               callUniversalTool('search-records', {
@@ -123,8 +109,6 @@ describe.skipIf(
         },
       ];
       for (const t of tests) {
-        const start = Date.now();
-        const res = await t();
         expect(res).toBeDefined();
         expect(Date.now() - start).toBeLessThan(60000);
       }
@@ -136,7 +120,6 @@ describe.skipIf(
   it(
     'maintains system stability under error conditions',
     async () => {
-      const ops = [
         () =>
           callUniversalTool('get-record-details', {
             resource_type: 'companies',
@@ -162,11 +145,9 @@ describe.skipIf(
           } as any),
       ];
       for (const op of ops) {
-        const response = await op();
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect('isError' in response).toBe(true);
-        const health = await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'health-check',
           limit: 1,
@@ -181,7 +162,6 @@ describe.skipIf(
   it(
     'preserves API contract consistency (search + details)',
     async () => {
-      const cases = [
         () =>
           callUniversalTool('search-records', {
             resource_type: 'companies',
@@ -195,7 +175,6 @@ describe.skipIf(
           } as any),
       ];
       for (const test of cases) {
-        const response = await test();
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect(response).toHaveProperty('isError');

@@ -5,12 +5,13 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { parseResourceUri } from '../../../../utils/uri-parser.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { NotesToolConfig, CreateNoteToolConfig } from '../../../tool-types.js';
+import { parseResourceUri } from '../../../../utils/uri-parser.js';
+import { ResourceType } from '../../../../types/attio.js';
 
 /**
  * Handle notes operations
@@ -20,16 +21,13 @@ export async function handleNotesOperation(
   toolConfig: NotesToolConfig,
   resourceType: ResourceType
 ) {
-  const directId =
     resourceType === ResourceType.COMPANIES
       ? (request.params.arguments?.companyId as string)
       : resourceType === ResourceType.DEALS
         ? (request.params.arguments?.dealId as string)
         : (request.params.arguments?.personId as string);
-  const uri = request.params.arguments?.uri as string;
 
   if (!directId && !uri) {
-    const idParamName =
       resourceType === ResourceType.COMPANIES
         ? 'companyId'
         : resourceType === ResourceType.DEALS
@@ -60,11 +58,7 @@ export async function handleNotesOperation(
       }
     }
 
-    const limit = request.params.arguments?.limit as number;
-    const offset = request.params.arguments?.offset as number;
 
-    const notes = await toolConfig.handler(notesTargetId, limit, offset);
-    const formattedResult = toolConfig.formatResult!(notes);
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
@@ -85,13 +79,11 @@ export async function handleCreateNoteOperation(
   toolConfig: CreateNoteToolConfig,
   resourceType: ResourceType
 ) {
-  const directId =
     resourceType === ResourceType.COMPANIES
       ? (request.params.arguments?.companyId as string)
       : resourceType === ResourceType.DEALS
         ? (request.params.arguments?.dealId as string)
         : (request.params.arguments?.personId as string);
-  const uri = request.params.arguments?.uri as string;
 
   /**
    * Parameter Mapping Strategy for Note Creation
@@ -107,9 +99,7 @@ export async function handleCreateNoteOperation(
    * The fallback pattern (primary || legacy) ensures compatibility while
    * encouraging use of the standardized parameter names.
    */
-  const title = (request.params.arguments?.title ||
     request.params.arguments?.noteTitle) as string;
-  const content = (request.params.arguments?.content ||
     request.params.arguments?.noteText) as string;
 
   if (!title || !content) {
@@ -122,7 +112,6 @@ export async function handleCreateNoteOperation(
   }
 
   if (!directId && !uri) {
-    const idParamName =
       resourceType === ResourceType.COMPANIES
         ? 'companyId'
         : resourceType === ResourceType.DEALS
@@ -153,8 +142,6 @@ export async function handleCreateNoteOperation(
       }
     }
 
-    const note = await toolConfig.handler(noteTargetId, title, content);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(note)
       : `Note added to ${resourceType.slice(0, -1)} ${noteTargetId}: ${
           note.title || 'Untitled'

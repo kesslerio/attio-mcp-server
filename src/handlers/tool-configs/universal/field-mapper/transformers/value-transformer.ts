@@ -5,56 +5,6 @@
 
 import { UniversalResourceType } from '../types.js';
 
-/**
- * Converts various value types to boolean for task completion status
- * Supports common task status strings and values
- */
-function toBooleanish(v: unknown): boolean | undefined {
-  if (typeof v === 'boolean') return v;
-  if (typeof v === 'number') return v !== 0;
-  if (typeof v === 'string') {
-    const s = v.trim().toLowerCase();
-    if (
-      [
-        'done',
-        'complete',
-        'completed',
-        'true',
-        'yes',
-        'y',
-        '1',
-        'closed',
-      ].includes(s)
-    )
-      return true;
-    if (['open', 'pending', 'in progress', 'false', 'no', 'n', '0'].includes(s))
-      return false;
-  }
-  return undefined;
-}
-
-/**
- * Transforms field values to match Attio API expectations
- * Handles complex field value transformations for each resource type
- */
-export async function transformFieldValue(
-  resourceType: UniversalResourceType,
-  fieldName: string,
-  value: unknown
-): Promise<unknown> {
-  // Handle domains field for companies
-  if (
-    resourceType === UniversalResourceType.COMPANIES &&
-    fieldName === 'domains'
-  ) {
-    // If value is already in correct format, return as-is
-    if (
-      Array.isArray(value) &&
-      value.every((v) => typeof v === 'object' && 'domain' in v)
-    ) {
-      return value;
-    }
-
     // If value is an array of strings, transform to domain objects
     if (Array.isArray(value) && value.every((v) => typeof v === 'string')) {
       return value.map((domain) => ({ domain }));
@@ -142,13 +92,10 @@ export async function transformFieldValue(
     resourceType === UniversalResourceType.PEOPLE &&
     fieldName === 'company'
   ) {
-    const toRef = (v: unknown): unknown => {
       if (typeof v === 'string') return { record_id: v };
       if (v && typeof v === 'object') {
-        const obj = v as Record<string, unknown>;
         if (obj.record_id) return { record_id: obj.record_id };
         if (obj.id && typeof obj.id === 'object') {
-          const idObj = obj.id as Record<string, unknown>;
           if (idObj.record_id) return { record_id: idObj.record_id };
         }
         if (obj.id) return { record_id: obj.id };
@@ -165,19 +112,15 @@ export async function transformFieldValue(
     resourceType === UniversalResourceType.DEALS &&
     (fieldName === 'associated_company' || fieldName === 'associated_people')
   ) {
-    const toRef = (v: unknown): unknown =>
       (typeof v === 'string' && { record_id: v }) ||
       (v && typeof v === 'object' && 'record_id' in v ? v : null);
 
-    const arr = Array.isArray(value) ? value : [value];
-    const refs = arr.map(toRef).filter(Boolean);
     return refs.length ? refs : value;
   }
 
   // Tasks field transformations
   if (resourceType === UniversalResourceType.TASKS) {
     if (fieldName === 'is_completed') {
-      const b = toBooleanish(value);
       return b === undefined ? value : b;
     }
     if (fieldName === 'deadline_at') {
@@ -185,7 +128,6 @@ export async function transformFieldValue(
       if (value instanceof Date) return value.toISOString();
       if (typeof value === 'number') return new Date(value).toISOString();
       if (typeof value === 'string') {
-        const d = new Date(value);
         return isNaN(d.getTime()) ? value : d.toISOString();
       }
     }

@@ -6,8 +6,8 @@
  * and regression detection.
  */
 
-import { performance } from 'perf_hooks';
 import { EventEmitter } from 'events';
+import { performance } from 'perf_hooks';
 
 /**
  * Performance timing breakdown
@@ -145,8 +145,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
   ): string {
     if (!this.enabled) return '';
 
-    const operationId = `${toolName}-${Date.now()}-${Math.random()}`;
-    const startTime = performance.now();
 
     this.timingContext.set(operationId, {
       toolName,
@@ -172,7 +170,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     phase: keyof TimingSplit,
     duration: number
   ): void {
-    const context = this.timingContext.get(operationId);
     if (context && context.timings[phase] !== undefined) {
       context.timings[phase] += duration;
     }
@@ -189,7 +186,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Mark API call end
    */
   markApiEnd(operationId: string, apiStartTime: number): void {
-    const duration = performance.now() - apiStartTime;
     this.markTiming(operationId, 'attioApi', duration);
   }
 
@@ -201,18 +197,14 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     success: boolean = true,
     error?: string,
     statusCode?: number,
-    additionalMetadata?: Record<string, any>
+    additionalMetadata?: Record<string, unknown>
   ): EnhancedPerformanceMetrics | null {
     if (!this.enabled || !operationId) return null;
 
-    const context = this.timingContext.get(operationId);
     if (!context) return null;
 
-    const endTime = performance.now();
-    const duration = endTime - context.startTime;
 
     // Calculate MCP overhead
-    const mcpOverhead =
       duration -
       (context.timings.validation +
         context.timings.attioApi +
@@ -279,14 +271,12 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Check if operation exceeds budget
    */
   private checkBudget(metrics: EnhancedPerformanceMetrics): void {
-    const budget = this.getBudgetForOperation(
       metrics.operationType,
       metrics.statusCode,
       metrics.recordCount
     );
 
     if (metrics.duration > budget) {
-      const percentOver = ((metrics.duration - budget) / budget) * 100;
 
       let level: AlertLevel;
       if (percentOver > 100) {
@@ -383,10 +373,8 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Get cached 404 response
    */
   getCached404(key: string): unknown | null {
-    const entry = this.cache404.get(key);
     if (!entry) return null;
 
-    const age = Date.now() - entry.timestamp;
     if (age > entry.ttl) {
       this.cache404.delete(key);
       return null;
@@ -399,7 +387,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Clean up expired cache entries
    */
   private cleanupCache(): void {
-    const now = Date.now();
     for (const [key, entry] of this.cache404.entries()) {
       if (now - entry.timestamp > entry.ttl) {
         this.cache404.delete(key);
@@ -414,8 +401,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     toolName?: string,
     timeWindow?: number
   ): Record<string, unknown> {
-    const now = Date.now();
-    const windowStart = timeWindow ? now - timeWindow : 0;
 
     let relevantMetrics = this.metrics;
 
@@ -433,13 +418,10 @@ export class EnhancedPerformanceTracker extends EventEmitter {
       return {};
     }
 
-    const durations = relevantMetrics
       .map((m) => m.duration)
       .sort((a, b) => a - b);
-    const apiTimes = relevantMetrics
       .map((m) => m.timingSplit.attioApi)
       .sort((a, b) => a - b);
-    const overheads = relevantMetrics
       .map((m) => m.timingSplit.mcpOverhead)
       .sort((a, b) => a - b);
 
@@ -492,7 +474,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    */
   private percentile(sortedValues: number[], percentile: number): number {
     if (sortedValues.length === 0) return 0;
-    const index = Math.ceil((percentile / 100) * sortedValues.length) - 1;
     return sortedValues[Math.max(0, index)];
   }
 
@@ -500,8 +481,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Log metrics in development
    */
   private logMetrics(metrics: EnhancedPerformanceMetrics): void {
-    const icon = metrics.success ? '✅' : '❌';
-    const timeIcon =
       metrics.duration >
       this.getBudgetForOperation(metrics.operationType, metrics.statusCode)
         ? '🔴'
@@ -521,8 +500,6 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    * Generate performance report
    */
   generateReport(): string {
-    const stats = this.getStatistics();
-    const recentAlerts = this.alerts.slice(-10);
 
     if (!stats) {
       return 'No performance data available';

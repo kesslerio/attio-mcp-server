@@ -255,10 +255,6 @@ export const batchOperationTypeMappings: Record<string, string> = {
  * Get the count of tools that will be consolidated
  */
 export function getConsolidationStats() {
-  const deprecatedCount = Object.keys(deprecatedToolMappings).length;
-  const universalCount = allUniversalTools.length;
-  const reductionCount = deprecatedCount - universalCount;
-  const reductionPercentage = Math.round(
     (reductionCount / deprecatedCount) * 100
   );
 
@@ -300,9 +296,7 @@ export function getUniversalEquivalent(
 export function getMigrationParams(
   deprecatedToolName: string,
   originalParams: any
-): any {
-  const universalTool = getUniversalEquivalent(deprecatedToolName);
-  const resourceType = resourceTypeMappings[deprecatedToolName];
+): unknown {
 
   if (!universalTool || !resourceType) {
     throw new Error(
@@ -311,7 +305,6 @@ export function getMigrationParams(
   }
 
   // Base parameters for all universal tools
-  const baseParams = {
     resource_type: resourceType,
     ...originalParams,
   };
@@ -319,7 +312,6 @@ export function getMigrationParams(
   // Add specific parameters based on the universal tool type
   switch (universalTool) {
     case 'get-detailed-info': {
-      const infoType = infoTypeMappings[deprecatedToolName];
       if (infoType) {
         baseParams.info_type = infoType;
       }
@@ -327,7 +319,6 @@ export function getMigrationParams(
     }
 
     case 'search-by-content': {
-      const contentType = contentTypeMappings[deprecatedToolName];
       if (contentType) {
         baseParams.content_type = contentType;
       }
@@ -335,7 +326,6 @@ export function getMigrationParams(
     }
 
     case 'search-by-timeframe': {
-      const timeframeType = timeframeTypeMappings[deprecatedToolName];
       if (timeframeType) {
         baseParams.timeframe_type = timeframeType;
       }
@@ -343,7 +333,6 @@ export function getMigrationParams(
     }
 
     case 'search-by-relationship': {
-      const relationshipType = relationshipTypeMappings[deprecatedToolName];
       if (relationshipType) {
         baseParams.relationship_type = relationshipType;
       }
@@ -351,7 +340,6 @@ export function getMigrationParams(
     }
 
     case 'batch-operations': {
-      const operationType = batchOperationTypeMappings[deprecatedToolName];
       if (operationType) {
         baseParams.operation_type = operationType;
       }
@@ -366,7 +354,6 @@ export function getMigrationParams(
  * Log consolidation statistics
  */
 export function logConsolidationStats(): void {
-  const stats = getConsolidationStats();
   console.error(`Universal tool consolidation: ${stats.summary}`);
   console.error(
     `Reduced tool count by ${stats.reductionCount} tools (${stats.reductionPercentage}% reduction)`

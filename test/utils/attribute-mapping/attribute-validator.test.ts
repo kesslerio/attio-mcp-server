@@ -25,7 +25,6 @@ describe('Attribute Validator', () => {
 
       it('should convert string representations to boolean values', () => {
         // Truthy strings
-        const truthyValues = [
           'true',
           'yes',
           '1',
@@ -45,7 +44,6 @@ describe('Attribute Validator', () => {
         });
 
         // Falsy strings
-        const falsyValues = [
           'false',
           'no',
           '0',
@@ -78,10 +76,8 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject unconvertible values with appropriate error messages', () => {
-        const invalidValues = ['maybe', 'invalid', 2, {}, []];
 
         invalidValues.forEach((value) => {
-          const result = validateAttributeValue('is_active', value, 'boolean');
           expect(result.valid).toBe(false);
           expect(result.error).toContain('Invalid boolean value');
           expect(result.error).toContain('is_active');
@@ -145,10 +141,8 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject unconvertible values with appropriate error messages', () => {
-        const invalidValues = ['not-a-number', 'abc123', {}, [], 'NaN'];
 
         invalidValues.forEach((value) => {
-          const result = validateAttributeValue('revenue', value, 'number');
           expect(result.valid).toBe(false);
           expect(result.error).toContain('Invalid number value');
           expect(result.error).toContain('revenue');
@@ -200,7 +194,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert date objects to ISO strings', () => {
-        const testDate = new Date('2023-05-15T14:30:00Z');
         expect(
           validateAttributeValue('date_string', testDate, 'string')
         ).toEqual({
@@ -210,7 +203,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should try to convert objects to JSON strings', () => {
-        const testObj = { id: 123, name: 'Test' };
         expect(
           validateAttributeValue('json_string', testObj, 'string')
         ).toEqual({
@@ -223,7 +215,6 @@ describe('Attribute Validator', () => {
     // Date validation tests
     describe('Date validation', () => {
       it('should validate date objects', () => {
-        const testDate = new Date('2023-05-15T14:30:00Z');
         expect(validateAttributeValue('created_at', testDate, 'date')).toEqual({
           valid: true,
           convertedValue: testDate.toISOString(),
@@ -231,8 +222,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject invalid date objects', () => {
-        const invalidDate = new Date('invalid date');
-        const result = validateAttributeValue(
           'created_at',
           invalidDate,
           'date'
@@ -242,19 +231,14 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert ISO date strings to dates', () => {
-        const dateStr = '2023-05-15T14:30:00Z';
-        const expectedDate = new Date(dateStr).toISOString();
-        const result = validateAttributeValue('created_at', dateStr, 'date');
 
         expect(result.valid).toBe(true);
         expect(result.convertedValue).toBe(expectedDate);
       });
 
       it('should convert various date string formats', () => {
-        const dateFormats = ['2023-05-15', '05/15/2023', 'May 15, 2023'];
 
         dateFormats.forEach((dateStr) => {
-          const result = validateAttributeValue('created_at', dateStr, 'date');
           expect(result.valid).toBe(true);
           expect(typeof result.convertedValue).toBe('string');
           // The format should be an ISO string
@@ -265,8 +249,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert Unix timestamps (milliseconds) to date strings', () => {
-        const timestamp = 1684162200000; // 2023-05-15T14:30:00Z
-        const expectedDate = new Date(timestamp).toISOString();
 
         expect(validateAttributeValue('created_at', timestamp, 'date')).toEqual(
           {
@@ -277,8 +259,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should convert Unix timestamps (seconds) to date strings', () => {
-        const timestamp = 1684162200; // 2023-05-15T14:30:00Z in seconds
-        const expectedDate = new Date(timestamp * 1000).toISOString();
 
         expect(validateAttributeValue('created_at', timestamp, 'date')).toEqual(
           {
@@ -289,10 +269,8 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject unconvertible values with appropriate error messages', () => {
-        const invalidValues = ['not-a-date', 'tomorrow', true, {}, []];
 
         invalidValues.forEach((value) => {
-          const result = validateAttributeValue('created_at', value, 'date');
           expect(result.valid).toBe(false);
           expect(result.error).toContain('Invalid date value');
           expect(result.error).toContain('created_at');
@@ -337,7 +315,6 @@ describe('Attribute Validator', () => {
     // Object validation tests
     describe('Object validation', () => {
       it('should validate plain object values', () => {
-        const testObj = { id: 123, name: 'Test' };
         expect(validateAttributeValue('metadata', testObj, 'object')).toEqual({
           valid: true,
           convertedValue: testObj,
@@ -350,10 +327,8 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject non-object values', () => {
-        const invalidValues = ['string', 123, true, [1, 2, 3]];
 
         invalidValues.forEach((value) => {
-          const result = validateAttributeValue('metadata', value, 'object');
           expect(result.valid).toBe(false);
           expect(result.error).toContain('Invalid object value');
           expect(result.error).toContain('metadata');
@@ -431,7 +406,6 @@ describe('Attribute Validator', () => {
       });
 
       it('should handle arrays of record references', () => {
-        const input = ['rec_123', { record_id: 'rec_456' }, { id: 'rec_789' }];
 
         expect(
           validateAttributeValue('related_companies', input, 'record-reference')
@@ -442,10 +416,8 @@ describe('Attribute Validator', () => {
       });
 
       it('should reject invalid record references', () => {
-        const invalidValues = [{ name: 'Not a record' }, true, 123];
 
         invalidValues.forEach((value) => {
-          const result = validateAttributeValue(
             'parent_company',
             value,
             'record-reference'
@@ -510,11 +482,9 @@ describe('Attribute Validator', () => {
         });
 
         // For numbers, empty string should be NaN (invalid)
-        const numberResult = validateAttributeValue('count', '', 'number');
         expect(numberResult.valid).toBe(false);
 
         // For booleans, empty string should be invalid
-        const boolResult = validateAttributeValue('is_active', '', 'boolean');
         expect(boolResult.valid).toBe(false);
       });
 
@@ -526,11 +496,9 @@ describe('Attribute Validator', () => {
         });
 
         // For numbers, whitespace should be invalid
-        const numberResult = validateAttributeValue('count', '   ', 'number');
         expect(numberResult.valid).toBe(false);
 
         // For booleans, whitespace should be invalid
-        const boolResult = validateAttributeValue(
           'is_active',
           '   ',
           'boolean'

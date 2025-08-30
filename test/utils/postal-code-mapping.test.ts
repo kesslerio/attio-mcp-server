@@ -12,20 +12,9 @@
  * their user.json to pick up this fix, since user.json overrides default.json.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  getAttributeSlug,
-  invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/attribute-mappers.js';
-
-describe('Postal Code Field Mapping - Issue #219', () => {
-  beforeEach(() => {
-    // Invalidate config cache to pick up any changes to mapping files
-    invalidateConfigCache();
-  });
 
   describe('postal_code field mapping', () => {
     it('should map "postal_code" to correct attribute slug', () => {
-      const result = getAttributeSlug('postal_code', 'companies');
 
       // The result should be a valid attribute slug that exists in Attio
       expect(result).toBeDefined();
@@ -36,7 +25,6 @@ describe('Postal Code Field Mapping - Issue #219', () => {
     });
 
     it('should map "Postal Code" (display name) to correct attribute slug', () => {
-      const result = getAttributeSlug('Postal Code', 'companies');
 
       expect(result).toBeDefined();
       expect(typeof result).toBe('string');
@@ -47,10 +35,8 @@ describe('Postal Code Field Mapping - Issue #219', () => {
 
     it('should map "ZIP" to correct attribute slug', () => {
       // Set development mode to see debug logs
-      const originalNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      const result = getAttributeSlug('ZIP', 'companies');
 
       // Restore original env
       process.env.NODE_ENV = originalNodeEnv;
@@ -63,12 +49,9 @@ describe('Postal Code Field Mapping - Issue #219', () => {
     });
 
     it('should have consistent mapping between postal_code variants', () => {
-      const postalCodeResult = getAttributeSlug('postal_code', 'companies');
-      const postalCodeDisplayResult = getAttributeSlug(
         'Postal Code',
         'companies'
       );
-      const zipResult = getAttributeSlug('ZIP', 'companies');
 
       // All variants should map to the same underlying attribute
       expect(postalCodeResult).toBe(postalCodeDisplayResult);
@@ -82,7 +65,6 @@ describe('Postal Code Field Mapping - Issue #219', () => {
     });
 
     it('should not map to non-existent "zip" slug if that causes the API error', () => {
-      const result = getAttributeSlug('postal_code', 'companies');
 
       // If the error is "Cannot find attribute with slug/ID 'zip'",
       // then the mapping should NOT be "zip"
@@ -104,15 +86,12 @@ describe('Postal Code Field Mapping - Issue #219', () => {
   describe('mapping priority and fallback', () => {
     it('should check which mapping source is being used', () => {
       // Test to understand the mapping priority
-      const result = getAttributeSlug('postal_code', 'companies');
 
       console.log('Testing mapping sources for postal_code:');
       console.log(`Final result: "${result}"`);
 
       // Let's also test the variants to see the pattern
-      const variants = ['postal_code', 'Postal Code', 'ZIP', 'zip'];
       variants.forEach((variant) => {
-        const mapped = getAttributeSlug(variant, 'companies');
         console.log(`"${variant}" -> "${mapped}"`);
       });
     });
@@ -128,7 +107,6 @@ describe('Company Creation with postal_code - Integration', () => {
     // This test documents the current mapping behavior
     // and helps identify where the "zip" reference comes from
 
-    const testAttributes = {
       name: 'Test Company',
       city: 'Corona',
       state: 'CA',
@@ -138,7 +116,6 @@ describe('Company Creation with postal_code - Integration', () => {
 
     // Test each attribute mapping
     Object.entries(testAttributes).forEach(([key, value]) => {
-      const mappedSlug = getAttributeSlug(key, 'companies');
       console.log(`${key}: "${value}" -> slug: "${mappedSlug}"`);
     });
   });

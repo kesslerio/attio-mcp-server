@@ -1,19 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  validateInput,
-  validateRequest,
-  ValidationSchema,
-} from '../../src/utils/validation';
-import { ErrorType } from '../../src/utils/error-handler';
 
-describe('validation', () => {
-  describe('validateInput', () => {
-    it('should validate a simple object against a schema', () => {
-      const input = {
-        name: 'Test User',
-        age: 30,
-        email: 'test@example.com',
-      };
+import { ErrorType } from '../../src/utils/error-handler';
 
       const schema: ValidationSchema = {
         type: 'object',
@@ -25,13 +12,11 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it('should detect missing required properties', () => {
-      const input = {
         name: 'Test User',
       };
 
@@ -44,7 +29,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]).toContain('email');
@@ -52,7 +36,6 @@ describe('validation', () => {
     });
 
     it('should validate type mismatches', () => {
-      const input = {
         name: 'Test User',
         age: 'thirty',
       };
@@ -65,7 +48,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]).toContain('age');
@@ -73,7 +55,6 @@ describe('validation', () => {
     });
 
     it('should validate nested objects', () => {
-      const input = {
         name: 'Test User',
         address: {
           street: '123 Main St',
@@ -99,13 +80,11 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it('should validate arrays', () => {
-      const input = {
         name: 'Test User',
         tags: ['tag1', 'tag2', 'tag3'],
       };
@@ -121,13 +100,11 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it('should validate array items', () => {
-      const input = {
         name: 'Test User',
         tags: ['tag1', 'tag2', 123],
       };
@@ -143,7 +120,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]).toContain('tags[2]');
@@ -151,7 +127,6 @@ describe('validation', () => {
     });
 
     it('should validate string constraints', () => {
-      const input = {
         username: 'user',
         password: 'pass',
       };
@@ -172,7 +147,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(2);
       expect(result.errors[0]).toContain('password');
@@ -182,7 +156,6 @@ describe('validation', () => {
     });
 
     it('should validate number constraints', () => {
-      const input = {
         age: 15,
         score: 110,
       };
@@ -202,7 +175,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(2);
       expect(result.errors[0]).toContain('age');
@@ -212,7 +184,6 @@ describe('validation', () => {
     });
 
     it('should validate enum values', () => {
-      const input = {
         status: 'pending',
         priority: 'urgent',
       };
@@ -231,7 +202,6 @@ describe('validation', () => {
         },
       };
 
-      const result = validateInput(input, schema);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]).toContain('priority');
@@ -241,7 +211,6 @@ describe('validation', () => {
 
   describe('validateRequest', () => {
     it('should return null for valid input', () => {
-      const input = {
         name: 'Test User',
         email: 'test@example.com',
       };
@@ -255,20 +224,17 @@ describe('validation', () => {
         },
       };
 
-      const errorFormatter = vi.fn((error, type, details) => ({
         error: true,
         message: error.message,
         type,
         details,
       }));
 
-      const result = validateRequest(input, schema, errorFormatter);
       expect(result).toBeNull();
       expect(errorFormatter).not.toHaveBeenCalled();
     });
 
     it('should return formatted error for invalid input', () => {
-      const input = {
         name: 'Test User',
         // missing required email
       };
@@ -282,14 +248,12 @@ describe('validation', () => {
         },
       };
 
-      const errorFormatter = vi.fn((error, type, details) => ({
         error: true,
         message: error.message,
         type,
         details,
       }));
 
-      const result = validateRequest(input, schema, errorFormatter);
       expect(result).not.toBeNull();
       expect(errorFormatter).toHaveBeenCalledWith(
         expect.any(Error),

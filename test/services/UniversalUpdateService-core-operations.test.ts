@@ -2,62 +2,18 @@
  * Split: UniversalUpdateService core operations (per resource)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-// Inline mocks (must match specifiers in this file)
-vi.mock('../../src/objects/companies/index.js', () => ({
-  updateCompany: vi.fn(),
-}));
-vi.mock('../../src/objects/lists.js', () => ({ updateList: vi.fn() }));
-vi.mock('../../src/objects/people-write.js', () => ({ updatePerson: vi.fn() }));
-vi.mock('../../src/objects/records/index.js', () => ({
-  updateObjectRecord: vi.fn(),
-}));
-vi.mock('../../src/config/deal-defaults.js', () => ({
-  applyDealDefaultsWithValidation: vi.fn(),
-}));
-vi.mock('../../src/objects/tasks.js', () => ({
-  getTask: vi.fn(),
-  updateTask: vi.fn(),
-}));
-vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
-  mapRecordFields: vi.fn(),
-  mapTaskFields: vi.fn((_: string, i: any) => i),
-  validateResourceType: vi.fn(),
-  getFieldSuggestions: vi.fn(),
-  validateFields: vi.fn(),
-  getValidResourceTypes: vi.fn(
-    () => 'companies, people, lists, records, deals, tasks'
-  ),
-}));
-vi.mock('../../src/utils/validation-utils.js', () => ({
-  validateRecordFields: vi.fn(),
-}));
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: {
-    truncateSuggestions: vi.fn((s: string[]) => s),
-    validateEmailAddresses: vi.fn(),
-  },
-}));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: {
-    updateTask: vi.fn(),
-    isUsingMockData: vi.fn().mockReturnValue(true),
-  },
-}));
-import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+
+import { applyDealDefaultsWithValidation } from '../../src/config/deal-defaults.js';
 import { AttioRecord } from '../../src/types/attio.js';
+import { MockService } from '../../src/services/MockService.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalUpdateService } from '../../src/services/UniversalUpdateService.js';
 import { updateCompany } from '../../src/objects/companies/index.js';
 import { updateList } from '../../src/objects/lists.js';
-import { updatePerson } from '../../src/objects/people-write.js';
 import { updateObjectRecord } from '../../src/objects/records/index.js';
-import { applyDealDefaultsWithValidation } from '../../src/config/deal-defaults.js';
-import { ValidationService } from '../../src/services/ValidationService.js';
-import { MockService } from '../../src/services/MockService.js';
-import {
-  mapRecordFields,
-  validateFields,
-} from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { updatePerson } from '../../src/objects/people-write.js';
 import { validateRecordFields } from '../../src/utils/validation-utils.js';
+import { ValidationService } from '../../src/services/ValidationService.js';
 
 describe('UniversalUpdateService', () => {
   beforeEach(() => {
@@ -88,7 +44,6 @@ describe('UniversalUpdateService', () => {
       } as any;
       vi.mocked(updateCompany).mockResolvedValue(mockCompany);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'comp_123',
         record_data: { values: { name: 'Updated Company' } },
@@ -110,7 +65,6 @@ describe('UniversalUpdateService', () => {
       } as any;
       vi.mocked(updatePerson).mockResolvedValue(mockPerson);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.PEOPLE,
         record_id: 'person_456',
         record_data: { values: { name: 'Updated Person' } },
@@ -126,7 +80,6 @@ describe('UniversalUpdateService', () => {
     });
 
     it('should update a list record and convert format', async () => {
-      const mockList = {
         id: { list_id: 'list_789' },
         name: 'Updated List',
         description: 'Updated description',
@@ -138,7 +91,6 @@ describe('UniversalUpdateService', () => {
       } as any;
       vi.mocked(updateList).mockResolvedValue(mockList);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.LISTS,
         record_id: 'list_789',
         record_data: { values: { name: 'Updated List' } },
@@ -160,7 +112,6 @@ describe('UniversalUpdateService', () => {
       } as any;
       vi.mocked(updateObjectRecord).mockResolvedValue(mockRecord);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.RECORDS,
         record_id: 'record_abc',
         record_data: { values: { name: 'Updated Record' } },
@@ -177,7 +128,6 @@ describe('UniversalUpdateService', () => {
         id: { record_id: 'deal_def' },
         values: { name: 'Updated Deal' },
       } as any;
-      const mockDealData = {
         name: 'Deal with defaults',
         stage: 'qualified',
       } as any;
@@ -187,7 +137,6 @@ describe('UniversalUpdateService', () => {
       );
       vi.mocked(updateObjectRecord).mockResolvedValue(mockDeal);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.DEALS,
         record_id: 'deal_def',
         record_data: { values: { name: 'Updated Deal' } },
@@ -223,7 +172,6 @@ describe('UniversalUpdateService', () => {
         errors: [],
       } as any);
 
-      const result = await UniversalUpdateService.updateRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_ghi',
         record_data: { values: { status: 'completed' } },

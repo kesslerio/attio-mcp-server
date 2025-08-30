@@ -3,12 +3,12 @@
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { registerPromptHandlers } from '../../src/prompts/handlers';
+
 import { getAllPrompts } from '../../src/prompts/templates/index';
+import { registerPromptHandlers } from '../../src/prompts/handlers';
+
+import { getAllPrompts } from '../../src/prompts/templates/index';
+import { registerPromptHandlers } from '../../src/prompts/handlers';
 
 // Mock the server
 vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
@@ -51,15 +51,12 @@ describe('Prompts Handlers', () => {
     it('should implement prompts/list handler correctly', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === ListPromptsRequestSchema
       )[1];
 
       // Call the handler
-      const result = await handler({});
 
       // Verify the result
-      const allPrompts = getAllPrompts();
       expect(result).toBeDefined();
       expect(result.prompts).toBeDefined();
       expect(Array.isArray(result.prompts)).toBe(true);
@@ -73,16 +70,12 @@ describe('Prompts Handlers', () => {
     it('should implement prompts/get handler correctly', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === GetPromptRequestSchema
       )[1];
 
       // Get a prompt ID for testing
-      const prompts = getAllPrompts();
-      const testPromptId = prompts[0].id;
 
       // Call the handler
-      const result = await handler({ params: { promptId: testPromptId } });
 
       // Verify the result
       expect(result).toBeDefined();
@@ -98,7 +91,6 @@ describe('Prompts Handlers', () => {
     it('should throw an error when prompt is not found', async () => {
       // Get the handler function
       registerPromptHandlers(server);
-      const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
         (call) => call[0] === GetPromptRequestSchema
       )[1];
 

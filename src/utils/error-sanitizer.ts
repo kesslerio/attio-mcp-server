@@ -8,42 +8,6 @@
 import { error as logError, OperationType } from './logger.js';
 
 /**
- * Types of sensitive information to remove from error messages
- */
-enum SensitiveInfoType {
-  FILE_PATH = 'file_path',
-  API_KEY = 'api_key',
-  INTERNAL_ID = 'internal_id',
-  STACK_TRACE = 'stack_trace',
-  DATABASE_SCHEMA = 'database_schema',
-  SYSTEM_INFO = 'system_info',
-  URL_WITH_PARAMS = 'url_with_params',
-  EMAIL_ADDRESS = 'email_address',
-  IP_ADDRESS = 'ip_address',
-}
-
-/**
- * Patterns for detecting sensitive information in error messages
- */
-const SENSITIVE_PATTERNS: Record<SensitiveInfoType, RegExp> = {
-  [SensitiveInfoType.FILE_PATH]:
-    /([A-Z]:)?[/\\](?:Users|home|var|opt|etc|tmp|src|app)[/\\][^\s"']+/gi,
-  [SensitiveInfoType.API_KEY]:
-    /(?:api[_-]?key|token|bearer|authorization|secret|password|passwd|pwd)[\s:=]*["']?[a-zA-Z0-9\-_]{20,}["']?/gi,
-  [SensitiveInfoType.INTERNAL_ID]:
-    /(?:workspace_id|record_id|object_id|user_id|session_id)[\s:=]*["']?[a-f0-9-]{20,}["']?/gi,
-  [SensitiveInfoType.STACK_TRACE]: /\s*at\s+[^\n]+/gi,
-  [SensitiveInfoType.DATABASE_SCHEMA]:
-    /(?:table|column|field|attribute|slug)[\s:]+["']?[a-z_][a-z0-9_]*["']?/gi,
-  [SensitiveInfoType.SYSTEM_INFO]:
-    /(?:node|npm|v\d+\.\d+\.\d+|darwin|linux|win32|x64|x86)/gi,
-  [SensitiveInfoType.URL_WITH_PARAMS]: /https?:\/\/[^\s]+\?[^\s]+/gi,
-  [SensitiveInfoType.EMAIL_ADDRESS]:
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
-  [SensitiveInfoType.IP_ADDRESS]: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/gi,
-};
-
-/**
  * User-friendly error messages mapped by error type
  */
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
@@ -92,7 +56,6 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
  * Map specific error patterns to error types
  */
 function classifyError(message: string): string {
-  const lowerMessage = message.toLowerCase();
 
   if (
     lowerMessage.includes('authentication') ||
@@ -164,7 +127,6 @@ function classifyError(message: string): string {
  */
 function extractSafeContext(message: string): string | undefined {
   // Extract field names (but not values or system paths)
-  const fieldMatch = message.match(
     /(?:field|attribute)[s]?\s+(?:with\s+)?["']?([a-z_]+)["']?/i
   );
   if (fieldMatch && fieldMatch[1] && !fieldMatch[1].includes('/')) {
@@ -172,7 +134,6 @@ function extractSafeContext(message: string): string | undefined {
   }
 
   // Extract resource type
-  const resourceMatch = message.match(
     /\b(company|companies|person|people|deal|deals|task|tasks|record|records)\b/i
   );
   if (resourceMatch) {
@@ -294,13 +255,11 @@ export function sanitizeErrorMessage(
   );
 
   // Get user-friendly message based on error classification
-  const errorType = classifyError(originalMessage);
   let userMessage =
     USER_FRIENDLY_MESSAGES[errorType] || USER_FRIENDLY_MESSAGES.default;
 
   // Add safe context if available and requested
   if (includeContext) {
-    const safeContext = extractSafeContext(originalMessage);
     if (safeContext) {
       userMessage = `${userMessage} (${safeContext})`;
     }
@@ -338,8 +297,6 @@ export function createSanitizedError(
   statusCode?: number,
   options: SanitizationOptions = {}
 ): SanitizedError {
-  const sanitizedMessage = sanitizeErrorMessage(error, options);
-  const errorType = classifyError(
     error instanceof Error ? error.message : String(error)
   );
 
@@ -395,14 +352,12 @@ function inferStatusCode(errorType: string): number {
  * @returns Wrapped function that sanitizes errors
  */
 export function withErrorSanitization<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (...args: unknown[]) => Promise<any>,
 >(fn: T, options: SanitizationOptions = {}): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
     } catch (error: unknown) {
-      const sanitized = createSanitizedError(error, undefined, options);
-      const sanitizedError = new Error(sanitized.message);
       sanitizedError.name = 'SanitizedError';
       (sanitizedError as any).statusCode = sanitized.statusCode;
       (sanitizedError as any).type = sanitized.type;
@@ -434,10 +389,8 @@ export function containsSensitiveInfo(message: string): boolean {
  * @returns Safe summary string
  */
 export function getErrorSummary(error: Error | string | any): string {
-  const errorType = classifyError(
     error instanceof Error ? error.message : String(error)
   );
-  const safeContext = extractSafeContext(
     error instanceof Error ? error.message : String(error)
   );
 

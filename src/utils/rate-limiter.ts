@@ -17,7 +17,7 @@ export interface RateLimiterConfig {
   trackByIp?: boolean;
 
   /** Optional key function to determine the rate limiting key */
-  keyFn?: (req: any) => string;
+  keyFn?: (req: unknown) => string;
 }
 
 /**
@@ -48,16 +48,13 @@ export class RateLimiter {
    * @param req - Request object (with IP address or other identifying info)
    * @returns Object with allowed status and rate limit info
    */
-  check(req: any): {
+  check(req: unknown): {
     allowed: boolean;
     remaining: number;
     resetTime: number;
     msUntilReset: number;
   } {
-    const now = Date.now();
-
     // Get the key to track this request by
-    const key = this.getKey(req);
 
     // Get or create record for this key
     let record = this.requests.get(key);
@@ -71,7 +68,6 @@ export class RateLimiter {
     }
 
     // Check if request is allowed
-    const allowed = record.count < this.config.maxRequests;
 
     // Increment counter if allowed
     if (allowed) {
@@ -91,7 +87,6 @@ export class RateLimiter {
    * Cleanup old entries to prevent memory leaks
    */
   cleanup(): void {
-    const now = Date.now();
     for (const [key, record] of this.requests.entries()) {
       if (now > record.resetTime) {
         this.requests.delete(key);
@@ -105,7 +100,7 @@ export class RateLimiter {
    * @param req - Request object
    * @returns Key for rate limiting
    */
-  private getKey(req: any): string {
+  private getKey(req: unknown): string {
     // Use custom key function if provided
     if (this.config.keyFn) {
       return this.config.keyFn(req);
@@ -113,8 +108,7 @@ export class RateLimiter {
 
     // Track by IP if configured
     if (this.config.trackByIp) {
-      const ip =
-        req.ip ||
+      req.ip ||
         req.connection?.remoteAddress ||
         req.headers?.['x-forwarded-for'] ||
         'unknown';
@@ -158,14 +152,10 @@ export function getRateLimiter(
  * @returns Express middleware function
  */
 export function rateLimiterMiddleware(config: RateLimiterConfig) {
-  const limiter = new RateLimiter(config);
-
   // Schedule cleanup every windowMs to prevent memory leaks
   setInterval(() => limiter.cleanup(), config.windowMs);
 
-  return (req: any, res: any, next: () => void) => {
-    const result = limiter.check(req);
-
+  return (req: unknown, res: unknown, next: () => void) => {
     // Add rate limit headers
     res.setHeader('X-RateLimit-Limit', config.maxRequests);
     res.setHeader('X-RateLimit-Remaining', result.remaining);
@@ -195,7 +185,7 @@ export function rateLimiterMiddleware(config: RateLimiterConfig) {
  * @returns Object with allowed status and rate limit info
  */
 export function checkFilterRateLimit(
-  req: any,
+  req: unknown,
   endpoint: string
 ): {
   allowed: boolean;
@@ -211,7 +201,6 @@ export function checkFilterRateLimit(
   };
 
   // Get limiter for this endpoint
-  const limiter = getRateLimiter(`filter:${endpoint}`, config);
 
   // Check rate limit
   return limiter.check(req);

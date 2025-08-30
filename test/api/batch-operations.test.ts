@@ -1,26 +1,6 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  executeBatchOperations,
-  batchSearchObjects,
-  batchGetObjectDetails,
-  DEFAULT_BATCH_CONFIG,
-  BatchRequestItem,
-  BatchResponse,
-  BatchItemResult,
-  BatchConfig,
-} from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
-import {
-  ResourceType,
-  Person,
-  Company,
-  AttioRecord,
-} from '../../src/types/attio';
 
-// Mock the axios client
-vi.mock('../../src/api/attio-client', () => ({
-  getAttioClient: vi.fn(),
-}));
+import { getAttioClient } from '../../src/api/attio-client';
 
 describe('Batch Operations', () => {
   // Sample mock data
@@ -65,7 +45,6 @@ describe('Batch Operations', () => {
   };
 
   // Mock API client
-  const mockApiClient = {
     post: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
@@ -79,7 +58,6 @@ describe('Batch Operations', () => {
   describe('executeBatchOperations', () => {
     it('should execute multiple operations and return results', async () => {
       // Use direct implementation instead of mocking
-      const mockOperation = vi
         .fn()
         .mockResolvedValueOnce('Result 1')
         .mockResolvedValueOnce('Result 2')
@@ -93,7 +71,6 @@ describe('Batch Operations', () => {
       ];
 
       // Execute batch operations with maxBatchSize 1 to force sequential execution
-      const result = await executeBatchOperations<string, string>(
         operations,
         mockOperation,
         { maxBatchSize: 1 }
@@ -130,13 +107,11 @@ describe('Batch Operations', () => {
 
     it('should handle operation failures with continueOnError=true', async () => {
       // Create a custom implementation of the function under test to validate behavior
-      const customExecuteBatchOperations = async <T, R>(
         operations: BatchRequestItem<T>[],
         apiCall: (params: T) => Promise<R>,
         config?: Partial<BatchConfig>
       ): Promise<BatchResponse<R>> => {
         // Implementation adapted for test purposes
-        const batchConfig = {
           maxBatchSize: 10,
           continueOnError: true,
           ...config,
@@ -148,7 +123,6 @@ describe('Batch Operations', () => {
 
         for (const operation of operations) {
           try {
-            const data = await apiCall(operation.params);
             results.push({
               id: operation.id,
               success: true,
@@ -180,7 +154,6 @@ describe('Batch Operations', () => {
       };
 
       // Mock operation function with one failure
-      const mockOperation = vi
         .fn()
         .mockImplementation(async (param: string) => {
           if (param === 'param2') throw new Error('Operation 2 failed');
@@ -195,7 +168,6 @@ describe('Batch Operations', () => {
       ];
 
       // Execute operations with our test implementation
-      const result = await customExecuteBatchOperations<string, string>(
         operations,
         mockOperation,
         { continueOnError: true }
@@ -221,13 +193,11 @@ describe('Batch Operations', () => {
 
     it('should stop on first error when continueOnError=false', async () => {
       // Create a custom implementation for testing
-      const customExecuteBatchOperations = async <T, R>(
         operations: BatchRequestItem<T>[],
         apiCall: (params: T) => Promise<R>,
         config?: Partial<BatchConfig>
       ): Promise<BatchResponse<R>> => {
         // Implementation adapted for test purposes
-        const batchConfig = {
           maxBatchSize: 10,
           continueOnError: true,
           ...config,
@@ -239,7 +209,6 @@ describe('Batch Operations', () => {
 
         for (const operation of operations) {
           try {
-            const data = await apiCall(operation.params);
             results.push({
               id: operation.id,
               success: true,
@@ -271,7 +240,6 @@ describe('Batch Operations', () => {
       };
 
       // Mock operation function with one failure
-      const mockOperation = vi
         .fn()
         .mockImplementation(async (param: string) => {
           if (param === 'param2') throw new Error('Operation 2 failed');
@@ -297,7 +265,6 @@ describe('Batch Operations', () => {
 
     it('should process operations in chunks based on maxBatchSize', async () => {
       // Mock operation function
-      const mockOperation = vi
         .fn()
         .mockImplementation((param) => Promise.resolve(`Result for ${param}`));
 
@@ -311,7 +278,6 @@ describe('Batch Operations', () => {
       );
 
       // Execute batch operations with maxBatchSize=3
-      const result = await executeBatchOperations<string, string>(
         operations,
         mockOperation,
         { maxBatchSize: 3 }
@@ -333,7 +299,6 @@ describe('Batch Operations', () => {
         .mockResolvedValueOnce({ data: { data: [mockPerson2] } });
 
       // Create a simpler implementation for test to avoid testing the implementation details
-      const customBatchSearchObjects = async <T extends AttioRecord>(
         objectType: ResourceType,
         queries: string[]
       ): Promise<BatchResponse<T[]>> => {
@@ -344,10 +309,7 @@ describe('Batch Operations', () => {
 
         // Process each query sequentially for testing
         for (let i = 0; i < queries.length; i++) {
-          const query = queries[i];
           try {
-            const result = await (async (): Promise<T[]> => {
-              const filter =
                 objectType === ResourceType.PEOPLE
                   ? {
                       $or: [
@@ -358,7 +320,6 @@ describe('Batch Operations', () => {
                     }
                   : { name: { $contains: query } };
 
-              const response = await mockApiClient.post(
                 `/objects/${objectType}/records/query`,
                 { filter }
               );
@@ -392,7 +353,6 @@ describe('Batch Operations', () => {
       };
 
       // Call our test implementation
-      const result = await customBatchSearchObjects<Person>(
         ResourceType.PEOPLE,
         ['John', 'Jane']
       );
@@ -413,7 +373,6 @@ describe('Batch Operations', () => {
         .mockResolvedValueOnce({ data: { data: [mockCompany2] } });
 
       // Call a simplified implementation directly
-      const result = {
         results: [
           { id: 'search_companies_0', success: true, data: [mockCompany1] },
           { id: 'search_companies_1', success: true, data: [mockCompany2] },
@@ -441,7 +400,6 @@ describe('Batch Operations', () => {
         .mockRejectedValueOnce(new Error('Search failed'));
 
       // Use a direct result for test - skip implementation details
-      const result = {
         results: [
           { id: 'search_people_0', success: true, data: [mockPerson1] },
           {
@@ -480,7 +438,6 @@ describe('Batch Operations', () => {
         .mockResolvedValueOnce({ data: { data: mockPerson2 } });
 
       // Use direct result structure for testing
-      const result = {
         results: [
           { id: 'get_people_person123', success: true, data: mockPerson1 },
           { id: 'get_people_person456', success: true, data: mockPerson2 },
@@ -508,7 +465,6 @@ describe('Batch Operations', () => {
         .mockResolvedValueOnce({ data: { data: mockCompany2 } });
 
       // Use direct result structure for testing
-      const result = {
         results: [
           { id: 'get_companies_company123', success: true, data: mockCompany1 },
           { id: 'get_companies_company456', success: true, data: mockCompany2 },
@@ -541,7 +497,6 @@ describe('Batch Operations', () => {
         });
 
       // Use direct result structure
-      const result = {
         results: [
           { id: 'get_people_person123', success: true, data: mockPerson1 },
           {

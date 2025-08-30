@@ -2,12 +2,11 @@
  * Split: ErrorService.createUniversalError tests
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ErrorService } from '../../src/services/ErrorService.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../../src/handlers/tool-configs/universal/schemas.js';
+
 import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
+import { ErrorService } from '../../src/services/ErrorService.js';
+import { validateResourceType } from '../../src/handlers/tool-configs/universal/field-mapper.js';
+import { validateResourceType } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 
 vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
   validateResourceType: vi.fn(),
@@ -25,11 +24,9 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('passes through UniversalValidationError unchanged', () => {
-    const original = new UniversalValidationError(
       'Test error',
       ErrorType.USER_ERROR
     );
-    const result = ErrorService.createUniversalError(
       'create',
       'companies',
       original
@@ -38,13 +35,11 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('passes through EnhancedApiError unchanged', () => {
-    const original = new EnhancedApiError(
       'Test error',
       400,
       '/api/test',
       'GET'
     );
-    const result = ErrorService.createUniversalError(
       'update',
       'people',
       original
@@ -53,8 +48,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('extracts message from Error objects', () => {
-    const original = new Error('Test error message');
-    const result = ErrorService.createUniversalError(
       'search',
       'tasks',
       original
@@ -67,8 +60,7 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('extracts message from objects with message property', () => {
-    const original: any = { message: 'Object error message', status: 400 };
-    const result = ErrorService.createUniversalError(
+    const original: unknown = { message: 'Object error message', status: 400 };
       'delete',
       'deals',
       original
@@ -78,7 +70,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('handles string errors', () => {
-    const result = ErrorService.createUniversalError(
       'create',
       'companies',
       'String error message'
@@ -88,7 +79,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('handles unknown error types', () => {
-    const result = ErrorService.createUniversalError(
       'update',
       'people',
       12345 as any
@@ -98,7 +88,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('classifies USER_ERROR for not found messages', () => {
-    const result = ErrorService.createUniversalError(
       'get',
       'records',
       new Error('Record not found')
@@ -107,7 +96,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('defaults to SYSTEM_ERROR for unclassified errors', () => {
-    const result = ErrorService.createUniversalError(
       'create',
       'tasks',
       new Error('Some random error')
@@ -120,7 +108,6 @@ describe('ErrorService.createUniversalError', () => {
       valid: true,
       suggestion: undefined,
     } as any);
-    const result = ErrorService.createUniversalError(
       'create',
       'companies',
       new Error('Rate limit exceeded')
@@ -130,8 +117,6 @@ describe('ErrorService.createUniversalError', () => {
   });
 
   it('includes original error as cause', () => {
-    const original = new Error('Original error');
-    const result = ErrorService.createUniversalError(
       'update',
       'people',
       original

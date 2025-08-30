@@ -1,10 +1,6 @@
+import { convertToBoolean } from '../../utils/attribute-mapping/attribute-mappers.js';
 import { detectFieldType } from '../../api/attribute-types.js';
 import { ResourceType } from '../../types/attio.js';
-import { convertToBoolean } from '../../utils/attribute-mapping/attribute-mappers.js';
-import {
-  CompanyFieldValue,
-  ProcessedFieldValue,
-} from '../../types/tool-types.js';
 import { TypeCache } from './type_cache.js';
 
 export const booleanFieldPatterns = [
@@ -36,7 +32,6 @@ export const booleanFieldPatterns = [
 ];
 
 export function isBooleanFieldByName(fieldName: string): boolean {
-  const lower = fieldName.toLowerCase();
   for (const pattern of booleanFieldPatterns) {
     if (
       lower.startsWith(pattern) ||
@@ -73,7 +68,6 @@ export async function processFieldValue(
     }
 
     if (fieldType === 'number' && typeof value === 'string') {
-      const numValue = Number(value);
       if (!isNaN(numValue)) {
         return numValue;
       }
@@ -105,7 +99,6 @@ export async function processFieldValue(
         fieldName.toLowerCase().includes('rating')) &&
       typeof value === 'string'
     ) {
-      const numValue = Number(value);
       if (!isNaN(numValue)) {
         return numValue;
       }
@@ -132,7 +125,6 @@ export async function processFieldValue(
 
   // For arrays, ensure all elements are valid types
   if (Array.isArray(value)) {
-    const processedArray = value.filter(
       (item) =>
         typeof item === 'string' ||
         typeof item === 'number' ||

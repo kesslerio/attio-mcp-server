@@ -6,10 +6,6 @@
 
 import { createErrorResult } from '../../../utils/error-handler.js';
 import { ResourceType } from '../../../types/attio.js';
-import {
-  AttributeValidationParams,
-  ValidationResult,
-} from '../../../types/tool-types.js';
 
 /**
  * Validates attribute parameters for company operations
@@ -45,12 +41,10 @@ export function validateAttributes(
  */
 export function validateResourceId(
   resourceType: ResourceType,
-  args: any,
+  args: unknown,
   apiPath: string
 ): string | { error: ReturnType<typeof createErrorResult> } {
-  const idParamName =
     resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = args?.[idParamName] as string;
 
   if (!id) {
     return {

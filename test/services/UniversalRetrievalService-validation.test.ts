@@ -2,79 +2,18 @@
  * Split: UniversalRetrievalService validation & error handling
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-// Inline mocks matching this file's specifiers
-vi.mock('../../src/services/CachingService.js', () => ({
-  CachingService: { isCached404: vi.fn(), cache404Response: vi.fn() },
-}));
-vi.mock('../../src/services/ValidationService.js', () => ({
-  ValidationService: { validateUUID: vi.fn() },
-}));
-vi.mock('../../src/middleware/performance-enhanced.js', () => ({
-  enhancedPerformanceTracker: {
-    startOperation: vi.fn(() => 'perf-123'),
-    markTiming: vi.fn(),
-    markApiStart: vi.fn(() => 100),
-    markApiEnd: vi.fn(),
-    endOperation: vi.fn(),
-  },
-}));
-vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
-  isValidUUID: vi.fn(() => true),
-  createRecordNotFoundError: vi.fn(
-    () =>
-      new (class EnhancedApiError extends Error {
-        statusCode = 404;
-        constructor() {
-          super('Record not found');
-          this.name = 'EnhancedApiError';
-        }
-      })()
-  ),
-}));
-vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
-  ErrorEnhancer: {
-    autoEnhance: (e: any) => e,
-    getErrorMessage: (e: any) => (e && e.message) || String(e),
-  },
-  EnhancedApiError: class EnhancedApiError extends Error {
-    statusCode: number;
-    endpoint: string;
-    method: string;
-    constructor(
-      message: string,
-      statusCode = 500,
-      endpoint = '/test',
-      method = 'GET',
-      context?: Record<string, unknown>
-    ) {
-      super(message);
-      this.name = 'EnhancedApiError';
-      this.statusCode = statusCode;
-      this.endpoint = endpoint;
-      this.method = method;
-      if (context) {
-        Object.assign(this, context);
-      }
-    }
-  },
-}));
-vi.mock('../../src/objects/companies/index.js', () => ({
-  getCompanyDetails: vi.fn(),
-}));
-vi.mock('../../src/objects/lists.js', () => ({ getListDetails: vi.fn() }));
-vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
-vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
-import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
-import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
+
 import { CachingService } from '../../src/services/CachingService.js';
 import { createRecordNotFoundError } from '../../src/utils/validation/uuid-validation.js';
+import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
-import * as tasks from '../../src/objects/tasks.js';
-import * as lists from '../../src/objects/lists.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import * as companies from '../../src/objects/companies/index.js';
+import * as lists from '../../src/objects/lists.js';
 import * as notes from '../../src/objects/notes.js';
+import * as tasks from '../../src/objects/tasks.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
@@ -121,7 +60,6 @@ describe('UniversalRetrievalService', () => {
 
     it('should handle 404 errors and cache them', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
-      const notFoundError = {
         response: { status: 404 },
         message: 'Company not found',
       } as any;
@@ -147,7 +85,6 @@ describe('UniversalRetrievalService', () => {
 
     it('should handle task retrieval errors and cache 404s', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
-      const taskError = new Error('Task not found');
       vi.mocked(tasks.getTask).mockRejectedValue(taskError);
       vi.mocked(createRecordNotFoundError).mockReturnValue(
         new EnhancedApiError('Record not found', 404, '/records/test', 'GET', {
@@ -249,7 +186,6 @@ describe('UniversalRetrievalService', () => {
   describe('Non-HTTP Error Handling', () => {
     it('should handle TypeError exceptions without masking as 404', async () => {
       vi.mocked(CachingService.isCached404).mockReturnValue(false);
-      const typeError = new TypeError('Cannot read properties of null');
       vi.mocked(companies.getCompanyDetails).mockRejectedValue(typeError);
 
       await expect(

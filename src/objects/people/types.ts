@@ -1,8 +1,8 @@
 /**
  * Shared types for people module
  */
-import { isValidEmail } from '../../utils/validation/email-validation.js';
 import { InvalidPersonDataError } from './errors.js';
+import { isValidEmail } from '../../utils/validation/email-validation.js';
 
 /**
  * Interface for attributes when creating or updating a person
@@ -69,7 +69,6 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>)
             .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
@@ -83,7 +82,6 @@ export class PersonValidator {
           emailItem &&
           'email' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -96,7 +94,6 @@ export class PersonValidator {
           emailItem &&
           'value' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).value;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -156,7 +153,6 @@ export class PersonValidator {
 
     // Special validation for email_addresses
     if (attributeName === 'email_addresses' && attributeValue) {
-      const emails = Array.isArray(attributeValue)
         ? attributeValue
         : [attributeValue];
 
@@ -171,7 +167,6 @@ export class PersonValidator {
           emailItem &&
           'email_address' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>)
             .email_address;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
@@ -185,7 +180,6 @@ export class PersonValidator {
           emailItem &&
           'email' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).email;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {
@@ -198,7 +192,6 @@ export class PersonValidator {
           emailItem &&
           'value' in emailItem
         ) {
-          const emailValue = (emailItem as Record<string, unknown>).value;
           if (typeof emailValue === 'string') {
             emailAddress = emailValue;
           } else {

@@ -1,12 +1,8 @@
 /**
  * Note operations for people
  */
-import {
-  getPersonNotes,
-  createPersonNote,
-} from '../../../objects/people/index.js';
-import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 import { NoteDisplay } from '../../../types/tool-types.js';
+import { NotesToolConfig, CreateNoteToolConfig } from '../../tool-types.js';
 
 export const notesToolConfigs = {
   notes: {
@@ -26,7 +22,7 @@ export const notesToolConfigs = {
       }
 
       return `Found ${notes.length} notes:\n${notes
-        .map((note: any) => {
+        .map((note: unknown) => {
           // Check multiple possible field structures from the API (Issue #365)
           // Field Priority Order (why this specific order was chosen):
           // 1. note.title/content - Standard API response fields (most common)
@@ -37,16 +33,13 @@ export const notesToolConfigs = {
           // 6. note.text/body - Alternative content field names (legacy/third-party support)
           // Note: Person notes include note.timestamp check that company notes don't have
           // This is intentional as person notes may use different timestamp field naming
-          const title =
             note.title || note.data?.title || note.values?.title || 'Untitled';
-          const content =
             note.content ||
             note.data?.content ||
             note.values?.content ||
             note.text ||
             note.body ||
             '';
-          const timestamp =
             note.timestamp ||
             note.created_at ||
             note.data?.created_at ||

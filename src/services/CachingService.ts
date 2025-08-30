@@ -10,12 +10,6 @@ import { AttioRecord } from '../types/attio.js';
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 import { generateIdCacheKey } from '../utils/validation/id-validation.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  DEFAULT_TASKS_CACHE_TTL,
-  DEFAULT_404_CACHE_TTL,
-  DEFAULT_ATTRIBUTES_CACHE_TTL,
-  MAX_CACHE_ENTRIES,
-} from '../constants/universal.constants.js';
 
 /**
  * Cache entry structure for storing cached data with timestamps
@@ -96,10 +90,8 @@ export class CachingService {
     cacheKey: string,
     ttl: number = DEFAULT_TASKS_CACHE_TTL
   ): AttioRecord[] | undefined {
-    const now = Date.now();
 
     if (this.tasksCache.has(cacheKey)) {
-      const cached = this.tasksCache.get(cacheKey)!;
       if (now - cached.timestamp < ttl) {
         this.stats.tasks.hits++;
         return cached.data;
@@ -119,7 +111,6 @@ export class CachingService {
    * @param data - Tasks data to cache
    */
   static setCachedTasks(cacheKey: string, data: AttioRecord[]): void {
-    const now = Date.now();
     this.tasksCache.set(cacheKey, { data, timestamp: now });
     this.stats.tasks.entries++;
     this.performCacheCleanup();
@@ -142,8 +133,6 @@ export class CachingService {
    * @returns True if 404 is cached, false otherwise
    */
   static isCached404(resourceType: string, recordId: string): boolean {
-    const cacheKey = generateIdCacheKey(resourceType, recordId);
-    const cached404 = enhancedPerformanceTracker.getCached404(cacheKey);
     return !!cached404;
   }
 
@@ -159,8 +148,6 @@ export class CachingService {
     recordId: string,
     ttl: number = DEFAULT_404_CACHE_TTL
   ): void {
-    const cacheKey = generateIdCacheKey(resourceType, recordId);
-    const now = Date.now();
 
     this.notFoundCache.set(cacheKey, {
       timestamp: now,
@@ -210,11 +197,8 @@ export class CachingService {
     objectSlug?: string,
     ttl: number = DEFAULT_ATTRIBUTES_CACHE_TTL
   ): Record<string, unknown> | undefined {
-    const cacheKey = this.getAttributeCacheKey(resourceType, objectSlug);
-    const now = Date.now();
 
     if (this.attributesCache.has(cacheKey)) {
-      const cached = this.attributesCache.get(cacheKey)!;
       if (now - cached.timestamp < ttl) {
         this.stats.attributes.hits++;
         return cached.data;
@@ -240,8 +224,6 @@ export class CachingService {
     data: Record<string, unknown>,
     objectSlug?: string
   ): void {
-    const cacheKey = this.getAttributeCacheKey(resourceType, objectSlug);
-    const now = Date.now();
 
     this.attributesCache.set(cacheKey, {
       data,
@@ -264,7 +246,6 @@ export class CachingService {
     objectSlug?: string
   ): void {
     if (objectSlug) {
-      const cacheKey = this.getAttributeCacheKey(resourceType, objectSlug);
       if (this.attributesCache.delete(cacheKey)) {
         this.stats.attributes.entries--;
       }
@@ -299,7 +280,6 @@ export class CachingService {
     ttl: number = DEFAULT_ATTRIBUTES_CACHE_TTL
   ): Promise<{ data: Record<string, unknown>; fromCache: boolean }> {
     // Check cache first
-    const cachedAttributes = this.getCachedAttributes(
       resourceType,
       objectSlug,
       ttl
@@ -309,7 +289,6 @@ export class CachingService {
     }
 
     // Load fresh data
-    const freshData = await dataLoader();
 
     // Cache the fresh data
     this.setCachedAttributes(resourceType, freshData, objectSlug);
@@ -376,7 +355,6 @@ export class CachingService {
    * @param ttl - Time to live in milliseconds
    */
   static clearExpiredTasksCache(ttl: number = DEFAULT_TASKS_CACHE_TTL): void {
-    const now = Date.now();
     let deletedCount = 0;
 
     for (const [key, entry] of this.tasksCache.entries()) {
@@ -397,7 +375,6 @@ export class CachingService {
   static clearExpiredAttributesCache(
     ttl: number = DEFAULT_ATTRIBUTES_CACHE_TTL
   ): void {
-    const now = Date.now();
     let deletedCount = 0;
 
     for (const [key, entry] of this.attributesCache.entries()) {
@@ -416,7 +393,6 @@ export class CachingService {
    * @param ttl - Time to live in milliseconds
    */
   static clearExpiredNotFoundCache(ttl: number = DEFAULT_404_CACHE_TTL): void {
-    const now = Date.now();
     let deletedCount = 0;
 
     for (const [key, entry] of this.notFoundCache.entries()) {
@@ -433,7 +409,6 @@ export class CachingService {
    * Perform automatic cache cleanup when cache size exceeds limits
    */
   private static performCacheCleanup(): void {
-    const totalEntries =
       this.tasksCache.size +
       this.attributesCache.size +
       this.notFoundCache.size;
@@ -443,7 +418,6 @@ export class CachingService {
       this.clearExpiredCache();
 
       // If still too large, clear oldest entries
-      const remainingEntries =
         this.tasksCache.size +
         this.attributesCache.size +
         this.notFoundCache.size;
@@ -483,11 +457,9 @@ export class CachingService {
     allEntries.sort((a, b) => a.timestamp - b.timestamp);
 
     // Remove oldest entries until under limit
-    const entriesToRemove =
       allEntries.length - Math.floor(MAX_CACHE_ENTRIES * 0.8); // Keep 80% of max
 
     for (let i = 0; i < entriesToRemove && i < allEntries.length; i++) {
-      const entry = allEntries[i];
 
       switch (entry.type) {
         case 'tasks':
@@ -522,11 +494,9 @@ export class CachingService {
       overall: number;
     };
   } {
-    const totalHits =
       this.stats.tasks.hits +
       this.stats.attributes.hits +
       this.stats.notFound.hits;
-    const totalRequests =
       totalHits +
       this.stats.tasks.misses +
       this.stats.attributes.misses +
@@ -580,13 +550,11 @@ export class CachingService {
     ttl: number = DEFAULT_TASKS_CACHE_TTL
   ): Promise<{ data: AttioRecord[]; fromCache: boolean }> {
     // Check cache first
-    const cachedTasks = this.getCachedTasks(cacheKey, ttl);
     if (cachedTasks) {
       return { data: cachedTasks, fromCache: true };
     }
 
     // Load fresh data
-    const freshData = await dataLoader();
 
     // Cache the fresh data
     this.setCachedTasks(cacheKey, freshData);

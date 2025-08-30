@@ -9,6 +9,7 @@
  */
 
 import { expect } from 'vitest';
+
 import { MockRecord } from './mock-data.js';
 import { PERFORMANCE_BUDGETS, TEST_LOGGING } from './test-constants.js';
 
@@ -111,7 +112,7 @@ export const assertionHelpers = {
    * Assert that a batch operation response is valid
    */
   assertValidBatchResponse: (
-    response: Array<{ success: boolean; result?: any; error?: string }>,
+    response: Array<{ success: boolean; result?: unknown; error?: string }>,
     expectedCount: number,
     minSuccessCount?: number
   ) => {
@@ -120,7 +121,6 @@ export const assertionHelpers = {
     expect(response).toHaveLength(expectedCount);
 
     if (minSuccessCount !== undefined) {
-      const successCount = response.filter((r) => r.success).length;
       expect(successCount).toBeGreaterThanOrEqual(minSuccessCount);
     }
   },
@@ -138,10 +138,6 @@ export const performanceHelpers = {
   measureTime: async <T>(
     fn: () => Promise<T>
   ): Promise<{ result: T; duration: number }> => {
-    const startTime = Date.now();
-    const result = await fn();
-    const endTime = Date.now();
-    const duration = endTime - startTime;
 
     return { result, duration };
   },
@@ -153,7 +149,6 @@ export const performanceHelpers = {
     duration: number,
     budgetType: keyof typeof PERFORMANCE_BUDGETS
   ) => {
-    const budget = PERFORMANCE_BUDGETS[budgetType];
     expect(duration).toBeLessThan(budget);
 
     if (TEST_LOGGING.debugEnabled) {
@@ -209,7 +204,7 @@ export const testDataHelpers = {
    * Extract record IDs from results for cleanup
    */
   extractRecordIds: (
-    results: Array<{ success: boolean; result?: any }>
+    results: Array<{ success: boolean; result?: unknown }>
   ): string[] => {
     return results
       .filter((r) => r.success && r.result?.id?.record_id)
@@ -220,8 +215,6 @@ export const testDataHelpers = {
    * Create unique test identifiers
    */
   createTestIdentifiers: (prefix: string = 'test') => {
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(7);
 
     return {
       timestamp,
@@ -248,7 +241,7 @@ export const testDataHelpers = {
     maxRetries: number = 3,
     baseDelayMs: number = 1000
   ): Promise<T> => {
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -261,7 +254,6 @@ export const testDataHelpers = {
         }
 
         // Exponential backoff: 1s, 2s, 4s, etc.
-        const delay = baseDelayMs * Math.pow(2, attempt - 1);
         await new Promise((resolve) => setTimeout(resolve, delay));
 
         console.log(
@@ -284,7 +276,7 @@ export const errorTestHelpers = {
    * Assert that an error has expected properties
    */
   assertError: (
-    error: any,
+    error: unknown,
     expectedMessage?: string,
     expectedType?: string
   ) => {
@@ -311,8 +303,8 @@ export const errorTestHelpers = {
    * Test error propagation through handlers
    */
   testErrorPropagation: async (
-    handler: (params: any) => Promise<any>,
-    params: any,
+    handler: (params: unknown) => Promise<any>,
+    params: unknown,
     mockError: Error,
     expectedErrorMessage?: string
   ) => {
@@ -333,14 +325,14 @@ export const mockVerificationHelpers = {
   /**
    * Assert that a mock was called with expected parameters
    */
-  assertMockCalledWith: (mockFn: any, expectedParams: any) => {
+  assertMockCalledWith: (mockFn: unknown, expectedParams: unknown) => {
     expect(mockFn).toHaveBeenCalledWith(expectedParams);
   },
 
   /**
    * Assert that multiple mocks were called in correct order
    */
-  assertMockCallOrder: (mocks: Array<{ mock: any; params?: any }>) => {
+  assertMockCallOrder: (mocks: Array<{ mock: unknown; params?: unknown }>) => {
     mocks.forEach(({ mock, params }, index) => {
       expect(mock).toHaveBeenCalled();
 
@@ -353,7 +345,7 @@ export const mockVerificationHelpers = {
   /**
    * Get call arguments from a mock for inspection
    */
-  getMockCallArgs: (mockFn: any, callIndex: number = 0) => {
+  getMockCallArgs: (mockFn: unknown, callIndex: number = 0) => {
     expect(mockFn).toHaveBeenCalled();
     return mockFn.mock.calls[callIndex];
   },
@@ -361,7 +353,7 @@ export const mockVerificationHelpers = {
   /**
    * Assert mock was called specified number of times
    */
-  assertMockCallCount: (mockFn: any, expectedCount: number) => {
+  assertMockCallCount: (mockFn: unknown, expectedCount: number) => {
     expect(mockFn).toHaveBeenCalledTimes(expectedCount);
   },
 };
@@ -408,7 +400,6 @@ export const integrationHelpers = {
       '../../../../../src/api/attio-client.js'
     );
 
-    const key = apiKey || process.env.ATTIO_API_KEY;
     if (!key) {
       throw new Error('No API key available for integration tests');
     }
@@ -422,12 +413,10 @@ export const integrationHelpers = {
   cleanupTestRecords: async (
     recordIds: string[],
     resourceType: string,
-    deleteHandler: (params: any) => Promise<any>
+    deleteHandler: (params: unknown) => Promise<any>
   ) => {
     if (recordIds.length === 0) return;
 
-    const CLEANUP_BATCH_SIZE = 45; // Stay under 50 limit
-    const batches = [];
 
     for (let i = 0; i < recordIds.length; i += CLEANUP_BATCH_SIZE) {
       batches.push(recordIds.slice(i, i + CLEANUP_BATCH_SIZE));
@@ -437,7 +426,6 @@ export const integrationHelpers = {
       `Cleaning up ${recordIds.length} test records in ${batches.length} batches...`
     );
 
-    const cleanupPromises = batches.map(async (batch, index) => {
       // Stagger requests to avoid overwhelming the API
       if (index > 0) {
         await new Promise((resolve) => setTimeout(resolve, index * 100));

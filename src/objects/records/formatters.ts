@@ -3,22 +3,6 @@
  */
 import { RecordAttributes } from '../../types/attio.js';
 
-/**
- * Helper function to format a single record attribute based on type
- *
- * @param key - Attribute key
- * @param value - Attribute value to format
- * @returns Properly formatted attribute value for the API
- */
-export function formatRecordAttribute(key: string, value: any): any {
-  if (value === null || value === undefined) {
-    return value;
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
   if (
     typeof value === 'number' &&
     (key.includes('price') || key.includes('revenue') || key.includes('cost'))

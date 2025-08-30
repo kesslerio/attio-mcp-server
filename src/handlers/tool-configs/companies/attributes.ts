@@ -2,12 +2,6 @@
  * Attribute management tool configurations for companies
  */
 import { Company } from '../../../types/attio.js';
-import {
-  getCompanyFields,
-  getCompanyCustomFields,
-  discoverCompanyAttributes,
-  getCompanyAttributes,
-} from '../../../objects/companies/index.js';
 import { ToolConfig } from '../../tool-types.js';
 
 // Company attribute tool configurations
@@ -16,17 +10,12 @@ export const attributeToolConfigs = {
     name: 'get-company-fields',
     handler: getCompanyFields,
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
-      const id = company.id?.record_id || 'Unknown';
-      const fieldCount = Object.keys(company.values || {}).length;
-      const fields = Object.keys(company.values || {});
 
       // Create a simplified version of the values for display
       const simplifiedValues: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(company.values || {})) {
         if (Array.isArray(value) && value.length > 0) {
           // Extract just the actual value from the array structure
-          const firstItem = value[0];
           if (firstItem && firstItem.value !== undefined) {
             simplifiedValues[key] = firstItem.value;
           } else if (firstItem && firstItem.target_record_id) {
@@ -67,12 +56,8 @@ ${JSON.stringify(simplifiedValues, null, 2)}`;
       return await getCompanyCustomFields(companyId, fields);
     },
     formatResult: (company: Partial<Company>) => {
-      const name = (company.values?.name as any)?.[0]?.value || 'Unknown';
-      const id = company.id?.record_id || 'Unknown';
-      const customFields = { ...company.values };
       delete customFields.name;
 
-      const fieldCount = Object.keys(customFields).length;
 
       return `Company: ${name} (ID: ${id})
 Custom fields: ${fieldCount}
@@ -90,9 +75,6 @@ ${
     handler: discoverCompanyAttributes,
     formatResult: (result: Record<string, unknown>): string => {
       // Type-safe property access with proper narrowing
-      const all = Array.isArray(result.all) ? result.all : [];
-      const standard = Array.isArray(result.standard) ? result.standard : [];
-      const custom = Array.isArray(result.custom) ? result.custom : [];
 
       // Sanity check for empty or invalid results
       if (all.length === 0 && standard.length === 0 && custom.length === 0) {
@@ -116,14 +98,12 @@ ${
       output += `\nCUSTOM FIELDS:\n`;
       if (custom.length > 0) {
         custom.forEach((field: unknown) => {
-          const fieldInfo = all.find(
             (f: unknown) =>
               typeof f === 'object' &&
               f !== null &&
               'name' in f &&
               (f as { name: unknown }).name === field
           );
-          const fieldType =
             fieldInfo && typeof fieldInfo === 'object' && 'type' in fieldInfo
               ? String((fieldInfo as { type: unknown }).type)
               : 'unknown';
@@ -150,7 +130,6 @@ ${
 
       // Handle case where the result contains an error object
       if (result.error) {
-        const errorMessage =
           typeof result.error === 'object' &&
           result.error !== null &&
           'message' in result.error &&
@@ -162,7 +141,6 @@ ${
 
       if (result.value !== undefined) {
         // Return specific attribute value
-        const company =
           typeof result.company === 'string' ? result.company : 'Unknown';
         return `Company: ${company}\nAttribute value: ${
           typeof result.value === 'object'
@@ -171,7 +149,6 @@ ${
         }`;
       } else if (result.attributes && Array.isArray(result.attributes)) {
         // Return list of attributes
-        const company =
           typeof result.company === 'string' ? result.company : 'Unknown';
         return `Company: ${company}\nAvailable attributes (${
           result.attributes.length

@@ -5,16 +5,39 @@
  * Provides universal search functionality across all resource types with performance optimization.
  */
 
-import {
-  UniversalResourceType,
-  SearchType,
-  MatchType,
-  SortType,
-} from '../handlers/tool-configs/universal/types.js';
-import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../types/attio.js';
 import { performance } from 'perf_hooks';
+
+import { advancedSearchCompanies } from '../objects/companies/index.js';
+import { advancedSearchCompanies } from '../objects/companies/index.js';
+import { advancedSearchPeople } from '../objects/people/index.js';
+import { advancedSearchPeople } from '../objects/people/index.js';
+import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
+import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
+import { AttioRecord } from '../types/attio.js';
+import { CachingService } from './CachingService.js';
+import { CachingService } from './CachingService.js';
 import { debug, error } from '../utils/logger.js';
+import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
+import { FilterValidationError } from '../errors/api-errors.js';
+import { FilterValidationError } from '../errors/api-errors.js';
+import { getAttioClient } from '../api/attio-client.js';
+import { getAttioClient } from '../api/attio-client.js';
+import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
+import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
+import { listObjectRecords } from '../objects/records/index.js';
+import { listObjectRecords } from '../objects/records/index.js';
+import { listTasks } from '../objects/tasks.js';
+import { listTasks } from '../objects/tasks.js';
+import { searchLists } from '../objects/lists.js';
+import { searchLists } from '../objects/lists.js';
+import { shouldUseMockData } from './create/index.js';
+import { shouldUseMockData } from './create/index.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { ValidationService } from './ValidationService.js';
+import { ValidationService } from './ValidationService.js';
+import type { UniversalSearchParams } from '../handlers/tool-configs/universal/types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -47,7 +70,6 @@ import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
 import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
 
 // Dynamic imports for better error handling in environments where functions might not be available
-const ensureAdvancedSearchCompanies = async () => {
   try {
     // Log more details about what's happening
     debug(
@@ -74,7 +96,6 @@ const ensureAdvancedSearchCompanies = async () => {
   }
 };
 
-const ensureAdvancedSearchPeople = async () => {
   try {
     debug(
       'UniversalSearchService',
@@ -103,8 +124,8 @@ const ensureAdvancedSearchPeople = async () => {
 // Import Attio client for deal queries
 import { getAttioClient } from '../api/attio-client.js';
 
-// Import MockService for guard checks
-import { MockService } from './MockService.js';
+// Import factory for environment checks
+import { shouldUseMockData } from './create/index.js';
 
 /**
  * UniversalSearchService provides centralized record search functionality
@@ -129,7 +150,6 @@ export class UniversalSearchService {
     } = params;
 
     // Start performance tracking
-    const perfId = enhancedPerformanceTracker.startOperation(
       'search-records',
       'search',
       {
@@ -146,7 +166,6 @@ export class UniversalSearchService {
     );
 
     // Track validation timing
-    const validationStart = performance.now();
 
     // Validate pagination parameters using ValidationService
     ValidationService.validatePaginationParameters({ limit, offset }, perfId);
@@ -161,7 +180,6 @@ export class UniversalSearchService {
     );
 
     // Track API call timing
-    const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
     let results: AttioRecord[];
 
     try {
@@ -190,12 +208,9 @@ export class UniversalSearchService {
     } catch (apiError: unknown) {
       enhancedPerformanceTracker.markApiEnd(perfId, apiStart);
 
-      const errorObj = apiError as Record<string, unknown>;
-      const statusCode =
         ((errorObj?.response as Record<string, unknown>)?.status as number) ||
         (errorObj?.statusCode as number) ||
         500;
-      const errorMessage =
         apiError instanceof Error ? apiError.message : 'Search failed';
       enhancedPerformanceTracker.endOperation(
         perfId,
@@ -304,7 +319,6 @@ export class UniversalSearchService {
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters) {
-      const searchFn = await ensureAdvancedSearchCompanies();
       if (!searchFn) {
         throw new Error('Companies search function not available');
       }
@@ -312,7 +326,6 @@ export class UniversalSearchService {
       return await searchFn(filters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Auto-detect domain-like queries and search domains field specifically
-      const looksLikeDomain =
         query.includes('.') ||
         query.includes('www') ||
         query.includes('http') ||
@@ -320,7 +333,6 @@ export class UniversalSearchService {
 
       if (looksLikeDomain) {
         // Use domain-specific search for better accuracy
-        const domainFilters = {
           filters: [
             {
               attribute: { slug: 'domains' },
@@ -329,7 +341,6 @@ export class UniversalSearchService {
             },
           ],
         };
-        const searchFn = await ensureAdvancedSearchCompanies();
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
@@ -339,12 +350,10 @@ export class UniversalSearchService {
       // Handle content search vs basic search
       if (search_type === SearchType.CONTENT) {
         // Content search - search across multiple text fields including domains
-        const searchFields =
           fields && fields.length > 0
             ? fields
             : ['name', 'description', 'notes', 'domains']; // Default content fields for companies
 
-        const contentFilters = {
           filters: searchFields.map((field) => ({
             attribute: { slug: field },
             condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
@@ -353,12 +362,10 @@ export class UniversalSearchService {
           matchAny: true, // Use OR logic to match any field
         };
 
-        const searchFn = await ensureAdvancedSearchCompanies();
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
         // FilterValidationError will bubble up naturally from searchFn
-        const results = await searchFn(contentFilters, limit, offset);
 
         // Apply relevance ranking if requested
         if (sort === SortType.RELEVANCE) {
@@ -368,7 +375,6 @@ export class UniversalSearchService {
         return results;
       } else {
         // Basic search - search name field only
-        const nameFilters = {
           filters: [
             {
               attribute: { slug: 'name' },
@@ -377,7 +383,6 @@ export class UniversalSearchService {
             },
           ],
         };
-        const searchFn = await ensureAdvancedSearchCompanies();
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
@@ -388,7 +393,6 @@ export class UniversalSearchService {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
       try {
-        const searchFn = await ensureAdvancedSearchCompanies();
         if (!searchFn) {
           throw new Error('Companies search function not available');
         }
@@ -400,7 +404,6 @@ export class UniversalSearchService {
         }
 
         // If empty filters aren't supported, return empty array rather than failing
-        const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         console.warn(
           'Companies search with empty filters failed, returning empty results:',
@@ -425,24 +428,20 @@ export class UniversalSearchService {
     sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     if (filters) {
-      const searchFn = await ensureAdvancedSearchPeople();
       if (!searchFn) {
         throw new Error('People search function not available');
       }
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      const paginatedResult = await searchFn(filters, {
         limit,
         offset,
       });
       return paginatedResult.results;
     } else if (query && query.trim().length > 0) {
       // Auto-detect email-like queries and search email field specifically
-      const looksLikeEmail =
         query.includes('@') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query);
 
       if (looksLikeEmail) {
         // Use email-specific search for better accuracy
-        const emailFilters = {
           filters: [
             {
               attribute: { slug: 'email_addresses' },
@@ -451,11 +450,9 @@ export class UniversalSearchService {
             },
           ],
         };
-        const searchFn = await ensureAdvancedSearchPeople();
         if (!searchFn) {
           throw new Error('People search function not available');
         }
-        const paginatedResult = await searchFn(emailFilters, {
           limit,
           offset,
         });
@@ -465,12 +462,10 @@ export class UniversalSearchService {
       // Handle content search vs basic search
       if (search_type === SearchType.CONTENT) {
         // Content search - search across multiple text fields
-        const searchFields =
           fields && fields.length > 0
             ? fields
             : ['name', 'notes', 'email_addresses', 'job_title']; // Default content fields for people
 
-        const contentFilters = {
           filters: searchFields.map((field) => ({
             attribute: { slug: field },
             condition: match_type === MatchType.EXACT ? 'equals' : 'contains',
@@ -479,11 +474,9 @@ export class UniversalSearchService {
           matchAny: true, // Use OR logic to match any field
         };
 
-        const searchFn = await ensureAdvancedSearchPeople();
         if (!searchFn) {
           throw new Error('People search function not available');
         }
-        const paginatedResult = await searchFn(contentFilters, {
           limit,
           offset,
         });
@@ -500,7 +493,6 @@ export class UniversalSearchService {
         return paginatedResult.results;
       } else {
         // Basic search - search name and email fields only
-        const nameEmailFilters = {
           filters: [
             {
               attribute: { slug: 'name' },
@@ -515,11 +507,9 @@ export class UniversalSearchService {
           ],
           matchAny: true, // Use OR logic to match either name or email
         };
-        const searchFn = await ensureAdvancedSearchPeople();
         if (!searchFn) {
           throw new Error('People search function not available');
         }
-        const paginatedResult = await searchFn(nameEmailFilters, {
           limit,
           offset,
         });
@@ -529,18 +519,15 @@ export class UniversalSearchService {
       // No query and no filters - use advanced search with empty filters for pagination
       // Defensive: Some APIs may not support empty filters, handle gracefully
       try {
-        const searchFn = await ensureAdvancedSearchPeople();
         if (!searchFn) {
           throw new Error('People search function not available');
         }
-        const paginatedResult = await searchFn(
           { filters: [] },
           { limit, offset }
         );
         return paginatedResult.results;
       } catch (error: unknown) {
         // If empty filters aren't supported, return empty array rather than failing
-        const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         console.warn(
           'People search with empty filters failed, returning empty results:',
@@ -559,15 +546,13 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    // Check for MockService usage in E2E mode and throw if forbidden
-    if (MockService.isUsingMockData()) {
+    // Check for mock data usage in E2E mode and throw if forbidden
+    if (shouldUseMockData()) {
       assertNoMockInE2E();
-      // Mock service doesn't support list search - return empty array
-      return [];
+      // Continue with normal flow - let mocked functions handle the response
     }
 
     try {
-      const lists =
         query && query.trim().length > 0
           ? await searchLists(query, limit || 10, offset || 0)
           : await searchLists('', limit || 10, offset || 0);
@@ -594,7 +579,6 @@ export class UniversalSearchService {
     } catch (error: unknown) {
       // Handle benign status codes (404/204) by returning empty success
       if (error && typeof error === 'object' && 'status' in error) {
-        const statusError = error as { status?: number };
         if (statusError.status === 404 || statusError.status === 204) {
           // Lists discovery should never fail - return empty array for benign errors
           return [];
@@ -603,7 +587,6 @@ export class UniversalSearchService {
 
       // Check error message for common "not found" scenarios
       if (error && typeof error === 'object' && 'message' in error) {
-        const message = String(error.message).toLowerCase();
         if (message.includes('not found') || message.includes('no lists')) {
           return [];
         }
@@ -624,7 +607,6 @@ export class UniversalSearchService {
   ): Promise<AttioRecord[]> {
     // Handle list_membership filters - invalid UUID should return empty array
     if (filters?.list_membership) {
-      const listId = String(filters.list_membership);
       if (!ValidationService.validateUUIDForSearch(listId)) {
         return []; // Return empty success for invalid UUID
       }
@@ -660,13 +642,9 @@ export class UniversalSearchService {
     offset?: number;
   }): Promise<AttioRecord[]> {
     const { limit = 10, offset = 0 } = params;
-    const client = getAttioClient();
     try {
       // Defensive: Ensure parameters are valid before sending to API
-      const safeLimit = Math.max(1, Math.min(limit || 10, 100));
-      const safeOffset = Math.max(0, offset || 0);
       // Use POST to /objects/deals/records/query (the correct Attio endpoint)
-      const response = await client.post('/objects/deals/records/query', {
         limit: safeLimit,
         offset: safeOffset,
         // Add any additional query parameters as needed
@@ -676,7 +654,6 @@ export class UniversalSearchService {
       console.error('Failed to query deal records:', error);
       // If the query endpoint also fails, try the simpler approach
       if (error && typeof error === 'object' && 'response' in error) {
-        const httpError = error as { response: { status: number } };
         if (httpError.response.status === 404) {
           console.error(
             'Deal query endpoint not found, falling back to empty results'
@@ -717,9 +694,7 @@ export class UniversalSearchService {
      */
 
     // Use CachingService for tasks data management
-    const loadTasksData = async (): Promise<AttioRecord[]> => {
       try {
-        const tasksList = await listTasks();
 
         // Convert tasks to records and ensure it's always an array
         if (!Array.isArray(tasksList)) {
@@ -761,8 +736,6 @@ export class UniversalSearchService {
     }
 
     // Smart pagination with early termination for unreasonable offsets
-    const start = offset || 0;
-    const requestedLimit = limit || 10;
 
     // Handle empty dataset cleanly
     if (tasks.length === 0) {
@@ -776,11 +749,8 @@ export class UniversalSearchService {
       );
       return [];
     } else {
-      const end = Math.min(start + requestedLimit, tasks.length);
-      const paginatedTasks = tasks.slice(start, end);
 
       // Tasks are already converted to AttioRecord[] in cache
-      const results = paginatedTasks;
 
       // Log pagination performance metrics
       enhancedPerformanceTracker.markTiming(
@@ -825,8 +795,6 @@ export class UniversalSearchService {
       if (offset) queryParams.offset = offset;
 
       // Call Notes API
-      const response = await listNotes(queryParams);
-      const notes = response.data || [];
 
       // Log performance metrics
       enhancedPerformanceTracker.markTiming(
@@ -836,20 +804,15 @@ export class UniversalSearchService {
       );
 
       // Normalize notes to AttioRecord format
-      const normalizedNotes = notes.map((note) =>
         normalizeNoteResponse(note)
       ) as AttioRecord[];
 
       // Apply query-based filtering if query provided (client-side filtering)
       let results = normalizedNotes;
       if (query && query.trim()) {
-        const queryLower = query.toLowerCase().trim();
         results = normalizedNotes.filter((record) => {
           // Search in title and content fields
-          const title = record.values?.title?.toString()?.toLowerCase() || '';
-          const contentMarkdown =
             record.values?.content_markdown?.toString()?.toLowerCase() || '';
-          const contentPlaintext =
             record.values?.content_plaintext?.toString()?.toLowerCase() || '';
 
           return (
@@ -907,7 +870,6 @@ export class UniversalSearchService {
     switch (resource_type) {
       case UniversalResourceType.TASKS:
         // For tasks, we can get the cached count if available
-        const cachedTasks = CachingService.getCachedTasks('tasks_cache');
         return cachedTasks ? cachedTasks.length : -1;
       default:
         return -1; // Count not available without full search
@@ -962,15 +924,11 @@ export class UniversalSearchService {
     searchFields: string[]
   ): AttioRecord[] {
     // Calculate relevance score for each result
-    const scoredResults = results.map((record) => {
       let score = 0;
-      const queryLower = query.toLowerCase();
 
       // Check each search field for matches
       searchFields.forEach((field) => {
-        const fieldValue = this.getFieldValue(record, field);
         if (fieldValue) {
-          const valueLower = fieldValue.toLowerCase();
 
           // Exact match gets highest score
           if (valueLower === queryLower) {
@@ -984,12 +942,10 @@ export class UniversalSearchService {
           else if (valueLower.includes(queryLower)) {
             score += 25;
             // Additional score for more occurrences
-            const matches = valueLower.split(queryLower).length - 1;
             score += matches * 10;
           }
           // Partial word match gets lower score
           else {
-            const queryWords = queryLower.split(/\s+/);
             queryWords.forEach((word) => {
               if (valueLower.includes(word)) {
                 score += 5;
@@ -1008,8 +964,6 @@ export class UniversalSearchService {
         return b.score - a.score;
       }
       // Secondary sort by name if scores are equal
-      const nameA = this.getFieldValue(a.record, 'name') || '';
-      const nameB = this.getFieldValue(b.record, 'name') || '';
       return nameA.localeCompare(nameB);
     });
 
@@ -1020,17 +974,14 @@ export class UniversalSearchService {
    * Helper method to extract field value from a record
    */
   private static getFieldValue(record: AttioRecord, field: string): string {
-    const values = record.values as Record<string, unknown>;
     if (!values) return '';
 
-    const fieldValue = values[field];
 
     // Handle different field value structures
     if (typeof fieldValue === 'string') {
       return fieldValue;
     } else if (Array.isArray(fieldValue) && fieldValue.length > 0) {
       // For array fields like email_addresses, get the first value
-      const firstItem = fieldValue[0];
       if (typeof firstItem === 'string') {
         return firstItem;
       } else if (

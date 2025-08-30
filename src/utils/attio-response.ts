@@ -8,8 +8,7 @@
  * Safely unwrap Attio API response envelope
  * Handles both Axios responses and direct API responses
  */
-export function unwrapAttio<T>(res: any): T {
-  const envelope = res?.data ?? res;
+export function unwrapAttio<T>(res: unknown): T {
   return (envelope?.data ?? envelope) as T;
 }
 
@@ -17,12 +16,10 @@ export function unwrapAttio<T>(res: any): T {
  * Normalize Attio note to consistent structure
  * Provides compatibility with record-style tests via record_id alias
  */
-export function normalizeNote(note: any) {
+export function normalizeNote(note: unknown) {
   if (!note) return null;
 
-  const id = note?.id ?? {};
 
-  const normalized = {
     // Provide both flat ID and record-compatible structure
     id: {
       note_id: id?.note_id ?? id,
@@ -48,7 +45,7 @@ export function normalizeNote(note: any) {
 /**
  * Normalize array of notes
  */
-export function normalizeNotes(notes: any[]): any[] {
+export function normalizeNotes(notes: unknown[]): unknown[] {
   if (!Array.isArray(notes)) return [];
   return notes.map(normalizeNote).filter(Boolean);
 }
@@ -60,10 +57,8 @@ export function coerceNoteFormat(
   format?: string,
   content?: string
 ): { format: 'markdown' | 'plaintext'; content: string } {
-  const attioFormat = format === 'markdown' ? 'markdown' : 'plaintext';
 
   // Preserve content as-is - tests expect HTML content to be unchanged
-  const processedContent = content || '';
 
   return {
     format: attioFormat,

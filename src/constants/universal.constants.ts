@@ -10,13 +10,6 @@
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 
-// ========================================
-// Cache Configuration
-// ========================================
-
-/** Default TTL for tasks cache in milliseconds (30 seconds) */
-export const DEFAULT_TASKS_CACHE_TTL = 30000;
-
 /** Default TTL for 404 response cache in milliseconds (60 seconds) */
 export const DEFAULT_404_CACHE_TTL = 60000;
 

@@ -5,31 +5,21 @@
  * Uses getAttioClient with rawE2E option for consistent API communication.
  */
 
-import type { CreateService } from './types.js';
-import type { AttioRecord } from '../../types/attio.js';
-import { getAttioClient } from '../../api/attio-client.js';
-import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
 import { debug, error as logError } from '../../utils/logger.js';
+import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../../utils/validation/uuid-validation.js';
-import {
-  extractAttioRecord,
-  looksLikeCreatedRecord,
-  assertLooksLikeCreated,
-  isTestRun,
-  debugRecordShape,
-} from './extractor.js';
+import { getAttioClient } from '../../api/attio-client.js';
+import type { AttioRecord } from '../../types/attio.js';
+import type { CreateService } from './types.js';
 
 /**
  * Real API implementation of CreateService
  */
 export class AttioCreateService implements CreateService {
   async createCompany(input: Record<string, unknown>): Promise<AttioRecord> {
-    const client = getAttioClient({ rawE2E: true });
 
     // Normalize company domains to string array
-    const normalizedCompany = this.normalizeCompanyValues(input);
 
-    const payload = {
       data: {
         values: normalizedCompany,
       },
@@ -43,7 +33,6 @@ export class AttioCreateService implements CreateService {
     });
 
     try {
-      const response = await client.post('/objects/companies/records', payload);
 
       debug('AttioCreateService', 'Company API response', {
         status: response?.status,
@@ -56,7 +45,6 @@ export class AttioCreateService implements CreateService {
       let record = extractAttioRecord(response);
 
       // Handle empty response with recovery attempt
-      const mustRecover = !record || !record.id || !record.id.record_id;
       if (mustRecover) {
         record = await this.recoverCompanyRecord(client, normalizedCompany);
       }
@@ -83,8 +71,6 @@ export class AttioCreateService implements CreateService {
   }
 
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
-    const client = getAttioClient({ rawE2E: true });
-    const filteredPersonData = this.normalizePersonValues(input);
 
     debug('AttioCreateService', 'Making person API call', {
       payload: { data: { values: filteredPersonData } },
@@ -98,7 +84,6 @@ export class AttioCreateService implements CreateService {
     }
 
     try {
-      let response = await this.createPersonWithRetry(
         client,
         filteredPersonData
       );
@@ -113,7 +98,6 @@ export class AttioCreateService implements CreateService {
       let record = extractAttioRecord(response);
 
       // Handle empty response with recovery attempt
-      const mustRecover = !record || !record.id || !record.id.record_id;
       if (mustRecover) {
         record = await this.recoverPersonRecord(client, filteredPersonData);
       }
@@ -142,7 +126,6 @@ export class AttioCreateService implements CreateService {
   async createTask(input: Record<string, unknown>): Promise<AttioRecord> {
     // Delegate to the tasks object for now, this will be refactored later
     const { createTask } = await import('../../objects/tasks.js');
-    const createdTask = await createTask(input.content as string, {
       assigneeId: input.assigneeId as string,
       dueDate: input.dueDate as string,
       recordId: input.recordId as string,
@@ -158,7 +141,6 @@ export class AttioCreateService implements CreateService {
   ): Promise<AttioRecord> {
     // Delegate to the tasks object for now, this will be refactored later
     const { updateTask } = await import('../../objects/tasks.js');
-    const updatedTask = await updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -177,20 +159,31 @@ export class AttioCreateService implements CreateService {
     content: string;
     format?: string;
   }): Promise<any> {
-    // For now, delegate to existing implementation
-    // This will be moved to a dedicated NotesCreateService later
-    const { MockService } = await import('../MockService.js');
-    return await MockService.createNote(input);
+    // Use real API calls for notes
+    const { createNote, normalizeNoteResponse } = await import('../../objects/notes.js');
+    
+      parent_object: input.resource_type,
+      parent_record_id: input.record_id,
+      title: input.title,
+      content: input.content,
+      format: (input.format as 'markdown' | 'plaintext') || 'plaintext',
+    };
+
+    return normalizeNoteResponse(response.data);
   }
 
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
   }): Promise<unknown[]> {
-    // For now, delegate to existing implementation
-    // This will be moved to a dedicated NotesService later
-    const { MockService } = await import('../MockService.js');
-    return await MockService.listNotes(params);
+    // Use real API calls for notes listing
+    const { listNotes } = await import('../../objects/notes.js');
+    
+      parent_object: params.resource_type,
+      parent_record_id: params.record_id,
+    };
+
+    return response.data || [];
   }
 
   // Private helper methods
@@ -199,12 +192,10 @@ export class AttioCreateService implements CreateService {
     input: Record<string, unknown>
   ): Record<string, unknown> {
     const normalizedCompany: Record<string, unknown> = { ...input };
-    const rawDomain = (input as any).domain;
-    const rawDomains = (input as any).domains;
 
     if (rawDomains) {
       if (Array.isArray(rawDomains)) {
-        (normalizedCompany as any).domains = rawDomains.map((d: any) =>
+        (normalizedCompany as any).domains = rawDomains.map((d: unknown) =>
           typeof d === 'string' ? d : (d?.domain ?? d?.value ?? String(d))
         );
       } else {
@@ -230,13 +221,8 @@ export class AttioCreateService implements CreateService {
     const filteredPersonData: Record<string, unknown> = {};
 
     // 1) Name normalization: array of personal-name objects
-    const rawName = (input as any).name;
     if (rawName) {
       if (typeof rawName === 'string') {
-        const parts = rawName.trim().split(/\s+/);
-        const first = parts.shift() || rawName;
-        const last = parts.join(' ');
-        const full = [first, last].filter(Boolean).join(' ');
         filteredPersonData.name = [
           {
             first_name: first,
@@ -247,7 +233,6 @@ export class AttioCreateService implements CreateService {
       } else if (Array.isArray(rawName)) {
         filteredPersonData.name = rawName;
       } else if (typeof rawName === 'object') {
-        const obj = rawName as Record<string, unknown>;
         if ('first_name' in obj || 'last_name' in obj || 'full_name' in obj) {
           filteredPersonData.name = [obj];
         }
@@ -255,9 +240,7 @@ export class AttioCreateService implements CreateService {
     }
 
     // 2) Emails: Attio create accepts string array; prefer plain strings
-    const rawEmails = (input as any).email_addresses;
     if (Array.isArray(rawEmails) && rawEmails.length) {
-      const normalized = rawEmails.map((e: any) =>
         e && typeof e === 'object' && 'email_address' in e
           ? String(e.email_address)
           : String(e)
@@ -277,18 +260,13 @@ export class AttioCreateService implements CreateService {
 
     if (!filteredPersonData.name) {
       // Derive a safe name from email local part
-      const firstEmail = ((filteredPersonData as any).email_addresses[0] || {})
         .email_address as string;
-      const local =
         typeof firstEmail === 'string'
           ? firstEmail.split('@')[0]
           : 'Test Person';
-      const parts = local
         .replace(/[^a-zA-Z]+/g, ' ')
         .trim()
         .split(/\s+/);
-      const first = parts[0] || 'Test';
-      const last = parts.slice(1).join(' ') || 'User';
       (filteredPersonData as any).name = [
         {
           first_name: first,
@@ -313,24 +291,21 @@ export class AttioCreateService implements CreateService {
   }
 
   private async createPersonWithRetry(
-    client: any,
+    client: unknown,
     filteredPersonData: Record<string, unknown>
   ) {
-    const doCreate = async (values: Record<string, unknown>) =>
       client.post('/objects/people/records', { data: { values } });
 
     try {
       // Attempt #1
       return await doCreate(filteredPersonData);
-    } catch (firstErr: any) {
-      const status = firstErr?.response?.status;
+    } catch (firstErr: unknown) {
       // Only retry on 400 with alternate email schema
       if (status === 400) {
         const alt: Record<string, unknown> = { ...filteredPersonData };
-        const emails = (alt as any).email_addresses as any[] | undefined;
         if (emails && emails.length) {
           if (typeof emails[0] === 'string') {
-            (alt as any).email_addresses = emails.map((e: any) => ({
+            (alt as any).email_addresses = emails.map((e: unknown) => ({
               email_address: String(e),
             }));
           } else if (
@@ -338,7 +313,7 @@ export class AttioCreateService implements CreateService {
             typeof emails[0] === 'object' &&
             'email_address' in emails[0]
           ) {
-            (alt as any).email_addresses = emails.map((e: any) =>
+            (alt as any).email_addresses = emails.map((e: unknown) =>
               String(e.email_address)
             );
           }
@@ -350,11 +325,10 @@ export class AttioCreateService implements CreateService {
   }
 
   private async recoverCompanyRecord(
-    client: any,
+    client: unknown,
     normalizedCompany: Record<string, unknown>
   ) {
     // Recovery: try to find the created company by unique fields
-    const domain = Array.isArray(normalizedCompany.domains)
       ? normalizedCompany.domains[0]
       : undefined;
 
@@ -368,11 +342,9 @@ export class AttioCreateService implements CreateService {
             order: { created_at: 'desc' },
           }
         );
-        const rec = extractAttioRecord(searchByDomain);
         if (rec?.id?.record_id) return rec;
       }
 
-      const name = normalizedCompany.name as string;
       if (name) {
         const { data: searchByName } = await client.post(
           '/objects/companies/records/search',
@@ -382,7 +354,6 @@ export class AttioCreateService implements CreateService {
             order: { created_at: 'desc' },
           }
         );
-        const rec = extractAttioRecord(searchByName);
         if (rec?.id?.record_id) return rec;
       }
     } catch (e) {
@@ -405,11 +376,10 @@ export class AttioCreateService implements CreateService {
   }
 
   private async recoverPersonRecord(
-    client: any,
+    client: unknown,
     filteredPersonData: Record<string, unknown>
   ) {
     // Recovery: try to find the created person by primary email
-    const email = Array.isArray(filteredPersonData.email_addresses)
       ? (filteredPersonData.email_addresses[0] as string)
       : undefined;
 
@@ -423,7 +393,6 @@ export class AttioCreateService implements CreateService {
             order: { created_at: 'desc' },
           }
         );
-        const rec = extractAttioRecord(search);
         if (rec?.id?.record_id) return rec;
       }
     } catch (e) {
@@ -446,12 +415,11 @@ export class AttioCreateService implements CreateService {
   }
 
   private convertTaskToAttioRecord(
-    createdTask: any,
+    createdTask: unknown,
     originalInput: Record<string, unknown>
   ): AttioRecord {
     // Handle conversion from AttioTask to AttioRecord format
     if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-      const task = createdTask as any;
 
       // If it's already an AttioRecord with record_id, ensure flat fields exist and return
       if (task.values && task.id?.record_id) {
@@ -517,21 +485,17 @@ export class AttioCreateService implements CreateService {
   }
 
   private enhanceApiError(
-    err: any,
+    err: unknown,
     operation: string,
     endpoint: string,
     resourceType: string
   ) {
-    const anyErr = err as any;
-    const status = anyErr?.response?.status ?? 500;
-    const data = anyErr?.response?.data;
 
     logError('AttioCreateService', `${operation} Direct API error`, {
       status,
       data,
     });
 
-    const msg =
       status && data
         ? `Attio ${operation} failed (${status}): ${JSON.stringify(data)}`
         : (anyErr?.message as string) || `${operation} error`;

@@ -5,25 +5,15 @@
  * Provides universal metadata discovery and attribute management across all resource types.
  */
 
+import { CachingService } from './CachingService.js';
+import { getAttioClient } from '../api/attio-client.js';
+import { getListAttributes } from '../objects/lists.js';
+import { getListAttributes } from '../objects/lists.js';
+import { isAttioAttribute } from '../types/service-types.js';
+import { OBJECT_SLUG_MAP } from '../constants/universal.constants.js';
+import { secureValidateCategories } from '../utils/validation/field-validation.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalAttributesParams } from '../handlers/tool-configs/universal/types.js';
-import { getAttioClient } from '../api/attio-client.js';
-import { secureValidateCategories } from '../utils/validation/field-validation.js';
-import { CachingService } from './CachingService.js';
-import { OBJECT_SLUG_MAP } from '../constants/universal.constants.js';
-import type {
-  AttioAttribute,
-  AttributeResponse,
-  UnknownRecord,
-} from '../types/service-types.js';
-import { isAttioAttribute } from '../types/service-types.js';
-import {
-  debug,
-  error,
-  info,
-  OperationType,
-  createScopedLogger,
-} from '../utils/logger.js';
 
 // Import resource-specific attribute functions
 import {
@@ -33,7 +23,6 @@ import {
 import { getListAttributes } from '../objects/lists.js';
 
 // Create scoped logger for this service
-const logger = createScopedLogger(
   'UniversalMetadataService',
   undefined,
   OperationType.DATA_PROCESSING
@@ -119,11 +108,6 @@ class AttributeDiscoveryMetrics {
       filtered = filtered.filter((m) => !m.error);
     }
 
-    const totalRequests = filtered.length;
-    const cacheHits = filtered.filter((m) => m.cacheHit).length;
-    const totalDuration = filtered.reduce((sum, m) => sum + m.duration, 0);
-    const avgDuration = totalRequests > 0 ? totalDuration / totalRequests : 0;
-    const errors = filtered.filter((m) => m.error).length;
 
     return {
       totalRequests,
@@ -159,7 +143,6 @@ class AttributeDiscoveryMetrics {
         };
       }
 
-      const stats = breakdown[metric.resourceType];
       stats.count++;
       stats.avgDuration =
         (stats.avgDuration * (stats.count - 1) + metric.duration) / stats.count;
@@ -210,17 +193,12 @@ export class UniversalMetadataService {
     }
   ): Promise<Record<string, unknown>> {
     // Check if caching should be used (default: true)
-    const useCache = options?.useCache !== false;
-    const startTime = Date.now();
 
     // Handle tasks as special case - they don't use /objects/{type}/attributes
     if (resourceType === UniversalResourceType.TASKS) {
       if (useCache) {
         return CachingService.getOrLoadAttributes(
           async () => {
-            const result = await this.discoverTaskAttributes(options);
-            const duration = Date.now() - startTime;
-            const attributeCount = Array.isArray(result?.attributes)
               ? result.attributes.length
               : 0;
 
@@ -236,8 +214,6 @@ export class UniversalMetadataService {
           options?.cacheTtl
         ).then((result) => {
           if (result.fromCache) {
-            const duration = Date.now() - startTime;
-            const attributeCount = Array.isArray(result.data?.attributes)
               ? result.data.attributes.length
               : 0;
 
@@ -250,9 +226,6 @@ export class UniversalMetadataService {
         });
       }
 
-      const result = await this.discoverTaskAttributes(options);
-      const duration = Date.now() - startTime;
-      const attributeCount = Array.isArray(result?.attributes)
         ? result.attributes.length
         : 0;
 
@@ -275,12 +248,9 @@ export class UniversalMetadataService {
       if (useCache) {
         return CachingService.getOrLoadAttributes(
           async () => {
-            const result = await this.discoverObjectAttributes(
               options.objectSlug!,
               options
             );
-            const duration = Date.now() - startTime;
-            const attributeCount = Array.isArray(result?.attributes)
               ? result.attributes.length
               : 0;
 
@@ -297,8 +267,6 @@ export class UniversalMetadataService {
           options?.cacheTtl
         ).then((result) => {
           if (result.fromCache) {
-            const duration = Date.now() - startTime;
-            const attributeCount = Array.isArray(result.data?.attributes)
               ? result.data.attributes.length
               : 0;
 
@@ -312,12 +280,9 @@ export class UniversalMetadataService {
         });
       }
 
-      const result = await this.discoverObjectAttributes(
         options.objectSlug,
         options
       );
-      const duration = Date.now() - startTime;
-      const attributeCount = Array.isArray(result?.attributes)
         ? result.attributes.length
         : 0;
 
@@ -334,12 +299,9 @@ export class UniversalMetadataService {
     if (useCache) {
       return CachingService.getOrLoadAttributes(
         async () => {
-          const result = await this.performAttributeDiscovery(
             resourceType,
             options
           );
-          const duration = Date.now() - startTime;
-          const attributeCount = Array.isArray(result?.attributes)
             ? result.attributes.length
             : 0;
 
@@ -355,8 +317,6 @@ export class UniversalMetadataService {
         options?.cacheTtl
       ).then((result) => {
         if (result.fromCache) {
-          const duration = Date.now() - startTime;
-          const attributeCount = Array.isArray(result.data?.attributes)
             ? result.data.attributes.length
             : 0;
 
@@ -371,12 +331,9 @@ export class UniversalMetadataService {
 
     // Perform direct attribute discovery without caching
     try {
-      const result = await this.performAttributeDiscovery(
         resourceType,
         options
       );
-      const duration = Date.now() - startTime;
-      const attributeCount = Array.isArray(result?.attributes)
         ? result.attributes.length
         : 0;
 
@@ -387,8 +344,6 @@ export class UniversalMetadataService {
 
       return result;
     } catch (error) {
-      const duration = Date.now() - startTime;
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
 
       AttributeDiscoveryMetrics.recordDiscovery(resourceType, duration, {
@@ -413,12 +368,10 @@ export class UniversalMetadataService {
       categories?: string[];
     }
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
 
     try {
       // Convert resource type to API slug for schema discovery (uses plural object api_slugs)
       // Note: Attio's schema discovery uses /objects/{api_slug}/attributes where api_slug is plural
-      const resourceSlug =
         OBJECT_SLUG_MAP[resourceType.toLowerCase()] ||
         resourceType.toLowerCase();
       let path = `/objects/${resourceSlug}/attributes`;
@@ -426,21 +379,17 @@ export class UniversalMetadataService {
       // NEW: Add category filtering to query parameters with security validation
       if (options?.categories && options.categories.length > 0) {
         // Validate and sanitize category names to prevent injection attacks
-        const validatedCategories = secureValidateCategories(
           options.categories,
           'category filtering in get-attributes'
         );
 
         if (validatedCategories.length > 0) {
-          const categoriesParam = validatedCategories.join(',');
           path += `?categories=${encodeURIComponent(categoriesParam)}`;
         }
       }
 
-      const response = await client.get<AttributeResponse>(path);
 
       // Tolerant parsing: Attio may return arrays, or objects with attributes/all/standard/custom
-      const parsed = UniversalMetadataService.parseAttributesResponse(
         response?.data as unknown
       );
 
@@ -466,9 +415,6 @@ export class UniversalMetadataService {
 
       // If it's a 404 or similar API error, convert to structured error for MCP error detection
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as any;
-        const status = axiosError.response?.status || 500;
-        const message =
           axiosError.response?.data?.error?.message ||
           axiosError.response?.data?.message ||
           axiosError.message ||
@@ -499,7 +445,6 @@ export class UniversalMetadataService {
   }): Promise<Record<string, unknown>> {
     // Define task attributes based on the actual task API structure
     // From /src/api/operations/tasks.ts and field mappings
-    const attributes = [
       {
         id: 'content',
         api_slug: 'content',
@@ -573,7 +518,7 @@ export class UniversalMetadataService {
     // NEW: Apply category filtering if categories parameter was provided
     let filteredAttributes = attributes;
     if (options?.categories && options.categories.length > 0) {
-      filteredAttributes = attributes.filter((attr: any) =>
+      filteredAttributes = attributes.filter((attr: unknown) =>
         options.categories!.includes(attr.category)
       );
     }
@@ -596,7 +541,6 @@ export class UniversalMetadataService {
     resourceType: UniversalResourceType,
     recordId: string
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
 
     try {
       // Convert resource type to API slug for record-level operations (uses plural object api_slugs)
@@ -609,10 +553,8 @@ export class UniversalMetadataService {
         records: 'records',
         lists: 'lists',
       };
-      const resourceSlug =
         OBJECT_SLUG_MAP[resourceType.toLowerCase()] ||
         resourceType.toLowerCase();
-      const response = await client.get(
         `/objects/${resourceSlug}/records/${recordId}`
       );
 
@@ -627,7 +569,6 @@ export class UniversalMetadataService {
         };
       }
 
-      const result = response.data.data?.values || response.data.data || {};
 
       // Return empty object if result is empty (test expectation)
       // Only throw 404 if result is null/undefined, not if it's empty object
@@ -648,7 +589,6 @@ export class UniversalMetadataService {
         error,
         { resourceType, recordId }
       );
-      const msg =
         error instanceof Error
           ? error.message
           : (() => {
@@ -675,9 +615,7 @@ export class UniversalMetadataService {
 
     // Handle array of attributes
     if (Array.isArray(attributes)) {
-      const filtered = attributes.filter((attr: Record<string, unknown>) => {
         // Check various possible category field names
-        const category =
           attr.category || attr.type || attr.attribute_type || attr.group;
         return (
           category &&
@@ -690,9 +628,7 @@ export class UniversalMetadataService {
 
     // Handle object with attributes property
     if (typeof attributes === 'object' && attributes !== null) {
-      const attrs = attributes as Record<string, unknown>;
       if (Array.isArray(attrs.attributes)) {
-        const filtered = this.filterAttributesByCategory(
           attrs.attributes as any[],
           requestedCategories
         );
@@ -705,7 +641,6 @@ export class UniversalMetadataService {
 
       // Handle format with 'all', 'custom', 'standard' fields (e.g., from discoverCompanyAttributes)
       if (Array.isArray(attrs.all)) {
-        const filtered = this.filterAttributesByCategory(
           attrs.all as any[],
           requestedCategories
         );
@@ -792,7 +727,6 @@ export class UniversalMetadataService {
     }
 
     // Apply category filtering if categories parameter was provided
-    const filtered = this.filterAttributesByCategory(result, categories);
     return filtered as Record<string, unknown>;
   }
 
@@ -841,26 +775,21 @@ export class UniversalMetadataService {
       categories?: string[];
     }
   ): Promise<Record<string, unknown>> {
-    const client = getAttioClient();
 
     try {
       let path = `/objects/${objectSlug}/attributes`;
 
       // Add category filtering if specified
       if (options?.categories && options.categories.length > 0) {
-        const validatedCategories = secureValidateCategories(
           options.categories,
           'category filtering in discover-object-attributes'
         );
 
         if (validatedCategories.length > 0) {
-          const categoriesParam = validatedCategories.join(',');
           path += `?categories=${encodeURIComponent(categoriesParam)}`;
         }
       }
 
-      const response = await client.get(path);
-      const parsed = UniversalMetadataService.parseAttributesResponse(
         response?.data as unknown
       );
 
@@ -870,7 +799,6 @@ export class UniversalMetadataService {
         objectSlug,
       };
     } catch (error: unknown) {
-      const err = error as { response?: { status?: number }; message?: string };
       throw new Error(
         `Failed to discover attributes for object ${objectSlug}: ${err.message || 'Unknown error'}`
       );
@@ -901,7 +829,7 @@ export class UniversalMetadataService {
   /**
    * Robustly parse attribute discovery responses from multiple possible shapes
    */
-  private static parseAttributesResponse(data: unknown): any[] {
+  private static parseAttributesResponse(data: unknown): unknown[] {
     // Common shapes:
     // - { data: AttioAttribute[] }
     // - { attributes: AttioAttribute[] }
@@ -914,21 +842,15 @@ export class UniversalMetadataService {
 
     // Object with nested arrays
     if (data && typeof data === 'object') {
-      const obj = data as Record<string, unknown>;
 
       // Prefer .data if it is an array
-      const dataArr = obj.data as unknown;
       if (Array.isArray(dataArr)) return dataArr as any[];
 
       // .attributes array
-      const attrs = obj.attributes as unknown;
       if (Array.isArray(attrs)) return attrs as any[];
 
       // Combined shape with .all / .custom / .standard
-      const all = obj.all as unknown;
-      const custom = obj.custom as unknown;
-      const standard = obj.standard as unknown;
-      const merged: any[] = [];
+      const merged: unknown[] = [];
       if (Array.isArray(all)) merged.push(...all);
       if (Array.isArray(custom)) merged.push(...custom);
       if (Array.isArray(standard)) merged.push(...standard);

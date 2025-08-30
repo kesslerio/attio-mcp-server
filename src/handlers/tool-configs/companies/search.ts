@@ -2,32 +2,6 @@
  * Search-related company tool configurations
  */
 import { CompanyRecord } from './types.js';
-import {
-  searchCompanies,
-  searchCompaniesByDomain,
-  advancedSearchCompanies,
-} from '../../../objects/companies/index.js';
-import {
-  SearchToolConfig,
-  AdvancedSearchToolConfig,
-} from '../../tool-types.js';
-
-// Company search tool configurations
-export const searchToolConfigs = {
-  search: {
-    name: 'search-companies',
-    handler: searchCompanies,
-    formatResult: (results: CompanyRecord[]) => {
-      return `Found ${results.length} companies:\n${results
-        .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
-          const id = company.id?.record_id || 'unknown';
-          return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
-        })
-        .join('\n')}`;
-    },
-  } as SearchToolConfig,
 
   searchByDomain: {
     name: 'search-companies-by-domain',
@@ -35,9 +9,6 @@ export const searchToolConfigs = {
     formatResult: (results: CompanyRecord[]) => {
       return `Found ${results.length} companies by domain:\n${results
         .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
-          const id = company.id?.record_id || 'unknown';
           return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
         })
         .join('\n')}`;
@@ -52,9 +23,6 @@ export const searchToolConfigs = {
         results.length
       } companies matching advanced search:\n${results
         .map((company) => {
-          const name = (company.values?.name as any)?.[0]?.value || 'Unnamed';
-          const website = (company.values?.website as any)?.[0]?.value || '';
-          const id = company.id?.record_id || 'unknown';
           return `- ${name}${website ? ` (${website})` : ''} (ID: ${id})`;
         })
         .join('\n')}`;

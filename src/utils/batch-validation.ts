@@ -5,34 +5,13 @@
  * size limits, payload validation, and rate limiting checks.
  */
 
-import {
-  BATCH_SIZE_LIMITS,
-  PAYLOAD_SIZE_LIMITS,
-  LIMIT_ERROR_MESSAGES,
-  getBatchSizeLimit,
-} from '../config/security-limits.js';
 import { ErrorType } from './error-handler.js';
-
-/**
- * Validation result for batch operations
- */
-export interface BatchValidationResult {
-  isValid: boolean;
-  error?: string;
-  errorType?: ErrorType;
-  details?: {
-    actualSize?: number;
-    maxSize?: number;
-    payloadSize?: number;
-    maxPayloadSize?: number;
-  };
-}
 
 /**
  * Calculate the approximate size of a JavaScript object in bytes
  * This is used to estimate payload sizes for validation
  */
-function getObjectSize(obj: any): number {
+function getObjectSize(obj: unknown): number {
   let size = 0;
 
   if (obj === null || obj === undefined) {
@@ -82,7 +61,7 @@ function getObjectSize(obj: any): number {
  * @returns Validation result
  */
 export function validateBatchSize(
-  items: any[] | undefined | null,
+  items: unknown[] | undefined | null,
   operationType: string,
   resourceType?: string
 ): BatchValidationResult {
@@ -142,11 +121,10 @@ export function validateBatchSize(
  * @returns Validation result
  */
 export function validatePayloadSize(
-  payload: any,
+  payload: unknown,
   checkSingleRecords: boolean = true
 ): BatchValidationResult {
   // Calculate total payload size
-  const totalSize = getObjectSize(payload);
 
   // Check total payload size
   if (totalSize > PAYLOAD_SIZE_LIMITS.BATCH_TOTAL) {
@@ -167,7 +145,6 @@ export function validatePayloadSize(
   // Check individual record sizes if requested
   if (checkSingleRecords && Array.isArray(payload)) {
     for (let i = 0; i < payload.length; i++) {
-      const recordSize = getObjectSize(payload[i]);
       if (recordSize > PAYLOAD_SIZE_LIMITS.SINGLE_RECORD) {
         return {
           isValid: false,
@@ -215,7 +192,6 @@ export function validateSearchQuery(
 
   // Validate filter object size
   if (filters) {
-    const filterSize = getObjectSize(filters);
     if (filterSize > PAYLOAD_SIZE_LIMITS.FILTER_OBJECT) {
       return {
         isValid: false,
@@ -239,7 +215,7 @@ export function validateSearchQuery(
  * @returns Validation result
  */
 export function validateBatchOperation(params: {
-  items?: any[];
+  items?: unknown[];
   operationType: string;
   resourceType?: string;
   checkPayload?: boolean;
@@ -247,14 +223,12 @@ export function validateBatchOperation(params: {
   const { items, operationType, resourceType, checkPayload = true } = params;
 
   // Validate batch size
-  const sizeValidation = validateBatchSize(items, operationType, resourceType);
   if (!sizeValidation.isValid) {
     return sizeValidation;
   }
 
   // Validate payload size if requested
   if (checkPayload && items) {
-    const payloadValidation = validatePayloadSize(items);
     if (!payloadValidation.isValid) {
       return payloadValidation;
     }
@@ -278,7 +252,6 @@ export function splitBatchIntoChunks<T>(
     return [];
   }
 
-  const maxSize = getBatchSizeLimit(resourceType);
   const chunks: T[][] = [];
 
   for (let i = 0; i < items.length; i += maxSize) {

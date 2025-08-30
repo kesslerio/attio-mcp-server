@@ -2,13 +2,8 @@
  * Basic search tool configurations for people
  */
 import { AttioRecord } from '../../../types/attio.js';
-import {
-  searchPeople,
-  searchPeopleByEmail,
-  searchPeopleByPhone,
-} from '../../../objects/people/index.js';
-import { SearchToolConfig } from '../../tool-types.js';
 import { getPersonName } from './formatters.js';
+import { SearchToolConfig } from '../../tool-types.js';
 
 export const searchToolConfigs = {
   search: {

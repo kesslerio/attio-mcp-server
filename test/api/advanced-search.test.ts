@@ -7,16 +7,18 @@
  * if ATTIO_API_KEY is not provided.
  */
 import { describe, beforeAll, it, expect, test, vi } from 'vitest';
+
+import { advancedSearchCompanies } from '../../src/objects/companies/search.js';
+import { advancedSearchCompanies } from '../../src/objects/companies/search.js';
 import { advancedSearchObject } from '../../src/api/operations/search.js';
 import { FilterConditionType, ResourceType } from '../../src/types/attio.js';
-import { initializeAttioClient } from '../../src/api/attio-client.js';
 import { FilterValidationError } from '../../src/errors/api-errors.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 // Import the actual implementation directly to bypass mocks
 import { advancedSearchCompanies } from '../../src/objects/companies/search.js';
 
 // Skip tests if no API key or if explicitly disabled
-const SKIP_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe('Advanced Search API Tests', { timeout: 30000 }, () => {
@@ -27,7 +29,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
       vi.doUnmock('../../src/objects/companies/search');
       vi.doUnmock('../../src/objects/companies/index');
 
-      const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
 
       console.log('Running API integration tests with provided API key');
@@ -47,7 +48,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should return companies matching a simple name filter', async () => {
       // Test with common company name term like "inc" that should match something
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -57,7 +57,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
         ],
       };
 
-      const results = await advancedSearchCompanies(filters, 5);
 
       // Verify we got results in the expected format
       expect(Array.isArray(results)).toBe(true);
@@ -65,7 +64,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
       // We can't guarantee results since this depends on actual data
       // but we can check the structure if results exist
       if (results.length > 0) {
-        const company = results[0];
         expect(company).toHaveProperty('id');
         expect(company).toHaveProperty('values');
         expect(company.values).toHaveProperty('name');
@@ -74,7 +72,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should handle OR logic with multiple conditions', async () => {
       // Test with multiple terms that should match something
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -90,7 +87,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
         matchAny: true,
       };
 
-      const results = await advancedSearchCompanies(filters, 5);
 
       // Verify we got results
       expect(Array.isArray(results)).toBe(true);
@@ -98,7 +94,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should handle company-specific attributes', async () => {
       // Test with a company-specific attribute like website
-      const filters = {
         filters: [
           {
             attribute: { slug: 'website' },
@@ -108,7 +103,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
         ],
       };
 
-      const results = await advancedSearchCompanies(filters, 5);
 
       // Verify we got results
       expect(Array.isArray(results)).toBe(true);
@@ -116,7 +110,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should throw appropriate error for invalid filter structure', async () => {
       // Test with invalid filter
-      const filters = {
         filters: [
           {
             // Missing attribute
@@ -133,7 +126,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should throw appropriate error for invalid condition', async () => {
       // Test with invalid condition
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -158,7 +150,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should search companies with the lower-level API function', async () => {
       // Test using the more generic advancedSearchObject function
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -168,7 +159,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
         ],
       };
 
-      const results = await advancedSearchObject(
         ResourceType.COMPANIES,
         filters,
         5
@@ -180,7 +170,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
 
     it('should handle errors at the generic API level', async () => {
       // Test with invalid filter
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -196,7 +185,6 @@ describe('Advanced Search API Tests', { timeout: 30000 }, () => {
     });
 
     it('should handle non-array filters with clear error', async () => {
-      const filters = {
         filters: { not: 'an array' },
       } as any;
 

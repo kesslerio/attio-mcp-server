@@ -20,14 +20,13 @@ export interface MappingConfig {
     objects: Record<string, string>;
     lists: Record<string, string>;
     relationships: Record<string, string>;
-    [key: string]: any; // Allow other mapping types
+    [key: string]: unknown; // Allow other mapping types
   };
 }
 
 /**
  * Default paths for configuration files
  */
-const CONFIG_PATHS = {
   default: path.resolve(process.cwd(), 'config/mappings/default.json'),
   user: path.resolve(process.cwd(), 'config/mappings/user.json'),
 };
@@ -39,8 +38,7 @@ const CONFIG_PATHS = {
  * @param source - The source object to merge in
  * @returns The merged object
  */
-function deepMerge(target: any, source: any): any {
-  const result = { ...target };
+function deepMerge(target: unknown, source: unknown): unknown {
 
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
@@ -101,10 +99,9 @@ function createEmptyConfig(): MappingConfig {
  * @param filePath - Path to the JSON file
  * @returns Parsed JSON object, or null if the file doesn't exist
  */
-function loadJsonFile(filePath: string): any {
+function loadJsonFile(filePath: string): unknown {
   try {
     if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
       return JSON.parse(content);
     }
   } catch (error: unknown) {
@@ -123,13 +120,11 @@ export function loadMappingConfig(): MappingConfig {
   let config = createEmptyConfig();
 
   // Load and merge the default configuration
-  const defaultConfig = loadJsonFile(CONFIG_PATHS.default);
   if (defaultConfig) {
     config = deepMerge(config, defaultConfig);
   }
 
   // Load and merge the user configuration
-  const userConfig = loadJsonFile(CONFIG_PATHS.user);
   if (userConfig) {
     config = deepMerge(config, userConfig);
   }
@@ -149,7 +144,6 @@ export async function writeMappingConfig(
 ): Promise<void> {
   try {
     // Ensure the directory exists
-    const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -161,7 +155,6 @@ export async function writeMappingConfig(
     config.metadata.generated = new Date().toISOString();
 
     // Write the file
-    const content = JSON.stringify(config, null, 2);
     await fs.promises.writeFile(filePath, content, 'utf8');
   } catch (error: unknown) {
     throw new Error(`Failed to write config file ${filePath}: ${error}`);
@@ -183,21 +176,17 @@ export async function updateMappingSection(
   filePath: string = CONFIG_PATHS.user
 ): Promise<void> {
   // Load the current config
-  const config = loadMappingConfig();
 
   // Parse the section path and navigate to the target section
-  const sectionParts = section.split('.');
   let target = config.mappings;
 
   for (let i = 0; i < sectionParts.length - 1; i++) {
-    const part = sectionParts[i];
     if (!target[part]) {
       target[part] = {};
     }
     target = target[part];
   }
 
-  const finalPart = sectionParts[sectionParts.length - 1];
 
   // Update the target section
   if (merge && target[finalPart]) {

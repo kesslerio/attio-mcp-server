@@ -2,25 +2,57 @@
 
 ## Overview
 
-The Mock Data Injection System provides a clean, environment-based approach to injecting test data during E2E tests without coupling production and test code. This system was implemented as part of Issue #480 to achieve 100% E2E test success rate while maintaining architectural integrity.
+The Mock Data Injection System provides a clean, factory-based approach to managing mock and real data implementations during development and testing. This system was completely refactored in Issue #525 to eliminate MockService coupling and establish a clean factory pattern architecture.
 
 ## Architecture
 
 ### Core Components
 
-#### 1. Environment Detection (`shouldUseMockData()`)
+#### 1. Factory Pattern (`getCreateService()`)
 
-Located in `src/handlers/tool-configs/universal/shared-handlers.ts`, this function provides reliable test environment detection:
+The factory pattern is the foundation of the new architecture, located in `src/services/create/factory.ts`:
 
 ```typescript
-export function shouldUseMockData(): boolean {
-  return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+import { shouldUseMockData } from './index.js';
+import type { CreateService } from './types.js';
+
+export function getCreateService(): CreateService {
+  if (shouldUseMockData()) {
+    const { MockCreateService } = require('./mock-create.service.js');
+    return new MockCreateService();
+  } else {
+    const { AttioCreateService } = require('./attio-create.service.js');
+    return new AttioCreateService();
+  }
 }
 ```
 
 **Key Features:**
+- Environment-aware service selection
+- Clean separation between mock and real implementations  
+- Type-safe service interfaces
+- Lazy loading for performance
+
+#### 2. Environment Detection (`shouldUseMockData()`)
+
+Centralized environment detection in `src/services/create/factory.ts`:
+
+```typescript
+export function shouldUseMockData(): boolean {
+  return (
+    process.env.USE_MOCK_DATA === 'true' ||
+    process.env.OFFLINE_MODE === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.VITEST === 'true' ||
+    process.env.E2E_MODE === 'true'
+  );
+}
+```
+
+**Key Features:**
+- Single source of truth for mock detection
+- Multiple environment flags supported
 - Zero production impact when not in test mode
-- Multiple detection strategies for reliability
 - No test code imports in production files
 
 #### 2. Mock Data Generation Functions

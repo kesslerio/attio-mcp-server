@@ -1,19 +1,16 @@
 /**
  * Debug script for tracing B2B segment attribute mapping issue
  */
-import { translateAttributeNamesInFilters } from './attribute-mapping/index.js';
-import { ResourceType } from '../types/attio.js';
-import { ListEntryFilters } from '../api/operations/index.js';
-import { FilterConditionType } from '../types/attio.js';
 import { advancedSearchCompanies } from '../objects/companies/index.js';
+import { FilterConditionType } from '../types/attio.js';
+import { ListEntryFilters } from '../api/operations/index.js';
+import { ResourceType } from '../types/attio.js';
+import { translateAttributeNamesInFilters } from './attribute-mapping/index.js';
 
 // Add temporary console logging to trace the flow
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
 
 // Enable logging temporarily
 console.error = (...args: unknown[]) => {
-  const firstArg = args[0];
   if (
     typeof firstArg === 'string' &&
     (firstArg.includes('b2b_segment') ||
@@ -27,7 +24,6 @@ console.error = (...args: unknown[]) => {
 };
 
 console.error = (...args: unknown[]) => {
-  const firstArg = args[0];
   if (
     (typeof firstArg === 'string' &&
       (firstArg.includes('b2b_segment') ||
@@ -55,7 +51,6 @@ async function debugB2BSegmentMapping() {
     console.error('[TEST] Original filters:', JSON.stringify(filters, null, 2));
 
     // Test translation directly
-    const translatedFilters = translateAttributeNamesInFilters(
       filters,
       ResourceType.COMPANIES
     );
@@ -67,7 +62,6 @@ async function debugB2BSegmentMapping() {
     // Test the search
     console.error('[TEST] Calling advancedSearchCompanies...');
     try {
-      const results = await advancedSearchCompanies(translatedFilters);
       console.error('[TEST] Search succeeded! Results:', results.length);
     } catch (error: unknown) {
       console.error('[TEST] Search failed:', (error as any).message);

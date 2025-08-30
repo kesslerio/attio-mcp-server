@@ -5,30 +5,6 @@
  */
 import { E2ENoteFactory, type E2ETestNote } from '../utils/test-data.js';
 
-/**
- * Standard note fixtures for E2E testing
- */
-export const noteFixtures = {
-  /**
-   * Company note fixtures
-   */
-  companies: {
-    meeting: (companyId: string): E2ETestNote =>
-      E2ENoteFactory.create('companies', companyId, {
-        title: 'E2E Meeting Notes',
-        content:
-          'Initial meeting with the client went well. Discussed their current challenges with data management and potential solutions. Key decision makers were present and showed strong interest in our platform.',
-        format: 'plaintext',
-      }),
-
-    followUp: (companyId: string): E2ETestNote =>
-      E2ENoteFactory.create('companies', companyId, {
-        title: 'E2E Follow-up Call',
-        content:
-          'Follow-up call completed. Client confirmed budget availability and timeline. Next steps: send proposal by end of week and schedule technical demo.',
-        format: 'plaintext',
-      }),
-
     demo: (companyId: string): E2ETestNote =>
       E2ENoteFactory.create('companies', companyId, {
         title: 'E2E Product Demo Notes',
@@ -524,7 +500,6 @@ export const performanceNotes = {
     format: 'plaintext' | 'html' | 'markdown',
     count: number = 10
   ): E2ETestNote[] => {
-    const contentByFormat = {
       plaintext: 'Plain text content for format testing.',
       html: '<p><strong>HTML</strong> content for <em>format</em> testing.</p>',
       markdown:

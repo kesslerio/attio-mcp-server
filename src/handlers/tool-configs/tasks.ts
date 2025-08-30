@@ -1,44 +1,5 @@
 import { AttioTask } from '../../types/attio.js';
-import {
-  listTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-  linkRecordToTask,
-} from '../../objects/tasks.js';
 import { ToolConfig } from '../tool-types.js';
-
-export const tasksToolConfigs = {
-  listTasks: {
-    name: 'list-tasks',
-    handler: listTasks,
-    formatResult: (tasks: AttioTask[]) => {
-      if (!tasks || tasks.length === 0) return 'No tasks found.';
-      return `Found ${tasks.length} tasks:\n${tasks
-        .map((t) => `- ${t.content} (ID: ${t.id.task_id})`)
-        .join('\n')}`;
-    },
-  } as ToolConfig,
-  createTask: {
-    name: 'create-task',
-    handler: createTask,
-    formatResult: (task: AttioTask) =>
-      `Created task with ID ${task.id.task_id}`,
-  } as ToolConfig,
-  updateTask: {
-    name: 'update-task',
-    handler: updateTask,
-    formatResult: (task: AttioTask) => `Updated task ${task.id.task_id}`,
-  } as ToolConfig,
-  deleteTask: {
-    name: 'delete-task',
-    handler: deleteTask,
-  } as ToolConfig,
-  linkRecord: {
-    name: 'link-record-to-task',
-    handler: linkRecordToTask,
-  } as ToolConfig,
-};
 
 export const tasksToolDefinitions = [
   {

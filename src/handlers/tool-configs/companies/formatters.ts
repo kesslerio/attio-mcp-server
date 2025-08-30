@@ -2,21 +2,13 @@
  * Result formatting functions for company tool configurations
  */
 import { Company } from '../../../types/attio.js';
-import {
-  getCompanyDetails,
-  getCompanyBasicInfo,
-  getCompanyContactInfo,
-  getCompanyBusinessInfo,
-  getCompanySocialInfo,
-} from '../../../objects/companies/index.js';
 import { DetailsToolConfig } from '../../tool-types.js';
 
 // Type-safe helper to access company values
 function getCompanyValue(
   company: Company,
   field: string
-): Array<{ value: any; [key: string]: any }> | undefined {
-  const values = company.values as any;
+): Array<{ value: unknown; [key: string]: unknown }> | undefined {
   return values?.[field];
 }
 
@@ -26,30 +18,20 @@ export const formatterConfigs = {
     name: 'get-company-details',
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
-      const companyName =
         getCompanyValue(company, 'name')?.[0]?.value || 'Unnamed';
-      const companyId = company.id?.record_id || 'unknown';
-      const website =
         getCompanyValue(company, 'website')?.[0]?.value || 'Not available';
-      const industry =
         getCompanyValue(company, 'industry')?.[0]?.value || 'Not available';
-      const description =
         getCompanyValue(company, 'description')?.[0]?.value ||
         'No description available';
-      const createdAt = (company as any).created_at || 'Unknown';
 
       // Extract other key details
-      const location = getCompanyValue(company, 'primary_location')?.[0];
-      const locationStr = location
         ? `${location.locality || ''}, ${location.region || ''} ${
             location.country_code || ''
           }`.trim()
         : 'Not available';
 
-      const employeeRange =
         getCompanyValue(company, 'employee_range')?.[0]?.option?.title ||
         'Not available';
-      const foundationDate =
         getCompanyValue(company, 'foundation_date')?.[0]?.value ||
         'Not available';
 
@@ -73,7 +55,6 @@ For full details, use get-company-json with this ID: ${companyId}`;
     handler: getCompanyDetails,
     formatResult: (company: Company) => {
       try {
-        const cleanedCompany = JSON.parse(JSON.stringify(company)) as any;
 
         // Fix the typo in the response data
         if (cleanedCompany.values?.typpe) {
@@ -92,7 +73,6 @@ For full details, use get-company-json with this ID: ${companyId}`;
         }
 
         // Instead of returning the entire JSON at once, create a summary
-        const summary = {
           id: cleanedCompany.id,
           created_at: cleanedCompany.created_at,
           web_url: cleanedCompany.web_url,
@@ -132,36 +112,26 @@ For full details, use get-company-json with this ID: ${companyId}`;
     name: 'get-company-basic-info',
     handler: getCompanyBasicInfo,
     formatResult: (company: Partial<Company>) => {
-      const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
         getCompanyValue(company as Company, 'website')?.[0]?.value ||
         'Not available';
-      const industry =
         getCompanyValue(company as Company, 'industry')?.[0]?.value ||
         'Not available';
-      const type =
         getCompanyValue(company as Company, 'type')?.[0]?.option?.title ||
         'Not available';
-      const typePersona =
         getCompanyValue(company as Company, 'type_persona')?.[0]?.option
           ?.title || 'Not available';
-      const employees =
         getCompanyValue(company as Company, 'employee_range')?.[0]?.option
           ?.title || 'Not available';
-      const founded =
         getCompanyValue(company as Company, 'foundation_date')?.[0]?.value ||
         'Not available';
-      const location = getCompanyValue(
         company as Company,
         'primary_location'
       )?.[0];
-      const locationStr = location
         ? `${location.locality || ''}, ${location.region || ''} ${
             location.country_code || ''
           }`.trim()
         : 'Not available';
-      const description =
         getCompanyValue(company as Company, 'description')?.[0]?.value ||
         'No description available';
 
@@ -183,26 +153,17 @@ ${description}`;
     name: 'get-company-contact-info',
     handler: getCompanyContactInfo,
     formatResult: (company: Partial<Company>) => {
-      const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
         getCompanyValue(company as Company, 'website')?.[0]?.value ||
         'Not available';
-      const phone =
         getCompanyValue(company as Company, 'company_phone_5')?.[0]
           ?.phone_number || 'Not available';
-      const streetAddress =
         getCompanyValue(company as Company, 'street_address')?.[0]?.value || '';
-      const streetAddress2 =
         getCompanyValue(company as Company, 'street_address_2')?.[0]?.value ||
         '';
-      const city =
         getCompanyValue(company as Company, 'city')?.[0]?.value || '';
-      const state =
         getCompanyValue(company as Company, 'state')?.[0]?.value || '';
-      const postalCode =
         getCompanyValue(company as Company, 'postal_code')?.[0]?.value || '';
-      const country =
         getCompanyValue(company as Company, 'country')?.[0]?.value || '';
 
       let address = streetAddress;
@@ -225,32 +186,22 @@ ${address || 'Not available'}`;
     name: 'get-company-business-info',
     handler: getCompanyBusinessInfo,
     formatResult: (company: Partial<Company>) => {
-      const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const type =
         getCompanyValue(company as Company, 'type')?.[0]?.option?.title ||
         'Not available';
-      const typePersona =
         getCompanyValue(company as Company, 'type_persona')?.[0]?.option
           ?.title || 'Not available';
-      const services = getCompanyValue(company as Company, 'services') || [];
-      const categories =
         getCompanyValue(company as Company, 'categories')?.map(
-          (cat: any) => cat.option?.title
+          (cat: unknown) => cat.option?.title
         ) || [];
-      const industry =
         getCompanyValue(company as Company, 'industry')?.[0]?.value ||
         'Not available';
-      const revenue =
         getCompanyValue(company as Company, 'estimated_arr_usd')?.[0]?.option
           ?.title || 'Not available';
-      const funding =
         getCompanyValue(company as Company, 'funding_raised_usd')?.[0]?.value ||
         'Not available';
-      const employees =
         getCompanyValue(company as Company, 'employee_range')?.[0]?.option
           ?.title || 'Not available';
-      const founded =
         getCompanyValue(company as Company, 'foundation_date')?.[0]?.value ||
         'Not available';
 
@@ -275,27 +226,19 @@ ${services.length > 0 ? JSON.stringify(services, null, 2) : 'None'}`;
     name: 'get-company-social-info',
     handler: getCompanySocialInfo,
     formatResult: (company: Partial<Company>) => {
-      const name =
         getCompanyValue(company as Company, 'name')?.[0]?.value || 'Unnamed';
-      const website =
         getCompanyValue(company as Company, 'website')?.[0]?.value ||
         'Not available';
-      const linkedin =
         getCompanyValue(company as Company, 'linkedin')?.[0]?.value ||
         'Not available';
-      const twitter =
         getCompanyValue(company as Company, 'twitter')?.[0]?.value ||
         'Not available';
-      const facebook =
         getCompanyValue(company as Company, 'facebook')?.[0]?.value ||
         'Not available';
-      const instagram =
         getCompanyValue(company as Company, 'instagram')?.[0]?.value ||
         'Not available';
-      const angellist =
         getCompanyValue(company as Company, 'angellist')?.[0]?.value ||
         'Not available';
-      const twitterFollowers =
         getCompanyValue(company as Company, 'twitter_follower_count')?.[0]
           ?.value || 'Not available';
 

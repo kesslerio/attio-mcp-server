@@ -2,19 +2,14 @@
  * Common types for tool configurations
  */
 import { Request, Response } from 'express';
-import {
-  AttioRecord,
-  AttioNote,
-  AttioList,
-  AttioListEntry,
-} from '../types/attio.js';
+
 import { ListEntryFilters } from '../api/operations/index.js';
 
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;
-  handler: any; // Using any to allow different handler signatures
-  formatResult?: (results: any) => string;
+  handler: unknown; // Using any to allow different handler signatures
+  formatResult?: (results: unknown) => string;
 }
 
 // Search tool configuration
@@ -76,6 +71,6 @@ export interface PromptsToolConfig extends ToolConfig {
 
 // Date-based search tool configuration
 export interface DateBasedSearchToolConfig extends ToolConfig {
-  handler: (...args: any[]) => Promise<AttioRecord[]>;
+  handler: (...args: unknown[]) => Promise<AttioRecord[]>;
   formatResult: (results: AttioRecord[]) => string;
 }

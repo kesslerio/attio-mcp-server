@@ -8,7 +8,6 @@
 /**
  * Valid ID patterns for different resource types
  */
-const ID_PATTERNS = {
   // Standard MongoDB ObjectId pattern (24 hex characters)
   OBJECT_ID: /^[a-f0-9]{24}$/,
 
@@ -136,7 +135,6 @@ export function validateRecordIds(
   ids: string[],
   resourceType?: string
 ): Map<string, IdValidationResult> {
-  const results = new Map<string, IdValidationResult>();
 
   for (const id of ids) {
     results.set(id, validateRecordId(id, resourceType));
@@ -169,7 +167,6 @@ export function filterValidIds(ids: string[]): {
   const invalid: Array<{ id: string; reason: string }> = [];
 
   for (const id of ids) {
-    const result = validateRecordId(id);
     if (result.isValid) {
       valid.push(id);
     } else {
@@ -190,7 +187,6 @@ export function filterValidIds(ids: string[]): {
  * @returns Normalized ID or null if invalid
  */
 export function normalizeId(id: string): string | null {
-  const validation = validateRecordId(id);
   if (!validation.isValid) {
     return null;
   }
@@ -215,7 +211,6 @@ export function normalizeId(id: string): string | null {
  * @returns Cache key string
  */
 export function generateIdCacheKey(resourceType: string, id: string): string {
-  const normalizedId = normalizeId(id);
   if (!normalizedId) {
     return `${resourceType}:invalid:${id}`;
   }
@@ -228,11 +223,9 @@ export function generateIdCacheKey(resourceType: string, id: string): string {
  * @param error The error to check
  * @returns True if error appears to be ID-related
  */
-export function isIdFormatError(error: any): boolean {
+export function isIdFormatError(error: unknown): boolean {
   if (!error) return false;
 
-  const errorMessage = error.message || error.toString() || '';
-  const lowerMessage = errorMessage.toLowerCase();
 
   return (
     lowerMessage.includes('invalid id') ||
@@ -255,13 +248,11 @@ export function extractIds(input: string): string[] {
   const ids: string[] = [];
 
   // Try to match ObjectId pattern
-  const objectIdMatches = input.match(/[a-f0-9]{24}/g);
   if (objectIdMatches) {
     ids.push(...objectIdMatches);
   }
 
   // Try to match UUID pattern
-  const uuidMatches = input.match(
     /[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi
   );
   if (uuidMatches) {

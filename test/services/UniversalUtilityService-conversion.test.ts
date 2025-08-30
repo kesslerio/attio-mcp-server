@@ -2,8 +2,9 @@
  * Split: UniversalUtilityService conversion helpers
  */
 import { describe, it, expect } from 'vitest';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+
 import { AttioTask } from '../../src/types/attio.js';
+import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
 
 describe('UniversalUtilityService', () => {
   describe('convertTaskToRecord', () => {
@@ -24,8 +25,6 @@ describe('UniversalUtilityService', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-02T00:00:00Z',
       } as any;
-
-      const result = UniversalUtilityService.convertTaskToRecord(task);
 
       expect(result).toEqual({
         id: {
@@ -66,8 +65,6 @@ describe('UniversalUtilityService', () => {
         updated_at: '2024-01-01T00:00:00Z',
       } as any;
 
-      const result = UniversalUtilityService.convertTaskToRecord(task);
-
       expect(result).toEqual({
         id: {
           record_id: 'task_abc',
@@ -102,8 +99,6 @@ describe('UniversalUtilityService', () => {
         created_at: '2024-01-01T00:00:00Z' as any,
         updated_at: '2024-01-03T00:00:00Z' as any,
       } as any;
-
-      const result = UniversalUtilityService.convertTaskToRecord(task);
 
       expect(result).toEqual({
         id: {
@@ -141,12 +136,11 @@ describe('UniversalUtilityService', () => {
         updated_at: '2024-01-01T00:00:00Z' as any,
       } as any;
 
-      const result = UniversalUtilityService.convertTaskToRecord(task);
       expect(result.id.workspace_id).toBe('');
     });
 
     it('should throw error for unrecognized ID structure', () => {
-      const task: any = {
+      const task: unknown = {
         id: { unknown_field: 'some_value' },
         content: 'Invalid task',
         status: 'pending',

@@ -2,10 +2,6 @@
  * Note operations for companies
  */
 import { getAttioClient } from '../../api/attio-client.js';
-import {
-  getObjectNotes,
-  createObjectNote,
-} from '../../api/operations/index.js';
 import { ResourceType, AttioNote } from '../../types/attio.js';
 
 /**
@@ -25,7 +21,6 @@ export async function getCompanyNotes(
 
   try {
     // Determine if the input is a URI or a direct ID
-    const isUri = companyIdOrUri.startsWith('attio://');
 
     if (isUri) {
       try {
@@ -42,7 +37,6 @@ export async function getCompanyNotes(
         companyId = id;
       } catch (parseError) {
         // Fallback to simple string splitting if formal parsing fails
-        const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
       }
 
@@ -75,7 +69,7 @@ export async function getCompanyNotes(
         limit,
         offset
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[getCompanyNotes] Unified operation failed: ${
@@ -87,16 +81,13 @@ export async function getCompanyNotes(
 
       // Fallback implementation with better error handling
       try {
-        const api = getAttioClient();
-        const path = `/notes?limit=${limit}&offset=${offset}&parent_object=companies&parent_record_id=${companyId}`;
 
         if (process.env.NODE_ENV === 'development') {
           console.error(`[getCompanyNotes] Trying direct API call: ${path}`);
         }
 
-        const response = await api.get(path);
         return response?.data?.data || [];
-      } catch (directError: any) {
+      } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
           console.error(`[getCompanyNotes] All attempts failed:`, {
             companyId,
@@ -154,7 +145,6 @@ export async function createCompanyNote(
 
   try {
     // Determine if the input is a URI or a direct ID
-    const isUri = companyIdOrUri.startsWith('attio://');
 
     if (isUri) {
       try {
@@ -171,7 +161,6 @@ export async function createCompanyNote(
         companyId = id;
       } catch (parseError) {
         // Fallback to simple string splitting if formal parsing fails
-        const parts = companyIdOrUri.split('/');
         companyId = parts[parts.length - 1];
       }
 
@@ -204,7 +193,7 @@ export async function createCompanyNote(
         title,
         content
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.NODE_ENV === 'development') {
         console.error(
           `[createCompanyNote] Unified operation failed: ${
@@ -216,14 +205,11 @@ export async function createCompanyNote(
 
       // Fallback implementation with better error handling
       try {
-        const api = getAttioClient();
-        const path = 'notes';
 
         if (process.env.NODE_ENV === 'development') {
           console.error(`[createCompanyNote] Trying direct API call: ${path}`);
         }
 
-        const response = await api.post(path, {
           data: {
             format: 'plaintext',
             parent_object: 'companies',
@@ -233,7 +219,7 @@ export async function createCompanyNote(
           },
         });
         return response.data;
-      } catch (directError: any) {
+      } catch (directError: unknown) {
         if (process.env.NODE_ENV === 'development') {
           console.error(`[createCompanyNote] All attempts failed:`, {
             companyId,

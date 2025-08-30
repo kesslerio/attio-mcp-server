@@ -4,24 +4,6 @@
 import { RetryConfig } from '../api/operations/index.js';
 
 /**
- * Base interface for Attio record values
- */
-export interface AttioValue<T> {
-  value: T;
-  [key: string]: unknown; // Additional fields that might be present
-}
-
-/**
- * Enhanced interface for field values that can contain display names
- * Supports both direct value access and full_name for name fields
- */
-export interface AttioFieldValue {
-  value?: string;
-  full_name?: string; // Used in name fields as alternative to value
-  [key: string]: unknown;
-}
-
-/**
  * Interface for record values with specific display name fields
  * Used by formatResult functions for consistent field access
  */

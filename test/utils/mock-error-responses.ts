@@ -10,28 +10,6 @@
 import { TestEnvironment } from './mock-factories/test-environment.js';
 
 /**
- * Standard error response interface matching MCP tool response format
- */
-export interface MockErrorResponse {
-  success: false;
-  error: {
-    message: string;
-    code: string;
-    details?: unknown;
-  };
-  content?: never;
-}
-
-/**
- * Standard success response interface
- */
-export interface MockSuccessResponse<T = unknown> {
-  success: true;
-  content: T;
-  error?: never;
-}
-
-/**
  * Union type for all mock responses
  */
 export type MockResponse<T = unknown> =
@@ -57,7 +35,6 @@ export class StandardErrorMessages {
    * Creates a "not found" error message that matches the expected pattern
    */
   static notFound(resourceType: string, id?: string): string {
-    const identifier = id ? ` with ID ${id}` : '';
     return `${resourceType} not found${identifier}`;
   }
 
@@ -72,7 +49,6 @@ export class StandardErrorMessages {
    * Creates a "does not exist" error message
    */
   static doesNotExist(resourceType: string, id?: string): string {
-    const identifier = id ? ` ${id}` : '';
     return `${resourceType}${identifier} does not exist`;
   }
 
@@ -87,7 +63,6 @@ export class StandardErrorMessages {
    * Creates a "duplicate" error message
    */
   static duplicate(resourceType: string, field?: string): string {
-    const fieldInfo = field ? ` with ${field}` : '';
     return `${resourceType}${fieldInfo} already exists`;
   }
 
@@ -174,7 +149,6 @@ export class MockErrorResponseFactory {
     errorMessage: string
   ): MockErrorResponse {
     // Match the format that E2E tests expect from MCP tool responses
-    const standardMessage = this.makeErrorMessageStandard(errorMessage);
 
     return {
       success: false,
@@ -264,7 +238,6 @@ export class ErrorPatternValidator {
     scenario: Parameters<typeof this.getStandardError>[0],
     id?: string
   ): string {
-    const standardError = this.getStandardError(scenario, id);
     return `Error executing tool '${toolName}': ${standardError}`;
   }
 }
@@ -287,7 +260,6 @@ export const E2ETestUtils = {
     if (success && content !== undefined) {
       return MockErrorResponseFactory.success(content);
     } else {
-      const errorMessage = errorScenario
         ? ErrorPatternValidator.getStandardError(errorScenario, resourceId)
         : StandardErrorMessages.notFound('Resource');
 

@@ -2,46 +2,8 @@
  * Record-related functionality
  */
 import { getAttioClient } from '../../api/attio-client.js';
-import {
-  createRecord,
-  getRecord,
-  updateRecord,
-  deleteRecord,
-  listRecords,
-  batchCreateRecords,
-  batchUpdateRecords,
-  BatchConfig,
-  BatchResponse,
-} from '../../api/operations/index.js';
-import {
-  ResourceType,
-  AttioRecord,
-  RecordAttributes,
-  RecordListParams,
-} from '../../types/attio.js';
-
-/**
- * Creates a new record for a specific object type
- *
- * @param objectSlug - Object slug (e.g., 'companies', 'people')
- * @param attributes - Record attributes as key-value pairs
- * @param objectId - Optional object ID (alternative to slug)
- * @returns Created record
- */
-export async function createObjectRecord<T extends AttioRecord>(
-  objectSlug: string | ResourceType,
-  attributes: RecordAttributes,
-  objectId?: string
-): Promise<T> {
-  // Ensure objectSlug is a string value, not undefined
-  if (!objectSlug) {
-    throw new Error(
-      '[createObjectRecord] Object slug is required for creating records'
-    );
-  }
 
   // Normalize objectSlug to ensure proper type handling
-  const normalizedSlug =
     typeof objectSlug === 'string' ? objectSlug : String(objectSlug);
 
   // Add debug logging (includes E2E mode)
@@ -71,7 +33,6 @@ export async function createObjectRecord<T extends AttioRecord>(
       });
     }
 
-    const result = await createRecord<T>({
       objectSlug: normalizedSlug,
       objectId,
       attributes,
@@ -91,10 +52,8 @@ export async function createObjectRecord<T extends AttioRecord>(
     }
 
     // Check for empty results and apply fallback query for companies
-    const isEmpty =
       !result ||
       (typeof result === 'object' && Object.keys(result).length === 0);
-    const hasNoValidId = !result?.id?.record_id && !result?.record_id;
 
     if (
       (isEmpty || hasNoValidId) &&
@@ -102,7 +61,6 @@ export async function createObjectRecord<T extends AttioRecord>(
       attributes?.name
     ) {
       // Extract the actual name value from the Attio format
-      const nameValue =
         typeof attributes.name === 'object' &&
         attributes.name !== null &&
         'value' in attributes.name
@@ -120,9 +78,7 @@ export async function createObjectRecord<T extends AttioRecord>(
       }
 
       try {
-        const api = getAttioClient();
         // Use the documented query endpoint with exact name match
-        const queryResponse = await api.post(
           `/objects/companies/records/query`,
           {
             filter: { name: nameValue },
@@ -149,7 +105,6 @@ export async function createObjectRecord<T extends AttioRecord>(
           Array.isArray(queryResponse.data.data) &&
           queryResponse.data.data.length > 0
         ) {
-          const foundRecord = queryResponse.data.data[0];
           if (
             process.env.NODE_ENV === 'development' ||
             process.env.E2E_MODE === 'true'
@@ -196,8 +151,6 @@ export async function createObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
-      const path = `/objects/${objectId || objectSlug}/records`;
 
       // ENHANCED DEBUG: Add path builder logging as requested by user
       console.debug('[attio-client] POST', path, {
@@ -217,14 +170,12 @@ export async function createObjectRecord<T extends AttioRecord>(
       }
 
       // Use the same payload format as the main implementation
-      const body = {
         data: {
           values: attributes,
         },
       };
 
       try {
-        const response = await api.post(path, body);
 
         if (
           process.env.NODE_ENV === 'development' ||
@@ -244,10 +195,8 @@ export async function createObjectRecord<T extends AttioRecord>(
         }
 
         // Extract the result with proper error handling
-        const result = response?.data?.data || response?.data;
 
         // Check for empty or invalid responses, but allow legitimate create responses
-        const looksLikeCreatedRecord =
           result &&
           typeof result === 'object' &&
           (('id' in result && (result as any).id?.record_id) ||
@@ -267,12 +216,9 @@ export async function createObjectRecord<T extends AttioRecord>(
         }
 
         return result;
-      } catch (err: any) {
-        const status = err?.response?.status;
-        const msg = String(
+      } catch (err: unknown) {
           err?.response?.data?.error?.message || err?.message || ''
         );
-        const isDuplicateDomain =
           status === 422 &&
           /domain/i.test(msg) &&
           /(taken|unique|already)/i.test(msg);
@@ -283,7 +229,6 @@ export async function createObjectRecord<T extends AttioRecord>(
           normalizedSlug === 'companies'
         ) {
           // Mutate domain once and retry for E2E tests
-          const suffix = Math.random().toString(36).slice(2, 6);
           if (
             body.data.values?.domain &&
             typeof body.data.values.domain === 'string'
@@ -300,7 +245,6 @@ export async function createObjectRecord<T extends AttioRecord>(
           await new Promise((r) =>
             setTimeout(r, 150 + Math.floor(Math.random() * 200))
           ); // jitter 150–350ms
-          const retryResponse = await api.post(path, body);
           return retryResponse?.data?.data || retryResponse?.data;
         }
         throw err;
@@ -339,16 +283,13 @@ export async function getObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
       let path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
       // Add attributes parameter if provided
       if (attributes && attributes.length > 0) {
-        const attributesParam = attributes.join(',');
         path += `?attributes=${encodeURIComponent(attributesParam)}`;
       }
 
-      const response = await api.get(path);
       return response?.data?.data || response?.data;
     } catch (fallbackError) {
       throw fallbackError instanceof Error
@@ -389,10 +330,7 @@ export async function updateObjectRecord<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
-      const path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
-      const response = await api.patch(path, {
         attributes,
       });
 
@@ -407,7 +345,6 @@ export async function updateObjectRecord<T extends AttioRecord>(
         };
       }
 
-      const result = response.data.data || response.data;
 
       // Check for empty object results that indicate API errors
       if (
@@ -456,10 +393,7 @@ export async function deleteObjectRecord(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
-      const path = `/objects/${objectId || objectSlug}/records/${recordId}`;
 
-      const response = await api.delete(path);
 
       // Add null guards to prevent undefined → {} conversion
       if (!response) {
@@ -511,10 +445,8 @@ export async function listObjectRecords<T extends AttioRecord>(
 
     // Fallback implementation in case the core function fails
     try {
-      const api = getAttioClient();
 
       // Build query parameters
-      const queryParams = new URLSearchParams();
 
       if (options.page) {
         queryParams.append('page', String(options.page));
@@ -540,11 +472,9 @@ export async function listObjectRecords<T extends AttioRecord>(
         queryParams.append('direction', options.direction);
       }
 
-      const path = `/objects/${objectId || objectSlug}/records${
         queryParams.toString() ? '?' + queryParams.toString() : ''
       }`;
 
-      const response = await api.get(path);
       return response.data.data || [];
     } catch (fallbackError) {
       throw fallbackError instanceof Error
@@ -571,10 +501,8 @@ export async function batchCreateObjectRecords<T extends AttioRecord>(
 ): Promise<BatchResponse<T>> {
   try {
     // Map records to the expected format
-    const recordItems = records.map((attributes) => ({ attributes }));
 
     // Use the core API function
-    const createdRecords = await batchCreateRecords<T>(
       {
         objectSlug,
         objectId,
@@ -615,7 +543,6 @@ export async function batchCreateObjectRecords<T extends AttioRecord>(
     await Promise.all(
       records.map(async (recordAttributes, index) => {
         try {
-          const record = await createObjectRecord<T>(
             objectSlug,
             recordAttributes,
             objectId
@@ -661,7 +588,6 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
 ): Promise<BatchResponse<T>> {
   try {
     // Use the core API function
-    const updatedRecords = await batchUpdateRecords<T>(
       {
         objectSlug,
         objectId,
@@ -703,7 +629,6 @@ export async function batchUpdateObjectRecords<T extends AttioRecord>(
     await Promise.all(
       records.map(async (record) => {
         try {
-          const updatedRecord = await updateObjectRecord<T>(
             objectSlug,
             record.id,
             record.attributes,

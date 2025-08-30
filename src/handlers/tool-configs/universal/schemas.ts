@@ -228,7 +228,6 @@ export class InputSanitizer {
 /**
  * Base resource type schema property
  */
-const resourceTypeProperty = {
   type: 'string' as const,
   enum: Object.values(UniversalResourceType),
   description:
@@ -238,7 +237,6 @@ const resourceTypeProperty = {
 /**
  * Common pagination properties
  */
-const paginationProperties = {
   limit: {
     type: 'number' as const,
     minimum: 1,
@@ -802,10 +800,9 @@ export class CrossResourceValidator {
 
     try {
       const { getAttioClient } = await import('../../../api/attio-client.js');
-      const client = getAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Classify the error based on response
       if (error?.response?.status === 404) {
         return {
@@ -842,16 +839,12 @@ export class CrossResourceValidator {
       case UniversalResourceType.PEOPLE:
         {
           // Check if company_id is provided and validate it exists
-          const companyId =
             recordData.company_id ||
             recordData.company?.id ||
             recordData.company;
           if (companyId) {
-            const companyIdString = String(companyId);
-            const validationResult =
               await this.validateCompanyExists(companyIdString);
             if (!validationResult.exists) {
-              const error = validationResult.error!;
               throw new UniversalValidationError(
                 error.message,
                 error.type === 'api_error'
@@ -900,8 +893,6 @@ export class CrossResourceValidator {
  * Helper function to suggest closest resource type
  */
 function suggestResourceType(invalid: string): string | undefined {
-  const validTypes = Object.values(UniversalResourceType);
-  const lower = invalid.toLowerCase();
 
   // Check for common mistakes
   const suggestions: Record<string, string> = {
@@ -924,7 +915,6 @@ function suggestResourceType(invalid: string): string | undefined {
   let bestScore = 0;
 
   for (const validType of validTypes) {
-    const score = getStringSimilarity(lower, validType);
     if (score > bestScore && score > 0.5) {
       bestScore = score;
       bestMatch = validType;
@@ -938,12 +928,9 @@ function suggestResourceType(invalid: string): string | undefined {
  * Simple string similarity calculation
  */
 function getStringSimilarity(str1: string, str2: string): number {
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
 
   if (longer.length === 0) return 1.0;
 
-  const editDistance = getEditDistance(longer, shorter);
   return (longer.length - editDistance) / longer.length;
 }
 
@@ -951,7 +938,6 @@ function getStringSimilarity(str1: string, str2: string): number {
  * Calculate edit distance between two strings
  */
 function getEditDistance(str1: string, str2: string): number {
-  const matrix = [];
 
   for (let i = 0; i <= str2.length; i++) {
     matrix[i] = [i];
@@ -988,7 +974,6 @@ function validatePaginationParams(params: SanitizedObject): void {
     params.limit !== null &&
     params.limit !== undefined
   ) {
-    const limit = Number(params.limit);
 
     if (isNaN(limit) || !Number.isInteger(limit)) {
       throw new UniversalValidationError(
@@ -1039,7 +1024,6 @@ function validatePaginationParams(params: SanitizedObject): void {
     params.offset !== null &&
     params.offset !== undefined
   ) {
-    const offset = Number(params.offset);
 
     if (isNaN(offset) || !Number.isInteger(offset)) {
       throw new UniversalValidationError(
@@ -1076,7 +1060,6 @@ function validatePaginationParams(params: SanitizedObject): void {
  * Validate ID format for record_id and similar fields
  */
 function validateIdFields(params: SanitizedObject): void {
-  const idFields = [
     'record_id',
     'source_id',
     'target_id',
@@ -1091,10 +1074,8 @@ function validateIdFields(params: SanitizedObject): void {
       params[field] !== null &&
       params[field] !== undefined
     ) {
-      const id = String(params[field]);
 
       // Basic ID format validation (alphanumeric with underscores and hyphens)
-      const idRegex = /^[a-zA-Z0-9_-]+$/;
 
       if (!idRegex.test(id)) {
         throw new UniversalValidationError(
@@ -1132,9 +1113,8 @@ function validateIdFields(params: SanitizedObject): void {
 export function validateUniversalToolParams(
   toolName: string,
   params: any
-): any {
+): unknown {
   // Sanitize input parameters first
-  const sanitizedValue = InputSanitizer.sanitizeObject(params);
 
   // Ensure we have a valid object to work with
   if (
@@ -1153,7 +1133,6 @@ export function validateUniversalToolParams(
     );
   }
 
-  const sanitizedParams = sanitizedValue as SanitizedObject;
 
   // Validate pagination parameters (limit, offset)
   validatePaginationParams(sanitizedParams);
@@ -1163,14 +1142,11 @@ export function validateUniversalToolParams(
 
   // Validate resource_type if present
   if (sanitizedParams.resource_type) {
-    const resourceType = String(sanitizedParams.resource_type);
     if (
       !Object.values(UniversalResourceType).includes(
         resourceType as UniversalResourceType
       )
     ) {
-      const suggestion = suggestResourceType(resourceType);
-      const validTypes = Object.values(UniversalResourceType).join(', ');
 
       throw new UniversalValidationError(
         `Invalid resource_type: '${resourceType}'`,
@@ -1278,7 +1254,6 @@ export function validateUniversalToolParams(
 
       // Task content immutability validation
       if (sanitizedParams.resource_type === 'tasks') {
-        const forbidden = ['content', 'content_markdown', 'content_plaintext'];
         if (
           sanitizedParams.record_data &&
           typeof sanitizedParams.record_data === 'object'
@@ -1413,7 +1388,6 @@ export function validateUniversalToolParams(
             }
           );
         }
-        const operationType = String(sanitizedParams.operation_type);
         if (
           ['create', 'update'].includes(operationType) &&
           !sanitizedParams.records

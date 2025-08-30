@@ -5,11 +5,12 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+
 import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { ToolConfig } from '../../../tool-types.js';
 import { formatResponse } from '../../formatters.js';
 import { hasResponseData } from '../../error-types.js';
+import { ResourceType } from '../../../../types/attio.js';
+import { ToolConfig } from '../../../tool-types.js';
 
 /**
  * Handle create operations
@@ -20,7 +21,6 @@ export async function handleCreateOperation(
   resourceType: ResourceType
 ) {
   try {
-    const attributes = request.params.arguments?.attributes;
 
     if (!attributes) {
       return createErrorResult(
@@ -31,8 +31,6 @@ export async function handleCreateOperation(
       );
     }
 
-    const result = await toolConfig.handler(attributes);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `${resourceType.slice(0, -1)} created successfully`;
 
@@ -59,17 +57,13 @@ export async function handleUpdateOperation(
     // Support multiple parameter names for ID
     // recordId is the generic parameter used by update-record
     // companyId/personId are resource-specific parameters
-    const recordId = request.params.arguments?.recordId as string;
-    const id =
       recordId ||
       (resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
         : (request.params.arguments?.personId as string));
 
-    const attributes = request.params.arguments?.attributes;
 
     if (!id) {
-      const idParamName =
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(
@@ -95,8 +89,6 @@ export async function handleUpdateOperation(
       );
     }
 
-    const result = await toolConfig.handler(id, attributes);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `${resourceType.slice(0, -1)} updated successfully`;
 
@@ -121,18 +113,13 @@ export async function handleUpdateAttributeOperation(
 ) {
   try {
     // Support multiple parameter names for ID
-    const recordId = request.params.arguments?.recordId as string;
-    const id =
       recordId ||
       (resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
         : (request.params.arguments?.personId as string));
 
-    const attributeName = request.params.arguments?.attributeName as string;
-    const value = request.params.arguments?.value;
 
     if (!id) {
-      const idParamName =
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(
@@ -169,8 +156,6 @@ export async function handleUpdateAttributeOperation(
       );
     }
 
-    const result = await toolConfig.handler(id, attributeName, value);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `${resourceType.slice(0, -1)} attribute updated successfully`;
 
@@ -194,13 +179,11 @@ export async function handleDeleteOperation(
   resourceType: ResourceType
 ) {
   try {
-    const id =
       resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
         : (request.params.arguments?.personId as string);
 
     if (!id) {
-      const idParamName =
         resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
       return createErrorResult(
         new Error(`${idParamName} parameter is required for delete operation`),
@@ -210,14 +193,11 @@ export async function handleDeleteOperation(
       );
     }
 
-    const result = await toolConfig.handler(id);
-    const formattedResult = toolConfig.formatResult
       ? toolConfig.formatResult(result)
       : `${resourceType.slice(0, -1)} deleted successfully`;
 
     return formatResponse(formattedResult);
   } catch (error: unknown) {
-    const id =
       resourceType === ResourceType.COMPANIES
         ? (request.params.arguments?.companyId as string)
         : (request.params.arguments?.personId as string);

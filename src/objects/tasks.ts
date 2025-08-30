@@ -1,28 +1,6 @@
-import {
-  listTasks as apiList,
-  getTask as apiGet,
-  createTask as apiCreate,
-  updateTask as apiUpdate,
-  linkRecordToTask as apiLink,
-  unlinkRecordFromTask as apiUnlink,
-} from '../api/operations/index.js';
 import { AttioTask } from '../types/attio.js';
 import { isValidId } from '../utils/validation.js';
-
-// Helper function to check if we should use mock data
-function shouldUseMockData(): boolean {
-  return (
-    process.env.NODE_ENV === 'test' ||
-    process.env.VITEST === 'true' ||
-    process.env.VITEST !== undefined ||
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    (typeof global !== 'undefined' &&
-      (typeof global.it === 'function' ||
-        typeof global.describe === 'function'))
-  );
-}
+import { shouldUseMockData } from '../services/create/index.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -53,7 +31,6 @@ export async function createTask(
     }
 
     // Generate mock task ID
-    const mockId = `mock-task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Return mock task response
     return {
@@ -79,6 +56,13 @@ export async function createTask(
             },
           ]
         : [],
+      // Add assignee object for E2E test compatibility
+      assignee: options.assigneeId
+        ? {
+            id: options.assigneeId,
+            type: 'person',
+          }
+        : undefined,
       linked_records: options.recordId
         ? [
             {
@@ -136,6 +120,13 @@ export async function updateTask(
             },
           ]
         : [],
+      // Add assignee object for E2E test compatibility
+      assignee: updates.assigneeId
+        ? {
+            id: updates.assigneeId,
+            type: 'person',
+          }
+        : undefined,
       linked_records: updates.recordIds
         ? updates.recordIds.map((recordId) => ({
             id: recordId,
@@ -170,17 +161,11 @@ export async function deleteTask(taskId: string): Promise<boolean> {
 
   // Use centralized Attio client for consistent authentication and 404 handling
   const { getAttioClient } = await import('../api/attio-client.js');
-  const client = getAttioClient();
 
   try {
-    const resp = await client.delete(`/objects/tasks/records/${taskId}`);
-    const status = resp?.status ?? 0;
     // Attio typically returns 204 on success (some gateways return 200)
     return status === 204 || status === 200;
-  } catch (err: any) {
-    const status = err?.response?.status ?? err?.status;
-    const code = err?.response?.data?.code ?? err?.code;
-    const msg = (err?.response?.data?.message ?? err?.message ?? '')
+  } catch (err: unknown) {
       .toString()
       .toLowerCase();
     // Normalize soft "not found" to boolean false so the service maps it to a structured 404

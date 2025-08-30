@@ -5,22 +5,30 @@
  * tool operations to existing resource-specific handlers.
  */
 
-import {
-  UniversalResourceType,
-  UniversalSearchParams,
-  UniversalRecordDetailsParams,
-  UniversalCreateParams,
-  UniversalUpdateParams,
-  UniversalDeleteParams,
-  UniversalAttributesParams,
-  UniversalDetailedInfoParams,
-  UniversalCreateNoteParams,
-  UniversalGetNotesParams,
-  UniversalUpdateNoteParams,
-  UniversalSearchNotesParams,
-  UniversalDeleteNoteParams,
-  DetailedInfoType,
-} from './types.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { AttioRecord } from '../../../types/attio.js';
+import { getListDetails } from '../../../objects/lists.js';
+import { getListDetails } from '../../../objects/lists.js';
+import { getObjectRecord } from '../../../objects/records/index.js';
+import { getObjectRecord } from '../../../objects/records/index.js';
+import { getPersonDetails } from '../../../objects/people/index.js';
+import { getPersonDetails } from '../../../objects/people/index.js';
+import { getTask } from '../../../objects/tasks.js';
+import { getTask } from '../../../objects/tasks.js';
+import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { UniversalCreateService } from '../../../services/UniversalCreateService.js';
+import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
+import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
+import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
+import { UniversalMetadataService } from '../../../services/UniversalMetadataService.js';
+import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
+import { UniversalRetrievalService } from '../../../services/UniversalRetrievalService.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
+import { UniversalUpdateService } from '../../../services/UniversalUpdateService.js';
+import { UniversalUpdateService } from '../../../services/UniversalUpdateService.js';
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
+import { UniversalUtilityService } from '../../../services/UniversalUtilityService.js';
 
 // Import extracted services from Issue #489 Phase 2 & 3
 import { UniversalDeleteService } from '../../../services/UniversalDeleteService.js';
@@ -86,7 +94,7 @@ export async function handleUniversalGetDetails(
  */
 
 /**
- * Universal note creation handler - uses Attio notes API directly
+ * Universal note creation handler - uses factory pattern for service selection
  */
 export async function handleUniversalCreateNote(
   params: UniversalCreateNoteParams
@@ -95,9 +103,8 @@ export async function handleUniversalCreateNote(
     params;
 
   try {
-    // Use MockService for consistent error handling
-    const { MockService } = await import('../../../services/MockService.js');
-    const result = await MockService.createNote({
+    // Use factory pattern for service selection
+    const { getCreateService } = await import('../../../services/create/index.js');
       resource_type,
       record_id,
       title,
@@ -106,7 +113,7 @@ export async function handleUniversalCreateNote(
     });
 
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Return error object for computeErrorWithContext detection
     return {
       error: error.message,
@@ -129,7 +136,6 @@ export async function handleUniversalGetNotes(
     client = getAttioClient();
   } catch (error) {
     // Try to initialize from environment if not already done
-    const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
       client = initializeAttioClient(apiKey);
     } else {
@@ -138,7 +144,6 @@ export async function handleUniversalGetNotes(
       );
     }
   }
-  const queryParams = new URLSearchParams({
     limit: limit.toString(),
     offset: offset.toString(),
   });
@@ -155,22 +160,15 @@ export async function handleUniversalGetNotes(
     // Lightweight debug trace to aid E2E diagnostics
     console.error('[list-notes] GET', `/notes?${queryParams.toString()}`);
     // Base URL already includes /v2, so use relative path
-    const response = await client.get(`/notes?${queryParams}`);
-    const rawList = unwrapAttio<any>(response);
 
     // Handle both array responses and nested data arrays
-    const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
-    const notes = normalizeNotes(noteArray);
 
     // Return raw notes array (same pattern as create-record)
     return notes;
-  } catch (error: any) {
-    const status = error?.response?.status;
-    const message =
+  } catch (error: unknown) {
       error?.response?.data?.error?.message ||
       error?.message ||
       'Unknown error';
-    const semanticMessage =
       status === 404
         ? 'record not found'
         : status === 400
@@ -202,14 +200,12 @@ export async function handleUniversalUpdateNote(
   params: UniversalUpdateNoteParams
 ): Promise<any> {
   const { note_id, title, content, is_archived } = params;
-  const client = getAttioClient();
 
   const updateData: Record<string, unknown> = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (is_archived !== undefined) updateData.is_archived = is_archived;
 
-  const response = await client.patch(`/notes/${note_id}`, updateData);
   return response.data;
 }
 
@@ -220,7 +216,6 @@ export async function handleUniversalSearchNotes(
   params: UniversalSearchNotesParams
 ): Promise<any[]> {
   const { resource_type, record_id, query, limit = 20, offset = 0 } = params;
-  const client = getAttioClient();
 
   const searchParams: Record<string, string> = {
     limit: limit.toString(),
@@ -230,8 +225,6 @@ export async function handleUniversalSearchNotes(
   if (record_id) searchParams.record_id = record_id;
   if (query) searchParams.q = query;
 
-  const queryParams = new URLSearchParams(searchParams);
-  const response = await client.get(`/notes?${queryParams}`);
   let notes = response.data.data || [];
 
   // Filter by resource type if specified
@@ -241,9 +234,8 @@ export async function handleUniversalSearchNotes(
       [UniversalResourceType.PEOPLE]: 'people',
       [UniversalResourceType.DEALS]: 'deals',
     };
-    const parentObject = resourceTypeMap[resource_type];
     if (parentObject) {
-      notes = notes.filter((note: any) => note.parent_object === parentObject);
+      notes = notes.filter((note: unknown) => note.parent_object === parentObject);
     }
   }
 
@@ -257,7 +249,6 @@ export async function handleUniversalDeleteNote(
   params: UniversalDeleteNoteParams
 ): Promise<{ success: boolean; note_id: string }> {
   const { note_id } = params;
-  const client = getAttioClient();
 
   await client.delete(`/notes/${note_id}`);
   return { success: true, note_id };
@@ -327,11 +318,8 @@ export async function handleUniversalGetDetailedInfo(
       case UniversalResourceType.PEOPLE:
         return getPersonDetails(record_id);
       case UniversalResourceType.LISTS: {
-        const list = await getListDetails(record_id);
         // Convert AttioList to AttioRecord format with robust shape handling
         // Handle all documented Attio API list response shapes
-        const raw = list;
-        const listId =
           raw?.id?.list_id ?? // nested shape from some endpoints
           raw?.list_id ?? // flat shape from "Get a list" endpoint
           raw?.id ?? // some responses use a flat id

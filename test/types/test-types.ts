@@ -1,8 +1,8 @@
 /**
  * Type definitions for test utilities and mocks
  */
-import type { MockedFunction } from 'vitest';
 import { vi } from 'vitest';
+import type { MockedFunction } from 'vitest';
 
 export interface MockApiClient {
   post: MockedFunction<(...args: unknown[]) => Promise<unknown>>;
@@ -47,10 +47,7 @@ export interface TestMockRequest {
 
 export function createMockApiClient(): MockApiClient {
   // in-memory fake DB for lists
-  const lists = new Map<string, any>();
 
-  const shapeList = (raw: any = {}) => {
-    const list_id =
       typeof raw?.id?.list_id === 'string'
         ? raw.id.list_id
         : typeof raw?.list_id === 'string'
@@ -67,7 +64,6 @@ export function createMockApiClient(): MockApiClient {
   };
 
   // Pre-populate test list
-  const testListId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
   lists.set(
     testListId,
     shapeList({
@@ -83,10 +79,8 @@ export function createMockApiClient(): MockApiClient {
     get: vi.fn(async (path: string) => {
       // Handle "get list by id/slug"
       if (path.startsWith('/v2/lists/')) {
-        const listId = path.split('/v2/lists/')[1].split('?')[0];
-        const found = lists.get(listId);
         if (!found) {
-          const err: any = new Error('Record not found');
+          const err: unknown = new Error('Record not found');
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },
@@ -98,7 +92,6 @@ export function createMockApiClient(): MockApiClient {
 
       // Handle "list all lists" (with or without querystring)
       if (path.startsWith('/v2/lists')) {
-        const allLists = Array.from(lists.values());
         return {
           status: 200,
           data: {
@@ -125,10 +118,8 @@ export function createMockApiClient(): MockApiClient {
 
       // Legacy list paths for backward compatibility
       if (path.startsWith('/lists/')) {
-        const id = path.split('/')[2];
-        const found = lists.get(id);
         if (!found) {
-          const err: any = new Error('Record not found');
+          const err: unknown = new Error('Record not found');
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },
@@ -140,10 +131,8 @@ export function createMockApiClient(): MockApiClient {
 
       // Handle attribute metadata requests for different object types
       if (path.match(/^\/objects\/\w+\/attributes$/)) {
-        const objectSlug = path.split('/')[2]; // Extract objectSlug from /objects/{objectSlug}/attributes
 
         // Mock attribute metadata based on object type
-        const attributeData = [];
 
         if (objectSlug === 'companies') {
           attributeData.push(
@@ -296,10 +285,9 @@ export function createMockApiClient(): MockApiClient {
       return { status: 200, data: { data: {} } };
     }),
 
-    post: vi.fn(async (path: string, payload?: any) => {
+    post: vi.fn(async (path: string, payload?: unknown) => {
       // Handle company record creation
       if (path === '/v2/objects/companies/records') {
-        const record_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
         return {
           status: 201,
           data: {
@@ -332,14 +320,12 @@ export function createMockApiClient(): MockApiClient {
 
       // Handle v2 lists creation
       if (path === '/v2/lists') {
-        const shaped = shapeList(payload?.data ?? {});
         lists.set(shaped.id.list_id, shaped);
         return { status: 201, data: { data: shaped } };
       }
 
       // Legacy lists creation
       if (path === '/lists') {
-        const shaped = shapeList(payload?.data ?? {});
         lists.set(shaped.id.list_id, shaped);
         return { status: 201, data: { data: shaped } };
       }
@@ -352,9 +338,8 @@ export function createMockApiClient(): MockApiClient {
 
     delete: vi.fn(async (path: string) => {
       if (path.startsWith('/lists/')) {
-        const id = path.split('/')[2];
         if (!lists.has(id)) {
-          const err: any = new Error('Record not found');
+          const err: unknown = new Error('Record not found');
           err.response = {
             status: 404,
             data: { error: { code: 'not_found' } },

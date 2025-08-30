@@ -6,6 +6,19 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { deleteCompany } from '../../src/objects/companies/index.js';
+import { deleteCompany } from '../../src/objects/companies/index.js';
+import { deleteList } from '../../src/objects/lists.js';
+import { deleteList } from '../../src/objects/lists.js';
+import { deleteObjectRecord } from '../../src/objects/records/index.js';
+import { deleteObjectRecord } from '../../src/objects/records/index.js';
+import { deletePerson } from '../../src/objects/people-write.js';
+import { deletePerson } from '../../src/objects/people-write.js';
+import { deleteTask } from '../../src/objects/tasks.js';
+import { deleteTask } from '../../src/objects/tasks.js';
+import { isValidId } from '../../src/utils/validation.js';
+import { isValidId } from '../../src/utils/validation.js';
 import { UniversalDeleteService } from '../../src/services/UniversalDeleteService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
@@ -58,7 +71,6 @@ describe('UniversalDeleteService', () => {
     it('should delete a company record', async () => {
       vi.mocked(deleteCompany).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: 'comp_123',
       });
@@ -70,7 +82,6 @@ describe('UniversalDeleteService', () => {
     it('should delete a person record', async () => {
       vi.mocked(deletePerson).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.PEOPLE,
         record_id: 'person_456',
       });
@@ -82,7 +93,6 @@ describe('UniversalDeleteService', () => {
     it('should delete a list record', async () => {
       vi.mocked(deleteList).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.LISTS,
         record_id: 'list_789',
       });
@@ -94,7 +104,6 @@ describe('UniversalDeleteService', () => {
     it('should delete a records object record', async () => {
       vi.mocked(deleteObjectRecord).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.RECORDS,
         record_id: 'record_abc',
       });
@@ -106,7 +115,6 @@ describe('UniversalDeleteService', () => {
     it('should delete a deals object record', async () => {
       vi.mocked(deleteObjectRecord).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.DEALS,
         record_id: 'deal_def',
       });
@@ -119,7 +127,6 @@ describe('UniversalDeleteService', () => {
       vi.mocked(deleteTask).mockResolvedValue(true);
       process.env.NODE_ENV = 'production';
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_ghi',
       });
@@ -132,7 +139,6 @@ describe('UniversalDeleteService', () => {
       process.env.USE_MOCK_DATA = 'true';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_mock',
       });
@@ -146,7 +152,6 @@ describe('UniversalDeleteService', () => {
       process.env.OFFLINE_MODE = 'true';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_offline',
       });
@@ -162,7 +167,6 @@ describe('UniversalDeleteService', () => {
       // Neither USE_MOCK_DATA nor OFFLINE_MODE is set to 'true'
       vi.mocked(deleteTask).mockResolvedValue(true);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_real_api',
       });
@@ -178,7 +182,6 @@ describe('UniversalDeleteService', () => {
       // USE_MOCK_DATA is not set to 'true'
       vi.mocked(deleteTask).mockResolvedValue(true);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.TASKS,
         record_id: 'task_vitest',
       });
@@ -208,7 +211,6 @@ describe('UniversalDeleteService', () => {
       process.env.NODE_ENV = 'development';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const consoleSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -229,7 +231,6 @@ describe('UniversalDeleteService', () => {
       process.env.VERBOSE_TESTS = 'true';
       vi.mocked(isValidId).mockReturnValue(true);
 
-      const consoleSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -255,7 +256,6 @@ describe('UniversalDeleteService', () => {
     });
 
     it('should propagate errors from underlying delete functions', async () => {
-      const error = new Error('Delete failed');
       vi.mocked(deleteCompany).mockRejectedValue(error);
 
       await expect(
@@ -273,7 +273,6 @@ describe('UniversalDeleteService', () => {
     it('should handle empty record IDs', async () => {
       vi.mocked(deleteCompany).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: '',
       });
@@ -285,7 +284,6 @@ describe('UniversalDeleteService', () => {
     it('should handle null-like record IDs gracefully', async () => {
       vi.mocked(deleteList).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.LISTS,
         record_id: 'null',
       });
@@ -295,10 +293,8 @@ describe('UniversalDeleteService', () => {
     });
 
     it('should handle very long record IDs', async () => {
-      const longId = 'a'.repeat(1000);
       vi.mocked(deletePerson).mockResolvedValue(undefined);
 
-      const result = await UniversalDeleteService.deleteRecord({
         resource_type: UniversalResourceType.PEOPLE,
         record_id: longId,
       });

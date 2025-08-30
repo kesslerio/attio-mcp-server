@@ -35,7 +35,6 @@ export function createFilterWithSpecialHandling(
   operator: string,
   value: unknown
 ): ListEntryFilters {
-  const specialHandling = FIELD_SPECIAL_HANDLING[attributeSlug];
 
   if (!specialHandling) {
     return {
@@ -50,7 +49,6 @@ export function createFilterWithSpecialHandling(
     };
   }
 
-  const mappedOperator = specialHandling[operator] || operator;
   let processedValue = value;
 
   if (specialHandling.allowStringValue && typeof value === 'string') {

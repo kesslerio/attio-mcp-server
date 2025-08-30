@@ -2,13 +2,8 @@
  * Split: field-mapper – mappings and basic utilities
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  FIELD_MAPPINGS,
-  mapFieldName,
-  getValidResourceTypes,
-  getValidFields,
-} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 // Mocks matching original suite
 vi.mock('../../../../src/api/attio-client.js', () => ({
@@ -54,7 +49,7 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('has proper structure per mapping', () => {
-      Object.values(FIELD_MAPPINGS).forEach((mapping: any) => {
+      Object.values(FIELD_MAPPINGS).forEach((mapping: unknown) => {
         expect(mapping).toHaveProperty('fieldMappings');
         expect(mapping).toHaveProperty('validFields');
         expect(mapping).toHaveProperty('commonMistakes');
@@ -65,21 +60,18 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('maps common company field variations', () => {
-      const company = FIELD_MAPPINGS[UniversalResourceType.COMPANIES];
       expect(company.fieldMappings.website).toBe('domains');
       expect(company.fieldMappings.url).toBe('domains');
       expect(company.fieldMappings.company_name).toBe('name');
     });
 
     it('maps common people field variations', () => {
-      const people = FIELD_MAPPINGS[UniversalResourceType.PEOPLE];
       expect(people.fieldMappings.first_name).toBe('name');
       expect(people.fieldMappings.last_name).toBe('name');
       expect(people.fieldMappings.email).toBe('email_addresses');
     });
 
     it('maps common task field variations', () => {
-      const tasks = FIELD_MAPPINGS[UniversalResourceType.TASKS];
       expect(tasks.fieldMappings.title).toBe('content');
       expect(tasks.fieldMappings.status).toBe('is_completed');
       expect(tasks.fieldMappings.due_date).toBe('deadline_at');
@@ -88,7 +80,6 @@ describe('field-mapper – mappings and basics', () => {
 
   describe('mapFieldName()', () => {
     it('returns original field when no mapping exists', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'unknown_field'
       );
@@ -96,7 +87,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('maps incorrect field names', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'website'
       );
@@ -104,7 +94,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('respects available attributes (keeps original if present)', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'website',
         ['website', 'domains']
@@ -113,7 +102,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('maps when original not present in attributes', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'website',
         ['domains']
@@ -122,7 +110,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('handles case-insensitive mapping', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'WEBSITE'
       );
@@ -130,7 +117,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('returns original when mapped field missing in attributes', async () => {
-      const result = await mapFieldName(
         UniversalResourceType.COMPANIES,
         'website',
         ['name']
@@ -141,7 +127,6 @@ describe('field-mapper – mappings and basics', () => {
 
   describe('getValidResourceTypes()', () => {
     it('returns string of valid resource types', () => {
-      const result = getValidResourceTypes();
       expect(typeof result).toBe('string');
       expect(result).toContain('companies');
       expect(result).toContain('people');
@@ -155,7 +140,6 @@ describe('field-mapper – mappings and basics', () => {
 
   describe('getValidFields()', () => {
     it('returns valid fields for resource type', () => {
-      const result = getValidFields(UniversalResourceType.COMPANIES);
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
       expect(result).toContain('name');
@@ -163,8 +147,6 @@ describe('field-mapper – mappings and basics', () => {
     });
 
     it('differs across resource types', () => {
-      const companyFields = getValidFields(UniversalResourceType.COMPANIES);
-      const peopleFields = getValidFields(UniversalResourceType.PEOPLE);
       expect(companyFields).not.toEqual(peopleFields);
       expect(peopleFields).toContain('email_addresses');
     });

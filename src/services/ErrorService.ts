@@ -5,22 +5,8 @@
  * Provides universal error creation and contextual suggestions for better user experience.
  */
 
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  validateResourceType,
-  getFieldSuggestions,
-} from '../handlers/tool-configs/universal/field-mapper.js';
 import { EnhancedApiError } from '../errors/enhanced-api-errors.js';
-import type {
-  AxiosErrorLike,
-  ValidationErrorContext,
-  UnknownRecord,
-  isRecord,
-} from '../types/service-types.js';
+import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 
 /**
  * ErrorService provides centralized error handling and suggestion functionality
@@ -66,8 +52,6 @@ export class ErrorService {
 
     // Classify the error type based on the original error
     let errorType = ErrorType.SYSTEM_ERROR;
-    const errorObj = originalError as Record<string, unknown>;
-    const lowerErrorMessage = errorMessage.toLowerCase();
 
     if (
       lowerErrorMessage.includes('not found') ||
@@ -88,7 +72,6 @@ export class ErrorService {
       errorType = ErrorType.API_ERROR;
     }
 
-    const message = `Universal ${operation} failed for resource type ${resourceType}: ${errorMessage}`;
 
     return new UniversalValidationError(message, errorType, {
       suggestion: this.getOperationSuggestion(
@@ -128,10 +111,8 @@ export class ErrorService {
     }
 
     // Use lowercase for pattern matching
-    const lowerErrorMessage = errorMessage.toLowerCase();
 
     // First check if this is an invalid resource type
-    const resourceValidation = validateResourceType(resourceType);
     if (!resourceValidation.valid && resourceValidation.suggestion) {
       return resourceValidation.suggestion;
     }
@@ -177,24 +158,20 @@ export class ErrorService {
 
     // Handle "Cannot find attribute" errors with field suggestions
     if (lowerErrorMessage.includes('cannot find attribute')) {
-      const errorMessageForMatch =
         error instanceof Error
           ? error.message
           : typeof error === 'object' && error !== null && 'message' in error
             ? String((error as Record<string, unknown>).message)
             : '';
-      const match = errorMessageForMatch.match(
         /cannot find attribute with slug\/id["\s]*([^"]*)/i
       );
       if (match && match[1]) {
-        const fieldName = match[1].replace(/["]/g, '').trim();
         // Try to get field suggestions for the resource type
         if (
           Object.values(UniversalResourceType).includes(
             resourceType as UniversalResourceType
           )
         ) {
-          const suggestion = getFieldSuggestions(
             resourceType as UniversalResourceType,
             fieldName
           );
@@ -235,7 +212,6 @@ export class ErrorService {
 
     // Check for remaining "cannot find attribute" errors not caught above
     if (lowerErrorMessage.includes('cannot find attribute')) {
-      const attrMatch = lowerErrorMessage.match(
         /cannot find attribute with slug\/id["\s]*([^"]*)/
       );
       if (attrMatch && attrMatch[1]) {
@@ -371,12 +347,9 @@ export class ErrorService {
     name: string;
     message: string;
   } {
-    const status = error?.response?.status || 500;
 
     // Extract validation message for 400/422 errors
-    const extractValidationMessage = (err: ValidationErrorContext): string => {
       try {
-        const responseData = err?.response?.data;
         if (responseData?.message) return String(responseData.message);
         if (responseData?.detail) return String(responseData.detail);
         if (responseData?.error && typeof responseData.error === 'string')

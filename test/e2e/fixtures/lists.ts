@@ -5,27 +5,6 @@
  */
 import { E2EListFactory, type E2ETestList } from '../utils/test-data.js';
 
-/**
- * Standard list fixtures for E2E testing
- */
-export const listFixtures = {
-  /**
-   * Company lists
-   */
-  companies: {
-    prospects: (): E2ETestList =>
-      E2EListFactory.createCompanyList({
-        name: 'E2E Prospect Companies',
-        description:
-          'Companies identified as potential prospects for E2E testing',
-      }),
-
-    customers: (): E2ETestList =>
-      E2EListFactory.createCompanyList({
-        name: 'E2E Customer Companies',
-        description: 'Current customer companies for E2E testing',
-      }),
-
     competitors: (): E2ETestList =>
       E2EListFactory.createCompanyList({
         name: 'E2E Competitor Analysis',

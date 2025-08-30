@@ -4,14 +4,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
-import {
-  UniversalResourceType,
-  SearchType,
-  MatchType,
-  SortType,
-} from '../../src/handlers/tool-configs/universal/types.js';
+
+import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
+import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
+import { advancedSearchPeople } from '../../src/objects/people/index.js';
+import { advancedSearchPeople } from '../../src/objects/people/index.js';
 import { AttioRecord } from '../../src/types/attio.js';
+import { UniversalSearchService } from '../../src/services/UniversalSearchService.js';
 
 // Mock the imported modules
 vi.mock('../../src/objects/companies/index.js', () => ({
@@ -52,7 +51,6 @@ describe('Content Search Functionality', () => {
 
   describe('UniversalSearchService.searchRecords', () => {
     it('should default to basic search when search_type is not specified', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: { name: [{ value: 'Test Company' }] },
@@ -61,7 +59,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
       });
@@ -83,7 +80,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should use content search when search_type is CONTENT', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: {
@@ -95,7 +91,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'AI',
         search_type: SearchType.CONTENT,
@@ -129,7 +124,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should use custom fields when specified', async () => {
-      const mockResults = [] as AttioRecord[];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
       await UniversalSearchService.searchRecords({
@@ -161,7 +155,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should use exact match when match_type is EXACT', async () => {
-      const mockResults = [] as AttioRecord[];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
       await UniversalSearchService.searchRecords({
@@ -187,7 +180,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should apply relevance ranking when sort is RELEVANCE', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: {
@@ -206,7 +198,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'AI',
         search_type: SearchType.CONTENT,
@@ -220,7 +211,6 @@ describe('Content Search Functionality', () => {
 
   describe('Content Search for People', () => {
     it('should search across default people fields', async () => {
-      const mockResults = {
         results: [
           {
             id: { record_id: '1' },
@@ -243,7 +233,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchPeople).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.PEOPLE,
         query: 'machine learning',
         search_type: SearchType.CONTENT,
@@ -281,7 +270,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should handle people search with custom fields', async () => {
-      const mockResults = {
         results: [] as AttioRecord[],
         pagination: {
           totalCount: 0,
@@ -326,7 +314,6 @@ describe('Content Search Functionality', () => {
 
   describe('Relevance Ranking Algorithm', () => {
     it('should rank exact matches highest', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: { name: [{ value: 'Other Company' }] },
@@ -343,7 +330,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'AI',
         search_type: SearchType.CONTENT,
@@ -357,7 +343,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should rank by number of occurrences', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: {
@@ -376,7 +361,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'AI',
         search_type: SearchType.CONTENT,
@@ -388,7 +372,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should handle partial word matches', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: {
@@ -400,7 +383,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'automat',
         search_type: SearchType.CONTENT,
@@ -414,10 +396,8 @@ describe('Content Search Functionality', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty query gracefully', async () => {
-      const mockResults = [] as AttioRecord[];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: '',
         search_type: SearchType.CONTENT,
@@ -427,7 +407,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should handle null/undefined fields gracefully', async () => {
-      const mockResults = [
         {
           id: { record_id: '1' },
           values: {
@@ -440,7 +419,6 @@ describe('Content Search Functionality', () => {
 
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
-      const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'test',
         search_type: SearchType.CONTENT,
@@ -452,7 +430,6 @@ describe('Content Search Functionality', () => {
     });
 
     it('should handle special characters in search query', async () => {
-      const mockResults = [] as AttioRecord[];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
       await UniversalSearchService.searchRecords({
@@ -477,7 +454,6 @@ describe('Content Search Functionality', () => {
 
   describe('Pagination with Content Search', () => {
     it('should pass pagination parameters correctly', async () => {
-      const mockResults = [] as AttioRecord[];
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults);
 
       await UniversalSearchService.searchRecords({

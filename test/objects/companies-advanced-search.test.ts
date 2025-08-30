@@ -2,15 +2,14 @@
  * Test for companies advanced search functionality
  */
 import { describe, test, expect, beforeAll } from 'vitest';
+
 import { advancedSearchCompanies } from '../../src/objects/companies/index';
 import { FilterConditionType } from '../../src/types/attio';
 import { initializeAttioClient } from '../../src/api/attio-client';
 
 // Skip tests if no API key
-const skipIntegrationTests = !process.env.ATTIO_API_KEY;
 
 // Define mock filters to search with
-const filters = {
   filters: [
     {
       attribute: { slug: 'name' },
@@ -20,7 +19,6 @@ const filters = {
   ],
 };
 
-const testSuite = skipIntegrationTests ? describe.skip : describe;
 testSuite('Companies Advanced Search', () => {
   beforeAll(() => {
     if (!skipIntegrationTests) {
@@ -29,7 +27,6 @@ testSuite('Companies Advanced Search', () => {
   });
 
   test('should return either array or paginated results', async () => {
-    const results = await advancedSearchCompanies(filters, 5);
 
     // Since the function returns either an array or paginated results
     // we need proper checks for both cases
@@ -40,12 +37,10 @@ testSuite('Companies Advanced Search', () => {
       // Array contents would depend on test data, so we can only
       // check for structure if there are results
       if (results.length > 0) {
-        const firstResult = results[0];
         expect(firstResult).toHaveProperty('id.record_id');
       }
     } else {
       // If it's a paginated response, check pagination structure
-      const paginatedResults = results as any;
       expect(paginatedResults).toBeDefined();
       expect(paginatedResults).toHaveProperty('data');
       expect(Array.isArray(paginatedResults.data)).toBe(true);
@@ -55,7 +50,6 @@ testSuite('Companies Advanced Search', () => {
 
       // If we have results, check their structure
       if (paginatedResults.data && paginatedResults.data.length > 0) {
-        const firstResult = paginatedResults.data[0];
         expect(firstResult).toHaveProperty('id.record_id');
       }
     }

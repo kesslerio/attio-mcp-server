@@ -2,23 +2,11 @@
  * Shared setup and imports for Lists Management E2E Tests
  */
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest';
-import { E2ETestBase } from '../../setup.js';
 import { E2EAssertions } from '../../utils/assertions.js';
+import { E2ETestBase } from '../../setup.js';
 import { loadE2EConfig } from '../../utils/config-loader.js';
-import {
-  CompanyFactory,
-  PersonFactory,
-  listFixtures,
-} from '../../fixtures/index.js';
+import { startTestSuite, endTestSuite } from '../../utils/logger.js';
+import { startTestSuite, endTestSuite } from '../../utils/logger.js';
 import type { TestDataObject, McpToolResponse } from '../../types/index.js';
 
 // Import enhanced tool caller with logging and migration
@@ -43,7 +31,6 @@ export function createSharedSetup() {
       startTestSuite('lists-management');
 
       // Validate test environment and tool migration setup
-      const envValidation = await validateTestEnvironment();
       if (!envValidation.valid) {
         console.warn('⚠️ Test environment warnings:', envValidation.warnings);
       }

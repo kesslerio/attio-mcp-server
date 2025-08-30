@@ -2,11 +2,11 @@
  * Export all prompt templates
  */
 import { PromptTemplate } from '../types.js';
-import peoplePrompts from './people.js';
 import companiesPrompts from './companies.js';
 import dealsPrompts from './deals.js';
 import listsPrompts from './lists.js';
 import notesPrompts from './notes.js';
+import peoplePrompts from './people.js';
 
 /**
  * All available prompt templates
@@ -54,7 +54,6 @@ export function getPromptById(id: string): PromptTemplate | undefined {
  * @returns Array of unique category names
  */
 export function getAllCategories(): string[] {
-  const categories = new Set<string>();
 
   allPrompts.forEach((prompt) => {
     categories.add(prompt.category);

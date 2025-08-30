@@ -3,9 +3,9 @@
  * Extracted from field-mapper.ts during Issue #529 modular refactoring
  */
 
-import { UniversalResourceType } from '../types.js';
-import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
 import { mapFieldName } from '../transformers/field-mapper.js';
+import { RESOURCE_TYPE_MAPPINGS as FIELD_MAPPINGS } from '../constants/index.js';
+import { UniversalResourceType } from '../types.js';
 
 /**
  * Gets suggestions for resolving field collisions
@@ -16,21 +16,16 @@ function getFieldCollisionSuggestion(
   targetField: string,
   conflictingFields: string[]
 ): string {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) return '';
 
   // Check if any of the conflicting fields is the actual target field
-  const preferredField = conflictingFields.find((f) => f === targetField);
   if (preferredField) {
     return `Recommended: Use "${preferredField}" instead of the mapped alternatives.`;
   }
 
   // Find the most "canonical" field name (shortest, most direct)
-  const sortedFields = conflictingFields.sort((a, b) => {
     // Prefer fields without underscores/prefixes
-    const aScore =
       (a.includes('_') ? 1 : 0) + (a.includes(resourceType) ? 1 : 0);
-    const bScore =
       (b.includes('_') ? 1 : 0) + (b.includes(resourceType) ? 1 : 0);
     if (aScore !== bScore) return aScore - bScore;
     return a.length - b.length;
@@ -52,7 +47,6 @@ export async function detectFieldCollisions(
   errors: string[];
   collisions: Record<string, string[]>;
 }> {
-  const mapping = FIELD_MAPPINGS[resourceType];
   if (!mapping) {
     return { hasCollisions: false, errors: [], collisions: {} };
   }
@@ -67,7 +61,6 @@ export async function detectFieldCollisions(
       continue;
     }
 
-    const targetField = await mapFieldName(
       resourceType,
       inputField,
       availableAttributes
@@ -106,8 +99,6 @@ export async function detectFieldCollisions(
       collisions[targetField] = inputFields;
       hasCollisions = true;
 
-      const inputFieldsList = inputFields.map((f) => `"${f}"`).join(', ');
-      const suggestion = getFieldCollisionSuggestion(
         resourceType,
         targetField,
         inputFields

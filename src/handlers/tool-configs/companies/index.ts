@@ -14,19 +14,13 @@
  */
 
 // Import configs by category
-import { searchToolConfigs, searchToolDefinitions } from './search.js';
-import { crudToolConfigs, crudToolDefinitions } from './crud.js';
-import {
-  attributeToolConfigs,
-  attributeToolDefinitions,
-} from './attributes.js';
-import { notesToolConfigs, notesToolDefinitions } from './notes.js';
-import {
-  relationshipToolConfigs,
-  relationshipToolDefinitions,
-} from './relationships.js';
 import { batchToolConfigs, batchToolDefinitions } from './batch.js';
+import { crudToolConfigs, crudToolDefinitions } from './crud.js';
 import { formatterConfigs, formatterToolDefinitions } from './formatters.js';
+import { notesToolConfigs, notesToolDefinitions } from './notes.js';
+import { searchToolConfigs, searchToolDefinitions } from './search.js';
+import { verifyToolConfigsWithRequiredTools } from '../../tools/config-verifier.js';
+import { verifyToolConfigsWithRequiredTools } from '../../tools/config-verifier.js';
 
 /**
  * Aggregated company tool configurations

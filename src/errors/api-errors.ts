@@ -5,32 +5,6 @@
 
 import { sanitizeErrorMessage } from '../utils/error-sanitizer.js';
 
-/**
- * Base class for all Attio API errors
- */
-export class AttioApiError extends Error {
-  /**
-   * Create an AttioApiError
-   *
-   * @param message - Error message
-   * @param statusCode - HTTP status code
-   * @param endpoint - API endpoint that was called
-   * @param details - Additional error details
-   */
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-    public readonly endpoint: string,
-    public readonly method: string,
-    public readonly details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = 'AttioApiError';
-
-    // This line is needed to properly capture the stack trace in derived classes
-    Object.setPrototypeOf(this, AttioApiError.prototype);
-  }
-
   /**
    * Get a formatted representation of the error for logging
    */
@@ -41,7 +15,6 @@ export class AttioApiError extends Error {
     }
 
     // In development, include more details but still sanitize sensitive data
-    const sanitizedEndpoint = this.endpoint.replace(
       /\/[a-f0-9-]{20,}/gi,
       '/[ID_REDACTED]'
     );
@@ -64,7 +37,6 @@ export class AuthenticationError extends AttioApiError {
     details?: Record<string, unknown>
   ) {
     // Sanitize the message to avoid exposing API key format
-    const sanitizedMessage = message.replace(
       /api[_-]?key[\s:=]*["']?[a-zA-Z0-9_-]{20,}["']?/gi,
       '[CREDENTIAL_REDACTED]'
     );
@@ -87,7 +59,6 @@ export class AuthorizationError extends AttioApiError {
     details?: Record<string, unknown>
   ) {
     // Sanitize the message to avoid exposing permission details
-    const sanitizedMessage = message.replace(
       /permission[s]?[\s:]+["']?[a-z_.]+["']?/gi,
       '[PERMISSION_REDACTED]'
     );
@@ -111,7 +82,6 @@ export class ResourceNotFoundError extends AttioApiError {
     details?: Record<string, unknown>
   ) {
     // Sanitize resource ID to avoid exposing internal identifiers
-    const sanitizedId = resourceId.length > 10 ? '[ID_REDACTED]' : resourceId;
     super(
       `${resourceType} ${sanitizedId} not found`,
       404,
@@ -245,22 +215,17 @@ export function createApiErrorFromAxiosError(
   endpoint: string,
   method: string
 ): AttioApiError {
-  const axiosError = error as {
     response?: { status?: number; data?: { message?: string } };
     message?: string;
   };
-  const statusCode = axiosError.response?.status || 500;
-  const message =
     axiosError.response?.data?.message ||
     axiosError.message ||
     'Unknown API error';
-  const details = axiosError.response?.data || {};
 
   // Special case for ResourceNotFoundError with object types
   if (statusCode === 404 && endpoint.includes('/objects/')) {
     // Extract resource type and ID from endpoint
     // Assuming endpoint format like /objects/{type}/records/{id}
-    const matches = endpoint.match(/\/objects\/([^/]+)\/records\/([^/]+)/);
     if (matches && matches.length >= 3) {
       const [, resourceType, resourceId] = matches;
       // Format resource type properly: 'people' -> 'Person', 'companies' -> 'Company'

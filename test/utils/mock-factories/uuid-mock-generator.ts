@@ -27,31 +27,20 @@ export class UUIDMockGenerator {
    */
   static generateDeterministicUUID(seed?: string): string {
     // Create deterministic seed from input or counter
-    const seedValue = seed || `perf-test-${this.seedCounter++}`;
 
     // Simple hash function for deterministic hex generation
     let hash = 0;
     for (let i = 0; i < seedValue.length; i++) {
-      const char = seedValue.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
 
     // Convert hash to hex string and pad, ensuring exactly 8 characters
-    const hexSeed = Math.abs(hash).toString(16).padStart(8, '0').slice(-8);
 
     // Generate deterministic UUID parts (use timestamp for first segment, not hexSeed)
-    const timestampRaw = Math.floor(Date.now() / 1000).toString(16);
-    const timestamp = timestampRaw.padStart(8, '0').slice(-8);
 
-    const random1 = this.generateHexFromSeed(seedValue + 'a', 4);
-    const random2 = this.generateHexFromSeed(seedValue + 'b', 4);
-    const random3 = this.generateHexFromSeed(seedValue + 'c', 4);
-    const random4 = this.generateHexFromSeed(seedValue + 'd', 12);
 
     // Format as UUID v4 (set version and variant bits)
-    const version = '4'; // UUID v4
-    const variant = '8'; // Variant 10xx
 
     return `${timestamp}-${random1}-${version}${random2.slice(1)}-${variant}${random3.slice(1)}-${random4}`;
   }
@@ -61,7 +50,6 @@ export class UUIDMockGenerator {
    */
   static generateCompanyUUID(identifier?: string): string {
     if (identifier) {
-      const seed = `company-${identifier}`;
       return this.generateDeterministicUUID(seed);
     }
     // For no identifier, use truly random UUID
@@ -73,7 +61,6 @@ export class UUIDMockGenerator {
    */
   static generatePersonUUID(identifier?: string): string {
     if (identifier) {
-      const seed = `person-${identifier}`;
       return this.generateDeterministicUUID(seed);
     }
     // For no identifier, use truly random UUID
@@ -85,7 +72,6 @@ export class UUIDMockGenerator {
    */
   static generateTaskUUID(identifier?: string): string {
     if (identifier) {
-      const seed = `task-${identifier}`;
       return this.generateDeterministicUUID(seed);
     }
     // For no identifier, use truly random UUID
@@ -97,7 +83,6 @@ export class UUIDMockGenerator {
    */
   static generateListUUID(identifier?: string): string {
     if (identifier) {
-      const seed = `list-${identifier}`;
       return this.generateDeterministicUUID(seed);
     }
     // For no identifier, use truly random UUID
@@ -114,8 +99,6 @@ export class UUIDMockGenerator {
     }
 
     // Fallback to manual random UUID generation
-    const randomHex = () => Math.floor(Math.random() * 16).toString(16);
-    const randomBytes = (length: number) =>
       Array.from({ length }, () => randomHex()).join('');
 
     return [
@@ -138,7 +121,6 @@ export class UUIDMockGenerator {
    * Validate that generated UUID meets requirements
    */
   static validateGeneratedUUID(uuid: string): boolean {
-    const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
@@ -151,14 +133,11 @@ export class UUIDMockGenerator {
     totalTime: number;
     iterations: number;
   } {
-    const startTime = performance.now();
 
     for (let i = 0; i < iterations; i++) {
       this.generateDeterministicUUID(`benchmark-${i}`);
     }
 
-    const endTime = performance.now();
-    const totalTime = endTime - startTime;
 
     return {
       averageTime: totalTime / iterations,
@@ -173,7 +152,6 @@ export class UUIDMockGenerator {
   private static generateHexFromSeed(seed: string, length: number): string {
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
-      const char = seed.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
@@ -219,7 +197,6 @@ export class PerformanceUUIDGenerator {
       this.initializePool();
     }
 
-    const uuid = this.uuidPool[this.poolIndex];
     this.poolIndex = (this.poolIndex + 1) % this.POOL_SIZE;
     return uuid;
   }

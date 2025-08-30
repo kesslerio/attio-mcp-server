@@ -144,7 +144,7 @@ declare module 'cacheable-request' {
     emit(event: 'error', error: Error): boolean;
   }
 
-  function CacheableRequest(request: (...args: any[]) => any): CacheableRequest;
+  function CacheableRequest(request: (...args: unknown[]) => any): CacheableRequest;
 
   export = CacheableRequest;
 }

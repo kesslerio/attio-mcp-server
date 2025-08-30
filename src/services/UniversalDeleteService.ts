@@ -5,9 +5,20 @@
  * Provides universal delete functionality across all resource types.
  */
 
+import { deleteList, getListDetails } from '../objects/lists.js';
+import { deleteList, getListDetails } from '../objects/lists.js';
+import { deleteNote } from '../objects/notes.js';
+import { deleteNote } from '../objects/notes.js';
+import { deletePerson } from '../objects/people-write.js';
+import { deletePerson } from '../objects/people-write.js';
+import { deleteTask, getTask } from '../objects/tasks.js';
+import { deleteTask, getTask } from '../objects/tasks.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { isValidId } from '../utils/validation.js';
+import { shouldUseMockData } from './create/index.js';
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/types.js';
-import { isValidId } from '../utils/validation.js';
 
 // Import delete functions for each resource type
 import {
@@ -25,16 +36,6 @@ import { deleteNote } from '../objects/notes.js';
 import { getPersonDetails } from '../objects/people/basic.js';
 
 /**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only use mocks when explicitly requested
-  return (
-    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true'
-  );
-}
-
-/**
  * UniversalDeleteService provides centralized record deletion functionality
  */
 export class UniversalDeleteService {
@@ -42,10 +43,6 @@ export class UniversalDeleteService {
    * Helper to detect 404 errors from various API error formats
    */
   private static is404Error(err: unknown): boolean {
-    const anyErr = err as any;
-    const status = anyErr?.response?.status ?? anyErr?.status;
-    const code = anyErr?.response?.data?.code ?? anyErr?.code;
-    const msg = (anyErr?.response?.data?.message ?? anyErr?.message ?? '')
       .toString()
       .toLowerCase();
 
@@ -150,11 +147,10 @@ export class UniversalDeleteService {
         }
 
         try {
-          const resp = await deleteTask(record_id);
 
           // deleteTask returns boolean - if false, treat as not found
           if (resp === false) {
-            const err: any = new Error(
+            const err: unknown = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -169,7 +165,7 @@ export class UniversalDeleteService {
         } catch (error: unknown) {
           // Map API errors to structured format
           if (this.is404Error(error)) {
-            const err: any = new Error(
+            const err: unknown = new Error(
               `Task with ID "${record_id}" not found.`
             );
             err.status = 404;
@@ -183,7 +179,6 @@ export class UniversalDeleteService {
         }
 
       case UniversalResourceType.NOTES:
-        const result = await deleteNote(record_id);
         return { success: result.success, record_id };
 
       default:

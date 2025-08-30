@@ -6,7 +6,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { UniversalResourceType } from '../src/handlers/tool-configs/universal/types.js';
+import * as advancedOps from '../src/handlers/tool-configs/universal/advanced-operations.js';
+import * as advancedOps from '../src/handlers/tool-configs/universal/advanced-operations.js';
+import * as coreOps from '../src/handlers/tool-configs/universal/core-operations.js';
+import * as coreOps from '../src/handlers/tool-configs/universal/core-operations.js';
 import type { ResourceType } from '../src/core/types.js';
 
 // Import configurations to test
@@ -24,7 +29,6 @@ import {
 describe('Universal Resource Types Validation', () => {
   describe('All 7 Resource Types Enum Validation', () => {
     it('should have exactly 7 resource types defined', () => {
-      const resourceTypes = Object.values(UniversalResourceType);
       expect(resourceTypes).toHaveLength(7);
 
       // Verify all expected types are present
@@ -48,7 +52,6 @@ describe('Universal Resource Types Validation', () => {
   });
 
   describe('formatResult Functions Support All Resource Types', () => {
-    const mockDataByType = {
       companies: CompanyMockFactory.create(),
       people: PersonMockFactory.create(),
       lists: ListMockFactory.create(),
@@ -61,7 +64,6 @@ describe('Universal Resource Types Validation', () => {
       }, // Simple mock for notes
     };
 
-    const formatResultFunctions = [
       { name: 'search-records', fn: coreOps.searchRecordsConfig.formatResult },
       {
         name: 'get-record-details',
@@ -107,7 +109,6 @@ describe('Universal Resource Types Validation', () => {
             }
 
             expect(() => {
-              const result = fn(mockData, resourceType as ResourceType);
               expect(typeof result).toBe('string');
               expect(result.length).toBeGreaterThan(0);
             }).not.toThrow();
@@ -119,9 +120,7 @@ describe('Universal Resource Types Validation', () => {
 
   describe('Phase 2 LISTS Resource Type Validation', () => {
     it('should properly support LISTS type in all formatResult functions', () => {
-      const listMockData = ListMockFactory.create();
 
-      const formatResultFunctions = [
         coreOps.searchRecordsConfig.formatResult,
         coreOps.getRecordDetailsConfig.formatResult,
         coreOps.createRecordConfig.formatResult,
@@ -134,7 +133,6 @@ describe('Universal Resource Types Validation', () => {
 
       formatResultFunctions.forEach((formatFn, index) => {
         expect(() => {
-          const result = formatFn(listMockData, 'lists');
           expect(typeof result).toBe('string');
           expect(result.length).toBeGreaterThan(0);
           // Ensure it's not JSON output
@@ -146,10 +144,8 @@ describe('Universal Resource Types Validation', () => {
 
   describe('Resource Type Mappings and Validation', () => {
     it('should handle plural and special forms correctly', () => {
-      const resourceTypes = Object.values(UniversalResourceType);
 
       // Most resource types should be plural forms, with "people" being the exception
-      const expectedTypes = [
         'companies',
         'people',
         'lists',
@@ -169,11 +165,9 @@ describe('Universal Resource Types Validation', () => {
       expect(() => ListMockFactory.create()).not.toThrow();
 
       // Verify mock data has expected structure
-      const companyMock = CompanyMockFactory.create();
       expect(companyMock).toBeDefined();
       expect(typeof companyMock).toBe('object');
 
-      const personMock = PersonMockFactory.create();
       expect(personMock).toBeDefined();
       expect(typeof personMock).toBe('object');
     });
@@ -181,9 +175,7 @@ describe('Universal Resource Types Validation', () => {
 
   describe('Contract Consistency Across All Types', () => {
     it('should return consistent string format across all resource types for search', () => {
-      const searchResults = Object.values(UniversalResourceType).map(
         (resourceType) => {
-          const mockData = getMockDataForType(resourceType);
           return {
             resourceType,
             result: coreOps.searchRecordsConfig.formatResult(
@@ -203,9 +195,7 @@ describe('Universal Resource Types Validation', () => {
     });
 
     it('should return consistent string format across all resource types for details', () => {
-      const detailResults = Object.values(UniversalResourceType).map(
         (resourceType) => {
-          const mockData = getMockDataForType(resourceType);
           return {
             resourceType,
             result: coreOps.getRecordDetailsConfig.formatResult(

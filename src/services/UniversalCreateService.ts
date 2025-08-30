@@ -5,13 +5,27 @@
  * Provides universal create functionality across all resource types with enhanced validation and error handling.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalCreateParams } from '../handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../types/attio.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
+import { createCompany } from '../objects/companies/index.js';
+import { createCompany } from '../objects/companies/index.js';
+import { createList } from '../objects/lists.js';
+import { createList } from '../objects/lists.js';
+import { createObjectRecord as createObjectRecordApi } from '../objects/records/index.js';
+import { createObjectRecord as createObjectRecordApi } from '../objects/records/index.js';
+import { createPerson } from '../objects/people/index.js';
+import { createPerson } from '../objects/people/index.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
+import { PeopleDataNormalizer } from '../utils/normalization/people-normalization.js';
+import { PeopleDataNormalizer } from '../utils/normalization/people-normalization.js';
+import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { validateRecordFields } from '../utils/validation-utils.js';
+import { validateRecordFields } from '../utils/validation-utils.js';
+import { ValidationService } from './ValidationService.js';
+import { ValidationService } from './ValidationService.js';
+import type { UniversalCreateParams } from '../handlers/tool-configs/universal/types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -80,7 +94,6 @@ import type {
 } from '../types/service-types.js';
 
 // Create scoped logger for this service
-const logger = createScopedLogger(
   'UniversalCreateService',
   undefined,
   OperationType.TOOL_EXECUTION
@@ -180,8 +193,6 @@ function createFieldTypeError(
   receivedValue: unknown,
   resourceType?: string
 ): UniversalValidationError {
-  const receivedType = typeof receivedValue;
-  const message = ERROR_MESSAGES.INVALID_FIELD_TYPE(
     field,
     expectedType,
     receivedType
@@ -248,7 +259,6 @@ function createFieldCollisionError(
   targetField: string,
   resourceType: string
 ): UniversalValidationError {
-  const message = ERROR_MESSAGES.FIELD_COLLISION(collidingFields, targetField);
 
   return createEnhancedValidationError(message, {
     field: targetField,
@@ -263,8 +273,6 @@ function createFieldCollisionError(
 }
 
 // Field filtering to prevent test-only fields from reaching API
-const COMPANY_ALLOWED_FIELDS = ['name', 'domains', 'description'];
-const PERSON_ALLOWED_FIELDS = [
   'name',
   'email_addresses',
   'phone_numbers',
@@ -296,60 +304,46 @@ import {
   CreateNoteBody,
 } from '../objects/notes.js';
 
-/**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
+// Import create service factory
+import { getCreateService, shouldUseMockData } from './create/index.js';
+
+// shouldUseMockData is now imported from the factory
 
 /**
- * Company creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
+ * Company creation with factory support - uses create service factory
+ * Updated to use factory pattern instead of direct MockService import (Phase B)
  */
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
   // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
     ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
     : companyData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(data);
+  return await service.createCompany(data);
 }
 
 /**
- * Person creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
+ * Person creation with factory support - uses create service factory
+ * Updated to use factory pattern instead of direct MockService import (Phase B)
  */
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
   // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
     ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
     : personData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(data);
+  return await service.createPerson(data);
 }
 
 /**
- * Task creation with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
+ * Task creation with factory support - uses create service factory
+ * Updated to use factory pattern instead of direct MockService import (Phase B)
  */
 async function createTaskWithMockSupport(
   taskData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createTask(taskData);
+  // Use factory to get appropriate service implementation
+  return await service.createTask(taskData);
 }
 
 /**
@@ -361,7 +355,6 @@ async function enhanceUniquenessError(
   mappedData: Record<string, unknown>
 ): Promise<string> {
   // Extract field name from error message if possible
-  const fieldMatch =
     errorMessage.match(/field\s+["']([^"']+)["']/i) ||
     errorMessage.match(/attribute\s+["']([^"']+)["']/i) ||
     errorMessage.match(/column\s+["']([^"']+)["']/i);
@@ -369,8 +362,6 @@ async function enhanceUniquenessError(
   let enhancedMessage = `Uniqueness constraint violation for ${resourceType}`;
 
   if (fieldMatch && fieldMatch[1]) {
-    const fieldName = fieldMatch[1];
-    const fieldValue = mappedData[fieldName];
     enhancedMessage += `: The value "${fieldValue}" for field "${fieldName}" already exists.`;
   } else {
     enhancedMessage += `: A record with these values already exists.`;
@@ -499,7 +490,6 @@ export class UniversalCreateService {
       >; // Normal validation for other types
     }
 
-    const fieldValidation = validateFields(resource_type, fieldsToValidate);
     logger.debug('Field validation result', {
       valid: fieldValidation.valid,
       warnings: fieldValidation.warnings,
@@ -513,7 +503,6 @@ export class UniversalCreateService {
       });
     }
     if (fieldValidation.suggestions.length > 0) {
-      const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
       logger.info('Field suggestions available', {
@@ -533,7 +522,6 @@ export class UniversalCreateService {
 
       // Add suggestions if available (truncated to prevent buffer overflow)
       if (fieldValidation.suggestions.length > 0) {
-        const truncated = ValidationService.truncateSuggestions(
           fieldValidation.suggestions
         );
         errorMessage += '\n\n💡 Suggestions:\n';
@@ -543,7 +531,6 @@ export class UniversalCreateService {
       }
 
       // List available fields for this resource type
-      const mapping = FIELD_MAPPINGS[resource_type];
       if (mapping && mapping.validFields.length > 0) {
         errorMessage += `\n\n📋 Available fields for ${resource_type}:\n  ${mapping.validFields.join(', ')}`;
         remediation.push(
@@ -580,20 +567,17 @@ export class UniversalCreateService {
         // For records, we need to extract the objectSlug for metadata discovery
         const options: { objectSlug?: string } = {};
         if (resource_type === UniversalResourceType.RECORDS) {
-          const objectSlug = record_data.object || record_data.object_api_slug;
           if (objectSlug && typeof objectSlug === 'string') {
             options.objectSlug = objectSlug;
           }
         }
 
-        const attributeResult =
           await UniversalMetadataService.discoverAttributesForResourceType(
             resource_type,
             options
           );
 
         // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
-        const attrs = (attributeResult?.attributes as any[]) ?? [];
         availableAttributes = Array.from(
           new Set(
             attrs.flatMap((a) =>
@@ -607,7 +591,6 @@ export class UniversalCreateService {
         ).map((s) => s.toLowerCase());
       } catch (error) {
         // If attribute discovery fails, proceed without it (fallback behavior)
-        const errorMessage =
           error instanceof Error ? error.message : String(error);
         logger.warn(ERROR_MESSAGES.ATTRIBUTE_DISCOVERY_FAILED(resource_type), {
           resource_type,
@@ -637,7 +620,6 @@ export class UniversalCreateService {
     // For records, extract objectSlug BEFORE mapping to ensure it doesn't get stripped
     let recordsObjectSlug: string | undefined;
     if (resource_type === UniversalResourceType.RECORDS) {
-      const original = record_data;
       recordsObjectSlug = (original.object_api_slug ||
         original.object_slug ||
         original.object) as string;
@@ -655,21 +637,17 @@ export class UniversalCreateService {
     }
 
     // Map field names to correct ones with collision detection
-    const mappingResult = await mapRecordFields(
       resource_type,
       (record_data.values || record_data) as Record<string, unknown>,
       availableAttributes
     );
     if (mappingResult.errors && mappingResult.errors.length > 0) {
       // Check if this is a field collision error
-      const firstError = mappingResult.errors[0];
-      const collisionMatch = firstError.match(
         /Multiple fields map to "([^"]+)": (.+)/
       );
 
       if (collisionMatch) {
         const [, targetField, fieldsStr] = collisionMatch;
-        const collidingFields = fieldsStr.split(', ');
         throw createFieldCollisionError(
           collidingFields,
           targetField,
@@ -702,13 +680,11 @@ export class UniversalCreateService {
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
     // Will be re-enabled after tasks API validation is properly configured
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
-      const validation = await validateRecordFields(
         resource_type,
         mappedData as Record<string, unknown>,
         false
       );
       if (!validation.isValid) {
-        const errorMessage = validation.error || 'Validation failed';
         throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
           suggestion: 'Please fix the validation errors and try again.',
           field: undefined,
@@ -734,7 +710,6 @@ export class UniversalCreateService {
           !mappedData.object_api_slug
         ) {
           // Create a copy to avoid mutating the original mappedData
-          const recordsData = { ...mappedData, object: recordsObjectSlug };
           return this.createObjectRecord(recordsData, resource_type);
         }
         return this.createObjectRecord(mappedData, resource_type);
@@ -767,10 +742,8 @@ export class UniversalCreateService {
       }
 
       // Apply format conversions for common mistakes
-      const correctedData = convertAttributeFormats('companies', mappedData);
 
       // Use mock injection for test environments (Issue #480 compatibility)
-      const result = await createCompanyWithMockSupport(correctedData);
 
       // Defensive validation: Ensure createCompany returned a valid record
       if (!result) {
@@ -797,17 +770,12 @@ export class UniversalCreateService {
 
       return result;
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
       // Enhance error messages with format help
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
             'companies',
             match[1],
             (error as Error).message
@@ -821,7 +789,6 @@ export class UniversalCreateService {
       }
       // Check for uniqueness constraint violations
       if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await enhanceUniquenessError(
           resource_type,
           errorMessage,
           mappedData
@@ -847,7 +814,6 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      const list = await createList(mappedData);
       // Convert AttioList to AttioRecord format
       return {
         id: {
@@ -865,15 +831,11 @@ export class UniversalCreateService {
         },
       } as unknown as AttioRecord;
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
           throw new UniversalValidationError(
             (error as Error).message,
             ErrorType.USER_ERROR,
@@ -894,17 +856,14 @@ export class UniversalCreateService {
   ): Promise<AttioRecord> {
     try {
       // Apply field allowlist for E2E test isolation (prevent extra field rejections)
-      const allowlistedData = pickAllowedPersonFields(mappedData);
 
       // Normalize people data first (handle name string/object, email singular/array)
-      const normalizedData =
         PeopleDataNormalizer.normalizePeopleData(allowlistedData);
 
       // Validate email addresses after normalization for consistent validation
       ValidationService.validateEmailAddresses(normalizedData);
 
       // Apply format conversions for common mistakes
-      const correctedData = convertAttributeFormats('people', normalizedData);
 
       // Validate people attributes before POST to ensure correct Attio format
       validatePeopleAttributesPrePost(correctedData);
@@ -918,7 +877,6 @@ export class UniversalCreateService {
       });
 
       // Use mock injection for test environments (Issue #480 compatibility)
-      const result = await createPersonWithMockSupport(correctedData);
 
       // Defensive validation: Ensure createPerson returned a valid record
       if (!result) {
@@ -945,8 +903,6 @@ export class UniversalCreateService {
 
       return result;
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
@@ -961,9 +917,7 @@ export class UniversalCreateService {
           errorMessage.includes('email') ||
           errorMessage.includes('email_address')
         ) {
-          const emailAddresses = (mappedData as any)
             .email_addresses as string[];
-          const emailText =
             emailAddresses?.length > 0
               ? emailAddresses.join(', ')
               : 'the provided email';
@@ -983,7 +937,6 @@ export class UniversalCreateService {
         }
 
         // Generic uniqueness conflict
-        const enhancedMessage = await enhanceUniquenessError(
           resource_type,
           errorMessage,
           mappedData
@@ -1003,10 +956,7 @@ export class UniversalCreateService {
         errorMessage.includes('invalid value') ||
         errorMessage.includes('Format Error')
       ) {
-        const match = errorMessage.match(/slug "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
-          const enhancedError = getFormatErrorHelp(
             'people',
             match[1],
             (error as Error).message
@@ -1021,7 +971,6 @@ export class UniversalCreateService {
 
       // Check for uniqueness constraint violations (fallback)
       if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await enhanceUniquenessError(
           resource_type,
           errorMessage,
           mappedData
@@ -1047,7 +996,6 @@ export class UniversalCreateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     // Validate required object slug
-    const objectSlug = mappedData.object || mappedData.object_api_slug;
     logger.debug('Creating object record', {
       objectSlug,
       mappedDataKeys: Object.keys(mappedData),
@@ -1073,15 +1021,12 @@ export class UniversalCreateService {
       const { UniversalMetadataService } = await import(
         './UniversalMetadataService.js'
       );
-      const attributeResult =
         await UniversalMetadataService.discoverAttributesForResourceType(
           UniversalResourceType.RECORDS, // Use records as resource type but pass objectSlug
           { objectSlug }
         );
 
       // Build available attributes list
-      const attrs = (attributeResult?.attributes as any[]) ?? [];
-      const availableAttributes = Array.from(
         new Set(
           attrs.flatMap((a) =>
             [a?.api_slug, a?.title, a?.name].filter(
@@ -1092,7 +1037,6 @@ export class UniversalCreateService {
       ).map((s) => s.toLowerCase());
 
       // Apply field mapping to inner values using the objectSlug
-      const mappingResult = await mapRecordFields(
         objectSlug as UniversalResourceType, // Use objectSlug as resource type for inner mapping
         (recordValues || {}) as Record<string, unknown>,
         availableAttributes
@@ -1129,14 +1073,11 @@ export class UniversalCreateService {
     try {
       return createObjectRecordApi(objectSlug, { values: recordValues } as any);
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       // Check for uniqueness constraint violations
       if (errorMessage.includes('uniqueness constraint')) {
-        const enhancedMessage = await enhanceUniquenessError(
           resource_type,
           errorMessage,
           mappedData
@@ -1165,7 +1106,6 @@ export class UniversalCreateService {
     let dealData = { ...mappedData };
 
     // Validate input and log suggestions (but don't block execution)
-    const validation = validateDealInput(dealData);
     if (
       validation.suggestions.length > 0 ||
       validation.warnings.length > 0 ||
@@ -1181,15 +1121,12 @@ export class UniversalCreateService {
     try {
       return await createObjectRecordApi('deals', { values: dealData } as any);
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       // If stage still fails after validation, try with default stage
       // IMPORTANT: Skip validation in error path to prevent API calls during failures
       if (errorMessage.includes('Cannot find Status') && dealData.stage) {
-        const defaults = getDealDefaults();
 
         // Use default stage if available, otherwise remove stage (will fail since it's required)
         if (defaults.stage) {
@@ -1219,7 +1156,6 @@ export class UniversalCreateService {
     try {
       // Issue #417: Enhanced task creation with field mapping guidance
       // Check for content field first, then validate (handle empty strings)
-      const content =
         (mappedData.content &&
           typeof mappedData.content === 'string' &&
           mappedData.content.trim()) ||
@@ -1244,14 +1180,12 @@ export class UniversalCreateService {
 
       // Only add fields that have actual values (not undefined)
       // Normalize assignee inputs: accept string, array of strings, or array of objects
-      const assigneesInput =
         mappedData.assignees || mappedData.assignee_id || mappedData.assigneeId;
       if (assigneesInput !== undefined) {
         let assigneeId: string | undefined;
         if (typeof assigneesInput === 'string') {
           assigneeId = assigneesInput;
         } else if (Array.isArray(assigneesInput)) {
-          const first = assigneesInput[0] as any;
           if (typeof first === 'string') assigneeId = first;
           else if (first && typeof first === 'object') {
             assigneeId =
@@ -1272,18 +1206,15 @@ export class UniversalCreateService {
         if (assigneeId) options.assigneeId = assigneeId;
       }
 
-      const dueDate =
         mappedData.deadline_at || mappedData.due_date || mappedData.dueDate;
       if (dueDate) options.dueDate = dueDate;
 
-      const recordId =
         mappedData.linked_records ||
         mappedData.record_id ||
         mappedData.recordId;
       if (recordId) options.recordId = recordId;
 
       // Use mock-enabled task creation for test environments
-      const createdTask = await createTaskWithMockSupport({
         content,
         title: content, // Dual field support
         ...options,
@@ -1346,9 +1277,8 @@ export class UniversalCreateService {
 
       // Ensure assignees are preserved for E2E expectations
       try {
-        const top: any = convertedRecord as any;
-        const values: any = convertedRecord.values || {};
-        const assigneeId = (options as any).assigneeId as string | undefined;
+        const top: unknown = convertedRecord as any;
+        const values: unknown = convertedRecord.values || {};
         if (assigneeId) {
           // Top-level assignees for E2E assertion
           top.assignees = [
@@ -1385,7 +1315,6 @@ export class UniversalCreateService {
       // Issue #417: Enhanced task error handling with field mapping guidance
       const errorObj: Error =
         error instanceof Error ? error : new Error(String(error));
-      const enhancedError = ErrorEnhancer.autoEnhance(
         errorObj,
         'tasks',
         'create-record'
@@ -1415,7 +1344,6 @@ export class UniversalCreateService {
       }
 
       // Validate parent_object (after field mapping)
-      const parentObject = mappedData.parent_object as string;
       if (
         !parentObject ||
         typeof parentObject !== 'string' ||
@@ -1429,7 +1357,6 @@ export class UniversalCreateService {
       }
 
       // Validate parent_record_id (after field mapping)
-      const parentRecordId = mappedData.parent_record_id as string;
       if (!parentRecordId) {
         throw new UniversalValidationError(
           'parent_record_id is required',
@@ -1452,7 +1379,6 @@ export class UniversalCreateService {
       }
 
       // Build create note body according to Attio API spec
-      const noteBody = {
         parent_object: parentObject,
         parent_record_id: parentRecordId,
         content,
@@ -1480,11 +1406,8 @@ export class UniversalCreateService {
       );
 
       // Create note via notes API
-      const response = await createNote(noteBody);
-      const createdNote = response.data;
 
       // Normalize to universal record format
-      const normalizedRecord = normalizeNoteResponse(createdNote);
 
       debug(
         'universal.createNote',
@@ -1506,7 +1429,6 @@ export class UniversalCreateService {
       // Enhanced error handling for notes
       const errorObj: Error =
         error instanceof Error ? error : new Error(String(error));
-      const enhancedError = ErrorEnhancer.autoEnhance(
         errorObj,
         'notes',
         'create-record'
@@ -1523,7 +1445,6 @@ export class UniversalCreateService {
     params: UniversalCreateParams
   ): Promise<AttioRecord> {
     // Check if resource type can be corrected
-    const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
       logger.info('Resource type corrected', {

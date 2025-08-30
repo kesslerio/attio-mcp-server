@@ -2,13 +2,11 @@
  * Command handler for discovering Attio attributes
  */
 import axios from 'axios';
-import ora from 'ora';
 import chalk from 'chalk';
-import {
-  loadMappingConfig,
-  writeMappingConfig,
-  MappingConfig,
-} from '../../utils/config-loader.js';
+import ora from 'ora';
+
+import { handleAxiosError } from '../../utils/error-utilities.js';
+
 import { handleAxiosError } from '../../utils/error-utilities.js';
 
 /**
@@ -61,11 +59,8 @@ function createAttioClient(apiKey: string) {
  * @returns Array of object slugs
  */
 export async function getAvailableObjects(apiKey: string): Promise<string[]> {
-  const client = createAttioClient(apiKey);
 
   try {
-    const response = await client.get('/objects');
-    const objects = response.data.data || [];
 
     // Extract API slugs from the objects
     return objects
@@ -87,10 +82,8 @@ export async function getObjectAttributes(
   objectSlug: string,
   apiKey: string
 ): Promise<Record<string, string>> {
-  const client = createAttioClient(apiKey);
 
   try {
-    const response = await client.get(`/objects/${objectSlug}/attributes`);
     const attributes: AttioAttribute[] = response.data.data || [];
 
     // Create mapping from title to api_slug
@@ -116,11 +109,9 @@ export async function getObjectAttributes(
 export async function discoverAttributes(
   argv: AttributesCommandArgs
 ): Promise<void> {
-  const spinner = ora('Initializing...').start();
 
   try {
     // Get API key from args or environment
-    const apiKey = argv.apiKey || process.env.ATTIO_API_KEY;
 
     if (!apiKey) {
       spinner.fail(
@@ -174,8 +165,6 @@ export async function discoverAttributes(
       spinner.start(`Discovering attributes for ${chalk.cyan(objectSlug)}...`);
 
       try {
-        const attributeMappings = await getObjectAttributes(objectSlug, apiKey);
-        const attributeCount = Object.keys(attributeMappings).length;
 
         if (attributeCount > 0) {
           // Ensure the object section exists

@@ -43,12 +43,10 @@ export function parsePersonalName(
 
   if (typeof value === 'string') {
     // Parse string name into first/last name structure
-    const trimmed = value.trim();
     if (!trimmed) {
       return null;
     }
 
-    const parts = trimmed.split(/\s+/);
     if (parts.length === 1) {
       // Only one name part - treat as first name
       return {
@@ -64,8 +62,6 @@ export function parsePersonalName(
       };
     } else {
       // Multiple parts - first, middle(s), last
-      const firstName = parts[0];
-      const lastName = parts[parts.length - 1];
       return {
         first_name: firstName,
         last_name: lastName,
@@ -74,7 +70,6 @@ export function parsePersonalName(
     }
   } else if (typeof value === 'object' && value !== null) {
     // Already structured - ensure it has required fields
-    const structured = value as Record<string, unknown>;
     const result: Record<string, unknown> = {};
 
     // Copy over known fields
@@ -85,7 +80,6 @@ export function parsePersonalName(
 
     // Generate full_name if not provided
     if (!structured.full_name) {
-      const nameParts = [];
       if (structured.title) nameParts.push(String(structured.title));
       if (structured.first_name) nameParts.push(String(structured.first_name));
       if (structured.middle_name)

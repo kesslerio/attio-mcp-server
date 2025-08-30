@@ -6,6 +6,7 @@
  */
 
 import { beforeAll, afterAll, vi } from 'vitest';
+
 import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 /**
@@ -107,8 +108,6 @@ class TestDataTracker {
   }
 }
 
-const testDataTracker = new TestDataTracker();
-
 /**
  * Load test configuration from environment
  */
@@ -148,7 +147,6 @@ export function setupIntegrationTests(
   } = config;
 
   // Check for API key
-  const apiKey = process.env.ATTIO_API_KEY;
 
   if (!apiKey && skipOnMissingApiKey) {
     return {
@@ -176,7 +174,6 @@ export function setupIntegrationTests(
   }
 
   // Load test configuration
-  const testConfig = loadTestConfiguration();
 
   // Check if required test configuration is present
   if (
@@ -192,8 +189,6 @@ export function setupIntegrationTests(
       testConfig,
     };
   }
-
-  const timestamp = Date.now();
 
   // Setup test configuration
   beforeAll(() => {
@@ -268,7 +263,7 @@ export function generateTestData(timestamp: number) {
  * Enhanced error handling for integration tests
  */
 export function expectIntegrationError(
-  error: any,
+  error: unknown,
   expectedPatterns: string[] = []
 ) {
   // Check if it's our enhanced UniversalValidationError
@@ -283,7 +278,6 @@ export function expectIntegrationError(
   }
 
   // Check for expected error patterns
-  const errorMessage = error?.message || String(error);
   for (const pattern of expectedPatterns) {
     if (errorMessage.includes(pattern)) {
       console.log(`✅ Expected error pattern found: ${pattern}`);

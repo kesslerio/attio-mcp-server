@@ -7,13 +7,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { transformFiltersToApiFormat } from '../../src/utils/filters/translators.js';
+
 import { isListSpecificAttribute } from '../../src/utils/filters/utils.js';
+import { transformFiltersToApiFormat } from '../../src/utils/filters/translators.js';
 
 describe('List-Specific Attribute Detection', () => {
   describe('isListSpecificAttribute', () => {
     it('should identify common list-specific attributes', () => {
-      const listAttributes = [
         'stage',
         'Stage',
         'status',
@@ -38,7 +38,6 @@ describe('List-Specific Attribute Detection', () => {
     });
 
     it('should identify UUID attributes as list-specific', () => {
-      const uuids = [
         '2e9b7337-7ffa-4c28-8496-d0aff1b186db',
         '123e4567-e89b-12d3-a456-426614174000',
       ];
@@ -49,7 +48,6 @@ describe('List-Specific Attribute Detection', () => {
     });
 
     it('should not identify parent record attributes as list-specific', () => {
-      const parentAttributes = [
         'name',
         'email',
         'website',
@@ -68,7 +66,6 @@ describe('List-Specific Attribute Detection', () => {
 describe('List Entry Filter Transformation', () => {
   describe('transformFiltersToApiFormat with list entry context', () => {
     it('should use direct field access for list-specific attributes', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -78,7 +75,6 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -90,7 +86,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should use record.values path for parent record attributes', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'name' },
@@ -100,7 +95,6 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -112,7 +106,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should handle multiple list-specific attributes with AND logic', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -128,7 +121,6 @@ describe('List Entry Filter Transformation', () => {
         matchAny: false,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -143,7 +135,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should handle OR logic with list-specific attributes', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -159,7 +150,6 @@ describe('List Entry Filter Transformation', () => {
         matchAny: true,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -172,7 +162,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should handle mixed filters with both list and parent attributes', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -188,7 +177,6 @@ describe('List Entry Filter Transformation', () => {
         matchAny: false,
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -203,7 +191,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should handle UUID attribute filters', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: '2e9b7337-7ffa-4c28-8496-d0aff1b186db' },
@@ -213,7 +200,6 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -225,7 +211,6 @@ describe('List Entry Filter Transformation', () => {
     });
 
     it('should handle empty value conditions correctly', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -235,7 +220,6 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, true);
 
       expect(result).toEqual({
         filter: {
@@ -249,7 +233,6 @@ describe('List Entry Filter Transformation', () => {
 
   describe('transformFiltersToApiFormat without list entry context', () => {
     it('should use standard field access for all attributes', () => {
-      const filters = {
         filters: [
           {
             attribute: { slug: 'stage' },
@@ -264,7 +247,6 @@ describe('List Entry Filter Transformation', () => {
         ],
       };
 
-      const result = transformFiltersToApiFormat(filters, true, false);
 
       expect(result).toEqual({
         filter: {
@@ -282,7 +264,6 @@ describe('List Entry Filter Transformation', () => {
 
 describe('Edge Cases', () => {
   it('should handle attributes with special characters', () => {
-    const filters = {
       filters: [
         {
           attribute: { slug: 'list_notes' },
@@ -292,7 +273,6 @@ describe('Edge Cases', () => {
       ],
     };
 
-    const result = transformFiltersToApiFormat(filters, true, true);
 
     expect(result).toEqual({
       filter: {
@@ -310,7 +290,6 @@ describe('Edge Cases', () => {
   });
 
   it('should handle complex OR conditions with mixed attributes', () => {
-    const filters = {
       filters: [
         {
           attribute: { slug: 'stage' },
@@ -331,7 +310,6 @@ describe('Edge Cases', () => {
       matchAny: true,
     };
 
-    const result = transformFiltersToApiFormat(filters, true, true);
 
     expect(result).toEqual({
       filter: {

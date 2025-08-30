@@ -46,15 +46,12 @@ export async function executeWithListFallback<T>(
 
   // Primary endpoint attempt
   try {
-    const path = `/lists/${listId}/entries/query`;
-    const requestBody = createRequestBody();
 
     logger('Primary endpoint attempt', {
       path,
       requestBody: JSON.stringify(requestBody),
     });
 
-    const response = await api.post<AttioListResponse<AttioListEntry>>(
       path,
       requestBody
     );
@@ -65,7 +62,6 @@ export async function executeWithListFallback<T>(
 
     return processEntries(response.data.data || []);
   } catch (primaryError: unknown) {
-    const err = primaryError as {
       message?: string;
       response?: { status?: number };
     };
@@ -80,8 +76,6 @@ export async function executeWithListFallback<T>(
 
     // Fallback endpoint attempt
     try {
-      const fallbackPath = '/lists-entries/query';
-      const fallbackBody = {
         ...createRequestBody(),
         list_id: listId,
       };
@@ -91,7 +85,6 @@ export async function executeWithListFallback<T>(
         requestBody: JSON.stringify(fallbackBody),
       });
 
-      const response = await api.post<AttioListResponse<AttioListEntry>>(
         fallbackPath,
         fallbackBody
       );
@@ -102,7 +95,6 @@ export async function executeWithListFallback<T>(
 
       return processEntries(response.data.data || []);
     } catch (fallbackError: unknown) {
-      const err = fallbackError as {
         message?: string;
         response?: { status?: number };
       };
@@ -118,17 +110,14 @@ export async function executeWithListFallback<T>(
       // GET endpoint as last resort (only if no filters)
       if (!filters || !filters.filters || filters.filters.length === 0) {
         try {
-          const params = new URLSearchParams();
           params.append('list_id', listId);
           params.append('expand', 'record');
           params.append('limit', (safeLimit || 20).toString());
           params.append('offset', (safeOffset || 0).toString());
 
-          const getPath = `/lists-entries?${params.toString()}`;
 
           logger('GET fallback attempt', { path: getPath });
 
-          const response =
             await api.get<AttioListResponse<AttioListEntry>>(getPath);
 
           logger('GET fallback successful', {
@@ -137,7 +126,6 @@ export async function executeWithListFallback<T>(
 
           return processEntries(response.data.data || []);
         } catch (getError: unknown) {
-          const err = getError as {
             message?: string;
             response?: { status?: number };
           };

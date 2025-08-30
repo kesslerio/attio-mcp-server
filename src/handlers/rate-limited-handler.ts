@@ -52,7 +52,6 @@ export function withRateLimiting<T extends readonly unknown[], R>(
     const req: RequestWithResponse = args[0] as RequestWithResponse;
 
     // Check rate limit
-    const rateLimit = checkFilterRateLimit(req, endpointName);
 
     // If rate limit exceeded, return error
     if (!rateLimit.allowed) {
@@ -83,8 +82,7 @@ export function withRateLimiting<T extends readonly unknown[], R>(
       return await handler(...args);
     } catch (error: unknown) {
       // Format error for API response
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      error instanceof Error ? error.message : String(error);
       const response: ApiResponse = {
         content: [
           {
@@ -124,7 +122,6 @@ export function withSearchRateLimiting<T extends readonly unknown[], R>(
     }
 
     // Check rate limit
-    const rateLimit = checkFilterRateLimit(req, endpointName);
 
     // Add rate limit headers
     if (req.res) {
@@ -166,12 +163,11 @@ export function withSearchRateLimiting<T extends readonly unknown[], R>(
       return await handler(...args);
     } catch (error: unknown) {
       // Format error for API response
-      const errorMessage =
-        error instanceof FilterValidationError
-          ? error.message
-          : error instanceof Error
-            ? `Unexpected error: ${error.message}`
-            : `Unknown error: ${String(error)}`;
+      error instanceof FilterValidationError
+        ? error.message
+        : error instanceof Error
+          ? `Unexpected error: ${error.message}`
+          : `Unknown error: ${String(error)}`;
 
       const response: ApiResponse = {
         content: [

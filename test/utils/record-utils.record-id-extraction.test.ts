@@ -3,8 +3,9 @@
  */
 
 import { expect, describe, it } from 'vitest';
-import { processListEntries } from '../../src/utils/record-utils.js';
+
 import { AttioListEntry } from '../../src/types/attio.js';
+import { processListEntries } from '../../src/utils/record-utils.js';
 
 describe('Record ID Extraction Tests', () => {
   it('should maintain existing record_id if already present', () => {
@@ -15,7 +16,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('existing-record-id');
   });
 
@@ -31,7 +31,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('nested-record-id');
   });
 
@@ -43,7 +42,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('parent-record-id');
   });
 
@@ -57,7 +55,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('value-record-id');
   });
 
@@ -75,7 +72,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('nested-values-record-id');
   });
 
@@ -87,7 +83,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('reference-id');
   });
 
@@ -99,7 +94,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('object-id');
   });
 
@@ -113,7 +107,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('record-reference-id');
   });
 
@@ -127,7 +120,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('direct-record-id');
   });
 
@@ -141,7 +133,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('uri-record-id');
   });
 
@@ -153,7 +144,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('company-record-id');
   });
 
@@ -165,7 +155,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBeUndefined();
   });
 
@@ -184,7 +173,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('complex-uri-id');
   });
 
@@ -215,7 +203,6 @@ describe('Record ID Extraction Tests', () => {
       },
     ];
 
-    const processed = processListEntries(entries);
     expect(processed[0].record_id).toBe('direct-id-1');
     expect(processed[1].record_id).toBe('nested-id-2');
     expect(processed[2].record_id).toBe('parent-id-3');

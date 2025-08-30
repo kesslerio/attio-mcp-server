@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
 import { CachingService } from '../../../src/services/CachingService.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
 import type { AttioRecord } from '../../../src/types/attio.js';
 
 // Mock the dependencies
@@ -44,7 +47,6 @@ describe('CachingService', () => {
 
   describe('Task Caching', () => {
     it('should cache and retrieve tasks with default TTL', () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
 
       // Initially no cache
       expect(CachingService.getCachedTasks(cacheKey)).toBeUndefined();
@@ -53,13 +55,10 @@ describe('CachingService', () => {
       CachingService.setCachedTasks(cacheKey, mockTasks);
 
       // Should retrieve cached tasks
-      const cachedTasks = CachingService.getCachedTasks(cacheKey);
       expect(cachedTasks).toEqual(mockTasks);
     });
 
     it('should respect custom TTL', () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
-      const shortTTL = 100; // 100ms
 
       // Cache tasks
       CachingService.setCachedTasks(cacheKey, mockTasks);
@@ -82,15 +81,12 @@ describe('CachingService', () => {
     });
 
     it('should generate consistent cache keys', () => {
-      const key1 = CachingService.getTasksListCacheKey();
-      const key2 = CachingService.getTasksListCacheKey();
 
       expect(key1).toBe(key2);
       expect(key1).toBe('tasks_list_all');
     });
 
     it('should clear all tasks cache', () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
 
       // Cache some tasks
       CachingService.setCachedTasks(cacheKey, mockTasks);
@@ -102,8 +98,6 @@ describe('CachingService', () => {
     });
 
     it('should clear only expired cache entries', () => {
-      const shortTTL = 50;
-      const longTTL = 10000;
 
       // Cache with different keys (simulating different cache entries)
       CachingService.setCachedTasks('key1', mockTasks);
@@ -148,8 +142,6 @@ describe('CachingService', () => {
 
   describe('404 Response Caching', () => {
     it('should check for cached 404 responses', () => {
-      const resourceType = 'companies';
-      const recordId = 'test-uuid';
 
       // Mock performance tracker response
       vi.mocked(enhancedPerformanceTracker.getCached404).mockReturnValue(null);
@@ -167,8 +159,6 @@ describe('CachingService', () => {
     });
 
     it('should cache 404 responses with default TTL', () => {
-      const resourceType = 'people';
-      const recordId = 'invalid-uuid';
 
       // Cache 404 response
       CachingService.cache404Response(resourceType, recordId);
@@ -182,9 +172,6 @@ describe('CachingService', () => {
     });
 
     it('should cache 404 responses with custom TTL', () => {
-      const resourceType = 'tasks';
-      const recordId = 'nonexistent-task';
-      const customTTL = 120000;
 
       // Cache 404 response with custom TTL
       CachingService.cache404Response(resourceType, recordId, customTTL);
@@ -199,17 +186,14 @@ describe('CachingService', () => {
   });
 
   describe('getOrLoadTasks Integration', () => {
-    const mockDataLoader = vi.fn();
 
     beforeEach(() => {
       mockDataLoader.mockClear();
     });
 
     it('should load data when cache is empty', async () => {
-      const expectedTasks = mockTasks;
       mockDataLoader.mockResolvedValue(expectedTasks);
 
-      const result = await CachingService.getOrLoadTasks(mockDataLoader);
 
       expect(result.data).toEqual(expectedTasks);
       expect(result.fromCache).toBe(false);
@@ -217,12 +201,10 @@ describe('CachingService', () => {
     });
 
     it('should return cached data when available', async () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
 
       // Pre-populate cache
       CachingService.setCachedTasks(cacheKey, mockTasks);
 
-      const result = await CachingService.getOrLoadTasks(mockDataLoader);
 
       expect(result.data).toEqual(mockTasks);
       expect(result.fromCache).toBe(true);
@@ -230,7 +212,6 @@ describe('CachingService', () => {
     });
 
     it('should handle data loader errors gracefully', async () => {
-      const error = new Error('API failure');
       mockDataLoader.mockRejectedValue(error);
 
       await expect(
@@ -240,12 +221,9 @@ describe('CachingService', () => {
     });
 
     it('should use custom cache key and TTL', async () => {
-      const customKey = 'custom_tasks_key';
-      const customTTL = 5000;
       mockDataLoader.mockResolvedValue(mockTasks);
 
       // First call should load data
-      const result1 = await CachingService.getOrLoadTasks(
         mockDataLoader,
         customKey,
         customTTL
@@ -253,7 +231,6 @@ describe('CachingService', () => {
       expect(result1.fromCache).toBe(false);
 
       // Second call should use cache
-      const result2 = await CachingService.getOrLoadTasks(
         mockDataLoader,
         customKey,
         customTTL
@@ -266,8 +243,6 @@ describe('CachingService', () => {
     });
 
     it('should reload data when cache expires', async () => {
-      const shortTTL = 50;
-      const freshTasks = [
         { id: { record_id: '3' }, values: { name: 'Fresh Task' } },
       ];
 
@@ -276,7 +251,6 @@ describe('CachingService', () => {
         .mockResolvedValueOnce(freshTasks);
 
       // First call loads data
-      const result1 = await CachingService.getOrLoadTasks(
         mockDataLoader,
         undefined,
         shortTTL
@@ -288,7 +262,6 @@ describe('CachingService', () => {
       await new Promise((resolve) => setTimeout(resolve, shortTTL + 10));
 
       // Second call should reload data
-      const result2 = await CachingService.getOrLoadTasks(
         mockDataLoader,
         undefined,
         shortTTL
@@ -302,11 +275,9 @@ describe('CachingService', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty arrays in cache', () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
       const emptyTasks: AttioRecord[] = [];
 
       CachingService.setCachedTasks(cacheKey, emptyTasks);
-      const result = CachingService.getCachedTasks(cacheKey);
 
       expect(result).toEqual(emptyTasks);
       expect(Array.isArray(result)).toBe(true);
@@ -323,16 +294,12 @@ describe('CachingService', () => {
     });
 
     it('should handle concurrent cache operations', async () => {
-      const cacheKey = CachingService.getTasksListCacheKey();
-      const tasks1 = [mockTasks[0]];
-      const tasks2 = [mockTasks[1]];
 
       // Simulate concurrent cache operations
       CachingService.setCachedTasks(cacheKey, tasks1);
       CachingService.setCachedTasks(cacheKey, tasks2);
 
       // Last write should win
-      const result = CachingService.getCachedTasks(cacheKey);
       expect(result).toEqual(tasks2);
     });
   });
@@ -347,40 +314,31 @@ describe('CachingService', () => {
         })
       );
 
-      const cacheKey = CachingService.getTasksListCacheKey();
 
       // Should handle large datasets without issues
-      const start = performance.now();
       CachingService.setCachedTasks(cacheKey, largeTasks);
-      const cached = CachingService.getCachedTasks(cacheKey);
-      const end = performance.now();
 
       expect(cached).toEqual(largeTasks);
       expect(end - start).toBeLessThan(100); // Should be fast
     });
 
     it('should maintain performance with multiple cache keys', () => {
-      const numKeys = 100;
       const keys: string[] = [];
 
       // Create many cache entries
       for (let i = 0; i < numKeys; i++) {
-        const key = `tasks_key_${i}`;
         keys.push(key);
         CachingService.setCachedTasks(key, mockTasks);
       }
 
       // Access should still be fast
-      const start = performance.now();
       for (const key of keys) {
         CachingService.getCachedTasks(key);
       }
-      const end = performance.now();
 
       expect(end - start).toBeLessThan(50); // Should be fast even with many keys
 
       // Verify stats
-      const stats = CachingService.getCacheStats();
       expect(stats.tasks.entries).toBe(numKeys);
     });
   });

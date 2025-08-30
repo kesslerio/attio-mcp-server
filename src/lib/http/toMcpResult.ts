@@ -5,7 +5,7 @@
 
 export interface HttpResponse {
   status: number;
-  body: any;
+  body: unknown;
 }
 
 export interface McpResult {
@@ -46,7 +46,6 @@ export function toMcpResult(resp: HttpResponse): McpResult {
   }
 
   // Fallback to simple message format
-  const msg =
     resp.body?.message ||
     resp.body?.error?.message ||
     (resp.status === 404
@@ -64,7 +63,7 @@ export function toMcpResult(resp: HttpResponse): McpResult {
 /**
  * Check if a result looks like an HTTP response
  */
-export function isHttpResponseLike(result: any): result is HttpResponse {
+export function isHttpResponseLike(result: unknown): result is HttpResponse {
   return (
     result &&
     typeof result === 'object' &&

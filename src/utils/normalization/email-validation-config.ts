@@ -115,7 +115,6 @@ export function getEmailValidationConfig(
   explicitMode?: EmailValidationMode
 ): EmailValidationConfig {
   // Allow environment variable override for easier migration
-  const envMode = process.env.EMAIL_VALIDATION_MODE as EmailValidationMode;
 
   if (explicitMode) {
     return {

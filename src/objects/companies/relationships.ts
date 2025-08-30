@@ -1,23 +1,12 @@
 /**
  * Relationship-based queries for companies
  */
-import {
-  ResourceType,
-  Company,
-  AttioList,
-  AttioListEntry,
-} from '../../types/attio.js';
-import { ListEntryFilters } from '../../api/operations/index.js';
+import { advancedSearchCompanies } from './search.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import { validateNumericParam } from '../../utils/filters/index.js';
 import { getAttioClient } from '../../api/attio-client.js';
 import { getListDetails } from '../lists.js';
-import {
-  createCompaniesByPeopleFilter,
-  createCompaniesByPeopleListFilter,
-  createRecordsByNotesFilter,
-} from '../../utils/relationship-utils.js';
-import { advancedSearchCompanies } from './search.js';
+import { ListEntryFilters } from '../../api/operations/index.js';
+import { validateNumericParam } from '../../utils/filters/index.js';
 
 /**
  * Search for companies based on attributes of their associated people
@@ -60,12 +49,8 @@ export async function searchCompaniesByPeople(
     }
 
     // Validate and normalize limit and offset parameters
-    const validatedLimit = validateNumericParam(limit, 'limit', 20);
-    const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
     // Create the relationship-based filter and perform the search
-    const filters = createCompaniesByPeopleFilter(filterObject);
-    const results = await advancedSearchCompanies(
       filters,
       validatedLimit,
       validatedOffset
@@ -104,12 +89,8 @@ export async function searchCompaniesByPeopleList(
     }
 
     // Validate and normalize limit and offset parameters
-    const validatedLimit = validateNumericParam(limit, 'limit', 20);
-    const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
     // Create the relationship-based filter and perform the search
-    const filters = createCompaniesByPeopleListFilter(listId);
-    const results = await advancedSearchCompanies(
       filters,
       validatedLimit,
       validatedOffset
@@ -152,15 +133,11 @@ export async function searchCompaniesByNotes(
     }
 
     // Validate and normalize limit and offset parameters
-    const validatedLimit = validateNumericParam(limit, 'limit', 20);
-    const validatedOffset = validateNumericParam(offset, 'offset', 0);
 
     // Create the relationship-based filter and perform the search
-    const filters = createRecordsByNotesFilter(
       ResourceType.COMPANIES,
       searchText
     );
-    const results = await advancedSearchCompanies(
       filters,
       validatedLimit,
       validatedOffset
@@ -189,9 +166,7 @@ export async function getCompanyLists(
   companyId: string,
   limit: number = 50
 ): Promise<AttioList[]> {
-  const api = getAttioClient();
 
-  const response = await api.post<{ data: AttioListEntry[] }>(
     '/lists-entries/query',
     {
       filter: { record_id: { $equals: companyId } },
@@ -200,12 +175,9 @@ export async function getCompanyLists(
     }
   );
 
-  const entries = response.data.data || [];
   const lists: AttioList[] = [];
-  const seen = new Set<string>();
 
   for (const entry of entries) {
-    const listId = (entry as any).list?.id?.list_id || entry.list_id;
     if (!listId || seen.has(listId)) continue;
     seen.add(listId);
 
@@ -213,7 +185,6 @@ export async function getCompanyLists(
       lists.push((entry as any).list as AttioList);
     } else {
       try {
-        const detail = await getListDetails(listId);
         lists.push(detail);
       } catch {
         // ignore retrieval errors

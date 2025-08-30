@@ -10,8 +10,10 @@ export const __MODULE_PATH__ = __filename;
  * Attio API client and related utilities
  */
 import axios, { AxiosInstance } from 'axios';
-// @ts-expect-error: axios internal adapter import
 import httpAdapter from 'axios/lib/adapters/http.js';
+
+import { debug, error, OperationType } from '../utils/logger.js';
+
 import { debug, error, OperationType } from '../utils/logger.js';
 
 // Global API client instance
@@ -44,14 +46,12 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     );
   }
 
-  const baseURL = (
     process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
   ).replace(/\/+$/, '');
 
   // Log which client path is being used
   console.log('⚙️ Attio client baseURL:', baseURL);
 
-  const client = axios.create({
     baseURL,
     timeout: 20000,
     headers: {
@@ -75,7 +75,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   // TEMP DIAGNOSTICS (E2E only): show final URL + top-level shape
   if (process.env.E2E_MODE === 'true') {
     client.interceptors.request.use((config) => {
-      const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       console.log('🌐 AttioClient request', {
         baseURL: config.baseURL,
@@ -99,7 +98,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
         return res;
       },
       (err) => {
-        const r = err?.response;
         error(
           'attio-client',
           'HTTP request failed',
@@ -121,7 +119,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   console.log('⚙️ DEFAULT Attio client baseURL:', baseURL);
 
   client.interceptors.request.use((config) => {
-    const redacted = { ...(config.headers || {}) };
     if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
     console.log('🌐 Request', {
       baseURL: config.baseURL,
@@ -145,7 +142,6 @@ export function createAttioClient(apiKey: string): AxiosInstance {
       return res;
     },
     (err) => {
-      const r = err?.response;
       error('attio-client', 'HTTP response error', err, {
         url: r?.config?.url,
         method: r?.config?.method,
@@ -177,10 +173,7 @@ export function initializeAttioClient(apiKey: string): AxiosInstance {
  * @throws If the API client hasn't been initialized and no API key is available
  */
 export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
-  const isE2E = process.env.E2E_MODE === 'true';
-  const useMocks =
     process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true';
-  const forceReal = isE2E && !useMocks;
 
   // Debug log the client mode selection
   console.log('🔍 CLIENT MODE SELECTION', {
@@ -214,16 +207,13 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     debug('AttioClient', 'Creating raw E2E client with http adapter');
 
     // Create a fresh client instance with no interceptors for E2E
-    const apiKey = process.env.ATTIO_API_KEY;
     if (!apiKey) {
       throw new Error('ATTIO_API_KEY required for E2E mode');
     }
 
-    const baseURL = (
       process.env.ATTIO_BASE_URL || 'https://api.attio.com/v2'
     ).replace(/\/+$/, '');
 
-    const rawClient = axios.create({
       baseURL,
       timeout: 20000,
       headers: {
@@ -248,7 +238,6 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     console.log('⚙️ E2E RAW client baseURL:', baseURL);
 
     rawClient.interceptors.request.use((config) => {
-      const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
       console.log('🌐 E2E Request', {
         baseURL: config.baseURL,
@@ -272,7 +261,6 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
         return res;
       },
       (err) => {
-        const r = err?.response;
         error('attio-client', 'E2E HTTP error', err, {
           url: r?.config?.url,
           method: r?.config?.method,
@@ -290,7 +278,6 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
   if (!apiInstance) {
     // Fallback: try to initialize from environment variable
-    const apiKey = process.env.ATTIO_API_KEY;
     if (apiKey) {
       console.log('🆕 CREATING DEFAULT CLIENT (auto-init from env)');
       debug(

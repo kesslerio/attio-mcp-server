@@ -2,25 +2,7 @@
  * Unit tests for filter validation functions
  * Specifically testing the fix for issue #182
  */
-import {
-  validateFilterStructure,
-  validateFilterCondition,
-  validateFilterWithConditions,
-} from '../../../src/utils/filters/validators';
 import { FilterValidationError } from '../../../src/errors/api-errors';
-import {
-  FilterConditionType,
-  ListEntryFilter,
-} from '../../../src/utils/filters/types';
-
-describe('Filter Validators', () => {
-  describe('validateFilterStructure', () => {
-    it('should return true for valid filter structure', () => {
-      const filter: ListEntryFilter = {
-        attribute: { slug: 'name' },
-        condition: FilterConditionType.CONTAINS,
-        value: 'test',
-      };
 
       expect(validateFilterStructure(filter)).toBe(true);
     });
@@ -31,7 +13,6 @@ describe('Filter Validators', () => {
     });
 
     it('should return false when attribute is missing', () => {
-      const filter = {
         condition: FilterConditionType.CONTAINS,
         value: 'test',
       } as any;
@@ -72,7 +53,6 @@ describe('Filter Validators', () => {
 
   describe('validateFilterCondition', () => {
     it('should return the condition for valid condition types', () => {
-      const validConditions = Object.values(FilterConditionType);
 
       validConditions.forEach((condition) => {
         expect(validateFilterCondition(condition)).toBe(condition);
@@ -114,7 +94,6 @@ describe('Filter Validators', () => {
     });
 
     it('should throw for invalid filter structure', () => {
-      const filter = {
         // Missing attribute
         condition: FilterConditionType.CONTAINS,
         value: 'test',

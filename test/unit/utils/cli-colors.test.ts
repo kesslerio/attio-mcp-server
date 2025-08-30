@@ -2,12 +2,12 @@
  * Tests for CLI color utilities
  */
 import { describe, it, expect } from 'vitest';
+
 import { colorize, colors, type ColorName } from '../../../src/utils/cli-colors.js';
 
 describe('CLI Colors Utility', () => {
   describe('colorize function', () => {
     it('should apply color codes to text', () => {
-      const result = colorize('Hello', 'red');
       expect(result).toBe('\x1b[31mHello\x1b[0m');
     });
 
@@ -24,19 +24,16 @@ describe('CLI Colors Utility', () => {
       ];
 
       colorNames.forEach((color) => {
-        const result = colorize('test', color);
         expect(result).toContain('test');
         expect(result).toContain('\x1b[0m'); // Reset code
       });
     });
 
     it('should handle empty text', () => {
-      const result = colorize('', 'green');
       expect(result).toBe('\x1b[32m\x1b[0m');
     });
 
     it('should handle special characters', () => {
-      const result = colorize('🎉 Success!', 'green');
       expect(result).toBe('\x1b[32m🎉 Success!\x1b[0m');
     });
   });
@@ -50,7 +47,6 @@ describe('CLI Colors Utility', () => {
     });
 
     it('should have all expected color properties', () => {
-      const expectedColors = [
         'red',
         'green',
         'yellow',

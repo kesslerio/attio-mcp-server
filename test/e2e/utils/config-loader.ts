@@ -4,8 +4,8 @@
  * Loads and validates configuration from config.local.json with fallbacks
  * to environment variables for CI/CD environments.
  */
-import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 
 export interface E2ETestData {
   testDataPrefix: string;
@@ -91,15 +91,12 @@ export class ConfigLoader {
       return this.config;
     }
 
-    const localConfigPath = join(this.configDir, 'config.local.json');
-    const templateConfigPath = join(this.configDir, 'config.template.json');
 
     let config: Partial<E2EConfig>;
 
     // Try to load local config first
     if (existsSync(localConfigPath)) {
       try {
-        const configContent = readFileSync(localConfigPath, 'utf8');
         config = JSON.parse(configContent);
         console.error('Loaded E2E configuration from config.local.json');
       } catch (error: unknown) {
@@ -108,7 +105,6 @@ export class ConfigLoader {
     } else {
       // Fall back to template config for CI/CD
       if (existsSync(templateConfigPath)) {
-        const templateContent = readFileSync(templateConfigPath, 'utf8');
         config = JSON.parse(templateContent);
         console.error('Loaded E2E configuration from template (CI/CD mode)');
       } else {
@@ -308,7 +304,6 @@ export class ConfigLoader {
    * Check if specific features should be skipped
    */
   shouldSkipFeature(feature: keyof E2EFeatures): boolean {
-    const config = this.getConfig();
     return config.features[feature];
   }
 
@@ -316,9 +311,6 @@ export class ConfigLoader {
    * Get test data with prefix applied
    */
   getTestIdentifier(suffix: string): string {
-    const config = this.getConfig();
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 6);
     return `${config.testData.testDataPrefix}${suffix}_${timestamp}_${random}`;
   }
 
@@ -326,8 +318,6 @@ export class ConfigLoader {
    * Get test email address
    */
   getTestEmail(prefix: string = 'test'): string {
-    const config = this.getConfig();
-    const identifier = this.getTestIdentifier(prefix);
     return `${identifier}@${config.testData.testEmailDomain}`;
   }
 
@@ -335,8 +325,6 @@ export class ConfigLoader {
    * Get test company domain
    */
   getTestCompanyDomain(): string {
-    const config = this.getConfig();
-    const identifier = this.getTestIdentifier('company');
     return `${identifier}.${config.testData.testCompanyDomain}`;
   }
 
@@ -351,7 +339,6 @@ export class ConfigLoader {
    * Get API key availability status and message
    */
   getApiKeyStatus(): { available: boolean; message?: string } {
-    const hasKey = this.hasApiKey();
 
     if (!hasKey) {
       return {
@@ -401,7 +388,7 @@ export function shouldSkipApiTests(): boolean {
 /**
  * Helper function to conditionally skip a test if API key is missing
  */
-export function skipIfNoApiKey(testContext: any, testName: string): boolean {
+export function skipIfNoApiKey(testContext: unknown, testName: string): boolean {
   if (shouldSkipApiTests()) {
     console.error(`⏭️  Skipping ${testName} - ATTIO_API_KEY not available`);
     testContext.skip();

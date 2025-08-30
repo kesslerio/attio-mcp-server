@@ -5,28 +5,7 @@
  * Converts various input shapes to the standard Attio API format.
  */
 
-import {
-  SanitizedObject,
-  InputSanitizer,
-} from '../../handlers/tool-configs/universal/schemas.js';
 import { isValidEmail } from '../validation/email-validation.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../../handlers/tool-configs/universal/schemas.js';
-import {
-  EmailValidationConfig,
-  EmailValidationMode,
-  getEmailValidationConfig,
-  DEFAULT_EMAIL_VALIDATION_CONFIG,
-} from './email-validation-config.js';
-
-/**
- * People name input formats
- */
-export interface NameStringInput {
-  name: string;
-}
 
 export interface NameObjectInput {
   first_name?: string;
@@ -60,7 +39,7 @@ export interface NormalizedPeopleData {
     phone_number: string;
     phone_type?: string;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -71,7 +50,7 @@ export class PeopleDataNormalizer {
    * Normalize name input to standard format
    */
   static normalizeName(
-    input: any,
+    input: unknown,
     options?: { includeFullName?: boolean }
   ):
     | { first_name?: string; last_name?: string; full_name?: string }
@@ -80,11 +59,9 @@ export class PeopleDataNormalizer {
 
     // Handle string input
     if (typeof input === 'string') {
-      const trimmed = input.trim();
       if (!trimmed) return undefined;
 
       // Try to split into first and last name
-      const parts = trimmed.split(/\s+/);
       let result: {
         first_name?: string;
         last_name?: string;
@@ -153,7 +130,6 @@ export class PeopleDataNormalizer {
 
         // If we don't have first/last name, try to extract from full name
         if (!result.first_name && !result.last_name) {
-          const parts = result.full_name.split(/\s+/);
           if (parts.length >= 2) {
             result.first_name = parts[0];
             result.last_name = parts.slice(1).join(' ');
@@ -193,7 +169,6 @@ export class PeopleDataNormalizer {
       return emailField;
     }
     if (typeof emailField === 'object' && emailField && 'value' in emailField) {
-      const value = (emailField as any).value;
       if (typeof value === 'string') {
         return value;
       }
@@ -220,7 +195,6 @@ export class PeopleDataNormalizer {
     emailValue: string,
     config: EmailValidationConfig
   ): string | null {
-    const normalized = InputSanitizer.normalizeEmail(emailValue);
 
     // Check if the normalized email is empty or invalid
     if (!normalized || !normalized.trim()) {
@@ -282,7 +256,7 @@ export class PeopleDataNormalizer {
    * @param config - Email validation configuration (optional)
    */
   static normalizeEmails(
-    input: any,
+    input: unknown,
     config: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): Array<{ email_address: string; email_type?: string }> | undefined {
     if (input === null || input === undefined) return undefined;
@@ -291,7 +265,6 @@ export class PeopleDataNormalizer {
 
     // Handle string input
     if (typeof input === 'string') {
-      const validatedEmail = this.validateAndProcessEmail(input, config);
       if (validatedEmail) {
         emails.push({ email_address: validatedEmail });
       }
@@ -300,7 +273,6 @@ export class PeopleDataNormalizer {
     else if (Array.isArray(input)) {
       for (const item of input) {
         if (typeof item === 'string') {
-          const validatedEmail = this.validateAndProcessEmail(item, config);
           if (validatedEmail) {
             emails.push({ email_address: validatedEmail });
           }
@@ -309,9 +281,7 @@ export class PeopleDataNormalizer {
           // Added support for multiple object formats: {email_address: "..."}, {value: "..."}, {email: "..."}
           // Handle objects with email_address field (official Attio API format)
           if (item.email_address) {
-            const emailValue = this.extractEmailValue(item.email_address);
             if (emailValue) {
-              const validatedEmail = this.validateAndProcessEmail(
                 emailValue,
                 config
               );
@@ -325,9 +295,7 @@ export class PeopleDataNormalizer {
           }
           // Handle objects with value field (alternative format)
           else if (item.value) {
-            const emailValue = this.extractEmailValue(item.value);
             if (emailValue) {
-              const validatedEmail = this.validateAndProcessEmail(
                 emailValue,
                 config
               );
@@ -341,9 +309,7 @@ export class PeopleDataNormalizer {
           }
           // Handle objects with email field (alternative format)
           else if (item.email) {
-            const emailValue = this.extractEmailValue(item.email);
             if (emailValue) {
-              const validatedEmail = this.validateAndProcessEmail(
                 emailValue,
                 config
               );
@@ -362,9 +328,7 @@ export class PeopleDataNormalizer {
     else if (typeof input === 'object') {
       // Check for email_address field
       if (input.email_address) {
-        const emailValue = this.extractEmailValue(input.email_address);
         if (emailValue) {
-          const validatedEmail = this.validateAndProcessEmail(
             emailValue,
             config
           );
@@ -378,16 +342,13 @@ export class PeopleDataNormalizer {
       }
       // Check for email_addresses field
       else if (input.email_addresses && Array.isArray(input.email_addresses)) {
-        const normalized = this.normalizeEmails(input.email_addresses, config);
         if (normalized) {
           emails.push(...normalized);
         }
       }
       // Check for email field (singular)
       else if (input.email) {
-        const emailValue = this.extractEmailValue(input.email);
         if (emailValue) {
-          const validatedEmail = this.validateAndProcessEmail(
             emailValue,
             config
           );
@@ -398,7 +359,6 @@ export class PeopleDataNormalizer {
       }
       // Check for emails field (plural)
       else if (input.emails && Array.isArray(input.emails)) {
-        const normalized = this.normalizeEmails(input.emails, config);
         if (normalized) {
           emails.push(...normalized);
         }
@@ -414,7 +374,6 @@ export class PeopleDataNormalizer {
 
     // For multiple emails, ensure first has primary if none specified
     if (emails.length > 1) {
-      const hasTyped = emails.some((e) => e.email_type);
       if (!hasTyped) {
         emails[0].email_type = 'primary';
         for (let i = 1; i < emails.length; i++) {
@@ -438,7 +397,6 @@ export class PeopleDataNormalizer {
 
     // Handle string input
     if (typeof input === 'string') {
-      const normalized = this.normalizePhoneNumber(input);
       if (normalized) {
         phones.push({ phone_number: normalized });
       }
@@ -447,7 +405,6 @@ export class PeopleDataNormalizer {
     else if (Array.isArray(input)) {
       for (const item of input) {
         if (typeof item === 'string') {
-          const normalized = this.normalizePhoneNumber(item);
           if (normalized) {
             phones.push({ phone_number: normalized });
           }
@@ -455,7 +412,6 @@ export class PeopleDataNormalizer {
           typeof item === 'object' &&
           (item.phone_number || item.number)
         ) {
-          const normalized = this.normalizePhoneNumber(
             item.phone_number || item.number
           );
           if (normalized) {
@@ -470,7 +426,6 @@ export class PeopleDataNormalizer {
     // Handle object input
     else if (typeof input === 'object') {
       // Check various phone field names
-      const phoneFields = [
         'phone_number',
         'phone',
         'phoneNumber',
@@ -479,7 +434,6 @@ export class PeopleDataNormalizer {
       ];
       for (const field of phoneFields) {
         if (input[field]) {
-          const normalized = this.normalizePhoneNumber(input[field]);
           if (normalized) {
             phones.push({
               phone_number: normalized,
@@ -492,7 +446,6 @@ export class PeopleDataNormalizer {
 
       // Check for phone_numbers array
       if (input.phone_numbers || input.phones) {
-        const normalized = this.normalizePhones(
           input.phone_numbers || input.phones
         );
         if (normalized) {
@@ -512,7 +465,6 @@ export class PeopleDataNormalizer {
 
     // Remove all non-digit characters except + at the beginning
     let normalized = phone.trim();
-    const hasPlus = normalized.startsWith('+');
     normalized = normalized.replace(/\D/g, '');
 
     // Re-add + if it was there
@@ -521,7 +473,6 @@ export class PeopleDataNormalizer {
     }
 
     // Basic validation - should have at least 7 digits
-    const digitCount = normalized.replace(/\D/g, '').length;
     if (digitCount < 7 || digitCount > 15) {
       return undefined;
     }
@@ -536,18 +487,16 @@ export class PeopleDataNormalizer {
    * @param emailConfig - Email validation configuration (optional)
    */
   static normalizePeopleData(
-    data: any,
+    data: unknown,
     emailConfig: EmailValidationConfig = DEFAULT_EMAIL_VALIDATION_CONFIG
   ): NormalizedPeopleData {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return {};
     }
 
-    const sanitized = InputSanitizer.sanitizeObject(data) as SanitizedObject;
     const normalized: NormalizedPeopleData = {};
 
     // Normalize name
-    const nameFields = [
       'name',
       'first_name',
       'last_name',
@@ -555,10 +504,8 @@ export class PeopleDataNormalizer {
       'firstName',
       'lastName',
     ];
-    const hasNameField = nameFields.some((field) => field in sanitized);
 
     if (hasNameField) {
-      const nameData = this.normalizeName(sanitized);
       if (nameData) {
         // Create name array for Attio personal-name format
         normalized.name = [
@@ -587,24 +534,20 @@ export class PeopleDataNormalizer {
     }
 
     // Normalize emails
-    const emailFields = [
       'email',
       'emails',
       'email_address',
       'email_addresses',
       'emailAddress',
     ];
-    const hasEmailField = emailFields.some((field) => field in sanitized);
 
     if (hasEmailField) {
-      const emailData = this.normalizeEmails(sanitized, emailConfig);
       if (emailData) {
         normalized.email_addresses = emailData;
       }
     }
 
     // Normalize phones
-    const phoneFields = [
       'phone',
       'phones',
       'phone_number',
@@ -613,17 +556,14 @@ export class PeopleDataNormalizer {
       'mobile',
       'telephone',
     ];
-    const hasPhoneField = phoneFields.some((field) => field in sanitized);
 
     if (hasPhoneField) {
-      const phoneData = this.normalizePhones(sanitized);
       if (phoneData) {
         normalized.phone_numbers = phoneData;
       }
     }
 
     // Copy over other fields that aren't being normalized
-    const normalizedFields = new Set([
       ...nameFields,
       ...emailFields,
       ...phoneFields,
@@ -641,13 +581,12 @@ export class PeopleDataNormalizer {
   /**
    * Check if data needs people normalization
    */
-  static needsNormalization(data: any): boolean {
+  static needsNormalization(data: unknown): boolean {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return false;
     }
 
     // Check for fields that indicate people data needing normalization
-    const peopleFields = [
       'name', // String name instead of object
       'email', // Singular email
       'email_address', // Singular email address

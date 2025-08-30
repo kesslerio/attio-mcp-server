@@ -6,8 +6,8 @@
  */
 
 import { AttioRecord } from '../../../types/attio.js';
-import { ToolConfig } from '../../tool-types.js';
 import { ListEntryFilters } from '../../../api/operations/index.js';
+import { ToolConfig } from '../../tool-types.js';
 
 /**
  * Supported resource types for universal operations
@@ -283,19 +283,19 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: any) => Promise<unknown>;
-  formatResult: (results: any) => string;
+  handler: (params: unknown) => Promise<unknown>;
+  formatResult: (results: unknown) => string;
 }
 
 /**
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.PEOPLE]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.LISTS]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.RECORDS]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.TASKS]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.COMPANIES]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.PEOPLE]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.LISTS]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.RECORDS]: (params: unknown) => Promise<unknown>;
+  [UniversalResourceType.TASKS]: (params: unknown) => Promise<unknown>;
 }
 
 /**
@@ -324,7 +324,7 @@ export interface UniversalResultFormatter {
     resourceType: UniversalResourceType
   ) => string;
   formatAttributes: (
-    attributes: any,
+    attributes: unknown,
     resourceType: UniversalResourceType
   ) => string;
 }

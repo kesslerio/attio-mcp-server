@@ -1,13 +1,9 @@
 /**
  * Note operations for Deals
  */
-import {
-  getObjectNotes,
-  createObjectNote,
-} from '../../api/operations/index.js';
-import { ResourceType, AttioNote } from '../../types/attio.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
 import { isValidId } from '../../utils/validation.js';
+import { ResourceType, AttioNote } from '../../types/attio.js';
 
 /**
  * Gets notes for a specific deal
@@ -29,7 +25,6 @@ export async function getDealNotes(
 
     return await getObjectNotes(ResourceType.DEALS, dealId, limit, offset);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Note retrieval validation failed: ${errorMessage}`
@@ -67,7 +62,6 @@ export async function createDealNote(
 
     return await createObjectNote(ResourceType.DEALS, dealId, title, content);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('validation')) {
       throw new FilterValidationError(
         `Note creation validation failed: ${errorMessage}`

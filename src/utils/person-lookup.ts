@@ -1,8 +1,8 @@
 /**
  * Utility functions for looking up people and handling person references
  */
-import { searchPeople } from '../objects/people/search.js';
 import { CompanyOperationError } from '../errors/company-errors.js';
+import { searchPeople } from '../objects/people/search.js';
 
 /**
  * Person ID validation regex
@@ -46,7 +46,6 @@ export async function findPersonReference(
 
   // It's a name, try to find the person by name
   try {
-    const people = await searchPeople(value);
 
     if (people.length === 0) {
       throw new CompanyOperationError(
@@ -57,8 +56,7 @@ export async function findPersonReference(
     }
 
     if (people.length > 1) {
-      const names = people
-        .map((p: any) => p.values.name?.[0]?.value || 'Unknown Name')
+        .map((p: unknown) => p.values.name?.[0]?.value || 'Unknown Name')
         .join(', ');
       throw new CompanyOperationError(
         operationContext,
@@ -67,8 +65,6 @@ export async function findPersonReference(
       );
     }
 
-    const person = people[0];
-    const personRecordId = person.id?.record_id;
 
     if (!personRecordId) {
       throw new CompanyOperationError(

@@ -3,21 +3,11 @@
  */
 
 import { vi } from 'vitest';
-import { E2ETestBase } from '../../setup.js';
+
 import { E2EAssertions } from '../../utils/assertions.js';
-import {
-  CompanyFactory,
-  PersonFactory,
-  noteFixtures,
-  noteScenarios,
-  edgeCaseNotes,
-  performanceNotes,
-} from '../../fixtures/index.js';
-import type {
-  TestDataObject,
-  McpToolResponse,
-  RecordData,
-} from '../../types/index.js';
+import { E2ETestBase } from '../../setup.js';
+import { startTestSuite, endTestSuite } from '../../utils/logger.js';
+import { startTestSuite, endTestSuite } from '../../utils/logger.js';
 
 // Type interfaces for proper type safety
 export interface AttioRecord {
@@ -61,7 +51,6 @@ export function createSharedSetup() {
       startTestSuite('notes-management');
 
       // Validate test environment and tool migration setup
-      const envValidation = await validateTestEnvironment();
       if (!envValidation.valid) {
         console.warn('⚠️ Test environment warnings:', envValidation.warnings);
       }
@@ -96,14 +85,11 @@ export function createSharedSetup() {
 
 // Shared test data creation utilities
 export async function createTestCompany(): Promise<void> {
-  const companyData = CompanyFactory.create();
-  const response = (await callUniversalTool('create-record', {
     resource_type: 'companies',
     record_data: companyData as unknown as RecordData,
   })) as McpToolResponse;
 
   E2EAssertions.expectMcpSuccess(response);
-  const company = E2EAssertions.expectMcpData(
     response
   ) as unknown as AttioRecord;
 
@@ -114,14 +100,11 @@ export async function createTestCompany(): Promise<void> {
 }
 
 export async function createTestPerson(): Promise<void> {
-  const personData = PersonFactory.create();
-  const response = (await callUniversalTool('create-record', {
     resource_type: 'people',
     record_data: personData as unknown as RecordData,
   })) as McpToolResponse;
 
   E2EAssertions.expectMcpSuccess(response);
-  const person = E2EAssertions.expectMcpData(
     response
   ) as unknown as AttioRecord;
 

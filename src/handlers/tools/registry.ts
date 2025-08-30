@@ -48,7 +48,6 @@ import {
  *
  * Legacy tools are kept for backward compatibility but not exposed by default.
  */
-const USE_UNIVERSAL_TOOLS_ONLY = process.env.DISABLE_UNIVERSAL_TOOLS !== 'true';
 
 /**
  * Consolidated tool configurations from modular files
@@ -108,7 +107,6 @@ export function findToolConfig(toolName: string):
     }
   | undefined {
   // Debug logging for tool lookup in development
-  const debugMode = process.env.NODE_ENV === 'development' || process.env.DEBUG;
 
   // Debug logging for all tool lookups in development
   if (debugMode) {
@@ -117,7 +115,6 @@ export function findToolConfig(toolName: string):
 
   // Search in resource-specific tools first
   for (const resourceType of Object.values(ResourceType)) {
-    const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
       if (debugMode) {
         console.error(
@@ -129,7 +126,6 @@ export function findToolConfig(toolName: string):
 
     // For debugging, log all available tools for a resource type
     if (debugMode) {
-      const toolTypes = Object.keys(resourceConfig);
       if (toolTypes.includes(toolName.replace(/-/g, ''))) {
         console.error(
           `[findToolConfig] Tool might be found under a different name. Available tool types:`,
@@ -138,7 +134,6 @@ export function findToolConfig(toolName: string):
       }
 
       // Specific logging for commonly problematic tools
-      const commonProblematicTools = [
         'discover-company-attributes',
         'get-company-basic-info',
       ];
@@ -146,15 +141,12 @@ export function findToolConfig(toolName: string):
         commonProblematicTools.includes(toolName) &&
         resourceType === ResourceType.COMPANIES
       ) {
-        const toolTypeKey =
           toolName === 'discover-company-attributes'
             ? 'discoverAttributes'
             : 'basicInfo';
 
         // Use a type-safe way to check for existence
-        const hasToolType = Object.keys(resourceConfig).includes(toolTypeKey);
         if (hasToolType) {
-          const config =
             resourceConfig[toolTypeKey as keyof typeof resourceConfig];
           console.error(`[findToolConfig] Found ${toolTypeKey} config:`, {
             name: (config as any).name,
@@ -187,7 +179,6 @@ export function findToolConfig(toolName: string):
   }
 
   // Search in universal tools (high priority for consolidation)
-  const universalConfig = TOOL_CONFIGS.UNIVERSAL;
   if (universalConfig) {
     for (const [toolType, config] of Object.entries(universalConfig)) {
       if (config && config.name === toolName) {
@@ -207,7 +198,6 @@ export function findToolConfig(toolName: string):
   }
 
   // Search in general tools if not found in resource-specific or universal tools
-  const generalConfig = TOOL_CONFIGS.GENERAL;
   if (generalConfig) {
     for (const [toolType, config] of Object.entries(generalConfig)) {
       if (config && config.name === toolName) {

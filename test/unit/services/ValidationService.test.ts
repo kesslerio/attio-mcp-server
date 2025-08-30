@@ -6,10 +6,19 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ValidationService } from '../../../src/services/ValidationService.js';
+
+import { EnhancedApiError } from '../../../src/errors/enhanced-api-errors.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '../../../src/middleware/performance-enhanced.js';
+import { isValidEmail } from '../../../src/utils/validation/email-validation.js';
+import { isValidEmail } from '../../../src/utils/validation/email-validation.js';
+import { isValidId } from '../../../src/utils/validation.js';
+import { isValidId } from '../../../src/utils/validation.js';
 import { UniversalResourceType } from '../../../src/handlers/tool-configs/universal/types.js';
 import { UniversalValidationError } from '../../../src/handlers/tool-configs/universal/schemas.js';
-import { EnhancedApiError } from '../../../src/errors/enhanced-api-errors.js';
+import { validateFields } from '../../../src/handlers/tool-configs/universal/field-mapper.js';
+import { validateFields } from '../../../src/handlers/tool-configs/universal/field-mapper.js';
+import { ValidationService } from '../../../src/services/ValidationService.js';
 
 // Mock the dependencies
 vi.mock('../../../src/utils/validation/email-validation.js', () => ({
@@ -34,7 +43,6 @@ vi.mock('../../../src/middleware/performance-enhanced.js', () => ({
 
 vi.mock('../../../src/handlers/tool-configs/universal/field-mapper.js', () => {
   // Define the mock constants here to avoid circular dependency
-  const mockFieldMappings = {
     companies: {
       validFields: ['name', 'domain', 'industry'],
     },
@@ -65,8 +73,6 @@ describe('ValidationService', () => {
 
   describe('createValidationError', () => {
     it('should create validation error with default resource type', () => {
-      const message = 'Test validation error';
-      const error = ValidationService.createValidationError(message);
 
       expect(error).toEqual({
         error: true,
@@ -77,9 +83,6 @@ describe('ValidationService', () => {
     });
 
     it('should create validation error with custom resource type', () => {
-      const message = 'Custom validation error';
-      const resourceType = 'companies';
-      const error = ValidationService.createValidationError(
         message,
         resourceType
       );
@@ -93,7 +96,6 @@ describe('ValidationService', () => {
     });
 
     it('should include valid ISO timestamp', () => {
-      const error = ValidationService.createValidationError('test');
       expect(new Date(error.timestamp).toISOString()).toBe(error.timestamp);
     });
   });
@@ -146,7 +148,6 @@ describe('ValidationService', () => {
     });
 
     it('should call performance tracker on error when perfId provided', () => {
-      const perfId = 'test-perf-id';
 
       expect(() => {
         ValidationService.validateLimitParameter(0, perfId);
@@ -286,7 +287,6 @@ describe('ValidationService', () => {
 
     it('should track performance when perfId provided', () => {
       vi.mocked(isValidUUID).mockReturnValue(true);
-      const perfId = 'test-perf-id';
 
       ValidationService.validateUUID(
         'valid-uuid',
@@ -305,28 +305,21 @@ describe('ValidationService', () => {
 
   describe('truncateSuggestions', () => {
     it('should return suggestions unchanged when under limit', () => {
-      const suggestions = ['suggestion 1', 'suggestion 2'];
-      const result = ValidationService.truncateSuggestions(suggestions);
 
       expect(result).toEqual(suggestions);
     });
 
     it('should truncate suggestions when over default limit', () => {
-      const suggestions = ['s1', 's2', 's3', 's4', 's5'];
-      const result = ValidationService.truncateSuggestions(suggestions);
 
       expect(result).toEqual(['s1', 's2', 's3', '... and 2 more suggestions']);
     });
 
     it('should respect custom max count', () => {
-      const suggestions = ['s1', 's2', 's3', 's4'];
-      const result = ValidationService.truncateSuggestions(suggestions, 2);
 
       expect(result).toEqual(['s1', 's2', '... and 2 more suggestions']);
     });
 
     it('should handle empty arrays', () => {
-      const result = ValidationService.truncateSuggestions([]);
       expect(result).toEqual([]);
     });
   });
@@ -351,7 +344,6 @@ describe('ValidationService', () => {
     it('should handle different email field formats', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         email_addresses: 'user@domain.com',
         emails: ['user2@domain.com'],
         emailAddress: 'user3@domain.com',
@@ -367,7 +359,6 @@ describe('ValidationService', () => {
     it('should handle email objects with email_address field', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         email_addresses: [{ email_address: 'user@domain.com' }],
       };
 
@@ -381,7 +372,6 @@ describe('ValidationService', () => {
     it('should handle email objects with email field', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         emails: [{ email: 'user@domain.com' }],
       };
 
@@ -395,7 +385,6 @@ describe('ValidationService', () => {
     it('should handle email objects with value field (Issue #511)', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         email_addresses: [{ value: 'user@domain.com', type: 'work' }],
       };
 
@@ -409,7 +398,6 @@ describe('ValidationService', () => {
     it('should handle mixed email formats including value objects (Issue #511)', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         email_addresses: [
           'simple@example.com',
           { value: 'work@example.com', type: 'work', primary: true },
@@ -432,7 +420,6 @@ describe('ValidationService', () => {
     it('should validate rich email metadata objects with value field (Issue #511)', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         email_addresses: [
           {
             value: 'primary@example.com',
@@ -460,7 +447,6 @@ describe('ValidationService', () => {
     it('should throw for invalid emails in value objects (Issue #511)', () => {
       vi.mocked(isValidEmail).mockReturnValue(false);
 
-      const recordData = {
         email_addresses: [{ value: 'invalid-email', type: 'work' }],
       };
 
@@ -501,7 +487,6 @@ describe('ValidationService', () => {
     it('should skip invalid email formats gracefully', () => {
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const recordData = {
         emails: [
           'valid@email.com',
           { invalidFormat: 'not-an-email' },
@@ -548,7 +533,6 @@ describe('ValidationService', () => {
         suggestions: [],
       });
 
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         { name: 'Test Company' },
         false
@@ -566,7 +550,6 @@ describe('ValidationService', () => {
         suggestions: ['Try using a valid company name'],
       });
 
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         {},
         false
@@ -600,7 +583,6 @@ describe('ValidationService', () => {
     });
 
     it('should truncate suggestions in error message', () => {
-      const manySuggestions = Array.from(
         { length: 10 },
         (_, i) => `Suggestion ${i + 1}`
       );
@@ -612,7 +594,6 @@ describe('ValidationService', () => {
         suggestions: manySuggestions,
       });
 
-      const result = ValidationService.validateFieldsWithErrorHandling(
         UniversalResourceType.COMPANIES,
         {},
         false
@@ -664,7 +645,6 @@ describe('ValidationService', () => {
       });
       vi.mocked(isValidEmail).mockReturnValue(true);
 
-      const result = ValidationService.validateUniversalOperation({
         resourceType: UniversalResourceType.COMPANIES,
         recordId: 'valid-uuid',
         recordData: { name: 'Test', email: 'test@example.com' },
@@ -689,7 +669,6 @@ describe('ValidationService', () => {
         suggestions: [],
       });
 
-      const result = ValidationService.validateUniversalOperation({
         resourceType: UniversalResourceType.PEOPLE,
         recordId: 'invalid-uuid',
         recordData: {},
@@ -702,7 +681,6 @@ describe('ValidationService', () => {
     });
 
     it('should handle partial parameter validation', () => {
-      const result = ValidationService.validateUniversalOperation({
         resourceType: UniversalResourceType.TASKS,
         limit: 50,
       });
@@ -721,22 +699,16 @@ describe('ValidationService', () => {
     });
 
     it('should handle very large suggestion arrays efficiently', () => {
-      const largeSuggestions = Array.from(
         { length: 1000 },
         (_, i) => `Suggestion ${i}`
       );
 
-      const start = performance.now();
-      const result = ValidationService.truncateSuggestions(largeSuggestions, 5);
-      const end = performance.now();
 
       expect(result.length).toBe(6); // 5 + truncation message
       expect(end - start).toBeLessThan(50); // Should be fast
     });
 
     it('should preserve original arrays when truncating', () => {
-      const original = ['s1', 's2', 's3', 's4'];
-      const truncated = ValidationService.truncateSuggestions(original, 2);
 
       expect(original).toEqual(['s1', 's2', 's3', 's4']); // Unchanged
       expect(truncated).toEqual(['s1', 's2', '... and 2 more suggestions']);

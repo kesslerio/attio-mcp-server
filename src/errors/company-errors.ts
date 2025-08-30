@@ -37,8 +37,6 @@ export class InvalidCompanyDataError extends CompanyError {
  */
 export class CompanyOperationError extends CompanyError {
   constructor(operation: string, companyId?: string, details?: string) {
-    const baseMessage = `Company ${operation} failed`;
-    const fullMessage = companyId
       ? `${baseMessage} for company ${companyId}${
           details ? `: ${details}` : ''
         }`

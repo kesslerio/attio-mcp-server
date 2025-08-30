@@ -1,12 +1,9 @@
 /**
  * Enhances API errors with helpful suggestions for value mismatches
  */
-import { ValueMatchError } from '../errors/value-match-error.js';
-import {
-  findBestValueMatch,
-  ValueMatchResult as ValueMatcherValueMatchResult,
-} from './value-matcher.js';
 import axios from 'axios';
+
+import { ValueMatchError } from '../errors/value-match-error.js';
 
 // Known valid values for select fields - this should ideally come from Attio API
 const KNOWN_FIELD_VALUES: Record<string, string[]> = {
@@ -58,7 +55,7 @@ interface ErrorContext {
 /**
  * Parse API error to extract context
  */
-function parseApiError(error: any): ErrorContext {
+function parseApiError(error: unknown): ErrorContext {
   console.error(`[enhancer-parseApiError] --- ENTERING parseApiError ---`);
   console.error(
     `[enhancer-parseApiError] error type: ${typeof error}, constructor: ${
@@ -77,7 +74,6 @@ function parseApiError(error: any): ErrorContext {
     );
   }
 
-  const isAxios = axios.isAxiosError(error);
   console.error(
     `[enhancer-parseApiError] Step 1: axios.isAxiosError(error) result: ${isAxios}`
   );
@@ -133,11 +129,7 @@ function parseApiError(error: any): ErrorContext {
     console.error(
       `[enhancer-parseApiError] --- CONDITION MET --- Processing error.response.data...`
     );
-    const data = error.response.data;
-    const message = typeof data.message === 'string' ? data.message : '';
-    const pathArray =
-      Array.isArray(data.path) && data.path.length > 0 ? data.path : [];
-    const path = typeof pathArray[0] === 'string' ? pathArray[0] : undefined;
+    Array.isArray(data.path) && data.path.length > 0 ? data.path : [];
 
     console.error(
       `[enhancer-parseApiError] Extracted from data: message='${message}', path='${path}'`
@@ -147,11 +139,9 @@ function parseApiError(error: any): ErrorContext {
       message.includes('Unknown select option name') ||
       message.includes('Unknown multi-select option names')
     ) {
-      const valueMatch = message.match(/constraint: (.*)/);
-      const extractedValue =
-        valueMatch && typeof valueMatch[1] === 'string'
-          ? valueMatch[1].split(',')[0].trim()
-          : undefined;
+      valueMatch && typeof valueMatch[1] === 'string'
+        ? valueMatch[1].split(',')[0].trim()
+        : undefined;
       console.error(
         `[enhancer-parseApiError] --- RETURNING ValueMismatch context: field='${path}', value='${extractedValue}' ---`
       );
@@ -168,10 +158,7 @@ function parseApiError(error: any): ErrorContext {
   }
 
   console.error(`[enhancer-parseApiError] --- CONDITION NOT MET ---`);
-  const genericErrorMessage =
-    error && typeof error.message === 'string'
-      ? error.message
-      : 'Unknown error';
+  error && typeof error.message === 'string' ? error.message : 'Unknown error';
   console.error(
     `[enhancer-parseApiError] Returning generic message: '${genericErrorMessage}'`
   );
@@ -181,7 +168,7 @@ function parseApiError(error: any): ErrorContext {
 /**
  * Enhance an API error with value suggestions if applicable
  */
-export function enhanceApiError(error: any): Error {
+export function enhanceApiError(error: unknown): Error {
   console.error(
     '[enhancer] Called with error type:',
     error?.constructor?.name,
@@ -195,7 +182,6 @@ export function enhanceApiError(error: any): Error {
     JSON.stringify(error?.response?.data)
   );
 
-  const mismatchCheck = isValueMismatchError(error);
   console.error(
     '[enhancer] Mismatch check result:',
     JSON.stringify(mismatchCheck)
@@ -206,10 +192,6 @@ export function enhanceApiError(error: any): Error {
     mismatchCheck.fieldSlug &&
     mismatchCheck.searchValue
   ) {
-    const fieldSlug = mismatchCheck.fieldSlug;
-    const searchValue = mismatchCheck.searchValue;
-    const knownValues = KNOWN_FIELD_VALUES[fieldSlug]; // Already checked in isValueMismatchError, but good for clarity
-
     console.error(
       `[enhancer] Value mismatch confirmed for field: ${fieldSlug}, value: ${searchValue}.`
     );
@@ -251,13 +233,12 @@ export function enhanceApiError(error: any): Error {
 /**
  * Check if an error is a value mismatch that we can enhance
  */
-export function isValueMismatchError(error: any): {
+export function isValueMismatchError(error: unknown): {
   isMismatch: boolean;
   fieldSlug?: string;
   searchValue?: string;
   errorMessage?: string;
 } {
-  const context = parseApiError(error);
   console.error(
     '[enhancer-isValueMismatchError] Context from parseApiError:',
     JSON.stringify(context)
@@ -267,7 +248,6 @@ export function isValueMismatchError(error: any): {
     context.searchValue &&
     KNOWN_FIELD_VALUES[context.fieldSlug]
   ) {
-    const knownValues = KNOWN_FIELD_VALUES[context.fieldSlug];
     if (
       knownValues &&
       !knownValues.some(

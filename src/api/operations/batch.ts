@@ -5,28 +5,11 @@
  * Enhanced for Issue #471: Batch Search Operations Support
  */
 
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioRecord,
-  ResourceType,
-  AttioListResponse,
-  RecordBatchCreateParams,
-  RecordBatchUpdateParams,
-} from '../../types/attio.js';
-import {
-  BatchRequestItem,
-  BatchItemResult,
-  BatchResponse,
-  BatchConfig,
-} from './types.js';
 import { callWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from './retry.js';
-import { searchObject } from './search.js';
-import { getObjectDetails } from './crud.js';
-import {
-  validateBatchSize,
-  validatePayloadSize,
-} from '../../utils/batch-validation.js';
+import { getAttioClient } from '../attio-client.js';
 import { getBatchSizeLimit } from '../../config/security-limits.js';
+import { getObjectDetails } from './crud.js';
+import { searchObject } from './search.js';
 
 // Import universal types for enhanced batch search support
 import {
@@ -60,7 +43,6 @@ export async function batchCreateRecords<T extends AttioRecord>(
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
   // Validate batch size
-  const sizeValidation = validateBatchSize(
     params.records,
     'create',
     params.objectSlug
@@ -70,17 +52,12 @@ export async function batchCreateRecords<T extends AttioRecord>(
   }
 
   // Validate payload size
-  const payloadValidation = validatePayloadSize(params.records);
   if (!payloadValidation.isValid) {
     throw new Error(payloadValidation.error);
   }
 
-  const api = getAttioClient();
-  const objectPath = getObjectPath(params.objectSlug, params.objectId);
-  const path = `${objectPath}/records/batch`;
 
   return callWithRetry(async () => {
-    const response = await api.post<AttioListResponse<T>>(path, {
       records: params.records.map((record) => ({
         attributes: record.attributes,
       })),
@@ -104,7 +81,6 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   retryConfig?: Partial<RetryConfig>
 ): Promise<T[]> {
   // Validate batch size
-  const sizeValidation = validateBatchSize(
     params.records,
     'update',
     params.objectSlug
@@ -114,17 +90,12 @@ export async function batchUpdateRecords<T extends AttioRecord>(
   }
 
   // Validate payload size
-  const payloadValidation = validatePayloadSize(params.records);
   if (!payloadValidation.isValid) {
     throw new Error(payloadValidation.error);
   }
 
-  const api = getAttioClient();
-  const objectPath = getObjectPath(params.objectSlug, params.objectId);
-  const path = `${objectPath}/records/batch`;
 
   return callWithRetry(async () => {
-    const response = await api.patch<AttioListResponse<T>>(path, {
       records: params.records.map((record) => ({
         id: record.id,
         attributes: record.attributes,
@@ -160,7 +131,6 @@ export async function executeBatchOperations<T, R>(
   config: Partial<BatchConfig> = {}
 ): Promise<BatchResponse<R>> {
   // Validate overall batch size
-  const sizeValidation = validateBatchSize(operations, 'execute');
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
@@ -186,7 +156,6 @@ export async function executeBatchOperations<T, R>(
   };
 
   // Process operations in chunks to respect maxBatchSize
-  const chunks = [];
   for (let i = 0; i < operations.length; i += batchConfig.maxBatchSize) {
     chunks.push(operations.slice(i, i + batchConfig.maxBatchSize));
   }
@@ -252,7 +221,6 @@ export async function batchSearchObjects<T extends AttioRecord>(
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<T[]>> {
   // Validate batch size for search operations
-  const sizeValidation = validateBatchSize(queries, 'search', objectType);
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
@@ -289,7 +257,6 @@ export async function batchGetObjectDetails<T extends AttioRecord>(
   batchConfig?: Partial<BatchConfig>
 ): Promise<BatchResponse<T>> {
   // Validate batch size
-  const sizeValidation = validateBatchSize(recordIds, 'get', objectType);
   if (!sizeValidation.isValid) {
     throw new Error(sizeValidation.error);
   }
@@ -384,14 +351,10 @@ export async function universalBatchSearch(
   batchConfig?: Partial<BatchConfig>
 ): Promise<UniversalBatchSearchResult[]> {
   // Performance timing start
-  const performanceStart = performance.now();
 
   // Validate batch size for search operations
-  const sizeValidation = validateBatchSize(queries, 'search', resourceType);
   if (!sizeValidation.isValid) {
     // Get current batch size limit for enhanced error message
-    const maxSize = getBatchSizeLimit(resourceType) || 100;
-    const enhancedError = `${sizeValidation.error}. Attempted to search ${queries.length} queries, but maximum allowed for ${resourceType} is ${maxSize}. Consider breaking your search into smaller batches or using sequential search operations.`;
     throw new Error(enhancedError);
   }
 
@@ -413,16 +376,12 @@ export async function universalBatchSearch(
       ].includes(resourceType)
     ) {
       // Use UniversalSearchService for these resource types
-      const result = await handleUniversalResourceTypeBatchSearch(
         resourceType,
         queries,
         { limit, offset, filters }
       );
 
       // Log performance metrics
-      const performanceEnd = performance.now();
-      const duration = performanceEnd - performanceStart;
-      const successCount = result.filter((r) => r.success).length;
       console.error(
         `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
       );
@@ -431,16 +390,13 @@ export async function universalBatchSearch(
     }
 
     // For companies and people, use the existing optimized batch API
-    const legacyResourceType = convertUniversalResourceType(resourceType);
 
-    const batchResponse = await batchSearchObjects<AttioRecord>(
       legacyResourceType,
       queries,
       batchConfig
     );
 
     // Convert BatchResponse format to UniversalBatchSearchResult format
-    const result = batchResponse.results.map((result, index) => ({
       success: result.success,
       query: queries[index],
       result: result.success ? result.data : undefined,
@@ -452,9 +408,6 @@ export async function universalBatchSearch(
     }));
 
     // Log performance metrics
-    const performanceEnd = performance.now();
-    const duration = performanceEnd - performanceStart;
-    const successCount = result.filter((r) => r.success).length;
     console.error(
       `[Performance] Batch search completed for ${resourceType}: ${duration.toFixed(2)}ms, ${successCount}/${queries.length} successful`
     );
@@ -462,14 +415,11 @@ export async function universalBatchSearch(
     return result;
   } catch (error: unknown) {
     // Log performance metrics for failed operations
-    const performanceEnd = performance.now();
-    const duration = performanceEnd - performanceStart;
     console.error(
       `[Performance] Batch search failed for ${resourceType}: ${duration.toFixed(2)}ms, error: ${error instanceof Error ? error.message : String(error)}`
     );
 
     // If batch operation fails completely, return error for all queries
-    const errorMessage = error instanceof Error ? error.message : String(error);
     return queries.map((query) => ({
       success: false,
       query,
@@ -501,7 +451,6 @@ async function handleUniversalResourceTypeBatchSearch(
         const { UniversalSearchService } = await import(
           '../../services/UniversalSearchService.js'
         );
-        const searchResult = await UniversalSearchService.searchRecords({
           resource_type: resourceType,
           query,
           filters: searchParams.filters,
@@ -557,11 +506,8 @@ export async function universalBatchGetDetails(
   }>
 > {
   // Validate batch size
-  const sizeValidation = validateBatchSize(recordIds, 'get', resourceType);
   if (!sizeValidation.isValid) {
     // Get current batch size limit for enhanced error message
-    const maxSize = getBatchSizeLimit(resourceType) || 100;
-    const enhancedError = `${sizeValidation.error}. Attempted to get ${recordIds.length} records, but maximum allowed for ${resourceType} is ${maxSize}. Consider breaking your request into smaller batches.`;
     throw new Error(enhancedError);
   }
 
@@ -571,10 +517,8 @@ export async function universalBatchGetDetails(
       resourceType
     )
   ) {
-    const legacyResourceType = convertUniversalResourceType(resourceType);
 
     try {
-      const batchResponse = await batchGetObjectDetails<AttioRecord>(
         legacyResourceType,
         recordIds,
         batchConfig
@@ -591,7 +535,6 @@ export async function universalBatchGetDetails(
             : String(result.error),
       }));
     } catch (error: unknown) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       return recordIds.map((recordId) => ({
         success: false,

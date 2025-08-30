@@ -6,34 +6,10 @@
  */
 
 import { ResourceType } from '../../types/attio.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../../handlers/tool-configs/universal/schemas.js';
-
-/**
- * Valid category names for attribute filtering
- */
-const VALID_CATEGORIES = [
-  'basic',
-  'business',
-  'personal',
-  'contact',
-  'address',
-  'social',
-  'custom',
-  'system',
-  'metadata',
-  'financial',
-  'technical',
-  'marketing',
-  'sales',
-];
 
 /**
  * Common field patterns that are typically safe across most resource types
  */
-const COMMON_SAFE_FIELDS = [
   // ID fields
   'id',
   'record_id',
@@ -176,7 +152,6 @@ const RESOURCE_SPECIFIC_FIELDS: Record<ResourceType, string[]> = {
 /**
  * Dangerous patterns that should never be allowed in field names
  */
-const DANGEROUS_PATTERNS = [
   // SQL injection attempts - comprehensive patterns
   /['";]/,
   /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)\b/i,
@@ -402,11 +377,9 @@ export function validateFieldName(
   }
 
   // Sanitize field name
-  const sanitized = sanitizeFieldName(fieldName, options);
 
   // Check if sanitization changed the field significantly
   if (sanitized !== fieldName.trim()) {
-    const displayFieldName =
       fieldName.length > 100 ? fieldName.substring(0, 100) + '...' : fieldName;
     warnings.push(
       `Field name was sanitized from "${displayFieldName}" to "${sanitized}"`
@@ -414,12 +387,10 @@ export function validateFieldName(
   }
 
   // Validate against known fields for this resource type
-  const allowedFields =
     RESOURCE_SPECIFIC_FIELDS[resourceType] || COMMON_SAFE_FIELDS;
 
   if (!allowedFields.includes(sanitized)) {
     // Check if it's close to a known field (typo detection)
-    const similarField = findSimilarField(sanitized, allowedFields);
     if (similarField) {
       warnings.push(
         `Did you mean "${similarField}" instead of "${sanitized}"?`
@@ -456,7 +427,6 @@ export function validateFieldNames(
   const warnings: string[] = [];
 
   for (const fieldName of fieldNames) {
-    const result = validateFieldName(fieldName, resourceType, options);
 
     if (result.valid && result.sanitized) {
       sanitizedFields.push(result.sanitized);
@@ -482,7 +452,6 @@ function findSimilarField(target: string, candidates: string[]): string | null {
   let bestDistance = Infinity;
 
   for (const candidate of candidates) {
-    const distance = levenshteinDistance(
       target.toLowerCase(),
       candidate.toLowerCase()
     );
@@ -503,7 +472,6 @@ function levenshteinDistance(a: string, b: string): number {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
 
-  const matrix = Array(b.length + 1)
     .fill(null)
     .map(() => Array(a.length + 1).fill(null));
 
@@ -512,7 +480,6 @@ function levenshteinDistance(a: string, b: string): number {
 
   for (let j = 1; j <= b.length; j++) {
     for (let i = 1; i <= a.length; i++) {
-      const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
       matrix[j][i] = Math.min(
         matrix[j][i - 1] + 1, // deletion
         matrix[j - 1][i] + 1, // insertion
@@ -530,7 +497,7 @@ function levenshteinDistance(a: string, b: string): number {
  * Enhanced for comprehensive security testing
  */
 export function secureValidateFields(
-  fieldNames: any, // Allow any type for comprehensive input validation
+  fieldNames: unknown, // Allow any type for comprehensive input validation
   resourceType: ResourceType,
   operation: string = 'field filtering'
 ): string[] {
@@ -574,7 +541,6 @@ export function secureValidateFields(
 
   // Validate that all array elements are strings
   for (let i = 0; i < fieldNames.length; i++) {
-    const field = fieldNames[i];
     if (typeof field !== 'string') {
       throw new UniversalValidationError(
         `Invalid field names for ${operation}: all field names must be strings, found ${typeof field} at index ${i}`,
@@ -587,7 +553,6 @@ export function secureValidateFields(
     }
   }
 
-  const validation = validateFieldNames(fieldNames, resourceType);
 
   if (!validation.valid) {
     throw new UniversalValidationError(
@@ -640,7 +605,6 @@ export function validateCategoryName(
   }
 
   // Sanitize category name
-  const sanitized = sanitizeFieldName(categoryName, {
     allowUnderscores: true,
     allowNumbers: false,
     maxLength: 30,
@@ -649,7 +613,6 @@ export function validateCategoryName(
 
   // Check if it's a valid category
   if (!VALID_CATEGORIES.includes(sanitized)) {
-    const similarCategory = findSimilarField(sanitized, VALID_CATEGORIES);
     if (similarCategory) {
       warnings.push(
         `Did you mean "${similarCategory}" instead of "${sanitized}"?`
@@ -682,7 +645,6 @@ export function validateCategoryNames(categoryNames: string[]): {
   const warnings: string[] = [];
 
   for (const categoryName of categoryNames) {
-    const result = validateCategoryName(categoryName);
 
     if (result.valid && result.sanitized) {
       sanitizedCategories.push(result.sanitized);
@@ -706,7 +668,7 @@ export function validateCategoryNames(categoryNames: string[]): {
  * Enhanced for comprehensive security testing
  */
 export function secureValidateCategories(
-  categoryNames: any, // Allow any type for comprehensive input validation
+  categoryNames: unknown, // Allow any type for comprehensive input validation
   operation: string = 'category filtering'
 ): string[] {
   // Enhanced input type validation
@@ -749,7 +711,6 @@ export function secureValidateCategories(
 
   // Validate that all array elements are strings
   for (let i = 0; i < categoryNames.length; i++) {
-    const category = categoryNames[i];
     if (typeof category !== 'string') {
       throw new UniversalValidationError(
         `Invalid category names for ${operation}: all category names must be strings, found ${typeof category} at index ${i}`,
@@ -762,7 +723,6 @@ export function secureValidateCategories(
     }
   }
 
-  const validation = validateCategoryNames(categoryNames);
 
   if (!validation.valid) {
     throw new UniversalValidationError(

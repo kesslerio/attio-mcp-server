@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PersonValidator } from '../../src/objects/people-write.js';
+
 import { InvalidPersonDataError } from '../../src/objects/people-write.js';
+import { PersonValidator } from '../../src/objects/people-write.js';
 
 describe('Email Validation', () => {
   describe('PersonValidator.validateCreate', () => {
     // Mock the searchPeopleByEmails function to avoid API calls
     beforeEach(() => {
       vi.mock('../../src/objects/people-write.js', async (importOriginal) => {
-        const actual = await importOriginal();
         return {
           ...actual,
           searchPeopleByEmails: vi.fn().mockResolvedValue([]),
@@ -20,7 +20,6 @@ describe('Email Validation', () => {
     });
 
     it('should reject invalid email formats during creation', async () => {
-      const invalidEmails = [
         'notanemail',
         '@example.com',
         'user@',
@@ -48,7 +47,6 @@ describe('Email Validation', () => {
     });
 
     it('should accept valid email formats during creation', async () => {
-      const validEmails = [
         'user@example.com',
         'user.name@example.com',
         'user+tag@example.com',
@@ -72,7 +70,6 @@ describe('Email Validation', () => {
       );
 
       for (const email of validEmails) {
-        const result = await PersonValidator.validateCreate({
           name: 'Test User',
           email_addresses: [email],
         });
@@ -82,7 +79,6 @@ describe('Email Validation', () => {
 
     it('should validate email format before checking for duplicates', async () => {
       // This test ensures validation order: format check should come before duplicate check
-      const invalidEmail = 'notanemail';
 
       await expect(
         PersonValidator.validateCreate({
@@ -101,7 +97,6 @@ describe('Email Validation', () => {
         { email: 'valid2@example.com', exists: false },
       ]);
 
-      const result = await PersonValidator.validateCreate({
         name: 'Test User',
         email_addresses: ['valid1@example.com', 'valid2@example.com'],
       });
@@ -119,7 +114,6 @@ describe('Email Validation', () => {
         { email: 'valid@example.com', exists: false },
       ]);
 
-      const result = await PersonValidator.validateCreate({
         name: 'Test User',
         email_addresses: 'valid@example.com' as any, // Testing string input
       });
@@ -132,7 +126,6 @@ describe('Email Validation', () => {
 
   describe('PersonValidator.validateAttributeUpdate', () => {
     it('should reject invalid email formats during attribute update', async () => {
-      const invalidEmails = [
         'notanemail',
         '@example.com',
         'user@',
@@ -153,7 +146,6 @@ describe('Email Validation', () => {
     });
 
     it('should accept valid email formats during attribute update', async () => {
-      const validEmails = [
         'user@example.com',
         'user.name@example.com',
         'user+tag@example.com',

@@ -5,30 +5,7 @@
  * for all API operations to prevent information disclosure.
  */
 
-import {
-  sanitizeErrorMessage,
-  createSanitizedError,
-} from './error-sanitizer.js';
 import { error as logError, OperationType } from './logger.js';
-import {
-  getErrorMessage,
-  ensureError,
-  getErrorStatus,
-  isAxiosError,
-} from './error-utilities.js';
-
-/**
- * Error context for enhanced error handling
- */
-export interface ErrorContext {
-  operation: string;
-  module: string;
-  resourceType?: string;
-  recordId?: string;
-  userId?: string;
-  correlationId?: string;
-  [key: string]: any;
-}
 
 /**
  * Enhanced error class with context and sanitization
@@ -48,7 +25,6 @@ export class SecureApiError extends Error {
     originalError?: Error
   ) {
     // Always use sanitized message
-    const sanitized = sanitizeErrorMessage(message, {
       includeContext: true,
       module: context.module,
       operation: context.operation,
@@ -112,7 +88,6 @@ export function withSecureErrorHandling<
       );
 
       // Determine status code
-      const statusCode =
         (error as any)?.statusCode || (error as any)?.response?.status || 500;
 
       // Determine error type
@@ -157,7 +132,7 @@ export interface SecureErrorResponse {
  * @returns Secure error response
  */
 export function createSecureErrorResponse(
-  error: any,
+  error: unknown,
   context?: Partial<ErrorContext>
 ): SecureErrorResponse {
   // If it's already a SecureApiError, use its safe data
@@ -173,7 +148,6 @@ export function createSecureErrorResponse(
   }
 
   // Otherwise, sanitize the error
-  const sanitized = createSanitizedError(error, error?.statusCode, {
     module: context?.module || 'unknown',
     operation: context?.operation || 'unknown',
     includeContext: true,
@@ -203,8 +177,7 @@ export class BatchErrorHandler {
   /**
    * Add an error for a specific batch item
    */
-  addError(index: number, error: any): void {
-    const secureError =
+  addError(index: number, error: unknown): void {
       error instanceof SecureApiError
         ? error
         : new SecureApiError(
@@ -263,7 +236,7 @@ export async function retryWithSecureErrors<T>(
     maxRetries?: number;
     initialDelay?: number;
     maxDelay?: number;
-    shouldRetry?: (error: any) => boolean;
+    shouldRetry?: (error: unknown) => boolean;
   } = {}
 ): Promise<T> {
   const {
@@ -271,12 +244,11 @@ export async function retryWithSecureErrors<T>(
     initialDelay = 1000,
     maxDelay = 10000,
     shouldRetry = (error) => {
-      const statusCode = error?.statusCode || error?.response?.status || 500;
       return statusCode >= 500 || statusCode === 429;
     },
   } = options;
 
-  let lastError: any;
+  let lastError: unknown;
   let delay = initialDelay;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -349,7 +321,6 @@ export class SecureCircuitBreaker {
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     // Check if circuit is open
     if (this.state === 'open') {
-      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
 
       if (timeSinceLastFailure < this.options.resetTimeout!) {
         throw new SecureApiError(
@@ -365,7 +336,6 @@ export class SecureCircuitBreaker {
     }
 
     try {
-      const result = await fn();
 
       // Success - reset failures
       if (this.state === 'half-open') {

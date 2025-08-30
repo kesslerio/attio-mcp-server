@@ -50,13 +50,11 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
   // Detect Attio API "unknown" record responses (indicates record not found)
   // Attio sometimes returns fake records with id.record_id: 'unknown' instead of 404s
   if (result && typeof result === 'object' && !Array.isArray(result)) {
-    const record = result as Record<string, unknown>;
     if (
       record.id &&
       typeof record.id === 'object' &&
       !Array.isArray(record.id)
     ) {
-      const id = record.id as Record<string, unknown>;
       if (id.record_id === 'unknown') {
         return { isError: true, reason: 'empty_response' as any };
       }
@@ -65,7 +63,6 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
 
   // Check for explicit success: false
   if (typeof result === 'object' && result !== null && 'success' in result) {
-    const successField = (result as Record<string, unknown>).success;
     if (successField === false) {
       return { isError: true, reason: 'explicit_success_false' };
     }
@@ -73,7 +70,6 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
 
   // Check for meaningful error objects
   if (typeof result === 'object' && result !== null && 'error' in result) {
-    const errorField = (result as Record<string, unknown>).error;
 
     // Error object with message
     if (
@@ -81,7 +77,6 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
       typeof errorField === 'object' &&
       'message' in errorField
     ) {
-      const message = (errorField as Record<string, unknown>).message;
       if (typeof message === 'string' && message.trim()) {
         return { isError: true, reason: 'meaningful_error_object' };
       }
@@ -95,15 +90,12 @@ export function computeErrorWithContext(result: unknown): ErrorAnalysis {
 
   // Check for errors array with meaningful items
   if (typeof result === 'object' && result !== null && 'errors' in result) {
-    const errorsField = (result as Record<string, unknown>).errors;
 
     if (Array.isArray(errorsField)) {
-      const hasErrors = errorsField.some((err: unknown) => {
         if (!err) return false;
 
         // Error with message
         if (typeof err === 'object' && 'message' in err) {
-          const message = (err as Record<string, unknown>).message;
           return typeof message === 'string' && message.trim();
         }
 
@@ -147,7 +139,6 @@ export function cleanEmptyErrorFields(result: unknown): unknown {
     return result;
   }
 
-  const cleaned = { ...(result as Record<string, unknown>) };
 
   // Remove empty error field
   if ('error' in cleaned && (cleaned.error === '' || cleaned.error === null)) {

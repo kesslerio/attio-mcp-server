@@ -46,19 +46,16 @@ export function convertMarkdownToPlainText(
     return '';
   }
 
-  const opts = { ...DEFAULT_OPTIONS, ...options };
   let text = markdown;
 
   // Step 1: Handle headers with proper spacing and separators
   text = text.replace(/^# (.+)$/gm, (match, title) => {
-    const separator = opts.sectionSeparators.h1!.repeat(
       Math.min(title.length, 60)
     );
     return `\n\n${separator}\n${title.toUpperCase()}\n${separator}\n`;
   });
 
   text = text.replace(/^## (.+)$/gm, (match, title) => {
-    const separator = opts.sectionSeparators.h2!.repeat(
       Math.min(title.length, 50)
     );
     return `\n\n${title}\n${separator}\n`;
@@ -160,7 +157,6 @@ export function isMarkdownContent(content: string): boolean {
     return false;
   }
 
-  const markdownPatterns = [
     /^#{1,6}\s+.+$/m, // Headers
     /^\*\*[^*]+\*\*$/m, // Bold text on its own line
     /^[-*]\s+.+$/m, // Bullet points

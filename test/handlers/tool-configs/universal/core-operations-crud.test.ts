@@ -1,16 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-// Import shared helpers
 import { setupUnitTestMocks, cleanupMocks } from './helpers/index.js';
-
-// Enhanced error types will be imported when needed in error handling tests
-
-// Import tool configurations
-import {
-  createRecordConfig,
-  updateRecordConfig,
-  deleteRecordConfig,
-} from '../../../../src/handlers/tool-configs/universal/core-operations.js';
 
 // Import types
 import {
@@ -31,7 +21,6 @@ describe('Universal Core Operations CRUD Tests', () => {
 
   describe('create-record tool', () => {
     it('should create company successfully', async () => {
-      const mockCreatedRecord = {
         id: { record_id: 'comp-new' },
         values: {
           name: [{ value: 'New Company' }],
@@ -53,13 +42,11 @@ describe('Universal Core Operations CRUD Tests', () => {
         return_details: true,
       };
 
-      const result = await createRecordConfig.handler(params);
       expect(result).toEqual(mockCreatedRecord);
       expect(vi.mocked(handleUniversalCreate)).toHaveBeenCalledWith(params);
     });
 
     it('should create person successfully', async () => {
-      const mockCreatedRecord = {
         id: { record_id: 'person-new' },
         values: {
           name: [{ value: 'Jane Smith' }],
@@ -80,12 +67,10 @@ describe('Universal Core Operations CRUD Tests', () => {
         },
       };
 
-      const result = await createRecordConfig.handler(params);
       expect(result).toEqual(mockCreatedRecord);
     });
 
     it('should format create result correctly', async () => {
-      const mockRecord = {
         id: { record_id: 'comp-new' },
         values: {
           name: [{ value: 'New Company' }],
@@ -97,7 +82,6 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = createRecordConfig.formatResult(
         mockRecord,
         UniversalResourceType.COMPANIES
       );
@@ -109,7 +93,6 @@ describe('Universal Core Operations CRUD Tests', () => {
 
   describe('update-record tool', () => {
     it('should update company successfully', async () => {
-      const mockUpdatedRecord = {
         id: { record_id: 'comp-1' },
         values: {
           name: [{ value: 'Updated Company' }],
@@ -131,13 +114,11 @@ describe('Universal Core Operations CRUD Tests', () => {
         return_details: true,
       };
 
-      const result = await updateRecordConfig.handler(params);
       expect(result).toEqual(mockUpdatedRecord);
       expect(vi.mocked(handleUniversalUpdate)).toHaveBeenCalledWith(params);
     });
 
     it('should format update result correctly', async () => {
-      const mockRecord = {
         id: { record_id: 'comp-1' },
         values: {
           name: [{ value: 'Updated Company' }],
@@ -149,7 +130,6 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = updateRecordConfig.formatResult(
         mockRecord,
         UniversalResourceType.COMPANIES
       );
@@ -161,7 +141,6 @@ describe('Universal Core Operations CRUD Tests', () => {
 
   describe('delete-record tool', () => {
     it('should delete record successfully', async () => {
-      const mockResult = {
         success: true,
         record_id: 'comp-1',
       };
@@ -176,19 +155,16 @@ describe('Universal Core Operations CRUD Tests', () => {
         record_id: 'comp-1',
       };
 
-      const result = await deleteRecordConfig.handler(params);
       expect(result).toEqual(mockResult);
       expect(vi.mocked(handleUniversalDelete)).toHaveBeenCalledWith(params);
     });
 
     it('should format successful delete result correctly', async () => {
-      const mockResult = { success: true, record_id: 'comp-1' };
       const { getSingularResourceType } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = deleteRecordConfig.formatResult(
         mockResult,
         UniversalResourceType.COMPANIES
       );
@@ -196,13 +172,11 @@ describe('Universal Core Operations CRUD Tests', () => {
     });
 
     it('should format failed delete result correctly', async () => {
-      const mockResult = { success: false, record_id: 'comp-1' };
       const { getSingularResourceType } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = deleteRecordConfig.formatResult(
         mockResult,
         UniversalResourceType.COMPANIES
       );

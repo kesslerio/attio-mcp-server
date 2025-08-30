@@ -3,8 +3,9 @@
  */
 
 import { randomUUID } from 'crypto';
-import { safeJsonStringify } from './json-serializer.js';
+
 import { safeGet } from '../types/error-types.js';
+import { safeJsonStringify } from './json-serializer.js';
 
 /**
  * Log level enum for controlling verbosity
@@ -79,7 +80,6 @@ interface LogContext {
 function parseLogLevel(envValue?: string): LogLevel {
   if (!envValue) return LogLevel.DEBUG;
 
-  const normalized = envValue.toUpperCase();
   switch (normalized) {
     case 'DEBUG':
       return LogLevel.DEBUG;
@@ -347,7 +347,6 @@ export class PerformanceTimer {
    * End timing and log the duration
    */
   end(message?: string, data?: Record<string, unknown>): number {
-    const duration = Date.now() - this.startTime;
     debug(
       this.module,
       message || `Operation completed: ${this.operation}`,
@@ -400,7 +399,6 @@ export function operationSuccess(
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
-  const logData = {
     ...resultSummary,
     ...(duration && { duration: `${duration}ms` }),
   };
@@ -431,7 +429,6 @@ export function operationFailure(
   operationType: OperationType = OperationType.SYSTEM,
   duration?: number
 ): void {
-  const logData = {
     ...context,
     ...(duration && { duration: `${duration}ms` }),
   };
@@ -540,10 +537,7 @@ export async function withLogging<T>(
   fn: () => Promise<T>,
   context?: Record<string, unknown>
 ): Promise<T> {
-  const timer = operationStart(module, operation, operationType, context);
   try {
-    const result = await fn();
-    const duration = timer.end();
     operationSuccess(
       module,
       operation,
@@ -553,7 +547,6 @@ export async function withLogging<T>(
     );
     return result;
   } catch (error: unknown) {
-    const duration = timer.end();
     operationFailure(
       module,
       operation,

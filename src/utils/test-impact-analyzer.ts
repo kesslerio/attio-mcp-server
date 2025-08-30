@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
-import { resolve, relative, dirname, join } from 'path';
 import { glob } from 'glob';
+import { resolve, relative, dirname, join } from 'path';
 
 interface TestImpactMapping {
   sourceFiles: Record<string, string[]>; // source file -> test files that cover it
@@ -35,8 +35,6 @@ class TestImpactAnalyzer {
    * Get tests affected by current git changes
    */
   public getAffectedTests(baseBranch: string = 'main'): TestSelection {
-    const changedFiles = this.getChangedFiles(baseBranch);
-    const affectedTests = this.calculateAffectedTests(changedFiles);
 
     return this.categorizeTestSelection(affectedTests, changedFiles);
   }
@@ -47,7 +45,6 @@ class TestImpactAnalyzer {
   private getChangedFiles(baseBranch: string): ChangedFiles {
     try {
       // Get changed files compared to base branch
-      const diffOutput = execSync(
         `git diff --name-status ${baseBranch}...HEAD`,
         {
           encoding: 'utf-8',
@@ -63,7 +60,6 @@ class TestImpactAnalyzer {
         if (!line.trim()) return;
 
         const [status, ...fileParts] = line.split('\t');
-        const file = fileParts.join('\t');
 
         switch (status[0]) {
           case 'M':
@@ -89,8 +85,6 @@ class TestImpactAnalyzer {
    * Calculate which tests are affected by changed files
    */
   private calculateAffectedTests(changedFiles: ChangedFiles): string[] {
-    const affectedTests = new Set<string>();
-    const allChangedFiles = [...changedFiles.modified, ...changedFiles.added];
 
     // Find tests that directly cover changed source files
     allChangedFiles.forEach((file) => {
@@ -118,7 +112,6 @@ class TestImpactAnalyzer {
     affectedTests: string[],
     changedFiles: ChangedFiles
   ): TestSelection {
-    const allChangedFiles = [
       ...changedFiles.modified,
       ...changedFiles.added,
       ...changedFiles.deleted,
@@ -146,8 +139,6 @@ class TestImpactAnalyzer {
 
     // If only a few tests affected, run them + smoke
     if (affectedTests.length <= 5) {
-      const smokeTests = this.mapping.categories.smoke || [];
-      const allTests = Array.from(new Set([...affectedTests, ...smokeTests]));
 
       return {
         affected: allTests,
@@ -171,8 +162,6 @@ class TestImpactAnalyzer {
     }
 
     // Default to core tests
-    const coreTests = this.mapping.categories.core || [];
-    const combinedTests = Array.from(new Set([...affectedTests, ...coreTests]));
 
     return {
       affected: combinedTests,
@@ -186,7 +175,6 @@ class TestImpactAnalyzer {
    * Check if changes are only documentation
    */
   private isOnlyDocumentationChanges(files: string[]): boolean {
-    const docPatterns = [
       '.md',
       '.txt',
       'docs/',
@@ -206,7 +194,6 @@ class TestImpactAnalyzer {
    * Check if changes include core services
    */
   private hasCoreServiceChanges(files: string[]): boolean {
-    const corePatterns = [
       'src/services/',
       'src/handlers/',
       'src/api/',
@@ -221,7 +208,6 @@ class TestImpactAnalyzer {
    * Load or generate test-to-source file mapping
    */
   private loadOrGenerateMapping(): TestImpactMapping {
-    const mappingFile = join(
       this.projectRoot,
       'config',
       'test-impact-mapping.json'
@@ -254,12 +240,10 @@ class TestImpactAnalyzer {
     };
 
     // Get all test files
-    const testFiles = glob.sync('test/**/*.test.{ts,js}', {
       cwd: this.projectRoot,
     });
 
     testFiles.forEach((testFile) => {
-      const sourceFiles = this.analyzeTestImports(testFile);
       mapping.testFiles[testFile] = sourceFiles;
 
       // Reverse mapping: source file -> test files
@@ -281,22 +265,16 @@ class TestImpactAnalyzer {
    * Analyze imports in a test file to determine which source files it covers
    */
   private analyzeTestImports(testFile: string): string[] {
-    const testPath = join(this.projectRoot, testFile);
     const sourceFiles: string[] = [];
 
     try {
-      const content = readFileSync(testPath, 'utf-8');
-      const imports = content.match(/from\s+['"`]([^'"`]+)['"`]/g) || [];
 
       imports.forEach((importLine) => {
-        const match = importLine.match(/from\s+['"`]([^'"`]+)['"`]/);
         if (match) {
           let importPath = match[1];
 
           // Convert relative imports to actual file paths
           if (importPath.startsWith('.')) {
-            const testDir = dirname(testFile);
-            const resolvedPath = resolve(
               join(this.projectRoot, testDir),
               importPath
             );
@@ -305,8 +283,6 @@ class TestImpactAnalyzer {
 
           // Add .ts/.js extensions if missing
           if (!importPath.includes('.')) {
-            const tsFile = `${importPath}.ts`;
-            const jsFile = `${importPath}.js`;
 
             if (existsSync(join(this.projectRoot, tsFile))) {
               importPath = tsFile;
@@ -333,7 +309,6 @@ class TestImpactAnalyzer {
    */
   private getCriticalPathTests(): string[] {
     // These are the most critical tests that must pass
-    const criticalTests = [
       'test/services/UniversalCreateService.test.ts',
       'test/services/UniversalSearchService.test.ts',
       'test/handlers/tools.test.ts',
@@ -382,12 +357,10 @@ class TestImpactAnalyzer {
    * Save the mapping to disk for future use
    */
   public saveMapping(): void {
-    const mappingFile = join(
       this.projectRoot,
       'config',
       'test-impact-mapping.json'
     );
-    const mappingDir = dirname(mappingFile);
 
     if (!existsSync(mappingDir)) {
       mkdirSync(mappingDir, { recursive: true });
@@ -400,8 +373,6 @@ class TestImpactAnalyzer {
    * Generate a report of the test impact analysis
    */
   public generateReport(baseBranch: string = 'main'): string {
-    const selection = this.getAffectedTests(baseBranch);
-    const changedFiles = this.getChangedFiles(baseBranch);
 
     let report = '# Test Impact Analysis Report\n\n';
     report += `**Base Branch**: ${baseBranch}\n`;

@@ -6,10 +6,8 @@
  */
 
 // Required environment variables for E2E tests
-const REQUIRED_ENV_VARS = ['ATTIO_API_KEY'] as const;
 
 // Optional environment variables (won't fail if missing, but will warn)
-const OPTIONAL_ENV_VARS = [
   'E2E_TEST_PREFIX',
   'E2E_TEST_EMAIL_DOMAIN',
   'E2E_TEST_COMPANY_DOMAIN',
@@ -24,7 +22,6 @@ function validateEnvironment(): void {
   console.log('🔍 Validating E2E environment variables...');
 
   // Check required variables
-  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:');
@@ -43,7 +40,6 @@ function validateEnvironment(): void {
   console.log('✅ All required environment variables are present');
 
   // Check optional variables and warn if missing
-  const missingOptional = OPTIONAL_ENV_VARS.filter((key) => !process.env[key]);
   if (missingOptional.length > 0) {
     console.log(
       '⚠️  Optional environment variables not set (will use defaults):'
@@ -54,8 +50,6 @@ function validateEnvironment(): void {
   }
 
   // Log loaded API key (redacted)
-  const apiKey = process.env.ATTIO_API_KEY!;
-  const redactedKey =
     apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4);
   console.log(`🔑 API key loaded: ${redactedKey}`);
 }

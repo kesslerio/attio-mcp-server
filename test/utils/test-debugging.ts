@@ -7,8 +7,8 @@
  * Created for Issue #480 Phase 3: E2E Test Coverage & Validation
  */
 
-import type { AttioTask, AttioRecord } from '../../src/types/attio.js';
 import { TestEnvironment } from './mock-factories/test-environment.js';
+import type { AttioTask, AttioRecord } from '../../src/types/attio.js';
 
 /**
  * Validation result interface
@@ -28,8 +28,8 @@ export interface ComparisonResult {
   match: boolean;
   differences: {
     field: string;
-    expected: any;
-    actual: any;
+    expected: unknown;
+    actual: unknown;
     reason: string;
   }[];
   score: number; // 0-1 compatibility score
@@ -78,10 +78,9 @@ export class TestDataInspector {
   /**
    * Validates task structure against E2E test expectations
    */
-  static validateTaskStructure(task: any): ValidationResult {
+  static validateTaskStructure(task: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const requiredFields = ['id', 'content', 'status', 'created_at'];
     const missingRequiredFields: string[] = [];
 
     // Check basic structure
@@ -150,7 +149,7 @@ export class TestDataInspector {
 
     // Check linked records
     if (task.linked_records && Array.isArray(task.linked_records)) {
-      task.linked_records.forEach((record: any, index: number) => {
+      task.linked_records.forEach((record: unknown, index: number) => {
         if (!record.id || !record.object_slug) {
           errors.push(
             `Linked record ${index} missing required id or object_slug`
@@ -159,7 +158,6 @@ export class TestDataInspector {
       });
     }
 
-    const fieldCoverage = this.calculateFieldCoverage(task, [
       'id',
       'content',
       'title',
@@ -183,10 +181,9 @@ export class TestDataInspector {
   /**
    * Validates company structure
    */
-  static validateCompanyStructure(company: any): ValidationResult {
+  static validateCompanyStructure(company: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const requiredFields = ['id', 'values'];
     const missingRequiredFields: string[] = [];
 
     if (!company || typeof company !== 'object') {
@@ -214,7 +211,6 @@ export class TestDataInspector {
       errors.push('Company values must be an object');
     }
 
-    const fieldCoverage = this.calculateFieldCoverage(company, [
       'id',
       'values',
       'created_at',
@@ -233,10 +229,9 @@ export class TestDataInspector {
   /**
    * Validates person structure
    */
-  static validatePersonStructure(person: any): ValidationResult {
+  static validatePersonStructure(person: unknown): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const requiredFields = ['id', 'values'];
     const missingRequiredFields: string[] = [];
 
     if (!person || typeof person !== 'object') {
@@ -262,7 +257,6 @@ export class TestDataInspector {
       missingRequiredFields.push('values');
     }
 
-    const fieldCoverage = this.calculateFieldCoverage(person, [
       'id',
       'values',
       'created_at',
@@ -282,19 +276,16 @@ export class TestDataInspector {
    * Compares actual data with expected test structure
    */
   static compareWithExpectedStructure(
-    actual: any,
+    actual: unknown,
     expected: any
   ): ComparisonResult {
     const differences: ComparisonResult['differences'] = [];
     let matches = 0;
     let total = 0;
 
-    const compareFields = (actualObj: any, expectedObj: any, path = '') => {
-      const expectedKeys = Object.keys(expectedObj);
 
       for (const key of expectedKeys) {
         total++;
-        const currentPath = path ? `${path}.${key}` : key;
 
         if (!(key in actualObj)) {
           differences.push({
@@ -333,7 +324,6 @@ export class TestDataInspector {
 
     compareFields(actual, expected);
 
-    const score = total > 0 ? matches / total : 1;
 
     return {
       match: differences.length === 0,
@@ -382,15 +372,13 @@ export class TestDataInspector {
    * Calculates field coverage percentage
    */
   private static calculateFieldCoverage(
-    obj: any,
+    obj: unknown,
     expectedFields: string[]
   ): number {
     if (!obj || expectedFields.length === 0) return 0;
 
-    const presentFields = expectedFields.filter((field) => {
       // Handle nested field paths like 'id.record_id'
       if (field.includes('.')) {
-        const parts = field.split('.');
         let current = obj;
         for (const part of parts) {
           if (
@@ -431,7 +419,6 @@ export class MockDataValidator {
     };
 
     // Timeout wrapper for async operations (CI protection)
-    const withTimeout = <T>(
       promise: Promise<T>,
       timeoutMs: number = 10000
     ): Promise<T> => {
@@ -447,12 +434,10 @@ export class MockDataValidator {
     };
 
     // Enhanced validation with error recovery
-    const safeValidate = async (
       factoryName: string,
       validator: () => Promise<ValidationResult>
     ): Promise<ValidationResult> => {
       try {
-        const result = await withTimeout(validator(), 10000);
 
         // Additional safety check - ensure result has required structure
         if (!result || typeof result !== 'object') {
@@ -475,7 +460,6 @@ export class MockDataValidator {
 
         return result;
       } catch (error) {
-        const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.warn(
           `[CI Warning] ${factoryName} validation failed:`,
@@ -489,21 +473,16 @@ export class MockDataValidator {
     };
 
     // Run validations with enhanced error handling
-    const taskFactory = await safeValidate('TaskFactory', () =>
       this.validateTaskFactory()
     );
-    const companyFactory = await safeValidate('CompanyFactory', () =>
       this.validateCompanyFactory()
     );
-    const personFactory = await safeValidate('PersonFactory', () =>
       this.validatePersonFactory()
     );
-    const listFactory = await safeValidate('ListFactory', () =>
       this.validateListFactory()
     );
 
     // Calculate overall score with safety checks
-    const validCoverages = [
       taskFactory,
       companyFactory,
       personFactory,
@@ -512,7 +491,6 @@ export class MockDataValidator {
       .map((f) => (typeof f.fieldCoverage === 'number' ? f.fieldCoverage : 0))
       .filter((coverage) => !isNaN(coverage));
 
-    const overallScore =
       validCoverages.length > 0
         ? validCoverages.reduce((sum, coverage) => sum + coverage, 0) /
           validCoverages.length
@@ -523,13 +501,11 @@ export class MockDataValidator {
     // Collect critical issues with enhanced safety
     [taskFactory, companyFactory, personFactory, listFactory].forEach(
       (result, index) => {
-        const factoryNames = [
           'TaskFactory',
           'CompanyFactory',
           'PersonFactory',
           'ListFactory',
         ];
-        const factoryName = factoryNames[index];
 
         // Multiple layers of safety checks for CI environments
         if (!result) {
@@ -582,10 +558,8 @@ export class MockDataValidator {
   static async validateTaskFactory(): Promise<ValidationResult> {
     try {
       // Import factory dynamically to avoid circular dependencies
-      const TaskMockFactoryModule = await import(
         './mock-factories/TaskMockFactory.js'
       );
-      const TaskMockFactory =
         TaskMockFactoryModule.TaskMockFactory || TaskMockFactoryModule.default;
 
       if (!TaskMockFactory) {
@@ -599,26 +573,19 @@ export class MockDataValidator {
       }
 
       // Test basic creation
-      const basicTask = TaskMockFactory.create();
-      const basicValidation =
         TestDataInspector.validateTaskStructure(basicTask);
 
       // Test with overrides
-      const customTask = TaskMockFactory.create({
         content: 'Test content',
         status: 'pending',
         assignee_id: 'test-assignee',
       });
-      const customValidation =
         TestDataInspector.validateTaskStructure(customTask);
 
       // Test multiple creation
-      const multipleTasks = TaskMockFactory.createMultiple(3);
-      const multipleValid = multipleTasks.every(
         (task) => TestDataInspector.validateTaskStructure(task).valid
       );
 
-      const combinedErrors = [
         ...basicValidation.errors,
         ...customValidation.errors,
         ...(multipleValid ? [] : ['Multiple task creation validation failed']),
@@ -635,9 +602,7 @@ export class MockDataValidator {
         missingRequiredFields: basicValidation.missingRequiredFields,
       };
     } catch (error) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorStack =
         error instanceof Error && error.stack
           ? ` Stack: ${error.stack.split('\n')[0]}`
           : '';
@@ -670,10 +635,8 @@ export class MockDataValidator {
    */
   static async validateCompanyFactory(): Promise<ValidationResult> {
     try {
-      const CompanyMockFactoryModule = await import(
         './mock-factories/CompanyMockFactory.js'
       );
-      const CompanyMockFactory =
         CompanyMockFactoryModule.CompanyMockFactory ||
         CompanyMockFactoryModule.default;
 
@@ -687,12 +650,9 @@ export class MockDataValidator {
         };
       }
 
-      const company = CompanyMockFactory.create();
       return TestDataInspector.validateCompanyStructure(company);
     } catch (error) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorStack =
         error instanceof Error && error.stack
           ? ` Stack: ${error.stack.split('\n')[0]}`
           : '';
@@ -725,10 +685,8 @@ export class MockDataValidator {
    */
   static async validatePersonFactory(): Promise<ValidationResult> {
     try {
-      const PersonMockFactoryModule = await import(
         './mock-factories/PersonMockFactory.js'
       );
-      const PersonMockFactory =
         PersonMockFactoryModule.PersonMockFactory ||
         PersonMockFactoryModule.default;
 
@@ -742,12 +700,9 @@ export class MockDataValidator {
         };
       }
 
-      const person = PersonMockFactory.create();
       return TestDataInspector.validatePersonStructure(person);
     } catch (error) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorStack =
         error instanceof Error && error.stack
           ? ` Stack: ${error.stack.split('\n')[0]}`
           : '';
@@ -780,10 +735,8 @@ export class MockDataValidator {
    */
   static async validateListFactory(): Promise<ValidationResult> {
     try {
-      const ListMockFactoryModule = await import(
         './mock-factories/ListMockFactory.js'
       );
-      const ListMockFactory =
         ListMockFactoryModule.ListMockFactory || ListMockFactoryModule.default;
 
       if (!ListMockFactory) {
@@ -796,7 +749,6 @@ export class MockDataValidator {
         };
       }
 
-      const list = ListMockFactory.create();
 
       // Basic structure validation for lists
       const errors: string[] = [];
@@ -826,7 +778,6 @@ export class MockDataValidator {
       }
 
       // Calculate field coverage for list
-      const expectedFields = [
         'id',
         'title',
         'name',
@@ -834,7 +785,6 @@ export class MockDataValidator {
         'object_slug',
         'created_at',
       ];
-      const fieldCoverage = this.calculateFieldCoverage(list, expectedFields);
 
       return {
         valid: errors.length === 0,
@@ -844,9 +794,7 @@ export class MockDataValidator {
         missingRequiredFields,
       };
     } catch (error) {
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorStack =
         error instanceof Error && error.stack
           ? ` Stack: ${error.stack.split('\n')[0]}`
           : '';
@@ -932,7 +880,6 @@ export class TestEnvironmentDiagnostics {
    */
   private static async generateRecommendations(): Promise<string[]> {
     const recommendations: string[] = [];
-    const report = await MockDataValidator.validateAllFactories();
 
     if (report.overallScore < 0.9) {
       recommendations.push(
@@ -1049,8 +996,6 @@ export class E2ETestFailureAnalyzer {
   } {
     const categorizedFailures: Record<string, number> = {};
     const criticalIssues: string[] = [];
-    const detailedAnalysis = failures.map((failure) => {
-      const analysis = this.analyzeFailure(failure.errorMessage, failure.suite);
 
       categorizedFailures[analysis.category] =
         (categorizedFailures[analysis.category] || 0) + 1;
@@ -1068,7 +1013,6 @@ export class E2ETestFailureAnalyzer {
       };
     });
 
-    const actionPlan = this.generateActionPlan(
       categorizedFailures,
       criticalIssues
     );
@@ -1102,7 +1046,6 @@ export class E2ETestFailureAnalyzer {
     }
 
     // Priority 2: Most common failure categories
-    const sortedCategories = Object.entries(categorizedFailures)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3);
 

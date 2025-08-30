@@ -64,7 +64,6 @@ export class JsonSchemaValidator {
    */
   static validate(params: unknown, schema: SchemaDefinition): ValidationResult {
     // First sanitize the input
-    const sanitized = InputSanitizer.sanitizeObject(params);
 
     if (
       !sanitized ||
@@ -84,10 +83,8 @@ export class JsonSchemaValidator {
       };
     }
 
-    const sanitizedParams = sanitized as SanitizedObject;
 
     // Validate against schema
-    const validationErrors = this.validateObject(sanitizedParams, schema, '');
 
     if (validationErrors.length > 0) {
       return {
@@ -135,7 +132,6 @@ export class JsonSchemaValidator {
       if (schema.properties) {
         for (const [key, value] of Object.entries(obj)) {
           if (schema.properties[key]) {
-            const fieldPath = path ? `${path}.${key}` : key;
             errors.push(
               ...this.validateValue(
                 value,
@@ -176,7 +172,6 @@ export class JsonSchemaValidator {
     }
 
     // Check type
-    const actualType = Array.isArray(value) ? 'array' : typeof value;
 
     switch (schema.type) {
       case 'string':
@@ -206,7 +201,6 @@ export class JsonSchemaValidator {
             });
           }
           if (schema.pattern) {
-            const regex = new RegExp(schema.pattern);
             if (!regex.test(value)) {
               errors.push({
                 field: path,
@@ -312,10 +306,8 @@ export class ParameterValidationMiddleware {
     schema: SchemaDefinition
   ): SanitizedObject {
     // First validate against JSON schema
-    const result = JsonSchemaValidator.validate(params, schema);
 
     if (!result.valid) {
-      const errorMessages = result.errors!.map(
         (e) =>
           `${e.field}: ${e.message}${e.suggestion ? ` (${e.suggestion})` : ''}`
       );
@@ -330,7 +322,6 @@ export class ParameterValidationMiddleware {
       );
     }
 
-    const sanitizedParams = result.sanitizedParams!;
 
     // Additional specific validations for universal tools
     this.validatePaginationParams(sanitizedParams);
@@ -349,7 +340,6 @@ export class ParameterValidationMiddleware {
       params.limit !== null &&
       params.limit !== undefined
     ) {
-      const limit = Number(params.limit);
 
       if (isNaN(limit) || !Number.isInteger(limit)) {
         throw new UniversalValidationError(
@@ -397,7 +387,6 @@ export class ParameterValidationMiddleware {
       params.offset !== null &&
       params.offset !== undefined
     ) {
-      const offset = Number(params.offset);
 
       if (isNaN(offset) || !Number.isInteger(offset)) {
         throw new UniversalValidationError(
@@ -431,7 +420,6 @@ export class ParameterValidationMiddleware {
    * Validate ID format for record_id and similar fields
    */
   private static validateIdFormat(params: SanitizedObject): void {
-    const idFields = [
       'record_id',
       'source_id',
       'target_id',
@@ -445,10 +433,8 @@ export class ParameterValidationMiddleware {
         params[field] !== null &&
         params[field] !== undefined
       ) {
-        const id = String(params[field]);
 
         // Basic ID format validation (alphanumeric with underscores and hyphens)
-        const idRegex = /^[a-zA-Z0-9_-]+$/;
 
         if (!idRegex.test(id)) {
           throw new UniversalValidationError(
@@ -486,7 +472,7 @@ export class ParameterValidationMiddleware {
  */
 export function createValidationErrorResponse(
   error: UniversalValidationError
-): any {
+): unknown {
   return {
     error: error.toErrorResponse().error,
     status: 'error',
@@ -497,16 +483,15 @@ export function createValidationErrorResponse(
 /**
  * Wrap a handler with validation middleware
  */
-export function withValidation<T extends (...args: any[]) => any>(
+export function withValidation<T extends (...args: unknown[]) => any>(
   handler: T,
   schema: SchemaDefinition,
   toolName: string
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     try {
       // Validate parameters if provided
       if (args[0]) {
-        const validatedParams =
           ParameterValidationMiddleware.validateUniversalParams(
             toolName,
             args[0],

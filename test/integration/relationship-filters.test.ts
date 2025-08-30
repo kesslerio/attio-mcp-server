@@ -8,21 +8,20 @@
  */
 import { describe, test, expect, beforeAll } from 'vitest';
 import axios from 'axios';
-import {
-  createPeopleByCompanyFilter,
-  createCompaniesByPeopleFilter,
-  createRecordsByListFilter,
-  createPeopleByCompanyListFilter,
-  createCompaniesByPeopleListFilter,
-} from '../../src/utils/relationship-utils';
-import { FilterConditionType, ResourceType } from '../../src/types/attio';
-import { ListEntryFilters } from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
-import { advancedSearchPeople } from '../../src/objects/people/search';
+
 import { advancedSearchCompanies } from '../../src/objects/companies/search';
+import { advancedSearchPeople } from '../../src/objects/people/search';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import { getAttioClient } from '../../src/api/attio-client';
+import { ListEntryFilters } from '../../src/api/operations/index';
+
+import { advancedSearchCompanies } from '../../src/objects/companies/search';
+import { advancedSearchPeople } from '../../src/objects/people/search';
+import { FilterConditionType, ResourceType } from '../../src/types/attio';
+import { getAttioClient } from '../../src/api/attio-client';
+import { ListEntryFilters } from '../../src/api/operations/index';
 
 // Skip tests if no API key is provided
-const runIntegrationTests =
   process.env.RUN_INTEGRATION_TESTS === 'true' &&
   process.env.ATTIO_API_KEY &&
   process.env.ATTIO_API_KEY !== 'development_api_key_placeholder';
@@ -53,10 +52,8 @@ describe('Relationship Filter Integration Tests', () => {
         };
 
         // Create a relationship filter for people who work at tech companies
-        const peopleFilter = createPeopleByCompanyFilter(techCompanyFilter);
 
         // Make an actual API call
-        const response = await advancedSearchPeople(peopleFilter, {
           limit: 5,
         });
 
@@ -66,7 +63,6 @@ describe('Relationship Filter Integration Tests', () => {
 
         // If any results are found, verify they have company relationships
         if (response.results.length > 0) {
-          const firstPerson = response.results[0];
           expect(firstPerson.id).toBeDefined();
           expect(firstPerson.id.record_id).toBeDefined();
         }
@@ -91,10 +87,8 @@ describe('Relationship Filter Integration Tests', () => {
         };
 
         // Create a relationship filter for companies with executives
-        const companiesFilter = createCompaniesByPeopleFilter(executiveFilter);
 
         // Make an actual API call
-        const response = await advancedSearchCompanies(companiesFilter, 5);
 
         // Verify the response structure and content
         expect(response).toBeDefined();
@@ -102,7 +96,6 @@ describe('Relationship Filter Integration Tests', () => {
 
         // If any results are found, verify they have the expected structure
         if (response.length > 0) {
-          const firstCompany = response[0];
           expect(firstCompany.id).toBeDefined();
           expect(firstCompany.id.record_id).toBeDefined();
         }
@@ -112,19 +105,16 @@ describe('Relationship Filter Integration Tests', () => {
 
   describe('Records by List Filters', () => {
     // This will require an actual list ID from your Attio account
-    const testListId = process.env.TEST_LIST_ID || 'list_test123';
 
     (runIntegrationTests ? it : it.skip)(
       'should find people in a specific list',
       async () => {
         // Create a filter for people in the test list
-        const peopleInListFilter = createRecordsByListFilter(
           ResourceType.PEOPLE,
           testListId
         );
 
         // Make an actual API call
-        const response = await advancedSearchPeople(peopleInListFilter, {
           limit: 5,
         });
 
@@ -138,13 +128,11 @@ describe('Relationship Filter Integration Tests', () => {
       'should find companies in a specific list',
       async () => {
         // Create a filter for companies in the test list
-        const companiesInListFilter = createRecordsByListFilter(
           ResourceType.COMPANIES,
           testListId
         );
 
         // Make an actual API call
-        const response = await advancedSearchCompanies(
           companiesInListFilter,
           5
         );
@@ -158,16 +146,13 @@ describe('Relationship Filter Integration Tests', () => {
 
   describe('Nested Relationship Filters', () => {
     // This will require an actual list ID from your Attio account
-    const testListId = process.env.TEST_LIST_ID || 'list_test123';
 
     (runIntegrationTests ? it : it.skip)(
       'should find people who work at companies in a specific list',
       async () => {
         // Create a filter for people who work at companies in the test list
-        const peopleFilter = createPeopleByCompanyListFilter(testListId);
 
         // Make an actual API call
-        const response = await advancedSearchPeople(peopleFilter, {
           limit: 5,
         });
 
@@ -181,10 +166,8 @@ describe('Relationship Filter Integration Tests', () => {
       'should find companies that have people in a specific list',
       async () => {
         // Create a filter for companies that have people in the test list
-        const companiesFilter = createCompaniesByPeopleListFilter(testListId);
 
         // Make an actual API call
-        const response = await advancedSearchCompanies(companiesFilter, 5);
 
         // Verify the response structure
         expect(response).toBeDefined();

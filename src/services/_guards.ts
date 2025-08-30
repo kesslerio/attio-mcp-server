@@ -6,7 +6,7 @@
  */
 
 /**
- * Asserts that MockService usage is forbidden under E2E+real API mode
+ * Asserts that mock service usage is forbidden under E2E+real API mode
  *
  * @throws {Error} If called in E2E mode with real API
  */
@@ -15,7 +15,7 @@ export function assertNoMockInE2E(): void {
     process.env.E2E_MODE === 'true' &&
     process.env.USE_MOCK_DATA === 'false'
   ) {
-    throw new Error('MockService usage forbidden under E2E+real API mode');
+    throw new Error('Mock service usage forbidden under E2E+real API mode');
   }
 }
 
@@ -39,23 +39,3 @@ export function enforceExpectedRoute(
 
 import type { ListMembershipParams } from '../types/service-types.js';
 
-/**
- * Validates that list membership operations go through RECORDS route
- *
- * @param params - Search parameters
- * @throws {Error} If list_membership used with wrong resource type in E2E
- */
-export function assertListMembershipRoute(params: ListMembershipParams): void {
-  if (
-    process.env.E2E_MODE === 'true' &&
-    params?.filters &&
-    typeof params.filters === 'object' &&
-    params.filters !== null &&
-    'list_membership' in params.filters
-  ) {
-    const resourceType = String(params.resource_type || '').toLowerCase();
-    if (resourceType !== 'records') {
-      throw new Error('Wrong route: list_membership must go through RECORDS');
-    }
-  }
-}

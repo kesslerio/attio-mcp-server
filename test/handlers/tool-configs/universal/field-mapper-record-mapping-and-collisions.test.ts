@@ -2,11 +2,8 @@
  * Split: field-mapper – record mapping & collisions
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
-import {
-  detectFieldCollisions,
-  mapRecordFields,
-} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
 
 // Matches original mocks
 vi.mock('../../../../src/api/attio-client.js', () => ({
@@ -41,7 +38,6 @@ describe('field-mapper – record mapping & collisions', () => {
 
   describe('detectFieldCollisions()', () => {
     it('detects no collisions for distinct targets', async () => {
-      const result = await detectFieldCollisions(
         UniversalResourceType.COMPANIES,
         { name: 'Test', industry: 'Tech' }
       );
@@ -51,7 +47,6 @@ describe('field-mapper – record mapping & collisions', () => {
     });
 
     it('detects collisions when fields map to same target', async () => {
-      const result = await detectFieldCollisions(
         UniversalResourceType.COMPANIES,
         { website: 'test.com', url: 'test.com' }
       );
@@ -63,7 +58,6 @@ describe('field-mapper – record mapping & collisions', () => {
     });
 
     it('ignores null-mapped fields', async () => {
-      const result = await detectFieldCollisions(
         UniversalResourceType.COMPANIES,
         { name: 'Test' }
       );
@@ -73,7 +67,6 @@ describe('field-mapper – record mapping & collisions', () => {
 
   describe('mapRecordFields()', () => {
     it('maps all fields from record data', async () => {
-      const res = await mapRecordFields(UniversalResourceType.COMPANIES, {
         company_name: 'Test Corp',
         website: 'test.com',
       });
@@ -84,7 +77,6 @@ describe('field-mapper – record mapping & collisions', () => {
     });
 
     it('returns warnings for mapped fields', async () => {
-      const res = await mapRecordFields(UniversalResourceType.COMPANIES, {
         company_name: 'Test Corp',
         website: 'test.com',
       });
@@ -94,7 +86,6 @@ describe('field-mapper – record mapping & collisions', () => {
     });
 
     it('detects and reports field collisions', async () => {
-      const res = await mapRecordFields(UniversalResourceType.COMPANIES, {
         website: 'test.com',
         url: 'test.com',
       });
@@ -103,7 +94,6 @@ describe('field-mapper – record mapping & collisions', () => {
     });
 
     it('preserves non-mapped fields', async () => {
-      const res = await mapRecordFields(UniversalResourceType.COMPANIES, {
         name: 'Test Corp',
         custom_field: 'custom_value',
       });

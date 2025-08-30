@@ -4,15 +4,6 @@
 
 // External imports
 import { FilterValidationError } from '../../../errors/api-errors.js';
-
-// Internal imports
-import {
-  FilterConditionType,
-  ListEntryFilter,
-  ListEntryFilters,
-  NumericRange,
-  ATTRIBUTES,
-} from './types.js';
 import { validateNumericRange } from '../validators.js';
 
 /**
@@ -23,7 +14,6 @@ export function createNumericFilter(
   range: NumericRange
 ): ListEntryFilters {
   try {
-    const validatedRange = validateNumericRange(range);
 
     if (validatedRange.equals !== undefined) {
       return {
@@ -58,7 +48,6 @@ export function createNumericFilter(
 
     return { filters, matchAny: false };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
     throw new FilterValidationError(
       `Failed to create numeric filter: ${message}`
     );

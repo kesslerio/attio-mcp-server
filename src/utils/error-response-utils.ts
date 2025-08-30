@@ -108,8 +108,6 @@ export function createReadOnlyFieldError(
   fieldNames: string[],
   resourceType: string
 ): EnhancedErrorResponse {
-  const plural = fieldNames.length > 1;
-  const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
 
   return {
     error: `Cannot update read-only field${plural ? 's' : ''} ${fieldList}. ${plural ? 'These fields are' : 'This field is'} automatically managed by the system and cannot be modified.`,
@@ -136,7 +134,6 @@ export function createUnknownFieldError(
   suggestions: string[] = []
 ): EnhancedErrorResponse {
   let errorMessage = `Unknown field '${fieldName}' for resource type '${resourceType}'.`;
-  const actionableSuggestions = [];
 
   if (suggestions.length > 0) {
     errorMessage += ` Did you mean: ${suggestions.map((s) => `'${s}'`).join(', ')}?`;
@@ -195,8 +192,6 @@ export function createRequiredFieldError(
   fieldNames: string[],
   resourceType: string
 ): EnhancedErrorResponse {
-  const plural = fieldNames.length > 1;
-  const fieldList = fieldNames.map((field) => `'${field}'`).join(', ');
 
   return {
     error: `Required field${plural ? 's' : ''} ${fieldList} ${plural ? 'are' : 'is'} missing.`,
@@ -219,8 +214,7 @@ export function createRequiredFieldError(
  */
 export function formatEnhancedErrorResponse(
   errorResponse: EnhancedErrorResponse
-): any {
-  const formattedError = {
+): unknown {
     content: [
       {
         type: 'text',
@@ -257,7 +251,7 @@ export function formatEnhancedErrorResponse(
 /**
  * Create a simple error response (for backward compatibility)
  */
-export function createErrorResponse(message: string): any {
+export function createErrorResponse(message: string): unknown {
   return {
     content: [
       {

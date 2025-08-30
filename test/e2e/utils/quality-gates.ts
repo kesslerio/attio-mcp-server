@@ -7,6 +7,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+
+import type { UsabilitySummary } from './usability-validators.js';
+
 import type { UsabilitySummary } from './usability-validators.js';
 
 export type Priority = 'P0' | 'P1' | 'P2';
@@ -35,13 +38,10 @@ export interface GateEvaluation {
 }
 
 export function evaluateGates(gates: QualityGate[]): GateEvaluation {
-  const evalGates = gates.map((g) => {
-    const rate = g.testResults.length
       ? g.testResults.filter((t) => t.passed).length / g.testResults.length
       : 0;
     return { ...g, productionReadiness: rate >= g.requiredPassRate };
   });
-  const overallReady = evalGates.every((g) => g.productionReadiness);
   return { gates: evalGates, overallReady };
 }
 
@@ -53,8 +53,6 @@ export function deriveDefaultGates(
   e2e: E2EStats,
   usability: UsabilitySummary
 ): QualityGate[] {
-  const passRate = e2e.total ? e2e.passed / e2e.total : 0;
-  const usabilityAvg =
     (usability.averages.documentationClarity +
       usability.averages.parameterIntuitiveness +
       usability.averages.workflowDiscoverability +
@@ -93,10 +91,7 @@ export function writeGateReport(
   suiteName: string,
   evaluation: GateEvaluation
 ): string {
-  const outDir = path.resolve('test/e2e/outputs');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-  const ts = new Date().toISOString().replace(/[:.]/g, '-');
-  const file = path.join(outDir, `${suiteName}-quality-gates-${ts}.json`);
   fs.writeFileSync(file, JSON.stringify(evaluation, null, 2), 'utf8');
   return file;
 }

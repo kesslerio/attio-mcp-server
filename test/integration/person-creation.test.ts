@@ -4,10 +4,15 @@
  * Addresses issues #407, #408, #409
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import axios from 'axios';
+
+import { clearAttributeCache } from '../../src/api/attribute-types.js';
 import { createPerson } from '../../src/objects/people-write.js';
 import { getAttioClient } from '../../src/api/attio-client.js';
+
 import { clearAttributeCache } from '../../src/api/attribute-types.js';
-import axios from 'axios';
+import { createPerson } from '../../src/objects/people-write.js';
+import { getAttioClient } from '../../src/api/attio-client.js';
 
 // Mock the Attio client
 vi.mock('../../src/api/attio-client.js', () => ({
@@ -16,10 +21,8 @@ vi.mock('../../src/api/attio-client.js', () => ({
 
 // Mock the attribute metadata fetching
 vi.mock('../../src/api/attribute-types.js', async () => {
-  const actual = await vi.importActual('../../src/api/attribute-types.js');
 
   // Create a mock metadata map for people attributes
-  const mockMetadataMap = new Map([
     [
       'name',
       {
@@ -81,7 +84,7 @@ vi.mock('../../src/api/attribute-types.js', async () => {
 });
 
 describe('Person Creation Integration', () => {
-  let mockAxiosInstance: any;
+  let mockAxiosInstance: unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -165,14 +168,12 @@ describe('Person Creation Integration', () => {
 
   it('should create a person with a string name', async () => {
     // Mock the email validation query response (first call)
-    const mockEmailValidationResponse = {
       data: {
         data: [], // No existing people with this email
       },
     };
 
     // Mock the create person response (second call)
-    const mockCreateResponse = {
       data: {
         data: {
           id: {
@@ -206,7 +207,6 @@ describe('Person Creation Integration', () => {
       .mockResolvedValueOnce(mockCreateResponse); // Person creation
 
     // Create a person with string name
-    const result = await createPerson({
       name: 'John Doe',
       email_addresses: ['john.doe@example.com'],
     });
@@ -251,7 +251,6 @@ describe('Person Creation Integration', () => {
 
   it('should create a person with structured name', async () => {
     // Mock the API response
-    const mockResponse = {
       data: {
         data: {
           id: {
@@ -282,7 +281,6 @@ describe('Person Creation Integration', () => {
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
     // Create a person with structured name
-    const result = await createPerson({
       name: {
         first_name: 'Jane',
         last_name: 'Smith',
@@ -313,7 +311,6 @@ describe('Person Creation Integration', () => {
 
   it('should handle single name correctly', async () => {
     // Mock the API response
-    const mockResponse = {
       data: {
         data: {
           id: {
@@ -337,7 +334,6 @@ describe('Person Creation Integration', () => {
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
     // Create a person with single name
-    const result = await createPerson({
       name: 'Madonna',
     });
 
@@ -362,7 +358,6 @@ describe('Person Creation Integration', () => {
 
   it('should handle complex names with middle names', async () => {
     // Mock the API response
-    const mockResponse = {
       data: {
         data: {
           id: {
@@ -387,7 +382,6 @@ describe('Person Creation Integration', () => {
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
     // Create a person with complex name
-    const result = await createPerson({
       name: 'Jean Claude Van Damme',
     });
 
@@ -423,7 +417,6 @@ describe('Person Creation Integration', () => {
 
   it('should handle API errors gracefully', async () => {
     // Mock an API error response for person creation
-    const mockError = new Error('API Error');
     (mockError as any).response = {
       status: 400,
       data: {
@@ -452,14 +445,12 @@ describe('Person Creation Integration', () => {
 
   it('should create person with email objects using value property (Issue #511)', async () => {
     // Mock the email validation query response (first call)
-    const mockEmailValidationResponse = {
       data: {
         data: [], // No existing people with this email
       },
     };
 
     // Mock the create person response (second call)
-    const mockCreateResponse = {
       data: {
         data: {
           id: {
@@ -499,7 +490,6 @@ describe('Person Creation Integration', () => {
       .mockResolvedValueOnce(mockCreateResponse); // Person creation
 
     // Test the exact failing case from Issue #511
-    const result = await createPerson({
       first_name: 'QA',
       last_name: 'TESTER_ALPHA_20250819',
       email_addresses: [
@@ -552,14 +542,12 @@ describe('Person Creation Integration', () => {
 
   it('should handle mixed email formats including value objects (Issue #511)', async () => {
     // Mock the email validation query response (first call)
-    const mockEmailValidationResponse = {
       data: {
         data: [], // No existing people with these emails
       },
     };
 
     // Mock the create person response (second call)
-    const mockCreateResponse = {
       data: {
         data: {
           id: {
@@ -597,7 +585,6 @@ describe('Person Creation Integration', () => {
       .mockResolvedValueOnce(mockCreateResponse); // Person creation
 
     // Test mixed email formats: string + object with value property
-    const result = await createPerson({
       first_name: 'Test',
       last_name: 'User',
       email_addresses: [

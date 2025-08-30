@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  batchGetListsDetails,
-  batchGetListsEntries,
-} from '../../src/objects/lists';
-import * as attioOperations from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
+
 import { AttioList, AttioListEntry } from '../../src/types/attio';
+import { getAttioClient } from '../../src/api/attio-client';
+import * as attioOperations from '../../src/api/operations/index';
 import * as listsModule from '../../src/objects/lists';
 
 // Mock the attio-operations module
@@ -59,7 +56,6 @@ describe('Lists Batch Operations', () => {
   };
 
   // Mock API client
-  const mockApiClient = {
     post: vi.fn(),
     get: vi.fn(),
   };
@@ -75,8 +71,7 @@ describe('Lists Batch Operations', () => {
       (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
-          const results = await Promise.all(
-            operations.map(async (op: any) => {
+            operations.map(async (op: unknown) => {
               let data: AttioList | undefined;
               if (op.params === 'list123') {
                 data = mockList1;
@@ -115,7 +110,6 @@ describe('Lists Batch Operations', () => {
       );
 
       // Call the function
-      const result = await batchGetListsDetails(['list123', 'list456']);
 
       // Assertions
       expect(attioOperations.executeBatchOperations).toHaveBeenCalled();
@@ -147,7 +141,6 @@ describe('Lists Batch Operations', () => {
       });
 
       // Call the function
-      const result = await batchGetListsDetails(['list123', 'nonexistent']);
 
       // Assertions
       expect(result.summary.total).toBe(2);
@@ -169,8 +162,7 @@ describe('Lists Batch Operations', () => {
       (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
-          const results = await Promise.all(
-            operations.map(async (op: any) => {
+            operations.map(async (op: unknown) => {
               let data: AttioListEntry[] = [];
               if (op.params.listId === 'list123') {
                 data = [mockListEntry1, mockListEntry2];
@@ -207,7 +199,6 @@ describe('Lists Batch Operations', () => {
       );
 
       // Call the function
-      const result = await batchGetListsEntries([
         { listId: 'list123', limit: 10 },
         { listId: 'list456', limit: 5, offset: 10 },
       ]);
@@ -245,7 +236,6 @@ describe('Lists Batch Operations', () => {
       });
 
       // Call the function
-      const result = await batchGetListsEntries([
         { listId: 'list123' },
         { listId: 'invalid' },
       ]);

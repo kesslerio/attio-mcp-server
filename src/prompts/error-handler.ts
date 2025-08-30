@@ -3,33 +3,6 @@
  */
 import { ErrorType, formatErrorResponse } from '../utils/error-handler.js';
 
-// Extend the error response type to allow string codes for Express
-interface PromptErrorResponse {
-  error: {
-    code: string | number;
-    message: string;
-    type: ErrorType;
-    details?: any;
-  };
-  content: Array<{ type: string; text: string }>;
-  isError: boolean;
-}
-
-/**
- * Creates a standardized error response for prompt-related errors
- *
- * @param error - The error object
- * @param message - Error message
- * @param statusCode - HTTP status code
- * @returns Formatted error result
- */
-export function createErrorResult(
-  error: Error,
-  message: string,
-  statusCode: number
-): PromptErrorResponse {
-  let errorType = ErrorType.UNKNOWN_ERROR;
-
   // Determine error type based on status code
   if (statusCode === 400) {
     errorType = ErrorType.VALIDATION_ERROR;
@@ -43,13 +16,11 @@ export function createErrorResult(
     errorType = ErrorType.SERVER_ERROR;
   }
 
-  const errorDetails = {
     statusCode,
     message,
   };
 
   // Get the base response from the utility function
-  const baseResponse = formatErrorResponse(error, errorType, errorDetails);
 
   // Create a new response object with our extended type
   const response: PromptErrorResponse = {

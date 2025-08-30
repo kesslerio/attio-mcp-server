@@ -9,16 +9,14 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { TaskMockFactory } from './mock-factories/TaskMockFactory.js';
+
 import { CompanyMockFactory } from './mock-factories/CompanyMockFactory.js';
-import { PersonMockFactory } from './mock-factories/PersonMockFactory.js';
+import { E2ETaskFactory } from '../e2e/utils/test-data.js';
+import { E2ETaskFactory } from '../e2e/utils/test-data.js';
 import { ListMockFactory } from './mock-factories/ListMockFactory.js';
+import { PersonMockFactory } from './mock-factories/PersonMockFactory.js';
+import { TaskMockFactory } from './mock-factories/TaskMockFactory.js';
 import { TestEnvironment } from './mock-factories/test-environment.js';
-import {
-  StandardErrorMessages,
-  ErrorPatternValidator,
-  ERROR_PATTERNS,
-} from './mock-error-responses.js';
 
 // Import E2E test data factories to replicate exact test scenarios
 import { E2ETaskFactory } from '../e2e/utils/test-data.js';
@@ -35,11 +33,9 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Analyzing high priority task creation...');
 
       // Replicate the exact E2E test pattern
-      const taskData = E2ETaskFactory.createHighPriority();
       console.log('E2E Task Data:', taskData);
 
       // Create mock task using the same pattern as E2E tests
-      const mockTask = TaskMockFactory.createHighPriority({
         content: taskData.title,
         due_date: taskData.due_date,
       });
@@ -66,11 +62,8 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Analyzing task assignee creation...');
 
       // Create a person first (as E2E tests do)
-      const person = PersonMockFactory.create();
-      const taskData = E2ETaskFactory.create();
 
       // Create task with assignee
-      const mockTask = TaskMockFactory.createWithAssignee(person.id.record_id, {
         content: taskData.title,
         due_date: taskData.due_date,
       });
@@ -90,7 +83,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should analyze task lifecycle workflow patterns', () => {
       console.log('🔍 Analyzing task lifecycle workflow...');
 
-      const taskData = E2ETaskFactory.create();
 
       // Step 1: Create task
       let workflowTask = TaskMockFactory.create({
@@ -125,8 +117,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Analyzing concurrent task operations...');
 
       // Simulate concurrent task creation (as E2E tests do)
-      const taskPromises = Array.from({ length: 3 }, (_, i) => {
-        const taskData = E2ETaskFactory.create();
         return Promise.resolve(
           TaskMockFactory.create({
             content: `Concurrent Task ${i + 1}: ${taskData.title}`,
@@ -152,7 +142,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should validate "not found" error patterns match E2E expectations', () => {
       console.log('🔍 Analyzing error message patterns...');
 
-      const errorScenarios = [
         {
           message: StandardErrorMessages.notFound('Task', 'invalid-task-id'),
           pattern: ERROR_PATTERNS.NOT_FOUND,
@@ -182,7 +171,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       ];
 
       errorScenarios.forEach(({ message, pattern }) => {
-        const isValid = ErrorPatternValidator.validate(message, pattern);
         expect(isValid).toBe(true);
         console.log(`✅ Error pattern valid: "${message}"`);
       });
@@ -194,7 +182,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Analyzing E2E tool error format...');
 
       // E2E tests expect errors in the format: "Error executing tool 'tool-name': <error-message>"
-      const toolErrorFormats = [
         ErrorPatternValidator.formatForE2ETest(
           'update-record',
           'task_not_found',
@@ -213,7 +200,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       ];
 
       toolErrorFormats.forEach((errorMessage) => {
-        const isValid = ErrorPatternValidator.validate(errorMessage);
         expect(isValid).toBe(true);
         console.log(`✅ Tool error format valid: "${errorMessage}"`);
       });
@@ -226,7 +212,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should validate company ID structure for notes management tests', () => {
       console.log('🔍 Analyzing company ID structure for notes...');
 
-      const company = CompanyMockFactory.create();
 
       // Notes management tests expect company.id to be defined
       expect(company.id).toBeDefined();
@@ -245,7 +230,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should validate person ID structure for notes management tests', () => {
       console.log('🔍 Analyzing person ID structure for notes...');
 
-      const person = PersonMockFactory.create();
 
       // Notes management tests expect person.id to be defined
       expect(person.id).toBeDefined();
@@ -264,7 +248,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should validate list ID structure differences', () => {
       console.log('🔍 Analyzing list ID structure...');
 
-      const list = ListMockFactory.create();
 
       // Lists use list_id instead of record_id
       expect(list.id).toBeDefined();
@@ -287,7 +270,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Analyzing universal tool response format...');
 
       // Universal tools should return data in content field
-      const mockResponses = {
         task: TaskMockFactory.create(),
         company: CompanyMockFactory.create(),
         person: PersonMockFactory.create(),
@@ -308,20 +290,13 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
     it('should validate mock factory creation speed', () => {
       console.log('🔍 Analyzing mock factory performance...');
 
-      const startTime = Date.now();
 
       // Create multiple instances as E2E tests do
-      const tasks = TaskMockFactory.createMultiple(5);
-      const companies = Array.from({ length: 5 }, () =>
         CompanyMockFactory.create()
       );
-      const people = Array.from({ length: 5 }, () =>
         PersonMockFactory.create()
       );
-      const lists = Array.from({ length: 5 }, () => ListMockFactory.create());
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(tasks).toHaveLength(5);
       expect(companies).toHaveLength(5);
@@ -346,8 +321,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       console.log('🔍 Simulating complete E2E workflow...');
 
       // Step 1: Create test companies (as E2E tests do)
-      const testCompanies = Array.from({ length: 2 }, () => {
-        const companyData = {
           name: `E2E Test Company ${Date.now()}`,
           domain: `e2e-test-${Date.now()}.com`,
         };
@@ -355,8 +328,6 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       });
 
       // Step 2: Create test people
-      const testPeople = Array.from({ length: 2 }, () => {
-        const personData = {
           name: `E2E Test Person ${Date.now()}`,
           email_addresses: [`e2e-${Date.now()}@test.com`],
         };
@@ -364,25 +335,21 @@ describe('E2E Failure Analysis - Issue #480 Root Cause Investigation', () => {
       });
 
       // Step 3: Create tasks with various scenarios
-      const basicTask = TaskMockFactory.create({
         content: 'E2E Basic Task',
       });
 
-      const assignedTask = TaskMockFactory.createWithAssignee(
         testPeople[0].id.record_id,
         {
           content: 'E2E Assigned Task',
         }
       );
 
-      const linkedTask = TaskMockFactory.createWithLinkedRecords(
         [testCompanies[0].id.record_id],
         {
           content: 'E2E Linked Task',
         }
       );
 
-      const highPriorityTask = TaskMockFactory.createHighPriority({
         content: 'E2E High Priority Task',
       });
 

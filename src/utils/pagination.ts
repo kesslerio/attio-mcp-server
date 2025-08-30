@@ -4,16 +4,6 @@
  */
 import { AttioRecord } from '../types/attio.js';
 
-/**
- * Standard pagination metadata interface
- */
-export interface PaginationMetadata {
-  /** Total number of records available */
-  totalCount: number;
-
-  /** Current page number (1-based) */
-  currentPage: number;
-
   /** Number of records per page */
   pageSize: number;
 
@@ -59,10 +49,8 @@ export function createPaginatedResponse<T>(
   baseUrl?: string
 ): PaginatedResponse<T> {
   // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   // Determine if there are more pages
-  const hasMore = page < totalPages;
 
   // Pagination metadata
   const pagination: PaginationMetadata = {
@@ -110,15 +98,10 @@ export function paginateRecords<T>(
   pageSize: number = 20
 ): PaginatedResponse<T> {
   // Ensure valid pagination parameters
-  const validPage = Math.max(1, page);
-  const validPageSize = Math.max(1, Math.min(100, pageSize)); // Limit page size to 100
 
   // Calculate start and end indices
-  const startIndex = (validPage - 1) * validPageSize;
-  const endIndex = startIndex + validPageSize;
 
   // Extract the requested page of records
-  const paginatedResults = records.slice(startIndex, endIndex);
 
   // Create and return paginated response
   return createPaginatedResponse(
@@ -141,14 +124,10 @@ export function getPaginationParams(
   pageSizeParam?: number | string
 ): { limit: number; offset: number } {
   // Default values
-  const defaultPageSize = 20;
-  const defaultPage = 1;
-  const maxPageSize = 100;
 
   // Parse and validate page
   let page = defaultPage;
   if (pageParam !== undefined) {
-    const parsedPage = Number(pageParam);
     if (!isNaN(parsedPage) && parsedPage > 0) {
       page = parsedPage;
     }
@@ -157,14 +136,12 @@ export function getPaginationParams(
   // Parse and validate page size
   let pageSize = defaultPageSize;
   if (pageSizeParam !== undefined) {
-    const parsedPageSize = Number(pageSizeParam);
     if (!isNaN(parsedPageSize) && parsedPageSize > 0) {
       pageSize = Math.min(parsedPageSize, maxPageSize);
     }
   }
 
   // Calculate offset from page and page size
-  const offset = (page - 1) * pageSize;
 
   return {
     limit: pageSize,
@@ -183,19 +160,16 @@ export function getPaginationParams(
  * @returns Standardized paginated response
  */
 export function processCursorPagination<T extends AttioRecord>(
-  apiResponse: any,
+  apiResponse: unknown,
   records: T[],
   page: number = 1,
   pageSize: number = 20,
   baseUrl?: string
 ): PaginatedResponse<T> {
   // Extract pagination metadata from the API response
-  const totalCount = apiResponse.pagination?.total_count || records.length;
-  const hasMore =
     apiResponse.has_more || apiResponse.pagination?.next_cursor !== undefined;
 
   // Calculate total pages based on total count and page size
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   // Create pagination metadata
   const pagination: PaginationMetadata = {
@@ -210,7 +184,6 @@ export function processCursorPagination<T extends AttioRecord>(
   if (baseUrl) {
     // Create next page URL if there's a next cursor
     if (hasMore) {
-      const nextCursor =
         apiResponse.next_cursor || apiResponse.pagination?.next_cursor;
       if (nextCursor) {
         pagination.nextPageUrl = `${baseUrl}?cursor=${encodeURIComponent(
@@ -255,8 +228,6 @@ export async function fetchAllPages<T>(
   let hasMoreResults = true;
 
   while (hasMoreResults && currentPage <= maxPages) {
-    const offset = (currentPage - 1) * pageSize;
-    const pageResults = await queryFn(pageSize, offset);
 
     // Add results to our collection
     allResults = [...allResults, ...pageResults];

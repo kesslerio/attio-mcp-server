@@ -1,21 +1,8 @@
 /**
  * Batch operation tool configurations for companies
  */
-import {
-  batchCreateCompanies,
-  batchUpdateCompanies,
-  batchDeleteCompanies,
-  batchSearchCompanies,
-  batchGetCompanyDetails,
-} from '../../../objects/batch-companies.js';
-import { ToolConfig } from '../../tool-types.js';
-import {
-  BatchResponse,
-  BatchItemResult,
-  extractBatchSummary,
-  extractBatchResults,
-} from '../../../types/batch-types.js';
 import { AttioRecord } from '../../../types/attio.js';
+import { ToolConfig } from '../../tool-types.js';
 
 // Company batch tool configurations
 export const batchToolConfigs = {
@@ -23,19 +10,13 @@ export const batchToolConfigs = {
     name: 'batch-create-companies',
     handler: batchCreateCompanies,
     formatResult: (result: BatchResponse<AttioRecord>): string => {
-      const summary = extractBatchSummary(result);
-      const results = extractBatchResults<AttioRecord>(result);
 
       let output = `Batch Create Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
-          const data = item.data as AttioRecord;
-          const name = (data?.values?.name as any)?.[0]?.value || 'Unknown';
-          const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Created: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
-          const message = item.error.message || 'Unknown error';
           output += `✗ Failed: ${message}\n`;
         }
       });
@@ -48,19 +29,13 @@ export const batchToolConfigs = {
     name: 'batch-update-companies',
     handler: batchUpdateCompanies,
     formatResult: (result: BatchResponse<AttioRecord>): string => {
-      const summary = extractBatchSummary(result);
-      const results = extractBatchResults<AttioRecord>(result);
 
       let output = `Batch Update Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
-          const data = item.data as AttioRecord;
-          const name = (data?.values?.name as any)?.[0]?.value || 'Unknown';
-          const recordId = data?.id?.record_id || 'Unknown';
           output += `✓ Updated: ${name} (ID: ${recordId})\n`;
         } else if (item.error) {
-          const message = item.error.message || 'Unknown error';
           output += `✗ Failed: ${message}\n`;
         }
       });
@@ -73,17 +48,13 @@ export const batchToolConfigs = {
     name: 'batch-delete-companies',
     handler: batchDeleteCompanies,
     formatResult: (result: BatchResponse<AttioRecord>): string => {
-      const summary = extractBatchSummary(result);
-      const results = extractBatchResults<AttioRecord>(result);
 
       let output = `Batch Delete Summary: ${summary.succeeded}/${summary.total} succeeded\n`;
 
       results.forEach((item: BatchItemResult<AttioRecord>) => {
-        const itemId = item.id;
         if (item.success) {
           output += `✓ Deleted: ${String(itemId)}\n`;
         } else if (item.error) {
-          const message = item.error.message || 'Unknown error';
           output += `✗ Failed: ${String(itemId)} - ${message}\n`;
         }
       });
@@ -96,23 +67,17 @@ export const batchToolConfigs = {
     name: 'batch-search-companies',
     handler: batchSearchCompanies,
     formatResult: (result: BatchResponse<AttioRecord[]>): string => {
-      const summary = extractBatchSummary(result);
-      const results = extractBatchResults<AttioRecord[]>(result);
 
       let output = `Batch Search Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
 
       results.forEach((item: BatchItemResult<AttioRecord[]>, index: number) => {
         if (item.success && item.data) {
-          const data = Array.isArray(item.data) ? item.data : [];
           output += `Query ${index + 1}: Found ${data.length} companies\n`;
           data.forEach((company: AttioRecord) => {
-            const name =
               (company?.values?.name as any)?.[0]?.value || 'Unknown';
-            const recordId = company?.id?.record_id || 'Unknown';
             output += `  - ${name} (ID: ${recordId})\n`;
           });
         } else if (item.error) {
-          const message = item.error.message || 'Unknown error';
           output += `Query ${index + 1}: Failed - ${message}\n`;
         }
         output += '\n';
@@ -126,27 +91,18 @@ export const batchToolConfigs = {
     name: 'batch-get-company-details',
     handler: batchGetCompanyDetails,
     formatResult: (result: BatchResponse<AttioRecord>): string => {
-      const summary = extractBatchSummary(result);
-      const results = extractBatchResults<AttioRecord>(result);
 
       let output = `Batch Get Details Summary: ${summary.succeeded}/${summary.total} succeeded\n\n`;
 
       results.forEach((item: BatchItemResult<AttioRecord>) => {
         if (item.success && item.data) {
-          const company = item.data as AttioRecord;
-          const name = (company?.values?.name as any)?.[0]?.value || 'Unknown';
-          const recordId = company?.id?.record_id || 'Unknown';
-          const website =
             (company?.values?.website as any)?.[0]?.value || 'N/A';
-          const industry =
             (company?.values?.industry as any)?.[0]?.value || 'N/A';
 
           output += `✓ ${name} (ID: ${recordId})\n`;
           output += `  Website: ${website}\n`;
           output += `  Industry: ${industry}\n`;
         } else if (item.error) {
-          const itemId = item.id;
-          const message = item.error.message || 'Unknown error';
           output += `✗ Failed: ${String(itemId)} - ${message}\n`;
         }
         output += '\n';

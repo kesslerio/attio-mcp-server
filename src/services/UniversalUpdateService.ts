@@ -5,14 +5,38 @@
  * Provides universal update functionality across all resource types.
  */
 
-import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import type { UniversalUpdateParams } from '../handlers/tool-configs/universal/types.js';
+import { applyDealDefaultsWithValidation } from '../config/deal-defaults.js';
+import { applyDealDefaultsWithValidation } from '../config/deal-defaults.js';
 import { AttioRecord, AttioTask } from '../types/attio.js';
-import {
-  UniversalValidationError,
-  ErrorType,
-} from '../handlers/tool-configs/universal/schemas.js';
 import { FilterValidationError } from '../errors/api-errors.js';
+import { getCompanyDetails } from '../objects/companies/index.js';
+import { getCompanyDetails } from '../objects/companies/index.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
+import { getListDetails } from '../objects/lists.js';
+import { getListDetails } from '../objects/lists.js';
+import { getObjectRecord } from '../objects/records/index.js';
+import { getObjectRecord } from '../objects/records/index.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { getPersonDetails } from '../objects/people/basic.js';
+import { getTask } from '../objects/tasks.js';
+import { getTask } from '../objects/tasks.js';
+import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { updateCompany } from '../objects/companies/index.js';
+import { updateCompany } from '../objects/companies/index.js';
+import { updateList } from '../objects/lists.js';
+import { updateList } from '../objects/lists.js';
+import { updateObjectRecord } from '../objects/records/index.js';
+import { updateObjectRecord } from '../objects/records/index.js';
+import { updatePerson } from '../objects/people-write.js';
+import { updatePerson } from '../objects/people-write.js';
+import { validateRecordFields } from '../utils/validation-utils.js';
+import { validateRecordFields } from '../utils/validation-utils.js';
+import { ValidationService } from './ValidationService.js';
+import { ValidationService } from './ValidationService.js';
+import type { UniversalUpdateParams } from '../handlers/tool-configs/universal/types.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -47,31 +71,19 @@ import { getPersonDetails } from '../objects/people/basic.js';
 import { getObjectRecord } from '../objects/records/index.js';
 import { getTask } from '../objects/tasks.js';
 
-/**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
+// Import create service factory for task updates
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 /**
- * Task update with mock support - uses production MockService
- * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
+ * Task update with mock support - uses factory pattern for service selection
+ * Updated for Phase B: factory pattern integration
  */
 async function updateTaskWithMockSupport(
   taskId: string,
   updateData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.updateTask(taskId, updateData);
+  // Use factory pattern for service selection
+  return await service.updateTask(taskId, updateData);
 }
 
 /**
@@ -88,7 +100,6 @@ export class UniversalUpdateService {
     params: UniversalUpdateParams
   ): Promise<AttioRecord> {
     // Validate resource type is supported
-    const validResourceTypes = Object.values(UniversalResourceType);
     if (!validResourceTypes.includes(params.resource_type)) {
       throw new UniversalValidationError(
         `Unsupported resource type: ${params.resource_type}`,
@@ -121,7 +132,7 @@ export class UniversalUpdateService {
         }
       }
 
-      // Also handle wrapped TypeErrors from MockService
+      // Also handle wrapped TypeErrors from mock service implementations
       if (
         error instanceof Error &&
         error.message.includes(
@@ -154,14 +165,11 @@ export class UniversalUpdateService {
     const { resource_type, record_id, record_data } = params;
 
     // Handle edge case where test uses 'data' instead of 'record_data'
-    const actualRecordData = record_data ?? (params as any).data;
 
     // Enhanced null-safety: Guard against undefined values access
-    const raw =
       actualRecordData && typeof actualRecordData === 'object'
         ? (actualRecordData as any)
         : {};
-    const values = raw.values ?? raw;
 
     // Early validation: if record_data is null/empty/non-object for tasks,
     // return 404 without checking existence
@@ -183,7 +191,6 @@ export class UniversalUpdateService {
     }
 
     // Pre-validate fields and provide helpful suggestions (less strict for updates)
-    const fieldValidation = validateFields(resource_type, values);
     if (fieldValidation.warnings.length > 0) {
       console.warn(
         'Field validation warnings:',
@@ -191,7 +198,6 @@ export class UniversalUpdateService {
       );
     }
     if (fieldValidation.suggestions.length > 0) {
-      const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
       console.error('Field suggestions:', truncated.join('\n'));
@@ -204,7 +210,6 @@ export class UniversalUpdateService {
         './UniversalMetadataService.js'
       );
       // For RECORDS and DEALS types, we need to pass the object slug
-      const options =
         resource_type === UniversalResourceType.RECORDS
           ? {
               objectSlug:
@@ -215,14 +220,12 @@ export class UniversalUpdateService {
           : resource_type === UniversalResourceType.DEALS
             ? { objectSlug: 'deals' }
             : undefined;
-      const attributeResult =
         await UniversalMetadataService.discoverAttributesForResourceType(
           resource_type,
           options
         );
 
       // Include both api_slug, title, and name fields, normalize to lowercase, and dedupe
-      const attrs = (attributeResult?.attributes as any[]) ?? [];
       availableAttributes = Array.from(
         new Set(
           attrs.flatMap((a) =>
@@ -241,7 +244,6 @@ export class UniversalUpdateService {
     }
 
     // Map field names to correct ones with collision detection
-    const mappingResult = await mapRecordFields(
       resource_type,
       values,
       availableAttributes
@@ -258,35 +260,30 @@ export class UniversalUpdateService {
       );
     }
 
-    let { mapped: mappedData, warnings } = mappingResult;
+    const { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
       console.error('Field mapping applied:', warnings.join('\n'));
     }
 
     // Always wrap in Attio envelope format
-    const attioPayload = { values: mappedData };
 
     // Apply operation-specific field mapping for tasks (prevent content injection on update)
     if (resource_type === UniversalResourceType.TASKS) {
-      const updatedTaskData = mapTaskFields('update', mappedData);
       // Re-wrap after task field mapping
       attioPayload.values = updatedTaskData;
     }
 
     // Sanitize special characters while preserving intended content (Issue #473)
-    const sanitizedData = this.sanitizeSpecialCharacters(attioPayload.values);
     attioPayload.values = sanitizedData;
 
     // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
     // Will be re-enabled after tasks API validation is properly configured
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
-      const validation = await validateRecordFields(
         resource_type,
         attioPayload.values as Record<string, unknown>,
         false
       );
       if (!validation.isValid) {
-        const errorMessage = validation.error || 'Validation failed';
         throw new UniversalValidationError(errorMessage, ErrorType.USER_ERROR, {
           suggestion: 'Please fix the validation errors and try again.',
           field: undefined,
@@ -323,7 +320,6 @@ export class UniversalUpdateService {
 
       case UniversalResourceType.RECORDS:
         // Extract object slug from record_data if available
-        const recordsObjectSlug =
           (actualRecordData?.object as string) ||
           (actualRecordData?.object_api_slug as string) ||
           'records';
@@ -351,7 +347,6 @@ export class UniversalUpdateService {
     }
 
     // Normalize response format across all resource types (Issue #473)
-    const normalizedRecord = this.normalizeResponseFormat(
       resource_type,
       updatedRecord
     );
@@ -359,7 +354,6 @@ export class UniversalUpdateService {
     // Verify field persistence after successful update (Issue #473)
     if (process.env.ENABLE_FIELD_VERIFICATION !== 'false') {
       try {
-        const verification = await this.verifyFieldPersistence(
           resource_type,
           record_id,
           sanitizedData,
@@ -402,15 +396,11 @@ export class UniversalUpdateService {
       // Extract values from Attio envelope for legacy updateCompany function
       return await updateCompany(record_id, attioPayload.values);
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
           throw new UniversalValidationError(
             (error as Error).message,
             ErrorType.USER_ERROR,
@@ -431,7 +421,6 @@ export class UniversalUpdateService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      const list = await updateList(record_id, attioPayload.values);
       // Convert AttioList to AttioRecord format
       return {
         id: {
@@ -449,15 +438,11 @@ export class UniversalUpdateService {
         },
       } as unknown as AttioRecord;
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
           throw new UniversalValidationError(
             (error as Error).message,
             ErrorType.USER_ERROR,
@@ -483,15 +468,11 @@ export class UniversalUpdateService {
 
       return await updatePerson(record_id, attioPayload.values as any);
     } catch (error: unknown) {
-      const errorObj = error as Record<string, unknown>;
-      const errorMessage =
         error instanceof Error
           ? error.message
           : String(errorObj?.message || '');
       if (errorMessage.includes('Cannot find attribute')) {
-        const match = errorMessage.match(/slug\/ID "([^"]+)"/);
         if (match && match[1]) {
-          const suggestion = getFieldSuggestions(resource_type, match[1]);
           throw new UniversalValidationError(
             (error as Error).message,
             ErrorType.USER_ERROR,
@@ -511,7 +492,6 @@ export class UniversalUpdateService {
     attioPayload: { values: Record<string, unknown> }
   ): Promise<AttioRecord> {
     // Note: Updates are less likely to fail, but we still validate stages proactively
-    const updatedDealData = await applyDealDefaultsWithValidation(
       attioPayload.values,
       false
     );
@@ -527,14 +507,11 @@ export class UniversalUpdateService {
   ): Promise<AttioRecord> {
     // 1) Early input validation - check for forbidden content fields BEFORE existence check
     // This ensures proper error precedence: input validation → existence → immutability → update
-    const hasForbiddenFields = this.hasForbiddenContent(attioPayload.values);
 
     // 2) Check existence - only if input validation passes
-    let taskExists = true;
     try {
-      const { MockService } = await import('./MockService.js');
       // In mock mode, skip live existence check; otherwise verify via API
-      if (!MockService.isUsingMockData()) {
+      if (!shouldUseMockData()) {
         await getTask(record_id); // calls GET /tasks/{id}
       }
     } catch (error: unknown) {
@@ -582,10 +559,8 @@ export class UniversalUpdateService {
 
     // Handle assignee field
     if (mappedData.assignees !== undefined) {
-      const value = mappedData.assignees as any;
       let assigneeId: string | undefined;
       if (Array.isArray(value)) {
-        const first = value[0];
         if (typeof first === 'string') assigneeId = first;
         else if (first && typeof first === 'object') {
           assigneeId =
@@ -657,13 +632,11 @@ export class UniversalUpdateService {
 
     // Use mock-enabled task update for test environments
     try {
-      const updatedTask = await updateTaskWithMockSupport(
         record_id,
         taskUpdateData
       );
       // Convert AttioTask to AttioRecord using proper type conversion
       // Mock functions already return AttioRecord, so handle both cases
-      const result = shouldUseMockData()
         ? updatedTask // Already an AttioRecord from mock
         : UniversalUtilityService.convertTaskToRecord(
             updatedTask as unknown as AttioTask
@@ -680,7 +653,6 @@ export class UniversalUpdateService {
     } catch (error: unknown) {
       // Handle task update API errors according to requirements
       if (error && typeof error === 'object' && 'status' in error) {
-        const httpError = error as {
           status: number;
           body?: { code?: string; message?: string };
         };
@@ -719,7 +691,6 @@ export class UniversalUpdateService {
       }
 
       // Wrap other errors
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to update task: ${errorMessage}`);
     }
@@ -732,7 +703,6 @@ export class UniversalUpdateService {
     if (!values || typeof values !== 'object') {
       return false;
     }
-    const forbidden = ['content', 'content_markdown', 'content_plaintext'];
     return forbidden.some((field) => field in values);
   }
 
@@ -762,7 +732,6 @@ export class UniversalUpdateService {
     params: UniversalUpdateParams
   ): Promise<AttioRecord> {
     // Check if resource type can be corrected
-    const resourceValidation = validateResourceType(resource_type);
     if (resourceValidation.corrected) {
       // Retry with corrected resource type
       console.error(
@@ -801,7 +770,6 @@ export class UniversalUpdateService {
       if (typeof value === 'string') {
         // Preserve special characters but ensure they're properly encoded for API
         // The goal is to maintain the user's intended content exactly as provided
-        let sanitizedValue = value;
 
         // Only apply minimal sanitization that doesn't change content meaning
         // Preserve quotes, newlines, tabs, and special characters as-is
@@ -841,7 +809,6 @@ export class UniversalUpdateService {
     discrepancies: string[];
     warnings: string[];
   }> {
-    const result = {
       verified: true,
       discrepancies: [] as string[],
       warnings: [] as string[],
@@ -857,7 +824,6 @@ export class UniversalUpdateService {
 
     try {
       // Fetch the updated record to verify field persistence
-      const verificationRecord = await this.fetchRecordForVerification(
         resource_type,
         record_id
       );
@@ -881,8 +847,6 @@ export class UniversalUpdateService {
           continue;
         }
 
-        const actualValue = verificationRecord.values?.[fieldName];
-        const comparisonResult = this.compareFieldValues(
           fieldName,
           expectedValue,
           actualValue
@@ -912,7 +876,6 @@ export class UniversalUpdateService {
       }
     } catch (error: unknown) {
       // Don't fail the update if verification fails - just log it
-      const errorMessage =
         error instanceof Error ? error.message : String(error);
       result.warnings.push(
         `Field persistence verification failed: ${errorMessage}`
@@ -933,15 +896,12 @@ export class UniversalUpdateService {
     try {
       switch (resource_type) {
         case UniversalResourceType.COMPANIES:
-          const company = await getCompanyDetails(record_id);
           return company as unknown as AttioRecord;
 
         case UniversalResourceType.PEOPLE:
-          const person = await getPersonDetails(record_id);
           return person as unknown as AttioRecord;
 
         case UniversalResourceType.LISTS:
-          const list = await getListDetails(record_id);
           // Convert AttioList to AttioRecord format for consistency
           return {
             id: { record_id: list.id.list_id, list_id: list.id.list_id },
@@ -957,7 +917,6 @@ export class UniversalUpdateService {
           } as unknown as AttioRecord;
 
         case UniversalResourceType.TASKS:
-          const task = await getTask(record_id);
           return UniversalUtilityService.convertTaskToRecord(task);
 
         case UniversalResourceType.DEALS:
@@ -1019,8 +978,6 @@ export class UniversalUpdateService {
       }
 
       // Compare array contents (order-independent for categories)
-      const expectedSet = new Set(expectedValue.map((v) => String(v)));
-      const actualSet = new Set(
         (unwrappedActual as unknown[]).map((v) => String(v))
       );
 
@@ -1033,8 +990,6 @@ export class UniversalUpdateService {
 
     // Handle string comparisons (most common case)
     if (typeof expectedValue === 'string') {
-      const actualStr = String(unwrappedActual);
-      const matches = expectedValue === actualStr;
 
       if (!matches && expectedValue.toLowerCase() === actualStr.toLowerCase()) {
         return {
@@ -1048,13 +1003,11 @@ export class UniversalUpdateService {
 
     // Handle number comparisons
     if (typeof expectedValue === 'number') {
-      const actualNum = Number(unwrappedActual);
       return { matches: !isNaN(actualNum) && expectedValue === actualNum };
     }
 
     // Handle boolean comparisons
     if (typeof expectedValue === 'boolean') {
-      const actualBool = Boolean(unwrappedActual);
       return { matches: expectedValue === actualBool };
     }
 

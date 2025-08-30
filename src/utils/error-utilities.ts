@@ -4,6 +4,7 @@
  */
 
 import axios, { AxiosError } from 'axios';
+
 import { createErrorResult, AttioApiError } from './error-handler.js';
 
 /**
@@ -52,7 +53,6 @@ export function getErrorMessage(
  * }
  */
 export function wrapError(error: unknown, context: string): Error {
-  const originalMessage = getErrorMessage(error);
   return new Error(`${context}: ${originalMessage}`);
 }
 
@@ -80,14 +80,10 @@ export function handleError(
     includeStack?: boolean;
   }
 ): Error {
-  const wrappedError = wrapError(error, context);
-
   if (options?.log) {
-    const logLevel = options.logLevel || 'error';
-    const logMessage =
-      options.includeStack && error instanceof Error && error.stack
-        ? `${wrappedError.message}\nStack: ${error.stack}`
-        : wrappedError.message;
+    options.includeStack && error instanceof Error && error.stack
+      ? `${wrappedError.message}\nStack: ${error.stack}`
+      : wrappedError.message;
 
     console[logLevel](logMessage);
   }
@@ -126,8 +122,7 @@ export function handleAxiosError(error: unknown, operation: string): Error {
 
   if (error.response) {
     const { status, statusText, data } = error.response;
-    const errorDetails =
-      typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+    typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
 
     return new Error(
       `Failed to ${operation}: ${status} ${statusText}\n${errorDetails}`
@@ -166,10 +161,7 @@ export function createStandardErrorResult(
   resource: string,
   additionalDetails?: Record<string, unknown>
 ) {
-  const errorObj =
-    error instanceof Error ? error : new Error(getErrorMessage(error));
-  const url = String(additionalDetails?.url || `/${resource}/${operation}`);
-  const method = String(additionalDetails?.method || 'POST');
+  error instanceof Error ? error : new Error(getErrorMessage(error));
 
   return createErrorResult(errorObj, url, method, {
     ...additionalDetails,
@@ -199,8 +191,6 @@ export function logAndReturn(
   context: string,
   details?: Record<string, unknown>
 ): unknown {
-  const message = getErrorMessage(error);
-
   if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
     console.error(`[${context}] Error:`, message);
     if (details) {
@@ -303,7 +293,6 @@ export function getErrorStatus(error: unknown): number | undefined {
   }
 
   if (error && typeof error === 'object' && 'status' in error) {
-    const status = (error as Record<string, unknown>).status;
     return typeof status === 'number' ? status : undefined;
   }
 
@@ -326,8 +315,6 @@ export function getErrorStatus(error: unknown): number | undefined {
  * }
  */
 export function isRetryableError(error: unknown): boolean {
-  const status = getErrorStatus(error);
-
   // Retryable HTTP status codes
   if (status) {
     return (
@@ -344,7 +331,6 @@ export function isRetryableError(error: unknown): boolean {
   }
 
   // Check for specific error messages
-  const message = getErrorMessage(error).toLowerCase();
   return (
     message.includes('timeout') ||
     message.includes('network') ||

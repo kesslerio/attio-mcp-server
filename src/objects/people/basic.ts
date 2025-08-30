@@ -1,21 +1,9 @@
 /**
  * Basic CRUD operations for People
  */
+import { isValidId } from '../../utils/validation.js';
 import { listObjects, getObjectDetails } from '../../api/operations/index.js';
 import { ResourceType, Person } from '../../types/attio.js';
-import { isValidId } from '../../utils/validation.js';
-import {
-  createObjectWithDynamicFields,
-  updateObjectWithDynamicFields,
-  updateObjectAttributeWithDynamicFields,
-  deleteObjectWithValidation,
-} from '../base-operations.js';
-import {
-  PersonValidator,
-  InvalidPersonDataError,
-  PersonOperationError,
-  PersonAttributes,
-} from './types.js';
 
 /**
  * Creates a new person in Attio
@@ -34,7 +22,6 @@ export async function createPerson(
   attributes: PersonAttributes
 ): Promise<Person> {
   try {
-    const result = await createObjectWithDynamicFields<Person>(
       ResourceType.PEOPLE,
       attributes,
       PersonValidator.validateCreate
@@ -241,7 +228,6 @@ export async function getPersonDetails(personId: string): Promise<Person> {
  */
 export async function listPeople(limit: number = 20): Promise<Person[]> {
   try {
-    const response = await listObjects<Person>(ResourceType.PEOPLE, limit);
     return response;
   } catch (error: unknown) {
     throw new Error(

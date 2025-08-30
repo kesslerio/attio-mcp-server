@@ -3,18 +3,14 @@
  */
 import { Request, Response } from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import {
-  getAllPrompts,
-  getPromptById,
-  getPromptsByCategory,
-  getAllCategories,
-} from './templates/index.js';
-import { PromptTemplate, PromptExecutionRequest } from './types.js';
+import Handlebars from 'handlebars';
+import Handlebars from 'handlebars';
+
 import { createErrorResult } from './error-handler.js';
+import { PromptTemplate, PromptExecutionRequest } from './types.js';
+
+import { createErrorResult } from './error-handler.js';
+import { PromptTemplate, PromptExecutionRequest } from './types.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
@@ -73,7 +69,6 @@ class TemplateCache {
     // Check if we need to evict entries (simple LRU implementation)
     if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
       // Delete the first entry (oldest)
-      const firstKeyValue = this.cache.keys().next();
       if (!firstKeyValue.done && firstKeyValue.value) {
         this.cache.delete(firstKeyValue.value);
       }
@@ -110,7 +105,6 @@ class TemplateCache {
 }
 
 // Create the template cache instance
-const templateCache = new TemplateCache({ maxSize: 100 });
 
 // Register Handlebars helpers
 Handlebars.registerHelper(
@@ -139,17 +133,13 @@ Handlebars.registerHelper(
  */
 export async function listPrompts(req: Request, res: Response): Promise<void> {
   try {
-    const category = req.query.category as string | undefined;
 
-    const prompts = category ? getPromptsByCategory(category) : getAllPrompts();
 
     res.json({
       success: true,
       data: prompts,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to list prompts');
-    const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
       500
@@ -169,15 +159,12 @@ export async function listPromptCategories(
   res: Response
 ): Promise<void> {
   try {
-    const categories = getAllCategories();
 
     res.json({
       success: true,
       data: categories,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to list prompt categories');
-    const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
       500
@@ -197,12 +184,8 @@ export async function getPromptDetails(
   res: Response
 ): Promise<void> {
   try {
-    const promptId = req.params.id;
-    const prompt = getPromptById(promptId);
 
     if (!prompt) {
-      const errorObj = new Error('Prompt not found');
-      const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
         404
@@ -216,8 +199,6 @@ export async function getPromptDetails(
       data: prompt,
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to get prompt details');
-    const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
       500
@@ -267,7 +248,6 @@ function validateParameters(
   // Check parameter types
   prompt.parameters.forEach((param) => {
     if (parameters[param.name] !== undefined) {
-      const paramValue = parameters[param.name];
       let typeError = false;
 
       switch (param.type as string) {
@@ -316,7 +296,6 @@ function applyDefaultValues(
   prompt: PromptTemplate,
   parameters: Record<string, unknown>
 ): Record<string, unknown> {
-  const result = { ...parameters };
 
   prompt.parameters.forEach((param) => {
     if (
@@ -341,12 +320,8 @@ export async function executePrompt(
   res: Response
 ): Promise<void> {
   try {
-    const promptId = req.params.id;
-    const prompt = getPromptById(promptId);
 
     if (!prompt) {
-      const errorObj = new Error('Prompt not found');
-      const errorResult = createErrorResult(
         errorObj,
         `No prompt found with ID: ${promptId}`,
         404
@@ -355,13 +330,9 @@ export async function executePrompt(
       return;
     }
 
-    const executionRequest = req.body as PromptExecutionRequest;
 
     // Validate parameters
-    const validation = validateParameters(prompt, executionRequest.parameters);
     if (!validation.valid) {
-      const errorObj = new Error('Invalid parameters');
-      const errorResult = createErrorResult(
         errorObj,
         validation.errors.join(', '),
         400
@@ -371,7 +342,6 @@ export async function executePrompt(
     }
 
     // Apply default values
-    const parameters = applyDefaultValues(prompt, executionRequest.parameters);
 
     // Get or compile template with caching
     let template = templateCache.get(promptId);
@@ -380,8 +350,6 @@ export async function executePrompt(
         template = Handlebars.compile(prompt.template);
         templateCache.set(promptId, template);
       } catch (compileError: unknown) {
-        const errorObj = new Error('Failed to compile template');
-        const errorResult = createErrorResult(
           errorObj,
           `Template compilation error for prompt ${promptId}: ${
             compileError instanceof Error
@@ -400,8 +368,6 @@ export async function executePrompt(
     try {
       result = template(parameters);
     } catch (renderError: unknown) {
-      const errorObj = new Error('Failed to render template');
-      const errorResult = createErrorResult(
         errorObj,
         `Template rendering error for prompt ${promptId}: ${
           renderError instanceof Error ? renderError.message : 'Unknown error'
@@ -420,8 +386,6 @@ export async function executePrompt(
       },
     });
   } catch (error: unknown) {
-    const errorObj = new Error('Failed to execute prompt');
-    const errorResult = createErrorResult(
       errorObj,
       error instanceof Error ? error.message : 'Unknown error',
       500
@@ -447,7 +411,6 @@ export async function executePrompt(
 export function registerPromptHandlers(server: Server): void {
   // Register handler for prompts/list endpoint
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
-    const prompts = getAllPrompts();
     return {
       prompts: prompts.map((prompt) => ({
         id: prompt.id,
@@ -460,8 +423,6 @@ export function registerPromptHandlers(server: Server): void {
 
   // Register handler for prompts/get endpoint
   server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-    const promptId = request.params.promptId as string;
-    const prompt = getPromptById(promptId);
 
     if (!prompt) {
       throw new Error(`Prompt not found: ${promptId}`);

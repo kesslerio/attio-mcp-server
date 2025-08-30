@@ -6,38 +6,6 @@
  */
 
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
-import {
-  AttioRecord,
-  AttioTask,
-  AttioRecordValues,
-  AttioFieldValue,
-} from '../types/attio.js';
-
-/**
- * UniversalUtilityService provides centralized utility functions
- */
-export class UniversalUtilityService {
-  /**
-   * Utility function to format resource type for display
-   */
-  static formatResourceType(resourceType: UniversalResourceType): string {
-    switch (resourceType) {
-      case UniversalResourceType.COMPANIES:
-        return 'company';
-      case UniversalResourceType.PEOPLE:
-        return 'person';
-      case UniversalResourceType.LISTS:
-        return 'list';
-      case UniversalResourceType.RECORDS:
-        return 'record';
-      case UniversalResourceType.DEALS:
-        return 'deal';
-      case UniversalResourceType.TASKS:
-        return 'task';
-      default:
-        return resourceType;
-    }
-  }
 
   /**
    * Utility function to get singular form of resource type
@@ -126,7 +94,6 @@ export class UniversalUtilityService {
     };
 
     // Add flat field compatibility for test environments (Issue #480 pattern)
-    const flatFields = {
       content: task.content,
       status: task.status,
       due_date: task.due_date,
@@ -176,12 +143,10 @@ export class UniversalUtilityService {
     }
 
     // Helper function to safely extract value from field
-    const extractFieldValue = (field: unknown): string | null => {
       if (!field) return null;
 
       // Handle array values first (e.g., company names, person names)
       if (Array.isArray(field) && field.length > 0) {
-        const firstItem = field[0] as AttioFieldValue;
         // For name field, check both 'value' and 'full_name' properties
         return firstItem?.value || firstItem?.full_name || null;
       }
@@ -195,14 +160,11 @@ export class UniversalUtilityService {
     };
 
     // Check fields in priority order, collecting valid values
-    const fieldPriority = ['name', 'full_name', 'title', 'content'] as const;
     const validValues: string[] = [];
 
     for (const fieldName of fieldPriority) {
-      const fieldValue = extractFieldValue(values[fieldName]);
       if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim()) {
         // Prefer array-based values over string fallbacks
-        const isArrayValue = Array.isArray(values[fieldName]);
         if (isArrayValue) {
           return fieldValue.trim(); // Return immediately for valid array values
         }
@@ -283,7 +245,6 @@ export class UniversalUtilityService {
    * Normalize resource type string (handle case variations and common aliases)
    */
   static normalizeResourceType(input: string): UniversalResourceType | null {
-    const normalized = input.toLowerCase().trim();
 
     switch (normalized) {
       case 'company':

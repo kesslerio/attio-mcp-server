@@ -1,27 +1,16 @@
 /**
  * Task operations for Attio
  */
-import { getAttioClient } from '../attio-client.js';
-import {
-  AttioTask,
-  AttioListResponse,
-  AttioSingleResponse,
-} from '../../types/attio.js';
 import { callWithRetry, RetryConfig } from './retry.js';
-import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 import { debug, OperationType } from '../../utils/logger.js';
-import {
-  logTaskDebug,
-  sanitizePayload,
-  inspectTaskRecordShape,
-} from '../../utils/task-debug.js';
+import { getAttioClient } from '../attio-client.js';
+import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
  * Handles field name transformations for backward compatibility
  */
 function transformTaskResponse(task: AttioTask): AttioTask {
-  const transformedTask = task as Record<string, unknown>;
 
   // Transform content_plaintext -> content for backward compatibility
   if (
@@ -48,16 +37,11 @@ export async function listTasks(
   pageSize: number = 25,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask[]> {
-  const api = getAttioClient();
-  const params = new URLSearchParams();
   params.append('page', String(page));
   params.append('pageSize', String(pageSize));
   if (status) params.append('status', status);
   if (assigneeId) params.append('assignee', assigneeId);
-  const path = `/tasks?${params.toString()}`;
   return callWithRetry(async () => {
-    const res = await api.get<AttioListResponse<AttioTask>>(path);
-    const tasks = res?.data?.data || [];
     // Transform each task in the response for backward compatibility
     return tasks.map((task) => transformTaskResponse(task));
   }, retryConfig);
@@ -67,10 +51,7 @@ export async function getTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
-  const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
-    const res = await api.get<AttioSingleResponse<AttioTask>>(path);
     // Enhanced response handling with more robust structure detection
     let task: AttioTask;
 
@@ -93,8 +74,6 @@ export async function createTask(
   options: { assigneeId?: string; dueDate?: string; recordId?: string } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
-  const path = '/tasks';
 
   // Build task data according to TaskCreateData interface
   const taskData: TaskCreateData = {
@@ -109,7 +88,6 @@ export async function createTask(
 
   // Build the full request payload with all required fields for the API
   // Assignees: Attio v2 expects referenced actor references
-  const assignees = options.assigneeId
     ? [
         {
           referenced_actor_type: 'workspace-member',
@@ -117,7 +95,6 @@ export async function createTask(
         },
       ]
     : [];
-  const requestPayload = {
     data: {
       ...taskData,
       is_completed: false, // Always false for new tasks
@@ -197,7 +174,6 @@ export async function createTask(
           OperationType.API_CALL
         );
 
-        const axiosResponse = api.post<AttioSingleResponse<AttioTask>>(
           path,
           requestPayload
         );
@@ -366,7 +342,6 @@ export async function createTask(
     }
 
     // Note: Only transform content field for create response (status not returned on create)
-    const transformed = transformTaskResponse(task);
     logTaskDebug(
       'createTask',
       'Create response shape',
@@ -387,8 +362,6 @@ export async function updateTask(
   },
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
-  const api = getAttioClient();
-  const path = `/tasks/${taskId}`;
   const data: TaskUpdateData = {};
   // Note: content is immutable and cannot be updated - ignore if provided
   if (updates.status) {
@@ -408,7 +381,6 @@ export async function updateTask(
   // Do not include linked_records in PATCH; call /linked-records after update
 
   // Wrap in Attio envelope as per API requirements
-  const requestPayload = { data };
   return callWithRetry(async () => {
     // Debug request for tracing
     debug(
@@ -424,7 +396,6 @@ export async function updateTask(
       sanitizePayload({ path, payload: requestPayload })
     );
 
-    const res = await api.patch<AttioSingleResponse<AttioTask>>(
       path,
       requestPayload
     );
@@ -441,7 +412,6 @@ export async function updateTask(
       throw new Error('Invalid API response structure: missing task data');
     }
 
-    const transformed = transformTaskResponse(task);
     logTaskDebug(
       'updateTask',
       'Update response shape',
@@ -478,8 +448,6 @@ export async function deleteTask(
   taskId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
-  const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     await api.delete(path);
     return true;
@@ -491,8 +459,6 @@ export async function linkRecordToTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
-  const path = `/tasks/${taskId}/linked-records`;
   return callWithRetry(async () => {
     await api.post(path, { record_id: recordId });
     return true;
@@ -504,8 +470,6 @@ export async function unlinkRecordFromTask(
   recordId: string,
   retryConfig?: Partial<RetryConfig>
 ): Promise<boolean> {
-  const api = getAttioClient();
-  const path = `/tasks/${taskId}/linked-records/${recordId}`;
   return callWithRetry(async () => {
     await api.delete(path);
     return true;

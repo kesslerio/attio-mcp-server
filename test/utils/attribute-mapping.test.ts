@@ -1,27 +1,7 @@
 /**
  * Tests for the attribute mapping utilities
  */
-import {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  type MockedFunction,
-} from 'vitest';
-import {
-  getAttributeSlug,
-  getObjectSlug,
-  getListSlug,
-  translateAttributeNamesInFilters,
-  invalidateConfigCache,
-} from '../../src/utils/attribute-mapping/index.js';
 import * as configLoader from '../../src/utils/config-loader.js';
-
-// Mock the config-loader
-vi.mock('../../src/utils/config-loader.js', () => ({
-  loadMappingConfig: vi.fn(),
-}));
 
 describe('Attribute Mapping', () => {
   // Reset mocks before each test
@@ -156,11 +136,9 @@ describe('Attribute Mapping', () => {
       vi.resetModules();
 
       // Industry should map to categories through special case handling
-      const result = getAttributeSlug('industry');
       expect(result).toBe('categories');
 
       // Industry type should also map to categories
-      const resultType = getAttributeSlug('industry type');
       expect(resultType).toBe('categories');
     });
 
@@ -194,11 +172,9 @@ describe('Attribute Mapping', () => {
       invalidateConfigCache();
 
       // Should use the company-specific mapping
-      const companySlug = getAttributeSlug('Name', 'companies');
       expect(companySlug).toBe('name_companies');
 
       // Should use the common mapping without object type
-      const commonSlug = getAttributeSlug('Name');
       expect(commonSlug).toBe('name');
     });
   });
@@ -312,10 +288,8 @@ describe('Attribute Mapping', () => {
       invalidateConfigCache();
 
       // Test list mappings
-      const importantLeadsSlug = getListSlug('Important Leads');
       expect(importantLeadsSlug).toBe('important_leads');
 
-      const vipContactsSlug = getListSlug('VIP Contacts');
       expect(vipContactsSlug).toBe('vip_contacts');
     });
 
@@ -393,7 +367,6 @@ describe('Attribute Mapping', () => {
     });
 
     it('should translate attribute names in a simple filter', () => {
-      const filter = {
         attribute: {
           slug: 'Name',
         },
@@ -401,7 +374,6 @@ describe('Attribute Mapping', () => {
         value: 'Test Company',
       };
 
-      const translated = translateAttributeNamesInFilters(filter);
       expect(translated.attribute.slug).toBe('name');
     });
 
@@ -409,7 +381,6 @@ describe('Attribute Mapping', () => {
       // Ensure we use the real configuration
       invalidateConfigCache();
 
-      const filter = {
         attribute: {
           slug: 'Name',
         },
@@ -417,12 +388,10 @@ describe('Attribute Mapping', () => {
         value: 'Test Company',
       };
 
-      const translated = translateAttributeNamesInFilters(filter, 'companies');
       expect(translated.attribute.slug).toBe('name_companies');
     });
 
     it('should handle nested filter structures', () => {
-      const filter = {
         operator: 'and',
         filters: [
           {
@@ -442,7 +411,6 @@ describe('Attribute Mapping', () => {
         ],
       };
 
-      const translated = translateAttributeNamesInFilters(filter);
       expect(translated.filters[0].attribute.slug).toBe('name');
       expect(translated.filters[1].attribute.slug).toBe('email');
     });
@@ -451,7 +419,6 @@ describe('Attribute Mapping', () => {
       // Ensure we use the real configuration
       invalidateConfigCache();
 
-      const filter = {
         operator: 'and',
         filters: [
           {
@@ -473,7 +440,6 @@ describe('Attribute Mapping', () => {
         ],
       };
 
-      const translated = translateAttributeNamesInFilters(filter);
       expect(translated.filters[0].attribute.slug).toBe('name_companies');
       expect(translated.filters[1].attribute.slug).toBe('name_people');
     });
@@ -487,7 +453,6 @@ describe('Attribute Mapping', () => {
       // Ensure we use the real configuration
       invalidateConfigCache();
 
-      const complexFilter = {
         operator: 'and',
         filters: [
           {
@@ -531,7 +496,6 @@ describe('Attribute Mapping', () => {
         ],
       };
 
-      const translated = translateAttributeNamesInFilters(complexFilter);
 
       // Check nested OR filters
       expect(translated.filters[0].filters[0].attribute.slug).toBe(

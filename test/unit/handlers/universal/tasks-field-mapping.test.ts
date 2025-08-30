@@ -6,17 +6,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  mapRecordFields,
-  validateFields,
-  getFieldSuggestions,
-} from '../../../../src/handlers/tool-configs/universal/field-mapper.js';
+
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 
 describe('Tasks Field Mapping Fix - Issue #417', () => {
   it('should map common task field variations to correct field names', async () => {
     // Test individual mappings to avoid collisions
-    const titleMapping = await mapRecordFields(UniversalResourceType.TASKS, {
       title: 'Q4 Follow-up: Test Task',
       due: '2025-02-15',
       assignee: 'user-123',
@@ -45,14 +40,12 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
   });
 
   it('should handle camelCase field variations correctly', async () => {
-    const recordData = {
       content: 'Test task content',
       dueDate: '2025-02-15',
       assigneeId: 'user-123',
       recordId: 'record-456',
     };
 
-    const result = await mapRecordFields(
       UniversalResourceType.TASKS,
       recordData
     );
@@ -72,49 +65,39 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
   });
 
   it('should validate required fields for tasks', () => {
-    const validData = { content: 'Test task' };
-    const invalidData = { title: 'Test task' }; // Should be mapped to content
-    const emptyData = {};
 
     // Valid data (after mapping)
-    const validResult = validateFields(UniversalResourceType.TASKS, validData);
     expect(validResult.valid).toBe(true);
     expect(validResult.errors).toHaveLength(0);
 
     // Data that needs mapping but has required content via title
-    const mappedResult = validateFields(
       UniversalResourceType.TASKS,
       invalidData
     );
     expect(mappedResult.valid).toBe(true); // Should pass because title maps to content
 
     // Empty data should fail
-    const emptyResult = validateFields(UniversalResourceType.TASKS, emptyData);
     expect(emptyResult.valid).toBe(false);
     expect(emptyResult.errors.some((e) => e.includes('content'))).toBe(true);
   });
 
   it('should provide helpful suggestions for unknown task fields', () => {
     // Test suggestions for unknown fields
-    const titleSuggestion = getFieldSuggestions(
       UniversalResourceType.TASKS,
       'title'
     );
     expect(titleSuggestion).toContain('content');
 
-    const assigneeSuggestion = getFieldSuggestions(
       UniversalResourceType.TASKS,
       'assignee'
     );
     expect(assigneeSuggestion).toContain('assignee_id');
 
-    const dueSuggestion = getFieldSuggestions(
       UniversalResourceType.TASKS,
       'due'
     );
     expect(dueSuggestion).toContain('due_date');
 
-    const unknownSuggestion = getFieldSuggestions(
       UniversalResourceType.TASKS,
       'completely_unknown_field'
     );
@@ -123,14 +106,12 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
 
   it('should prevent field mapping collisions', async () => {
     // Test collision detection when multiple fields map to the same target
-    const collisionData = {
       title: 'Task Title',
       name: 'Task Name',
       description: 'Task Description',
       // All three map to 'content'
     };
 
-    const result = await mapRecordFields(
       UniversalResourceType.TASKS,
       collisionData
     );
@@ -143,7 +124,6 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
   });
 
   it('should include all expected valid fields', () => {
-    const validData = {
       content: 'Test task',
       status: 'pending',
       due_date: '2025-02-15',
@@ -151,7 +131,6 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
       record_id: 'record-456',
     };
 
-    const result = validateFields(UniversalResourceType.TASKS, validData);
 
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);

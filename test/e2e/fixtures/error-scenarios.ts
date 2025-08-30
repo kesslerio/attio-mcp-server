@@ -10,42 +10,6 @@
 
 import { createTestUuid } from '../utils/error-handling-utils.js';
 
-export const errorScenarios = {
-  /**
-   * Invalid record IDs for testing not found scenarios
-   */
-  invalidIds: {
-    company: createTestUuid('1'),
-    person: createTestUuid('2'),
-    task: createTestUuid('3'),
-    list: createTestUuid('4'),
-    note: createTestUuid('5'),
-    generic: createTestUuid('0'),
-    batch: [createTestUuid('6'), createTestUuid('7'), createTestUuid('8')],
-  },
-
-  /**
-   * Unicode and special character test data
-   * Note: Contains intentional Unicode strings for internationalization testing
-   * cspell:disable-next-line
-   */
-  unicodeData: {
-    company: {
-      name: '🏢 Test Company™ ñoñó 中文 العربية',
-      description:
-        'Company with special chars: <script>alert("test")</script> & symbols',
-    },
-    person: {
-      first_name: 'José María',
-      last_name: 'González-López',
-      email_address: 'test@compañía.com',
-    },
-    task: {
-      title: '📝 Task with émojis & spëcial chârs',
-      content: 'Content with 中文 characters and العربية text',
-    },
-  },
-
   /**
    * Invalid data formats for validation testing
    */
@@ -262,7 +226,7 @@ export const errorDataGenerators = {
    * Generates deeply nested object
    */
   deeplyNested: (depth: number = 10) => {
-    let nested: any = { value: 'deep value' };
+    let nested: unknown = { value: 'deep value' };
     for (let i = 0; i < depth; i++) {
       nested = { [`level${i}`]: nested };
     }

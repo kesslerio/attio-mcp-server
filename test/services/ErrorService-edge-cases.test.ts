@@ -2,6 +2,7 @@
  * Split: ErrorService edge cases
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { ErrorService } from '../../src/services/ErrorService.js';
 import { UniversalValidationError } from '../../src/handlers/tool-configs/universal/schemas.js';
 
@@ -20,7 +21,6 @@ describe('ErrorService Edge Cases', () => {
   });
 
   it('handles empty error messages', () => {
-    const result = ErrorService.getOperationSuggestion(
       'create',
       'companies',
       new Error('')
@@ -29,8 +29,7 @@ describe('ErrorService Edge Cases', () => {
   });
 
   it('handles malformed error objects', () => {
-    const malformed: any = { notMessage: 'test', randomField: 123 };
-    const result = ErrorService.createUniversalError(
+    const malformed: unknown = { notMessage: 'test', randomField: 123 };
       'create',
       'companies',
       malformed

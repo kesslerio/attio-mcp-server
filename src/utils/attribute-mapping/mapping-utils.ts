@@ -12,7 +12,6 @@
 export function createCaseInsensitiveMap<T>(
   mappings: Record<string, T>
 ): Map<string, { original: string; value: T }> {
-  const map = new Map<string, { original: string; value: T }>();
 
   // Pre-process all keys to lowercase for faster lookups
   for (const [key, value] of Object.entries(mappings)) {
@@ -33,7 +32,6 @@ export function lookupCaseInsensitive<T>(
   map: Map<string, { original: string; value: T }>,
   key: string
 ): T | undefined {
-  const entry = map.get(key.toLowerCase());
   return entry ? entry.value : undefined;
 }
 
@@ -66,7 +64,6 @@ export function aggressiveNormalizeString(input: string): string {
 export function createNormalizedMap<T>(
   mappings: Record<string, T>
 ): Map<string, { original: string; value: T }> {
-  const map = new Map<string, { original: string; value: T }>();
 
   // Pre-process all keys to normalized form for faster lookups
   for (const [key, value] of Object.entries(mappings)) {
@@ -86,7 +83,6 @@ export function createNormalizedMap<T>(
 export function createAggressiveNormalizedMap<T>(
   mappings: Record<string, T>
 ): Map<string, { original: string; value: T }> {
-  const map = new Map<string, { original: string; value: T }>();
 
   // Pre-process all keys to normalized form for faster lookups
   for (const [key, value] of Object.entries(mappings)) {
@@ -107,7 +103,6 @@ export function lookupNormalized<T>(
   map: Map<string, { original: string; value: T }>,
   key: string
 ): T | undefined {
-  const entry = map.get(normalizeString(key));
   return entry ? entry.value : undefined;
 }
 
@@ -122,7 +117,6 @@ export function lookupAggressiveNormalized<T>(
   map: Map<string, { original: string; value: T }>,
   key: string
 ): T | undefined {
-  const entry = map.get(aggressiveNormalizeString(key));
   return entry ? entry.value : undefined;
 }
 
@@ -134,7 +128,6 @@ export function lookupAggressiveNormalized<T>(
  */
 export function handleSpecialCases(key: string): string | undefined {
   // Convert to lowercase for consistency
-  const lowerKey = key.toLowerCase();
 
   // Map of special cases with their mappings
   const specialCases: Record<string, string> = {
@@ -167,7 +160,6 @@ export function handleSpecialCases(key: string): string | undefined {
   }
 
   // Check for normalized matches
-  const normalizedKey = normalizeString(lowerKey);
   for (const [specialKey, value] of Object.entries(specialCases)) {
     if (normalizeString(specialKey) === normalizedKey) {
       return value;

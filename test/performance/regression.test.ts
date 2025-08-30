@@ -5,9 +5,20 @@
  * Integrated into CI/CD pipeline to catch performance degradations early.
  */
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { config } from 'dotenv';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { performance } from 'perf_hooks';
+
+import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
+import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
+
+import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 
 // Load environment variables
 config();
@@ -63,7 +74,6 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
 
   // Mock resource-specific search functions to prevent real API calls
   vi.mock('../../src/objects/companies/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       advancedSearchCompanies: vi.fn().mockResolvedValue([
@@ -108,7 +118,6 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/people/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       advancedSearchPeople: vi.fn().mockResolvedValue([
@@ -146,7 +155,6 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/lists.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       searchLists: vi.fn().mockResolvedValue([
@@ -161,7 +169,6 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/records/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       listObjectRecords: vi.fn().mockResolvedValue([
@@ -176,7 +183,6 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/tasks.js', async (importOriginal) => {
-    const actual = await importOriginal();
     return {
       ...actual,
       listTasks: vi.fn().mockResolvedValue([
@@ -199,15 +205,12 @@ import { initializeAttioClient } from '../../src/api/attio-client.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 
 // Environment-aware performance budgets (following universal test pattern)
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const CI_MULTIPLIER = isCI ? 2.5 : 1; // 2.5x longer timeouts for CI environments
 
 console.log(
   `Performance regression testing with ${isCI ? 'CI' : 'LOCAL'} budgets (multiplier: ${CI_MULTIPLIER}x)`
 );
 
 // Performance test configuration - use environment variables or defaults with CI adjustments
-const PERFORMANCE_BUDGETS = {
   notFound: Math.round(
     parseInt(process.env.PERF_BUDGET_NOT_FOUND || '2000', 10) * CI_MULTIPLIER
   ),
@@ -241,7 +244,6 @@ vi.setConfig({
 });
 
 // Skip tests if no API key available
-const SKIP_TESTS =
   !process.env.ATTIO_API_KEY || process.env.SKIP_PERFORMANCE_TESTS === 'true';
 
 describe('Performance Regression Tests', () => {
@@ -251,11 +253,9 @@ describe('Performance Regression Tests', () => {
   }
 
   let testRecordId: string | null = null;
-  const timestamp = Date.now();
 
   beforeAll(async () => {
     // Initialize API client
-    const apiKey = process.env.ATTIO_API_KEY!;
     await initializeAttioClient(apiKey);
 
     // Clear performance tracker
@@ -263,7 +263,6 @@ describe('Performance Regression Tests', () => {
 
     // Create a test record for performance testing
     try {
-      const createResult = await coreOperationsToolConfigs[
         'create-record'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -296,14 +295,11 @@ describe('Performance Regression Tests', () => {
     }
 
     // Generate performance report
-    const report = enhancedPerformanceTracker.generateReport();
     console.log('\n' + report);
   });
 
   describe('404 Response Performance', () => {
     it('should return 404 for invalid ID format within budget', async () => {
-      const invalidId = 'invalid-id-format';
-      const startTime = performance.now();
 
       try {
         await coreOperationsToolConfigs['get-record-details'].handler({
@@ -313,8 +309,7 @@ describe('Performance Regression Tests', () => {
 
         // Should not reach here
         expect.fail('Expected error for invalid ID');
-      } catch (error: any) {
-        const duration = performance.now() - startTime;
+      } catch (error: unknown) {
 
         // Verify it's a validation error (enhanced error message format)
         expect(error.message).toContain('Invalid record identifier format');
@@ -331,8 +326,6 @@ describe('Performance Regression Tests', () => {
 
     it('should return 404 for non-existent valid ID within budget', async () => {
       // Valid MongoDB ObjectId format but doesn't exist
-      const nonExistentId = '507f1f77bcf86cd799439011';
-      const startTime = performance.now();
 
       try {
         await coreOperationsToolConfigs['get-record-details'].handler({
@@ -342,8 +335,7 @@ describe('Performance Regression Tests', () => {
 
         // Should not reach here
         expect.fail('Expected error for non-existent ID');
-      } catch (error: any) {
-        const duration = performance.now() - startTime;
+      } catch (error: unknown) {
 
         // Check performance budget
         expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.notFound);
@@ -356,10 +348,8 @@ describe('Performance Regression Tests', () => {
     });
 
     it('should cache 404 responses for faster subsequent requests', async () => {
-      const nonExistentId = '507f1f77bcf86cd799439012';
 
       // First request - should hit API
-      const firstStart = performance.now();
       try {
         await coreOperationsToolConfigs['get-record-details'].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -368,10 +358,8 @@ describe('Performance Regression Tests', () => {
       } catch (error: unknown) {
         // Expected
       }
-      const firstDuration = performance.now() - firstStart;
 
       // Second request - should hit cache
-      const secondStart = performance.now();
       try {
         await coreOperationsToolConfigs['get-record-details'].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -380,12 +368,9 @@ describe('Performance Regression Tests', () => {
       } catch (error: unknown) {
         // Expected
       }
-      const secondDuration = performance.now() - secondStart;
 
       // Second request should be significantly faster or both should be very fast (< 5ms)
       // If both are already sub-5ms, the cache is working effectively
-      const bothVeryFast = firstDuration < 5 && secondDuration < 5;
-      const secondFaster = secondDuration < firstDuration * 0.8; // More lenient timing
 
       expect(bothVeryFast || secondFaster).toBe(true);
 
@@ -397,9 +382,7 @@ describe('Performance Regression Tests', () => {
 
   describe('Search Operation Performance', () => {
     it('should complete search within budget', async () => {
-      const startTime = performance.now();
 
-      const results = await coreOperationsToolConfigs['search-records'].handler(
         {
           resource_type: UniversalResourceType.COMPANIES,
           query: 'test',
@@ -407,7 +390,6 @@ describe('Performance Regression Tests', () => {
         }
       );
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.search);
@@ -421,9 +403,7 @@ describe('Performance Regression Tests', () => {
     });
 
     it('should handle pagination efficiently', async () => {
-      const startTime = performance.now();
 
-      const results = await coreOperationsToolConfigs['search-records'].handler(
         {
           resource_type: UniversalResourceType.COMPANIES,
           limit: 20,
@@ -431,7 +411,6 @@ describe('Performance Regression Tests', () => {
         }
       );
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.search);
@@ -440,15 +419,13 @@ describe('Performance Regression Tests', () => {
     });
 
     it('should validate parameters quickly', async () => {
-      const startTime = performance.now();
 
       try {
         await coreOperationsToolConfigs['search-records'].handler({
           resource_type: UniversalResourceType.COMPANIES,
           limit: -5, // Invalid parameter
         });
-      } catch (error: any) {
-        const duration = performance.now() - startTime;
+      } catch (error: unknown) {
 
         // Validation should be very fast (under 100ms)
         expect(duration).toBeLessThan(100);
@@ -467,16 +444,13 @@ describe('Performance Regression Tests', () => {
         return;
       }
 
-      const startTime = performance.now();
 
-      const record = await coreOperationsToolConfigs[
         'get-record-details'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: testRecordId,
       });
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.getDetails);
@@ -491,9 +465,7 @@ describe('Performance Regression Tests', () => {
         return;
       }
 
-      const startTime = performance.now();
 
-      const updated = await coreOperationsToolConfigs['update-record'].handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: testRecordId,
         record_data: {
@@ -501,7 +473,6 @@ describe('Performance Regression Tests', () => {
         },
       });
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.update);
@@ -511,9 +482,7 @@ describe('Performance Regression Tests', () => {
     });
 
     it('should create record within budget', async () => {
-      const startTime = performance.now();
 
-      const created = await coreOperationsToolConfigs['create-record'].handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_data: {
           name: `Perf Test Create ${timestamp}`,
@@ -521,7 +490,6 @@ describe('Performance Regression Tests', () => {
         },
       });
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.create);
@@ -534,7 +502,6 @@ describe('Performance Regression Tests', () => {
       if (created && Object.keys(created).length > 0) {
         expect(created).toBeDefined();
         // Check for either new or legacy response structure
-        const recordId =
           created?.id?.record_id ||
           created?.record_id ||
           created?.data?.id?.record_id ||
@@ -555,7 +522,6 @@ describe('Performance Regression Tests', () => {
 
       // Clean up (only if we have a real record ID)
       if (created && Object.keys(created).length > 0) {
-        const recordId =
           created?.id?.record_id ||
           created?.record_id ||
           created?.data?.id?.record_id ||
@@ -579,7 +545,6 @@ describe('Performance Regression Tests', () => {
 
     it('should delete record within budget', async () => {
       // Create a record to delete
-      const toDelete = await coreOperationsToolConfigs['create-record'].handler(
         {
           resource_type: UniversalResourceType.COMPANIES,
           record_data: {
@@ -590,7 +555,6 @@ describe('Performance Regression Tests', () => {
       );
 
       // Check for either new or legacy response structure
-      const deleteId =
         toDelete?.id?.record_id ||
         toDelete?.record_id ||
         toDelete?.data?.id?.record_id;
@@ -599,14 +563,11 @@ describe('Performance Regression Tests', () => {
         return;
       }
 
-      const startTime = performance.now();
 
-      const result = await coreOperationsToolConfigs['delete-record'].handler({
         resource_type: UniversalResourceType.COMPANIES,
         record_id: deleteId,
       });
 
-      const duration = performance.now() - startTime;
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.delete);
@@ -630,7 +591,6 @@ describe('Performance Regression Tests', () => {
       });
 
       // Get statistics
-      const stats =
         enhancedPerformanceTracker.getStatistics('get-record-details');
 
       expect(stats).toBeDefined();
@@ -649,7 +609,6 @@ describe('Performance Regression Tests', () => {
     });
 
     it('should have acceptable p95 and p99 latencies', async () => {
-      const stats = enhancedPerformanceTracker.getStatistics();
 
       if (stats && stats.count > 0) {
         // P95 should be under 5 seconds
@@ -678,7 +637,6 @@ describe('Performance Regression Tests', () => {
       }
 
       // Check if any alerts were generated
-      const report = enhancedPerformanceTracker.generateReport();
       console.log(
         'Performance alerts check:',
         report.includes('Budget Violations')

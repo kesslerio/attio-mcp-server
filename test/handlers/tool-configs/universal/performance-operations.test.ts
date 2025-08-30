@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { config } from 'dotenv';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 
-// Load environment variables from .env file before any imports
-config();
+import { advancedOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
+import { advancedOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
+import { initializeAttioClient } from '../../../../src/api/attio-client.js';
+import { initializeAttioClient } from '../../../../src/api/attio-client.js';
 
 import { advancedOperationsToolConfigs } from '../../../../src/handlers/tool-configs/universal/index.js';
 import {
@@ -17,7 +19,6 @@ import {
 } from './helpers/index.js';
 
 // These tests use real API calls - only run when API key is available
-const SKIP_PERFORMANCE_TESTS = TEST_ENVIRONMENT.skipPerformanceTests;
 
 // Log environment configuration
 console.log(
@@ -38,7 +39,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
   beforeAll(async () => {
     // Initialize the API client with real credentials first
-    const apiKey = process.env.ATTIO_API_KEY!;
     console.log('Initializing API client for performance tests...');
     await initializeAttioClient(apiKey);
 
@@ -49,7 +49,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
     );
   });
 
-  const timestamp = Date.now();
   const createdTestRecords: string[] = [];
 
   afterAll(async () => {
@@ -57,8 +56,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
     if (createdTestRecords.length > 0) {
       try {
         // Split into batches of 45 records to stay well under the 50 limit
-        const CLEANUP_BATCH_SIZE = 45;
-        const batches = [];
         for (
           let i = 0;
           i < createdTestRecords.length;
@@ -72,7 +69,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
         );
 
         // Process all batches in parallel for faster cleanup
-        const cleanupPromises = batches.map(async (batch, index) => {
           // Add a small staggered delay to avoid overwhelming the API
           if (index > 0) {
             await new Promise((resolve) => setTimeout(resolve, index * 100));
@@ -96,7 +92,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
   describe('Batch Operations Performance', () => {
     it('should handle batch create operations efficiently (1 record)', async () => {
-      const records = [
         {
           name: `Perf Test Company 1-${timestamp}`,
           website: `https://perf1-${timestamp}.com`,
@@ -104,9 +99,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
         },
       ];
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -114,8 +107,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -134,7 +125,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
     });
 
     it('should handle batch create operations efficiently (10 records)', async () => {
-      const records = Array(10)
         .fill(0)
         .map((_, i) => ({
           name: `Perf Test Company 10-${timestamp}-${i}`,
@@ -142,9 +132,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
           industry: 'Technology',
         }));
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -152,15 +140,11 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(10);
 
-      const successCount = result.filter((r: any) => r.success).length;
-      const failureCount = result.length - successCount;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (successCount <= 7) {
         // Log for debugging but don't fail the test during Phase A1
@@ -168,7 +152,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
       }
 
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
         console.warn(
           `Batch operation failures:`,
           failures.map((f) => f.error).join(', ')
@@ -179,9 +162,8 @@ describe('Universal Tools Performance Tests - Operations', () => {
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.tenRecords);
 
       // Store created IDs for cleanup
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(
@@ -190,7 +172,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
     });
 
     it('should handle batch create operations efficiently (25 records)', async () => {
-      const records = Array(25)
         .fill(0)
         .map((_, i) => ({
           name: `Perf Test Company 25-${timestamp}-${i}`,
@@ -198,9 +179,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
           industry: 'Technology',
         }));
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -208,22 +187,17 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(25);
 
-      const successCount = result.filter((r: any) => r.success).length;
-      const failureCount = result.length - successCount;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (successCount <= 20) {
         // expect(successCount).toBeGreaterThan(20, `Expected >20 successful operations, got ${successCount}. Failures: ${failureCount}`);
       }
 
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
         console.warn(
           `Batch operation failures:`,
           failures.map((f) => f.error).join(', ')
@@ -234,9 +208,8 @@ describe('Universal Tools Performance Tests - Operations', () => {
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.twentyFiveRecords);
 
       // Store created IDs for cleanup
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(
@@ -245,7 +218,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
     });
 
     it('should handle batch create operations at maximum limit (50 records)', async () => {
-      const records = Array(50)
         .fill(0)
         .map((_, i) => ({
           name: `Perf Test Company 50-${timestamp}-${i}`,
@@ -253,9 +225,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
           industry: 'Technology',
         }));
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -263,22 +233,17 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(50);
 
-      const successCount = result.filter((r: any) => r.success).length;
-      const failureCount = result.length - successCount;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (successCount <= 40) {
         // expect(successCount).toBeGreaterThan(40, `Expected >40 successful operations, got ${successCount}. Failures: ${failureCount}`);
       }
 
       if (failureCount > 0) {
-        const failures = result.filter((r: any) => !r.success);
         console.warn(
           `Batch operation failures:`,
           failures.map((f) => f.error).join(', ')
@@ -289,9 +254,8 @@ describe('Universal Tools Performance Tests - Operations', () => {
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.fiftyRecords);
 
       // Store created IDs for cleanup
-      const createdIds = result
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(
@@ -301,7 +265,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
     it('should demonstrate performance improvement vs sequential operations', async () => {
       // Create a small batch to compare parallel vs sequential performance
-      const records = Array(5)
         .fill(0)
         .map((_, i) => ({
           name: `Perf Compare Test ${timestamp}-${i}`,
@@ -310,9 +273,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
         }));
 
       // Test batch (parallel) performance
-      const batchStartTime = Date.now();
 
-      const batchResult = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -320,23 +281,19 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records,
       });
 
-      const batchEndTime = Date.now();
-      const batchDuration = batchEndTime - batchStartTime;
 
       expect(batchResult).toBeDefined();
       expect(Array.isArray(batchResult)).toBe(true);
       expect(batchResult).toHaveLength(5);
 
-      const successCount = batchResult.filter((r: any) => r.success).length;
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (successCount <= 3) {
         // expect(successCount).toBeGreaterThan(3);
       }
 
       // Store created IDs for cleanup
-      const createdIds = batchResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
       createdTestRecords.push(...createdIds);
 
       console.log(`Batch (parallel) creation of 5 records: ${batchDuration}ms`);
@@ -348,7 +305,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
     it('should handle batch get operations efficiently', async () => {
       // Use some of the created records for batch get testing
-      const testIds = createdTestRecords.slice(
         0,
         Math.min(10, createdTestRecords.length)
       );
@@ -358,9 +314,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
         return;
       }
 
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -368,14 +322,11 @@ describe('Universal Tools Performance Tests - Operations', () => {
         record_ids: testIds,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(testIds.length);
 
-      const successCount = result.filter((r: any) => r.success).length;
       expect(successCount).toBe(testIds.length); // All should succeed for existing records
 
       // Batch get should be fast
@@ -386,14 +337,12 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
     it('should handle batch delete operations efficiently', async () => {
       // Create some records specifically for delete testing
-      const createRecords = Array(10)
         .fill(0)
         .map((_, i) => ({
           name: `Delete Test Company ${timestamp}-${i}`,
           industry: 'Technology',
         }));
 
-      const createResult = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -401,9 +350,8 @@ describe('Universal Tools Performance Tests - Operations', () => {
         records: createRecords,
       });
 
-      const createdIds = createResult
-        .filter((r: any) => r.success && r.result?.id?.record_id)
-        .map((r: any) => r.result.id.record_id);
+        .filter((r: unknown) => r.success && r.result?.id?.record_id)
+        .map((r: unknown) => r.result.id.record_id);
 
       // Phase A1: Soft performance check to avoid CI noise during stabilization
       if (createdIds.length <= 5) {
@@ -411,9 +359,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
       }
 
       // Now test batch delete performance
-      const startTime = Date.now();
 
-      const deleteResult = await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -421,14 +367,11 @@ describe('Universal Tools Performance Tests - Operations', () => {
         record_ids: createdIds,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(deleteResult).toBeDefined();
       expect(Array.isArray(deleteResult)).toBe(true);
       expect(deleteResult).toHaveLength(createdIds.length);
 
-      const successCount = deleteResult.filter((r: any) => r.success).length;
       expect(successCount).toBe(createdIds.length); // All deletes should succeed
 
       // Batch delete should be fast
@@ -440,9 +383,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
   describe('Search Performance', () => {
     it('should handle search operations efficiently', async () => {
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -450,8 +391,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
         limit: 20,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -465,9 +404,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
     });
 
     it('should handle large search limits efficiently', async () => {
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -475,8 +412,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
         limit: 100,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -490,9 +425,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
     });
 
     it('should handle filtered searches efficiently', async () => {
-      const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -509,8 +442,6 @@ describe('Universal Tools Performance Tests - Operations', () => {
         limit: 50,
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);

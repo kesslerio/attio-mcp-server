@@ -1,16 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import {
-  createCompany,
-  updateCompany,
-  updateCompanyAttribute,
-  deleteCompany,
-  searchCompanies,
-  getCompanyDetails,
-} from '../../src/objects/companies/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
 
-// These tests use real API calls - only run when API key is available
-const SKIP_INTEGRATION_TESTS = !process.env.ATTIO_API_KEY;
+import { initializeAttioClient } from '../../src/api/attio-client';
 
 describe('Concurrent Operations - Integration Tests', () => {
   if (SKIP_INTEGRATION_TESTS) {
@@ -22,7 +12,6 @@ describe('Concurrent Operations - Integration Tests', () => {
 
   beforeAll(() => {
     // Initialize the Attio client with test API key
-    const apiKey = process.env.ATTIO_API_KEY!;
     initializeAttioClient(apiKey);
   });
 
@@ -41,7 +30,6 @@ describe('Concurrent Operations - Integration Tests', () => {
   describe('Concurrent Updates', () => {
     it('should handle concurrent attribute updates', async () => {
       // Create a test company
-      const company = await createCompany({
         name: `Concurrent Update Test ${Date.now()}`,
         counter: 0,
         description: 'Initial description',
@@ -49,7 +37,6 @@ describe('Concurrent Operations - Integration Tests', () => {
       testCompanies.push(company.id.record_id);
 
       // Define concurrent updates
-      const updates = [
         { attribute: 'website', value: 'https://concurrent1.com' },
         { attribute: 'industry', value: 'Technology' },
         { attribute: 'description', value: 'Updated description' },
@@ -58,7 +45,6 @@ describe('Concurrent Operations - Integration Tests', () => {
       ];
 
       // Execute updates concurrently
-      const updatePromises = updates.map((update) =>
         updateCompanyAttribute(
           company.id.record_id,
           update.attribute,
@@ -66,25 +52,19 @@ describe('Concurrent Operations - Integration Tests', () => {
         )
       );
 
-      const results = await Promise.allSettled(updatePromises);
 
       // Check results
-      const successful = results.filter((r) => r.status === 'fulfilled');
-      const failed = results.filter((r) => r.status === 'rejected');
 
       console.log(
         `Concurrent updates: ${successful.length} succeeded, ${failed.length} failed`
       );
 
       // Verify final state
-      const finalCompany = await getCompanyDetails(company.id.record_id);
 
       // At least some updates should have succeeded
       expect(successful.length).toBeGreaterThan(0);
 
       // Check if any of the expected values are present
-      const hasExpectedValues = updates.some((update) => {
-        const value = finalCompany.values?.[update.attribute];
         if (Array.isArray(value) && value.length > 0) {
           return (
             value[0].value === update.value ||
@@ -98,20 +78,17 @@ describe('Concurrent Operations - Integration Tests', () => {
     });
 
     it('should handle race conditions in full company updates', async () => {
-      const company = await createCompany({
         name: `Race Condition Test ${Date.now()}`,
         version: 1,
       });
       testCompanies.push(company.id.record_id);
 
       // Simulate race condition with conflicting updates
-      const update1 = {
         website: 'https://version1.com',
         description: 'Version 1 description',
         industry: 'Finance',
       };
 
-      const update2 = {
         website: 'https://version2.com',
         description: 'Version 2 description',
         industry: 'Healthcare',
@@ -124,14 +101,11 @@ describe('Concurrent Operations - Integration Tests', () => {
       ]);
 
       // Both might succeed (last write wins) or one might fail
-      const successCount = [result1, result2].filter(
         (r) => r.status === 'fulfilled'
       ).length;
       expect(successCount).toBeGreaterThan(0);
 
       // Verify final state
-      const finalCompany = await getCompanyDetails(company.id.record_id);
-      const finalWebsite = finalCompany.values?.website?.[0]?.value;
 
       // Website should be one of the two values
       expect([update1.website, update2.website]).toContain(finalWebsite);
@@ -140,11 +114,8 @@ describe('Concurrent Operations - Integration Tests', () => {
 
   describe('Concurrent Creates and Deletes', () => {
     it('should handle concurrent company creation', async () => {
-      const baseName = `Concurrent Create ${Date.now()}`;
-      const numCompanies = 5;
 
       // Create multiple companies concurrently
-      const createPromises = Array(numCompanies)
         .fill(0)
         .map((_, i) =>
           createCompany({
@@ -153,7 +124,6 @@ describe('Concurrent Operations - Integration Tests', () => {
           })
         );
 
-      const results = await Promise.allSettled(createPromises);
 
       // Track created companies
       results.forEach((result) => {
@@ -162,12 +132,10 @@ describe('Concurrent Operations - Integration Tests', () => {
         }
       });
 
-      const successful = results.filter((r) => r.status === 'fulfilled');
       expect(successful.length).toBe(numCompanies);
     });
 
     it('should handle create and immediate delete race condition', async () => {
-      const company = await createCompany({
         name: `Delete Race Test ${Date.now()}`,
       });
 
@@ -182,7 +150,6 @@ describe('Concurrent Operations - Integration Tests', () => {
       ]);
 
       // One should succeed, one might fail
-      const successCount = [updateResult, deleteResult].filter(
         (r) => r.status === 'fulfilled'
       ).length;
       expect(successCount).toBeGreaterThan(0);
@@ -199,10 +166,8 @@ describe('Concurrent Operations - Integration Tests', () => {
 
   describe('Concurrent Searches and Updates', () => {
     it('should handle searches during updates', async () => {
-      const uniquePrefix = `ConcurrentSearch_${Date.now()}`;
 
       // Create test companies
-      const companies = await Promise.all([
         createCompany({ name: `${uniquePrefix}_A` }),
         createCompany({ name: `${uniquePrefix}_B` }),
         createCompany({ name: `${uniquePrefix}_C` }),
@@ -211,7 +176,6 @@ describe('Concurrent Operations - Integration Tests', () => {
       companies.forEach((c) => testCompanies.push(c.id.record_id));
 
       // Perform concurrent searches and updates
-      const operations = [
         searchCompanies(uniquePrefix),
         updateCompanyAttribute(
           companies[0].id.record_id,
@@ -227,14 +191,11 @@ describe('Concurrent Operations - Integration Tests', () => {
         searchCompanies(uniquePrefix),
       ];
 
-      const results = await Promise.allSettled(operations);
 
       // All operations should complete successfully
-      const successful = results.filter((r) => r.status === 'fulfilled');
       expect(successful.length).toBe(operations.length);
 
       // Extract search results
-      const searchResults = results
         .filter((r, i) => [0, 2, 4].includes(i) && r.status === 'fulfilled')
         .map((r) => (r as any).value);
 
@@ -247,17 +208,13 @@ describe('Concurrent Operations - Integration Tests', () => {
 
   describe('Stress Testing', () => {
     it('should handle high volume of concurrent operations', async () => {
-      const company = await createCompany({
         name: `Stress Test Company ${Date.now()}`,
       });
       testCompanies.push(company.id.record_id);
 
-      const operationCount = 20;
-      const operations = [];
 
       // Mix of different operations
       for (let i = 0; i < operationCount; i++) {
-        const operationType = i % 4;
         switch (operationType) {
           case 0:
             operations.push(
@@ -284,12 +241,7 @@ describe('Concurrent Operations - Integration Tests', () => {
         }
       }
 
-      const startTime = Date.now();
-      const results = await Promise.allSettled(operations);
-      const duration = Date.now() - startTime;
 
-      const successful = results.filter((r) => r.status === 'fulfilled');
-      const failed = results.filter((r) => r.status === 'rejected');
 
       console.log(`Stress test completed in ${duration}ms`);
       console.log(`${successful.length} succeeded, ${failed.length} failed`);

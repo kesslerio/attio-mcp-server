@@ -2,32 +2,20 @@
  * Split: Regression Prevention E2E – Relationships & Workflows slice
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  callUniversalTool,
-  callTasksTool,
-  callNotesTool,
-  validateTestEnvironment,
-} from '../utils/enhanced-tool-caller.js';
+
 import { E2EAssertions } from '../utils/assertions.js';
-import { testDataGenerator } from '../fixtures/index.js';
-import {
-  extractRecordId,
-  createTestRecord,
-  cleanupTestRecords,
-} from '../utils/error-handling-utils.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
+import { testDataGenerator } from '../fixtures/index.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Regression Prevention – Relationships & Workflows', () => {
-  let testRecordIds: string[] = [];
-  const T45 = 45000,
+  const testRecordIds: string[] = [];
     T60 = 60000;
   let prevForceRealApi: string | undefined;
 
   beforeAll(async () => {
     startTestSuite('regression-prevention-relationships-workflows');
-    const validation = await validateTestEnvironment();
     if (!validation.valid)
       console.warn(
         '⚠️ Regression prevention test warnings:',
@@ -55,8 +43,6 @@ describe.skipIf(
     'preserves core CRUD workflow integrity',
     async () => {
       let recordId: string | undefined;
-      const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
       } as any);
@@ -66,22 +52,18 @@ describe.skipIf(
       if (!recordId) return;
       testRecordIds.push(recordId);
 
-      const readResponse = await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: recordId,
       } as any);
       E2EAssertions.expectMcpSuccess(readResponse);
-      const recordData = E2EAssertions.expectMcpData(readResponse);
       expect(recordData).toBeDefined();
 
-      const updateResponse = await callUniversalTool('update-record', {
         resource_type: 'companies',
         record_id: recordId,
         record_data: { description: 'Updated for CRUD workflow test' },
       } as any);
       E2EAssertions.expectMcpSuccess(updateResponse);
 
-      const verifyResponse = await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: recordId,
       } as any);
@@ -94,8 +76,6 @@ describe.skipIf(
   it(
     'preserves cross-resource relationship integrity',
     async () => {
-      const companyData = testDataGenerator.companies.basicCompany();
-      const companyId = await createTestRecord(
         (resourceType, data) =>
           callUniversalTool('create-record', {
             resource_type: resourceType as any,
@@ -112,7 +92,6 @@ describe.skipIf(
       }
       testRecordIds.push(companyId);
 
-      const taskResponse = await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: 'Relationship integrity test task',
@@ -121,7 +100,6 @@ describe.skipIf(
       } as any);
       expect(taskResponse).toBeDefined();
 
-      const noteResponse = await callNotesTool('create-note', {
         resource_type: 'companies',
         record_id: companyId,
         title: 'Relationship integrity test note',
@@ -130,7 +108,6 @@ describe.skipIf(
       } as any);
       expect(noteResponse).toBeDefined();
 
-      const companyCheck = await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: companyId,
       } as any);
@@ -143,11 +120,9 @@ describe.skipIf(
   it(
     'preserves data validation rules',
     async () => {
-      const validationTests = [
         {
           name: 'Required field validation',
           test: async () => {
-            const response = await callUniversalTool('create-record', {
               resource_type: 'companies',
               record_data: {
                 /* intentionally missing required fields to assert validation */
@@ -159,7 +134,6 @@ describe.skipIf(
         {
           name: 'Data type validation',
           test: async () => {
-            const response = await callUniversalTool('search-records', {
               resource_type: 'companies',
               query: 'validation-test',
               limit: 5,
@@ -169,7 +143,6 @@ describe.skipIf(
         },
       ];
       for (const validationTest of validationTests) {
-        const result = await validationTest.test();
         expect(result).toBeDefined();
         console.error(`✅ ${validationTest.name} preserved`);
       }
