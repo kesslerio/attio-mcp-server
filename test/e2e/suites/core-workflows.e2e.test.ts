@@ -157,7 +157,7 @@ describe.skipIf(
     console.error('📊 Tool migration stats:', getToolMigrationStats());
 
     await E2ETestBase.setup({
-      requiresRealApi: false, // Use mock data for reliable testing
+      requiresRealApi: true, // 🔒 Real API only for E2E tests
       cleanupAfterTests: true,
       timeout: 120000,
     });
@@ -303,7 +303,7 @@ describe.skipIf(
 
         E2EAssertions.expectTaskRecord(createdTask);
         expect(
-          createdTask.assignees?.[0]?.referenced_actor_id
+          createdTask.assignee?.referenced_actor_id
         ).toBeDefined();
 
         createdTasks.push(createdTask);

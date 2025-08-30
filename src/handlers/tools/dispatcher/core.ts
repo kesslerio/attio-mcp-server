@@ -376,7 +376,7 @@ export async function executeToolRequest(request: CallToolRequest) {
 
       // For E2E tests, return raw JSON data instead of formatted strings
       // This allows tests to parse and validate the actual data structures
-      const isE2EMode =
+      const isTestRun =
         process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 
       // 🧪 DEBUG: Log E2E mode detection
@@ -385,9 +385,9 @@ export async function executeToolRequest(request: CallToolRequest) {
           toolName,
           E2E_MODE: process.env.E2E_MODE,
           NODE_ENV: process.env.NODE_ENV,
-          isE2EMode,
+          isTestRun,
           willUseRawJSON:
-            isE2EMode &&
+            isTestRun &&
             (toolName === 'create-record' ||
               toolName === 'update-record' ||
               toolName === 'create-note'),
@@ -395,7 +395,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
 
       if (
-        isE2EMode &&
+        isTestRun &&
         (toolName === 'create-record' ||
           toolName === 'update-record' ||
           toolName === 'create-note')

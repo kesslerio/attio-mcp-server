@@ -99,21 +99,10 @@ export class MockService {
 
     if (!useMocks) {
       try {
-        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        debug('MockService', 'createCompany Making raw axios API call');
-
-        // Create a completely fresh axios instance to bypass any mocking
-        const axios = (await import('axios')).default;
-        const api = axios.create({
-          baseURL: 'https://api.attio.com/v2',
-          headers: {
-            Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000,
-        });
-
-        debug('MockService', 'createCompany Raw axios instance created');
+        // Use centralized Attio client for consistent authentication
+        debug('MockService', 'createCompany Using centralized Attio client');
+        const { getAttioClient } = await import('../api/attio-client.js');
+        const client = getAttioClient();
 
         // Normalize company domains to string array
         const normalizedCompany: Record<string, unknown> = { ...companyData };
@@ -138,7 +127,7 @@ export class MockService {
           delete (normalizedCompany as any).domain;
         }
 
-        const response = await api.post('/objects/companies/records', {
+        const response = await client.post('/objects/companies/records', {
           data: {
             values: normalizedCompany,
           },
@@ -154,21 +143,21 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord
-        const result = response?.data?.data || response?.data;
+        const record = response?.data?.data || response?.data;
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
-          result &&
-          typeof result === 'object' &&
-          (('id' in result && (result as any).id?.record_id) ||
-            'record_id' in result ||
-            'web_url' in result ||
-            'created_at' in result);
+          record &&
+          typeof record === 'object' &&
+          (('id' in record && (record as any).id?.record_id) ||
+            'record_id' in record ||
+            'web_url' in record ||
+            'created_at' in record);
 
         if (
-          !result ||
-          (typeof result === 'object' &&
-            Object.keys(result).length === 0 &&
+          !record ||
+          (typeof record === 'object' &&
+            Object.keys(record).length === 0 &&
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
@@ -176,7 +165,7 @@ export class MockService {
           );
         }
 
-        return result;
+        return record;
       } catch (err) {
         const anyErr = err as any;
         const status = anyErr?.response?.status ?? 500;
@@ -238,21 +227,10 @@ export class MockService {
   ): Promise<AttioRecord> {
     if (!shouldUseMockData()) {
       try {
-        // TEMPORARY: Direct API call bypassing all potential mocks with raw axios
-        debug('MockService', 'createPerson Making raw axios API call');
-
-        // Create a completely fresh axios instance to bypass any mocking
-        const axios = (await import('axios')).default;
-        const api = axios.create({
-          baseURL: 'https://api.attio.com/v2',
-          headers: {
-            Authorization: `Bearer ${process.env.ATTIO_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000,
-        });
-
-        debug('MockService', 'createPerson Raw axios instance created');
+        // Use centralized Attio client for consistent authentication
+        debug('MockService', 'createPerson Using centralized Attio client');
+        const { getAttioClient } = await import('../api/attio-client.js');
+        const client = getAttioClient();
 
         // Normalize to Attio API schema for people values
         const filteredPersonData: Record<string, unknown> = {};
@@ -358,7 +336,7 @@ export class MockService {
         }
 
         const doCreate = async (values: Record<string, unknown>) =>
-          api.post('/objects/people/records', { data: { values } });
+          client.post('/objects/people/records', { data: { values } });
 
         let response;
         try {
@@ -414,21 +392,21 @@ export class MockService {
         });
 
         // Extract result following same logic as createRecord
-        const result = response?.data?.data || response?.data;
+        const record = response?.data?.data || response?.data;
 
         // SURGICAL FIX: Detect empty objects and convert to proper error, but allow legitimate create responses
         const looksLikeCreatedRecord =
-          result &&
-          typeof result === 'object' &&
-          (('id' in result && (result as any).id?.record_id) ||
-            'record_id' in result ||
-            'web_url' in result ||
-            'created_at' in result);
+          record &&
+          typeof record === 'object' &&
+          (('id' in record && (record as any).id?.record_id) ||
+            'record_id' in record ||
+            'web_url' in record ||
+            'created_at' in record);
 
         if (
-          !result ||
-          (typeof result === 'object' &&
-            Object.keys(result).length === 0 &&
+          !record ||
+          (typeof record === 'object' &&
+            Object.keys(record).length === 0 &&
             !looksLikeCreatedRecord)
         ) {
           throw new Error(
@@ -436,7 +414,7 @@ export class MockService {
           );
         }
 
-        return result;
+        return record;
       } catch (err) {
         // Enhance error with HTTP response details when available (helps E2E diagnosis)
         const anyErr = err as any;
