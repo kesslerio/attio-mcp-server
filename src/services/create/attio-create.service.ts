@@ -162,7 +162,7 @@ export class AttioCreateService implements CreateService {
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
-  }): Promise<unknown[]> {
+  }): Promise<any[]> {
     // For now, delegate to existing implementation
     // This will be moved to a dedicated NotesService later
     const { MockService } = await import('../MockService.js');
