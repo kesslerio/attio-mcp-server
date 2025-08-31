@@ -295,12 +295,19 @@ export class MockCreateService implements CreateService {
     }
 
     // Check for invalid IDs following test patterns
-    if (
-      extractedRecordId === '00000000-0000-0000-0000-000000000000' ||
-      extractedRecordId.includes('invalid') ||
-      extractedRecordId === 'invalid-company-id-12345' ||
-      extractedRecordId === 'invalid-person-id-54321'
-    ) {
+    const invalidPatterns = [
+      '00000000-0000-0000-0000-000000000000',
+      /invalid/i,
+      /^invalid-.*-id-\d+$/
+    ];
+
+    const isInvalidId = invalidPatterns.some(pattern => 
+      pattern instanceof RegExp 
+        ? pattern.test(extractedRecordId)
+        : pattern === extractedRecordId
+    );
+
+    if (isInvalidId) {
       throw new Error('record not found');
     }
 

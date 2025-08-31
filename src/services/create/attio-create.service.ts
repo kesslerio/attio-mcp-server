@@ -21,8 +21,41 @@ import {
 
 /**
  * Real API implementation of CreateService
+ * 
+ * Handles company, person, task, and note creation through the Attio API.
+ * Includes data normalization, error recovery, and robust error handling.
+ * 
+ * @example
+ * ```typescript
+ * const service = new AttioCreateService();
+ * const company = await service.createCompany({
+ *   name: "Acme Corp",
+ *   domain: "acme.com"
+ * });
+ * ```
  */
 export class AttioCreateService implements CreateService {
+  /**
+   * Creates a company record with domain normalization
+   * 
+   * @param input - Company data including name, domain/domains, industry, etc.
+   * @returns Promise<AttioRecord> - Created company record with id.record_id
+   * 
+   * @example
+   * ```typescript
+   * // Single domain
+   * const company = await service.createCompany({
+   *   name: "Tech Corp",
+   *   domain: "techcorp.com"
+   * });
+   * 
+   * // Multiple domains
+   * const company = await service.createCompany({
+   *   name: "Multi Corp",
+   *   domains: ["multi.com", "multicorp.io"]
+   * });
+   * ```
+   */
   async createCompany(input: Record<string, unknown>): Promise<AttioRecord> {
     const client = getAttioClient({ rawE2E: true });
 
@@ -82,6 +115,34 @@ export class AttioCreateService implements CreateService {
     }
   }
 
+  /**
+   * Creates a person record with name and email normalization
+   * 
+   * @param input - Person data including name, email/email_addresses, title, etc.
+   * @returns Promise<AttioRecord> - Created person record with id.record_id
+   * 
+   * @example
+   * ```typescript
+   * // String name and email
+   * const person = await service.createPerson({
+   *   name: "John Doe",
+   *   email: "john@example.com"
+   * });
+   * 
+   * // Multiple emails
+   * const person = await service.createPerson({
+   *   name: "Jane Smith",
+   *   email_addresses: ["jane@company.com", "jane.smith@company.com"]
+   * });
+   * 
+   * // Complex name object
+   * const person = await service.createPerson({
+   *   name: { first_name: "Bob", last_name: "Wilson" },
+   *   email: "bob@example.com",
+   *   job_title: "Senior Engineer"
+   * });
+   * ```
+   */
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
     const client = getAttioClient({ rawE2E: true });
     const filteredPersonData = this.normalizePersonValues(input);
@@ -195,30 +256,47 @@ export class AttioCreateService implements CreateService {
 
   // Private helper methods
 
+  /**
+   * Normalizes company input data, particularly domain handling
+   * 
+   * Converts single domain to domains array, handles domain objects with .value property
+   * 
+   * @param input - Raw company input data
+   * @returns Normalized company data with domains as string array
+   * 
+   * @example
+   * ```typescript
+   * // Input: { name: "Corp", domain: "corp.com" }
+   * // Output: { name: "Corp", domains: ["corp.com"] }
+   * 
+   * // Input: { name: "Corp", domains: [{value: "corp.com"}, {value: "corp.io"}] }
+   * // Output: { name: "Corp", domains: ["corp.com", "corp.io"] }
+   * ```
+   */
   private normalizeCompanyValues(
     input: Record<string, unknown>
   ): Record<string, unknown> {
     const normalizedCompany: Record<string, unknown> = { ...input };
-    const rawDomain = (input as any).domain;
-    const rawDomains = (input as any).domains;
+    const rawDomain = input.domain as string | undefined;
+    const rawDomains = input.domains as unknown;
 
     if (rawDomains) {
       if (Array.isArray(rawDomains)) {
-        (normalizedCompany as any).domains = rawDomains.map((d: any) =>
-          typeof d === 'string' ? d : (d?.domain ?? d?.value ?? String(d))
+        normalizedCompany.domains = rawDomains.map((d: unknown) =>
+          typeof d === 'string' ? d : ((d as Record<string, unknown>)?.domain ?? (d as Record<string, unknown>)?.value ?? String(d))
         );
       } else {
-        (normalizedCompany as any).domains = [
+        normalizedCompany.domains = [
           typeof rawDomains === 'string'
             ? rawDomains
-            : ((rawDomains as any)?.domain ??
-              (rawDomains as any)?.value ??
+            : ((rawDomains as Record<string, unknown>)?.domain ??
+              (rawDomains as Record<string, unknown>)?.value ??
               String(rawDomains)),
         ];
       }
     } else if (rawDomain) {
-      (normalizedCompany as any).domains = [String(rawDomain)];
-      delete (normalizedCompany as any).domain;
+      normalizedCompany.domains = [String(rawDomain)];
+      delete normalizedCompany.domain;
     }
 
     return normalizedCompany;
@@ -230,7 +308,7 @@ export class AttioCreateService implements CreateService {
     const filteredPersonData: Record<string, unknown> = {};
 
     // 1) Name normalization: array of personal-name objects
-    const rawName = (input as any).name;
+    const rawName = input.name;
     if (rawName) {
       if (typeof rawName === 'string') {
         const parts = rawName.trim().split(/\s+/);
@@ -255,41 +333,39 @@ export class AttioCreateService implements CreateService {
     }
 
     // 2) Emails: Attio create accepts string array; prefer plain strings
-    const rawEmails = (input as any).email_addresses;
+    const rawEmails = input.email_addresses;
     if (Array.isArray(rawEmails) && rawEmails.length) {
-      const normalized = rawEmails.map((e: any) =>
-        e && typeof e === 'object' && 'email_address' in e
-          ? String(e.email_address)
+      const normalized = rawEmails.map((e: unknown) =>
+        e && typeof e === 'object' && e !== null && 'email_address' in e
+          ? String((e as Record<string, unknown>).email_address)
           : String(e)
       );
       filteredPersonData.email_addresses = normalized;
-    } else if (typeof (input as any).email === 'string') {
-      filteredPersonData.email_addresses = [String((input as any).email)];
+    } else if (typeof input.email === 'string') {
+      filteredPersonData.email_addresses = [String(input.email)];
     }
 
     // Ensure required fields exist
     if (
       !filteredPersonData.email_addresses ||
-      !(filteredPersonData as any).email_addresses.length
+      !Array.isArray(filteredPersonData.email_addresses) ||
+      filteredPersonData.email_addresses.length === 0
     ) {
       throw new Error('missing required parameter: email_addresses');
     }
 
     if (!filteredPersonData.name) {
       // Derive a safe name from email local part
-      const firstEmail = ((filteredPersonData as any).email_addresses[0] || {})
-        .email_address as string;
-      const local =
-        typeof firstEmail === 'string'
-          ? firstEmail.split('@')[0]
-          : 'Test Person';
+      const emailAddresses = filteredPersonData.email_addresses as string[];
+      const firstEmail = emailAddresses[0] || '';
+      const local = typeof firstEmail === 'string' ? firstEmail.split('@')[0] : 'Test Person';
       const parts = local
         .replace(/[^a-zA-Z]+/g, ' ')
         .trim()
         .split(/\s+/);
       const first = parts[0] || 'Test';
       const last = parts.slice(1).join(' ') || 'User';
-      (filteredPersonData as any).name = [
+      filteredPersonData.name = [
         {
           first_name: first,
           last_name: last,
@@ -299,14 +375,14 @@ export class AttioCreateService implements CreateService {
     }
 
     // 3) Optional professional info
-    if (typeof (input as any).title === 'string') {
-      filteredPersonData.title = (input as any).title;
+    if (typeof input.title === 'string') {
+      filteredPersonData.title = input.title;
     }
-    if (typeof (input as any).job_title === 'string') {
-      filteredPersonData.job_title = (input as any).job_title;
+    if (typeof input.job_title === 'string') {
+      filteredPersonData.job_title = input.job_title;
     }
-    if (typeof (input as any).description === 'string') {
-      filteredPersonData.description = (input as any).description;
+    if (typeof input.description === 'string') {
+      filteredPersonData.description = input.description;
     }
 
     return filteredPersonData;
@@ -322,24 +398,26 @@ export class AttioCreateService implements CreateService {
     try {
       // Attempt #1
       return await doCreate(filteredPersonData);
-    } catch (firstErr: any) {
-      const status = firstErr?.response?.status;
+    } catch (firstErr: unknown) {
+      const error = firstErr as { response?: { status?: number } };
+      const status = error?.response?.status;
       // Only retry on 400 with alternate email schema
       if (status === 400) {
         const alt: Record<string, unknown> = { ...filteredPersonData };
-        const emails = (alt as any).email_addresses as any[] | undefined;
+        const emails = alt.email_addresses as unknown[] | undefined;
         if (emails && emails.length) {
           if (typeof emails[0] === 'string') {
-            (alt as any).email_addresses = emails.map((e: any) => ({
+            alt.email_addresses = emails.map((e: unknown) => ({
               email_address: String(e),
             }));
           } else if (
             emails[0] &&
             typeof emails[0] === 'object' &&
+            emails[0] !== null &&
             'email_address' in emails[0]
           ) {
-            (alt as any).email_addresses = emails.map((e: any) =>
-              String(e.email_address)
+            alt.email_addresses = emails.map((e: unknown) =>
+              String((e as Record<string, unknown>).email_address)
             );
           }
           return await doCreate(alt);
@@ -387,7 +465,7 @@ export class AttioCreateService implements CreateService {
       }
     } catch (e) {
       debug('AttioCreateService', 'Company recovery failed', {
-        message: (e as any)?.message,
+        message: (e as Error)?.message,
       });
     }
 
@@ -428,7 +506,7 @@ export class AttioCreateService implements CreateService {
       }
     } catch (e) {
       debug('AttioCreateService', 'Person recovery failed', {
-        message: (e as any)?.message,
+        message: (e as Error)?.message,
       });
     }
 
@@ -517,14 +595,14 @@ export class AttioCreateService implements CreateService {
   }
 
   private enhanceApiError(
-    err: any,
+    err: unknown,
     operation: string,
     endpoint: string,
     resourceType: string
   ) {
-    const anyErr = err as any;
-    const status = anyErr?.response?.status ?? 500;
-    const data = anyErr?.response?.data;
+    const error = err as { response?: { status?: number; data?: unknown }; message?: string; name?: string };
+    const status = error?.response?.status ?? 500;
+    const data = error?.response?.data;
 
     logError('AttioCreateService', `${operation} Direct API error`, {
       status,
@@ -534,13 +612,13 @@ export class AttioCreateService implements CreateService {
     const msg =
       status && data
         ? `Attio ${operation} failed (${status}): ${JSON.stringify(data)}`
-        : (anyErr?.message as string) || `${operation} error`;
+        : error?.message || `${operation} error`;
 
     return new EnhancedApiError(msg, status, endpoint, 'POST', {
       httpStatus: status,
       resourceType,
       operation,
-      originalError: anyErr,
+      originalError: err as Error,
     });
   }
 }
