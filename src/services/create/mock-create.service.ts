@@ -154,7 +154,7 @@ export class MockCreateService implements CreateService {
 
   async updateTask(taskId: string, updateData: Record<string, unknown>): Promise<AttioRecord> {
     // Validation for mock environment
-    if (!isValidId(taskId) || taskId === 'invalid') {
+    if (!isValidId(taskId)) {
       throw new Error(`Task not found: ${taskId}`);
     }
 
