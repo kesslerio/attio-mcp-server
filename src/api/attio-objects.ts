@@ -1,18 +1,6 @@
 import type { AxiosInstance } from 'axios';
 
-type AttioObject = { id: string; slug: string; label: string };
 const slugCache = new Map<string, string>();
-
-function normalize(s: string) {
-  return String(s ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-}
-
-const CANDIDATES: Record<'companies' | 'people', string[]> = {
-  companies: ['companies', 'company', 'accounts', 'organizations', 'orgs'],
-  people: ['people', 'person', 'contacts', 'leads', 'prospects'],
-};
 
 export async function resolveObjectSlug(
   client: AxiosInstance,
@@ -20,71 +8,65 @@ export async function resolveObjectSlug(
 ): Promise<string> {
   if (slugCache.has(logical)) return slugCache.get(logical)!;
 
-  const resp = await client.get('/objects');
-  const d = resp?.data;
-
-  // Debug: log the actual response structure
-  if (process.env.E2E_MODE === 'true') {
-    console.log('🔍 /objects response structure:', {
-      hasResp: !!resp,
-      status: resp?.status,
-      hasData: !!d,
-      dataType: typeof d,
-      dataKeys: d && typeof d === 'object' ? Object.keys(d) : [],
-      firstLevel: d,
-      isDataArray: Array.isArray(d?.data),
-      isDirectArray: Array.isArray(d),
-      isObjectsArray: Array.isArray(d?.objects),
-    });
-  }
-
-  const items: AttioObject[] = Array.isArray(d?.data)
-    ? d.data
-    : Array.isArray(d)
-      ? (d as any)
-      : Array.isArray(d?.objects)
-        ? d.objects
-        : [];
-
-  // If we can't get objects list, fall back to standard slugs
-  if (!Array.isArray(items) || !items.length) {
+  // 1) Try direct object endpoint (most reliable)
+  try {
+    const { data } = await client.get(`/objects/${logical}`);
+    const obj = (data && data.data) || data;
+    if (obj && (obj.api_slug || obj.slug || obj.id)) {
+      const slug = String(obj.api_slug || obj.slug || obj.id);
+      slugCache.set(logical, slug);
+      if (process.env.E2E_MODE === 'true') {
+        console.log('🔎 /objects/{logical} probe', {
+          logical,
+          ok: true,
+          ...obj,
+          rawResponse: data,
+        });
+      }
+      return slug;
+    } else {
+      console.log('🔎 probe EMPTY', {
+        logical,
+        statusLike: data?.status,
+        body: data,
+      });
+    }
+  } catch (e) {
     if (process.env.E2E_MODE === 'true') {
-      console.log(
-        `⚠️ /objects returned empty/invalid list, falling back to standard slug: ${logical}`
-      );
+      console.log('🔎 /objects/{logical} probe failed', {
+        logical,
+        error:
+          (e as { response?: { data?: unknown }; message?: unknown })?.response
+            ?.data || (e as { message?: unknown })?.message,
+      });
     }
-    // Return standard slug as fallback
-    const fallbackSlug = logical;
-    slugCache.set(logical, fallbackSlug);
-    return fallbackSlug;
   }
 
-  const wanted = new Set(CANDIDATES[logical].map(normalize));
-
-  // 1) exact slug
-  for (const o of items) {
-    if (wanted.has(normalize(o.slug))) {
-      slugCache.set(logical, o.slug);
-      return o.slug;
-    }
-  }
-  // 2) label fallback
-  for (const o of items) {
-    if (wanted.has(normalize(o.label))) {
-      slugCache.set(logical, o.slug);
-      return o.slug;
-    }
-  }
-  // 3) contains fallback
-  for (const o of items) {
-    const nslug = normalize(o.slug);
-    const nlabel = normalize(o.label);
-    for (const c of wanted) {
-      if (nslug.includes(c) || nlabel.includes(c)) {
-        slugCache.set(logical, o.slug);
-        return o.slug;
+  // 2) Fall back to list (some tenants)
+  try {
+    const { data } = await client.get('/objects', { params: { limit: 200 } });
+    const list = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : data?.objects || [];
+    for (const pd of list) {
+      if (!pd) continue;
+      const fields = [pd.api_slug, pd.slug, pd.id].filter(Boolean).map(String);
+      if (fields.includes(logical)) {
+        const slug = String(pd.api_slug || pd.slug || pd.id);
+        slugCache.set(logical, slug);
+        return slug;
       }
     }
+  } catch {
+    // Intentionally empty - fallback behavior handled below
   }
-  throw new Error(`Unable to resolve Attio object slug for '${logical}'`);
+
+  // 3) Last resort: assume standard slug
+  if (process.env.E2E_MODE === 'true') {
+    console.log(`⚠️ resolveObjectSlug fallback → ${logical}`);
+  }
+  slugCache.set(logical, logical);
+  return logical;
 }
