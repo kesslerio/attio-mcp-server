@@ -1,6 +1,6 @@
 /**
  * Type definitions for Create Services
- *
+ * 
  * Port/interface definitions that ensure both AttioCreateService and MockCreateService
  * implement the same contract for consistent behavior across environments.
  */
@@ -19,7 +19,7 @@ export interface CreateService {
   createCompany(input: Record<string, unknown>): Promise<AttioRecord>;
 
   /**
-   * Creates a person record
+   * Creates a person record  
    * @param input - Person data to create
    * @returns Promise<AttioRecord> - Created person record
    */
@@ -38,10 +38,7 @@ export interface CreateService {
    * @param input - Update data
    * @returns Promise<AttioRecord> - Updated task record
    */
-  updateTask(
-    taskId: string,
-    input: Record<string, unknown>
-  ): Promise<AttioRecord>;
+  updateTask(taskId: string, input: Record<string, unknown>): Promise<AttioRecord>;
 
   /**
    * Creates a note record
