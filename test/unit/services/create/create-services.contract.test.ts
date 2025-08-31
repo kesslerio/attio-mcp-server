@@ -225,7 +225,7 @@ describe('Create Services Contract', () => {
   describe('Error handling contract', () => {
     it('should throw similar error types for validation failures', async () => {
       // Both services should throw Error for validation failures
-      await expect(mockService.updateTask('invalid', {})).rejects.toThrow(
+      await expect(mockService.updateTask('invalid-task-id', {})).rejects.toThrow(
         Error
       );
 
