@@ -17,7 +17,6 @@ import {
   transformFiltersToApiFormat,
 } from '../../utils/record-utils.js';
 import { FilterValidationError } from '../../errors/api-errors.js';
-import { executeWithListFallback } from '../../utils/api-fallback.js';
 import {
   SearchRequestBody,
   LogDetails,
@@ -182,15 +181,26 @@ export async function getListEntries(
     }
   };
 
-  // Define a function to try all endpoints with proper retry logic
+  // Call primary endpoint directly (Option A simplification)
   return callWithRetry(async () => {
-    return executeWithListFallback(
-      api,
-      { listId, filters, limit: safeLimit, offset: safeOffset },
-      createRequestBody,
-      processListEntries,
-      logOperation
+    const path = `/lists/${listId}/entries/query`;
+    const requestBody = createRequestBody();
+
+    logOperation('Primary endpoint attempt', {
+      path,
+      requestBody: JSON.stringify(requestBody),
+    });
+
+    const response = await api.post<AttioListResponse<AttioListEntry>>(
+      path,
+      requestBody
     );
+
+    logOperation('Primary endpoint successful', {
+      resultCount: response.data?.data?.length || 0,
+    });
+
+    return processListEntries(response.data?.data || []);
   }, retryConfig);
 }
 
