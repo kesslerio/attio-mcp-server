@@ -41,7 +41,7 @@ export class CompanyCreator extends BaseCreator {
       const response = await context.client.post(this.endpoint, payload);
       return await this.processResponse(response, context, normalizedCompany);
     } catch (err: any) {
-      this.handleApiError(err, context, payload);
+      return this.handleApiError(err, context, payload);
     }
   }
 

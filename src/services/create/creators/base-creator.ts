@@ -62,7 +62,8 @@ export abstract class BaseCreator implements ResourceCreator {
    */
   protected async processResponse(
     response: any,
-    context: ResourceCreatorContext
+    context: ResourceCreatorContext,
+    normalizedInput?: Record<string, unknown>
   ): Promise<AttioRecord> {
     context.debug(this.constructor.name, `${this.resourceType} API response`, {
       status: response?.status,
@@ -80,7 +81,7 @@ export abstract class BaseCreator implements ResourceCreator {
     // Handle empty response with recovery if needed
     const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover) {
-      record = await this.attemptRecovery(context);
+      record = await this.attemptRecovery(context, normalizedInput);
     }
 
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
@@ -114,7 +115,10 @@ export abstract class BaseCreator implements ResourceCreator {
    * Attempts to recover record by searching for it
    * Override in subclasses to implement resource-specific recovery
    */
-  protected async attemptRecovery(context: ResourceCreatorContext): Promise<any> {
+  protected async attemptRecovery(
+    context: ResourceCreatorContext,
+    normalizedInput?: Record<string, unknown>
+  ): Promise<any> {
     const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
       throw this.createEnhancedError(

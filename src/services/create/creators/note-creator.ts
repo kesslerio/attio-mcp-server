@@ -27,6 +27,22 @@ export class NoteCreator extends BaseCreator {
   readonly resourceType = 'notes';
   readonly endpoint = '/objects/notes/records';
 
+  // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
+  private noteModule: any = null;
+  private responseUtilsModule: any = null;
+
+  /**
+   * Lazy-loads note dependencies to prevent repeated dynamic imports
+   */
+  private async ensureDependencies(): Promise<void> {
+    if (!this.noteModule) {
+      this.noteModule = await import('../../../objects/notes.js');
+    }
+    if (!this.responseUtilsModule) {
+      this.responseUtilsModule = await import('../../../utils/attio-response.js');
+    }
+  }
+
   /**
    * Creates a note record via delegation to notes object
    * 
@@ -50,9 +66,8 @@ export class NoteCreator extends BaseCreator {
     });
 
     try {
-      // Always use real API here; factory determines mock usage.
-      const { createNote } = await import('../../../objects/notes.js');
-      const { unwrapAttio, normalizeNote } = await import('../../../utils/attio-response.js');
+      // Ensure dependencies are loaded
+      await this.ensureDependencies();
       
       const noteData = {
         parent_object: noteInput.resource_type,
@@ -64,11 +79,11 @@ export class NoteCreator extends BaseCreator {
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);
 
-      const response = await createNote(noteData);
+      const response = await this.noteModule.createNote(noteData);
       
       // Unwrap varying API envelopes and normalize to stable shape
-      const attioNote = unwrapAttio<any>(response);
-      const normalizedNote = normalizeNote(attioNote);
+      const attioNote = this.responseUtilsModule.unwrapAttio(response);
+      const normalizedNote = this.responseUtilsModule.normalizeNote(attioNote);
 
       context.debug(this.constructor.name, 'Note creation response', {
         hasResponse: !!response,
@@ -84,7 +99,7 @@ export class NoteCreator extends BaseCreator {
         input: noteInput,
       });
 
-      this.handleApiError(err, context, noteInput);
+      return this.handleApiError(err, context, noteInput);
     }
   }
 

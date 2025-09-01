@@ -18,6 +18,22 @@ export class TaskCreator extends BaseCreator {
   readonly resourceType = 'tasks';
   readonly endpoint = '/objects/tasks/records';
 
+  // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
+  private taskModule: any = null;
+  private converterModule: any = null;
+
+  /**
+   * Lazy-loads task dependencies to prevent repeated dynamic imports
+   */
+  private async ensureDependencies(): Promise<void> {
+    if (!this.taskModule) {
+      this.taskModule = await import('../../../objects/tasks.js');
+    }
+    if (!this.converterModule) {
+      this.converterModule = await import('../data-normalizers.js');
+    }
+  }
+
   /**
    * Creates a task record via delegation to tasks object
    * 
@@ -37,10 +53,10 @@ export class TaskCreator extends BaseCreator {
     });
 
     try {
-      // Delegate to the tasks object for now, this will be refactored later
-      const { createTask } = await import('../../../objects/tasks.js');
+      // Ensure dependencies are loaded
+      await this.ensureDependencies();
       
-      const createdTask = await createTask(input.content as string, {
+      const createdTask = await this.taskModule.createTask(input.content as string, {
         assigneeId: input.assigneeId as string,
         dueDate: input.dueDate as string,
         recordId: input.recordId as string,
@@ -53,7 +69,7 @@ export class TaskCreator extends BaseCreator {
       });
 
       // Convert task to AttioRecord format
-      const record = convertTaskToAttioRecord(createdTask, input);
+      const record = this.converterModule.convertTaskToAttioRecord(createdTask, input);
 
       context.debug(this.constructor.name, 'Converted task record', {
         recordId: (record as any)?.id?.record_id,
@@ -67,7 +83,7 @@ export class TaskCreator extends BaseCreator {
         input,
       });
 
-      this.handleApiError(err, context, input);
+      return this.handleApiError(err, context, input);
     }
   }
 

@@ -47,14 +47,27 @@ import {
 export class AttioCreateService implements CreateService {
   private readonly creators: Map<string, ResourceCreator>;
   private readonly context: ResourceCreatorContext;
+  
+  // Lazy-loaded dependencies for non-strategy methods
+  private taskModule: any = null;
+  private converterModule: any = null;
+  private noteModule: any = null;
+
+  // Supported resource types for validation
+  static readonly SUPPORTED_RESOURCE_TYPES = {
+    COMPANIES: 'companies',
+    PEOPLE: 'people', 
+    TASKS: 'tasks',
+    NOTES: 'notes'
+  } as const;
 
   constructor() {
     // Initialize resource creators using Strategy Pattern
     this.creators = new Map<string, ResourceCreator>();
-    this.creators.set('companies', new CompanyCreator());
-    this.creators.set('people', new PersonCreator());
-    this.creators.set('tasks', new TaskCreator());
-    this.creators.set('notes', new NoteCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.COMPANIES, new CompanyCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.PEOPLE, new PersonCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.TASKS, new TaskCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.NOTES, new NoteCreator());
 
     // Create shared context for all creators
     this.context = {
@@ -62,6 +75,21 @@ export class AttioCreateService implements CreateService {
       debug,
       logError,
     };
+  }
+
+  /**
+   * Lazy-loads dependencies for non-strategy methods
+   */
+  private async ensureDependencies(): Promise<void> {
+    if (!this.taskModule) {
+      this.taskModule = await import('../../objects/tasks.js');
+    }
+    if (!this.converterModule) {
+      this.converterModule = await import('./data-normalizers.js');
+    }
+    if (!this.noteModule) {
+      this.noteModule = await import('../../objects/notes.js');
+    }
   }
 
   /**
@@ -101,11 +129,10 @@ export class AttioCreateService implements CreateService {
     taskId: string,
     input: Record<string, unknown>
   ): Promise<AttioRecord> {
-    // Delegate to the tasks object for now, this will be refactored later
-    const { updateTask } = await import('../../objects/tasks.js');
-    const { convertTaskToAttioRecord } = await import('./data-normalizers.js');
+    // Ensure dependencies are loaded
+    await this.ensureDependencies();
     
-    const updatedTask = await updateTask(taskId, {
+    const updatedTask = await this.taskModule.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -114,7 +141,7 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return convertTaskToAttioRecord(updatedTask, input);
+    return this.converterModule.convertTaskToAttioRecord(updatedTask, input);
   }
 
   /**
@@ -142,28 +169,81 @@ export class AttioCreateService implements CreateService {
     resource_type?: string;
     record_id?: string;
   }): Promise<unknown[]> {
-    // Use real API calls for notes listing
-    const { listNotes } = await import('../../objects/notes.js');
+    // Ensure dependencies are loaded
+    await this.ensureDependencies();
     
     const query = {
       parent_object: params.resource_type,
       parent_record_id: params.record_id,
     };
 
-    const response = await listNotes(query);
+    const response = await this.noteModule.listNotes(query);
     return response.data || [];
   }
 
   /**
-   * Gets a creator for the specified resource type
+   * Validates and gets a creator for the specified resource type
    * @private
    */
   private getCreator(resourceType: string): ResourceCreator {
-    const creator = this.creators.get(resourceType);
-    if (!creator) {
-      throw new Error(`No creator found for resource type: ${resourceType}`);
+    // Validate input
+    if (!resourceType || typeof resourceType !== 'string') {
+      throw new Error(
+        `Invalid resource type: expected non-empty string, got ${typeof resourceType}`
+      );
     }
+
+    const normalizedType = resourceType.toLowerCase().trim();
+    const creator = this.creators.get(normalizedType);
+    
+    if (!creator) {
+      const supportedTypes = Array.from(this.creators.keys()).sort();
+      const suggestion = this.findClosestResourceType(normalizedType, supportedTypes);
+      
+      throw new Error(
+        `Unsupported resource type: "${resourceType}". ` +
+        `Supported types: ${supportedTypes.join(', ')}.` +
+        (suggestion ? ` Did you mean "${suggestion}"?` : '')
+      );
+    }
+    
     return creator;
+  }
+
+  /**
+   * Finds the closest matching resource type for better error messages
+   * @private
+   */
+  private findClosestResourceType(input: string, supportedTypes: string[]): string | null {
+    // Simple similarity check - could be enhanced with better algorithms
+    const similarities = supportedTypes.map(type => ({
+      type,
+      score: this.calculateSimilarity(input, type)
+    }));
+    
+    const best = similarities.reduce((prev, current) => 
+      prev.score > current.score ? prev : current
+    );
+    
+    // Only suggest if similarity is reasonable (> 0.5)
+    return best.score > 0.5 ? best.type : null;
+  }
+
+  /**
+   * Calculates simple string similarity score
+   * @private
+   */
+  private calculateSimilarity(a: string, b: string): number {
+    if (a === b) return 1;
+    if (a.length === 0 || b.length === 0) return 0;
+    
+    // Simple character overlap calculation
+    const setA = new Set(a.toLowerCase());
+    const setB = new Set(b.toLowerCase());
+    const intersection = new Set([...setA].filter(x => setB.has(x)));
+    const union = new Set([...setA, ...setB]);
+    
+    return intersection.size / union.size;
   }
 
   /**
@@ -180,5 +260,15 @@ export class AttioCreateService implements CreateService {
    */
   getSupportedResourceTypes(): string[] {
     return Array.from(this.creators.keys());
+  }
+
+  /**
+   * Validates if a resource type is supported
+   */
+  isResourceTypeSupported(resourceType: string): boolean {
+    if (!resourceType || typeof resourceType !== 'string') {
+      return false;
+    }
+    return this.creators.has(resourceType.toLowerCase().trim());
   }
 }

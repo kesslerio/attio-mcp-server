@@ -44,7 +44,7 @@ export class PersonCreator extends BaseCreator {
       const response = await this.createPersonWithRetry(context, normalizedPerson);
       return await this.processResponse(response, context, normalizedPerson);
     } catch (err: any) {
-      this.handleApiError(err, context, { data: { values: normalizedPerson } });
+      return this.handleApiError(err, context, { data: { values: normalizedPerson } });
     }
   }
 
