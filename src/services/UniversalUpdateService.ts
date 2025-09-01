@@ -59,7 +59,11 @@ async function updateTaskWithMockSupport(
 ): Promise<AttioRecord> {
   // Prefer mock path whenever mock/offline data is enabled to allow Vitest spies
   // to intercept MockService.updateTask even if E2E_MODE is set in tests.
-  if (shouldUseMockData() || process.env.VITEST === 'true') {
+  if (
+    shouldUseMockData() ||
+    process.env.VITEST === 'true' ||
+    process.env.NODE_ENV === 'test'
+  ) {
     const { MockService } = await import('./MockService.js');
     return await MockService.updateTask(taskId, updateData);
   }
@@ -639,13 +643,11 @@ export class UniversalUpdateService {
 
     // Debug before update
     try {
-      const { logTaskDebug, sanitizePayload } = await import(
-        '../utils/task-debug.js'
-      );
-      logTaskDebug(
+      const mod: any = await import('../utils/task-debug.js');
+      mod.logTaskDebug?.(
         'updateRecord',
         'Task update data',
-        sanitizePayload({
+        mod.sanitizePayload({
           record_id,
           mappedData,
           taskUpdateData,
@@ -667,11 +669,9 @@ export class UniversalUpdateService {
             updatedTask as unknown as AttioTask
           );
       try {
-        const { logTaskDebug, inspectTaskRecordShape } = await import(
-          '../utils/task-debug.js'
-        );
-        logTaskDebug('updateRecord', 'Updated task record shape', {
-          shape: inspectTaskRecordShape(result),
+        const mod: any = await import('../utils/task-debug.js');
+        mod.logTaskDebug?.('updateRecord', 'Updated task record shape', {
+          shape: mod.inspectTaskRecordShape?.(result),
         });
       } catch {}
       return result as AttioRecord;

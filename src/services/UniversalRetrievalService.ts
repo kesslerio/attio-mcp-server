@@ -421,8 +421,8 @@ export class UniversalRetrievalService {
     try {
       if (shouldUseMockData()) {
         try {
-          const { logTaskDebug } = await import('../utils/task-debug.js');
-          logTaskDebug('getRecordDetails', 'Using mock task retrieval', {
+          const mod: any = await import('../utils/task-debug.js');
+          mod.logTaskDebug?.('getRecordDetails', 'Using mock task retrieval', {
             record_id,
           });
         } catch {}

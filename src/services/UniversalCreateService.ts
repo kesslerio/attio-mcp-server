@@ -1364,13 +1364,11 @@ export class UniversalCreateService {
 
       // Debugging shape insight
       try {
-        const { logTaskDebug, inspectTaskRecordShape } = await import(
-          '../utils/task-debug.js'
-        );
-        logTaskDebug('createRecord', 'Created task record shape', {
+        const mod: any = await import('../utils/task-debug.js');
+        mod.logTaskDebug?.('createRecord', 'Created task record shape', {
           mappedKeys: Object.keys(mappedData || {}),
           optionsKeys: Object.keys(options || {}),
-          shape: inspectTaskRecordShape(convertedRecord),
+          shape: mod.inspectTaskRecordShape?.(convertedRecord),
         });
       } catch {}
 

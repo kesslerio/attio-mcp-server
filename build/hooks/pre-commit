@@ -98,9 +98,11 @@ if [ "$SKIP_TESTS" = "true" ]; then
   echo -e "${YELLOW}⚠️  Remember to run tests before pushing!${NC}"
 else
   echo -e "\n${YELLOW}Stage 4/4: Running smoke tests...${NC}"
+  # Ensure predictable test environment (Vitest defaults, not production)
+  export NODE_ENV=test
   # Try smoke tests first (if available), fall back to offline tests
   if npm run test:smoke >/dev/null 2>&1; then
-    if ! NODE_ENV=test npm run test:smoke; then
+    if ! npm run test:smoke; then
       echo -e "${RED}❌ COMMIT BLOCKED: Smoke tests failed${NC}"
       echo -e "Fix failing tests before committing."
       echo -e "\n💡 Skip this check: ${YELLOW}SKIP_PRECOMMIT_TESTS=true git commit${NC}"
@@ -110,7 +112,7 @@ else
   else
     # Fallback to offline tests
     echo -e "${YELLOW}Running offline tests (smoke tests not available)...${NC}"
-    if ! NODE_ENV=test timeout 60 npm run test:offline; then
+    if ! timeout 60 npm run test:offline; then
       echo -e "${RED}❌ COMMIT BLOCKED: Tests failed or timed out${NC}"
       echo -e "Fix failing tests before committing."
       echo -e "\n💡 Skip this check: ${YELLOW}SKIP_PRECOMMIT_TESTS=true git commit${NC}"
