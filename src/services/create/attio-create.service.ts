@@ -1,36 +1,39 @@
 /**
- * AttioCreateService - Real API implementation
+ * AttioCreateService - Refactored with Strategy Pattern (Issue #552)
  *
- * Pure real API implementation with no environment checks.
- * Uses getAttioClient with rawE2E option for consistent API communication.
+ * REFACTORED: Implements the Strategy Pattern using resource-specific creators to handle
+ * different Attio resource types. Each creator encapsulates the logic for
+ * creating one type of resource, promoting Single Responsibility Principle.
+ * 
+ * This refactoring addresses SRP violations by moving resource-specific logic
+ * from large methods (~139-168 lines) into focused creator classes (~50-80 lines each).
+ * 
+ * Key improvements:
+ * - Single Responsibility: Each creator handles one resource type
+ * - Maintainability: Easy to add new resource types
+ * - Testability: Test each creator independently  
+ * - Code Reuse: Shared utilities in BaseCreator
+ * 
+ * See src/services/create/creators/README.md for full documentation.
  */
 
 import type { CreateService } from './types.js';
 import type { AttioRecord } from '../../types/attio.js';
+import type { ResourceCreator, ResourceCreatorContext } from './creators/types.js';
 import { getAttioClient } from '../../api/attio-client.js';
-import { EnhancedApiError } from '../../errors/enhanced-api-errors.js';
 import { debug, error as logError } from '../../utils/logger.js';
-import { extractRecordId } from '../../utils/validation/uuid-validation.js';
 import {
-  extractAttioRecord,
-  looksLikeCreatedRecord,
-  assertLooksLikeCreated,
-  isTestRun,
-  debugRecordShape,
-} from './extractor.js';
-import {
-  normalizeCompanyValues,
-  normalizePersonValues,
-  convertTaskToAttioRecord,
-  normalizeEmailsToObjectFormat,
-  normalizeEmailsToStringFormat,
-} from './data-normalizers.js';
+  CompanyCreator,
+  PersonCreator,
+  TaskCreator,
+  NoteCreator,
+} from './creators/index.js';
 
 /**
- * Real API implementation of CreateService
+ * Refactored implementation using Strategy Pattern
  * 
- * Handles company, person, task, and note creation through the Attio API.
- * Includes data normalization, error recovery, and robust error handling.
+ * Uses resource-specific creators to handle different resource types,
+ * promoting separation of concerns and Single Responsibility Principle.
  * 
  * @example
  * ```typescript
@@ -42,220 +45,94 @@ import {
  * ```
  */
 export class AttioCreateService implements CreateService {
+  private readonly creators: Map<string, ResourceCreator>;
+  private readonly context: ResourceCreatorContext;
+  
+  // Lazy-loaded dependencies for non-strategy methods
+  private taskModule: any = null;
+  private converterModule: any = null;
+  private noteModule: any = null;
+
+  // Supported resource types for validation
+  static readonly SUPPORTED_RESOURCE_TYPES = {
+    COMPANIES: 'companies',
+    PEOPLE: 'people', 
+    TASKS: 'tasks',
+    NOTES: 'notes'
+  } as const;
+
+  constructor() {
+    // Initialize resource creators using Strategy Pattern
+    this.creators = new Map<string, ResourceCreator>();
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.COMPANIES, new CompanyCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.PEOPLE, new PersonCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.TASKS, new TaskCreator());
+    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.NOTES, new NoteCreator());
+
+    // Create shared context for all creators
+    this.context = {
+      client: getAttioClient({ rawE2E: true }),
+      debug,
+      logError,
+    };
+  }
+
+  /**
+   * Lazy-loads dependencies for non-strategy methods
+   */
+  private async ensureDependencies(): Promise<void> {
+    if (!this.taskModule) {
+      this.taskModule = await import('../../objects/tasks.js');
+    }
+    if (!this.converterModule) {
+      this.converterModule = await import('./data-normalizers.js');
+    }
+    if (!this.noteModule) {
+      this.noteModule = await import('../../objects/notes.js');
+    }
+  }
+
   /**
    * Creates a company record with domain normalization
-   * 
-   * @param input - Company data including name, domain/domains, industry, etc.
-   * @returns Promise<AttioRecord> - Created company record with id.record_id
-   * 
-   * @example
-   * ```typescript
-   * // Single domain
-   * const company = await service.createCompany({
-   *   name: "Tech Corp",
-   *   domain: "techcorp.com"
-   * });
-   * 
-   * // Multiple domains
-   * const company = await service.createCompany({
-   *   name: "Multi Corp",
-   *   domains: ["multi.com", "multicorp.io"]
-   * });
-   * ```
+   * Delegates to CompanyCreator strategy
    */
   async createCompany(input: Record<string, unknown>): Promise<AttioRecord> {
-    const client = getAttioClient({ rawE2E: true });
-
-    // Normalize company domains to string array
-    const normalizedCompany = normalizeCompanyValues(input);
-
-    const payload = {
-      data: {
-        values: normalizedCompany,
-      },
-    };
-
-    debug('AttioCreateService', '🔍 EXACT API PAYLOAD', {
-      url: '/objects/companies/records',
-      payload: JSON.stringify(payload, null, 2),
-    });
-
-    try {
-      const response = await client.post('/objects/companies/records', payload);
-
-      debug('AttioCreateService', 'Company API response', {
-        status: response?.status,
-        statusText: response?.statusText,
-        hasData: !!response?.data,
-        hasNestedData: !!response?.data?.data,
-        dataKeys: response?.data ? Object.keys(response.data) : [],
-      });
-
-      let record = extractAttioRecord(response);
-
-      // Enrich missing id from web_url if available
-      if (record && (!record as any || !(record as any).id || !(record as any).id?.record_id)) {
-        const webUrl = (record as any)?.web_url || (response?.data as any)?.web_url;
-        const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
-        if (rid) {
-          (record as any).id = { ...(record as any).id, record_id: rid };
-        }
-      }
-
-      // Handle empty response with recovery attempt
-      const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
-      if (mustRecover) {
-        record = await this.recoverCompanyRecord(client, normalizedCompany);
-      }
-
-      assertLooksLikeCreated(record, 'AttioCreateService.createCompany');
-
-      if (isTestRun()) {
-        debug(
-          'AttioCreateService',
-          'Normalized company record',
-          debugRecordShape(record)
-        );
-      }
-
-      return record as AttioRecord;
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const errorData = err?.response?.data;
-
-      logError('AttioCreateService', 'API Error Details', {
-        status,
-        errorBody: errorData,
-        requestPayload: payload,
-      });
-
-      throw this.enhanceApiError(
-        err,
-        'createCompany',
-        '/objects/companies/records',
-        'companies'
-      );
-    }
+    const creator = this.getCreator('companies');
+    return creator.create(input, this.context);
   }
 
   /**
    * Creates a person record with name and email normalization
-   * 
-   * @param input - Person data including name, email/email_addresses, title, etc.
-   * @returns Promise<AttioRecord> - Created person record with id.record_id
-   * 
-   * @example
-   * ```typescript
-   * // String name and email
-   * const person = await service.createPerson({
-   *   name: "John Doe",
-   *   email: "john@example.com"
-   * });
-   * 
-   * // Multiple emails
-   * const person = await service.createPerson({
-   *   name: "Jane Smith",
-   *   email_addresses: ["jane@company.com", "jane.smith@company.com"]
-   * });
-   * 
-   * // Complex name object
-   * const person = await service.createPerson({
-   *   name: { first_name: "Bob", last_name: "Wilson" },
-   *   email: "bob@example.com",
-   *   job_title: "Senior Engineer"
-   * });
-   * ```
+   * Delegates to PersonCreator strategy
    */
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
-    const client = getAttioClient({ rawE2E: true });
-    const filteredPersonData = normalizePersonValues(input);
-
-    debug('AttioCreateService', '🔍 EXACT API PAYLOAD', {
-      url: '/objects/people/records',
-      payload: JSON.stringify({ data: { values: filteredPersonData } }, null, 2),
-    });
-
-    try {
-      let response = await this.createPersonWithRetry(
-        client,
-        filteredPersonData
-      );
-
-      debug('AttioCreateService', 'Person API response', {
-        status: response?.status,
-        statusText: response?.statusText,
-        hasData: !!response?.data,
-        hasNestedData: !!response?.data?.data,
-      });
-
-      let record = extractAttioRecord(response);
-
-      // Enrich missing id from web_url if available
-      if (record && (!record as any || !(record as any).id || !(record as any).id?.record_id)) {
-        const webUrl = (record as any)?.web_url || (response?.data as any)?.web_url;
-        const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
-        if (rid) {
-          (record as any).id = { ...(record as any).id, record_id: rid };
-        }
-      }
-
-      // Handle empty response with recovery attempt
-      const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
-      if (mustRecover) {
-        record = await this.recoverPersonRecord(client, filteredPersonData);
-      }
-
-      assertLooksLikeCreated(record, 'AttioCreateService.createPerson');
-
-      if (isTestRun()) {
-        debug(
-          'AttioCreateService',
-          'Normalized person record',
-          debugRecordShape(record)
-        );
-      }
-
-      return record as AttioRecord;
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const errorData = err?.response?.data;
-      const payload = { data: { values: filteredPersonData } }; // Define payload here for error logging
-
-      logError('AttioCreateService', 'API Error Details', {
-        status,
-        errorBody: errorData,
-        requestPayload: payload,
-      });
-
-      throw this.enhanceApiError(
-        err,
-        'createPerson',
-        '/objects/people/records',
-        'people'
-      );
-    }
+    const creator = this.getCreator('people');
+    return creator.create(input, this.context);
   }
 
+  /**
+   * Creates a task record via delegation to tasks object
+   * Delegates to TaskCreator strategy
+   */
   async createTask(input: Record<string, unknown>): Promise<AttioRecord> {
-    // Delegate to the tasks object for now, this will be refactored later
-    const { createTask } = await import('../../objects/tasks.js');
-    const createdTask = await createTask(input.content as string, {
-      assigneeId: input.assigneeId as string,
-      dueDate: input.dueDate as string,
-      recordId: input.recordId as string,
-    });
-
-    // Convert task to AttioRecord format
-    return convertTaskToAttioRecord(createdTask, input);
+    const creator = this.getCreator('tasks');
+    return creator.create(input, this.context);
   }
 
+  /**
+   * Updates a task record via delegation to tasks object
+   * 
+   * Note: This method doesn't use strategy pattern as it's an update operation
+   * and the existing logic is simple enough to keep inline
+   */
   async updateTask(
     taskId: string,
     input: Record<string, unknown>
   ): Promise<AttioRecord> {
-    // Delegate to the tasks object for now, this will be refactored later
-    const { updateTask } = await import('../../objects/tasks.js');
-    const updatedTask = await updateTask(taskId, {
+    // Ensure dependencies are loaded
+    await this.ensureDependencies();
+    
+    const updatedTask = await this.taskModule.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
       assigneeId: input.assigneeId as string,
@@ -264,9 +141,13 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return convertTaskToAttioRecord(updatedTask, input);
+    return this.converterModule.convertTaskToAttioRecord(updatedTask, input);
   }
 
+  /**
+   * Creates a note record via delegation to notes object
+   * Delegates to NoteCreator strategy
+   */
   async createNote(input: {
     resource_type: string;
     record_id: string;
@@ -274,200 +155,120 @@ export class AttioCreateService implements CreateService {
     content: string;
     format?: string;
   }): Promise<any> {
-    // Always use real API here; factory determines mock usage.
-    const { createNote, normalizeNoteResponse } = await import('../../objects/notes.js');
-    
-    const noteData = {
-      parent_object: input.resource_type,
-      parent_record_id: input.record_id,
-      title: input.title,
-      content: input.content,
-      format: (input.format as 'markdown' | 'plaintext') || 'plaintext',
-    };
-
-    const response = await createNote(noteData);
-    return normalizeNoteResponse(response.data);
+    const creator = this.getCreator('notes');
+    return creator.create(input, this.context);
   }
 
+  /**
+   * Lists notes for a resource
+   * 
+   * Note: This method doesn't use strategy pattern as it's a read operation
+   * and the existing logic is simple enough to keep inline
+   */
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
   }): Promise<unknown[]> {
-    // Use real API calls for notes listing
-    const { listNotes } = await import('../../objects/notes.js');
+    // Ensure dependencies are loaded
+    await this.ensureDependencies();
     
     const query = {
       parent_object: params.resource_type,
       parent_record_id: params.record_id,
     };
 
-    const response = await listNotes(query);
+    const response = await this.noteModule.listNotes(query);
     return response.data || [];
   }
 
-  // Private helper methods
-
-  private async createPersonWithRetry(
-    client: any,
-    filteredPersonData: Record<string, unknown>
-  ) {
-    const doCreate = async (values: Record<string, unknown>) =>
-      client.post('/objects/people/records', { data: { values } });
-
-    try {
-      // Attempt #1
-      return await doCreate(filteredPersonData);
-    } catch (firstErr: unknown) {
-      const error = firstErr as { response?: { status?: number } };
-      const status = error?.response?.status;
-      // Only retry on 400 with alternate email schema
-      if (status === 400) {
-        const alt: Record<string, unknown> = { ...filteredPersonData };
-        const emails = alt.email_addresses as unknown[] | undefined;
-        if (emails && emails.length) {
-          if (typeof emails[0] === 'string') {
-            alt.email_addresses = normalizeEmailsToObjectFormat(emails);
-          } else if (
-            emails[0] &&
-            typeof emails[0] === 'object' &&
-            emails[0] !== null &&
-            'email_address' in emails[0]
-          ) {
-            alt.email_addresses = normalizeEmailsToStringFormat(emails);
-          }
-          return await doCreate(alt);
-        }
-      }
-      throw firstErr;
+  /**
+   * Validates and gets a creator for the specified resource type
+   * @private
+   */
+  private getCreator(resourceType: string): ResourceCreator {
+    // Validate input
+    if (!resourceType || typeof resourceType !== 'string') {
+      throw new Error(
+        `Invalid resource type: expected non-empty string, got ${typeof resourceType}`
+      );
     }
+
+    const normalizedType = resourceType.toLowerCase().trim();
+    const creator = this.creators.get(normalizedType);
+    
+    if (!creator) {
+      const supportedTypes = Array.from(this.creators.keys()).sort();
+      const suggestion = this.findClosestResourceType(normalizedType, supportedTypes);
+      
+      throw new Error(
+        `Unsupported resource type: "${resourceType}". ` +
+        `Supported types: ${supportedTypes.join(', ')}.` +
+        (suggestion ? ` Did you mean "${suggestion}"?` : '')
+      );
+    }
+    
+    return creator;
   }
 
-  private async recoverCompanyRecord(
-    client: any,
-    normalizedCompany: Record<string, unknown>
-  ) {
-    // Recovery: try to find the created company by unique fields
-    const domain = Array.isArray(normalizedCompany.domains)
-      ? normalizedCompany.domains[0]
-      : undefined;
-
-    try {
-      if (domain) {
-        const { data: searchByDomain } = await client.post(
-          '/objects/companies/records/search',
-          {
-            filter: { domains: { contains: domain } },
-            limit: 1,
-            order: { created_at: 'desc' },
-          }
-        );
-        const rec = extractAttioRecord(searchByDomain);
-        if (rec?.id?.record_id) return rec;
-      }
-
-      const name = normalizedCompany.name as string;
-      if (name) {
-        const { data: searchByName } = await client.post(
-          '/objects/companies/records/search',
-          {
-            filter: { name: { eq: name } },
-            limit: 1,
-            order: { created_at: 'desc' },
-          }
-        );
-        const rec = extractAttioRecord(searchByName);
-        if (rec?.id?.record_id) return rec;
-      }
-    } catch (e) {
-      debug('AttioCreateService', 'Company recovery failed', {
-        message: (e as Error)?.message,
-      });
-    }
-
-    throw new EnhancedApiError(
-      'Attio createCompany returned an empty/invalid record payload',
-      500,
-      '/objects/companies/records',
-      'POST',
-      {
-        httpStatus: 500,
-        resourceType: 'companies',
-        operation: 'create',
-      }
+  /**
+   * Finds the closest matching resource type for better error messages
+   * @private
+   */
+  private findClosestResourceType(input: string, supportedTypes: string[]): string | null {
+    // Simple similarity check - could be enhanced with better algorithms
+    const similarities = supportedTypes.map(type => ({
+      type,
+      score: this.calculateSimilarity(input, type)
+    }));
+    
+    const best = similarities.reduce((prev, current) => 
+      prev.score > current.score ? prev : current
     );
+    
+    // Only suggest if similarity is reasonable (> 0.5)
+    return best.score > 0.5 ? best.type : null;
   }
 
-  private async recoverPersonRecord(
-    client: any,
-    filteredPersonData: Record<string, unknown>
-  ) {
-    // Recovery: try to find the created person by primary email
-    const email = Array.isArray(filteredPersonData.email_addresses)
-      ? (filteredPersonData.email_addresses[0] as string)
-      : undefined;
-
-    try {
-      if (email) {
-        const { data: search } = await client.post(
-          '/objects/people/records/search',
-          {
-            filter: { email_addresses: { contains: email } },
-            limit: 1,
-            order: { created_at: 'desc' },
-          }
-        );
-        const rec = extractAttioRecord(search);
-        if (rec?.id?.record_id) return rec;
-      }
-    } catch (e) {
-      debug('AttioCreateService', 'Person recovery failed', {
-        message: (e as Error)?.message,
-      });
-    }
-
-    throw new EnhancedApiError(
-      'Attio createPerson returned an empty/invalid record payload',
-      500,
-      '/objects/people/records',
-      'POST',
-      {
-        httpStatus: 500,
-        resourceType: 'people',
-        operation: 'create',
-      }
-    );
+  /**
+   * Calculates simple string similarity score
+   * @private
+   */
+  private calculateSimilarity(a: string, b: string): number {
+    if (a === b) return 1;
+    if (a.length === 0 || b.length === 0) return 0;
+    
+    // Simple character overlap calculation
+    const setA = new Set(a.toLowerCase());
+    const setB = new Set(b.toLowerCase());
+    const intersection = new Set([...setA].filter(x => setB.has(x)));
+    const union = new Set([...setA, ...setB]);
+    
+    return intersection.size / union.size;
   }
 
+  /**
+   * Adds a new creator for a resource type (for future extensibility)
+   * @param resourceType - The resource type identifier
+   * @param creator - The creator implementation
+   */
+  addCreator(resourceType: string, creator: ResourceCreator): void {
+    this.creators.set(resourceType, creator);
+  }
 
-  private enhanceApiError(
-    err: unknown,
-    operation: string,
-    endpoint: string,
-    resourceType: string
-  ) {
-    const error = err as { response?: { status?: number; data?: unknown }; message?: string; name?: string };
-    const status = error?.response?.status ?? 500;
-    const data = error?.response?.data;
+  /**
+   * Gets all supported resource types
+   */
+  getSupportedResourceTypes(): string[] {
+    return Array.from(this.creators.keys());
+  }
 
-    logError('AttioCreateService', `${operation} Direct API error`, {
-      status,
-      data,
-    });
-
-    let msg: string;
-    if (status === 500) {
-      msg = `invalid request: Attio ${operation} failed with a server error.`;
-    } else if (status && data) {
-      msg = `Attio ${operation} failed (${status}): ${JSON.stringify(data)}`;
-    } else {
-      msg = error?.message || `${operation} error`;
+  /**
+   * Validates if a resource type is supported
+   */
+  isResourceTypeSupported(resourceType: string): boolean {
+    if (!resourceType || typeof resourceType !== 'string') {
+      return false;
     }
-
-    return new EnhancedApiError(msg, status, endpoint, 'POST', {
-      httpStatus: status,
-      resourceType,
-      operation,
-      originalError: err as Error,
-    });
+    return this.creators.has(resourceType.toLowerCase().trim());
   }
 }
