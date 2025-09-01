@@ -1,20 +1,16 @@
 # Issue #554: List Entry Endpoint Fallback – Investigation Plan
 
+Decision
+- Chosen: Option A (simplify) — use only `POST /lists/{listId}/entries/query`.
+- Rationale: Prefer simplicity; fallback complexity is not justified unless integration tests show failures.
+- Next: Validate against real Attio API; if stable, consider removing `utils/api-fallback.ts` in follow-up.
+
 Context
-- Current implementation uses `executeWithListFallback` to try:
+- Current implementation previously used `executeWithListFallback` to try:
   1) POST `/lists/{listId}/entries/query`
   2) POST `/lists-entries/query`
   3) GET `/lists-entries` (only without filters)
 - Goal: Determine if a single endpoint can be used reliably and simplify accordingly.
-
-Questions
-1. Why were multiple endpoints required originally? (API evolution, workspace differences, compatibility)
-2. Are all endpoints still necessary today? (Test against current API)
-3. What is the actual failure rate/success patterns?
-
-Options
-- Option A (Simplify): Use only `/lists/{listId}/entries/query` if reliable.
-- Option B (Document/Optimize): Keep fallback with explicit documentation, logging, metrics; optimize ordering and consider caching per-workspace success.
 
 Plan
 1. Research
@@ -22,8 +18,7 @@ Plan
    - Check Attio API docs for official guidance and expected shapes.
    - Run integration tests for each endpoint path and capture logs.
 2. Decision
-   - If primary endpoint is reliable → adopt Option A.
-   - If not → implement Option B with instrumentation hooks.
+   - Primary endpoint appears reliable → adopt Option A (implemented).
 3. Validation
    - Unit + integration + E2E within existing test suites.
    - Confirm `formatResult` and error paths are consistent.
