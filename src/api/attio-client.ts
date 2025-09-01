@@ -1,10 +1,12 @@
 // module banner – shows up as soon as the file is evaluated
+import { fileURLToPath } from 'url';
+const MODULE_FILE = fileURLToPath(import.meta.url);
 console.log('📦 LOADED attio-client', {
-  file: __filename,
+  file: MODULE_FILE,
   E2E_MODE: process.env.E2E_MODE,
   USE_MOCK_DATA: process.env.USE_MOCK_DATA,
 });
-export const __MODULE_PATH__ = __filename;
+export const __MODULE_PATH__ = MODULE_FILE;
 
 /**
  * Attio API client and related utilities
