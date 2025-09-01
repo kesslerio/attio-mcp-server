@@ -2,13 +2,13 @@ import { resourceTypeProperty, paginationProperties } from './common/properties.
 import { UniversalResourceType, DetailedInfoType, RelationshipType, ContentSearchType, TimeframeType, BatchOperationType } from '../types.js';
 
 export const getDetailedInfoSchema = {
-  type: 'object',
+  type: 'object' as const,
   properties: {
-    resource_type: { type: 'string', enum: Object.values(UniversalResourceType), description: 'Type of resource' },
-    record_id: { type: 'string', description: 'Unique identifier of the record' },
-    info_type: { type: 'string', enum: Object.values(DetailedInfoType), description: 'Type of detailed info to retrieve' },
+    resource_type: { type: 'string' as const, enum: Object.values(UniversalResourceType), description: 'Type of resource' },
+    record_id: { type: 'string' as const, description: 'Unique identifier of the record' },
+    info_type: { type: 'string' as const, enum: Object.values(DetailedInfoType), description: 'Type of detailed info to retrieve' },
   },
-  required: ['resource_type', 'record_id', 'info_type'],
+  required: ['resource_type' as const, 'record_id' as const, 'info_type' as const],
   additionalProperties: false,
 };
 
@@ -76,4 +76,3 @@ export const batchOperationsSchema = {
   required: ['resource_type' as const, 'operation_type' as const],
   additionalProperties: false,
 };
-
