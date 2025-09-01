@@ -14,6 +14,7 @@ import { performance } from 'perf_hooks';
 import { ValidationService } from './ValidationService.js';
 import { CachingService } from './CachingService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { shouldUseMockData } from './create/index.js';
 
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
@@ -395,8 +396,7 @@ export class UniversalRetrievalService {
     resource_type: UniversalResourceType
   ): Promise<AttioRecord> {
     try {
-      const { MockService } = await import('./MockService.js');
-      if (MockService.isUsingMockData()) {
+      if (shouldUseMockData()) {
         try {
           const { logTaskDebug } = await import('../utils/task-debug.js');
           logTaskDebug('getRecordDetails', 'Using mock task retrieval', {

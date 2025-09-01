@@ -103,8 +103,8 @@ const ensureAdvancedSearchPeople = async () => {
 // Import Attio client for deal queries
 import { getAttioClient } from '../api/attio-client.js';
 
-// Import MockService for guard checks
-import { MockService } from './MockService.js';
+// Import factory for guard checks
+import { shouldUseMockData } from './create/index.js';
 
 /**
  * UniversalSearchService provides centralized record search functionality
@@ -559,8 +559,8 @@ export class UniversalSearchService {
     limit?: number,
     offset?: number
   ): Promise<AttioRecord[]> {
-    // Check for MockService usage in E2E mode and throw if forbidden
-    if (MockService.isUsingMockData()) {
+    // Check for mock usage in E2E mode and throw if forbidden
+    if (shouldUseMockData()) {
       assertNoMockInE2E();
       // Mock service doesn't support list search - return empty array
       return [];

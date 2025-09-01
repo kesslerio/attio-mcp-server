@@ -238,20 +238,35 @@ export class AttioCreateService implements CreateService {
     content: string;
     format?: string;
   }): Promise<any> {
-    // For now, delegate to existing implementation
-    // This will be moved to a dedicated NotesCreateService later
-    const { MockService } = await import('../MockService.js');
-    return await MockService.createNote(input);
+    // Use real API calls for notes
+    const { createNote, normalizeNoteResponse } = await import('../../objects/notes.js');
+    
+    const noteData = {
+      parent_object: input.resource_type,
+      parent_record_id: input.record_id,
+      title: input.title,
+      content: input.content,
+      format: (input.format as 'markdown' | 'plaintext') || 'plaintext',
+    };
+
+    const response = await createNote(noteData);
+    return normalizeNoteResponse(response.data);
   }
 
   async listNotes(params: {
     resource_type?: string;
     record_id?: string;
   }): Promise<unknown[]> {
-    // For now, delegate to existing implementation
-    // This will be moved to a dedicated NotesService later
-    const { MockService } = await import('../MockService.js');
-    return await MockService.listNotes(params);
+    // Use real API calls for notes listing
+    const { listNotes } = await import('../../objects/notes.js');
+    
+    const query = {
+      parent_object: params.resource_type,
+      parent_record_id: params.record_id,
+    };
+
+    const response = await listNotes(query);
+    return response.data || [];
   }
 
   // Private helper methods

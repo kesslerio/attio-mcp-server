@@ -23,16 +23,7 @@ import {
 import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
 import { getPersonDetails } from '../objects/people/basic.js';
-
-/**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only use mocks when explicitly requested
-  return (
-    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true'
-  );
-}
+import { shouldUseMockData } from './create/index.js';
 
 /**
  * UniversalDeleteService provides centralized record deletion functionality

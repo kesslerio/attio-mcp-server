@@ -16,6 +16,7 @@ import {
 // Import services
 import { ValidationService } from './ValidationService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 // Import field mapping utilities
 import {
@@ -299,16 +300,6 @@ import {
 /**
  * Helper function to check if we should use mock data based on environment
  */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
 
 /**
  * Company creation with mock support - uses production MockService
@@ -321,8 +312,8 @@ async function createCompanyWithMockSupport(
   const data = shouldUseMockData()
     ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
     : companyData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(data);
+  const service = getCreateService();
+  return await service.createCompany(data);
 }
 
 /**
@@ -336,8 +327,8 @@ async function createPersonWithMockSupport(
   const data = shouldUseMockData()
     ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
     : personData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(data);
+  const service = getCreateService();
+  return await service.createPerson(data);
 }
 
 /**
@@ -347,9 +338,9 @@ async function createPersonWithMockSupport(
 async function createTaskWithMockSupport(
   taskData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createTask(taskData);
+  // Delegate to factory service for consistent behavior
+  const service = getCreateService();
+  return await service.createTask(taskData);
 }
 
 /**

@@ -17,6 +17,7 @@ import { FilterValidationError } from '../errors/api-errors.js';
 // Import services
 import { ValidationService } from './ValidationService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 // Import field mapping utilities
 import {
@@ -48,20 +49,6 @@ import { getObjectRecord } from '../objects/records/index.js';
 import { getTask } from '../objects/tasks.js';
 
 /**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
-
-/**
  * Task update with mock support - uses production MockService
  * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
@@ -69,9 +56,9 @@ async function updateTaskWithMockSupport(
   taskId: string,
   updateData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.updateTask(taskId, updateData);
+  // Delegate to factory service for consistent behavior
+  const service = getCreateService();
+  return await service.updateTask(taskId, updateData);
 }
 
 /**
@@ -532,9 +519,8 @@ export class UniversalUpdateService {
     // 2) Check existence - only if input validation passes
     let taskExists = true;
     try {
-      const { MockService } = await import('./MockService.js');
       // In mock mode, skip live existence check; otherwise verify via API
-      if (!MockService.isUsingMockData()) {
+      if (!shouldUseMockData()) {
         await getTask(record_id); // calls GET /tasks/{id}
       }
     } catch (error: unknown) {
