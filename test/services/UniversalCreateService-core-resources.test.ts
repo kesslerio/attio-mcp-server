@@ -91,12 +91,20 @@ vi.mock('../../src/objects/people/index.js', () => ({ createPerson: vi.fn() }));
 vi.mock('../../src/objects/records/index.js', () => ({
   createObjectRecord: vi.fn(),
 }));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: {
-    createCompany: vi.fn(),
-    createPerson: vi.fn(),
-    createTask: vi.fn(),
-  },
+// Mock the create service factory to return a mock service
+const mockCreateService = {
+  createCompany: vi.fn(),
+  createPerson: vi.fn(),
+  createTask: vi.fn(),
+  createList: vi.fn(),
+  createNote: vi.fn(),
+  createDeal: vi.fn(),
+  updateTask: vi.fn(),
+};
+
+vi.mock('../../src/services/create/index.js', () => ({
+  getCreateService: vi.fn(() => mockCreateService),
+  shouldUseMockData: vi.fn(() => true),
 }));
 
 import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
@@ -106,7 +114,7 @@ import { ValidationService } from '../../src/services/ValidationService.js';
 import { PeopleDataNormalizer } from '../../src/utils/normalization/people-normalization.js';
 import { convertAttributeFormats } from '../../src/utils/attribute-format-helpers.js';
 import { createList } from '../../src/objects/lists.js';
-import { MockService } from '../../src/services/MockService.js';
+import { getCreateService } from '../../src/services/create/index.js';
 import {
   validateFields,
   mapRecordFields,
@@ -145,7 +153,7 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any;
-      vi.mocked(MockService.createCompany).mockResolvedValue(mockCompany);
+      mockCreateService.createCompany.mockResolvedValue(mockCompany);
 
       const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.COMPANIES,
@@ -155,7 +163,7 @@ describe('UniversalCreateService', () => {
       expect(convertAttributeFormats).toHaveBeenCalledWith('companies', {
         name: 'Test Company',
       });
-      expect(MockService.createCompany).toHaveBeenCalled();
+      expect(mockCreateService.createCompany).toHaveBeenCalled();
       expect(result).toEqual(mockCompany);
     });
 
@@ -164,7 +172,7 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'person_456' },
         values: { name: 'John Doe' },
       } as any;
-      vi.mocked(MockService.createPerson).mockResolvedValue(mockPerson);
+      mockCreateService.createPerson.mockResolvedValue(mockPerson);
 
       const result = await UniversalCreateService.createRecord({
         resource_type: UniversalResourceType.PEOPLE,
@@ -178,7 +186,7 @@ describe('UniversalCreateService', () => {
       expect(convertAttributeFormats).toHaveBeenCalledWith('people', {
         name: 'John Doe',
       });
-      expect(MockService.createPerson).toHaveBeenCalled();
+      expect(mockCreateService.createPerson).toHaveBeenCalled();
       expect(result).toEqual(mockPerson);
     });
 
