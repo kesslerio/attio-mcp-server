@@ -175,7 +175,7 @@
     "dotenv-cli": "^10.0.0",
     "eslint": "^9.33.0",
     "eslint-plugin-import": "^2.32.0",
-    "glob": "^10.4.5",
+    "glob": "^11.0.3",
     "husky": "^9.1.7",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
