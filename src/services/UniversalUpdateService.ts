@@ -59,7 +59,7 @@ async function updateTaskWithMockSupport(
 ): Promise<AttioRecord> {
   // Prefer mock path whenever mock/offline data is enabled to allow Vitest spies
   // to intercept MockService.updateTask even if E2E_MODE is set in tests.
-  if (shouldUseMockData() || process.env.NODE_ENV === 'test') {
+  if (shouldUseMockData() || process.env.VITEST === 'true') {
     const { MockService } = await import('./MockService.js');
     return await MockService.updateTask(taskId, updateData);
   }
