@@ -64,8 +64,20 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
 vi.mock('../../src/objects/records/index.js', () => ({
   createObjectRecord: vi.fn(),
 }));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: { createTask: vi.fn(), createCompany: vi.fn() },
+// Mock the create service factory to return a mock service
+const mockCreateService = {
+  createCompany: vi.fn(),
+  createPerson: vi.fn(),
+  createTask: vi.fn(),
+  createList: vi.fn(),
+  createNote: vi.fn(),
+  createDeal: vi.fn(),
+  updateTask: vi.fn(),
+};
+
+vi.mock('../../src/services/create/index.js', () => ({
+  getCreateService: vi.fn(() => mockCreateService),
+  shouldUseMockData: vi.fn(() => true),
 }));
 
 import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
@@ -76,7 +88,7 @@ import {
   validateDealInput,
 } from '../../src/config/deal-defaults.js';
 import { createObjectRecord } from '../../src/objects/records/index.js';
-import { MockService } from '../../src/services/MockService.js';
+import { getCreateService } from '../../src/services/create/index.js';
 import {
   mapRecordFields,
   getFieldSuggestions,
@@ -148,7 +160,7 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'task_ghi', task_id: 'task_ghi' },
         values: { content: 'Test Task' },
       } as any;
-      vi.mocked(MockService.createTask).mockResolvedValue(mockTaskRecord);
+      mockCreateService.createTask.mockResolvedValue(mockTaskRecord);
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: {
           content: 'Test Task',
@@ -170,7 +182,7 @@ describe('UniversalCreateService', () => {
           },
         },
       });
-      expect(MockService.createTask).toHaveBeenCalledWith({
+      expect(mockCreateService.createTask).toHaveBeenCalledWith({
         content: 'Test Task',
         title: 'Test Task',
         assigneeId: 'user_123',
@@ -207,7 +219,7 @@ describe('UniversalCreateService', () => {
         id: { record_id: 'task_123', task_id: 'task_123' },
         values: { content: 'New task' },
       } as any;
-      vi.mocked(MockService.createTask).mockResolvedValue(mockTaskRecord);
+      mockCreateService.createTask.mockResolvedValue(mockTaskRecord);
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: { content: '' },
         warnings: [],
@@ -218,7 +230,7 @@ describe('UniversalCreateService', () => {
         record_data: { values: { content: '' } },
       });
       expect(result).toEqual(mockTaskRecord);
-      expect(MockService.createTask).toHaveBeenCalledWith({
+      expect(mockCreateService.createTask).toHaveBeenCalledWith({
         content: 'New task',
         title: 'New task',
       });

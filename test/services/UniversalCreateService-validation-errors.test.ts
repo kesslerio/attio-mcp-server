@@ -50,17 +50,25 @@ vi.mock('../../src/errors/enhanced-api-errors.js', () => ({
     ),
   },
 }));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: {
-    createCompany: vi.fn(),
-    createPerson: vi.fn(),
-    createTask: vi.fn(),
-  },
+// Mock the create service factory to return a mock service
+const mockCreateService = {
+  createCompany: vi.fn(),
+  createPerson: vi.fn(),
+  createTask: vi.fn(),
+  createList: vi.fn(),
+  createNote: vi.fn(),
+  createDeal: vi.fn(),
+  updateTask: vi.fn(),
+};
+
+vi.mock('../../src/services/create/index.js', () => ({
+  getCreateService: vi.fn(() => mockCreateService),
+  shouldUseMockData: vi.fn(() => true),
 }));
 
 import { UniversalCreateService } from '../../src/services/UniversalCreateService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
-import { MockService } from '../../src/services/MockService.js';
+import { getCreateService } from '../../src/services/create/index.js';
 import {
   validateFields,
   mapRecordFields,
@@ -142,7 +150,7 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle company creation with null result', async () => {
-      vi.mocked(MockService.createCompany).mockResolvedValue(null as any);
+      mockCreateService.createCompany.mockResolvedValue(null as any);
       await expect(
         UniversalCreateService.createRecord({
           resource_type: UniversalResourceType.COMPANIES,
@@ -154,7 +162,7 @@ describe('UniversalCreateService', () => {
     });
 
     it('should handle company creation with invalid ID structure', async () => {
-      vi.mocked(MockService.createCompany).mockResolvedValue({
+      mockCreateService.createCompany.mockResolvedValue({
         values: { name: 'Test Company' },
       } as any);
       await expect(
@@ -169,7 +177,7 @@ describe('UniversalCreateService', () => {
       const error = new Error(
         'Cannot find attribute with slug/ID "invalid_field"'
       );
-      vi.mocked(MockService.createCompany).mockRejectedValue(error);
+      mockCreateService.createCompany.mockRejectedValue(error);
       vi.mocked(getFieldSuggestions).mockReturnValue('Did you mean "name"?');
       vi.mocked(getFormatErrorHelp).mockReturnValue('Enhanced error message');
       await expect(
@@ -184,7 +192,7 @@ describe('UniversalCreateService', () => {
       const error = new Error(
         'uniqueness constraint violation for field "name"'
       );
-      vi.mocked(MockService.createCompany).mockRejectedValue(error);
+      mockCreateService.createCompany.mockRejectedValue(error);
       await expect(
         UniversalCreateService.createRecord({
           resource_type: UniversalResourceType.COMPANIES,
@@ -199,7 +207,7 @@ describe('UniversalCreateService', () => {
         corrected: UniversalResourceType.COMPANIES,
         suggestion: 'Did you mean "companies"?',
       } as any);
-      vi.mocked(MockService.createCompany).mockResolvedValue({
+      mockCreateService.createCompany.mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any);
@@ -226,7 +234,7 @@ describe('UniversalCreateService', () => {
 
     it('should handle task creation errors with enhanced error handling', async () => {
       const originalError = new Error('Task creation failed');
-      vi.mocked(MockService.createTask).mockRejectedValue(originalError);
+      mockCreateService.createTask.mockRejectedValue(originalError);
       vi.mocked(ErrorEnhancer.autoEnhance).mockReturnValue(
         new EnhancedApiError(
           'Enhanced task error',
@@ -256,7 +264,7 @@ describe('UniversalCreateService', () => {
         suggestions: ['Suggestion 1', 'Suggestion 2'],
         errors: [],
       } as any);
-      vi.mocked(MockService.createCompany).mockResolvedValue({
+      mockCreateService.createCompany.mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any);

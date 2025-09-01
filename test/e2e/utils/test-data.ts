@@ -146,11 +146,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
       name: `Test Company ${testId}`,
       domain,
       // Removed website to avoid field collision with domain -> domains mapping
-      industry: 'Technology',
-      description: `E2E test company created for testing purposes - ${testId}`,
-      annual_revenue: String(Math.floor(Math.random() * 10000000) + 1000000), // Convert to string
-      employee_count: String(Math.floor(Math.random() * 1000) + 10),
-      categories: ['Software', 'B2B'],
+      description: `E2E test company created for testing purposes - ${testId}`
     };
 
     return { ...defaults, ...overrides };

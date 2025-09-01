@@ -34,16 +34,23 @@ vi.mock('../../src/utils/validation.js', () => ({
   isValidId: vi.fn(),
 }));
 
+vi.mock('../../src/services/create/index.js', () => ({
+  shouldUseMockData: vi.fn(),
+}));
+
 import { deleteCompany } from '../../src/objects/companies/index.js';
 import { deletePerson } from '../../src/objects/people-write.js';
 import { deleteList } from '../../src/objects/lists.js';
 import { deleteObjectRecord } from '../../src/objects/records/index.js';
 import { deleteTask } from '../../src/objects/tasks.js';
 import { isValidId } from '../../src/utils/validation.js';
+import { shouldUseMockData } from '../../src/services/create/index.js';
 
 describe('UniversalDeleteService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock behavior for most tests
+    vi.mocked(shouldUseMockData).mockReturnValue(true);
     // Clear environment variables
     delete process.env.E2E_MODE;
     delete process.env.USE_MOCK_DATA;
@@ -116,6 +123,7 @@ describe('UniversalDeleteService', () => {
     });
 
     it('should delete a task record in normal mode', async () => {
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(deleteTask).mockResolvedValue(true);
       process.env.NODE_ENV = 'production';
 
@@ -130,6 +138,7 @@ describe('UniversalDeleteService', () => {
 
     it('should handle task deletion with mock data when USE_MOCK_DATA is true', async () => {
       process.env.USE_MOCK_DATA = 'true';
+      vi.mocked(shouldUseMockData).mockReturnValue(true);
       vi.mocked(isValidId).mockReturnValue(true);
 
       const result = await UniversalDeleteService.deleteRecord({
@@ -144,6 +153,7 @@ describe('UniversalDeleteService', () => {
 
     it('should handle task deletion with mock data when OFFLINE_MODE is true', async () => {
       process.env.OFFLINE_MODE = 'true';
+      vi.mocked(shouldUseMockData).mockReturnValue(true);
       vi.mocked(isValidId).mockReturnValue(true);
 
       const result = await UniversalDeleteService.deleteRecord({
@@ -160,6 +170,7 @@ describe('UniversalDeleteService', () => {
       process.env.NODE_ENV = 'test';
       process.env.E2E_MODE = 'true';
       // Neither USE_MOCK_DATA nor OFFLINE_MODE is set to 'true'
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(deleteTask).mockResolvedValue(true);
 
       const result = await UniversalDeleteService.deleteRecord({
@@ -176,6 +187,7 @@ describe('UniversalDeleteService', () => {
       process.env.NODE_ENV = 'test';
       process.env.VITEST = 'true';
       // USE_MOCK_DATA is not set to 'true'
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(deleteTask).mockResolvedValue(true);
 
       const result = await UniversalDeleteService.deleteRecord({
@@ -190,6 +202,7 @@ describe('UniversalDeleteService', () => {
 
     it('should throw error for invalid task ID in mock mode', async () => {
       process.env.USE_MOCK_DATA = 'true';
+      vi.mocked(shouldUseMockData).mockReturnValue(true);
       vi.mocked(isValidId).mockReturnValue(false);
 
       await expect(
@@ -217,7 +230,10 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_dev',
       });
 
-      expect(console.error).toHaveBeenCalledWith(
+      // Logger outputs JSON format, check that it contains the expected message
+      expect(console.error).toHaveBeenCalledTimes(1);
+      const loggedMessage = vi.mocked(console.error).mock.calls[0][0] as string;
+      expect(loggedMessage).toContain(
         '[MockInjection] Using mock data for task deletion'
       );
 
@@ -238,7 +254,10 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_verbose',
       });
 
-      expect(console.error).toHaveBeenCalledWith(
+      // Logger outputs JSON format, check that it contains the expected message
+      expect(console.error).toHaveBeenCalledTimes(1);
+      const loggedMessage = vi.mocked(console.error).mock.calls[0][0] as string;
+      expect(loggedMessage).toContain(
         '[MockInjection] Using mock data for task deletion'
       );
 
@@ -314,6 +333,7 @@ describe('UniversalDeleteService', () => {
       process.env.E2E_MODE = 'false';
       process.env.USE_MOCK_DATA = 'false';
       process.env.OFFLINE_MODE = 'false';
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(deleteTask).mockResolvedValue(true);
 
       await UniversalDeleteService.deleteRecord({
@@ -329,6 +349,7 @@ describe('UniversalDeleteService', () => {
       process.env.NODE_ENV = 'test';
       process.env.USE_MOCK_DATA = 'false';
       process.env.OFFLINE_MODE = 'false';
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(deleteTask).mockResolvedValue(true);
 
       await UniversalDeleteService.deleteRecord({

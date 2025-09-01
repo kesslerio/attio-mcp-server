@@ -28,8 +28,8 @@ vi.mock('../../src/objects/people/index.js', () => ({
   advancedSearchPeople: vi.fn(),
 }));
 vi.mock('../../src/objects/lists.js', () => ({ searchLists: vi.fn() }));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: { isUsingMockData: vi.fn().mockReturnValue(false) },
+vi.mock('../../src/services/create/index.js', () => ({
+  shouldUseMockData: vi.fn(() => false),
 }));
 vi.mock('../../src/services/UniversalUtilityService.js', () => ({
   UniversalUtilityService: { convertListToRecord: vi.fn() },
@@ -42,9 +42,14 @@ import { advancedSearchCompanies } from '../../src/objects/companies/index.js';
 import { advancedSearchPeople } from '../../src/objects/people/index.js';
 import { searchLists } from '../../src/objects/lists.js';
 import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
+import { shouldUseMockData } from '../../src/services/create/index.js';
 
 describe('UniversalSearchService', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default to real API for these tests (they expect spies to be called)
+    vi.mocked(shouldUseMockData).mockReturnValue(false);
+  });
 
   describe('searchRecords', () => {
     it('should search companies with query', async () => {

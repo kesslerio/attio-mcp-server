@@ -95,19 +95,20 @@ export async function handleUniversalCreateNote(
     params;
 
   try {
-    // Use MockService for consistent error handling
-    const { MockService } = await import('../../../services/MockService.js');
-    const result = await MockService.createNote({
+    // Use factory service for consistent behavior
+    const { getCreateService } = await import('../../../services/create/index.js');
+    const service = getCreateService();
+    const result = await service.createNote({
       resource_type,
       record_id,
       title,
       content,
       format,
     });
-
+    console.error('DEBUG: handleUniversalCreateNote - result from service.createNote:', result);
     return result;
   } catch (error: any) {
-    // Return error object for computeErrorWithContext detection
+    console.error('DEBUG: handleUniversalCreateNote - caught error:', error);
     return {
       error: error.message,
       success: false,

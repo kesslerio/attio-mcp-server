@@ -13,10 +13,12 @@ import {
   ErrorType,
 } from '../handlers/tool-configs/universal/schemas.js';
 import { FilterValidationError } from '../errors/api-errors.js';
+import { debug, error as logError } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 // Import field mapping utilities
 import {
@@ -48,20 +50,6 @@ import { getObjectRecord } from '../objects/records/index.js';
 import { getTask } from '../objects/tasks.js';
 
 /**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
-
-/**
  * Task update with mock support - uses production MockService
  * Moved to production-side service to avoid test directory imports (Issue #489 Phase 1)
  */
@@ -69,9 +57,19 @@ async function updateTaskWithMockSupport(
   taskId: string,
   updateData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.updateTask(taskId, updateData);
+  // Prefer mock path whenever mock/offline data is enabled to allow Vitest spies
+  // to intercept MockService.updateTask even if E2E_MODE is set in tests.
+  if (
+    shouldUseMockData() ||
+    process.env.VITEST === 'true' ||
+    process.env.NODE_ENV === 'test'
+  ) {
+    const { MockService } = await import('./MockService.js');
+    return await MockService.updateTask(taskId, updateData);
+  }
+  // Otherwise, defer to the real/factory-backed service
+  const service = getCreateService();
+  return await service.updateTask(taskId, updateData);
 }
 
 /**
@@ -194,7 +192,9 @@ export class UniversalUpdateService {
       const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
-      console.error('Field suggestions:', truncated.join('\n'));
+      debug('UniversalUpdateService', 'Field suggestions:', {
+        suggestions: truncated.join('\n'),
+      });
     }
 
     // Fetch available attributes for attribute-aware mapping (both api_slug and title)
@@ -260,7 +260,9 @@ export class UniversalUpdateService {
 
     let { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
-      console.error('Field mapping applied:', warnings.join('\n'));
+      debug('UniversalUpdateService', 'Field mapping applied:', {
+        warnings: warnings.join('\n'),
+      });
     }
 
     // Always wrap in Attio envelope format
@@ -367,7 +369,8 @@ export class UniversalUpdateService {
         );
 
         if (verification.warnings.length > 0) {
-          console.error(
+          logError(
+            'UniversalUpdateService',
             `Field persistence warnings for ${resource_type} ${record_id}:`,
             verification.warnings
           );
@@ -532,9 +535,8 @@ export class UniversalUpdateService {
     // 2) Check existence - only if input validation passes
     let taskExists = true;
     try {
-      const { MockService } = await import('./MockService.js');
       // In mock mode, skip live existence check; otherwise verify via API
-      if (!MockService.isUsingMockData()) {
+      if (!shouldUseMockData()) {
         await getTask(record_id); // calls GET /tasks/{id}
       }
     } catch (error: unknown) {
@@ -641,13 +643,11 @@ export class UniversalUpdateService {
 
     // Debug before update
     try {
-      const { logTaskDebug, sanitizePayload } = await import(
-        '../utils/task-debug.js'
-      );
-      logTaskDebug(
+      const mod: any = await import('../utils/task-debug.js');
+      mod.logTaskDebug?.(
         'updateRecord',
         'Task update data',
-        sanitizePayload({
+        mod.sanitizePayload({
           record_id,
           mappedData,
           taskUpdateData,
@@ -669,11 +669,9 @@ export class UniversalUpdateService {
             updatedTask as unknown as AttioTask
           );
       try {
-        const { logTaskDebug, inspectTaskRecordShape } = await import(
-          '../utils/task-debug.js'
-        );
-        logTaskDebug('updateRecord', 'Updated task record shape', {
-          shape: inspectTaskRecordShape(result),
+        const mod: any = await import('../utils/task-debug.js');
+        mod.logTaskDebug?.('updateRecord', 'Updated task record shape', {
+          shape: mod.inspectTaskRecordShape?.(result),
         });
       } catch {}
       return result as AttioRecord;

@@ -98,6 +98,8 @@ if [ "$SKIP_TESTS" = "true" ]; then
   echo -e "${YELLOW}⚠️  Remember to run tests before pushing!${NC}"
 else
   echo -e "\n${YELLOW}Stage 4/4: Running smoke tests...${NC}"
+  # Ensure predictable test environment (Vitest defaults, not production)
+  export NODE_ENV=test
   # Try smoke tests first (if available), fall back to offline tests
   if npm run test:smoke >/dev/null 2>&1; then
     if ! npm run test:smoke; then

@@ -16,6 +16,7 @@ import {
 // Import services
 import { ValidationService } from './ValidationService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 
 // Import field mapping utilities
 import {
@@ -299,16 +300,6 @@ import {
 /**
  * Helper function to check if we should use mock data based on environment
  */
-function shouldUseMockData(): boolean {
-  // Only activate for E2E tests and specific performance tests
-  // Unit tests use vi.mock() and should not be interfered with
-  return (
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true'
-  );
-}
 
 /**
  * Company creation with mock support - uses production MockService
@@ -317,12 +308,15 @@ function shouldUseMockData(): boolean {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
-    ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
-    : companyData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createCompany(data);
+  if (shouldUseMockData()) {
+    // In mock/offline mode, route through the create service so unit tests
+    // can assert the service was called (tests mock getCreateService()).
+    const service = getCreateService();
+    return await service.createCompany(companyData);
+  }
+
+  const service = getCreateService();
+  return await service.createCompany(companyData);
 }
 
 /**
@@ -332,12 +326,15 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
-    ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
-    : personData;
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createPerson(data);
+  if (shouldUseMockData()) {
+    // In mock/offline mode, route through the create service so unit tests
+    // can assert the service was called (tests mock getCreateService()).
+    const service = getCreateService();
+    return await service.createPerson(personData);
+  }
+
+  const service = getCreateService();
+  return await service.createPerson(personData);
 }
 
 /**
@@ -347,9 +344,9 @@ async function createPersonWithMockSupport(
 async function createTaskWithMockSupport(
   taskData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to production MockService to avoid TypeScript build errors
-  const { MockService } = await import('./MockService.js');
-  return await MockService.createTask(taskData);
+  // Delegate to factory service for consistent behavior
+  const service = getCreateService();
+  return await service.createTask(taskData);
 }
 
 /**
@@ -1367,13 +1364,11 @@ export class UniversalCreateService {
 
       // Debugging shape insight
       try {
-        const { logTaskDebug, inspectTaskRecordShape } = await import(
-          '../utils/task-debug.js'
-        );
-        logTaskDebug('createRecord', 'Created task record shape', {
+        const mod: any = await import('../utils/task-debug.js');
+        mod.logTaskDebug?.('createRecord', 'Created task record shape', {
           mappedKeys: Object.keys(mappedData || {}),
           optionsKeys: Object.keys(options || {}),
-          shape: inspectTaskRecordShape(convertedRecord),
+          shape: mod.inspectTaskRecordShape?.(convertedRecord),
         });
       } catch {}
 

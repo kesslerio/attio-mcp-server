@@ -10,6 +10,8 @@
  */
 export function unwrapAttio<T>(res: any): T {
   const envelope = res?.data ?? res;
+  // If the envelope clearly looks like an error, just return it as-is and let the caller detect it
+  if (envelope?.error && !envelope?.data) return envelope as T;
   return (envelope?.data ?? envelope) as T;
 }
 
@@ -18,27 +20,36 @@ export function unwrapAttio<T>(res: any): T {
  * Provides compatibility with record-style tests via record_id alias
  */
 export function normalizeNote(note: any) {
-  if (!note) return null;
+  if (!note) {
+    // return a minimal shape instead of null to avoid `.id` reads exploding
+    return { id: { note_id: null, record_id: null, workspace_id: null } };
+  }
 
-  const id = note?.id ?? {};
+  const idObj = note?.id;
+  const rawId =
+    typeof idObj === 'object'
+      ? (idObj?.note_id ?? idObj?.id)
+      : (idObj ?? note?.note_id ?? note?.id ?? null);
 
   const normalized = {
-    // Provide both flat ID and record-compatible structure
     id: {
-      note_id: id?.note_id ?? id,
-      workspace_id: id?.workspace_id,
-      record_id: id?.note_id ?? id, // ← Alias for test compatibility
+      note_id: rawId,
+      workspace_id:
+        (typeof idObj === 'object'
+          ? idObj?.workspace_id
+          : note?.workspace_id) ?? null,
+      record_id: rawId, // alias for tests
     },
-    parent_object: note?.parent_object,
-    parent_record_id: note?.parent_record_id,
-    title: note?.title,
-    content_markdown: note?.content_markdown,
-    content_plaintext: note?.content_plaintext,
-    content: note?.content_markdown || note?.content_plaintext, // Fallback for tests
-    created_at: note?.created_at,
-    updated_at: note?.updated_at,
-    tags: note?.tags || [],
-    meeting_id: note?.meeting_id,
+    parent_object: note?.parent_object ?? null,
+    parent_record_id: note?.parent_record_id ?? null,
+    title: note?.title ?? null,
+    content_markdown: note?.content_markdown ?? null,
+    content_plaintext: note?.content_plaintext ?? null,
+    content: note?.content_markdown || note?.content_plaintext || '',
+    created_at: note?.created_at ?? null,
+    updated_at: note?.updated_at ?? null,
+    tags: Array.isArray(note?.tags) ? note.tags : [],
+    meeting_id: note?.meeting_id ?? null,
     format: note?.format || 'markdown',
   };
 

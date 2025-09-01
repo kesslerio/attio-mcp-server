@@ -18,6 +18,9 @@ vi.mock('../../src/middleware/performance-enhanced.js', () => ({
     endOperation: vi.fn(),
   },
 }));
+vi.mock('../../src/services/create/index.js', () => ({
+  shouldUseMockData: vi.fn(() => false),
+}));
 vi.mock('../../src/utils/validation/uuid-validation.js', () => ({
   isValidUUID: vi.fn(() => true),
   createRecordNotFoundError: vi.fn(
@@ -68,6 +71,7 @@ import { UniversalRetrievalService } from '../../src/services/UniversalRetrieval
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { EnhancedApiError } from '../../src/errors/enhanced-api-errors.js';
 import { CachingService } from '../../src/services/CachingService.js';
+import { shouldUseMockData } from '../../src/services/create/index.js';
 import { createRecordNotFoundError } from '../../src/utils/validation/uuid-validation.js';
 import { enhancedPerformanceTracker } from '../../src/middleware/performance-enhanced.js';
 import { getCompanyDetails } from '../../src/objects/companies/index.js';
@@ -79,6 +83,8 @@ import * as notes from '../../src/objects/notes.js';
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default to real API for error handling tests (they expect functions to throw)
+    vi.mocked(shouldUseMockData).mockReturnValue(false);
   });
 
   describe('getRecordDetails - error cases', () => {

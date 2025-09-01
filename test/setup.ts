@@ -3,6 +3,9 @@
  * Handles API client mocking and common test configuration
  */
 import { vi, beforeEach } from 'vitest';
+
+// Force predictable test environment semantics for sanitization logic
+process.env.NODE_ENV = 'test';
 import { createMockApiClient } from './types/test-types';
 import {
   validateTestEnvironment,

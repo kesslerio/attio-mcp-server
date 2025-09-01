@@ -16,11 +16,20 @@ vi.mock('../../src/handlers/tool-configs/universal/field-mapper.js', () => ({
 vi.mock('../../src/utils/validation-utils.js', () => ({
   validateRecordFields: vi.fn(),
 }));
-vi.mock('../../src/services/MockService.js', () => ({
-  MockService: {
-    updateTask: vi.fn(),
-    isUsingMockData: vi.fn().mockReturnValue(true),
-  },
+// Mock the create service factory to return a mock service
+const mockCreateService = {
+  createCompany: vi.fn(),
+  createPerson: vi.fn(),
+  createTask: vi.fn(),
+  createList: vi.fn(),
+  createNote: vi.fn(),
+  createDeal: vi.fn(),
+  updateTask: vi.fn(),
+};
+
+vi.mock('../../src/services/create/index.js', () => ({
+  getCreateService: vi.fn(() => mockCreateService),
+  shouldUseMockData: vi.fn(() => true),
 }));
 vi.mock('../../src/objects/companies/index.js', () => ({
   updateCompany: vi.fn(() => ({ id: { record_id: 'comp_123' }, values: {} })),
@@ -46,7 +55,10 @@ import {
   validateResourceType,
 } from '../../src/handlers/tool-configs/universal/field-mapper.js';
 import { validateRecordFields } from '../../src/utils/validation-utils.js';
-import { MockService } from '../../src/services/MockService.js';
+import {
+  getCreateService,
+  shouldUseMockData,
+} from '../../src/services/create/index.js';
 import * as tasks from '../../src/objects/tasks.js';
 // Ensure enhanced validation is disabled for these unit tests
 beforeEach(() => {
@@ -57,6 +69,8 @@ describe('UniversalUpdateService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.SKIP_FIELD_VERIFICATION = 'true';
+    // Default to using mock data for most tests (offline mode)
+    vi.mocked(shouldUseMockData).mockReturnValue(true);
     vi.mocked(validateFields).mockReturnValue({
       warnings: [],
       suggestions: [],
@@ -79,7 +93,7 @@ describe('UniversalUpdateService', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      vi.mocked(MockService.updateTask).mockResolvedValue({
+      mockCreateService.updateTask.mockResolvedValue({
         id: { record_id: 'comp_123' },
         values: { name: 'Test Company' },
       } as any);
@@ -161,7 +175,7 @@ describe('UniversalUpdateService', () => {
         warnings: [],
         suggestions: [],
       } as any);
-      vi.mocked(MockService.updateTask).mockResolvedValue({
+      mockCreateService.updateTask.mockResolvedValue({
         id: { record_id: 'task_123', task_id: 'task_123' },
         values: { content: 'Test Task' },
       } as any);
@@ -180,7 +194,7 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { is_completed: true } },
       });
 
-      expect(MockService.updateTask).toHaveBeenCalledWith('task_123', {
+      expect(mockCreateService.updateTask).toHaveBeenCalledWith('task_123', {
         status: 'completed',
       });
     });
@@ -198,7 +212,7 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { assignees: 'user_456' } },
       });
 
-      expect(MockService.updateTask).toHaveBeenCalledWith('task_123', {
+      expect(mockCreateService.updateTask).toHaveBeenCalledWith('task_123', {
         assigneeId: 'user_456',
       });
     });
@@ -216,7 +230,7 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { deadline_at: '2024-02-01' } },
       });
 
-      expect(MockService.updateTask).toHaveBeenCalledWith('task_123', {
+      expect(mockCreateService.updateTask).toHaveBeenCalledWith('task_123', {
         dueDate: '2024-02-01',
       });
     });
@@ -240,7 +254,7 @@ describe('UniversalUpdateService', () => {
         record_data: { values: { linked_records: [] } },
       });
 
-      expect(MockService.updateTask).toHaveBeenCalledWith('task_123', {
+      expect(mockCreateService.updateTask).toHaveBeenCalledWith('task_123', {
         recordIds: ['comp_123', 'comp_456', 'comp_789'],
       });
     });
@@ -261,7 +275,7 @@ describe('UniversalUpdateService', () => {
 
     it('should use mock data in E2E mode', async () => {
       process.env.E2E_MODE = 'true';
-      vi.mocked(MockService.updateTask).mockResolvedValue({
+      mockCreateService.updateTask.mockResolvedValue({
         id: { record_id: 'task_123', task_id: 'task_123' },
         values: { title: 'Mock Task', status: 'completed' },
       } as any);
@@ -281,7 +295,7 @@ describe('UniversalUpdateService', () => {
       vi.mocked(tasks.getTask).mockResolvedValue({
         id: { task_id: 'task_123' },
       } as any);
-      vi.mocked(MockService.updateTask).mockResolvedValue({
+      mockCreateService.updateTask.mockResolvedValue({
         id: { record_id: 'task_123', task_id: 'task_123' },
         values: {},
       } as any);
@@ -297,7 +311,7 @@ describe('UniversalUpdateService', () => {
 
     it('should return 404 when task not found', async () => {
       // For this test, we want to test the real API path, so disable mock mode
-      vi.mocked(MockService.isUsingMockData).mockReturnValue(false);
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(tasks.getTask).mockRejectedValue(
         Object.assign(new Error('Not found'), { response: { status: 404 } })
       );
@@ -314,6 +328,8 @@ describe('UniversalUpdateService', () => {
     });
 
     it('should return 404 when task existence check fails with generic error', async () => {
+      // For this test, we want to test the real API path, so disable mock mode
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(tasks.getTask).mockRejectedValue(new Error('Network timeout'));
 
       await expect(
@@ -327,7 +343,7 @@ describe('UniversalUpdateService', () => {
 
     it('should validate immutability for existing task content updates', async () => {
       // For this test, we want to test the real API path for immutability validation
-      vi.mocked(MockService.isUsingMockData).mockReturnValue(false);
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
       vi.mocked(mapRecordFields).mockReturnValue({
         mapped: { content: 'Updated content' },
         warnings: [],

@@ -42,13 +42,7 @@ describe
     beforeEach(setup.beforeEach);
 
     describe('Note Content and Format Validation', () => {
-      it('should handle notes with special characters', async () => {
-        if (testCompanies.length === 0) {
-          console.error(
-            '⏭️ Skipping special characters test - no test companies available'
-          );
-          return;
-        }
+      it.skipIf(testCompanies.length === 0)('should handle notes with special characters', async () => {
 
         const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {
@@ -77,7 +71,7 @@ describe
         E2EAssertions.expectValidNoteStructure(createdNote);
         expect(createdNote.title).toContain('Special™ & Co.');
         expect(createdNote.content).toContain(
-          'Cupcake chocolate bear claw chocolate apple pie pudding. sweet sesame gummi bears dragée cupcake ice cream cotton candy. fruitcake wafer apple pie icing bear claw apple pie soufflé powder candy canes apple pie halvah cotton candy croissant. gummies lollipop halvah sesame jelly-o fruit caked onut bear claw snaps chupa chups. halvah cupcake sugar fruitcake toffee.marzipan sweet dessert halvah pudding jelly-o lemon drops pudding danish.'
+          'Note with special characters: áéíóú ñ çß àèìòù âêîôû'
         );
 
         createdNotes.push(createdNote);
@@ -184,7 +178,7 @@ describe
           record_id: testCompany.id.record_id,
           title: noteData.title,
           content: noteData.content,
-          format: 'markdown',
+          format: 'html',
         })) as McpToolResponse;
 
         E2EAssertions.expectMcpSuccess(response);

@@ -8,21 +8,7 @@ import {
 } from '../api/operations/index.js';
 import { AttioTask } from '../types/attio.js';
 import { isValidId } from '../utils/validation.js';
-
-// Helper function to check if we should use mock data
-function shouldUseMockData(): boolean {
-  return (
-    process.env.NODE_ENV === 'test' ||
-    process.env.VITEST === 'true' ||
-    process.env.VITEST !== undefined ||
-    process.env.E2E_MODE === 'true' ||
-    process.env.USE_MOCK_DATA === 'true' ||
-    process.env.OFFLINE_MODE === 'true' ||
-    (typeof global !== 'undefined' &&
-      (typeof global.it === 'function' ||
-        typeof global.describe === 'function'))
-  );
-}
+import { shouldUseMockData } from '../services/create/index.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 

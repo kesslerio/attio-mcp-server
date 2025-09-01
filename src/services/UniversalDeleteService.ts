@@ -8,6 +8,7 @@
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/types.js';
 import { isValidId } from '../utils/validation.js';
+import { debug } from '../utils/logger.js';
 
 // Import delete functions for each resource type
 import {
@@ -23,16 +24,7 @@ import {
 import { deleteTask, getTask } from '../objects/tasks.js';
 import { deleteNote } from '../objects/notes.js';
 import { getPersonDetails } from '../objects/people/basic.js';
-
-/**
- * Helper function to check if we should use mock data based on environment
- */
-function shouldUseMockData(): boolean {
-  // Only use mocks when explicitly requested
-  return (
-    process.env.USE_MOCK_DATA === 'true' || process.env.OFFLINE_MODE === 'true'
-  );
-}
+import { shouldUseMockData } from './create/index.js';
 
 /**
  * UniversalDeleteService provides centralized record deletion functionality
@@ -131,21 +123,26 @@ export class UniversalDeleteService {
         return { success: true, record_id };
 
       case UniversalResourceType.TASKS:
-        // Add mock support for task deletion in test environments
+        // In mock mode, pre-validate IDs and emit deterministic message expected by tests
         if (shouldUseMockData()) {
-          // Validate task ID before proceeding with deletion
           if (!isValidId(record_id)) {
-            throw new Error(`Task not found: ${record_id}`);
+            const err: any = new Error(`Task not found: ${record_id}`);
+            err.status = 404;
+            err.body = {
+              code: 'not_found',
+              message: `Task not found: ${record_id}`,
+            };
+            throw err;
           }
-
           if (
             process.env.NODE_ENV === 'development' ||
             process.env.VERBOSE_TESTS === 'true'
           ) {
-            console.error('[MockInjection] Using mock data for task deletion');
+            debug(
+              'UniversalDeleteService',
+              '[MockInjection] Using mock data for task deletion'
+            );
           }
-
-          // Return mock success response
           return { success: true, record_id };
         }
 

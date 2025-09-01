@@ -62,6 +62,9 @@ vi.mock('../../src/objects/records/index.js', () => ({
 }));
 vi.mock('../../src/objects/tasks.js', () => ({ getTask: vi.fn() }));
 vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
+vi.mock('../../src/services/create/index.js', () => ({
+  shouldUseMockData: vi.fn(),
+}));
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
@@ -74,10 +77,13 @@ import { getPersonDetails } from '../../src/objects/people/index.js';
 import * as lists from '../../src/objects/lists.js';
 import { getObjectRecord } from '../../src/objects/records/index.js';
 import * as tasks from '../../src/objects/tasks.js';
+import { shouldUseMockData } from '../../src/services/create/index.js';
 
 describe('UniversalRetrievalService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default to using mock data for most tests (offline mode)
+    vi.mocked(shouldUseMockData).mockReturnValue(true);
   });
 
   describe('getRecordDetails', () => {
@@ -179,6 +185,9 @@ describe('UniversalRetrievalService', () => {
     });
 
     it('should retrieve a task record and convert to AttioRecord', async () => {
+      // Ensure we use real task API, not mock data
+      vi.mocked(shouldUseMockData).mockReturnValue(false);
+
       const mockTask: AttioTask = {
         id: { task_id: 'task_ghi' },
         content: 'Test Task',
