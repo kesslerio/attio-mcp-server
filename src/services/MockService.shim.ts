@@ -15,7 +15,7 @@
  *      await service.createCompany(data);
  */
 
-import { getCreateService } from './create/index.js';
+import { getCreateService, shouldUseMockData } from './create/index.js';
 import { debug } from '../utils/logger.js';
 
 /**
@@ -116,7 +116,6 @@ export const MockService = {
       'MockService.shim',
       'DEPRECATED: MockService.isUsingMockData called - use shouldUseMockData() from create/index.js instead'
     );
-    const { shouldUseMockData } = require('./create/index.js');
     return shouldUseMockData();
   },
 };
