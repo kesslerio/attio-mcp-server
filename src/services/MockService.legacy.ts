@@ -1,15 +1,33 @@
 /**
- * Production Mock Service
+ * LEGACY IMPLEMENTATION - SCHEDULED FOR REMOVAL
  *
- * Handles mock data generation for testing environments without importing test files.
- * This service contains the minimum viable mock logic needed by production handlers
- * while avoiding production-test coupling violations.
+ * This file preserves the original MockService implementation as a safety net
+ * during the factory pattern migration (Issue #525 Phases B & C). It will be
+ * removed after successful production validation of the new architecture.
  *
- * Key Design Principles:
+ * ⚠️  DO NOT USE THIS FILE ⚠️
+ * Use getCreateService() from './create/index.js' instead
+ *
+ * This file is kept temporarily for:
+ * - Rollback capability if critical issues discovered in factory pattern
+ * - Reference for complex API normalization logic during migration
+ * - Validation that factory pattern handles all original edge cases
+ * - Preservation of sophisticated error recovery and eventual consistency handling
+ *
+ * ORIGINAL DESCRIPTION:
+ * Production Mock Service - Handled mock data generation for testing environments
+ * without importing test files. Contains minimum viable mock logic needed by
+ * production handlers while avoiding production-test coupling violations.
+ *
+ * Original Design Principles:
  * - No imports from test/ directories
  * - Environment-driven behavior
  * - Fallback to real API when not in mock mode
  * - Issue #480 compatibility maintained
+ *
+ * STATUS: This represents the "hybrid service anti-pattern" that was eliminated
+ * in favor of clean factory pattern separation between MockCreateService and
+ * AttioCreateService.
  */
 
 import type { AttioRecord } from '../types/attio.js';

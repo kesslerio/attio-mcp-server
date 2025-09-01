@@ -8,6 +8,7 @@
 import { UniversalResourceType } from '../handlers/tool-configs/universal/types.js';
 import type { UniversalDeleteParams } from '../handlers/tool-configs/universal/types.js';
 import { isValidId } from '../utils/validation.js';
+import { debug } from '../utils/logger.js';
 
 // Import delete functions for each resource type
 import {
@@ -133,7 +134,10 @@ export class UniversalDeleteService {
             process.env.NODE_ENV === 'development' ||
             process.env.VERBOSE_TESTS === 'true'
           ) {
-            console.error('[MockInjection] Using mock data for task deletion');
+            debug(
+              'UniversalDeleteService',
+              '[MockInjection] Using mock data for task deletion'
+            );
           }
 
           // Return mock success response

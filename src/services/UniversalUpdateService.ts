@@ -13,6 +13,7 @@ import {
   ErrorType,
 } from '../handlers/tool-configs/universal/schemas.js';
 import { FilterValidationError } from '../errors/api-errors.js';
+import { debug, error as logError } from '../utils/logger.js';
 
 // Import services
 import { ValidationService } from './ValidationService.js';
@@ -189,7 +190,9 @@ export class UniversalUpdateService {
       const truncated = ValidationService.truncateSuggestions(
         fieldValidation.suggestions
       );
-      console.error('Field suggestions:', truncated.join('\n'));
+      debug('UniversalUpdateService', 'Field suggestions:', {
+        suggestions: truncated.join('\n'),
+      });
     }
 
     // Fetch available attributes for attribute-aware mapping (both api_slug and title)
@@ -255,7 +258,9 @@ export class UniversalUpdateService {
 
     let { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
-      console.error('Field mapping applied:', warnings.join('\n'));
+      debug('UniversalUpdateService', 'Field mapping applied:', {
+        warnings: warnings.join('\n'),
+      });
     }
 
     // Always wrap in Attio envelope format
@@ -362,7 +367,8 @@ export class UniversalUpdateService {
         );
 
         if (verification.warnings.length > 0) {
-          console.error(
+          logError(
+            'UniversalUpdateService',
             `Field persistence warnings for ${resource_type} ${record_id}:`,
             verification.warnings
           );

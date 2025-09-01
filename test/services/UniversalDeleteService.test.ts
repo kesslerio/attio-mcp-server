@@ -230,7 +230,10 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_dev',
       });
 
-      expect(console.error).toHaveBeenCalledWith(
+      // Logger outputs JSON format, check that it contains the expected message
+      expect(console.error).toHaveBeenCalledTimes(1);
+      const loggedMessage = vi.mocked(console.error).mock.calls[0][0] as string;
+      expect(loggedMessage).toContain(
         '[MockInjection] Using mock data for task deletion'
       );
 
@@ -251,7 +254,10 @@ describe('UniversalDeleteService', () => {
         record_id: 'task_verbose',
       });
 
-      expect(console.error).toHaveBeenCalledWith(
+      // Logger outputs JSON format, check that it contains the expected message
+      expect(console.error).toHaveBeenCalledTimes(1);
+      const loggedMessage = vi.mocked(console.error).mock.calls[0][0] as string;
+      expect(loggedMessage).toContain(
         '[MockInjection] Using mock data for task deletion'
       );
 

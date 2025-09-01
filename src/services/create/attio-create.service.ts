@@ -152,9 +152,10 @@ export class AttioCreateService implements CreateService {
     });
 
     if (isTestRun()) {
-      console.log(
+      debug(
+        'AttioCreateService',
         '🔍 EXACT API PAYLOAD:',
-        JSON.stringify({ data: { values: filteredPersonData } }, null, 2)
+        { payload: JSON.stringify({ data: { values: filteredPersonData } }, null, 2) }
       );
     }
 
