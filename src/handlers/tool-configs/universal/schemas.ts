@@ -1129,6 +1129,289 @@ function validateIdFields(params: SanitizedObject): void {
 /**
  * Enhanced schema validation utility function with better error messages
  */
+// Strategy/Factory: per-tool validators to replace monolithic switch
+type ToolValidator = (params: SanitizedObject) => SanitizedObject;
+
+const toolValidators: Record<string, ToolValidator> = {
+  'search-records': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        {
+          field: 'resource_type',
+          suggestion: 'Specify which type of records to search',
+          example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'get-record-details': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_id',
+          suggestion: 'Provide the unique identifier of the record to retrieve',
+          example: `record_id: 'comp_abc123'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'create-record': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.record_data) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_data',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_data',
+          suggestion: 'Provide the data for creating the new record',
+          example: `record_data: { name: 'Company Name', domain: 'example.com' }`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'update-record': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        { field: 'record_id', example: `record_id: 'comp_abc123'` }
+      );
+    }
+    if (!sanitizedParams.record_data) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_data',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_data',
+          suggestion: 'Provide the data to update the record with',
+          example: `record_data: { name: 'Updated Name' }`,
+        }
+      );
+    }
+
+    if (sanitizedParams.resource_type === 'tasks') {
+      const forbidden = ['content', 'content_markdown', 'content_plaintext'];
+      if (
+        sanitizedParams.record_data &&
+        typeof sanitizedParams.record_data === 'object'
+      ) {
+        for (const k of forbidden) {
+          if (k in sanitizedParams.record_data) {
+            throw new UniversalValidationError(
+              'Task content is immutable and cannot be updated'
+            );
+          }
+        }
+      }
+    }
+    return sanitizedParams;
+  },
+
+  'delete-record': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_id',
+          suggestion: 'Provide the ID of the record to delete',
+          example: `record_id: 'comp_abc123'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'create-note': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'deals'` }
+      );
+    }
+    if (!sanitizedParams.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_id',
+          suggestion: 'Provide the ID of the record to attach the note to',
+          example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
+        }
+      );
+    }
+    if (!sanitizedParams.title) {
+      throw new UniversalValidationError(
+        'Missing required parameter: title',
+        ErrorType.USER_ERROR,
+        {
+          field: 'title',
+          suggestion: 'Provide a title for the note',
+          example: `title: 'Meeting notes'`,
+        }
+      );
+    }
+    if (!sanitizedParams.content) {
+      throw new UniversalValidationError(
+        'Missing required parameter: content',
+        ErrorType.USER_ERROR,
+        {
+          field: 'content',
+          suggestion: 'Provide content for the note',
+          example: `content: 'Discussion about project timeline'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'get-notes': (sanitizedParams) => sanitizedParams,
+  'search-notes': (sanitizedParams) => sanitizedParams,
+
+  'update-note': (sanitizedParams) => {
+    if (!sanitizedParams.note_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: note_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'note_id',
+          suggestion: 'Provide the ID of the note to update',
+          example: `note_id: 'note_abc123'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'delete-note': (sanitizedParams) => {
+    if (!sanitizedParams.note_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: note_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'note_id',
+          suggestion: 'Provide the ID of the note to delete',
+          example: `note_id: 'note_abc123'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'batch-operations': (sanitizedParams) => {
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.operation_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: operation_type',
+        ErrorType.USER_ERROR,
+        {
+          field: 'operation_type',
+          example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`,
+        }
+      );
+    }
+    const operationType = String(sanitizedParams.operation_type);
+    if (
+      ['create', 'update'].includes(operationType) &&
+      !sanitizedParams.records
+    ) {
+      throw new UniversalValidationError(
+        `Missing required parameter for ${operationType} operations: records`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'records',
+          suggestion: `Provide an array of record data for ${operationType} operations`,
+          example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`,
+        }
+      );
+    }
+    if (
+      ['delete', 'get'].includes(operationType) &&
+      !sanitizedParams.record_ids
+    ) {
+      throw new UniversalValidationError(
+        `Missing required parameter for ${operationType} operations: record_ids`,
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_ids',
+          suggestion: `Provide an array of record IDs for ${operationType} operations`,
+          example: `record_ids: ['comp_abc123', 'comp_def456']`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+
+  'list-notes': (sanitizedParams) => {
+    if (!sanitizedParams.record_id && sanitizedParams.parent_record_id) {
+      sanitizedParams.record_id = sanitizedParams.parent_record_id;
+    }
+    if (!sanitizedParams.resource_type) {
+      throw new UniversalValidationError(
+        'Missing required parameter: resource_type',
+        ErrorType.USER_ERROR,
+        { field: 'resource_type', example: `resource_type: 'companies'` }
+      );
+    }
+    if (!sanitizedParams.record_id) {
+      throw new UniversalValidationError(
+        'Missing required parameter: record_id',
+        ErrorType.USER_ERROR,
+        {
+          field: 'record_id',
+          suggestion: 'Provide the ID of the record to list notes for',
+          example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
+        }
+      );
+    }
+    return sanitizedParams;
+  },
+};
+
 export function validateUniversalToolParams(
   toolName: string,
   params: any
@@ -1185,296 +1468,10 @@ export function validateUniversalToolParams(
     }
   }
 
-  switch (toolName) {
-    case 'search-records':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          {
-            field: 'resource_type',
-            suggestion: 'Specify which type of records to search',
-            example: `resource_type: 'companies' | 'people' | 'records' | 'tasks'`,
-          }
-        );
-      }
-      break;
-
-    case 'get-record-details':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          {
-            field: 'resource_type',
-            example: `resource_type: 'companies'`,
-          }
-        );
-      }
-      if (!sanitizedParams.record_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_id',
-            suggestion:
-              'Provide the unique identifier of the record to retrieve',
-            example: `record_id: 'comp_abc123'`,
-          }
-        );
-      }
-      break;
-
-    case 'create-record':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          {
-            field: 'resource_type',
-            example: `resource_type: 'companies'`,
-          }
-        );
-      }
-      if (!sanitizedParams.record_data) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_data',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_data',
-            suggestion: 'Provide the data for creating the new record',
-            example: `record_data: { name: 'Company Name', domain: 'example.com' }`,
-          }
-        );
-      }
-      break;
-
-    case 'update-record':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          { field: 'resource_type', example: `resource_type: 'companies'` }
-        );
-      }
-      if (!sanitizedParams.record_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_id',
-          ErrorType.USER_ERROR,
-          { field: 'record_id', example: `record_id: 'comp_abc123'` }
-        );
-      }
-      if (!sanitizedParams.record_data) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_data',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_data',
-            suggestion: 'Provide the data to update the record with',
-            example: `record_data: { name: 'Updated Name' }`,
-          }
-        );
-      }
-
-      // Task content immutability validation
-      if (sanitizedParams.resource_type === 'tasks') {
-        const forbidden = ['content', 'content_markdown', 'content_plaintext'];
-        if (
-          sanitizedParams.record_data &&
-          typeof sanitizedParams.record_data === 'object'
-        ) {
-          for (const k of forbidden) {
-            if (k in sanitizedParams.record_data) {
-              throw new UniversalValidationError(
-                'Task content is immutable and cannot be updated'
-              );
-            }
-          }
-        }
-      }
-      break;
-
-    case 'delete-record':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          { field: 'resource_type', example: `resource_type: 'companies'` }
-        );
-      }
-      if (!sanitizedParams.record_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_id',
-            suggestion: 'Provide the ID of the record to delete',
-            example: `record_id: 'comp_abc123'`,
-          }
-        );
-      }
-      break;
-
-    case 'create-note':
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          { field: 'resource_type', example: `resource_type: 'deals'` }
-        );
-      }
-      if (!sanitizedParams.record_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_id',
-            suggestion: 'Provide the ID of the record to attach the note to',
-            example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
-          }
-        );
-      }
-      if (!sanitizedParams.title) {
-        throw new UniversalValidationError(
-          'Missing required parameter: title',
-          ErrorType.USER_ERROR,
-          {
-            field: 'title',
-            suggestion: 'Provide a title for the note',
-            example: `title: 'Meeting notes'`,
-          }
-        );
-      }
-      if (!sanitizedParams.content) {
-        throw new UniversalValidationError(
-          'Missing required parameter: content',
-          ErrorType.USER_ERROR,
-          {
-            field: 'content',
-            suggestion: 'Provide content for the note',
-            example: `content: 'Discussion about project timeline'`,
-          }
-        );
-      }
-      break;
-
-    case 'get-notes':
-      // All parameters are optional for get-notes
-      break;
-
-    case 'update-note':
-      if (!sanitizedParams.note_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: note_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'note_id',
-            suggestion: 'Provide the ID of the note to update',
-            example: `note_id: 'note_abc123'`,
-          }
-        );
-      }
-      break;
-
-    case 'search-notes':
-      // All parameters are optional for search-notes
-      break;
-
-    case 'delete-note':
-      if (!sanitizedParams.note_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: note_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'note_id',
-            suggestion: 'Provide the ID of the note to delete',
-            example: `note_id: 'note_abc123'`,
-          }
-        );
-      }
-      break;
-
-    case 'batch-operations':
-      {
-        if (!sanitizedParams.resource_type) {
-          throw new UniversalValidationError(
-            'Missing required parameter: resource_type',
-            ErrorType.USER_ERROR,
-            { field: 'resource_type', example: `resource_type: 'companies'` }
-          );
-        }
-        if (!sanitizedParams.operation_type) {
-          throw new UniversalValidationError(
-            'Missing required parameter: operation_type',
-            ErrorType.USER_ERROR,
-            {
-              field: 'operation_type',
-              example: `operation_type: 'create' | 'update' | 'delete' | 'search' | 'get'`,
-            }
-          );
-        }
-        const operationType = String(sanitizedParams.operation_type);
-        if (
-          ['create', 'update'].includes(operationType) &&
-          !sanitizedParams.records
-        ) {
-          throw new UniversalValidationError(
-            `Missing required parameter for ${operationType} operations: records`,
-            ErrorType.USER_ERROR,
-            {
-              field: 'records',
-              suggestion: `Provide an array of record data for ${operationType} operations`,
-              example: `records: [{ name: 'Company 1' }, { name: 'Company 2' }]`,
-            }
-          );
-        }
-        if (
-          ['delete', 'get'].includes(operationType) &&
-          !sanitizedParams.record_ids
-        ) {
-          throw new UniversalValidationError(
-            `Missing required parameter for ${operationType} operations: record_ids`,
-            ErrorType.USER_ERROR,
-            {
-              field: 'record_ids',
-              suggestion: `Provide an array of record IDs for ${operationType} operations`,
-              example: `record_ids: ['comp_abc123', 'comp_def456']`,
-            }
-          );
-        }
-      }
-      break;
-
-    case 'list-notes':
-      // Alias parent_record_id → record_id for backward compatibility
-      if (!sanitizedParams.record_id && sanitizedParams.parent_record_id) {
-        sanitizedParams.record_id = sanitizedParams.parent_record_id;
-      }
-      
-      if (!sanitizedParams.resource_type) {
-        throw new UniversalValidationError(
-          'Missing required parameter: resource_type',
-          ErrorType.USER_ERROR,
-          { field: 'resource_type', example: `resource_type: 'companies'` }
-        );
-      }
-      if (!sanitizedParams.record_id) {
-        throw new UniversalValidationError(
-          'Missing required parameter: record_id',
-          ErrorType.USER_ERROR,
-          {
-            field: 'record_id',
-            suggestion: 'Provide the ID of the record to list notes for',
-            example: `record_id: '35dfdec5-f4a6-4a53-b5e0-f0809224e156'`,
-          }
-        );
-      }
-      break;
-
-    default:
-      // Additional validation for other tools can be added here
-      break;
+  // Delegate to strategy-based validators
+  const validator = toolValidators[toolName];
+  if (validator) {
+    return validator(sanitizedParams);
   }
-
   return sanitizedParams;
 }
