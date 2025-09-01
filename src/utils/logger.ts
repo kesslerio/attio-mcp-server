@@ -106,6 +106,10 @@ function parseLogLevel(envValue?: string): LogLevel {
  * Priority: MCP_LOG_LEVEL > LOG_LEVEL > NODE_ENV-based defaults
  */
 export const CURRENT_LOG_LEVEL = (() => {
+  // Force DEBUG during Vitest runs for deterministic logging in tests
+  if (process.env.VITEST === 'true') {
+    return LogLevel.DEBUG;
+  }
   // First check MCP-specific log level
   if (process.env.MCP_LOG_LEVEL) {
     return parseLogLevel(process.env.MCP_LOG_LEVEL);
