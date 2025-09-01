@@ -42,13 +42,7 @@ describe
     beforeEach(setup.beforeEach);
 
     describe('Note Content and Format Validation', () => {
-      it('should handle notes with special characters', async () => {
-        if (testCompanies.length === 0) {
-          console.error(
-            '⏭️ Skipping special characters test - no test companies available'
-          );
-          return;
-        }
+      it.skipIf(testCompanies.length === 0)('should handle notes with special characters', async () => {
 
         const testCompany = testCompanies[0] as unknown as AttioRecord;
         if (!testCompany?.id?.record_id) {

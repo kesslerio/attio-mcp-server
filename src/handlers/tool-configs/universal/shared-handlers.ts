@@ -105,10 +105,10 @@ export async function handleUniversalCreateNote(
       content,
       format,
     });
-
+    console.error('DEBUG: handleUniversalCreateNote - result from service.createNote:', result);
     return result;
   } catch (error: any) {
-    // Return error object for computeErrorWithContext detection
+    console.error('DEBUG: handleUniversalCreateNote - caught error:', error);
     return {
       error: error.message,
       success: false,

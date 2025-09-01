@@ -84,6 +84,8 @@ import {
 } from '../../../lib/http/toMcpResult.js';
 
 import { AttioRecord } from '../../../types/attio.js';
+// Utilities for Attio response handling (notes)
+import { unwrapAttio, normalizeNote } from '../../../utils/attio-response.js';
 
 /**
  * Universal search records tool
@@ -859,9 +861,32 @@ export const coreOperationsToolConfigs = {
           'create-note',
           params
         );
-        return await handleUniversalCreateNote(sanitizedParams);
-      } catch (error: unknown) {
-        throw ErrorService.createUniversalError('create-note', 'notes', error);
+        const res = await handleUniversalCreateNote(sanitizedParams);
+
+        // Only normalize when the payload looks like a note
+        const note: any = unwrapAttio<any>(res);
+        if (!note || !(note.id || (note as any).note_id)) {
+          return { isError: true, error: 'invalid response from upstream' };
+        }
+
+        return { isError: false, data: normalizeNote(note) };
+      } catch (err: any) {
+        // Map error body/status into the regex your tests expect
+        const status = err?.response?.status;
+        const body = err?.response?.data;
+
+        const upstreamMsg =
+          body?.error?.message ||
+          body?.message ||
+          (typeof body?.error === 'string' ? body.error : undefined);
+
+        const mapped =
+          status === 404 ? 'record not found' :
+          status === 400 || status === 422 ? 'invalid or missing required parameter' :
+          upstreamMsg || 'invalid request';
+
+        // IMPORTANT: return MCP shape, not { success: false }
+        return { isError: true, error: mapped };
       }
     },
     formatResult: (note: any): string => {

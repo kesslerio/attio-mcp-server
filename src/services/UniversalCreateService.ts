@@ -308,12 +308,29 @@ import {
 async function createCompanyWithMockSupport(
   companyData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
-    ? filterAllowedFields(companyData, COMPANY_ALLOWED_FIELDS)
-    : companyData;
+  if (shouldUseMockData()) {
+    // Direct mock return - no service call to prevent API attempts
+    const mockId = `mock-company-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    return {
+      id: {
+        record_id: mockId,
+        object_id: 'companies',
+        workspace_id: 'mock-workspace-id',
+      },
+      values: {
+        name:
+          (companyData.name as string) || `Mock Company ${mockId.slice(-4)}`,
+        domains: Array.isArray(companyData.domains)
+          ? companyData.domains
+          : ['example.com'],
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as AttioRecord;
+  }
+
   const service = getCreateService();
-  return await service.createCompany(data);
+  return await service.createCompany(companyData);
 }
 
 /**
@@ -323,12 +340,30 @@ async function createCompanyWithMockSupport(
 async function createPersonWithMockSupport(
   personData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Use filtering only when using MockService for E2E
-  const data = shouldUseMockData()
-    ? filterAllowedFields(personData, PERSON_ALLOWED_FIELDS)
-    : personData;
+  if (shouldUseMockData()) {
+    // Direct mock return - no service call to prevent API attempts
+    const mockId = `mock-person-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    return {
+      id: {
+        record_id: mockId,
+        object_id: 'people',
+        workspace_id: 'mock-workspace-id',
+      },
+      values: {
+        name: (personData.name as string) || `Mock Person ${mockId.slice(-4)}`,
+        email_addresses: Array.isArray(personData.email_addresses)
+          ? personData.email_addresses
+          : personData.email
+            ? [personData.email as string]
+            : [`${mockId}@example.com`],
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as AttioRecord;
+  }
+
   const service = getCreateService();
-  return await service.createPerson(data);
+  return await service.createPerson(personData);
 }
 
 /**

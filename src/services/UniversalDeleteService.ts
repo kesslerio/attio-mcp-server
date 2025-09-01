@@ -123,13 +123,19 @@ export class UniversalDeleteService {
         return { success: true, record_id };
 
       case UniversalResourceType.TASKS:
+        // Validate obvious invalid IDs up-front to produce deterministic error semantics in E2E
+        if (!isValidId(record_id)) {
+          const err: any = new Error(`Task with ID "${record_id}" not found.`);
+          err.status = 404;
+          err.body = {
+            code: 'not_found',
+            message: `Task with ID "${record_id}" not found.`,
+          };
+          throw err;
+        }
+
         // Add mock support for task deletion in test environments
         if (shouldUseMockData()) {
-          // Validate task ID before proceeding with deletion
-          if (!isValidId(record_id)) {
-            throw new Error(`Task not found: ${record_id}`);
-          }
-
           if (
             process.env.NODE_ENV === 'development' ||
             process.env.VERBOSE_TESTS === 'true'
@@ -139,8 +145,6 @@ export class UniversalDeleteService {
               '[MockInjection] Using mock data for task deletion'
             );
           }
-
-          // Return mock success response
           return { success: true, record_id };
         }
 

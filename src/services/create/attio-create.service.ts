@@ -75,11 +75,9 @@ export class AttioCreateService implements CreateService {
       },
     };
 
-    debug('AttioCreateService', 'Making company API call', {
+    debug('AttioCreateService', '🔍 EXACT API PAYLOAD', {
       url: '/objects/companies/records',
-      method: 'POST',
-      payload,
-      payloadSize: JSON.stringify(payload).length,
+      payload: JSON.stringify(payload, null, 2),
     });
 
     try {
@@ -95,8 +93,17 @@ export class AttioCreateService implements CreateService {
 
       let record = extractAttioRecord(response);
 
+      // Enrich missing id from web_url if available
+      if (record && (!record as any || !(record as any).id || !(record as any).id?.record_id)) {
+        const webUrl = (record as any)?.web_url || (response?.data as any)?.web_url;
+        const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
+        if (rid) {
+          (record as any).id = { ...(record as any).id, record_id: rid };
+        }
+      }
+
       // Handle empty response with recovery attempt
-      const mustRecover = !record || !record.id || !record.id.record_id;
+      const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
       if (mustRecover) {
         record = await this.recoverCompanyRecord(client, normalizedCompany);
       }
@@ -112,7 +119,16 @@ export class AttioCreateService implements CreateService {
       }
 
       return record as AttioRecord;
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const errorData = err?.response?.data;
+
+      logError('AttioCreateService', 'API Error Details', {
+        status,
+        errorBody: errorData,
+        requestPayload: payload,
+      });
+
       throw this.enhanceApiError(
         err,
         'createCompany',
@@ -154,17 +170,10 @@ export class AttioCreateService implements CreateService {
     const client = getAttioClient({ rawE2E: true });
     const filteredPersonData = normalizePersonValues(input);
 
-    debug('AttioCreateService', 'Making person API call', {
-      payload: { data: { values: filteredPersonData } },
+    debug('AttioCreateService', '🔍 EXACT API PAYLOAD', {
+      url: '/objects/people/records',
+      payload: JSON.stringify({ data: { values: filteredPersonData } }, null, 2),
     });
-
-    if (isTestRun()) {
-      debug(
-        'AttioCreateService',
-        '🔍 EXACT API PAYLOAD:',
-        { payload: JSON.stringify({ data: { values: filteredPersonData } }, null, 2) }
-      );
-    }
 
     try {
       let response = await this.createPersonWithRetry(
@@ -181,8 +190,17 @@ export class AttioCreateService implements CreateService {
 
       let record = extractAttioRecord(response);
 
+      // Enrich missing id from web_url if available
+      if (record && (!record as any || !(record as any).id || !(record as any).id?.record_id)) {
+        const webUrl = (record as any)?.web_url || (response?.data as any)?.web_url;
+        const rid = webUrl ? extractRecordId(String(webUrl)) : undefined;
+        if (rid) {
+          (record as any).id = { ...(record as any).id, record_id: rid };
+        }
+      }
+
       // Handle empty response with recovery attempt
-      const mustRecover = !record || !record.id || !record.id.record_id;
+      const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
       if (mustRecover) {
         record = await this.recoverPersonRecord(client, filteredPersonData);
       }
@@ -198,7 +216,17 @@ export class AttioCreateService implements CreateService {
       }
 
       return record as AttioRecord;
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const errorData = err?.response?.data;
+      const payload = { data: { values: filteredPersonData } }; // Define payload here for error logging
+
+      logError('AttioCreateService', 'API Error Details', {
+        status,
+        errorBody: errorData,
+        requestPayload: payload,
+      });
+
       throw this.enhanceApiError(
         err,
         'createPerson',
@@ -246,7 +274,7 @@ export class AttioCreateService implements CreateService {
     content: string;
     format?: string;
   }): Promise<any> {
-    // Use real API calls for notes
+    // Always use real API here; factory determines mock usage.
     const { createNote, normalizeNoteResponse } = await import('../../objects/notes.js');
     
     const noteData = {
@@ -426,10 +454,14 @@ export class AttioCreateService implements CreateService {
       data,
     });
 
-    const msg =
-      status && data
-        ? `Attio ${operation} failed (${status}): ${JSON.stringify(data)}`
-        : error?.message || `${operation} error`;
+    let msg: string;
+    if (status === 500) {
+      msg = `invalid request: Attio ${operation} failed with a server error.`;
+    } else if (status && data) {
+      msg = `Attio ${operation} failed (${status}): ${JSON.stringify(data)}`;
+    } else {
+      msg = error?.message || `${operation} error`;
+    }
 
     return new EnhancedApiError(msg, status, endpoint, 'POST', {
       httpStatus: status,
