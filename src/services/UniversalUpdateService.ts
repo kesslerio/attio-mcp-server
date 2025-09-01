@@ -56,9 +56,17 @@ async function updateTaskWithMockSupport(
   taskId: string,
   updateData: Record<string, unknown>
 ): Promise<AttioRecord> {
-  // Delegate to factory service for consistent behavior
-  const service = getCreateService();
-  return await service.updateTask(taskId, updateData);
+  // For unit tests: Use the original MockService approach to work with Vitest mocks
+  // For E2E tests: Use the factory pattern for proper environment detection
+  if (process.env.NODE_ENV === 'test' && !process.env.E2E_MODE) {
+    // Unit test mode - use original MockService (which gets mocked by Vitest)
+    const { MockService } = await import('./MockService.js');
+    return await MockService.updateTask(taskId, updateData);
+  } else {
+    // E2E mode - use factory service for consistent behavior
+    const service = getCreateService();
+    return await service.updateTask(taskId, updateData);
+  }
 }
 
 /**

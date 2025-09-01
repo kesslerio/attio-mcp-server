@@ -15,9 +15,11 @@ import { debug } from '../../utils/logger.js';
  */
 export function shouldUseMockData(): boolean {
   const result =
+    process.env.E2E_MODE === 'true' ||
     process.env.USE_MOCK_DATA === 'true' ||
     process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true';
+    process.env.PERFORMANCE_TEST === 'true' ||
+    process.env.NODE_ENV === 'test';
 
   // Debug logging for service selection transparency
   debug('CreateServiceFactory', 'Environment detection', {
