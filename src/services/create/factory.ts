@@ -15,17 +15,18 @@ import { debug } from '../../utils/logger.js';
  * Priority: E2E_MODE > explicit USE_MOCK_DATA > other test environments
  */
 export function shouldUseMockData(): boolean {
-  // Policy: E2E ≠ Mocks — do not force mocks just because E2E_MODE is true.
-  // Only use mocks when explicitly requested or in offline/perf modes.
-
-  // Respect explicit USE_MOCK_DATA setting first
+  // Respect explicit USE_MOCK_DATA first
   if (process.env.USE_MOCK_DATA === 'true') return true;
   if (process.env.USE_MOCK_DATA === 'false') return false;
 
-  // Offline/performance modes may still prefer mocks
+  // E2E policy: do NOT auto-mock when E2E_MODE=true
+  if (process.env.E2E_MODE === 'true') return false;
+
+  // Offline/perf/unit tests (NODE_ENV=test) use mocks by default
   const result =
     process.env.OFFLINE_MODE === 'true' ||
-    process.env.PERFORMANCE_TEST === 'true';
+    process.env.PERFORMANCE_TEST === 'true' ||
+    process.env.NODE_ENV === 'test';
 
   // Debug logging for service selection transparency
   debug('CreateServiceFactory', 'Environment detection', {
