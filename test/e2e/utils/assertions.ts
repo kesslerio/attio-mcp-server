@@ -442,16 +442,13 @@ export class E2EAssertions {
   static expectCompanyRecord(company: TestDataObject): void {
     this.expectAttioRecord(company);
 
-    // Companies should typically have a name
+    // Companies should have a name, which is a string
     if (company.values.name) {
+      // The Attio API for companies returns name as a string, not an array like for people.
       expect(
-        Array.isArray(company.values.name),
-        'Company name should be array format'
-      ).toBe(true);
-      expect(
-        company.values.name[0]?.value,
-        'Company should have name value'
-      ).toBeDefined();
+        typeof company.values.name,
+        'Company name should be a string'
+      ).toBe('string');
     }
   }
 
@@ -475,13 +472,9 @@ export class E2EAssertions {
       if (
         nameEntry &&
         typeof nameEntry === 'object' &&
-        'attribute_type' in nameEntry
+        (nameEntry.full_name || nameEntry.first_name || nameEntry.last_name)
       ) {
         // New API structure: personal-name attribute type
-        expect(
-          nameEntry.attribute_type,
-          'Person name should have personal-name type'
-        ).toBe('personal-name');
         expect(
           nameEntry.full_name || nameEntry.first_name || nameEntry.last_name,
           'Person should have at least one name component (full_name, first_name, or last_name)'

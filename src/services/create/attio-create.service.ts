@@ -18,6 +18,13 @@ import {
   isTestRun,
   debugRecordShape,
 } from './extractor.js';
+import {
+  normalizeCompanyValues,
+  normalizePersonValues,
+  convertTaskToAttioRecord,
+  normalizeEmailsToObjectFormat,
+  normalizeEmailsToStringFormat,
+} from './data-normalizers.js';
 
 /**
  * Real API implementation of CreateService
@@ -60,7 +67,7 @@ export class AttioCreateService implements CreateService {
     const client = getAttioClient({ rawE2E: true });
 
     // Normalize company domains to string array
-    const normalizedCompany = this.normalizeCompanyValues(input);
+    const normalizedCompany = normalizeCompanyValues(input);
 
     const payload = {
       data: {
@@ -145,7 +152,7 @@ export class AttioCreateService implements CreateService {
    */
   async createPerson(input: Record<string, unknown>): Promise<AttioRecord> {
     const client = getAttioClient({ rawE2E: true });
-    const filteredPersonData = this.normalizePersonValues(input);
+    const filteredPersonData = normalizePersonValues(input);
 
     debug('AttioCreateService', 'Making person API call', {
       payload: { data: { values: filteredPersonData } },
@@ -211,7 +218,7 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return this.convertTaskToAttioRecord(createdTask, input);
+    return convertTaskToAttioRecord(createdTask, input);
   }
 
   async updateTask(
@@ -229,7 +236,7 @@ export class AttioCreateService implements CreateService {
     });
 
     // Convert task to AttioRecord format
-    return this.convertTaskToAttioRecord(updatedTask, input);
+    return convertTaskToAttioRecord(updatedTask, input);
   }
 
   async createNote(input: {
@@ -272,138 +279,6 @@ export class AttioCreateService implements CreateService {
 
   // Private helper methods
 
-  /**
-   * Normalizes company input data, particularly domain handling
-   * 
-   * Converts single domain to domains array, handles domain objects with .value property
-   * 
-   * @param input - Raw company input data
-   * @returns Normalized company data with domains as string array
-   * 
-   * @example
-   * ```typescript
-   * // Input: { name: "Corp", domain: "corp.com" }
-   * // Output: { name: "Corp", domains: ["corp.com"] }
-   * 
-   * // Input: { name: "Corp", domains: [{value: "corp.com"}, {value: "corp.io"}] }
-   * // Output: { name: "Corp", domains: ["corp.com", "corp.io"] }
-   * ```
-   */
-  private normalizeCompanyValues(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
-    const normalizedCompany: Record<string, unknown> = { ...input };
-    const rawDomain = input.domain as string | undefined;
-    const rawDomains = input.domains as unknown;
-
-    if (rawDomains) {
-      if (Array.isArray(rawDomains)) {
-        normalizedCompany.domains = rawDomains.map((d: unknown) =>
-          typeof d === 'string' ? d : ((d as Record<string, unknown>)?.domain ?? (d as Record<string, unknown>)?.value ?? String(d))
-        );
-      } else {
-        normalizedCompany.domains = [
-          typeof rawDomains === 'string'
-            ? rawDomains
-            : ((rawDomains as Record<string, unknown>)?.domain ??
-              (rawDomains as Record<string, unknown>)?.value ??
-              String(rawDomains)),
-        ];
-      }
-    } else if (rawDomain) {
-      normalizedCompany.domains = [String(rawDomain)];
-      delete normalizedCompany.domain;
-    }
-
-    return normalizedCompany;
-  }
-
-  private normalizePersonValues(
-    input: Record<string, unknown>
-  ): Record<string, unknown> {
-    const filteredPersonData: Record<string, unknown> = {};
-
-    // 1) Name normalization: array of personal-name objects
-    const rawName = input.name;
-    if (rawName) {
-      if (typeof rawName === 'string') {
-        const parts = rawName.trim().split(/\s+/);
-        const first = parts.shift() || rawName;
-        const last = parts.join(' ');
-        const full = [first, last].filter(Boolean).join(' ');
-        filteredPersonData.name = [
-          {
-            first_name: first,
-            ...(last ? { last_name: last } : {}),
-            full_name: full,
-          },
-        ];
-      } else if (Array.isArray(rawName)) {
-        filteredPersonData.name = rawName;
-      } else if (typeof rawName === 'object') {
-        const obj = rawName as Record<string, unknown>;
-        if ('first_name' in obj || 'last_name' in obj || 'full_name' in obj) {
-          filteredPersonData.name = [obj];
-        }
-      }
-    }
-
-    // 2) Emails: Attio create accepts string array; prefer plain strings
-    const rawEmails = input.email_addresses;
-    if (Array.isArray(rawEmails) && rawEmails.length) {
-      const normalized = rawEmails.map((e: unknown) =>
-        e && typeof e === 'object' && e !== null && 'email_address' in e
-          ? String((e as Record<string, unknown>).email_address)
-          : String(e)
-      );
-      filteredPersonData.email_addresses = normalized;
-    } else if (typeof input.email === 'string') {
-      filteredPersonData.email_addresses = [String(input.email)];
-    }
-
-    // Ensure required fields exist
-    if (
-      !filteredPersonData.email_addresses ||
-      !Array.isArray(filteredPersonData.email_addresses) ||
-      filteredPersonData.email_addresses.length === 0
-    ) {
-      throw new Error('missing required parameter: email_addresses');
-    }
-
-    if (!filteredPersonData.name) {
-      // Derive a safe name from email local part
-      const emailAddresses = filteredPersonData.email_addresses as string[];
-      const firstEmail = emailAddresses[0] || '';
-      const local = typeof firstEmail === 'string' ? firstEmail.split('@')[0] : 'Test Person';
-      const parts = local
-        .replace(/[^a-zA-Z]+/g, ' ')
-        .trim()
-        .split(/\s+/);
-      const first = parts[0] || 'Test';
-      const last = parts.slice(1).join(' ') || 'User';
-      filteredPersonData.name = [
-        {
-          first_name: first,
-          last_name: last,
-          full_name: `${first} ${last}`,
-        },
-      ];
-    }
-
-    // 3) Optional professional info
-    if (typeof input.title === 'string') {
-      filteredPersonData.title = input.title;
-    }
-    if (typeof input.job_title === 'string') {
-      filteredPersonData.job_title = input.job_title;
-    }
-    if (typeof input.description === 'string') {
-      filteredPersonData.description = input.description;
-    }
-
-    return filteredPersonData;
-  }
-
   private async createPersonWithRetry(
     client: any,
     filteredPersonData: Record<string, unknown>
@@ -423,18 +298,14 @@ export class AttioCreateService implements CreateService {
         const emails = alt.email_addresses as unknown[] | undefined;
         if (emails && emails.length) {
           if (typeof emails[0] === 'string') {
-            alt.email_addresses = emails.map((e: unknown) => ({
-              email_address: String(e),
-            }));
+            alt.email_addresses = normalizeEmailsToObjectFormat(emails);
           } else if (
             emails[0] &&
             typeof emails[0] === 'object' &&
             emails[0] !== null &&
             'email_address' in emails[0]
           ) {
-            alt.email_addresses = emails.map((e: unknown) =>
-              String((e as Record<string, unknown>).email_address)
-            );
+            alt.email_addresses = normalizeEmailsToStringFormat(emails);
           }
           return await doCreate(alt);
         }
@@ -539,76 +410,6 @@ export class AttioCreateService implements CreateService {
     );
   }
 
-  private convertTaskToAttioRecord(
-    createdTask: any,
-    originalInput: Record<string, unknown>
-  ): AttioRecord {
-    // Handle conversion from AttioTask to AttioRecord format
-    if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
-      const task = createdTask as any;
-
-      // If it's already an AttioRecord with record_id, ensure flat fields exist and return
-      if (task.values && task.id?.record_id) {
-        const base: AttioRecord = task as AttioRecord;
-        return {
-          ...base,
-          // Provide flat field compatibility expected by E2E tests
-          content: (base.values?.content as any)?.[0]?.value || base.content,
-          title:
-            (base.values?.title as any)?.[0]?.value ||
-            (base.values?.content as any)?.[0]?.value ||
-            base.title,
-          status: (base.values?.status as any)?.[0]?.value || base.status,
-          due_date:
-            (base.values?.due_date as any)?.[0]?.value ||
-            base.due_date ||
-            (task.deadline_at
-              ? String(task.deadline_at).split('T')[0]
-              : undefined),
-          assignee_id:
-            (base.values?.assignee as any)?.[0]?.value || base.assignee_id,
-          priority: base.priority || 'medium',
-        } as any;
-      }
-
-      // If it has task_id, convert to AttioRecord format
-      if (task.id?.task_id) {
-        const attioRecord: AttioRecord = {
-          id: {
-            record_id: task.id.task_id,
-            task_id: task.id.task_id,
-            object_id: 'tasks',
-            workspace_id: task.id.workspace_id || 'test-workspace',
-          },
-          values: {
-            content: task.content || undefined,
-            title: task.content || undefined,
-            status: task.status || undefined,
-            due_date: task.deadline_at
-              ? String(task.deadline_at).split('T')[0]
-              : undefined,
-            assignee: task.assignee || undefined,
-          },
-          created_at: task.created_at,
-          updated_at: task.updated_at,
-        } as AttioRecord;
-
-        return {
-          ...attioRecord,
-          content: task.content,
-          title: task.content,
-          status: task.status,
-          due_date: task.deadline_at
-            ? String(task.deadline_at).split('T')[0]
-            : undefined,
-          assignee_id: task.assignee?.id || task.assignee_id,
-          priority: task.priority || 'medium',
-        } as any;
-      }
-    }
-
-    return createdTask as AttioRecord;
-  }
 
   private enhanceApiError(
     err: unknown,
