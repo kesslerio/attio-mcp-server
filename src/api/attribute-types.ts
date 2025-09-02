@@ -101,8 +101,9 @@ export async function getObjectAttributeMetadata(
       if (!attr?.api_slug) return;
 
       // Normalize legacy/variant flags commonly seen in mocks
-      const allowMultiple = (attr as { allow_multiple_values?: boolean })
-        .allow_multiple_values;
+      const allowMultiple = (
+        attr as unknown as { allow_multiple_values?: boolean }
+      ).allow_multiple_values;
 
       const normalized: AttioAttributeMetadata = {
         ...attr,
