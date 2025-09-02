@@ -46,6 +46,9 @@ import { getPersonDetails } from '../../../objects/people/index.js';
 import { getObjectRecord } from '../../../objects/records/index.js';
 
 import { getTask } from '../../../objects/tasks.js';
+import { listNotes } from '../../../objects/notes.js';
+import { getCreateService } from '../../../services/create/index.js';
+import { debug, error as logError, OperationType } from '../../../utils/logger.js';
 
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
@@ -96,9 +99,6 @@ export async function handleUniversalCreateNote(
 
   try {
     // Use factory service for consistent behavior
-    const { getCreateService } = await import(
-      '../../../services/create/index.js'
-    );
     const service = getCreateService();
     const result = await service.createNote({
       resource_type,
@@ -107,13 +107,23 @@ export async function handleUniversalCreateNote(
       content,
       format,
     });
-    console.error(
-      'DEBUG: handleUniversalCreateNote - result from service.createNote:',
-      result
+    debug(
+      'universal.createNote',
+      'Create note result',
+      { hasResult: !!result },
+      'handleUniversalCreateNote',
+      OperationType.TOOL_EXECUTION
     );
     return result;
   } catch (error: any) {
-    console.error('DEBUG: handleUniversalCreateNote - caught error:', error);
+    logError(
+      'universal.createNote',
+      'Failed to create note',
+      error,
+      { errorMessage: error.message },
+      'handleUniversalCreateNote',
+      OperationType.TOOL_EXECUTION
+    );
     return {
       error: error.message,
       success: false,
@@ -136,7 +146,6 @@ export async function handleUniversalGetNotes(
 
   try {
     // Prefer object-layer helper which handles Attio response shape
-    const { listNotes } = await import('../../../objects/notes.js');
     const response = await listNotes({
       parent_object: resource_type,
       parent_record_id: record_id,

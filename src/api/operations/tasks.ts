@@ -41,6 +41,45 @@ function transformTaskResponse(task: AttioTask): AttioTask {
   return transformedTask as AttioTask;
 }
 
+/**
+ * Helper function to extract task data from API response
+ * Handles different response structure patterns
+ */
+function extractTaskFromResponse(res: any): AttioTask {
+  // Try different response structure patterns
+  if (res?.data?.data) {
+    return res.data.data;
+  } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
+    // Direct task object in data
+    return res.data as unknown as AttioTask;
+  } else {
+    throw new Error('Invalid API response structure: missing task data');
+  }
+}
+
+/**
+ * Helper function to validate linking parameters
+ * Both recordId and targetObject must be provided together, or neither
+ */
+function validateLinkingParameters(recordId?: string, targetObject?: string): void {
+  const hasRecordId = !!recordId;
+  const hasTargetObject = !!targetObject;
+  
+  if (hasRecordId !== hasTargetObject) {
+    debug(
+      'tasks.validateLinkingParameters',
+      'Invalid task linking parameters',
+      { recordId, targetObject },
+      'validateLinkingParameters',
+      OperationType.VALIDATION
+    );
+    throw new Error(
+      `Invalid task linking: both 'recordId' and 'targetObject' must be provided together, or neither. ` +
+      `Received recordId: ${recordId ? 'present' : 'missing'}, targetObject: ${targetObject ? 'present' : 'missing'}`
+    );
+  }
+}
+
 export async function listTasks(
   status?: string,
   assigneeId?: string,
@@ -71,19 +110,7 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    // Enhanced response handling with more robust structure detection
-    let task: AttioTask;
-
-    // Try different response structure patterns
-    if (res?.data?.data) {
-      task = res.data.data;
-    } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
-      // Direct task object in data
-      task = res.data as unknown as AttioTask;
-    } else {
-      throw new Error('Invalid API response structure: missing task data');
-    }
-
+    const task = extractTaskFromResponse(res);
     return transformTaskResponse(task);
   }, retryConfig);
 }
@@ -97,19 +124,7 @@ export async function createTask(
   const path = '/tasks';
 
   // Validate linking parameters: both recordId and targetObject required, or neither
-  if ((options.recordId && !options.targetObject) || (!options.recordId && options.targetObject)) {
-    debug(
-      'tasks.createTask',
-      'Invalid task linking parameters',
-      { recordId: options.recordId, targetObject: options.targetObject },
-      'createTask',
-      OperationType.VALIDATION
-    );
-    throw new Error(
-      `Invalid task linking: both 'recordId' and 'targetObject' must be provided together, or neither. ` +
-      `Got recordId: ${options.recordId}, targetObject: ${options.targetObject}`
-    );
-  }
+  validateLinkingParameters(options.recordId, options.targetObject);
 
   // Build task data according to TaskCreateData interface
   const taskData: TaskCreateData = {
@@ -157,159 +172,25 @@ export async function createTask(
       'Prepared create payload',
       sanitizePayload({ path, payload: requestPayload })
     );
-    // Debug logging for request
+    
     debug(
       'tasks.createTask',
-      'Sending request',
-      {
-        path,
-        payload: requestPayload,
-        apiInstanceExists: !!api,
-        apiClientDetails: {
-          baseURL: api.defaults?.baseURL || 'NOT_SET',
-          hasAuth: !!api.defaults?.headers?.Authorization,
-          authPreview: api.defaults?.headers?.Authorization
-            ? String(api.defaults.headers.Authorization).substring(0, 20) +
-              '...'
-            : 'NOT_SET',
-        },
-      },
+      'Creating task',
+      { path, hasLinkedRecords: linkedRecords.length > 0 },
       'createTask',
       OperationType.API_CALL
     );
 
     let res;
     try {
-      debug(
-        'tasks.createTask',
-        'About to call api.post',
-        {
-          apiHasInterceptors: !!api.interceptors?.response,
-          baseURL: api.defaults?.baseURL,
-          apiInstance: !!api,
-          hasAxiosDefaults: !!api.defaults,
-          hasAxiosBaseURL: !!api.defaults?.baseURL,
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-      // Try direct axios call to isolate interceptor issues
-      debug(
-        'tasks.createTask',
-        'Making direct API call',
-        {
-          url: `${api.defaults?.baseURL}${path}`,
-          method: 'POST',
-          hasInterceptors: !!api.interceptors?.response,
-          interceptorCount: 'unknown',
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-
-      // TEMPORARY FIX: Try to isolate the undefined response issue
-      try {
-        debug(
-          'tasks.createTask',
-          'About to make axios call',
-          {
-            apiExists: !!api,
-            pathSet: !!path,
-            payloadSet: !!requestPayload,
-            axiosPost: typeof api.post,
-          },
-          'createTask',
-          OperationType.API_CALL
-        );
-
-        const axiosResponse = api.post<AttioSingleResponse<AttioTask>>(
-          path,
-          requestPayload
-        );
-
-        debug(
-          'tasks.createTask',
-          'Axios call initiated',
-          {
-            promiseCreated: !!axiosResponse,
-            promiseType: typeof axiosResponse,
-            isPromise: axiosResponse instanceof Promise,
-          },
-          'createTask',
-          OperationType.API_CALL
-        );
-
-        res = await axiosResponse;
-
-        debug(
-          'tasks.createTask',
-          'Promise awaited',
-          {
-            resultReceived: !!res,
-            resultType: typeof res,
-            resultIsNull: res === null,
-            resultIsUndefined: res === undefined,
-          },
-          'createTask',
-          OperationType.API_CALL
-        );
-      } catch (promiseError) {
-        debug(
-          'tasks.createTask',
-          'Promise rejected',
-          {
-            error: promiseError,
-            errorType: typeof promiseError,
-          },
-          'createTask',
-          OperationType.API_CALL
-        );
-        throw promiseError;
-      }
-
-      debug(
-        'tasks.createTask',
-        'Direct API call completed',
-        {
-          hasResult: !!res,
-          resultType: typeof res,
-          isObject: res !== null && typeof res === 'object',
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-      debug(
-        'tasks.createTask',
-        'api.post returned',
-        {
-          responseReceived: true,
-          hasResponse: !!res,
-          responseStatus: res?.status,
-          responseType: typeof res,
-          responseHasData: !!res?.data,
-          responseDataType: typeof res?.data,
-          responseKeys: res ? Object.keys(res) : [],
-          responseData: res?.data ? 'DATA_PRESENT' : 'NO_DATA',
-          responseStatusText: res?.statusText,
-          responseHeaders: res?.headers ? 'HEADERS_PRESENT' : 'NO_HEADERS',
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
+      res = await api.post<AttioSingleResponse<AttioTask>>(path, requestPayload);
     } catch (err) {
       debug(
         'tasks.createTask',
-        'api.post threw error',
+        'API call failed',
         {
-          error: err,
           errorMessage: err instanceof Error ? err.message : String(err),
-          errorType: typeof err,
           isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
-          hasResponse: err && typeof err === 'object' && 'response' in err,
-          responseStatus:
-            err && typeof err === 'object' && 'response' in err
-              ? (err as { response?: { status?: unknown } }).response?.status
-              : null,
         },
         'createTask',
         OperationType.API_CALL
@@ -319,26 +200,14 @@ export async function createTask(
 
     // Handle response validation
     if (!res) {
-      // This is the critical issue - API call returning undefined
       debug(
-        'tasks.createTask',
-        'CRITICAL: api.post returned undefined',
-        {
-          path,
-          requestPayload: JSON.stringify(requestPayload),
-          apiClient: {
-            hasBaseURL: !!api.defaults?.baseURL,
-            baseURL: api.defaults?.baseURL,
-            hasAuth: !!api.defaults?.headers?.Authorization,
-            hasInterceptors: !!api.interceptors?.response,
-          },
-        },
+        'tasks.createTask', 
+        'API response is null/undefined',
+        { path },
         'createTask',
         OperationType.API_CALL
       );
-      throw new Error(
-        'Invalid API response: no response data received - api.post returned undefined'
-      );
+      throw new Error('Invalid API response: no response data received');
     }
 
     // Debug logging to identify the response structure
@@ -354,41 +223,7 @@ export async function createTask(
       OperationType.API_CALL
     );
 
-    // Enhanced response handling with more robust structure detection
-    let task: AttioTask;
-
-    // Try different response structure patterns
-    if (res?.data?.data) {
-      task = res.data.data;
-    } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
-      // Direct task object in data
-      task = res.data as unknown as AttioTask;
-    } else {
-      // Enhanced error with response structure details for debugging
-      debug(
-        'tasks.createTask',
-        'Response structure analysis - no valid task found',
-        {
-          hasResponse: !!res,
-          responseKeys: res ? Object.keys(res) : [],
-          hasData: !!res?.data,
-          dataKeys: res?.data ? Object.keys(res.data) : [],
-          dataType: typeof res?.data,
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-      throw new Error(
-        `Invalid API response structure: missing task data. Response structure: ${JSON.stringify(
-          {
-            hasResponse: !!res,
-            responseKeys: res ? Object.keys(res) : [],
-            hasData: !!res?.data,
-            dataKeys: res?.data ? Object.keys(res.data) : [],
-          }
-        )}`
-      );
-    }
+    const task = extractTaskFromResponse(res);
 
     // Note: Only transform content field for create response (status not returned on create)
     const transformed = transformTaskResponse(task);
@@ -453,18 +288,7 @@ export async function updateTask(
       path,
       requestPayload
     );
-    // Enhanced response handling with more robust structure detection
-    let task: AttioTask;
-
-    // Try different response structure patterns
-    if (res?.data?.data) {
-      task = res.data.data;
-    } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
-      // Direct task object in data
-      task = res.data as unknown as AttioTask;
-    } else {
-      throw new Error('Invalid API response structure: missing task data');
-    }
+    const task = extractTaskFromResponse(res);
 
     const transformed = transformTaskResponse(task);
     logTaskDebug(
