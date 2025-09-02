@@ -10,7 +10,10 @@
  * Using console.log will break the MCP protocol, as it writes to stdout
  * which is used for client-server communication.
  */
-import fastSafeStringify from 'fast-safe-stringify';
+// Support both CJS and ESM default export shapes for fast-safe-stringify
+import * as fastSafeStringifyNs from 'fast-safe-stringify';
+const fastSafeStringify: (value: any, replacer?: any, space?: any) => string =
+  (fastSafeStringifyNs as any).default || (fastSafeStringifyNs as any);
 
 /**
  * Interface for serialization options
@@ -82,7 +85,7 @@ export function safeJsonStringify(
         if (opts.includeStackTraces && value.stack) {
           errorObj.stack = value.stack;
         }
-        if (value.cause) {
+        if ('cause' in value && value.cause) {
           errorObj.cause = value.cause;
         }
         return errorObj;

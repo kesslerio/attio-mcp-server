@@ -55,7 +55,7 @@ export async function processFieldValue(
   value: CompanyFieldValue
 ): Promise<ProcessedFieldValue> {
   if (value === null || value === undefined) {
-    return value;
+    return value as ProcessedFieldValue;
   }
 
   try {
@@ -127,7 +127,7 @@ export async function processFieldValue(
     value === null ||
     value === undefined
   ) {
-    return value;
+    return value as ProcessedFieldValue;
   }
 
   // For arrays, ensure all elements are valid types

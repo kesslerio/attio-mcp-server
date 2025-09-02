@@ -2,8 +2,8 @@
  * Configuration migration utility for Attio MCP Server
  * Handles migration of user.json files to fix outdated mappings
  */
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { MappingConfig } from './config-loader.js';
 import logger from './logger.js';
 

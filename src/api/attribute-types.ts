@@ -358,7 +358,7 @@ export async function getAttributeSlugById(
   attributeId: string
 ): Promise<string | null> {
   const metadata = await getObjectAttributeMetadata(objectSlug);
-  for (const [slug, attr] of metadata.entries()) {
+  for (const [slug, attr] of Array.from(metadata.entries())) {
     if (attr.id.attribute_id === attributeId) {
       return slug;
     }

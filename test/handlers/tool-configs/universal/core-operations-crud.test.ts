@@ -42,7 +42,9 @@ describe('Universal Core Operations CRUD Tests', () => {
       const { handleUniversalCreate } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      vi.mocked(handleUniversalCreate).mockResolvedValue(mockCreatedRecord);
+      vi.mocked(handleUniversalCreate).mockResolvedValue(
+        mockCreatedRecord as any
+      );
 
       const params: UniversalCreateParams = {
         resource_type: UniversalResourceType.COMPANIES,
@@ -70,7 +72,9 @@ describe('Universal Core Operations CRUD Tests', () => {
       const { handleUniversalCreate } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      vi.mocked(handleUniversalCreate).mockResolvedValue(mockCreatedRecord);
+      vi.mocked(handleUniversalCreate).mockResolvedValue(
+        mockCreatedRecord as any
+      );
 
       const params: UniversalCreateParams = {
         resource_type: UniversalResourceType.PEOPLE,
@@ -97,7 +101,7 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = createRecordConfig.formatResult(
+      const formatted = (createRecordConfig.formatResult as any)(
         mockRecord,
         UniversalResourceType.COMPANIES
       );
@@ -149,7 +153,7 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = updateRecordConfig.formatResult(
+      const formatted = (updateRecordConfig.formatResult as any)(
         mockRecord,
         UniversalResourceType.COMPANIES
       );
@@ -188,7 +192,7 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = deleteRecordConfig.formatResult(
+      const formatted = (deleteRecordConfig.formatResult as any)(
         mockResult,
         UniversalResourceType.COMPANIES
       );
@@ -202,7 +206,7 @@ describe('Universal Core Operations CRUD Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = deleteRecordConfig.formatResult(
+      const formatted = (deleteRecordConfig.formatResult as any)(
         mockResult,
         UniversalResourceType.COMPANIES
       );

@@ -268,5 +268,5 @@ export function extractIds(input: string): string[] {
     ids.push(...uuidMatches);
   }
 
-  return [...new Set(ids)]; // Remove duplicates
+  return Array.from(new Set(ids)); // Remove duplicates
 }

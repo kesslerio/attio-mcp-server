@@ -95,7 +95,7 @@ export function validateUUIDWithDetails(
     const nonHexChars = uuid.replace(/-/g, '').match(/[^0-9a-fA-F]/g);
     if (nonHexChars) {
       issues.push(
-        `invalid characters: ${[...new Set(nonHexChars)].join(', ')}`
+        `invalid characters: ${Array.from(new Set(nonHexChars)).join(', ')}`
       );
     }
 

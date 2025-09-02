@@ -454,7 +454,7 @@ async function searchRecordsByNotesContent(
 
     // Step 4: Fetch the actual records for these IDs
     const records: AttioRecord[] = [];
-    for (const recordId of parentRecordIds) {
+    for (const recordId of Array.from(parentRecordIds)) {
       try {
         const recordResponse = await client.get(
           `/objects/${parentObject}/records/${recordId}`

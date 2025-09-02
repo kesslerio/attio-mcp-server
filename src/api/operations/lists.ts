@@ -76,7 +76,7 @@ export async function getListDetails(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<AttioList>>(path);
-    return response?.data?.data || response?.data;
+    return (response?.data?.data || response?.data) as AttioList;
   }, retryConfig);
 }
 

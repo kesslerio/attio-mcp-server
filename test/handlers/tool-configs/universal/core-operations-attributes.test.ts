@@ -33,7 +33,7 @@ describe('Universal Core Operations Attributes Tests', () => {
 
   describe('get-attributes tool', () => {
     it('should get attributes successfully', async () => {
-      const mockAttributes = [
+      const mockAttributes: any = [
         { name: 'name', type: 'string', required: true },
         { name: 'website', type: 'url', required: false },
         { name: 'industry', type: 'select', required: false },
@@ -57,7 +57,7 @@ describe('Universal Core Operations Attributes Tests', () => {
     });
 
     it('should format array attributes correctly', async () => {
-      const mockAttributes = [
+      const mockAttributes: any = [
         { name: 'name', type: 'string' },
         { name: 'website', type: 'url' },
       ];
@@ -67,7 +67,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = getAttributesConfig.formatResult(
+      const formatted = (getAttributesConfig.formatResult as any)(
         mockAttributes,
         UniversalResourceType.COMPANIES
       );
@@ -87,7 +87,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = getAttributesConfig.formatResult(
+      const formatted = (getAttributesConfig.formatResult as any)(
         mockAttributes,
         UniversalResourceType.COMPANIES
       );
@@ -132,7 +132,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = discoverAttributesConfig.formatResult(
+      const formatted = (discoverAttributesConfig.formatResult as any)(
         mockSchema,
         UniversalResourceType.COMPANIES
       );
@@ -184,7 +184,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = getDetailedInfoConfig.formatResult(
+      const formatted = (getDetailedInfoConfig.formatResult as any)(
         mockInfo,
         UniversalResourceType.COMPANIES,
         DetailedInfoType.CONTACT
@@ -208,7 +208,7 @@ describe('Universal Core Operations Attributes Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = getDetailedInfoConfig.formatResult(
+      const formatted = (getDetailedInfoConfig.formatResult as any)(
         mockInfo,
         UniversalResourceType.COMPANIES,
         DetailedInfoType.BUSINESS
@@ -241,7 +241,7 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = searchRecordsConfig.formatResult(
+        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -266,7 +266,7 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = searchRecordsConfig.formatResult(
+        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -286,7 +286,7 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = searchRecordsConfig.formatResult(
+        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.TASKS
         );
@@ -306,7 +306,7 @@ describe('Universal Core Operations Attributes Tests', () => {
           },
         ];
 
-        const formatted = searchRecordsConfig.formatResult(
+        const formatted = (searchRecordsConfig.formatResult as any)(
           mockResults,
           UniversalResourceType.COMPANIES
         );
@@ -333,7 +333,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
-        const formatted = getRecordDetailsConfig.formatResult(
+        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.TASKS
         );
@@ -356,7 +356,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('task');
 
-        const formatted = getRecordDetailsConfig.formatResult(
+        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.TASKS
         );
@@ -379,7 +379,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         );
         vi.mocked(getSingularResourceType).mockReturnValue('record');
 
-        const formatted = getRecordDetailsConfig.formatResult(
+        const formatted = (getRecordDetailsConfig.formatResult as any)(
           mockRecord,
           UniversalResourceType.RECORDS
         );

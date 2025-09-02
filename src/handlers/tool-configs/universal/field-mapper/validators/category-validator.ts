@@ -136,7 +136,7 @@ export function validateCategories(input: string | string[]): {
 
   // Convert set back to array and remove duplicates from suggestions
   result.validatedCategories = Array.from(processedCategories);
-  result.suggestions = [...new Set(result.suggestions)];
+  result.suggestions = Array.from(new Set(result.suggestions));
 
   return result;
 }

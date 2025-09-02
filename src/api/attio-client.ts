@@ -12,8 +12,6 @@ export const __MODULE_PATH__ = MODULE_FILE;
  * Attio API client and related utilities
  */
 import axios, { AxiosInstance } from 'axios';
-// @ts-expect-error: axios internal adapter import
-import httpAdapter from 'axios/lib/adapters/http.js';
 import { debug, error, OperationType } from '../utils/logger.js';
 
 export type AttioClient = AxiosInstance;

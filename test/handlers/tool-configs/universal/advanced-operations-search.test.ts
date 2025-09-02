@@ -46,7 +46,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.handleUniversalSearch.mockResolvedValue(mockResults);
 
-      const params: AdvancedSearchParams = {
+      const params: any = {
         resource_type: UniversalResourceType.COMPANIES,
         query: 'technology',
         filters: [
@@ -88,7 +88,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('company');
 
-      const formatted = advancedSearchConfig.formatResult(
+      const formatted = (advancedSearchConfig.formatResult as any)(
         mockResults,
         UniversalResourceType.COMPANIES
       );
@@ -199,7 +199,7 @@ describe('Universal Advanced Operations - Search Tests', () => {
         },
       ];
 
-      const formatted = searchByRelationshipConfig.formatResult(
+      const formatted = (searchByRelationshipConfig.formatResult as any)(
         mockResults,
         RelationshipType.COMPANY_TO_PEOPLE
       );

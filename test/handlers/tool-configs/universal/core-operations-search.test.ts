@@ -33,7 +33,7 @@ describe('Universal Core Operations Search Tests', () => {
 
   describe('search-records tool', () => {
     it('should search companies successfully', async () => {
-      const mockResults = [
+      const mockResults: any[] = [
         {
           id: { record_id: 'comp-1' },
           values: {
@@ -59,7 +59,7 @@ describe('Universal Core Operations Search Tests', () => {
     });
 
     it('should search people successfully', async () => {
-      const mockResults = [
+      const mockResults: any[] = [
         {
           id: { record_id: 'person-1' },
           values: {
@@ -135,7 +135,7 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const formatted = searchRecordsConfig.formatResult(
+      const formatted = (searchRecordsConfig.formatResult as any)(
         mockResults,
         UniversalResourceType.COMPANIES
       );
@@ -150,14 +150,14 @@ describe('Universal Core Operations Search Tests', () => {
     });
 
     it('should handle empty search results', () => {
-      const formatted = searchRecordsConfig.formatResult([]);
+      const formatted = (searchRecordsConfig.formatResult as any)([]);
       expect(formatted).toContain('Found 0 records');
     });
   });
 
   describe('get-record-details tool', () => {
     it('should get company details successfully', async () => {
-      const mockRecord = {
+      const mockRecord: any = {
         id: { record_id: 'comp-1' },
         values: {
           name: [{ value: 'Test Company' }],
@@ -222,7 +222,7 @@ describe('Universal Core Operations Search Tests', () => {
       );
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
-      const formatted = getRecordDetailsConfig.formatResult(
+      const formatted = (getRecordDetailsConfig.formatResult as any)(
         mockRecord,
         UniversalResourceType.COMPANIES
       );

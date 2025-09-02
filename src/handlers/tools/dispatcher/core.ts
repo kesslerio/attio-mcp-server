@@ -347,9 +347,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
 
       // If a tool already returned an MCP-shaped object, stop double-wrapping
-      function isMcpResponseLike(v: any) {
+      const isMcpResponseLike = (v: any) => {
         return v && typeof v === 'object' && 'content' in v && 'isError' in v;
-      }
+      };
 
       if (isMcpResponseLike(rawResult)) {
         const sanitized = sanitizeMcpResponse(rawResult);

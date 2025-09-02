@@ -5,7 +5,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverAttributes } from './commands/attributes.js';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 // Load environment variables from .env file
 dotenv.config({ debug: false });
