@@ -182,6 +182,8 @@ test/e2e/
     └── assertions.ts      # Custom assertions
 ```
 
+Note: When asserting IDs, use the resource-aware helper `E2EAssertions.expectResourceId(record, '<resource>')` instead of direct checks like `expect(record.id.task_id).toBeDefined()`. This ensures consistency across tasks (`task_id`), notes (`note_id`), lists (`list_id`), and default records (`record_id`).
+
 ### Configuration System
 - **Template Config**: Version-controlled template with all options documented
 - **Local Config**: Gitignored file with workspace-specific settings

@@ -90,11 +90,26 @@ export async function getTask(
 
 export async function createTask(
   content: string,
-  options: { assigneeId?: string; dueDate?: string; recordId?: string; targetObject?: string } = {},
+  options: { assigneeId?: string; dueDate?: string; recordId?: string; targetObject?: 'companies' | 'people' | 'records' } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
   const api = getAttioClient();
   const path = '/tasks';
+
+  // Validate linking parameters: both recordId and targetObject required, or neither
+  if ((options.recordId && !options.targetObject) || (!options.recordId && options.targetObject)) {
+    debug(
+      'tasks.createTask',
+      'Invalid task linking parameters',
+      { recordId: options.recordId, targetObject: options.targetObject },
+      'createTask',
+      OperationType.VALIDATION
+    );
+    throw new Error(
+      `Invalid task linking: both 'recordId' and 'targetObject' must be provided together, or neither. ` +
+      `Got recordId: ${options.recordId}, targetObject: ${options.targetObject}`
+    );
+  }
 
   // Build task data according to TaskCreateData interface
   const taskData: TaskCreateData = {
@@ -102,6 +117,7 @@ export async function createTask(
     format: 'plaintext', // Required field for Attio API
   };
 
+  // Only include deadline_at if provided (will be omitted from payload if undefined)
   if (options.dueDate) {
     taskData.deadline_at = options.dueDate;
   }
@@ -117,8 +133,8 @@ export async function createTask(
       ]
     : [];
 
-  // linked_records: Required field - empty array when no record to link, array with record when there is
-  // Must use target_object and target_record_id format per Attio API documentation
+  // Always include linked_records as an array (Attio API requires the field)
+  // Use target_object and target_record_id format when linking
   const linkedRecords = options.recordId && options.targetObject
     ? [{ target_object: options.targetObject, target_record_id: options.recordId }]
     : [];
@@ -128,8 +144,8 @@ export async function createTask(
       ...taskData,
       is_completed: false, // Always false for new tasks
       assignees,
-      deadline_at: taskData.deadline_at || null, // Explicitly null if not provided
-      linked_records: linkedRecords, // Always include this required field
+      ...(taskData.deadline_at && { deadline_at: taskData.deadline_at }), // Omit when not provided
+      linked_records: linkedRecords, // Always include as array (empty when not linking)
     },
   };
 

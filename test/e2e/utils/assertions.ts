@@ -409,30 +409,46 @@ export class E2EAssertions {
     resourceType?: string
   ): void {
     expect(record, 'Record should be defined').toBeDefined();
-    expect(record.id, 'Record should have id object').toBeDefined();
-    expect(record.id.record_id, 'Record should have record_id').toBeDefined();
-    expect(typeof record.id.record_id, 'Record ID should be string').toBe(
-      'string'
-    );
-    expect(record.values, 'Record should have values object').toBeDefined();
-    expect(typeof record.values, 'Values should be object').toBe('object');
 
     if (resourceType) {
-      // Additional resource-specific validations
+      // Use resource-aware ID assertion when resource type is known
       switch (resourceType) {
         case 'companies':
+          this.expectResourceId(record, 'companies');
           this.expectCompanyRecord(record);
           break;
         case 'people':
+          this.expectResourceId(record, 'people');
           this.expectPersonRecord(record);
           break;
         case 'lists':
+          this.expectResourceId(record, 'lists');
           this.expectListRecord(record);
           break;
         case 'tasks':
+          this.expectResourceId(record, 'tasks');
           this.expectTaskRecord(record);
           break;
+        case 'notes':
+          this.expectResourceId(record, 'notes');
+          this.expectValidNoteStructure(record);
+          break;
+        default:
+          // Fallback to generic record assertion for unknown types
+          expect(record.id, 'Record should have id object').toBeDefined();
+          expect(record.id.record_id, 'Record should have record_id').toBeDefined();
+          expect(typeof record.id.record_id, 'Record ID should be string').toBe('string');
+          expect(record.values, 'Record should have values object').toBeDefined();
+          expect(typeof record.values, 'Values should be object').toBe('object');
+          break;
       }
+    } else {
+      // Generic record assertion for backward compatibility
+      expect(record.id, 'Record should have id object').toBeDefined();
+      expect(record.id.record_id, 'Record should have record_id').toBeDefined();
+      expect(typeof record.id.record_id, 'Record ID should be string').toBe('string');
+      expect(record.values, 'Record should have values object').toBeDefined();
+      expect(typeof record.values, 'Values should be object').toBe('object');
     }
   }
 
@@ -493,9 +509,9 @@ export class E2EAssertions {
    * Assert that list record has expected structure
    */
   static expectListRecord(list: TestDataObject): void {
-    expect(list, 'List should be defined').toBeDefined();
-    expect(list.id, 'List should have id object').toBeDefined();
-    expect(list.id.list_id, 'List should have list_id').toBeDefined();
+    // Use resource-aware ID assertion for lists
+    this.expectResourceId(list, 'lists');
+    
     expect(list.name, 'List should have name').toBeDefined();
     expect(list.parent_object, 'List should have parent_object').toBeDefined();
   }
@@ -504,7 +520,11 @@ export class E2EAssertions {
    * Assert that task record has expected structure
    */
   static expectTaskRecord(task: TestDataObject): void {
-    this.expectAttioRecord(task);
+    // Use resource-aware ID assertion for tasks
+    this.expectResourceId(task, 'tasks');
+    
+    expect(task.values, 'Task should have values object').toBeDefined();
+    expect(typeof task.values, 'Values should be object').toBe('object');
 
     // Tasks should typically have a title
     if (task.values.title) {
@@ -754,14 +774,51 @@ export class E2EAssertions {
   }
 
   /**
+   * Resource-aware ID assertion helper
+   */
+  static expectResourceId(
+    obj: any, 
+    resourceType: 'notes' | 'tasks' | 'companies' | 'people' | 'lists'
+  ): void {
+    expect(obj, `${resourceType.slice(0, -1)} should be defined`).toBeDefined();
+    expect(obj.id, `${resourceType.slice(0, -1)} should have id object`).toBeDefined();
+    expect(typeof obj.id, `${resourceType.slice(0, -1)} ID should be object`).toBe('object');
+    
+    switch (resourceType) {
+      case 'notes':
+        expect(obj.id.note_id, 'Note should have note_id').toBeDefined();
+        expect(typeof obj.id.note_id, 'Note ID should be string').toBe('string');
+        break;
+      case 'tasks':
+        expect(obj.id.task_id, 'Task should have task_id').toBeDefined();
+        expect(typeof obj.id.task_id, 'Task ID should be string').toBe('string');
+        break;
+      case 'companies':
+      case 'people':
+        expect(obj.id.record_id, 'Record should have record_id').toBeDefined();
+        expect(typeof obj.id.record_id, 'Record ID should be string').toBe('string');
+        break;
+      case 'lists':
+        expect(obj.id.list_id, 'List should have list_id').toBeDefined();
+        expect(typeof obj.id.list_id, 'List ID should be string').toBe('string');
+        break;
+    }
+    
+    // All resources should have workspace_id
+    expect(obj.id.workspace_id, `${resourceType.slice(0, -1)} should have workspace_id`).toBeDefined();
+    expect(typeof obj.id.workspace_id, 'Workspace ID should be string').toBe('string');
+  }
+
+  /**
    * Assert that note response has valid structure
    */
   static expectValidNoteStructure(note: any): void {
     expect(note, 'Note should be defined').toBeDefined();
     expect(typeof note, 'Note should be object').toBe('object');
 
-    // Core note properties
-    expect(note.id, 'Note should have id').toBeDefined();
+    // Use resource-aware ID assertion for notes
+    this.expectResourceId(note, 'notes');
+    
     expect(note.title, 'Note should have title').toBeDefined();
     expect(note.content, 'Note should have content').toBeDefined();
     expect(typeof note.title, 'Note title should be string').toBe('string');

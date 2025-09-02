@@ -214,7 +214,10 @@ describe.skipIf(
         (company as any)?.id?.record_id
       );
 
-      // Also create for notes
+      // Also populate the shared testCompanies array for notes tests
+      testCompanies.push(company);
+      
+      // Also create for notes (fallback)
       await createTestCompany();
     }, 45000);
 
@@ -239,7 +242,10 @@ describe.skipIf(
         (person as any)?.id?.record_id
       );
 
-      // Also create for notes
+      // Also populate the shared testPeople array for notes tests
+      testPeople.push(person);
+      
+      // Also create for notes (fallback)
       await createTestPerson();
     }, 45000);
   });
@@ -264,7 +270,7 @@ describe.skipIf(
         const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(createdTask.id.task_id).toBeDefined();
+        E2EAssertions.expectResourceId(createdTask, 'tasks');
 
         // Access content from the correct field in the record structure
         const taskContent =
@@ -437,6 +443,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('✅ Updated task status:', taskId);
       }, 30000);
@@ -471,6 +478,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('👤 Updated task assignee:', taskId);
       }, 30000);
@@ -502,6 +510,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('🔄 Updated multiple task fields:', taskId);
       }, 30000);
