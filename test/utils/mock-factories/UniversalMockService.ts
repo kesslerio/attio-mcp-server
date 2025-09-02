@@ -16,7 +16,14 @@
  * - Environment-aware mock injection
  */
 
-import type { AttioRecord } from '../../../src/types/attio.js';
+// Use a relaxed test-only record shape to avoid src type coupling
+export interface TestAttioRecord {
+  id: Record<string, unknown>;
+  values: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
 import { CompanyMockFactory } from './CompanyMockFactory.js';
 import { PersonMockFactory } from './PersonMockFactory.js';
 import { TaskMockFactory } from './TaskMockFactory.js';
@@ -49,7 +56,7 @@ export class UniversalMockService {
    */
   static async createCompany(
     companyData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       const { createCompany } = await import(
@@ -127,7 +134,7 @@ export class UniversalMockService {
    */
   static async createPerson(
     personData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       const { createPerson } = await import(
@@ -193,7 +200,7 @@ export class UniversalMockService {
    */
   static async createTask(
     taskData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       try {
@@ -202,7 +209,7 @@ export class UniversalMockService {
           assigneeId: taskData.assigneeId as string,
           dueDate: taskData.dueDate as string,
           recordId: taskData.recordId as string,
-        })) as unknown as AttioRecord;
+        })) as unknown as TestAttioRecord;
       } catch (error) {
         throw new Error(
           `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -232,7 +239,7 @@ export class UniversalMockService {
     });
 
     // Convert to AttioRecord format with Issue #480 compatibility
-    const attioRecord: AttioRecord = {
+    const attioRecord: TestAttioRecord = {
       id: {
         record_id: mockTask.id.record_id,
         task_id: mockTask.id.task_id, // Issue #480: Preserve task_id
@@ -303,7 +310,7 @@ export class UniversalMockService {
   static async updateTask(
     taskId: string,
     updateData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       try {
@@ -314,7 +321,7 @@ export class UniversalMockService {
           assigneeId: updateData.assigneeId as string,
           dueDate: updateData.dueDate as string,
           recordIds: updateData.recordIds as string[],
-        })) as unknown as AttioRecord;
+        })) as unknown as TestAttioRecord;
       } catch (error) {
         throw new Error(
           `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -365,7 +372,7 @@ export class UniversalMockService {
     mockTask.id.task_id = taskId;
 
     // Convert to AttioRecord format with Issue #480 compatibility
-    const attioRecord: AttioRecord = {
+    const attioRecord: TestAttioRecord = {
       id: {
         record_id: taskId,
         task_id: taskId, // Issue #480: Preserve task_id

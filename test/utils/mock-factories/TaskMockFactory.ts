@@ -164,7 +164,10 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
 
     // Handle optional fields
     if (overrides.deadline_at || overrides.due_date) {
-      baseTask.due_date = overrides.deadline_at || overrides.due_date || null;
+      const d = overrides.deadline_at || overrides.due_date || undefined;
+      if (d !== undefined && d !== null) {
+        baseTask.due_date = d as string;
+      }
     }
 
     if (overrides.assignee_id || overrides.assignee) {

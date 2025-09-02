@@ -160,8 +160,8 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
 
     TestEnvironment.log(`Created mock person: ${personId}`, {
       name: fullName,
-      email: basePerson.values.email_addresses?.[0],
-      jobTitle: basePerson.values.job_title,
+      email: (basePerson.values as any).email_addresses?.[0],
+      jobTitle: (basePerson.values as any).job_title,
     });
 
     return basePerson;

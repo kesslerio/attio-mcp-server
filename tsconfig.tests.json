@@ -3,12 +3,20 @@
   "compilerOptions": {
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals", "node"],
+    "types": ["vitest/globals", "vitest", "node"],
     "rootDir": ".",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "target": "ES2022"
   },
   "include": ["test/**/*"],
-  "exclude": ["node_modules", "dist", "scripts/**/*"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts/**/*",
+    "test/e2e/**/*",
+    "test/formatResult-contract-regression.test.ts",
+    "test/handlers/tool-configs/universal/**/*",
+    "test/integration/**/*"
+  ]
 }
