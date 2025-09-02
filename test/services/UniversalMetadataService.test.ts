@@ -422,7 +422,7 @@ describe('UniversalMetadataService', () => {
 
       const result = await UniversalMetadataService.discoverAttributes(
         UniversalResourceType.RECORDS,
-        { categories: ['companies'] }
+        { objectSlug: 'companies' }
       );
 
       expect(mockClient.get).toHaveBeenCalledWith(
