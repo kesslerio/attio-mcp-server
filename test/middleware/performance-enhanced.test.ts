@@ -132,7 +132,9 @@ describe('Enhanced Performance Tracker', () => {
         enhancedPerformanceTracker.endOperation(opId, true);
       }
 
-      const stats = enhancedPerformanceTracker.getStatistics('test-tool');
+      const stats = enhancedPerformanceTracker.getStatistics(
+        'test-tool'
+      ) as any;
 
       expect(stats).toBeDefined();
       expect(stats.count).toBe(5);
@@ -155,7 +157,9 @@ describe('Enhanced Performance Tracker', () => {
         enhancedPerformanceTracker.endOperation(opId, true);
       });
 
-      const stats = enhancedPerformanceTracker.getStatistics('percentile-test');
+      const stats = enhancedPerformanceTracker.getStatistics(
+        'percentile-test'
+      ) as any;
 
       expect(stats).toBeDefined();
       expect(stats.count).toBe(10);

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["vitest/globals", "vitest", "node"],
+    "rootDir": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022"
+  },
+  "include": ["test/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts/**/*",
+    "test/e2e/**/*",
+    "test/formatResult-contract-regression.test.ts",
+    "test/integration/**/*",
+    "test/handlers/tool-configs/universal/integration-*.test.ts",
+    "test/handlers/tool-configs/universal/performance-*.test.ts"
+  ]
+}

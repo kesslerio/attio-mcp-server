@@ -48,7 +48,7 @@ export class CompanyValidator {
         await CompanyValidator.validateFieldType(field, value);
         processedAttributes[field] = await processFieldValue(field, value);
       } else {
-        processedAttributes[field] = value;
+        processedAttributes[field] = value as ProcessedFieldValue;
       }
     }
 

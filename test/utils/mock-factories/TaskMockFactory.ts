@@ -26,12 +26,15 @@ export interface MockTaskOptions {
   deadline_at?: string | null;
   due_date?: string | null;
   assignee_id?: string | null;
+  assignees?: string[]; // plural variant used in some tests
+  priority?: string; // allow priority in tests
   assignee?: AttioTask['assignee'];
   linked_record?: AttioTask['linked_records'];
   linked_records?: AttioTask['linked_records'];
   record_id?: string | null;
   created_at?: string;
   updated_at?: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -161,7 +164,10 @@ export class TaskMockFactory implements MockFactory<AttioTask> {
 
     // Handle optional fields
     if (overrides.deadline_at || overrides.due_date) {
-      baseTask.due_date = overrides.deadline_at || overrides.due_date || null;
+      const d = overrides.deadline_at || overrides.due_date || undefined;
+      if (d !== undefined && d !== null) {
+        baseTask.due_date = d as string;
+      }
     }
 
     if (overrides.assignee_id || overrides.assignee) {

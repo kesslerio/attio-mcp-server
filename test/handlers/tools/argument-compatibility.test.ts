@@ -39,7 +39,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
 
   describe('Argument Format Normalization', () => {
     it('should handle properly wrapped arguments (standard MCP format) with universal tools', async () => {
-      const request: CallToolRequest = {
+      const request: any = {
         params: {
           name: 'search-records',
           arguments: {
@@ -72,7 +72,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     });
 
     it('should handle tools with minimal arguments using universal tools', async () => {
-      const request: CallToolRequest = {
+      const request: any = {
         params: {
           name: 'get-record-details',
           arguments: {
@@ -113,7 +113,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       );
       const mockedExecute = vi.mocked(executeToolRequest);
 
-      const request: CallToolRequest = {
+      const request: any = {
         params: {
           name: 'search-records',
           arguments: {

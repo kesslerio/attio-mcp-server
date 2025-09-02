@@ -140,7 +140,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('company');
 
-      const formatted = searchByContentConfig.formatResult(
+      const formatted = (searchByContentConfig.formatResult as any)(
         mockResults,
         ContentSearchType.NOTES,
         UniversalResourceType.COMPANIES
@@ -310,7 +310,7 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const { mockHandlers } = getMockInstances();
       mockHandlers.formatResourceType.mockReturnValue('person');
 
-      const formatted = searchByTimeframeConfig.formatResult(
+      const formatted = (searchByTimeframeConfig.formatResult as any)(
         mockResults,
         TimeframeType.CREATED,
         UniversalResourceType.PEOPLE
@@ -368,12 +368,12 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const emptyResults: any[] = [];
 
       // For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
-      expect(searchByContentConfig.formatResult(emptyResults)).toContain(
-        'Found 0 records with matching'
-      );
-      expect(searchByTimeframeConfig.formatResult(emptyResults)).toContain(
-        'Found 0 records by'
-      );
+      expect(
+        (searchByContentConfig.formatResult as any)(emptyResults)
+      ).toContain('Found 0 records with matching');
+      expect(
+        (searchByTimeframeConfig.formatResult as any)(emptyResults)
+      ).toContain('Found 0 records by');
     });
   });
 });

@@ -78,7 +78,13 @@ describe('UniversalSearchService', () => {
         } as any,
       ];
       const filters = {
-        filters: [{ attribute: { slug: 'domain' }, value: 'test.com' }],
+        filters: [
+          {
+            attribute: { slug: 'domain' },
+            condition: 'equals',
+            value: 'test.com',
+          },
+        ],
       };
       vi.mocked(advancedSearchCompanies).mockResolvedValue(mockResults as any);
       const result = await UniversalSearchService.searchRecords({

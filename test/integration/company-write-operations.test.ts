@@ -49,11 +49,9 @@ describe('Company Write Operations - Integration Tests', () => {
 
       expect(result).toBeDefined();
       expect(result.id?.record_id).toBeDefined();
-      expect(result.values?.name?.[0]?.value).toBe(companyData.name);
-      expect(result.values?.website?.[0]?.value).toBe(companyData.website);
-      expect(result.values?.description?.[0]?.value).toBe(
-        companyData.description
-      );
+      expect(result.values?.name).toBe(companyData.name);
+      expect(result.values?.website).toBe(companyData.website);
+      expect(result.values?.description).toBe(companyData.description);
 
       // Track for cleanup
       testCompanies.push(result.id.record_id);
@@ -69,7 +67,7 @@ describe('Company Write Operations - Integration Tests', () => {
       const result = await createCompany(companyData);
 
       expect(result).toBeDefined();
-      expect(result.values?.name?.[0]?.value).toBe(companyData.name);
+      expect(result.values?.name).toBe(companyData.name);
 
       // Test passes as long as we can create the company and verify the name
 
@@ -101,8 +99,8 @@ describe('Company Write Operations - Integration Tests', () => {
 
       // Make expectations more flexible to handle API response variations
       // Check that the updated fields exist with correct values
-      const websiteValue = result.values?.website?.[0]?.value;
-      const descriptionValue = result.values?.description?.[0]?.value;
+      const websiteValue = result.values?.website;
+      const descriptionValue = result.values?.description;
 
       // Check website and description from immediate result
       expect(websiteValue).toBe(updates.website);
@@ -130,7 +128,7 @@ describe('Company Write Operations - Integration Tests', () => {
         newWebsite
       );
 
-      expect(result.values?.website?.[0]?.value).toBe(newWebsite);
+      expect(result.values?.website).toBe(newWebsite);
     });
 
     it('should handle null value updates (Issue #97 regression test)', async () => {

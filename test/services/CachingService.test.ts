@@ -27,8 +27,8 @@ import { enhancedPerformanceTracker } from '../../src/middleware/performance-enh
 
 describe('CachingService', () => {
   const mockTasks: AttioRecord[] = [
-    { id: { record_id: '1' }, values: { name: [{ value: 'Task 1' }] } },
-    { id: { record_id: '2' }, values: { name: [{ value: 'Task 2' }] } },
+    { id: { record_id: '1' }, values: { name: 'Task 1' } },
+    { id: { record_id: '2' }, values: { name: 'Task 2' } },
   ];
 
   beforeEach(() => {
@@ -343,7 +343,7 @@ describe('CachingService', () => {
         { length: 1000 },
         (_, i) => ({
           id: { record_id: `task-${i}` },
-          values: { name: [{ value: `Task ${i}` }] },
+          values: { name: `Task ${i}` },
         })
       );
 

@@ -1025,7 +1025,7 @@ export class UniversalUpdateService {
       return {
         matches:
           expectedSet.size === actualSet.size &&
-          [...expectedSet].every((v) => actualSet.has(v)),
+          Array.from(expectedSet).every((v) => actualSet.has(v)),
       };
     }
 

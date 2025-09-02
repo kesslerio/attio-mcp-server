@@ -100,7 +100,7 @@ class LRUCache<K, V> {
    */
   private cleanExpired(): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (now - entry.timestamp > this.ttlMs) {
         this.cache.delete(key);
       }
@@ -116,7 +116,7 @@ class LRUCache<K, V> {
     let oldestTimestamp = Infinity;
 
     // Find the entry with lowest hit count, or oldest if tied
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (
         entry.hits < lowestHits ||
         (entry.hits === lowestHits && entry.timestamp < oldestTimestamp)

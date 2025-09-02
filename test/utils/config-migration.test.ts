@@ -4,8 +4,8 @@
  * Tests the migration tool that fixes postal code mappings from issue #219
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   detectMigrationNeeds,
   createBackup,
@@ -114,7 +114,7 @@ describe('Config Migration Utility', () => {
     mockFs.readFileSync.mockReturnValue('{}');
     mockFs.writeFileSync.mockImplementation(() => {});
     mockFs.copyFileSync.mockImplementation(() => {});
-    mockFs.mkdirSync.mockImplementation(() => {});
+    mockFs.mkdirSync.mockImplementation(() => '');
 
     // Reset logger mocks
     mockLogger.warn.mockClear();
@@ -230,7 +230,7 @@ describe('Config Migration Utility', () => {
   describe('createBackup', () => {
     it('should create a timestamped backup successfully', () => {
       mockFs.existsSync.mockReturnValue(false); // Backup dir doesn't exist
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
       const result = createBackup();
@@ -308,7 +308,7 @@ describe('Config Migration Utility', () => {
       // Mock the detection and backup steps
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
       let writtenConfig: any;
@@ -360,7 +360,7 @@ describe('Config Migration Utility', () => {
     it('should handle write errors gracefully', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {
         throw new Error('Write failed');
@@ -424,7 +424,7 @@ describe('Config Migration Utility', () => {
       // Setup mocks for successful migration
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
       let writtenConfig: any;
@@ -456,7 +456,7 @@ describe('Config Migration Utility', () => {
       // Setup mocks for migration that doesn't fix the issue
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(JSON.stringify(OUTDATED_USER_CONFIG));
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {
         // Simulate write succeeding but validation still failing
@@ -526,7 +526,7 @@ describe('Config Migration Utility', () => {
       mockFs.readFileSync.mockReturnValue(
         JSON.stringify(configWithOtherMappings)
       );
-      mockFs.mkdirSync.mockImplementation(() => {});
+      mockFs.mkdirSync.mockImplementation(() => '');
       mockFs.copyFileSync.mockImplementation(() => {});
 
       let writtenConfig: any;

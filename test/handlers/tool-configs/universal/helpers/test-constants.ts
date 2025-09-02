@@ -103,33 +103,33 @@ export const RESOURCE_TYPES = {
 
 // Detailed Info Types
 export const DETAILED_INFO_TYPES = {
-  ATTRIBUTES: DetailedInfoType.ATTRIBUTES,
-  SCHEMAS: DetailedInfoType.SCHEMAS,
-  RELATIONSHIPS: DetailedInfoType.RELATIONSHIPS,
-  PERMISSIONS: DetailedInfoType.PERMISSIONS,
+  CONTACT: DetailedInfoType.CONTACT,
+  BUSINESS: DetailedInfoType.BUSINESS,
+  SOCIAL: DetailedInfoType.SOCIAL,
+  BASIC: DetailedInfoType.BASIC,
+  CUSTOM: DetailedInfoType.CUSTOM,
 } as const;
 
 // Relationship Types
 export const RELATIONSHIP_TYPES = {
-  BELONGS_TO: RelationshipType.BELONGS_TO,
-  HAS_MANY: RelationshipType.HAS_MANY,
-  ASSOCIATED_WITH: RelationshipType.ASSOCIATED_WITH,
+  COMPANY_TO_PEOPLE: RelationshipType.COMPANY_TO_PEOPLE,
+  PEOPLE_TO_COMPANY: RelationshipType.PEOPLE_TO_COMPANY,
+  PERSON_TO_TASKS: RelationshipType.PERSON_TO_TASKS,
+  COMPANY_TO_TASKS: RelationshipType.COMPANY_TO_TASKS,
 } as const;
 
 // Content Search Types
 export const CONTENT_SEARCH_TYPES = {
   NOTES: ContentSearchType.NOTES,
-  TASKS: ContentSearchType.TASKS,
   ACTIVITY: ContentSearchType.ACTIVITY,
-  ALL: ContentSearchType.ALL,
+  INTERACTIONS: ContentSearchType.INTERACTIONS,
 } as const;
 
 // Timeframe Types
 export const TIMEFRAME_TYPES = {
   CREATED: TimeframeType.CREATED,
   MODIFIED: TimeframeType.MODIFIED,
-  ACTIVITY: TimeframeType.ACTIVITY,
-  CUSTOM: TimeframeType.CUSTOM,
+  LAST_INTERACTION: TimeframeType.LAST_INTERACTION,
 } as const;
 
 // Batch Operation Types

@@ -164,5 +164,5 @@ export function extractAllDomains(query: string): string[] {
   }
 
   // Remove duplicates and normalize
-  return [...new Set(domains.map(normalizeDomain))];
+  return Array.from(new Set(domains.map(normalizeDomain)));
 }

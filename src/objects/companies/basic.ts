@@ -278,9 +278,9 @@ export async function createCompany(
         const nameValue =
           typeof attributes.name === 'object' &&
           attributes.name !== null &&
-          'value' in attributes.name
+          'value' in (attributes.name as Record<string, unknown>)
             ? (attributes.name as { value: string }).value
-            : attributes.name;
+            : (attributes.name ?? '');
 
         try {
           const api = getAttioClient();

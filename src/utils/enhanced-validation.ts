@@ -293,7 +293,7 @@ export async function validateRecordFields(
     if (!isUpdate) {
       const requiredFields: string[] = [];
 
-      for (const [fieldName, metadata] of attributeMetadata) {
+      for (const [fieldName, metadata] of Array.from(attributeMetadata)) {
         if (metadata.is_required && metadata.is_writable !== false) {
           requiredFields.push(fieldName);
         }

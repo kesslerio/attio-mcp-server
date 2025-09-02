@@ -29,7 +29,7 @@ describe('addRecordToList Tests', () => {
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
-    });
+    } as unknown as import('axios').AxiosInstance);
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
@@ -59,7 +59,7 @@ describe('addRecordToList Tests', () => {
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
 
-    await expect(addRecordToList(listId, recordId)).rejects.toThrow(
+    await expect(addRecordToList(listId, recordId, '')).rejects.toThrow(
       'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
     );
   });
@@ -80,7 +80,7 @@ describe('addRecordToList Tests', () => {
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
-    });
+    } as unknown as import('axios').AxiosInstance);
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(
@@ -198,7 +198,7 @@ describe('addRecordToList Tests', () => {
       get: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
-    });
+    } as unknown as import('axios').AxiosInstance);
 
     // Mock the generic function to throw so we test the fallback
     vi.spyOn(apiOperations, 'addRecordToList').mockRejectedValue(

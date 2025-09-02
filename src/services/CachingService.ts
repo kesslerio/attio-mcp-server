@@ -271,7 +271,7 @@ export class CachingService {
     } else {
       // Invalidate all cache entries for this resource type
       const keysToDelete: string[] = [];
-      for (const [key, entry] of this.attributesCache.entries()) {
+      for (const [key, entry] of Array.from(this.attributesCache.entries())) {
         if (entry.resourceType === resourceType) {
           keysToDelete.push(key);
         }
@@ -379,7 +379,7 @@ export class CachingService {
     const now = Date.now();
     let deletedCount = 0;
 
-    for (const [key, entry] of this.tasksCache.entries()) {
+    for (const [key, entry] of Array.from(this.tasksCache.entries())) {
       if (now - entry.timestamp >= ttl) {
         this.tasksCache.delete(key);
         deletedCount++;
@@ -400,7 +400,7 @@ export class CachingService {
     const now = Date.now();
     let deletedCount = 0;
 
-    for (const [key, entry] of this.attributesCache.entries()) {
+    for (const [key, entry] of Array.from(this.attributesCache.entries())) {
       if (now - entry.timestamp >= ttl) {
         this.attributesCache.delete(key);
         deletedCount++;
@@ -419,7 +419,7 @@ export class CachingService {
     const now = Date.now();
     let deletedCount = 0;
 
-    for (const [key, entry] of this.notFoundCache.entries()) {
+    for (const [key, entry] of Array.from(this.notFoundCache.entries())) {
       if (now - entry.timestamp >= ttl) {
         this.notFoundCache.delete(key);
         deletedCount++;
@@ -465,17 +465,17 @@ export class CachingService {
     }> = [];
 
     // Collect tasks entries
-    for (const [key, entry] of this.tasksCache.entries()) {
+    for (const [key, entry] of Array.from(this.tasksCache.entries())) {
       allEntries.push({ key, timestamp: entry.timestamp, type: 'tasks' });
     }
 
     // Collect attributes entries
-    for (const [key, entry] of this.attributesCache.entries()) {
+    for (const [key, entry] of Array.from(this.attributesCache.entries())) {
       allEntries.push({ key, timestamp: entry.timestamp, type: 'attributes' });
     }
 
     // Collect 404 entries
-    for (const [key, entry] of this.notFoundCache.entries()) {
+    for (const [key, entry] of Array.from(this.notFoundCache.entries())) {
       allEntries.push({ key, timestamp: entry.timestamp, type: 'notFound' });
     }
 

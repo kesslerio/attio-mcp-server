@@ -400,7 +400,7 @@ export class EnhancedPerformanceTracker extends EventEmitter {
    */
   private cleanupCache(): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache404.entries()) {
+    for (const [key, entry] of Array.from(this.cache404.entries())) {
       if (now - entry.timestamp > entry.ttl) {
         this.cache404.delete(key);
       }

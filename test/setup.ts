@@ -60,7 +60,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people/search', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...actual,
+      ...(actual as any),
       searchPeopleByEmail: vi.fn(async (email: string) => {
         // Mock behavior based on email for testing
         if (email === 'dup@example.com') {
@@ -88,7 +88,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people-write', async () => {
     const actual = await vi.importActual('../src/objects/people-write');
     return {
-      ...actual,
+      ...(actual as any),
       searchPeopleByEmails: vi.fn(async (emails: string[]) => {
         // Mock batch email search for PersonValidator tests
         return emails.map((email) => ({
@@ -105,7 +105,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/companies/index', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...actual,
+      ...(actual as any),
       searchCompanies: vi.fn(async () => []),
       searchCompaniesByName: vi.fn(async (name: string) => {
         // Mock behavior based on company name for testing
@@ -121,7 +121,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/search'
           );
-          return actual.advancedSearchCompanies(...args);
+          return (actual as any).advancedSearchCompanies(...args);
         }
         // Otherwise return mock
         return [];
@@ -133,7 +133,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return actual.getCompanyDetails(...args);
+          return (actual as any).getCompanyDetails(...args);
         }
         // Otherwise return mock
         return {};
@@ -144,7 +144,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return actual.createCompany(...args);
+          return (actual as any).createCompany(...args);
         }
         // Otherwise return mock
         return {};
@@ -155,7 +155,7 @@ if (process.env.E2E_MODE !== 'true') {
           const actual = await vi.importActual(
             '../src/objects/companies/index'
           );
-          return actual.updateCompany(...args);
+          return (actual as any).updateCompany(...args);
         }
         // Otherwise return mock
         return {};
@@ -169,7 +169,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/companies/search', async (importOriginal) => {
     const actual = await importOriginal<any>();
     return {
-      ...actual,
+      ...(actual as any),
       searchCompaniesByName: vi.fn(async (name: string) => {
         // Mock behavior based on company name for testing
         if (name === 'Test Company' || name === 'Existing Company') {
@@ -191,7 +191,7 @@ if (process.env.E2E_MODE !== 'true') {
   vi.mock('../src/objects/people/index', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-      ...actual,
+      ...(actual as any),
       searchPeople: vi.fn(async () => []),
       advancedSearchPeople: vi.fn(async (filters, options) => {
         // Mock that bypasses filter validation

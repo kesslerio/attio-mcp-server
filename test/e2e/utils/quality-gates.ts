@@ -5,8 +5,8 @@
  * aggregator that can combine E2E stats and usability metrics into a
  * production-readiness signal. Intended to be wired into CI after iteration.
  */
-import fs from 'node:fs';
-import path from 'node:path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { UsabilitySummary } from './usability-validators.js';
 
 export type Priority = 'P0' | 'P1' | 'P2';

@@ -36,11 +36,11 @@ export function isTestEnvironment(): boolean {
     process.env.E2E_MODE === 'true' ||
     process.env.JEST_WORKER_ID !== undefined ||
     process.env.CI === 'true' ||
-    (typeof global !== 'undefined' &&
-      (typeof global.it === 'function' ||
-        typeof global.describe === 'function' ||
-        typeof global.beforeEach === 'function' ||
-        typeof global.afterEach === 'function'))
+    (typeof globalThis !== 'undefined' &&
+      (typeof (globalThis as any).it === 'function' ||
+        typeof (globalThis as any).describe === 'function' ||
+        typeof (globalThis as any).beforeEach === 'function' ||
+        typeof (globalThis as any).afterEach === 'function'))
   );
 }
 

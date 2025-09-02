@@ -115,7 +115,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/companies/index.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
+      const actual: any = await importOriginal();
       return {
         ...actual,
         searchCompaniesByNotes: vi.fn(),
@@ -129,7 +129,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/index.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
+      const actual: any = await importOriginal();
       return {
         ...actual,
         searchPeopleByCompany: vi.fn(),
@@ -147,7 +147,7 @@ export const mockSpecializedHandlers = () => {
   vi.mock(
     '../../../../../src/objects/people/search.js',
     async (importOriginal) => {
-      const actual = await importOriginal();
+      const actual: any = await importOriginal();
       return {
         ...actual,
         searchPeopleByActivity: vi.fn(),
@@ -165,7 +165,7 @@ export const mockSpecializedHandlers = () => {
  */
 export const mockDateUtils = () => {
   vi.mock('../../../../../src/utils/date-utils.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual: any = await importOriginal();
     return {
       ...actual,
       validateAndCreateDateRange: vi.fn((start?: string, end?: string) => {
@@ -192,6 +192,9 @@ export const setupMockHandlers = async () => {
   vi.clearAllMocks();
 
   // Reset shared handlers to default successful behaviors
+  const shared: any = await import(
+    '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
+  );
   const {
     handleUniversalSearch,
     handleUniversalGetDetails,
@@ -199,10 +202,7 @@ export const setupMockHandlers = async () => {
     handleUniversalUpdate,
     handleUniversalDelete,
     formatResourceType,
-    createUniversalError,
-  } = await import(
-    '../../../../../src/handlers/tool-configs/universal/shared-handlers.js'
-  );
+  } = shared as any;
 
   // Set up default mock implementations
   vi.mocked(handleUniversalSearch).mockResolvedValue([]);
@@ -215,7 +215,7 @@ export const setupMockHandlers = async () => {
   });
 
   // Set up formatResourceType with proper mapping
-  vi.mocked(formatResourceType).mockImplementation((type: string) => {
+  (vi.mocked as any)(formatResourceType).mockImplementation((type: string) => {
     switch (type) {
       case 'companies':
         return 'company';
@@ -231,12 +231,14 @@ export const setupMockHandlers = async () => {
   });
 
   // Set up error creation
-  vi.mocked(createUniversalError).mockImplementation(
-    (operation: string, resourceType: string, error: any) =>
-      new Error(
-        `${operation} failed for ${resourceType}: ${error.message || error}`
-      )
-  );
+  if (shared.createUniversalError) {
+    (vi.mocked as any)(shared.createUniversalError).mockImplementation(
+      (operation: string, resourceType: string, error: any) =>
+        new Error(
+          `${operation} failed for ${resourceType}: ${error.message || error}`
+        )
+    );
+  }
 };
 
 /**
@@ -249,7 +251,7 @@ export const setupMockErrorService = async () => {
   );
 
   // Set up default error creation behavior
-  vi.mocked(ErrorService.createUniversalError).mockImplementation(
+  (vi.mocked as any)(ErrorService.createUniversalError).mockImplementation(
     (operation: string, resourceType: string, error: any) =>
       new Error(
         `Universal ${operation} failed for resource type ${resourceType}: ${error.message || error}`
@@ -372,7 +374,7 @@ export const initializeMockInstances = async () => {
         sharedHandlers.handleUniversalGetDetailedInfo,
       formatResourceType: sharedHandlers.formatResourceType,
       getSingularResourceType: sharedHandlers.getSingularResourceType,
-      createUniversalError: sharedHandlers.createUniversalError,
+      createUniversalError: (sharedHandlers as any).createUniversalError,
     },
     mockSchemas: {
       validateUniversalToolParams: schemas.validateUniversalToolParams,

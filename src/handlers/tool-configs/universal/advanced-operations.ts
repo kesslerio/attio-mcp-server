@@ -253,7 +253,8 @@ export const advancedSearchConfig: UniversalToolConfig = {
         if (first && typeof first === 'object' && 'value' in first)
           return String((first as any).value);
       }
-      if (typeof v === 'object' && 'value' in v) return String((v as any).value);
+      if (typeof v === 'object' && 'value' in v)
+        return String((v as any).value);
       return undefined;
     };
 
@@ -454,7 +455,7 @@ async function searchRecordsByNotesContent(
 
     // Step 4: Fetch the actual records for these IDs
     const records: AttioRecord[] = [];
-    for (const recordId of parentRecordIds) {
+    for (const recordId of Array.from(parentRecordIds)) {
       try {
         const recordResponse = await client.get(
           `/objects/${parentObject}/records/${recordId}`
@@ -982,15 +983,12 @@ export const batchOperationsConfig: UniversalToolConfig = {
             if (first && typeof first === 'object' && 'value' in first)
               return String((first as any).value);
           }
-          if (typeof v === 'object' && 'value' in v) return String((v as any).value);
+          if (typeof v === 'object' && 'value' in v)
+            return String((v as any).value);
           return undefined;
         };
 
-        return (
-          coerce(nameVal) ??
-          coerce(titleVal) ??
-          (fallback ?? 'Unknown')
-        );
+        return coerce(nameVal) ?? coerce(titleVal) ?? fallback ?? 'Unknown';
       };
 
       const successCount = results.filter((r) => r.success).length;
@@ -1048,15 +1046,17 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Legacy format: AttioRecord[] (single search)
           return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
             .map((record: Record<string, unknown>, index: number) => {
-              const values = record.values as Record<string, unknown> | undefined;
+              const values = record.values as
+                | Record<string, unknown>
+                | undefined;
               const recordId = record.id as Record<string, unknown> | undefined;
               const name = extractName(values, 'Unnamed');
               const id = (recordId?.record_id as string) || 'unknown';
               return `${index + 1}. ${name} (ID: ${id})`;
             })
             .join('\n')}`;
+        }
       }
-    }
 
       // Show details for successful operations
       const successful = results.filter((r) => r.success);

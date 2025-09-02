@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { ResourceType } from '../src/core/types.js';
+import { ResourceType } from '../src/types/attio.js';
 
 // Import all universal tool configurations
 import * as coreOpsConfig from '../src/handlers/tool-configs/universal/core-operations.js';
@@ -43,12 +43,12 @@ const UNIVERSAL_TOOL_CONFIGS = [
  * All supported resource types including the new LISTS type added in Phase 2
  */
 const ALL_RESOURCE_TYPES: ResourceType[] = [
-  'companies',
-  'people',
-  'lists',
-  'records',
-  'tasks',
-  'deals',
+  ResourceType.COMPANIES,
+  ResourceType.PEOPLE,
+  ResourceType.LISTS,
+  ResourceType.RECORDS,
+  ResourceType.TASKS,
+  ResourceType.DEALS,
 ];
 
 /**
@@ -76,7 +76,7 @@ describe('formatResult Contract Regression Tests', () => {
         ALL_RESOURCE_TYPES.forEach((resourceType) => {
           it(`should always return string type for ${resourceType}`, () => {
             const mockData = getMockDataForResourceType(resourceType);
-            const result = config.formatResult(mockData, resourceType);
+            const result = config.formatResult(mockData);
 
             expect(typeof result).toBe('string');
             expect(result).toBeDefined();
@@ -90,8 +90,10 @@ describe('formatResult Contract Regression Tests', () => {
             process.env.NODE_ENV = NODE_ENV;
 
             try {
-              const mockData = getMockDataForResourceType('companies');
-              const result = config.formatResult(mockData, 'companies');
+              const mockData = getMockDataForResourceType(
+                ResourceType.COMPANIES
+              );
+              const result = config.formatResult(mockData);
 
               expect(typeof result).toBe('string');
             } finally {
@@ -113,7 +115,7 @@ describe('formatResult Contract Regression Tests', () => {
         ALL_RESOURCE_TYPES.forEach((resourceType) => {
           it(`should never return JSON string for ${resourceType}`, () => {
             const mockData = getMockDataForResourceType(resourceType);
-            const result = config.formatResult(mockData, resourceType);
+            const result = config.formatResult(mockData);
 
             // Verify result doesn't look like JSON
             expect(result.trim().startsWith('{')).toBe(false);
@@ -129,8 +131,10 @@ describe('formatResult Contract Regression Tests', () => {
             process.env.NODE_ENV = NODE_ENV;
 
             try {
-              const mockData = getMockDataForResourceType('companies');
-              const result = config.formatResult(mockData, 'companies');
+              const mockData = getMockDataForResourceType(
+                ResourceType.COMPANIES
+              );
+              const result = config.formatResult(mockData);
 
               // Verify result doesn't look like JSON
               expect(result.trim().startsWith('{')).toBe(false);
@@ -151,7 +155,7 @@ describe('formatResult Contract Regression Tests', () => {
       }
 
       it(`${name} should provide consistent output across environments`, () => {
-        const mockData = getMockDataForResourceType('companies');
+        const mockData = getMockDataForResourceType(ResourceType.COMPANIES);
         const outputs: string[] = [];
 
         TEST_ENVIRONMENTS.forEach(({ NODE_ENV }) => {
@@ -159,7 +163,7 @@ describe('formatResult Contract Regression Tests', () => {
           process.env.NODE_ENV = NODE_ENV;
 
           try {
-            const result = config.formatResult(mockData, 'companies');
+            const result = config.formatResult(mockData);
             outputs.push(result);
           } finally {
             process.env.NODE_ENV = originalEnv;
@@ -187,13 +191,10 @@ describe('formatResult Contract Regression Tests', () => {
         const minimalValidData = { success: true, data: null };
 
         expect(() => {
-          config.formatResult(minimalValidData, 'companies');
+          config.formatResult(minimalValidData);
         }).not.toThrow();
 
-        const resultForNull = config.formatResult(
-          minimalValidData,
-          'companies'
-        );
+        const resultForNull = config.formatResult(minimalValidData);
         expect(typeof resultForNull).toBe('string');
       });
 
@@ -202,12 +203,12 @@ describe('formatResult Contract Regression Tests', () => {
         const emptyData = { success: true, data: {} };
 
         expect(() => {
-          config.formatResult(emptyData, 'companies');
+          config.formatResult(emptyData);
         }).not.toThrow();
 
         expect(() => {
           const arrayData = { success: true, data: [] };
-          config.formatResult(arrayData, 'companies');
+          config.formatResult(arrayData);
         }).not.toThrow();
       });
     });
@@ -224,7 +225,7 @@ describe('formatResult Contract Regression Tests', () => {
           const mockData = getMockDataForResourceType(resourceType);
 
           expect(() => {
-            const result = config.formatResult(mockData, resourceType);
+            const result = config.formatResult(mockData);
             expect(typeof result).toBe('string');
           }).not.toThrow();
         });
@@ -241,7 +242,7 @@ describe('formatResult Contract Regression Tests', () => {
       it(`${name} should properly handle LISTS resource type added in Phase 2`, () => {
         const mockListData = ListMockFactory.create();
 
-        const result = config.formatResult(mockListData, 'lists');
+        const result = config.formatResult(mockListData);
 
         expect(typeof result).toBe('string');
         expect(result.length).toBeGreaterThan(0);

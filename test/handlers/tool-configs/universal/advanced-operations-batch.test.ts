@@ -340,7 +340,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       const emptyResults: any[] = [];
 
       // For empty arrays, batch formatters should handle empty results appropriately
-      const formatted = batchOperationsConfig.formatResult(
+      const formatted = (batchOperationsConfig.formatResult as any)(
         emptyResults,
         BatchOperationType.SEARCH,
         UniversalResourceType.COMPANIES
@@ -373,11 +373,13 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       };
 
       const startTime = Date.now();
-      const result = await batchOperationsConfig.handler(params);
+      const result: any[] = (await batchOperationsConfig.handler(
+        params
+      )) as any[];
       const endTime = Date.now();
 
       expect(result).toHaveLength(10);
-      expect(result.every((r) => r.success)).toBe(true);
+      expect((result as any[]).every((r: any) => r.success)).toBe(true);
       // Should complete faster than sequential processing due to controlled concurrency
       expect(endTime - startTime).toBeLessThan(200); // Much less than 10 * 10ms = 100ms
     });

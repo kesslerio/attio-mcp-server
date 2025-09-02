@@ -1,5 +1,6 @@
 // module banner – shows up as soon as the file is evaluated
 import { fileURLToPath } from 'url';
+// @ts-ignore - import.meta is valid with NodeNext module resolution in tsconfig.json
 const MODULE_FILE = fileURLToPath(import.meta.url);
 console.log('📦 LOADED attio-client', {
   file: MODULE_FILE,
@@ -12,8 +13,6 @@ export const __MODULE_PATH__ = MODULE_FILE;
  * Attio API client and related utilities
  */
 import axios, { AxiosInstance } from 'axios';
-// @ts-expect-error: axios internal adapter import
-import httpAdapter from 'axios/lib/adapters/http.js';
 import { debug, error, OperationType } from '../utils/logger.js';
 
 export type AttioClient = AxiosInstance;

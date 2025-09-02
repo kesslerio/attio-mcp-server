@@ -775,7 +775,7 @@ export class SchemaPreValidator {
     // Apply suggestions automatically
     if (validation.suggestions.size > 0) {
       const correctedData = { ...recordData };
-      for (const [wrong, correct] of validation.suggestions) {
+      for (const [wrong, correct] of Array.from(validation.suggestions)) {
         if (wrong in correctedData) {
           correctedData[correct] = correctedData[wrong];
           delete correctedData[wrong];

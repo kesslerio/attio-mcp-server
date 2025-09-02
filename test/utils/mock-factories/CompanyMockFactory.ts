@@ -7,7 +7,7 @@
  * response format with proper AttioValue wrappers and nested structure.
  */
 
-import type { AttioRecord, AttioValue } from '../../../src/types/attio.js';
+import type { AttioValue } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
@@ -52,7 +52,16 @@ export interface MockCompanyOptions {
  * const companies = CompanyMockFactory.createMultiple(5);
  * ```
  */
-export class CompanyMockFactory implements MockFactory<AttioRecord> {
+// Local test-friendly record type accepting AttioValue[] wrappers
+export interface TestAttioRecord {
+  id: { record_id: string; [key: string]: unknown };
+  values: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
   /**
    * Generates a unique mock company ID in UUID format
    *
@@ -70,7 +79,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
    * @param overrides - Optional overrides for specific fields
    * @returns Mock AttioRecord for company matching API response format
    */
-  static create(overrides: MockCompanyOptions = {}): AttioRecord {
+  static create(overrides: MockCompanyOptions = {}): TestAttioRecord {
     const companyId = this.generateMockId();
     const now = new Date().toISOString();
     const companyNumber = this.extractNumberFromId(companyId);
@@ -80,7 +89,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
     const domain =
       overrides.domain || `mock-company-${companyNumber}.example.com`;
 
-    const baseCompany: AttioRecord = {
+    const baseCompany: TestAttioRecord = {
       id: {
         record_id: companyId,
         object_id: 'companies',
@@ -167,7 +176,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   static createMultiple(
     count: number,
     overrides: MockCompanyOptions = {}
-  ): AttioRecord[] {
+  ): TestAttioRecord[] {
     return Array.from({ length: count }, (_, index) => {
       const companyNumber = index + 1;
       return this.create({
@@ -181,7 +190,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a technology company mock
    */
-  static createTechnology(overrides: MockCompanyOptions = {}): AttioRecord {
+  static createTechnology(overrides: MockCompanyOptions = {}): TestAttioRecord {
     return this.create({
       ...overrides,
       industry: 'Technology',
@@ -197,7 +206,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a finance company mock
    */
-  static createFinance(overrides: MockCompanyOptions = {}): AttioRecord {
+  static createFinance(overrides: MockCompanyOptions = {}): TestAttioRecord {
     return this.create({
       ...overrides,
       industry: 'Financial Services',
@@ -213,7 +222,7 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a healthcare company mock
    */
-  static createHealthcare(overrides: MockCompanyOptions = {}): AttioRecord {
+  static createHealthcare(overrides: MockCompanyOptions = {}): TestAttioRecord {
     return this.create({
       ...overrides,
       industry: 'Healthcare',
@@ -229,7 +238,9 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a manufacturing company mock
    */
-  static createManufacturing(overrides: MockCompanyOptions = {}): AttioRecord {
+  static createManufacturing(
+    overrides: MockCompanyOptions = {}
+  ): TestAttioRecord {
     return this.create({
       ...overrides,
       industry: 'Manufacturing',
@@ -245,14 +256,14 @@ export class CompanyMockFactory implements MockFactory<AttioRecord> {
   /**
    * Implementation of MockFactory interface
    */
-  create(overrides: MockCompanyOptions = {}): AttioRecord {
+  create(overrides: MockCompanyOptions = {}): TestAttioRecord {
     return CompanyMockFactory.create(overrides);
   }
 
   createMultiple(
     count: number,
     overrides: MockCompanyOptions = {}
-  ): AttioRecord[] {
+  ): TestAttioRecord[] {
     return CompanyMockFactory.createMultiple(count, overrides);
   }
 

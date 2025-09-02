@@ -184,3 +184,6 @@ export interface TaskRecord {
   created_at?: string;
   updated_at?: string;
 }
+
+// Add missing export for AnyTestData
+export type AnyTestData = Record<string, unknown>;

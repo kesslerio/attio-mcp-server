@@ -188,7 +188,7 @@ export async function getObjectDetails<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<T>>(path);
-    return response?.data?.data || response?.data;
+    return (response?.data?.data || response?.data) as T;
   }, options?.retryConfig);
 }
 
@@ -281,7 +281,7 @@ export async function createRecord<T extends AttioRecord>(
       const isCompaniesRequest =
         params.objectSlug === 'companies' || params.objectId === 'companies';
       const result = ensureAttioRecordStructure<T>(
-        rawResult,
+        rawResult as Record<string, unknown>,
         isCompaniesRequest
       );
       return result;
@@ -370,7 +370,7 @@ export async function getRecord<T extends AttioRecord>(
 
   return callWithRetry(async () => {
     const response = await api.get<AttioSingleResponse<T>>(path);
-    return response?.data?.data || response?.data;
+    return (response?.data?.data || response?.data) as T;
   }, retryConfig);
 }
 
@@ -439,7 +439,7 @@ export async function updateRecord<T extends AttioRecord>(
       const isCompaniesRequest =
         params.objectSlug === 'companies' || params.objectId === 'companies';
       const result = ensureAttioRecordStructure<T>(
-        rawResult,
+        rawResult as Record<string, unknown>,
         isCompaniesRequest
       );
       return result;

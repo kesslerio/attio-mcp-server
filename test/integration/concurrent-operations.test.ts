@@ -131,7 +131,7 @@ describe('Concurrent Operations - Integration Tests', () => {
 
       // Verify final state
       const finalCompany = await getCompanyDetails(company.id.record_id);
-      const finalWebsite = finalCompany.values?.website?.[0]?.value;
+      const finalWebsite = finalCompany.values?.website;
 
       // Website should be one of the two values
       expect([update1.website, update2.website]).toContain(finalWebsite);
@@ -277,9 +277,7 @@ describe('Concurrent Operations - Integration Tests', () => {
             );
             break;
           case 3:
-            operations.push(
-              searchCompanies(company.values?.name?.[0]?.value || '')
-            );
+            operations.push(searchCompanies(company.values?.name || ''));
             break;
         }
       }

@@ -873,6 +873,36 @@ export class MockDataValidator {
       };
     }
   }
+
+  /**
+   * Local field coverage calculator to avoid cross-class private access
+   */
+  private static calculateFieldCoverage(
+    obj: any,
+    expectedFields: string[]
+  ): number {
+    if (!obj || expectedFields.length === 0) return 0;
+    const present = expectedFields.filter((field) => {
+      if (field.includes('.')) {
+        const parts = field.split('.');
+        let current: any = obj;
+        for (const part of parts) {
+          if (
+            current &&
+            current[part] !== undefined &&
+            current[part] !== null
+          ) {
+            current = current[part];
+          } else {
+            return false;
+          }
+        }
+        return true;
+      }
+      return obj[field] !== undefined && obj[field] !== null;
+    });
+    return present.length / expectedFields.length;
+  }
 }
 
 /**

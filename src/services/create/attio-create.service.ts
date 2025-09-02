@@ -261,8 +261,8 @@ export class AttioCreateService implements CreateService {
     // Simple character overlap calculation
     const setA = new Set(a.toLowerCase());
     const setB = new Set(b.toLowerCase());
-    const intersection = new Set([...setA].filter((x) => setB.has(x)));
-    const union = new Set([...setA, ...setB]);
+    const intersection = new Set(Array.from(setA).filter((x) => setB.has(x)));
+    const union = new Set([...Array.from(setA), ...Array.from(setB)]);
 
     return intersection.size / union.size;
   }

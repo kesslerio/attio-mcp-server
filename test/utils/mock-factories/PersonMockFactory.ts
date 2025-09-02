@@ -7,7 +7,7 @@
  * response format with proper email, phone, and company associations.
  */
 
-import type { AttioRecord, AttioValue } from '../../../src/types/attio.js';
+import type { AttioValue } from '../../../src/types/attio.js';
 import { TestEnvironment } from './test-environment.js';
 import type { MockFactory } from './TaskMockFactory.js';
 import { UUIDMockGenerator } from './uuid-mock-generator.js';
@@ -51,7 +51,16 @@ export interface MockPersonOptions {
  * const people = PersonMockFactory.createMultiple(5);
  * ```
  */
-export class PersonMockFactory implements MockFactory<AttioRecord> {
+// Local test-friendly record type accepting AttioValue[] wrappers
+export interface TestAttioRecord {
+  id: { record_id: string; [key: string]: unknown };
+  values: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   /**
    * Generates a unique mock person ID in UUID format
    *
@@ -69,7 +78,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
    * @param overrides - Optional overrides for specific fields
    * @returns Mock AttioRecord for person matching API response format
    */
-  static create(overrides: MockPersonOptions = {}): AttioRecord {
+  static create(overrides: MockPersonOptions = {}): TestAttioRecord {
     const personId = this.generateMockId();
     const now = new Date().toISOString();
     const personNumber = this.extractNumberFromId(personId);
@@ -86,7 +95,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
     const email = this.generateEmail(fullName, personNumber);
     const phone = this.generatePhone();
 
-    const basePerson: AttioRecord = {
+    const basePerson: TestAttioRecord = {
       id: {
         record_id: personId,
         object_id: 'people',
@@ -151,8 +160,8 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
 
     TestEnvironment.log(`Created mock person: ${personId}`, {
       name: fullName,
-      email: basePerson.values.email_addresses?.[0],
-      jobTitle: basePerson.values.job_title,
+      email: (basePerson.values as any).email_addresses?.[0],
+      jobTitle: (basePerson.values as any).job_title,
     });
 
     return basePerson;
@@ -168,7 +177,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   static createMultiple(
     count: number,
     overrides: MockPersonOptions = {}
-  ): AttioRecord[] {
+  ): TestAttioRecord[] {
     return Array.from({ length: count }, (_, index) => {
       const personNumber = index + 1;
       return this.create({
@@ -184,7 +193,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates an executive person mock
    */
-  static createExecutive(overrides: MockPersonOptions = {}): AttioRecord {
+  static createExecutive(overrides: MockPersonOptions = {}): TestAttioRecord {
     const executiveTitles = [
       'CEO',
       'CTO',
@@ -206,7 +215,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a sales person mock
    */
-  static createSalesPerson(overrides: MockPersonOptions = {}): AttioRecord {
+  static createSalesPerson(overrides: MockPersonOptions = {}): TestAttioRecord {
     const salesTitles = [
       'Account Executive',
       'Sales Representative',
@@ -226,7 +235,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates an engineer mock
    */
-  static createEngineer(overrides: MockPersonOptions = {}): AttioRecord {
+  static createEngineer(overrides: MockPersonOptions = {}): TestAttioRecord {
     const engineeringTitles = [
       'Software Engineer',
       'Senior Software Engineer',
@@ -247,7 +256,9 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   /**
    * Creates a marketing person mock
    */
-  static createMarketingPerson(overrides: MockPersonOptions = {}): AttioRecord {
+  static createMarketingPerson(
+    overrides: MockPersonOptions = {}
+  ): TestAttioRecord {
     const marketingTitles = [
       'Marketing Manager',
       'Content Marketing Manager',
@@ -270,7 +281,7 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   static createWithCompany(
     companyId: string,
     overrides: MockPersonOptions = {}
-  ): AttioRecord {
+  ): TestAttioRecord {
     return this.create({
       ...overrides,
       company: companyId,
@@ -280,14 +291,14 @@ export class PersonMockFactory implements MockFactory<AttioRecord> {
   /**
    * Implementation of MockFactory interface
    */
-  create(overrides: MockPersonOptions = {}): AttioRecord {
+  create(overrides: MockPersonOptions = {}): TestAttioRecord {
     return PersonMockFactory.create(overrides);
   }
 
   createMultiple(
     count: number,
     overrides: MockPersonOptions = {}
-  ): AttioRecord[] {
+  ): TestAttioRecord[] {
     return PersonMockFactory.createMultiple(count, overrides);
   }
 

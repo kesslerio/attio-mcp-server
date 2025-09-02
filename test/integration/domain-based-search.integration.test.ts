@@ -5,7 +5,6 @@ import { describe, test, beforeAll } from 'vitest';
 import {
   searchCompanies,
   searchCompaniesByDomain,
-  smartSearchCompanies,
 } from '../../src/objects/companies/index.js';
 import { extractDomain } from '../../src/utils/domain-utils.js';
 
@@ -36,7 +35,7 @@ describe('Domain-Based Company Search Integration', () => {
 
         // Check if domain matches appear first (if any companies with stripe.com exist)
         const hasStripeResults = results.some((company) =>
-          company.values?.website?.[0]?.value?.includes('stripe.com')
+          company.values?.website?.includes('stripe.com')
         );
 
         if (hasStripeResults) {
@@ -105,7 +104,7 @@ describe('Domain-Based Company Search Integration', () => {
     }, 30000);
   });
 
-  describe('smartSearchCompanies', () => {
+  describe('searchCompanies', () => {
     test('should handle mixed content queries', async () => {
       if (!process.env.ATTIO_API_KEY) {
         console.log('Skipping test - no API key');
@@ -113,7 +112,7 @@ describe('Domain-Based Company Search Integration', () => {
       }
 
       const mixedQuery = 'stripe.com payment processing';
-      const results = await smartSearchCompanies(mixedQuery);
+      const results = await searchCompanies(mixedQuery);
 
       expect(Array.isArray(results)).toBe(true);
 
@@ -135,7 +134,7 @@ describe('Domain-Based Company Search Integration', () => {
       }
 
       const complexQuery = 'Contact support@github.com or visit stripe.com';
-      const results = await smartSearchCompanies(complexQuery);
+      const results = await searchCompanies(complexQuery);
 
       expect(Array.isArray(results)).toBe(true);
 

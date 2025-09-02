@@ -2,7 +2,7 @@
  * Value matching utilities for fuzzy matching field values
  * Uses string-similarity for intelligent suggestions when exact matches fail
  */
-import stringSimilarity from 'string-similarity';
+import * as stringSimilarity from 'string-similarity';
 
 export interface ValueMatch {
   value: string;

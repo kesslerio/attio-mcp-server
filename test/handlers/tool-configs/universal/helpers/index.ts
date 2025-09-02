@@ -23,6 +23,20 @@
  * } from './helpers';
  */
 
+// Local imports needed for convenience exports below
+import { setupUnitTestMocks, cleanupMocks } from './mock-setup.js';
+import { MockRecordFactory } from './mock-data.js';
+import { assertionHelpers } from './test-helpers.js';
+import {
+  IntegrationTestSetup,
+  IntegrationTestDataManager,
+  PerformanceTestRunner,
+  integrationConfig,
+  integrationUtils,
+} from './integration-helpers.js';
+import { IntegrationDataFactory } from './mock-data.js';
+import { PERFORMANCE_BUDGETS } from './test-constants.js';
+
 // Test Constants and Configuration
 export {
   TEST_ENVIRONMENT,

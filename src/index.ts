@@ -2,8 +2,8 @@
 
 // Load environment variables from .env file manually to avoid dotenv banner output
 // This ensures MCP JSON-RPC protocol compliance by preventing stdout contamination
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function loadEnvFile() {
   try {

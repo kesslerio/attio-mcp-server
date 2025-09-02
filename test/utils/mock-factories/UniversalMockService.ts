@@ -16,7 +16,14 @@
  * - Environment-aware mock injection
  */
 
-import type { AttioRecord } from '../../../src/types/attio.js';
+// Use a relaxed test-only record shape to avoid src type coupling
+export interface TestAttioRecord {
+  id: Record<string, unknown>;
+  values: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
 import { CompanyMockFactory } from './CompanyMockFactory.js';
 import { PersonMockFactory } from './PersonMockFactory.js';
 import { TaskMockFactory } from './TaskMockFactory.js';
@@ -49,7 +56,7 @@ export class UniversalMockService {
    */
   static async createCompany(
     companyData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       const { createCompany } = await import(
@@ -75,29 +82,39 @@ export class UniversalMockService {
     // Convert to AttioRecord format expected by universal handlers
     return {
       id: {
-        record_id: mockCompany.id.company_id,
+        record_id: (mockCompany.id as any).record_id,
         object_id: 'companies',
-        workspace_id: mockCompany.id.workspace_id || 'mock-workspace-id',
+        workspace_id:
+          ((mockCompany.id as any).workspace_id as string) ||
+          'mock-workspace-id',
       },
       values: {
         name: [
           {
             value:
-              mockCompany.values.name ||
-              `Mock Company ${mockCompany.id.company_id.slice(-4)}`,
+              (mockCompany.values as any).name ||
+              `Mock Company ${String((mockCompany.id as any).record_id).slice(-4)}`,
           },
         ],
-        domains: mockCompany.values.domains
+        domains: (mockCompany.values as any).domains
           ? Array.isArray(mockCompany.values.domains)
-            ? mockCompany.values.domains.map((d) => ({ value: d }))
-            : [{ value: mockCompany.values.domains }]
-          : [{ value: `${mockCompany.id.company_id}.example.com` }],
-        industry: [{ value: mockCompany.values.industry || 'Technology' }],
+            ? (mockCompany.values as any).domains.map((d: string) => ({
+                value: d,
+              }))
+            : [{ value: (mockCompany.values as any).domains }]
+          : [
+              {
+                value: `${String((mockCompany.id as any).record_id)}.example.com`,
+              },
+            ],
+        industry: [
+          { value: (mockCompany.values as any).industry || 'Technology' },
+        ],
         description: [
           {
             value:
-              mockCompany.values.description ||
-              `Mock company for testing - ${mockCompany.id.company_id}`,
+              (mockCompany.values as any).description ||
+              `Mock company for testing - ${String((mockCompany.id as any).record_id)}`,
           },
         ],
         // Pass through any additional fields with proper wrapping
@@ -126,7 +143,7 @@ export class UniversalMockService {
    */
   static async createPerson(
     personData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       const { createPerson } = await import(
@@ -150,21 +167,25 @@ export class UniversalMockService {
     // Convert to AttioRecord format expected by universal handlers
     return {
       id: {
-        record_id: mockPerson.id.person_id,
+        record_id: (mockPerson.id as any).record_id,
         object_id: 'people',
-        workspace_id: mockPerson.id.workspace_id || 'mock-workspace-id',
+        workspace_id:
+          ((mockPerson.id as any).workspace_id as string) ||
+          'mock-workspace-id',
       },
       values: {
         name: [
           {
             value:
-              mockPerson.values.name ||
-              `Mock Person ${mockPerson.id.person_id.slice(-4)}`,
+              (mockPerson.values as any).name ||
+              `Mock Person ${String((mockPerson.id as any).record_id).slice(-4)}`,
           },
         ],
         email_addresses: Array.isArray(personData.email_addresses)
           ? personData.email_addresses.map((email) => ({ value: email }))
           : [{ value: `${mockPerson.id.person_id}@example.com` }],
+        // Adjust above default to use record_id if present
+        // (keep existing structure but ensure deterministic value)
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
           Object.entries(personData)
@@ -189,7 +210,7 @@ export class UniversalMockService {
    */
   static async createTask(
     taskData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       try {
@@ -198,7 +219,7 @@ export class UniversalMockService {
           assigneeId: taskData.assigneeId as string,
           dueDate: taskData.dueDate as string,
           recordId: taskData.recordId as string,
-        })) as unknown as AttioRecord;
+        })) as unknown as TestAttioRecord;
       } catch (error) {
         throw new Error(
           `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -228,7 +249,7 @@ export class UniversalMockService {
     });
 
     // Convert to AttioRecord format with Issue #480 compatibility
-    const attioRecord: AttioRecord = {
+    const attioRecord: TestAttioRecord = {
       id: {
         record_id: mockTask.id.record_id,
         task_id: mockTask.id.task_id, // Issue #480: Preserve task_id
@@ -299,7 +320,7 @@ export class UniversalMockService {
   static async updateTask(
     taskId: string,
     updateData: Record<string, unknown>
-  ): Promise<AttioRecord> {
+  ): Promise<TestAttioRecord> {
     if (!this.shouldUseMockData()) {
       // Dynamic import to avoid circular dependencies in production
       try {
@@ -310,7 +331,7 @@ export class UniversalMockService {
           assigneeId: updateData.assigneeId as string,
           dueDate: updateData.dueDate as string,
           recordIds: updateData.recordIds as string[],
-        })) as unknown as AttioRecord;
+        })) as unknown as TestAttioRecord;
       } catch (error) {
         throw new Error(
           `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -361,7 +382,7 @@ export class UniversalMockService {
     mockTask.id.task_id = taskId;
 
     // Convert to AttioRecord format with Issue #480 compatibility
-    const attioRecord: AttioRecord = {
+    const attioRecord: TestAttioRecord = {
       id: {
         record_id: taskId,
         task_id: taskId, // Issue #480: Preserve task_id

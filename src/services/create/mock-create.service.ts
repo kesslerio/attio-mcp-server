@@ -366,10 +366,9 @@ export class MockCreateService implements CreateService {
     return {
       ...data,
       tags: Array.from(baseTags),
-      metadata: {
-        ...(data.metadata || {}),
+      metadata: Object.assign(data.metadata || {}, {
         e2e: true,
-      },
+      }),
     };
   }
 }

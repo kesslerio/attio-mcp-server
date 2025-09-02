@@ -37,7 +37,7 @@ describe('Enhanced Universal Error Handling', () => {
         },
       };
 
-      const sanitized = InputSanitizer.sanitizeObject(obj);
+      const sanitized = InputSanitizer.sanitizeObject(obj) as any;
       expect(sanitized.name).toBe('evilCompany');
       expect(sanitized.email).toBe('admin@company.com');
       expect(sanitized.nested.description).toBe('alert(1)Safe description');

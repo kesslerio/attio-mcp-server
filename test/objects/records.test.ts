@@ -27,8 +27,8 @@ describe('Records API', () => {
       record_id: 'record123',
     },
     values: {
-      name: [{ value: 'Test Record' }],
-      description: [{ value: 'This is a test record' }],
+      name: 'Test Record',
+      description: 'This is a test record',
     },
   };
 
@@ -38,11 +38,11 @@ describe('Records API', () => {
     get: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
-  };
+  } as unknown as import('axios').AxiosInstance;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
+    (getAttioClient as any).mockReturnValue(mockApiClient);
   });
 
   describe('createObjectRecord', () => {
@@ -54,7 +54,7 @@ describe('Records API', () => {
       };
 
       // Mock the createRecord function
-      (attioOperations.createRecord as vi.Mock).mockResolvedValue(mockRecord);
+      (attioOperations.createRecord as any).mockResolvedValue(mockRecord);
 
       // Call the function
       const result = await createObjectRecord<AttioRecord>(
@@ -80,13 +80,13 @@ describe('Records API', () => {
 
       // Mock the createRecord function to throw an error that's a non-Error object
       // This will bypass the error instanceof Error check
-      (attioOperations.createRecord as vi.Mock).mockImplementation(() => {
+      (attioOperations.createRecord as any).mockImplementation(() => {
         // Return a Promise that rejects with a non-Error object
         return Promise.reject({ message: 'API error' });
       });
 
       // Mock the direct API call for fallback
-      mockApiClient.post.mockResolvedValue({
+      (mockApiClient.post as any).mockResolvedValue({
         data: {
           data: mockRecord,
         },
@@ -115,7 +115,7 @@ describe('Records API', () => {
   describe('getObjectRecord', () => {
     it('should call getRecord to get record details', async () => {
       // Mock the getRecord function
-      (attioOperations.getRecord as vi.Mock).mockResolvedValue(mockRecord);
+      (attioOperations.getRecord as any).mockResolvedValue(mockRecord);
 
       // Call the function
       const result = await getObjectRecord<AttioRecord>(
@@ -135,7 +135,7 @@ describe('Records API', () => {
 
     it('should support attributes parameter', async () => {
       // Mock the getRecord function
-      (attioOperations.getRecord as vi.Mock).mockResolvedValue(mockRecord);
+      (attioOperations.getRecord as any).mockResolvedValue(mockRecord);
 
       // Call the function with attributes
       const attributes = ['name', 'description'];
@@ -164,7 +164,7 @@ describe('Records API', () => {
       };
 
       // Mock the updateRecord function
-      (attioOperations.updateRecord as vi.Mock).mockResolvedValue(mockRecord);
+      (attioOperations.updateRecord as any).mockResolvedValue(mockRecord);
 
       // Call the function
       const result = await updateObjectRecord<AttioRecord>(
@@ -187,7 +187,7 @@ describe('Records API', () => {
   describe('deleteObjectRecord', () => {
     it('should call deleteRecord to delete a record', async () => {
       // Mock the deleteRecord function
-      (attioOperations.deleteRecord as vi.Mock).mockResolvedValue(true);
+      (attioOperations.deleteRecord as any).mockResolvedValue(true);
 
       // Call the function
       const result = await deleteObjectRecord('companies', 'record123');
@@ -211,7 +211,7 @@ describe('Records API', () => {
       ];
 
       // Mock the listRecords function
-      (attioOperations.listRecords as vi.Mock).mockResolvedValue(mockRecords);
+      (attioOperations.listRecords as any).mockResolvedValue(mockRecords);
 
       // Call the function
       const result = await listObjectRecords<AttioRecord>('companies');
@@ -230,7 +230,7 @@ describe('Records API', () => {
       const mockRecords = [mockRecord];
 
       // Mock the listRecords function
-      (attioOperations.listRecords as vi.Mock).mockResolvedValue(mockRecords);
+      (attioOperations.listRecords as any).mockResolvedValue(mockRecords);
 
       // Call the function with options
       const options = {

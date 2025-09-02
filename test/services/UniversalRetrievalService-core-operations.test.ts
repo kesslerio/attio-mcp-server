@@ -65,7 +65,7 @@ vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
 vi.mock('../../src/services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
 }));
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../src/types/attio.js';
@@ -89,7 +89,7 @@ describe('UniversalRetrievalService', () => {
   describe('getRecordDetails', () => {
     const mockRecord: AttioRecord = {
       id: { record_id: 'test_123' },
-      values: { name: [{ value: 'Test Record' }] },
+      values: { name: 'Test Record' },
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
     };

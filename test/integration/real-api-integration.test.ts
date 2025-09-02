@@ -63,10 +63,9 @@ describe('Real API Integration Tests', () => {
         company.values?.name,
         'Company should have a name field'
       ).toBeDefined();
-      expect(
-        company.values.name?.[0]?.value,
-        'Company name should match input'
-      ).toBe(testData.companyName);
+      expect(company.values.name, 'Company name should match input').toBe(
+        testData.companyName
+      );
 
       createdCompanyId = company.id.record_id;
       trackTestRecord('company', createdCompanyId);
@@ -86,7 +85,7 @@ describe('Real API Integration Tests', () => {
       ).toBeGreaterThan(0);
 
       const foundCompany = results.find(
-        (c) => c.values.name?.[0]?.value === testData.companyName
+        (c) => c.values.name === testData.companyName
       );
       expect(
         foundCompany,
@@ -102,10 +101,9 @@ describe('Real API Integration Tests', () => {
         details.id?.record_id,
         'Details should have correct record ID'
       ).toBe(createdCompanyId);
-      expect(
-        details.values?.name?.[0]?.value,
-        'Details should have correct name'
-      ).toBe(testData.companyName);
+      expect(details.values?.name, 'Details should have correct name').toBe(
+        testData.companyName
+      );
     });
 
     it('should update the company', async () => {
@@ -178,7 +176,7 @@ describe('Real API Integration Tests', () => {
       );
 
       const foundPerson = results.find((p) =>
-        p.values.email_addresses?.some(
+        (p.values.email_addresses as any[])?.some(
           (e: any) => e.email_address === testData.personEmail
         )
       );

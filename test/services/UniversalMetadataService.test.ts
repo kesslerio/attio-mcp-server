@@ -320,8 +320,8 @@ describe('UniversalMetadataService', () => {
         standard: ['attr1'],
         custom: ['attr2'],
         all: [
-          { name: 'attr1', category: 'contact', isCustom: false },
-          { name: 'attr2', category: 'other', isCustom: true },
+          { name: 'attr1', type: 'contact', isCustom: false },
+          { name: 'attr2', type: 'other', isCustom: true },
         ],
       };
       vi.mocked(discoverCompanyAttributes).mockResolvedValue(mockResult);
@@ -332,7 +332,7 @@ describe('UniversalMetadataService', () => {
       });
 
       expect(result).toEqual({
-        attributes: [{ name: 'attr1', category: 'contact', isCustom: false }],
+        attributes: [{ name: 'attr1', type: 'contact', isCustom: false }],
         count: 1,
       });
     });
