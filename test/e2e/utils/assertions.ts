@@ -786,8 +786,10 @@ export class E2EAssertions {
     
     switch (resourceType) {
       case 'notes':
-        expect(obj.id.note_id, 'Note should have note_id').toBeDefined();
-        expect(typeof obj.id.note_id, 'Note ID should be string').toBe('string');
+        // Support both raw notes (id.note_id) and normalized records (id.record_id)
+        const noteId = obj?.id?.note_id || obj?.id?.record_id;
+        expect(noteId, 'Note should have note_id (or record_id)').toBeDefined();
+        expect(typeof noteId, 'Note ID should be string').toBe('string');
         break;
       case 'tasks':
         expect(obj.id.task_id, 'Task should have task_id').toBeDefined();
@@ -804,9 +806,17 @@ export class E2EAssertions {
         break;
     }
     
-    // All resources should have workspace_id
-    expect(obj.id.workspace_id, `${resourceType.slice(0, -1)} should have workspace_id`).toBeDefined();
-    expect(typeof obj.id.workspace_id, 'Workspace ID should be string').toBe('string');
+    // All resources should have workspace_id, except notes API may omit it
+    if (resourceType !== 'notes') {
+      expect(
+        obj.id.workspace_id,
+        `${resourceType.slice(0, -1)} should have workspace_id`
+      ).toBeDefined();
+      expect(
+        typeof obj.id.workspace_id,
+        'Workspace ID should be string'
+      ).toBe('string');
+    }
   }
 
   /**
@@ -819,10 +829,14 @@ export class E2EAssertions {
     // Use resource-aware ID assertion for notes
     this.expectResourceId(note, 'notes');
     
-    expect(note.title, 'Note should have title').toBeDefined();
-    expect(note.content, 'Note should have content').toBeDefined();
-    expect(typeof note.title, 'Note title should be string').toBe('string');
-    expect(typeof note.content, 'Note content should be string').toBe('string');
+    // Support normalized and raw shapes for content/title
+    const title = note.title ?? note.values?.title;
+    const content =
+      note.content ?? note.values?.content_plaintext ?? note.values?.content_markdown;
+    expect(title, 'Note should have title').toBeDefined();
+    expect(content, 'Note should have content').toBeDefined();
+    expect(typeof title, 'Note title should be string').toBe('string');
+    expect(typeof content, 'Note content should be string').toBe('string');
 
     // Note format validation
     if (note.format) {

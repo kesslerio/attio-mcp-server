@@ -563,6 +563,24 @@ describe.skipIf(
 
   describe('Notes Management - CRUD Operations', () => {
     describe('Company Notes Management', () => {
+      // Ensure at least one company exists when running this block in isolation
+      beforeAll(async () => {
+        try {
+          if (testCompanies.length === 0) {
+            const companyData = CompanyFactory.create();
+            const resp = asToolResponse(
+              await callNotesTool('create-record', {
+                resource_type: 'companies',
+                record_data: companyData as any,
+              })
+            );
+            if (!resp.isError) {
+              const created = E2EAssertions.expectMcpData(resp) as any;
+              if (created?.id?.record_id) testCompanies.push(created);
+            }
+          }
+        } catch {}
+      });
       it('should create a company note with basic content', async () => {
         if (testCompanies.length === 0) {
           console.error(

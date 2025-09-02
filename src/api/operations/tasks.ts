@@ -134,7 +134,9 @@ export async function createTask(
     : [];
 
   // Always include linked_records as an array (Attio API requires the field)
-  // Use target_object and target_record_id format when linking
+  // If omitted, Attio returns 400 with validation error:
+  // validation_errors: path ["data","linked_records"], expected "array", received "undefined"
+  // When linking, use target_object and target_record_id format
   const linkedRecords = options.recordId && options.targetObject
     ? [{ target_object: options.targetObject, target_record_id: options.recordId }]
     : [];

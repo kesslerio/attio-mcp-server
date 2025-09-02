@@ -36,6 +36,7 @@ export function normalizeCompanyValues(
   const normalizedCompany: Record<string, unknown> = { ...input };
   const rawDomain = input.domain as string | undefined;
   const rawDomains = input.domains as unknown;
+  const rawWebsite = input.website as string | undefined;
 
   if (rawDomains) {
     if (Array.isArray(rawDomains)) {
@@ -58,6 +59,26 @@ export function normalizeCompanyValues(
   } else if (rawDomain) {
     normalizedCompany.domains = [String(rawDomain)];
     delete normalizedCompany.domain;
+  }
+
+  // If website is provided, derive domain from URL and merge into domains array.
+  // Then remove website to avoid unsupported attribute errors in Attio API.
+  if (rawWebsite && typeof rawWebsite === 'string') {
+    try {
+      const url = new URL(rawWebsite.includes('://') ? rawWebsite : `https://${rawWebsite}`);
+      let host = url.hostname.toLowerCase();
+      if (host.startsWith('www.')) host = host.slice(4);
+      const domains: string[] = Array.isArray(normalizedCompany.domains)
+        ? (normalizedCompany.domains as string[])
+        : [];
+      if (host && !domains.includes(host)) {
+        domains.push(host);
+        normalizedCompany.domains = domains;
+      }
+    } catch {
+      // Ignore invalid URL formats; simply drop website
+    }
+    delete normalizedCompany.website;
   }
 
   return normalizedCompany;

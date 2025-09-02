@@ -28,8 +28,8 @@ export function normalizeNote(note: any) {
   const idObj = note?.id;
   const rawId =
     typeof idObj === 'object'
-      ? (idObj?.note_id ?? idObj?.id)
-      : (idObj ?? note?.note_id ?? note?.id ?? null);
+      ? (idObj?.note_id ?? idObj?.record_id ?? idObj?.id)
+      : (idObj ?? note?.note_id ?? note?.record_id ?? note?.id ?? null);
 
   const normalized = {
     id: {
