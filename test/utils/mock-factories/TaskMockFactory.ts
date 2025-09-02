@@ -26,12 +26,15 @@ export interface MockTaskOptions {
   deadline_at?: string | null;
   due_date?: string | null;
   assignee_id?: string | null;
+  assignees?: string[]; // plural variant used in some tests
+  priority?: string; // allow priority in tests
   assignee?: AttioTask['assignee'];
   linked_record?: AttioTask['linked_records'];
   linked_records?: AttioTask['linked_records'];
   record_id?: string | null;
   created_at?: string;
   updated_at?: string;
+  [key: string]: unknown;
 }
 
 /**

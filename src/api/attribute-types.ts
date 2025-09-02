@@ -100,14 +100,18 @@ export async function getObjectAttributeMetadata(
     attributes.forEach((attr) => {
       if (!attr?.api_slug) return;
 
+      // Normalize legacy/variant flags commonly seen in mocks
+      const allowMultiple = (attr as { allow_multiple_values?: boolean })
+        .allow_multiple_values;
+
       const normalized: AttioAttributeMetadata = {
         ...attr,
         // Ensure is_multiselect is populated even if mocks use allow_multiple_values
         is_multiselect:
           typeof attr.is_multiselect === 'boolean'
             ? attr.is_multiselect
-            : typeof attr.allow_multiple_values === 'boolean'
-              ? attr.allow_multiple_values
+            : typeof allowMultiple === 'boolean'
+              ? allowMultiple
               : false,
       };
 

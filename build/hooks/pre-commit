@@ -91,6 +91,16 @@ else
   echo -e "${GREEN}✅ Build check passed ($(($stage3_end - $stage3_start))s)${NC}"
 fi
 
+# Stage 3.5: TypeScript check for tests (prevent regressions)
+echo -e "\n${YELLOW}Stage 3.5/4: TypeScript check for tests...${NC}"
+if ! npx tsc --project tsconfig.typecheck.json --noEmit; then
+  echo -e "${RED}❌ COMMIT BLOCKED: Test TypeScript errors detected${NC}"
+  echo -e "Fix type errors in test/ before committing."
+  echo -e "Hint: ensure Vitest types are available and mocks align with src types."
+  exit 1
+fi
+echo -e "${GREEN}✅ Test typecheck passed${NC}"
+
 # Stage 4: Unit Tests
 stage4_start=$(date +%s)
 if [ "$SKIP_TESTS" = "true" ]; then

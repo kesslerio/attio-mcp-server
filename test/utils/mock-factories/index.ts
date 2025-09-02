@@ -234,8 +234,8 @@ export const QuickMocks = {
   }),
 } as const;
 
-// Export MockDataInjector separately from its own file
-export { MockDataInjector } from './mock-injector.js';
+// Export MockDataInjector alias for compatibility
+export { UniversalMockInjector as MockDataInjector } from './mock-injector.js';
 
 /**
  * Export everything as default for convenience

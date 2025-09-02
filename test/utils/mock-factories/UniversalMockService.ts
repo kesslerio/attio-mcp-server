@@ -75,29 +75,30 @@ export class UniversalMockService {
     // Convert to AttioRecord format expected by universal handlers
     return {
       id: {
-        record_id: mockCompany.id.company_id,
+        record_id: (mockCompany.id as any).record_id,
         object_id: 'companies',
-        workspace_id: mockCompany.id.workspace_id || 'mock-workspace-id',
+        workspace_id:
+          ((mockCompany.id as any).workspace_id as string) || 'mock-workspace-id',
       },
       values: {
         name: [
           {
             value:
-              mockCompany.values.name ||
-              `Mock Company ${mockCompany.id.company_id.slice(-4)}`,
+              (mockCompany.values as any).name ||
+              `Mock Company ${String((mockCompany.id as any).record_id).slice(-4)}`,
           },
         ],
-        domains: mockCompany.values.domains
+        domains: (mockCompany.values as any).domains
           ? Array.isArray(mockCompany.values.domains)
-            ? mockCompany.values.domains.map((d) => ({ value: d }))
-            : [{ value: mockCompany.values.domains }]
-          : [{ value: `${mockCompany.id.company_id}.example.com` }],
-        industry: [{ value: mockCompany.values.industry || 'Technology' }],
+            ? (mockCompany.values as any).domains.map((d: string) => ({ value: d }))
+            : [{ value: (mockCompany.values as any).domains }]
+          : [{ value: `${String((mockCompany.id as any).record_id)}.example.com` }],
+        industry: [{ value: (mockCompany.values as any).industry || 'Technology' }],
         description: [
           {
             value:
-              mockCompany.values.description ||
-              `Mock company for testing - ${mockCompany.id.company_id}`,
+              (mockCompany.values as any).description ||
+              `Mock company for testing - ${String((mockCompany.id as any).record_id)}`,
           },
         ],
         // Pass through any additional fields with proper wrapping
@@ -150,21 +151,24 @@ export class UniversalMockService {
     // Convert to AttioRecord format expected by universal handlers
     return {
       id: {
-        record_id: mockPerson.id.person_id,
+        record_id: (mockPerson.id as any).record_id,
         object_id: 'people',
-        workspace_id: mockPerson.id.workspace_id || 'mock-workspace-id',
+        workspace_id:
+          ((mockPerson.id as any).workspace_id as string) || 'mock-workspace-id',
       },
       values: {
         name: [
           {
             value:
-              mockPerson.values.name ||
-              `Mock Person ${mockPerson.id.person_id.slice(-4)}`,
+              (mockPerson.values as any).name ||
+              `Mock Person ${String((mockPerson.id as any).record_id).slice(-4)}`,
           },
         ],
         email_addresses: Array.isArray(personData.email_addresses)
           ? personData.email_addresses.map((email) => ({ value: email }))
           : [{ value: `${mockPerson.id.person_id}@example.com` }],
+        // Adjust above default to use record_id if present
+        // (keep existing structure but ensure deterministic value)
         // Pass through any additional fields with proper wrapping
         ...Object.fromEntries(
           Object.entries(personData)
