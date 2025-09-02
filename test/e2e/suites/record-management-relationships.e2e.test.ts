@@ -181,6 +181,7 @@ describe.skipIf(
           record_data: {
             content: 'Consistency validation task',
             recordId: companyId,
+            targetObject: 'companies',
           },
         })
       );

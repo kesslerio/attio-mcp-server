@@ -90,7 +90,7 @@ export async function getTask(
 
 export async function createTask(
   content: string,
-  options: { assigneeId?: string; dueDate?: string; recordId?: string } = {},
+  options: { assigneeId?: string; dueDate?: string; recordId?: string; targetObject?: string } = {},
   retryConfig?: Partial<RetryConfig>
 ): Promise<AttioTask> {
   const api = getAttioClient();
@@ -118,8 +118,9 @@ export async function createTask(
     : [];
 
   // linked_records: Required field - empty array when no record to link, array with record when there is
-  const linkedRecords = options.recordId
-    ? [{ record_id: options.recordId }]
+  // Must use target_object and target_record_id format per Attio API documentation
+  const linkedRecords = options.recordId && options.targetObject
+    ? [{ target_object: options.targetObject, target_record_id: options.recordId }]
     : [];
 
   const requestPayload = {

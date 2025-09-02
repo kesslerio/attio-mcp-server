@@ -361,6 +361,7 @@ describe.skipIf(
               content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
               format: 'plaintext',
               recordId: company.id.record_id,
+              targetObject: 'companies',
               deadline_at: taskData.due_date,
             },
           })
@@ -905,6 +906,7 @@ describe.skipIf(
             content: `Follow up on integration for ${company.values.name?.[0]?.value || 'company'}`,
             format: 'plaintext',
             recordId: companyId,
+            targetObject: 'companies',
             deadline_at: taskData.due_date,
           },
         })
