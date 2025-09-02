@@ -4,6 +4,15 @@ set -euo pipefail
 echo "🏥 E2E Health Check Report"
 echo "=========================="
 
+ROOT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)
+# Load .env if present so ATTIO_API_KEY is available for curl
+if [[ -f "$ROOT_DIR/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ROOT_DIR/.env"
+  set +a
+fi
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "⚠️ jq not found. Install jq for JSON parsing (brew install jq)."
 fi
@@ -26,4 +35,3 @@ E2E_MODE=true npm run test:offline --silent \
   | grep -q "passed" && echo "✅ Passed" || echo "❌ Failed"
 
 echo "=========================="
-
