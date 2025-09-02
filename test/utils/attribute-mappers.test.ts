@@ -84,7 +84,7 @@ describe('Attribute Mappers', () => {
       expect(() => getAttributeSlug('industry_type')).not.toThrow();
 
       // Restore original function
-      (mappingUtils.handleSpecialCases as vi.Mock).mockRestore();
+      (mappingUtils.handleSpecialCases as any).mockRestore();
     });
 
     it('should handle edge cases in snake case conversion', () => {

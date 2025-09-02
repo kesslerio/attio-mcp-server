@@ -66,13 +66,13 @@ describe('Lists Batch Operations', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
+    (getAttioClient as any).mockReturnValue(mockApiClient);
   });
 
   describe('batchGetListsDetails', () => {
     it('should use executeBatchOperations to get multiple lists details', async () => {
       // Setup executeBatchOperations mock to simulate success
-      (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
+      (attioOperations.executeBatchOperations as any).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(
@@ -130,7 +130,7 @@ describe('Lists Batch Operations', () => {
 
     it('should handle errors in list details retrieval', async () => {
       // Setup executeBatchOperations mock to simulate mixed success/failure
-      (attioOperations.executeBatchOperations as vi.Mock).mockReturnValue({
+      (attioOperations.executeBatchOperations as any).mockReturnValue({
         results: [
           { id: 'get_list_list123', success: true, data: mockList1 },
           {
@@ -159,14 +159,14 @@ describe('Lists Batch Operations', () => {
 
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe('List not found');
+      expect((result.results[1].error as any).message).toBe('List not found');
     });
   });
 
   describe('batchGetListsEntries', () => {
     it('should use executeBatchOperations to get entries for multiple lists', async () => {
       // Setup executeBatchOperations mock
-      (attioOperations.executeBatchOperations as vi.Mock).mockImplementation(
+      (attioOperations.executeBatchOperations as any).mockImplementation(
         async (operations, apiCall) => {
           // Simulate calling the apiCall function for each operation
           const results = await Promise.all(
@@ -224,7 +224,7 @@ describe('Lists Batch Operations', () => {
 
     it('should handle errors in list entries retrieval', async () => {
       // Setup executeBatchOperations mock to simulate error
-      (attioOperations.executeBatchOperations as vi.Mock).mockReturnValue({
+      (attioOperations.executeBatchOperations as any).mockReturnValue({
         results: [
           {
             id: 'get_list_entries_list123_0',
@@ -260,7 +260,7 @@ describe('Lists Batch Operations', () => {
 
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe(
+      expect((result.results[1].error as any).message).toBe(
         'Failed to retrieve list entries'
       );
     });

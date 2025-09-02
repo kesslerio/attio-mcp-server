@@ -241,7 +241,8 @@ describe('Lists Resource Type', () => {
           parent_object: 'companies',
         });
 
-        const tempListId = (tempList.id as any)?.list_id || (tempList.id as any);
+        const tempListId =
+          (tempList.id as any)?.list_id || (tempList.id as any);
         const result = await deleteList(tempListId as string);
 
         expect(result).toBe(true);
@@ -342,7 +343,7 @@ describe('Lists Resource Type', () => {
 
           // Clean up if successful
           if (result.id) {
-            await deleteList(result.id.list_id || result.id);
+            await deleteList((result.id.list_id || result.id) as string);
           }
         } catch (error) {
           // Lists might not be creatable via records API

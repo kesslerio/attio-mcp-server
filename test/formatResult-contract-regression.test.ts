@@ -90,7 +90,9 @@ describe('formatResult Contract Regression Tests', () => {
             process.env.NODE_ENV = NODE_ENV;
 
             try {
-              const mockData = getMockDataForResourceType(ResourceType.COMPANIES);
+              const mockData = getMockDataForResourceType(
+                ResourceType.COMPANIES
+              );
               const result = config.formatResult(mockData);
 
               expect(typeof result).toBe('string');
@@ -129,7 +131,9 @@ describe('formatResult Contract Regression Tests', () => {
             process.env.NODE_ENV = NODE_ENV;
 
             try {
-              const mockData = getMockDataForResourceType(ResourceType.COMPANIES);
+              const mockData = getMockDataForResourceType(
+                ResourceType.COMPANIES
+              );
               const result = config.formatResult(mockData);
 
               // Verify result doesn't look like JSON

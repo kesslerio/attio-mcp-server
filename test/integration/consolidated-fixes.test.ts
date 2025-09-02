@@ -134,7 +134,9 @@ describe('Consolidated Fixes Integration Tests', () => {
       expect(result.mappings).toBeDefined();
 
       // Verify core task fields are included
-      const fieldNames = result.attributes.map((attr: any) => attr.api_slug);
+      const fieldNames = (result.attributes as any[]).map(
+        (attr: any) => attr.api_slug
+      );
       expect(fieldNames).toContain('content');
       expect(fieldNames).toContain('status');
       expect(fieldNames).toContain('due_date');
@@ -193,7 +195,7 @@ describe('Consolidated Fixes Integration Tests', () => {
         expect.fail('Should have thrown error for invalid task field');
       } catch (error: unknown) {
         // This may throw UniversalValidationError or EnhancedApiError depending on validation layer
-        const message = error.message || error.toString();
+        const message = (error as any).message || error.toString();
         expect(message).toContain('invalid_field');
 
         // Should provide guidance about valid task fields or general field validation
@@ -364,8 +366,8 @@ describe('Consolidated Fixes Integration Tests', () => {
       } catch (error: unknown) {
         // Should still be throwable and have basic properties
         expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBeDefined();
-        expect(error.message.length).toBeGreaterThan(0);
+        expect((error as any).message).toBeDefined();
+        expect((error as any).message.length).toBeGreaterThan(0);
 
         // But should be enhanced
         if (error instanceof EnhancedApiError) {

@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { UniversalResourceType } from '../src/handlers/tool-configs/universal/types.js';
-import type { ResourceType } from '../src/core/types.js';
+import type { ResourceType } from '../src/types/attio.js';
 
 // Import configurations to test
 import * as coreOps from '../src/handlers/tool-configs/universal/core-operations.js';
@@ -107,7 +107,7 @@ describe('Universal Resource Types Validation', () => {
             }
 
             expect(() => {
-              const result = fn(mockData, resourceType as ResourceType);
+              const result = fn(mockData);
               expect(typeof result).toBe('string');
               expect(result.length).toBeGreaterThan(0);
             }).not.toThrow();
@@ -134,7 +134,7 @@ describe('Universal Resource Types Validation', () => {
 
       formatResultFunctions.forEach((formatFn, index) => {
         expect(() => {
-          const result = formatFn(listMockData, 'lists');
+          const result = formatFn(listMockData);
           expect(typeof result).toBe('string');
           expect(result.length).toBeGreaterThan(0);
           // Ensure it's not JSON output
@@ -186,10 +186,7 @@ describe('Universal Resource Types Validation', () => {
           const mockData = getMockDataForType(resourceType);
           return {
             resourceType,
-            result: coreOps.searchRecordsConfig.formatResult(
-              mockData,
-              resourceType as ResourceType
-            ),
+            result: coreOps.searchRecordsConfig.formatResult(mockData),
           };
         }
       );
@@ -208,10 +205,7 @@ describe('Universal Resource Types Validation', () => {
           const mockData = getMockDataForType(resourceType);
           return {
             resourceType,
-            result: coreOps.getRecordDetailsConfig.formatResult(
-              mockData,
-              resourceType as ResourceType
-            ),
+            result: coreOps.getRecordDetailsConfig.formatResult(mockData),
           };
         }
       );

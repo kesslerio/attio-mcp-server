@@ -194,7 +194,8 @@ describe('Universal Core Operations Search Tests', () => {
       const { handleUniversalGetDetails } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord);
+      // Cast to any to align with AttioRecord typing used by handler
+      vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
       const params: UniversalRecordDetailsParams = {
         resource_type: UniversalResourceType.PEOPLE,

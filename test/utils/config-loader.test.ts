@@ -50,7 +50,7 @@ describe('Configuration Loader', () => {
   describe('loadMappingConfig', () => {
     it('should return an empty config when no files exist', () => {
       // Mock fs.existsSync to return false (files don't exist)
-      (fs.existsSync as vi.Mock).mockReturnValue(false);
+      (fs.existsSync as any).mockReturnValue(false);
 
       const config = loadMappingConfig();
 
@@ -73,10 +73,10 @@ describe('Configuration Loader', () => {
 
     it('should load and merge default and user configurations', () => {
       // Mock fs.existsSync to return true (files exist)
-      (fs.existsSync as vi.Mock).mockReturnValue(true);
+      (fs.existsSync as any).mockReturnValue(true);
 
       // Mock fs.readFileSync to return test configurations
-      (fs.readFileSync as vi.Mock).mockImplementation((filePath) => {
+      (fs.readFileSync as any).mockImplementation((filePath) => {
         if (filePath.includes('default.json')) {
           return JSON.stringify({
             version: '1.0',
@@ -126,10 +126,10 @@ describe('Configuration Loader', () => {
 
     it('should handle invalid JSON in configuration files', () => {
       // Mock fs.existsSync to return true (files exist)
-      (fs.existsSync as vi.Mock).mockReturnValue(true);
+      (fs.existsSync as any).mockReturnValue(true);
 
       // Mock fs.readFileSync to return invalid JSON
-      (fs.readFileSync as vi.Mock).mockImplementation((filePath) => {
+      (fs.readFileSync as any).mockImplementation((filePath) => {
         if (filePath.includes('default.json')) {
           return '{ invalid json';
         }
@@ -137,7 +137,9 @@ describe('Configuration Loader', () => {
       });
 
       // Mock console.warn to capture warnings
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       const config = loadMappingConfig();
 
@@ -168,7 +170,7 @@ describe('Configuration Loader', () => {
   describe('writeMappingConfig', () => {
     it('should write configuration to file', async () => {
       // Mock fs.existsSync to return true (directory exists)
-      (fs.existsSync as vi.Mock).mockReturnValue(true);
+      (fs.existsSync as any).mockReturnValue(true);
 
       const config: MappingConfig = {
         version: '1.0',
@@ -194,8 +196,7 @@ describe('Configuration Loader', () => {
       );
 
       // Verify the written content
-      const writtenContent = (fs.promises.writeFile as vi.Mock).mock
-        .calls[0][1];
+      const writtenContent = (fs.promises.writeFile as any).mock.calls[0][1];
       const parsedContent = JSON.parse(writtenContent);
       expect(parsedContent.version).toBe('1.0');
       expect(parsedContent.mappings.attributes.common).toEqual({
@@ -206,7 +207,7 @@ describe('Configuration Loader', () => {
 
     it('should create directory if it does not exist', async () => {
       // Mock fs.existsSync to return false (directory doesn't exist)
-      (fs.existsSync as vi.Mock).mockReturnValue(false);
+      (fs.existsSync as any).mockReturnValue(false);
 
       const config: MappingConfig = {
         version: '1.0',

@@ -54,7 +54,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
     integrationConfig.logEnvironment();
 
     // Create test records for advanced operations
-    const companyResult = await coreOperationsToolConfigs[
+    const companyResult: any = await coreOperationsToolConfigs[
       'create-record'
     ].handler({
       resource_type: UniversalResourceType.COMPANIES,
@@ -70,7 +70,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       createdCompanyId
     );
 
-    const personResult = await coreOperationsToolConfigs[
+    const personResult: any = await coreOperationsToolConfigs[
       'create-record'
     ].handler({
       resource_type: UniversalResourceType.PEOPLE,
@@ -105,7 +105,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
   describe('Advanced Operations Integration', () => {
     describe('advanced-search tool', () => {
       it('should perform advanced company search with complex filters', async () => {
-        const result = await advancedOperationsToolConfigs[
+        const result: any = await advancedOperationsToolConfigs[
           'advanced-search'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -129,13 +129,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should perform advanced people search', async () => {
-        const result = await advancedOperationsToolConfigs[
+        const result = (await advancedOperationsToolConfigs[
           'advanced-search'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
           query: testPersonEmail,
           limit: 5,
-        });
+        })) as any[];
 
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
@@ -147,7 +147,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         // This test assumes we have some company-people relationships
         // In a real scenario, you'd link the person to the company first
         try {
-          const result = await advancedOperationsToolConfigs[
+          const result: any = await advancedOperationsToolConfigs[
             'search-by-relationship'
           ].handler({
             relationship_type: RelationshipType.COMPANY_TO_PEOPLE,
@@ -181,14 +181,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
       it('should search companies by notes content', async () => {
         // This test might not find results without notes, but tests the integration
         try {
-          const result = await advancedOperationsToolConfigs[
+          const result = (await advancedOperationsToolConfigs[
             'search-by-content'
           ].handler({
             resource_type: UniversalResourceType.COMPANIES,
             content_type: ContentSearchType.NOTES,
             search_query: 'Universal Test',
             limit: 10,
-          });
+          })) as any[];
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
@@ -201,14 +201,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
       it('should search people by notes content', async () => {
         // Test people content search using the new search-records API
         try {
-          const result = await coreOperationsToolConfigs[
+          const result = (await coreOperationsToolConfigs[
             'search-records'
           ].handler({
             resource_type: UniversalResourceType.PEOPLE,
             query: 'engineer', // Common searchable term in people profiles
             search_type: 'content',
             limit: 5,
-          });
+          })) as any[];
 
           expect(result).toBeDefined();
           expect(Array.isArray(result)).toBe(true);
@@ -248,7 +248,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
         const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
         const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-        const result = await advancedOperationsToolConfigs[
+        const result = (await advancedOperationsToolConfigs[
           'search-by-timeframe'
         ].handler({
           resource_type: UniversalResourceType.PEOPLE,
@@ -256,7 +256,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
           start_date: yesterday.toISOString(),
           end_date: tomorrow.toISOString(),
           limit: 10,
-        });
+        })) as any[];
 
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
@@ -293,13 +293,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
           },
         ];
 
-        const result = await advancedOperationsToolConfigs[
+        const result = (await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.CREATE,
           records: batchCompanies,
-        });
+        })) as any[];
 
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
@@ -336,7 +336,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
       });
 
       it('should perform batch search operations', async () => {
-        const result = await advancedOperationsToolConfigs[
+        const result = (await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
@@ -344,7 +344,7 @@ describe('Universal Tools Advanced Integration Tests', () => {
           query: 'Universal Test',
           limit: 5,
           offset: 0,
-        });
+        })) as any[];
 
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
@@ -378,13 +378,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
           } as any,
         ];
 
-        const result = await advancedOperationsToolConfigs[
+        const result = (await advancedOperationsToolConfigs[
           'batch-operations'
         ].handler({
           resource_type: UniversalResourceType.COMPANIES,
           operation_type: BatchOperationType.CREATE,
           records: mixedBatch,
-        });
+        })) as any[];
 
         expect(result).toBeDefined();
         expect(Array.isArray(result)).toBe(true);
@@ -435,14 +435,14 @@ describe('Universal Tools Advanced Integration Tests', () => {
     it('should handle network timeouts gracefully', async () => {
       // This test would require mocking network conditions
       // For now, we just verify that large batch operations don't hang
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.SEARCH,
         limit: 1,
         offset: 0,
-      });
+      })) as any[];
 
       expect(result).toBeDefined();
     }, 15000); // 15 second timeout
@@ -452,13 +452,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
     it('should handle reasonable batch sizes efficiently', async () => {
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.SEARCH,
         limit: 10,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -478,13 +478,13 @@ describe('Universal Tools Advanced Integration Tests', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records: batchRecords,
-      });
+      })) as any[];
 
       const endTime = Date.now();
 

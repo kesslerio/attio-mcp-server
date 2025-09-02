@@ -51,7 +51,7 @@ describe('ValidationService', () => {
     it('should throw for invalid UUIDs in non-task resources', () => {
       vi.mocked(isValidUUID).mockReturnValue(false);
       vi.mocked(createInvalidUUIDError).mockImplementation(
-        () => new Error('Invalid UUID')
+        () => new Error('Invalid UUID') as any
       );
       expect(() => {
         ValidationService.validateUUID(

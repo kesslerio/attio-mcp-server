@@ -106,13 +106,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -153,13 +153,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -211,13 +211,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
           industry: 'Technology',
         }));
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const finalMemory = process.memoryUsage();
 
@@ -249,13 +249,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
         }));
 
       // Create and immediately delete to test cleanup
-      const createResult = await advancedOperationsToolConfigs[
+      const createResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const createdIds = createResult
         .filter((r: any) => r.success && r.result?.id?.record_id)
@@ -266,13 +266,13 @@ describe('Universal Tools Performance Tests - Resources', () => {
         // expect(createdIds.length).toBeGreaterThan(3, `Expected more than 3 created IDs, got ${createdIds.length}. This may indicate API failures during record creation.`);
       }
 
-      const deleteResult = await advancedOperationsToolConfigs[
+      const deleteResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.DELETE,
         record_ids: createdIds,
-      });
+      })) as any[];
 
       const deleteSuccessCount = deleteResult.filter(
         (r: any) => r.success

@@ -16,7 +16,8 @@
     "scripts/**/*",
     "test/e2e/**/*",
     "test/formatResult-contract-regression.test.ts",
-    
-    "test/integration/**/*"
+    "test/integration/**/*",
+    "test/handlers/tool-configs/universal/integration-*.test.ts",
+    "test/handlers/tool-configs/universal/performance-*.test.ts"
   ]
 }

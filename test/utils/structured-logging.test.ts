@@ -30,9 +30,9 @@ const originalConsole = {
 };
 
 describe('Structured Logging System', () => {
-  let mockConsoleLog: vi.Mock;
-  let mockConsoleWarn: vi.Mock;
-  let mockConsoleError: vi.Mock;
+  let mockConsoleLog: any;
+  let mockConsoleWarn: any;
+  let mockConsoleError: any;
 
   beforeEach(() => {
     // Create fresh mocks for each test

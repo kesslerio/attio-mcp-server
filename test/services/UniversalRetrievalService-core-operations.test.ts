@@ -89,7 +89,7 @@ describe('UniversalRetrievalService', () => {
   describe('getRecordDetails', () => {
     const mockRecord: AttioRecord = {
       id: { record_id: 'test_123' },
-      values: { name: [{ value: 'Test Record' }] },
+      values: { name: 'Test Record' },
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
     };

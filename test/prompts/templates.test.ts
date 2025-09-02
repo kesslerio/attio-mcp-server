@@ -98,7 +98,7 @@ describe('Prompt Templates', () => {
       expect(categories).toContain('lists');
 
       // Check for duplicates
-      const uniqueCategories = [...new Set(categories)];
+      const uniqueCategories = Array.from(new Set(categories));
       expect(uniqueCategories.length).toBe(categories.length);
     });
   });

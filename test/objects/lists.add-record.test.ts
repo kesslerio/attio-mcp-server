@@ -59,7 +59,7 @@ describe('addRecordToList Tests', () => {
     const listId = 'test-list-id';
     const recordId = 'test-record-id';
 
-    await expect(addRecordToList(listId, recordId)).rejects.toThrow(
+    await expect(addRecordToList(listId, recordId, '')).rejects.toThrow(
       'Object type is required: Must be a non-empty string (e.g., "companies", "people")'
     );
   });

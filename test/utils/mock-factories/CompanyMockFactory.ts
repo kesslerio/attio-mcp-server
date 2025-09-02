@@ -238,7 +238,9 @@ export class CompanyMockFactory implements MockFactory<TestAttioRecord> {
   /**
    * Creates a manufacturing company mock
    */
-  static createManufacturing(overrides: MockCompanyOptions = {}): TestAttioRecord {
+  static createManufacturing(
+    overrides: MockCompanyOptions = {}
+  ): TestAttioRecord {
     return this.create({
       ...overrides,
       industry: 'Manufacturing',

@@ -63,7 +63,9 @@ describe('Batch Company Operations - Integration', () => {
 
     try {
       // Create test companies
-      const createResult = await batchCreateCompanies(TEST_COMPANIES);
+      const createResult = await batchCreateCompanies({
+        companies: TEST_COMPANIES,
+      });
 
       // Store created companies for later use
       createdCompanies = createResult.results
@@ -110,7 +112,7 @@ describe('Batch Company Operations - Integration', () => {
 
     try {
       // Execute the batch update
-      const updateResult = await batchUpdateCompanies(updates);
+      const updateResult = await batchUpdateCompanies({ updates });
 
       // Verify the results
       expect(updateResult.summary.total).toBe(updates.length);

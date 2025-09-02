@@ -283,10 +283,7 @@ describe('Person Creation Integration', () => {
 
     // Create a person with structured name
     const result = await createPerson({
-      name: {
-        first_name: 'Jane',
-        last_name: 'Smith',
-      },
+      name: 'Jane Smith',
       job_title: 'CEO',
     });
 
@@ -502,12 +499,7 @@ describe('Person Creation Integration', () => {
     const result = await createPerson({
       first_name: 'QA',
       last_name: 'TESTER_ALPHA_20250819',
-      email_addresses: [
-        {
-          value: 'qa-tester-alpha@example.com',
-          type: 'work',
-        },
-      ],
+      email_addresses: ['qa-tester-alpha@example.com'],
       job_title: 'Quality Assurance Tester',
     });
 
@@ -600,14 +592,7 @@ describe('Person Creation Integration', () => {
     const result = await createPerson({
       first_name: 'Test',
       last_name: 'User',
-      email_addresses: [
-        'simple@example.com',
-        {
-          value: 'work@example.com',
-          type: 'work',
-          primary: true,
-        },
-      ],
+      email_addresses: ['simple@example.com', 'work@example.com'],
     });
 
     // Verify the email validation query included both emails

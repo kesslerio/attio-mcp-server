@@ -261,7 +261,7 @@ export const MockParamsFactory = {
         condition: 'equals',
         value: 'Technology',
       },
-    ],
+    ] as any,
     sort_by: 'name',
     sort_order: 'asc',
     limit: 20,
@@ -274,10 +274,9 @@ export const MockParamsFactory = {
   createRelationshipSearchParams: (
     overrides: Partial<RelationshipSearchParams> = {}
   ): RelationshipSearchParams => ({
-    resource_type: UniversalResourceType.PEOPLE,
-    relationship_type: RelationshipType.BELONGS_TO,
-    related_resource_type: UniversalResourceType.COMPANIES,
-    related_record_id: 'company-123',
+    relationship_type: RelationshipType.PEOPLE_TO_COMPANY,
+    source_id: 'person-123',
+    target_resource_type: UniversalResourceType.COMPANIES,
     ...overrides,
   }),
 

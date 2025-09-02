@@ -85,7 +85,8 @@ export class UniversalMockService {
         record_id: (mockCompany.id as any).record_id,
         object_id: 'companies',
         workspace_id:
-          ((mockCompany.id as any).workspace_id as string) || 'mock-workspace-id',
+          ((mockCompany.id as any).workspace_id as string) ||
+          'mock-workspace-id',
       },
       values: {
         name: [
@@ -97,10 +98,18 @@ export class UniversalMockService {
         ],
         domains: (mockCompany.values as any).domains
           ? Array.isArray(mockCompany.values.domains)
-            ? (mockCompany.values as any).domains.map((d: string) => ({ value: d }))
+            ? (mockCompany.values as any).domains.map((d: string) => ({
+                value: d,
+              }))
             : [{ value: (mockCompany.values as any).domains }]
-          : [{ value: `${String((mockCompany.id as any).record_id)}.example.com` }],
-        industry: [{ value: (mockCompany.values as any).industry || 'Technology' }],
+          : [
+              {
+                value: `${String((mockCompany.id as any).record_id)}.example.com`,
+              },
+            ],
+        industry: [
+          { value: (mockCompany.values as any).industry || 'Technology' },
+        ],
         description: [
           {
             value:
@@ -161,7 +170,8 @@ export class UniversalMockService {
         record_id: (mockPerson.id as any).record_id,
         object_id: 'people',
         workspace_id:
-          ((mockPerson.id as any).workspace_id as string) || 'mock-workspace-id',
+          ((mockPerson.id as any).workspace_id as string) ||
+          'mock-workspace-id',
       },
       values: {
         name: [

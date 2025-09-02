@@ -58,7 +58,7 @@ describe('Enhanced Attribute Mapping', () => {
     it('should first check for special cases', () => {
       // Mock configuration with a different mapping for B2B Segment
       // This shouldn't be used because special case handling has priority
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -87,7 +87,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
 
     it('should use case-insensitive lookup after special cases', () => {
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -109,7 +109,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
 
     it('should use normalized lookup when case-insensitive fails', () => {
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -149,7 +149,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
 
     it('should handle snake case conversion', () => {
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {
@@ -170,7 +170,7 @@ describe('Enhanced Attribute Mapping', () => {
     });
 
     it('should map postal code fields without converting to zip', () => {
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: { common: {}, objects: {}, custom: {} },
@@ -187,7 +187,7 @@ describe('Enhanced Attribute Mapping', () => {
 
   describe('Object-Specific Mappings', () => {
     it('should prioritize object-specific mappings over common mappings', () => {
-      (configLoader.loadMappingConfig as vi.Mock).mockReturnValue({
+      (configLoader.loadMappingConfig as any).mockReturnValue({
         version: '1.0',
         mappings: {
           attributes: {

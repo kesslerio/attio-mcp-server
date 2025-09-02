@@ -368,12 +368,12 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       const emptyResults: any[] = [];
 
       // For empty arrays, formatters should show "found 0" not "No results found" based on current implementation
-      expect((searchByContentConfig.formatResult as any)(emptyResults)).toContain(
-        'Found 0 records with matching'
-      );
-      expect((searchByTimeframeConfig.formatResult as any)(emptyResults)).toContain(
-        'Found 0 records by'
-      );
+      expect(
+        (searchByContentConfig.formatResult as any)(emptyResults)
+      ).toContain('Found 0 records with matching');
+      expect(
+        (searchByTimeframeConfig.formatResult as any)(emptyResults)
+      ).toContain('Found 0 records by');
     });
   });
 });

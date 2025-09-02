@@ -106,13 +106,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -144,13 +144,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -200,13 +200,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -255,13 +255,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -312,13 +312,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
       // Test batch (parallel) performance
       const batchStartTime = Date.now();
 
-      const batchResult = await advancedOperationsToolConfigs[
+      const batchResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records,
-      });
+      })) as any[];
 
       const batchEndTime = Date.now();
       const batchDuration = batchEndTime - batchStartTime;
@@ -360,13 +360,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
 
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.GET,
         record_ids: testIds,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -393,13 +393,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
           industry: 'Technology',
         }));
 
-      const createResult = await advancedOperationsToolConfigs[
+      const createResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.CREATE,
         records: createRecords,
-      });
+      })) as any[];
 
       const createdIds = createResult
         .filter((r: any) => r.success && r.result?.id?.record_id)
@@ -413,13 +413,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
       // Now test batch delete performance
       const startTime = Date.now();
 
-      const deleteResult = await advancedOperationsToolConfigs[
+      const deleteResult = (await advancedOperationsToolConfigs[
         'batch-operations'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         operation_type: BatchOperationType.DELETE,
         record_ids: createdIds,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -442,13 +442,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
     it('should handle search operations efficiently', async () => {
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'Perf Test',
         limit: 20,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -467,13 +467,13 @@ describe('Universal Tools Performance Tests - Operations', () => {
     it('should handle large search limits efficiently', async () => {
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
         query: 'Test',
         limit: 100,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -492,7 +492,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
     it('should handle filtered searches efficiently', async () => {
       const startTime = Date.now();
 
-      const result = await advancedOperationsToolConfigs[
+      const result = (await advancedOperationsToolConfigs[
         'advanced-search'
       ].handler({
         resource_type: UniversalResourceType.COMPANIES,
@@ -507,7 +507,7 @@ describe('Universal Tools Performance Tests - Operations', () => {
           ],
         },
         limit: 50,
-      });
+      })) as any[];
 
       const endTime = Date.now();
       const duration = endTime - startTime;

@@ -124,7 +124,9 @@ describe('Universal Core Operations CRUD Tests', () => {
       const { handleUniversalUpdate } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      vi.mocked(handleUniversalUpdate).mockResolvedValue(mockUpdatedRecord as any);
+      vi.mocked(handleUniversalUpdate).mockResolvedValue(
+        mockUpdatedRecord as any
+      );
 
       const params: UniversalUpdateParams = {
         resource_type: UniversalResourceType.COMPANIES,

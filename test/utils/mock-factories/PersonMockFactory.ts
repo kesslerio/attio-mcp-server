@@ -256,7 +256,9 @@ export class PersonMockFactory implements MockFactory<TestAttioRecord> {
   /**
    * Creates a marketing person mock
    */
-  static createMarketingPerson(overrides: MockPersonOptions = {}): TestAttioRecord {
+  static createMarketingPerson(
+    overrides: MockPersonOptions = {}
+  ): TestAttioRecord {
     const marketingTitles = [
       'Marketing Manager',
       'Content Marketing Manager',

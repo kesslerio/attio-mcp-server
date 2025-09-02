@@ -163,7 +163,7 @@ export class IntegrationTestDataManager {
   async cleanupTrackedRecords(toolConfigs: any): Promise<void> {
     const allRecords = this.getAllTrackedRecords();
 
-    for (const [resourceType, recordIds] of allRecords) {
+    for (const [resourceType, recordIds] of Array.from(allRecords.entries())) {
       if (recordIds.length === 0) continue;
 
       await this.cleanupRecords(resourceType, recordIds, toolConfigs);
@@ -343,7 +343,7 @@ export class PerformanceTestRunner {
   generatePerformanceReport(): string {
     const lines = ['Performance Test Results:', '========================'];
 
-    for (const [testName, results] of this.results) {
+    for (const [testName, results] of Array.from(this.results.entries())) {
       const stats = this.getPerformanceStats(testName);
       if (stats) {
         lines.push(

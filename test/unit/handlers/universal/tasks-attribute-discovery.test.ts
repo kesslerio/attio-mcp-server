@@ -26,26 +26,26 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
 
     // Verify it contains the expected task attributes
     expect(result.attributes).toBeInstanceOf(Array);
-    expect(result.attributes.length).toBeGreaterThan(0);
+    expect((result.attributes as any[]).length).toBeGreaterThan(0);
 
     // Check for key task attributes
-    const contentAttr = result.attributes.find(
+    const contentAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'content'
     );
     expect(contentAttr).toBeDefined();
     expect(contentAttr.required).toBe(true);
 
-    const statusAttr = result.attributes.find(
+    const statusAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'status'
     );
     expect(statusAttr).toBeDefined();
 
-    const dueDateAttr = result.attributes.find(
+    const dueDateAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'due_date'
     );
     expect(dueDateAttr).toBeDefined();
 
-    const assigneeAttr = result.attributes.find(
+    const assigneeAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'assignee_id'
     );
     expect(assigneeAttr).toBeDefined();
@@ -61,7 +61,7 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
     expect(result).toBeDefined();
     expect(result).toHaveProperty('attributes');
     expect(result.attributes).toBeInstanceOf(Array);
-    expect(result.attributes.length).toBeGreaterThan(0);
+    expect((result.attributes as any[]).length).toBeGreaterThan(0);
   });
 
   it('should include proper field mappings for common task field names', async () => {
@@ -85,17 +85,17 @@ describe('Tasks Attribute Discovery Fix - Issue #417', () => {
       UniversalResourceType.TASKS
     );
 
-    const contentAttr = result.attributes.find(
+    const contentAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'content'
     );
     expect(contentAttr.description).toContain('text');
 
-    const dueDateAttr = result.attributes.find(
+    const dueDateAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'due_date'
     );
     expect(dueDateAttr.description).toContain('ISO date');
 
-    const assigneeAttr = result.attributes.find(
+    const assigneeAttr = (result.attributes as any[]).find(
       (attr: any) => attr.api_slug === 'assignee_id'
     );
     expect(assigneeAttr.description).toContain('workspace member');

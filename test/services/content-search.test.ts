@@ -55,7 +55,7 @@ describe('Content Search Functionality', () => {
       const mockResults = [
         {
           id: { record_id: '1' },
-          values: { name: [{ value: 'Test Company' }] },
+          values: { name: 'Test Company' },
         } as AttioRecord,
       ];
 
@@ -225,8 +225,8 @@ describe('Content Search Functionality', () => {
           {
             id: { record_id: '1' },
             values: {
-              name: [{ value: 'Alice Smith' }],
-              notes: [{ value: 'Expert in machine learning' }],
+              name: 'Alice Smith',
+              notes: 'Expert in machine learning',
             },
           } as AttioRecord,
         ],
@@ -329,15 +329,15 @@ describe('Content Search Functionality', () => {
       const mockResults = [
         {
           id: { record_id: '1' },
-          values: { name: [{ value: 'Other Company' }] },
+          values: { name: 'Other Company' },
         } as AttioRecord,
         {
           id: { record_id: '2' },
-          values: { name: [{ value: 'AI' }] },
+          values: { name: 'AI' },
         } as AttioRecord,
         {
           id: { record_id: '3' },
-          values: { name: [{ value: 'AI Technologies' }] },
+          values: { name: 'AI Technologies' },
         } as AttioRecord,
       ];
 

@@ -1,5 +1,6 @@
 // module banner – shows up as soon as the file is evaluated
 import { fileURLToPath } from 'url';
+// @ts-ignore - import.meta is valid with NodeNext module resolution in tsconfig.json
 const MODULE_FILE = fileURLToPath(import.meta.url);
 console.log('📦 LOADED attio-client', {
   file: MODULE_FILE,

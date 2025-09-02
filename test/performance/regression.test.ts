@@ -63,7 +63,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
 
   // Mock resource-specific search functions to prevent real API calls
   vi.mock('../../src/objects/companies/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = (await importOriginal()) as any;
     return {
       ...actual,
       advancedSearchCompanies: vi.fn().mockResolvedValue([
@@ -108,7 +108,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/people/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = (await importOriginal()) as any;
     return {
       ...actual,
       advancedSearchPeople: vi.fn().mockResolvedValue([
@@ -146,7 +146,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/lists.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = (await importOriginal()) as any;
     return {
       ...actual,
       searchLists: vi.fn().mockResolvedValue([
@@ -161,7 +161,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/records/index.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = (await importOriginal()) as any;
     return {
       ...actual,
       listObjectRecords: vi.fn().mockResolvedValue([
@@ -176,7 +176,7 @@ if (!process.env.ATTIO_API_KEY || process.env.E2E_MODE !== 'true') {
   });
 
   vi.mock('../../src/objects/tasks.js', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = (await importOriginal()) as any;
     return {
       ...actual,
       listTasks: vi.fn().mockResolvedValue([
@@ -274,7 +274,7 @@ describe('Performance Regression Tests', () => {
         },
       });
 
-      testRecordId = createResult?.id?.record_id || null;
+      testRecordId = (createResult as any)?.id?.record_id || null;
       console.log('Created test record:', testRecordId);
     } catch (error: unknown) {
       console.error('Failed to create test record:', error);
@@ -416,7 +416,7 @@ describe('Performance Regression Tests', () => {
       expect(Array.isArray(results)).toBe(true);
 
       console.log(
-        `Search operation time: ${duration.toFixed(0)}ms (${results.length} results)`
+        `Search operation time: ${duration.toFixed(0)}ms (${(results as any[]).length} results)`
       );
     });
 
@@ -535,10 +535,10 @@ describe('Performance Regression Tests', () => {
         expect(created).toBeDefined();
         // Check for either new or legacy response structure
         const recordId =
-          created?.id?.record_id ||
-          created?.record_id ||
-          created?.data?.id?.record_id ||
-          created?.data?.data?.id?.record_id;
+          (created as any)?.id?.record_id ||
+          (created as any)?.record_id ||
+          (created as any)?.data?.id?.record_id ||
+          (created as any)?.data?.data?.id?.record_id;
 
         // Only assert on record ID if we're using real API
         if (process.env.ATTIO_API_KEY && process.env.E2E_MODE === 'true') {
@@ -556,10 +556,10 @@ describe('Performance Regression Tests', () => {
       // Clean up (only if we have a real record ID)
       if (created && Object.keys(created).length > 0) {
         const recordId =
-          created?.id?.record_id ||
-          created?.record_id ||
-          created?.data?.id?.record_id ||
-          created?.data?.data?.id?.record_id;
+          (created as any)?.id?.record_id ||
+          (created as any)?.record_id ||
+          (created as any)?.data?.id?.record_id ||
+          (created as any)?.data?.data?.id?.record_id;
         if (
           recordId &&
           process.env.ATTIO_API_KEY &&
@@ -591,9 +591,9 @@ describe('Performance Regression Tests', () => {
 
       // Check for either new or legacy response structure
       const deleteId =
-        toDelete?.id?.record_id ||
-        toDelete?.record_id ||
-        toDelete?.data?.id?.record_id;
+        (toDelete as any)?.id?.record_id ||
+        (toDelete as any)?.record_id ||
+        (toDelete as any)?.data?.id?.record_id;
       if (!deleteId) {
         console.warn('Skipping delete test - failed to create record');
         return;
@@ -610,7 +610,7 @@ describe('Performance Regression Tests', () => {
 
       // Check performance budget
       expect(duration).toBeLessThan(PERFORMANCE_BUDGETS.delete);
-      expect(result.success).toBe(true);
+      expect((result as any).success).toBe(true);
 
       console.log(`Delete operation time: ${duration.toFixed(0)}ms`);
     });
@@ -635,31 +635,31 @@ describe('Performance Regression Tests', () => {
 
       expect(stats).toBeDefined();
       expect(stats.count).toBeGreaterThan(0);
-      expect(stats.timing.p95).toBeDefined();
-      expect(stats.apiTiming.average).toBeDefined();
-      expect(stats.overhead.average).toBeDefined();
+      expect((stats as any).timing.p95).toBeDefined();
+      expect((stats as any).apiTiming.average).toBeDefined();
+      expect((stats as any).overhead.average).toBeDefined();
 
       console.log('Performance Statistics:', {
         operations: stats.count,
-        avgTotal: stats.timing.average.toFixed(0) + 'ms',
-        p95Total: stats.timing.p95.toFixed(0) + 'ms',
-        avgAPI: stats.apiTiming.average.toFixed(0) + 'ms',
-        avgOverhead: stats.overhead.average.toFixed(0) + 'ms',
+        avgTotal: (stats as any).timing.average.toFixed(0) + 'ms',
+        p95Total: (stats as any).timing.p95.toFixed(0) + 'ms',
+        avgAPI: (stats as any).apiTiming.average.toFixed(0) + 'ms',
+        avgOverhead: (stats as any).overhead.average.toFixed(0) + 'ms',
       });
     });
 
     it('should have acceptable p95 and p99 latencies', async () => {
       const stats = enhancedPerformanceTracker.getStatistics();
 
-      if (stats && stats.count > 0) {
+      if (stats && (stats as any).count > 0) {
         // P95 should be under 5 seconds
-        expect(stats.timing.p95).toBeLessThan(5000);
+        expect((stats as any).timing.p95).toBeLessThan(5000);
 
         // P99 should be under 10 seconds
-        expect(stats.timing.p99).toBeLessThan(10000);
+        expect((stats as any).timing.p99).toBeLessThan(10000);
 
         console.log(
-          `Latency percentiles - P50: ${stats.timing.p50.toFixed(0)}ms, P95: ${stats.timing.p95.toFixed(0)}ms, P99: ${stats.timing.p99.toFixed(0)}ms`
+          `Latency percentiles - P50: ${(stats as any).timing.p50.toFixed(0)}ms, P95: ${(stats as any).timing.p95.toFixed(0)}ms, P99: ${(stats as any).timing.p99.toFixed(0)}ms`
         );
       }
     });
