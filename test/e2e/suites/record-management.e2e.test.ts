@@ -365,6 +365,7 @@ describe.skipIf(
           record_id: taskId,
           record_data: {
             recordId: companyId,
+            targetObject: 'companies',
           },
         })
       );

@@ -164,8 +164,23 @@ export class UniversalDeleteService {
 
           return { success: true, record_id };
         } catch (error: unknown) {
-          // Map API errors to structured format
+          // Map API errors to structured format, with a single retry for occasional eventual consistency
           if (this.is404Error(error)) {
+            // Best-effort verification: if task still exists, wait briefly and retry once
+            try {
+              const exists = await getTask(record_id).then(
+                () => true,
+                () => false
+              );
+              if (exists) {
+                await new Promise((r) => setTimeout(r, 500));
+                const retried = await deleteTask(record_id);
+                if (retried) return { success: true, record_id };
+              }
+            } catch {
+              // ignore and fall through to not_found mapping
+            }
+
             const err: any = new Error(
               `Task with ID "${record_id}" not found.`
             );

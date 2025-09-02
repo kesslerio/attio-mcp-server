@@ -118,6 +118,7 @@ describe.skipIf(
         record_data: {
           content: 'Relationship integrity test task',
           recordId: companyId,
+          targetObject: 'companies',
         },
       } as any);
       expect(taskResponse).toBeDefined();

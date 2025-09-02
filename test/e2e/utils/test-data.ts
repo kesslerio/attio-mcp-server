@@ -153,7 +153,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     const defaults: E2ETestCompany = {
       name: `Test Company ${testId}`,
       domain,
-      // Removed website to avoid field collision with domain -> domains mapping
+      // Avoid website in default create payloads to prevent API attribute conflicts
       description: `E2E test company created for testing purposes - ${testId}`,
     };
 
@@ -172,7 +172,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
         ...overrides,
         name: `Test Company ${testId}`,
         domain: `${testId}.${domain}`,
-        // Removed website to avoid field collision with domain -> domains mapping
+        // website intentionally omitted by default (see comment above)
         description: `E2E test company ${i + 1} created for testing purposes - ${testId}`,
       });
     });

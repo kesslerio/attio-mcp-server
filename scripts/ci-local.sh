@@ -179,8 +179,17 @@ echo ""
 # Step 2: Change analysis
 analyze_changes
 
-# Step 3: Dependency installation
-run_step "Installing dependencies" "npm ci" || exit 1
+# Step 3: Dependency installation (skip lifecycle scripts to avoid prepare/husky issues)
+# Ensure devDependencies are installed regardless of NODE_ENV in user env
+export npm_config_production=false
+export NODE_ENV=development
+run_step "Installing dependencies" "npm ci --ignore-scripts" || exit 1
+
+# Explicitly install git hooks using our repo script (husky not required here)
+run_step "Install git hooks" "npm run setup-hooks" || echo "${YELLOW}⚠️ Hook setup optional; continuing...${NC}"
+
+# Ensure ESLint parser is available even if lockfile lags
+run_step "Install ESLint TS parser" "npm i --no-save @typescript-eslint/parser@^8.39.0" || echo "${YELLOW}⚠️ Parser install optional; continuing...${NC}"
 
 # Step 4: Lint and Type Check
 echo "${YELLOW}📝 Code Quality Checks${NC}"

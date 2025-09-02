@@ -173,6 +173,7 @@ describe.skipIf(
           record_data: {
             content: 'Integration boundary test task',
             recordId: companyId,
+            targetObject: 'companies',
           },
         });
 

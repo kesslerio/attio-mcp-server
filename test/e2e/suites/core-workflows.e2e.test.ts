@@ -214,7 +214,10 @@ describe.skipIf(
         (company as any)?.id?.record_id
       );
 
-      // Also create for notes
+      // Also populate the shared testCompanies array for notes tests
+      testCompanies.push(company);
+      
+      // Also create for notes (fallback)
       await createTestCompany();
     }, 45000);
 
@@ -239,7 +242,10 @@ describe.skipIf(
         (person as any)?.id?.record_id
       );
 
-      // Also create for notes
+      // Also populate the shared testPeople array for notes tests
+      testPeople.push(person);
+      
+      // Also create for notes (fallback)
       await createTestPerson();
     }, 45000);
   });
@@ -264,7 +270,7 @@ describe.skipIf(
         const createdTask = extractTaskData(response);
 
         E2EAssertions.expectTaskRecord(createdTask);
-        expect(createdTask.id.task_id).toBeDefined();
+        E2EAssertions.expectResourceId(createdTask, 'tasks');
 
         // Access content from the correct field in the record structure
         const taskContent =
@@ -361,6 +367,7 @@ describe.skipIf(
               content: `Follow up with ${company.values.name?.[0]?.value || 'company'}`,
               format: 'plaintext',
               recordId: company.id.record_id,
+              targetObject: 'companies',
               deadline_at: taskData.due_date,
             },
           })
@@ -436,6 +443,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('✅ Updated task status:', taskId);
       }, 30000);
@@ -470,6 +478,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('👤 Updated task assignee:', taskId);
       }, 30000);
@@ -501,6 +510,7 @@ describe.skipIf(
         E2EAssertions.expectMcpSuccess(response);
         const updatedTask = extractTaskData(response);
 
+        E2EAssertions.expectResourceId(updatedTask, 'tasks');
         expect(updatedTask.id.task_id).toBe(taskId);
         console.error('🔄 Updated multiple task fields:', taskId);
       }, 30000);
@@ -553,6 +563,24 @@ describe.skipIf(
 
   describe('Notes Management - CRUD Operations', () => {
     describe('Company Notes Management', () => {
+      // Ensure at least one company exists when running this block in isolation
+      beforeAll(async () => {
+        try {
+          if (testCompanies.length === 0) {
+            const companyData = CompanyFactory.create();
+            const resp = asToolResponse(
+              await callNotesTool('create-record', {
+                resource_type: 'companies',
+                record_data: companyData as any,
+              })
+            );
+            if (!resp.isError) {
+              const created = E2EAssertions.expectMcpData(resp) as any;
+              if (created?.id?.record_id) testCompanies.push(created);
+            }
+          }
+        } catch {}
+      });
       it('should create a company note with basic content', async () => {
         if (testCompanies.length === 0) {
           console.error(
@@ -905,6 +933,7 @@ describe.skipIf(
             content: `Follow up on integration for ${company.values.name?.[0]?.value || 'company'}`,
             format: 'plaintext',
             recordId: companyId,
+            targetObject: 'companies',
             deadline_at: taskData.due_date,
           },
         })

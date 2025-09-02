@@ -46,6 +46,9 @@ import { getPersonDetails } from '../../../objects/people/index.js';
 import { getObjectRecord } from '../../../objects/records/index.js';
 
 import { getTask } from '../../../objects/tasks.js';
+import { listNotes } from '../../../objects/notes.js';
+import { getCreateService } from '../../../services/create/index.js';
+import { debug, error as logError, OperationType } from '../../../utils/logger.js';
 
 // Note: Using direct Attio API client calls instead of object-specific note functions
 
@@ -96,9 +99,6 @@ export async function handleUniversalCreateNote(
 
   try {
     // Use factory service for consistent behavior
-    const { getCreateService } = await import(
-      '../../../services/create/index.js'
-    );
     const service = getCreateService();
     const result = await service.createNote({
       resource_type,
@@ -107,13 +107,23 @@ export async function handleUniversalCreateNote(
       content,
       format,
     });
-    console.error(
-      'DEBUG: handleUniversalCreateNote - result from service.createNote:',
-      result
+    debug(
+      'universal.createNote',
+      'Create note result',
+      { hasResult: !!result },
+      'handleUniversalCreateNote',
+      OperationType.TOOL_EXECUTION
     );
     return result;
   } catch (error: any) {
-    console.error('DEBUG: handleUniversalCreateNote - caught error:', error);
+    logError(
+      'universal.createNote',
+      'Failed to create note',
+      error,
+      { errorMessage: error.message },
+      'handleUniversalCreateNote',
+      OperationType.TOOL_EXECUTION
+    );
     return {
       error: error.message,
       success: false,
@@ -129,53 +139,26 @@ export async function handleUniversalGetNotes(
 ): Promise<any[]> {
   const { resource_type, record_id, limit = 20, offset = 0 } = params;
 
-  // Ensure API client is initialized
-  let client;
-  try {
-    client = getAttioClient();
-  } catch (error) {
-    // Try to initialize from environment if not already done
-    const apiKey = process.env.ATTIO_API_KEY;
-    if (apiKey) {
-      client = initializeAttioClient(apiKey);
-    } else {
-      throw new Error(
-        'ATTIO_API_KEY not found in environment variables for list-notes'
-      );
-    }
-  }
-  const queryParams = new URLSearchParams({
-    limit: limit.toString(),
-    offset: offset.toString(),
-  });
-
-  // Add filters if specified
-  if (resource_type) {
-    queryParams.set('parent_object', resource_type);
-  }
-  if (record_id) {
-    queryParams.set('parent_record_id', record_id);
+  // Validate key inputs early for clearer messages
+  if (!resource_type || !record_id) {
+    throw new Error('Attio list-notes failed (400): invalid request');
   }
 
   try {
-    // Lightweight debug trace to aid E2E diagnostics
-    console.error('[list-notes] GET', `/notes?${queryParams.toString()}`);
-    // Base URL already includes /v2, so use relative path
-    const response = await client.get(`/notes?${queryParams}`);
+    // Prefer object-layer helper which handles Attio response shape
+    const response = await listNotes({
+      parent_object: resource_type,
+      parent_record_id: record_id,
+      limit,
+      offset,
+    });
     const rawList = unwrapAttio<any>(response);
-
-    // Handle both array responses and nested data arrays
     const noteArray = Array.isArray(rawList) ? rawList : rawList?.data || [];
-    const notes = normalizeNotes(noteArray);
-
-    // Return raw notes array (same pattern as create-record)
-    return notes;
+    return normalizeNotes(noteArray);
   } catch (error: any) {
     const status = error?.response?.status;
     const message =
-      error?.response?.data?.error?.message ||
-      error?.message ||
-      'Unknown error';
+      error?.response?.data?.error?.message || error?.message || 'Unknown error';
     const semanticMessage =
       status === 404
         ? 'record not found'
@@ -184,8 +167,6 @@ export async function handleUniversalGetNotes(
           : message.includes('not found')
             ? message
             : `invalid: ${message}`;
-
-    // Throw error with semantic message (same pattern as create-record)
     throw new Error(
       `Attio list-notes failed${status ? ` (${status})` : ''}: ${semanticMessage}`
     );

@@ -50,6 +50,7 @@ export class TaskCreator extends BaseCreator {
       assigneeId: input.assigneeId,
       dueDate: input.dueDate,
       recordId: input.recordId,
+      targetObject: input.targetObject,
     });
 
     try {
@@ -62,6 +63,7 @@ export class TaskCreator extends BaseCreator {
           assigneeId: input.assigneeId as string,
           dueDate: input.dueDate as string,
           recordId: input.recordId as string,
+          targetObject: input.targetObject as string,
         }
       );
 
