@@ -696,8 +696,9 @@ export class UniversalCreateService {
       });
     }
 
-    // TODO: Enhanced validation for Issue #413 - disabled for tasks compatibility
-    // Will be re-enabled after tasks API validation is properly configured
+    // FEATURE: Enhanced validation for Issue #413 - conditionally disabled
+    // Requires: task attribute metadata API support in Attio
+    // Status: Ready for activation via ENABLE_ENHANCED_VALIDATION=true
     if (process.env.ENABLE_ENHANCED_VALIDATION === 'true') {
       const validation = await validateRecordFields(
         resource_type,
@@ -965,8 +966,9 @@ export class UniversalCreateService {
               ? emailAddresses.join(', ')
               : 'the provided email';
 
-          // Optional preflight check (behind feature flag) - disabled for now due to import issues
-          // TODO: Re-enable after fixing search import path
+          // FEATURE: Preflight duplicate check - disabled due to circular import
+          // Requires: search-records import path refactoring
+          // Next: Extract search logic to shared utility module
 
           throw new UniversalValidationError(
             `A person with email "${emailText}" already exists. Try searching for existing records first or use different email addresses.`,

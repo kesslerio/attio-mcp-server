@@ -107,13 +107,16 @@ export class SchemaPreValidator {
           break;
 
         case UniversalResourceType.PEOPLE:
-          // TODO: Implement discoverPersonAttributes when available
-          // For now, use default people attributes
+          // FEATURE: Dynamic person attributes discovery
+          // Requires: Attio API /objects/people/attributes endpoint
+          // Fallback: Default people attributes schema
           attributes = this.getDefaultPeopleAttributes();
           break;
 
         case UniversalResourceType.DEALS:
-          // TODO: Implement when deal discover-attributes is available
+          // FEATURE: Dynamic deal attributes discovery
+          // Requires: Attio API /objects/deals/attributes endpoint
+          // Status: Pending Attio deals API feature availability
           attributes = this.getDefaultDealAttributes();
           break;
 
