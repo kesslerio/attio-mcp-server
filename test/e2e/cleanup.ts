@@ -41,8 +41,8 @@ export interface OrphanedObject {
  * Main cleanup utility class
  */
 export class E2ECleanup {
-  private config: E2EConfig;
-  private apiClient: AxiosInstance;
+  private config!: E2EConfig;
+  private apiClient!: AxiosInstance;
   private options: Required<CleanupOptions>;
 
   constructor(options: CleanupOptions = {}) {
@@ -64,7 +64,11 @@ export class E2ECleanup {
   async initialize(): Promise<void> {
     try {
       this.config = await loadE2EConfig();
-      await initializeAttioClient();
+      const apiKey = process.env.ATTIO_API_KEY;
+      if (!apiKey) {
+        throw new Error('ATTIO_API_KEY is required for cleanup');
+      }
+      await initializeAttioClient(apiKey);
       this.apiClient = getAttioClient();
 
       this.log('✅ Cleanup utility initialized');

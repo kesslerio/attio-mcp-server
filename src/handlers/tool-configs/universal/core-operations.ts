@@ -401,16 +401,22 @@ export const createRecordConfig: UniversalToolConfig = {
       ? getSingularResourceType(resourceType)
       : 'record';
     // Extract name from values (may be empty on create) or fall back to a generic name
+    const coerce = (v: any): string | undefined => {
+      if (v == null) return undefined;
+      if (typeof v === 'string') return v;
+      if (Array.isArray(v)) {
+        const first = v[0];
+        if (typeof first === 'string') return first;
+        if (first && typeof first === 'object' && 'value' in first)
+          return String(first.value);
+      }
+      if (typeof v === 'object' && 'value' in v) return String(v.value);
+      return undefined;
+    };
     const displayName =
-      (record.values?.name &&
-        Array.isArray(record.values.name) &&
-        record.values.name[0]?.value) ||
-      (record.values?.title &&
-        Array.isArray(record.values.title) &&
-        record.values.title[0]?.value) ||
-      (record.values?.content &&
-        Array.isArray(record.values.content) &&
-        record.values.content[0]?.value) ||
+      coerce((record.values as any)?.name) ||
+      coerce((record.values as any)?.title) ||
+      coerce((record.values as any)?.content) ||
       `New ${resourceTypeName}`;
     const id = String(record.id?.record_id || record.record_id || 'unknown');
 
@@ -881,9 +887,11 @@ export const coreOperationsToolConfigs = {
           (typeof body?.error === 'string' ? body.error : undefined);
 
         const mapped =
-          status === 404 ? 'record not found' :
-          status === 400 || status === 422 ? 'invalid or missing required parameter' :
-          upstreamMsg || 'invalid request';
+          status === 404
+            ? 'record not found'
+            : status === 400 || status === 422
+              ? 'invalid or missing required parameter'
+              : upstreamMsg || 'invalid request';
 
         // IMPORTANT: return MCP shape, not { success: false }
         return { isError: true, error: mapped };

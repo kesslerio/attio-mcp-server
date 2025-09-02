@@ -6,8 +6,10 @@ describe('Email Validation', () => {
   describe('PersonValidator.validateCreate', () => {
     // Mock the searchPeopleByEmails function to avoid API calls
     beforeEach(() => {
-      vi.mock('../../src/objects/people-write.js', async (importOriginal) => {
-        const actual = await importOriginal();
+      vi.mock('../../src/objects/people-write.js', async () => {
+        const actual = await vi.importActual<any>(
+          '../../src/objects/people-write.js'
+        );
         return {
           ...actual,
           searchPeopleByEmails: vi.fn().mockResolvedValue([]),

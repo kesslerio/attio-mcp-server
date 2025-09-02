@@ -15,6 +15,7 @@ export interface E2ETestCompany {
   annual_revenue?: string; // Changed to string to match API requirements
   employee_count?: number;
   categories?: string[];
+  [key: string]: unknown;
 }
 
 export interface E2ETestPerson {
@@ -25,12 +26,14 @@ export interface E2ETestPerson {
   department?: string; // Test-only field - stripped before API calls (not supported by API)
   seniority?: string;
   company?: string; // Company record ID
+  [key: string]: unknown;
 }
 
 export interface E2ETestList {
   name: string;
   parent_object: string;
   description?: string;
+  [key: string]: unknown;
 }
 
 export interface E2ETestTask {
@@ -40,6 +43,7 @@ export interface E2ETestTask {
   due_date?: string;
   status?: string;
   priority?: string;
+  [key: string]: unknown;
 }
 
 export interface E2ETestNote {
@@ -48,6 +52,7 @@ export interface E2ETestNote {
   format: 'plaintext' | 'html' | 'markdown';
   parent_object: string;
   parent_record_id: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -119,7 +124,10 @@ export abstract class E2ETestDataFactory {
       // Try to get config - if it fails, attempt to load it
       configLoader.getConfig();
     } catch (error) {
-      if (error.message?.includes('Configuration not loaded')) {
+      if (
+        error instanceof Error &&
+        error.message?.includes('Configuration not loaded')
+      ) {
         try {
           await configLoader.loadConfig();
         } catch (loadError) {
@@ -146,7 +154,7 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
       name: `Test Company ${testId}`,
       domain,
       // Removed website to avoid field collision with domain -> domains mapping
-      description: `E2E test company created for testing purposes - ${testId}`
+      description: `E2E test company created for testing purposes - ${testId}`,
     };
 
     return { ...defaults, ...overrides };
@@ -176,8 +184,8 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     return this.create({
       industry: 'Technology',
       categories: ['Software', 'SaaS', 'B2B'],
-      annual_revenue: String(Math.floor(Math.random() * 50000000) + 5000000), // Convert to string
-      employee_count: String(Math.floor(Math.random() * 500) + 50),
+      annual_revenue: String(Math.floor(Math.random() * 50000000) + 5000000),
+      employee_count: Math.floor(Math.random() * 500) + 50,
       ...overrides,
     });
   }
@@ -188,8 +196,8 @@ export class E2ECompanyFactory extends E2ETestDataFactory {
     return this.create({
       industry: 'Financial Services',
       categories: ['Banking', 'Finance', 'B2B'],
-      annual_revenue: String(Math.floor(Math.random() * 100000000) + 10000000), // Convert to string
-      employee_count: String(Math.floor(Math.random() * 1000) + 100),
+      annual_revenue: String(Math.floor(Math.random() * 100000000) + 10000000),
+      employee_count: Math.floor(Math.random() * 1000) + 100,
       ...overrides,
     });
   }
@@ -524,9 +532,7 @@ export class E2ETestDataValidator {
     return false;
   }
 
-  /**
-   * Extract all string values from an object recursively
-   */
+  // Extract all string values from an object recursively
   private static extractStringValues(obj: any): string[] {
     const strings: string[] = [];
 
@@ -544,9 +550,7 @@ export class E2ETestDataValidator {
     return strings;
   }
 
-  /**
-   * Check if email follows test domain pattern
-   */
+  // Check if email follows test domain pattern
   static isTestEmail(email: string): boolean {
     try {
       const config = configLoader.getConfig();
@@ -557,9 +561,7 @@ export class E2ETestDataValidator {
     }
   }
 
-  /**
-   * Check if domain follows test domain pattern
-   */
+  // Check if domain follows test domain pattern
   static isTestDomain(domain: string): boolean {
     try {
       const config = configLoader.getConfig();
@@ -569,11 +571,50 @@ export class E2ETestDataValidator {
       return domain.includes('.test-company.com');
     }
   }
+
+  static validateCompany(company: E2ETestCompany): {
+    isValid: boolean;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    if (!company || typeof company !== 'object') {
+      errors.push('Company data is invalid');
+      return { isValid: false, errors };
+    }
+    if (!company.name) errors.push('Missing company name');
+    if (!company.domain) errors.push('Missing company domain');
+    if (company.name && !this.validateTestDataPrefix(company.name)) {
+      errors.push('Company name missing test prefix');
+    }
+    if (company.domain && !this.isTestDomain(company.domain)) {
+      errors.push('Company domain does not match test domain');
+    }
+    return { isValid: errors.length === 0, errors };
+  }
+
+  static validatePerson(person: E2ETestPerson): {
+    isValid: boolean;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    if (!person || typeof person !== 'object') {
+      errors.push('Person data is invalid');
+      return { isValid: false, errors };
+    }
+    if (!person.name) errors.push('Missing person name');
+    if (!person.email_addresses || person.email_addresses.length === 0) {
+      errors.push('Missing person email');
+    } else if (!this.isTestEmail(person.email_addresses[0])) {
+      errors.push('Person email does not match test domain');
+    }
+    if (person.name && !this.validateTestDataPrefix(person.name)) {
+      errors.push('Person name missing test prefix');
+    }
+    return { isValid: errors.length === 0, errors };
+  }
 }
 
-/**
- * Convenience exports with shorter names for tests
- */
+// Convenience exports with shorter names for tests
 export const CompanyFactory = E2ECompanyFactory;
 export const PersonFactory = E2EPersonFactory;
 export const ListFactory = E2EListFactory;

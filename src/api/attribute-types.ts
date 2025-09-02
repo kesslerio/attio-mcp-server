@@ -3,6 +3,7 @@
  */
 import { getAttioClient } from './attio-client.js';
 import { parsePersonalName } from '../utils/personal-name-parser.js';
+import { debug } from '../utils/logger.js';
 
 /**
  * Interface for Attio attribute metadata
@@ -46,6 +47,8 @@ export interface AttioAttributeMetadata {
       }>;
     };
   };
+  // Support for legacy/variant field names used in tests and mocks
+  allow_multiple_values?: boolean;
 }
 
 /**
@@ -79,7 +82,7 @@ export async function getObjectAttributeMetadata(
     const api = getAttioClient();
     const response = await api.get(`/objects/${objectSlug}/attributes`);
     // Handle multiple API response structures for attributes
-    let rawAttributes = response?.data?.data || response?.data || [];
+    const rawAttributes = response?.data?.data || response?.data || [];
 
     // Ensure attributes is always an array - handle multiple shape variants
     const attributes: AttioAttributeMetadata[] = Array.isArray(rawAttributes)
@@ -92,12 +95,23 @@ export async function getObjectAttributeMetadata(
             ? rawAttributes.data
             : [];
 
-    // Build metadata map
+    // Build metadata map with normalization to support variant fields used in tests/mocks
     const metadataMap = new Map<string, AttioAttributeMetadata>();
     attributes.forEach((attr) => {
-      if (attr.api_slug) {
-        metadataMap.set(attr.api_slug, attr);
-      }
+      if (!attr?.api_slug) return;
+
+      const normalized: AttioAttributeMetadata = {
+        ...attr,
+        // Ensure is_multiselect is populated even if mocks use allow_multiple_values
+        is_multiselect:
+          typeof attr.is_multiselect === 'boolean'
+            ? attr.is_multiselect
+            : typeof attr.allow_multiple_values === 'boolean'
+              ? attr.allow_multiple_values
+              : false,
+      };
+
+      metadataMap.set(attr.api_slug, normalized);
     });
 
     // Cache the result
@@ -273,28 +287,26 @@ export async function getAttributeTypeInfo(
   const metadata = await getObjectAttributeMetadata(objectSlug);
   const attrMetadata = metadata.get(attributeSlug);
 
-  if (process.env.NODE_ENV === 'development') {
-    console.error(
-      `[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}:`,
-      {
-        metadataSize: metadata.size,
-        metadataKeys: Array.from(metadata.keys()),
-        attrMetadata: attrMetadata
-          ? {
-              type: attrMetadata.type,
-              isMultiselect: attrMetadata.is_multiselect,
-            }
-          : null,
-      }
-    );
-  }
+  debug(
+    'attribute-types',
+    `[getAttributeTypeInfo] Looking up ${objectSlug}.${attributeSlug}`,
+    {
+      metadataSize: metadata.size,
+      metadataKeys: Array.from(metadata.keys()),
+      attrMetadata: attrMetadata
+        ? {
+            type: attrMetadata.type,
+            isMultiselect: attrMetadata.is_multiselect,
+          }
+        : null,
+    }
+  );
 
   if (!attrMetadata) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`
-      );
-    }
+    debug(
+      'attribute-types',
+      `[getAttributeTypeInfo] No metadata found for ${objectSlug}.${attributeSlug}, returning default`
+    );
     return {
       fieldType: 'string',
       isArray: false,
@@ -381,16 +393,16 @@ export async function getFieldValidationRules(
 
   // Add specific validation rules based on Attio type
   if (typeInfo.metadata) {
-    switch (typeInfo.attioType) {
-      case 'email':
-        rules.pattern = '^[^@]+@[^@]+\\.[^@]+$';
-        break;
-      case 'url':
-        rules.pattern = '^https?://';
-        break;
-      case 'phone_number':
-        rules.pattern = '^\\+?[0-9-()\\s]+$';
-        break;
+    // Validation patterns lookup map for better maintainability
+    const validationPatterns: Record<string, string> = {
+      email: '^[^@]+@[^@]+\\.[^@]+$',
+      url: '^https?://',
+      phone_number: '^\\+?[0-9-()\\s]+$',
+    };
+
+    const pattern = validationPatterns[typeInfo.attioType];
+    if (pattern) {
+      rules.pattern = pattern;
     }
 
     // Add enum values for select fields
@@ -478,39 +490,41 @@ export async function formatAttributeValue(
           attributeSlug === 'first_name' ||
           attributeSlug === 'last_name')
       ) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`[formatAttributeValue] Text field (people) direct:`, {
+        debug(
+          'attribute-types',
+          `[formatAttributeValue] Text field (people) direct:`,
+          {
             input: value,
             output: value,
             objectSlug,
             attributeSlug,
-          });
-        }
+          }
+        );
         return value;
       }
       // Other text fields need wrapped values if not array, or array of wrapped if array
       if (typeInfo.isArray) {
         const arrayValue = Array.isArray(value) ? value : [value];
         const result = arrayValue.map((v) => ({ value: v }));
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`[formatAttributeValue] Text field array wrapped:`, {
+        debug(
+          'attribute-types',
+          `[formatAttributeValue] Text field array wrapped:`,
+          {
             input: value,
             output: result,
             objectSlug,
             attributeSlug,
-          });
-        }
+          }
+        );
         return result;
       } else {
         const result = { value };
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`[formatAttributeValue] Text field wrapped:`, {
-            input: value,
-            output: result,
-            objectSlug,
-            attributeSlug,
-          });
-        }
+        debug('attribute-types', `[formatAttributeValue] Text field wrapped:`, {
+          input: value,
+          output: result,
+          objectSlug,
+          attributeSlug,
+        });
         return result;
       }
 
@@ -518,14 +532,16 @@ export async function formatAttributeValue(
       // Personal name fields need special handling
       // Use the dedicated parser utility
       const parsedName = parsePersonalName(value);
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`[formatAttributeValue] Personal name parsing:`, {
+      debug(
+        'attribute-types',
+        `[formatAttributeValue] Personal name parsing:`,
+        {
           input: value,
           output: parsedName,
           objectSlug,
           attributeSlug,
-        });
-      }
+        }
+      );
       return parsedName;
     }
 
@@ -550,14 +566,12 @@ export async function formatAttributeValue(
     case 'email-address': {
       // Email is an array field but doesn't need value wrapping
       const emails = Array.isArray(value) ? value : [value];
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`[formatAttributeValue] Email formatting:`, {
-          input: value,
-          output: emails,
-          objectSlug,
-          attributeSlug,
-        });
-      }
+      debug('attribute-types', `[formatAttributeValue] Email formatting:`, {
+        input: value,
+        output: emails,
+        objectSlug,
+        attributeSlug,
+      });
       return emails;
     }
 

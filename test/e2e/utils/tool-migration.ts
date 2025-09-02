@@ -19,7 +19,7 @@ import type {
   ApiResponse,
   ParameterTransformFn,
   ResponseTransformFn,
-} from '../types';
+} from '../types/index.js';
 
 export interface ToolMappingRule {
   legacyToolName: string;

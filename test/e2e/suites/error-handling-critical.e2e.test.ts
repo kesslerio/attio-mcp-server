@@ -207,7 +207,7 @@ describe.skipIf(
     it('should handle malformed filter objects', async () => {
       const response = (await callUniversalTool('advanced-search', {
         resource_type: 'companies',
-        filters: 'this_should_be_an_object_not_string', // Invalid filter format
+        filters: 'this_should_be_an_object_not_string' as unknown as any, // Invalid filter format
       })) as McpToolResponse;
 
       // Should either validate filters or handle gracefully
@@ -241,7 +241,7 @@ describe.skipIf(
         record_data: {
           name: 'Test Company',
           description: longText,
-        },
+        } as any,
       })) as McpToolResponse;
 
       // Should handle long text either by truncating, accepting, or rejecting
@@ -328,7 +328,7 @@ describe.skipIf(
       const taskData = testDataGenerator.tasks.basicTask();
       const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData,
+        record_data: taskData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {

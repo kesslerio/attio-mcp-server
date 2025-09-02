@@ -21,7 +21,7 @@ import type {
   LogResponse,
   LogMetadata,
   ApiError,
-} from '../types';
+} from '../types/index.js';
 
 export interface LogEntry {
   timestamp: string;
@@ -67,6 +67,27 @@ class E2ELogger {
   private currentTestRun?: TestRunSummary;
   private apiCallTimes: number[] = [];
   private runId?: string;
+
+  // Safely extract ApiError fields from unknown errors
+  private extractApiError(err: unknown): ApiError {
+    const base: ApiError = {
+      message:
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : 'Unknown error',
+      stack: err instanceof Error ? err.stack : undefined,
+    };
+
+    if (err && typeof err === 'object' && 'code' in err) {
+      const codeVal = (err as Record<string, unknown>).code;
+      if (typeof codeVal === 'string') {
+        base.code = codeVal;
+      }
+    }
+    return base;
+  }
 
   constructor() {
     // Create logs directory in test/e2e/outputs (logs was removed in cleanup)
@@ -185,11 +206,7 @@ class E2ELogger {
     };
 
     if (error) {
-      logEntry.error = {
-        message: error.message,
-        stack: error.stack,
-        code: (error as unknown).code,
-      };
+      logEntry.error = this.extractApiError(error);
 
       if (this.currentTestRun) {
         this.currentTestRun.errors.push({
@@ -338,11 +355,7 @@ class E2ELogger {
       testName,
       operation: 'error',
       success: false,
-      error: {
-        message: error.message,
-        stack: error.stack,
-        code: (error as unknown).code,
-      },
+      error: this.extractApiError(error),
       metadata: context,
     });
   }

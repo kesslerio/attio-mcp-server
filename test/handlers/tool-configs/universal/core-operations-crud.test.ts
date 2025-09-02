@@ -34,8 +34,8 @@ describe('Universal Core Operations CRUD Tests', () => {
       const mockCreatedRecord = {
         id: { record_id: 'comp-new' },
         values: {
-          name: [{ value: 'New Company' }],
-          website: [{ value: 'https://new.com' }],
+          name: 'New Company',
+          website: 'https://new.com',
         },
       };
 
@@ -62,8 +62,8 @@ describe('Universal Core Operations CRUD Tests', () => {
       const mockCreatedRecord = {
         id: { record_id: 'person-new' },
         values: {
-          name: [{ value: 'Jane Smith' }],
-          email: [{ value: 'jane@example.com' }],
+          name: 'Jane Smith',
+          email: 'jane@example.com',
         },
       };
 
@@ -88,7 +88,7 @@ describe('Universal Core Operations CRUD Tests', () => {
       const mockRecord = {
         id: { record_id: 'comp-new' },
         values: {
-          name: [{ value: 'New Company' }],
+          name: 'New Company',
         },
       };
 

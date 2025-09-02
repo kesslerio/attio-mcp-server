@@ -114,7 +114,10 @@ export async function createTestCompany(): Promise<void> {
     })) as McpToolResponse;
 
     if (response.isError) {
-      console.error('[Setup] createTestCompany failed with real API:', response.error);
+      console.error(
+        '[Setup] createTestCompany failed with real API:',
+        response.error
+      );
       return;
     }
 
@@ -150,7 +153,10 @@ export async function createTestPerson(): Promise<void> {
     })) as McpToolResponse;
 
     if (response.isError) {
-      console.error('[Setup] createTestPerson failed with real API:', response.error);
+      console.error(
+        '[Setup] createTestPerson failed with real API:',
+        response.error
+      );
       return;
     }
 

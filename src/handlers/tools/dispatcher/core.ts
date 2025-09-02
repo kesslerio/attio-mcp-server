@@ -75,6 +75,12 @@ import {
   handleListOperation,
   handleGetOperation,
 } from './operations/records.js';
+import {
+  handleInfoOperation,
+  handleFieldsOperation,
+  handleGetAttributesOperation,
+  handleDiscoverAttributesOperation,
+} from './misc-operations.js';
 
 // Import tool type definitions
 import {
@@ -91,33 +97,7 @@ import {
  * Normalize error messages by stripping tool execution prefixes
  * This improves test compatibility and error message clarity
  */
-function normalizeToolMsg(msg: string): string {
-  return msg.replace(/^Error executing tool '.*?':\s*/, '');
-}
-
-/**
- * Canonicalize resource type to valid values and prevent mutations
- */
-function canonicalizeResourceType(rt: unknown): string {
-  const value = String(rt ?? '').toLowerCase();
-  const validTypes = [
-    'records',
-    'lists',
-    'people',
-    'companies',
-    'tasks',
-    'deals',
-    'notes',
-  ];
-
-  if (!validTypes.includes(value)) {
-    throw new Error(
-      `Invalid resource_type: ${value}. Must be one of: ${validTypes.join(', ')}`
-    );
-  }
-
-  return value;
-}
+import { normalizeToolMsg, canonicalizeResourceType } from './utils.js';
 
 /**
  * Execute a tool request and return formatted results
@@ -173,7 +153,9 @@ export async function executeToolRequest(request: CallToolRequest) {
       );
     } else if (toolType === 'searchByCompany') {
       // Use the tool config's own handler and format the result
-      const rawResult = await toolConfig.handler(request.params.arguments);
+      const rawResult = await (toolConfig as ToolConfig).handler(
+        request.params.arguments as unknown as Record<string, unknown>
+      );
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
@@ -348,7 +330,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Handle Universal tools (Issue #352 - Universal tool consolidation)
     } else if (resourceType === ('UNIVERSAL' as any)) {
       // For universal tools, use the tool's own handler directly
-      const args = request.params.arguments;
+      const args = request.params.arguments as Record<string, unknown>;
 
       // Canonicalize and freeze resource_type to prevent mutation
       if (args && 'resource_type' in args) {
@@ -360,7 +342,20 @@ export async function executeToolRequest(request: CallToolRequest) {
       }
 
       // Universal tools have their own parameter validation and handling
-      let rawResult = await toolConfig.handler(args);
+      let rawResult = await (toolConfig as ToolConfig).handler(
+        args as Record<string, unknown>
+      );
+
+      // If a tool already returned an MCP-shaped object, stop double-wrapping
+      function isMcpResponseLike(v: any) {
+        return v && typeof v === 'object' && 'content' in v && 'isError' in v;
+      }
+
+      if (isMcpResponseLike(rawResult)) {
+        const sanitized = sanitizeMcpResponse(rawResult);
+        logToolSuccess(toolName, toolType, sanitized, timer);
+        return sanitized; // skip detection/formatting, it's already MCP
+      }
 
       // Special handling for lists resource type to return API-consistent shape
       if (
@@ -379,20 +374,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       const isTestRun =
         process.env.E2E_MODE === 'true' || process.env.NODE_ENV === 'test';
 
-      // 🧪 DEBUG: Log E2E mode detection
-      if (toolName === 'create-record') {
-        console.error('🧪 E2E MODE DETECTION', {
-          toolName,
-          E2E_MODE: process.env.E2E_MODE,
-          NODE_ENV: process.env.NODE_ENV,
-          isTestRun,
-          willUseRawJSON:
-            isTestRun &&
-            (toolName === 'create-record' ||
-              toolName === 'update-record' ||
-              toolName === 'create-note'),
-        });
-      }
+      // (debug logging removed for brevity)
 
       if (
         isTestRun &&
@@ -471,8 +453,15 @@ export async function executeToolRequest(request: CallToolRequest) {
         }
       }
 
+      // Build a normalized value for detection (pre-stringify)
+      // Prefer a tool-specific normalizer if you have it; else use rawResult
+      const detectionTarget =
+        (toolConfig as any)?.normalizeForDetection?.(rawResult) ?? rawResult;
+
       // Use explicit error detection instead of string matching
-      const errorAnalysis = computeErrorWithContext(rawResult);
+      const errorAnalysis = computeErrorWithContext(detectionTarget, {
+        toolName,
+      });
 
       // Override formatted result with appropriate error message for certain error types
       let finalFormattedResult = formattedResult;
@@ -492,7 +481,7 @@ export async function executeToolRequest(request: CallToolRequest) {
       // Handle General tools (relationship helpers, etc.)
     } else if (resourceType === ('GENERAL' as any)) {
       // For general tools, use the tool's own handler directly
-      const args = request.params.arguments;
+      const args = request.params.arguments as Record<string, unknown>;
       let handlerArgs: any[] = [];
 
       // Map arguments based on tool type
@@ -500,17 +489,19 @@ export async function executeToolRequest(request: CallToolRequest) {
         toolType === 'linkPersonToCompany' ||
         toolType === 'unlinkPersonFromCompany'
       ) {
-        handlerArgs = [args?.personId, args?.companyId];
+        handlerArgs = [(args as any)?.personId, (args as any)?.companyId];
       } else if (toolType === 'getPersonCompanies') {
-        handlerArgs = [args?.personId];
+        handlerArgs = [(args as any)?.personId];
       } else if (toolType === 'getCompanyTeam') {
-        handlerArgs = [args?.companyId];
+        handlerArgs = [(args as any)?.companyId];
       } else {
         // For other general tools, pass arguments as is
-        handlerArgs = [args];
+        handlerArgs = [args as any];
       }
 
-      const rawResult = await toolConfig.handler(...handlerArgs);
+      const rawResult = await (toolConfig as ToolConfig).handler(
+        ...handlerArgs
+      );
       const formattedResult =
         toolConfig.formatResult?.(rawResult) ||
         JSON.stringify(rawResult, null, 2);
@@ -605,95 +596,3 @@ export async function executeToolRequest(request: CallToolRequest) {
 }
 
 // Placeholder functions that need to be implemented (missing from main branch)
-async function handleInfoOperation(
-  request: CallToolRequest,
-  toolConfig: any,
-  resourceType: ResourceType
-) {
-  // This should be moved to an appropriate operations module
-  const idParam =
-    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-
-  if (!id) {
-    throw new Error(`${idParam} parameter is required`);
-  }
-
-  const result = await toolConfig.handler(id);
-  const formattedResult = toolConfig.formatResult
-    ? toolConfig.formatResult(result)
-    : result;
-
-  return {
-    content: [{ type: 'text', text: formattedResult }],
-    isError: false,
-  };
-}
-
-async function handleFieldsOperation(
-  request: CallToolRequest,
-  toolConfig: any,
-  resourceType: ResourceType
-) {
-  // This should be moved to an appropriate operations module
-  const idParam =
-    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const fields = request.params.arguments?.fields as string[];
-
-  if (!id || !fields) {
-    throw new Error('Both id and fields parameters are required');
-  }
-
-  const result = await toolConfig.handler(id, fields);
-  const formattedResult = toolConfig.formatResult
-    ? toolConfig.formatResult(result)
-    : result;
-
-  return {
-    content: [{ type: 'text', text: formattedResult }],
-    isError: false,
-  };
-}
-
-async function handleGetAttributesOperation(
-  request: CallToolRequest,
-  toolConfig: any,
-  resourceType: ResourceType
-) {
-  // This should be moved to an appropriate operations module
-  const idParam =
-    resourceType === ResourceType.COMPANIES ? 'companyId' : 'personId';
-  const id = request.params.arguments?.[idParam] as string;
-  const attributeName = request.params.arguments?.attributeName as string;
-
-  if (!id) {
-    throw new Error(`${idParam} parameter is required`);
-  }
-
-  const result = await toolConfig.handler(id, attributeName);
-  const formattedResult = toolConfig.formatResult
-    ? toolConfig.formatResult(result)
-    : result;
-
-  return {
-    content: [{ type: 'text', text: formattedResult }],
-    isError: false,
-  };
-}
-
-async function handleDiscoverAttributesOperation(
-  request: CallToolRequest,
-  toolConfig: any
-) {
-  // This should be moved to an appropriate operations module
-  const result = await toolConfig.handler();
-  const formattedResult = toolConfig.formatResult
-    ? toolConfig.formatResult(result)
-    : result;
-
-  return {
-    content: [{ type: 'text', text: formattedResult }],
-    isError: false,
-  };
-}

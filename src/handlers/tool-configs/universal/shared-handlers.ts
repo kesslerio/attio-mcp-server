@@ -96,7 +96,9 @@ export async function handleUniversalCreateNote(
 
   try {
     // Use factory service for consistent behavior
-    const { getCreateService } = await import('../../../services/create/index.js');
+    const { getCreateService } = await import(
+      '../../../services/create/index.js'
+    );
     const service = getCreateService();
     const result = await service.createNote({
       resource_type,
@@ -105,7 +107,10 @@ export async function handleUniversalCreateNote(
       content,
       format,
     });
-    console.error('DEBUG: handleUniversalCreateNote - result from service.createNote:', result);
+    console.error(
+      'DEBUG: handleUniversalCreateNote - result from service.createNote:',
+      result
+    );
     return result;
   } catch (error: any) {
     console.error('DEBUG: handleUniversalCreateNote - caught error:', error);

@@ -5,9 +5,9 @@
  * and ATTIO_API_KEY is provided
  */
 import { describe, test, expect, beforeAll } from 'vitest';
-import { initializeAttioClient } from '../../src/api/attio-client';
-import { getListDetails } from '../../src/objects/lists';
-import { executeToolRequest } from '../../src/handlers/tools/dispatcher';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
+import { getListDetails } from '../../src/objects/lists.js';
+import { executeToolRequest } from '../../src/handlers/tools/dispatcher/core.js';
 
 // Test config
 const TIMEOUT = 30000; // 30 seconds timeout for API tests
@@ -77,7 +77,7 @@ describe('get-list-details API test', () => {
       };
 
       // Execute the request through the MCP tool
-      const response = await executeToolRequest(mockRequest);
+      const response = (await executeToolRequest(mockRequest)) as any;
 
       // Check the basic response structure
       expect(response).toBeDefined();
@@ -86,7 +86,7 @@ describe('get-list-details API test', () => {
       expect(response.content[0].type).toBe('text');
 
       // Verify the content contains the expected sections
-      const textContent = response.content[0].text;
+      const textContent = response.content[0].text as string;
       expect(textContent).toContain('List:');
       expect(textContent).toContain('ID:');
       expect(textContent).toContain(TEST_LIST_ID);
@@ -116,7 +116,7 @@ describe('get-list-details API test', () => {
       };
 
       // Execute the request and expect an error
-      const response = await executeToolRequest(mockRequest);
+      const response = (await executeToolRequest(mockRequest)) as any;
 
       // Check error response structure
       expect(response).toBeDefined();

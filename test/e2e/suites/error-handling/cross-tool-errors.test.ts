@@ -30,7 +30,7 @@ export function crossToolErrorsTests(
       const taskData = testDataGenerator.tasks.basicTask();
       const taskResponse = (await callUniversalTool('create-record', {
         resource_type: 'tasks',
-        record_data: taskData,
+        record_data: taskData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(taskResponse)) {
@@ -63,7 +63,7 @@ export function crossToolErrorsTests(
       const companyData = testDataGenerator.companies.basicCompany();
       const companyResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
-        record_data: companyData,
+        record_data: companyData as any,
       })) as McpToolResponse;
 
       if (hasValidContent(companyResponse)) {

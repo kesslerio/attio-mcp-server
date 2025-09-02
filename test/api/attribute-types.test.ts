@@ -7,13 +7,13 @@ import {
   getAttributeTypeInfo,
   clearAttributeCache,
   getFieldValidationRules,
-} from '../../src/api/attribute-types';
-import { getAttioClient } from '../../src/api/attio-client';
-import { ResourceType } from '../../src/types/attio';
+} from '../../src/api/attribute-types.js';
+import { getAttioClient } from '../../src/api/attio-client.js';
+import { ResourceType } from '../../src/types/attio.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the Attio client
-vi.mock('../../src/api/attio-client');
+vi.mock('../../src/api/attio-client.js');
 
 describe('Attribute Type Detection', () => {
   beforeEach(() => {
@@ -38,7 +38,8 @@ describe('Attribute Type Detection', () => {
       expect(categoriesAttr).toBeDefined();
       expect(categoriesAttr?.api_slug).toBe('categories');
       expect(categoriesAttr?.type).toBe('select');
-      expect(categoriesAttr?.allow_multiple_values).toBe(true);
+      // Multiselect categories should be allowed
+      expect(categoriesAttr?.is_multiselect).toBe(true);
 
       // Second call should use cache - verify no duplicate data
       const cachedMetadata = await getObjectAttributeMetadata('companies');

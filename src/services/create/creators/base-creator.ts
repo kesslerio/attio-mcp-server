@@ -1,17 +1,17 @@
 /**
  * BaseCreator - Abstract base class for all resource creators
- * 
+ *
  * Provides common functionality and utilities shared across all resource creators.
  * Implements Strategy Pattern base behavior including error handling, recovery,
  * and response processing.
  */
 
 import type { AttioRecord } from '../../../types/attio.js';
-import type { 
-  ResourceCreator, 
-  ResourceCreatorContext, 
+import type {
+  ResourceCreator,
+  ResourceCreatorContext,
   ResourceCreatorError,
-  RecoveryOptions 
+  RecoveryOptions,
 } from './types.js';
 import { EnhancedApiError } from '../../../errors/enhanced-api-errors.js';
 import { extractRecordId } from '../../../utils/validation/uuid-validation.js';
@@ -42,7 +42,9 @@ export abstract class BaseCreator implements ResourceCreator {
    * Normalizes input data for the specific resource type
    * Override in subclasses for resource-specific normalization
    */
-  protected normalizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  protected normalizeInput(
+    input: Record<string, unknown>
+  ): Record<string, unknown> {
     return input;
   }
 
@@ -79,7 +81,8 @@ export abstract class BaseCreator implements ResourceCreator {
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery if needed
-    const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
+    const mustRecover =
+      !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -122,7 +125,9 @@ export abstract class BaseCreator implements ResourceCreator {
     const recoveryOptions = this.getRecoveryOptions();
     if (!recoveryOptions) {
       throw this.createEnhancedError(
-        new Error(`${this.resourceType} creation returned empty/invalid record`),
+        new Error(
+          `${this.resourceType} creation returned empty/invalid record`
+        ),
         context,
         500
       );
@@ -132,30 +137,42 @@ export abstract class BaseCreator implements ResourceCreator {
       try {
         const searchEndpoint = `${this.endpoint}/search`;
         const searchFilter = {
-          [filter.field]: filter.operator === 'contains' 
-            ? { contains: filter.value }
-            : { eq: filter.value }
+          [filter.field]:
+            filter.operator === 'contains'
+              ? { contains: filter.value }
+              : { eq: filter.value },
         };
 
-        const { data: searchResult } = await context.client.post(searchEndpoint, {
-          filter: searchFilter,
-          limit: 1,
-          order: { created_at: 'desc' },
-        });
+        const { data: searchResult } = await context.client.post(
+          searchEndpoint,
+          {
+            filter: searchFilter,
+            limit: 1,
+            order: { created_at: 'desc' },
+          }
+        );
 
         const record = extractAttioRecord(searchResult);
         if (record?.id?.record_id) {
-          context.debug(this.constructor.name, `${this.resourceType} recovery succeeded`, {
-            recoveredBy: filter.field,
-            recordId: record.id.record_id,
-          });
+          context.debug(
+            this.constructor.name,
+            `${this.resourceType} recovery succeeded`,
+            {
+              recoveredBy: filter.field,
+              recordId: record.id.record_id,
+            }
+          );
           return record;
         }
       } catch (e) {
-        context.debug(this.constructor.name, `${this.resourceType} recovery attempt failed`, {
-          field: filter.field,
-          message: (e as Error)?.message,
-        });
+        context.debug(
+          this.constructor.name,
+          `${this.resourceType} recovery attempt failed`,
+          {
+            field: filter.field,
+            message: (e as Error)?.message,
+          }
+        );
       }
     }
 
@@ -177,6 +194,23 @@ export abstract class BaseCreator implements ResourceCreator {
   /**
    * Creates enhanced API error with context
    */
+  /**
+   * Fails fast if auth is missing to avoid confusing "200 {}" responses
+   */
+  protected assertClientHasAuth(context: ResourceCreatorContext) {
+    const common = context.client?.defaults?.headers?.common ?? {};
+    const direct = context.client?.defaults?.headers ?? {};
+
+    const auth = (common['Authorization'] ??
+      common['authorization'] ??
+      direct['Authorization'] ??
+      direct['authorization']) as string | undefined;
+
+    if (!auth) {
+      throw new Error('Attio client has no Authorization header.');
+    }
+  }
+
   protected createEnhancedError(
     error: Error,
     context: ResourceCreatorContext,
@@ -190,7 +224,11 @@ export abstract class BaseCreator implements ResourceCreator {
       httpStatus: status,
     };
 
-    context.logError(this.constructor.name, `${this.resourceType} creation error`, errorInfo);
+    context.logError(
+      this.constructor.name,
+      `${this.resourceType} creation error`,
+      errorInfo
+    );
 
     let message: string;
     if (status === 500) {
@@ -215,19 +253,23 @@ export abstract class BaseCreator implements ResourceCreator {
     context: ResourceCreatorContext,
     payload?: any
   ): never {
-    const error = err as { 
-      response?: { status?: number; data?: unknown }; 
-      message?: string; 
-      name?: string 
+    const error = err as {
+      response?: { status?: number; data?: unknown };
+      message?: string;
+      name?: string;
     };
     const status = error?.response?.status ?? 500;
     const data = error?.response?.data;
 
-    context.logError(this.constructor.name, `${this.resourceType} API error details`, {
-      status,
-      errorBody: data,
-      requestPayload: payload,
-    });
+    context.logError(
+      this.constructor.name,
+      `${this.resourceType} API error details`,
+      {
+        status,
+        errorBody: data,
+        requestPayload: payload,
+      }
+    );
 
     throw this.createEnhancedError(
       new Error(error?.message || `${this.resourceType} creation error`),

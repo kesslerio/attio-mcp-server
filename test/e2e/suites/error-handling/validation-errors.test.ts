@@ -71,7 +71,7 @@ export function validationErrorsTests(testCompanyId?: string) {
     it('should handle malformed filter objects', async () => {
       const response = (await callUniversalTool('advanced-search', {
         resource_type: 'companies',
-        filters: 'this_should_be_an_object_not_string', // Invalid filter format
+        filters: 'this_should_be_an_object_not_string' as unknown as any, // Invalid filter format
       })) as McpToolResponse;
 
       // Should either validate filters or handle gracefully
@@ -117,7 +117,7 @@ export function validationErrorsTests(testCompanyId?: string) {
 
       const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
-        record_data: companyData,
+        record_data: companyData as any,
       })) as McpToolResponse;
 
       // Should handle Unicode and special characters gracefully
@@ -140,7 +140,7 @@ export function validationErrorsTests(testCompanyId?: string) {
 
       const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
-        record_data: companyData,
+        record_data: companyData as any,
       })) as McpToolResponse;
 
       // Should handle null/undefined values appropriately
@@ -167,7 +167,7 @@ export function validationErrorsTests(testCompanyId?: string) {
       // but we can test edge cases within valid structure
       const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
-        record_data: errorScenarios.malformedData.company,
+        record_data: errorScenarios.malformedData.company as any,
       })) as McpToolResponse;
 
       expect(response).toBeDefined();

@@ -89,9 +89,10 @@ describe.skipIf(SKIP_TESTS)(`Attribute Validation with Real Attio API`, () => {
   beforeAll(async () => {
     // Clear attribute cache to ensure fresh data
     clearAttributeCache();
-
-    // Set longer timeout for API tests
-    test.setTimeout(30000); // 30 seconds
+    // Set longer timeout for API tests (guard for typings)
+    (test as unknown as { setTimeout?: (ms: number) => void }).setTimeout?.(
+      30000
+    );
   });
 
   // Clean up after tests

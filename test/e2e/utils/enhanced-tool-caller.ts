@@ -27,7 +27,7 @@ import {
   logInfo,
 } from './logger.js';
 import { configLoader } from './config-loader.js';
-import type { ToolParameters, ApiResponse } from '../types.js';
+import type { ToolParameters } from '../types/index.js';
 import { extractRecordId } from '../../../src/utils/validation/uuid-validation.js';
 
 export interface ToolCallOptions {
@@ -50,6 +50,7 @@ export interface ToolCallResult {
   toolName: string;
   originalToolName: string;
   wasTransformed: boolean;
+  isError?: boolean;
 }
 
 /**
@@ -189,18 +190,43 @@ export async function callToolWithEnhancements(
     let isErrorResponse = false;
     let errorInfo: string | undefined;
 
-    // Strict error detection - only flag actual errors, not text content
-    if (finalResponse?.isError === true) {
-      isErrorResponse = true;
-    } else if (finalResponse?.error) {
-      // Only consider it an error if there's an actual error object with meaningful content
-      isErrorResponse = true;
-    } else if (
-      Array.isArray(finalResponse?.content) &&
-      finalResponse.content[0]?.type === 'error'
-    ) {
-      // Check if the response content type is explicitly 'error'
-      isErrorResponse = true;
+    // 1) If MCP already says success, trust it
+    if (finalResponse && finalResponse.isError === false) {
+      isErrorResponse = false;
+    } else {
+      // 2) Check for arrays - non-empty arrays are valid successes
+      const first = finalResponse?.content?.[0];
+      let parsed: any | undefined;
+      try {
+        parsed = JSON.parse(String(first?.text ?? ''));
+      } catch {
+        // Parsing failed, continue with other checks
+      }
+
+      // Non-empty arrays are success
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        isErrorResponse = false;
+      }
+      // Check for explicit errors in parsed content
+      else if (parsed) {
+        const hasExplicitError =
+          !!parsed?.error ||
+          (Array.isArray(parsed?.errors) && parsed.errors.length > 0);
+        isErrorResponse = hasExplicitError;
+      }
+      // Strict error detection - only flag actual errors, not text content
+      else if (finalResponse?.isError === true) {
+        isErrorResponse = true;
+      } else if (finalResponse?.error) {
+        // Only consider it an error if there's an actual error object with meaningful content
+        isErrorResponse = true;
+      } else if (
+        Array.isArray(finalResponse?.content) &&
+        finalResponse.content[0]?.type === 'error'
+      ) {
+        // Check if the response content type is explicitly 'error'
+        isErrorResponse = true;
+      }
     }
     // DO NOT check response text for error keywords - this causes false positives
 

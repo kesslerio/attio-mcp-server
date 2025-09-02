@@ -1,6 +1,6 @@
 /**
  * Type definitions for Resource Creators
- * 
+ *
  * Defines the Strategy Pattern interfaces and types used by resource-specific
  * creators to handle different Attio resource types (companies, people, tasks, notes).
  */

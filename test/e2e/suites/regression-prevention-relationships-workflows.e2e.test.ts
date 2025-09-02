@@ -9,6 +9,7 @@ import {
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
+import type { McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 import {
   extractRecordId,
@@ -56,35 +57,35 @@ describe.skipIf(
     async () => {
       let recordId: string | undefined;
       const companyData = testDataGenerator.companies.basicCompany();
-      const createResponse = await callUniversalTool('create-record', {
+      const createResponse = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      } as any);
+      } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(createResponse);
-      recordId = extractRecordId(createResponse);
+      recordId = extractRecordId(createResponse as McpToolResponse);
       expect(recordId).toBeDefined();
       if (!recordId) return;
       testRecordIds.push(recordId);
 
-      const readResponse = await callUniversalTool('get-record-details', {
+      const readResponse = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: recordId,
-      } as any);
+      } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(readResponse);
       const recordData = E2EAssertions.expectMcpData(readResponse);
       expect(recordData).toBeDefined();
 
-      const updateResponse = await callUniversalTool('update-record', {
+      const updateResponse = (await callUniversalTool('update-record', {
         resource_type: 'companies',
         record_id: recordId,
         record_data: { description: 'Updated for CRUD workflow test' },
-      } as any);
+      } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(updateResponse);
 
-      const verifyResponse = await callUniversalTool('get-record-details', {
+      const verifyResponse = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: recordId,
-      } as any);
+      } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(verifyResponse);
       console.error('✅ Core CRUD workflow integrity preserved');
     },
@@ -130,10 +131,10 @@ describe.skipIf(
       } as any);
       expect(noteResponse).toBeDefined();
 
-      const companyCheck = await callUniversalTool('get-record-details', {
+      const companyCheck = (await callUniversalTool('get-record-details', {
         resource_type: 'companies',
         record_id: companyId,
-      } as any);
+      } as any)) as McpToolResponse;
       E2EAssertions.expectMcpSuccess(companyCheck);
       console.error('✅ Cross-resource relationship integrity preserved');
     },

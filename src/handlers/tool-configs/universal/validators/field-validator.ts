@@ -1,6 +1,10 @@
 import { SanitizedObject } from '../schemas/common/types.js';
 import { UniversalResourceType } from '../types.js';
-import { ErrorType, HttpStatusCode, UniversalValidationError } from '../errors/validation-errors.js';
+import {
+  ErrorType,
+  HttpStatusCode,
+  UniversalValidationError,
+} from '../errors/validation-errors.js';
 
 export function suggestResourceType(invalid: string): string | undefined {
   const validTypes = Object.values(UniversalResourceType);
@@ -57,64 +61,125 @@ function getEditDistance(str1: string, str2: string): number {
 }
 
 export function validatePaginationParams(params: SanitizedObject): void {
-  if ('limit' in params && params.limit !== null && params.limit !== undefined) {
+  if (
+    'limit' in params &&
+    params.limit !== null &&
+    params.limit !== undefined
+  ) {
     const limit = Number(params.limit);
     if (isNaN(limit) || !Number.isInteger(limit)) {
-      throw new UniversalValidationError('Parameter "limit" must be an integer', ErrorType.USER_ERROR, {
-        field: 'limit', httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY, suggestion: 'Provide a valid integer for limit', example: 'limit: 10',
-      });
+      throw new UniversalValidationError(
+        'Parameter "limit" must be an integer',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Provide a valid integer for limit',
+          example: 'limit: 10',
+        }
+      );
     }
     if (limit < 1) {
-      throw new UniversalValidationError('Parameter "limit" must be at least 1', ErrorType.USER_ERROR, {
-        field: 'limit', httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY, suggestion: 'Use a positive integer for limit', example: 'limit: 10',
-      });
+      throw new UniversalValidationError(
+        'Parameter "limit" must be at least 1',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a positive integer for limit',
+          example: 'limit: 10',
+        }
+      );
     }
     if (limit > 100) {
-      throw new UniversalValidationError('Parameter "limit" must not exceed 100', ErrorType.USER_ERROR, {
-        field: 'limit', httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY, suggestion: 'Use a value between 1 and 100', example: 'limit: 50',
-      });
+      throw new UniversalValidationError(
+        'Parameter "limit" must not exceed 100',
+        ErrorType.USER_ERROR,
+        {
+          field: 'limit',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a value between 1 and 100',
+          example: 'limit: 50',
+        }
+      );
     }
     params.limit = limit;
   }
-  if ('offset' in params && params.offset !== null && params.offset !== undefined) {
+  if (
+    'offset' in params &&
+    params.offset !== null &&
+    params.offset !== undefined
+  ) {
     const offset = Number(params.offset);
     if (isNaN(offset) || !Number.isInteger(offset)) {
-      throw new UniversalValidationError('Parameter "offset" must be an integer', ErrorType.USER_ERROR, {
-        field: 'offset', httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY, suggestion: 'Provide a valid integer for offset', example: 'offset: 0',
-      });
+      throw new UniversalValidationError(
+        'Parameter "offset" must be an integer',
+        ErrorType.USER_ERROR,
+        {
+          field: 'offset',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Provide a valid integer for offset',
+          example: 'offset: 0',
+        }
+      );
     }
     if (offset < 0) {
-      throw new UniversalValidationError('Parameter "offset" must be non-negative', ErrorType.USER_ERROR, {
-        field: 'offset', httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY, suggestion: 'Use a non-negative integer for offset', example: 'offset: 0',
-      });
+      throw new UniversalValidationError(
+        'Parameter "offset" must be non-negative',
+        ErrorType.USER_ERROR,
+        {
+          field: 'offset',
+          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+          suggestion: 'Use a non-negative integer for offset',
+          example: 'offset: 0',
+        }
+      );
     }
     params.offset = offset;
   }
 }
 
 export function validateIdFields(params: SanitizedObject): void {
-  const idFields = ['record_id', 'source_id', 'target_id', 'company_id', 'person_id', 'list_id'];
+  const idFields = [
+    'record_id',
+    'source_id',
+    'target_id',
+    'company_id',
+    'person_id',
+    'list_id',
+  ];
   for (const field of idFields) {
-    if (field in params && params[field] !== null && params[field] !== undefined) {
+    if (
+      field in params &&
+      params[field] !== null &&
+      params[field] !== undefined
+    ) {
       const id = String(params[field]);
       const idRegex = /^[a-zA-Z0-9_-]+$/;
       if (!idRegex.test(id)) {
-        throw new UniversalValidationError(`Invalid ${field} format: "${id}"`, ErrorType.USER_ERROR, {
-          field,
-          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
-          suggestion: `The ${field} should contain only letters, numbers, underscores, and hyphens`,
-          example: `${field}: 'comp_abc123' or 'person_xyz789'`,
-        });
+        throw new UniversalValidationError(
+          `Invalid ${field} format: "${id}"`,
+          ErrorType.USER_ERROR,
+          {
+            field,
+            httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+            suggestion: `The ${field} should contain only letters, numbers, underscores, and hyphens`,
+            example: `${field}: 'comp_abc123' or 'person_xyz789'`,
+          }
+        );
       }
       if (id.length < 3 || id.length > 100) {
-        throw new UniversalValidationError(`Invalid ${field} length: ${id.length} characters`, ErrorType.USER_ERROR, {
-          field,
-          httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
-          suggestion: `The ${field} should be between 3 and 100 characters`,
-          example: `${field}: 'comp_abc123'`,
-        });
+        throw new UniversalValidationError(
+          `Invalid ${field} length: ${id.length} characters`,
+          ErrorType.USER_ERROR,
+          {
+            field,
+            httpStatusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
+            suggestion: `The ${field} should be between 3 and 100 characters`,
+            example: `${field}: 'comp_abc123'`,
+          }
+        );
       }
     }
   }
 }
-

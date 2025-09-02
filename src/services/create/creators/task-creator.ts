@@ -1,6 +1,6 @@
 /**
  * TaskCreator - Strategy implementation for task resource creation
- * 
+ *
  * Handles task-specific creation logic by delegating to the existing tasks
  * object and converting the result to AttioRecord format.
  */
@@ -16,7 +16,7 @@ import { convertTaskToAttioRecord } from '../data-normalizers.js';
  */
 export class TaskCreator extends BaseCreator {
   readonly resourceType = 'tasks';
-  readonly endpoint = '/objects/tasks/records';
+  readonly endpoint = '/tasks';
 
   // Lazy-loaded dependencies to prevent resource leaks from repeated dynamic imports
   private taskModule: any = null;
@@ -36,7 +36,7 @@ export class TaskCreator extends BaseCreator {
 
   /**
    * Creates a task record via delegation to tasks object
-   * 
+   *
    * @param input - Task data including content, assigneeId, dueDate, recordId, etc.
    * @param context - Shared context with client and utilities
    * @returns Promise<AttioRecord> - Created task record in AttioRecord format
@@ -55,12 +55,15 @@ export class TaskCreator extends BaseCreator {
     try {
       // Ensure dependencies are loaded
       await this.ensureDependencies();
-      
-      const createdTask = await this.taskModule.createTask(input.content as string, {
-        assigneeId: input.assigneeId as string,
-        dueDate: input.dueDate as string,
-        recordId: input.recordId as string,
-      });
+
+      const createdTask = await this.taskModule.createTask(
+        input.content as string,
+        {
+          assigneeId: input.assigneeId as string,
+          dueDate: input.dueDate as string,
+          recordId: input.recordId as string,
+        }
+      );
 
       context.debug(this.constructor.name, 'Task creation response', {
         hasTask: !!createdTask,
@@ -69,7 +72,10 @@ export class TaskCreator extends BaseCreator {
       });
 
       // Convert task to AttioRecord format
-      const record = this.converterModule.convertTaskToAttioRecord(createdTask, input);
+      const record = this.converterModule.convertTaskToAttioRecord(
+        createdTask,
+        input
+      );
 
       context.debug(this.constructor.name, 'Converted task record', {
         recordId: (record as any)?.id?.record_id,
@@ -90,7 +96,9 @@ export class TaskCreator extends BaseCreator {
   /**
    * Tasks don't require input normalization beyond what's in the input
    */
-  protected normalizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  protected normalizeInput(
+    input: Record<string, unknown>
+  ): Record<string, unknown> {
     return input;
   }
 
@@ -105,7 +113,9 @@ export class TaskCreator extends BaseCreator {
   /**
    * Override attemptRecovery to handle delegation approach
    */
-  protected async attemptRecovery(context: ResourceCreatorContext): Promise<any> {
+  protected async attemptRecovery(
+    context: ResourceCreatorContext
+  ): Promise<any> {
     // Tasks are handled via delegation, so no direct recovery needed
     throw this.createEnhancedError(
       new Error('Task creation failed via delegation - no recovery available'),

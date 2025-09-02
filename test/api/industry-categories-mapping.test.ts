@@ -19,8 +19,8 @@ import {
   updateCompany,
   getCompanyDetails,
   deleteCompany,
-} from '../../src/objects/companies/index';
-import { initializeAttioClient } from '../../src/api/attio-client';
+} from '../../src/objects/companies/index.js';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 // These tests use real API calls - only run when API key is available
 const SKIP_INTEGRATION_TESTS =
@@ -201,7 +201,7 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         'Software',
         'AI & Machine Learning',
       ];
-      const companyData = {
+      const companyData: any = {
         name: `Multi-Industry Test ${Date.now()}`,
         industry: testIndustries, // Try passing multiple industries
       };
@@ -244,7 +244,10 @@ describe('Industry-Categories Mapping - E2E Tests', () => {
         });
       } catch (error: unknown) {
         // If multiple industries aren't supported, that's fine - log it
-        console.log('Multiple industries not supported:', error.message);
+        console.log(
+          'Multiple industries not supported:',
+          String((error as any)?.message || error)
+        );
         // Try with a single industry instead
         const singleIndustryData = {
           name: `Single-Industry Fallback Test ${Date.now()}`,

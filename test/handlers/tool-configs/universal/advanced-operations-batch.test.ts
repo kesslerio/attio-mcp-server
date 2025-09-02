@@ -74,11 +74,11 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       mockHandleUniversalCreate
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Company 1' }] },
+          values: { name: 'Company 1' },
         })
         .mockResolvedValueOnce({
           id: { record_id: 'comp-2' },
-          values: { name: [{ value: 'Company 2' }] },
+          values: { name: 'Company 2' },
         });
 
       const params: BatchOperationsParams = {
@@ -90,7 +90,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         ],
       };
 
-      const result = await batchOperationsConfig.handler(params);
+      const result: any = await batchOperationsConfig.handler(params);
       expect(result).toHaveLength(2);
       expect(result[0].success).toBe(true);
       expect(result[1].success).toBe(true);
@@ -105,7 +105,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       mockHandleUniversalUpdate
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Updated Company 1' }] },
+          values: { name: 'Updated Company 1' },
         })
         .mockRejectedValueOnce(new Error('Record not found'));
 
@@ -118,7 +118,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         ],
       };
 
-      const result = await batchOperationsConfig.handler(params);
+      const result: any = await batchOperationsConfig.handler(params);
       expect(result).toHaveLength(2);
       expect(result[0].success).toBe(true);
       expect(result[1].success).toBe(false);
@@ -140,7 +140,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         record_ids: ['comp-1', 'comp-2'],
       };
 
-      const result = await batchOperationsConfig.handler(params);
+      const result: any = await batchOperationsConfig.handler(params);
       expect(result).toHaveLength(2);
       expect(result[0].success).toBe(true);
       expect(result[1].success).toBe(true);
@@ -155,11 +155,11 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       mockHandleUniversalGetDetails
         .mockResolvedValueOnce({
           id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Company 1' }] },
+          values: { name: 'Company 1' },
         })
         .mockResolvedValueOnce({
           id: { record_id: 'comp-2' },
-          values: { name: [{ value: 'Company 2' }] },
+          values: { name: 'Company 2' },
         });
 
       const params: BatchOperationsParams = {
@@ -168,7 +168,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         record_ids: ['comp-1', 'comp-2'],
       };
 
-      const result = await batchOperationsConfig.handler(params);
+      const result: any = await batchOperationsConfig.handler(params);
       expect(result).toHaveLength(2);
       expect(result[0].success).toBe(true);
       expect(result[1].success).toBe(true);
@@ -178,11 +178,11 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       const mockResults = [
         {
           id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Company 1' }] },
+          values: { name: 'Company 1' },
         },
         {
           id: { record_id: 'comp-2' },
-          values: { name: [{ value: 'Company 2' }] },
+          values: { name: 'Company 2' },
         },
       ];
 
@@ -198,7 +198,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         offset: 0,
       };
 
-      const result = await batchOperationsConfig.handler(params);
+      const result: any = await batchOperationsConfig.handler(params);
       expect(result).toEqual(mockResults);
       expect(mockHandleUniversalSearch).toHaveBeenCalledWith({
         resource_type: UniversalResourceType.COMPANIES,
@@ -225,7 +225,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       const mockResults = [
         {
           success: true,
-          result: { values: { name: [{ value: 'Company 1' }] } },
+          result: { values: { name: 'Company 1' } },
         },
         {
           success: false,
@@ -239,7 +239,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       );
       mockFormatResourceType.mockReturnValue('company');
 
-      const formatted = batchOperationsConfig.formatResult(
+      const formatted = (batchOperationsConfig.formatResult as any)(
         mockResults,
         BatchOperationType.CREATE,
         UniversalResourceType.COMPANIES
@@ -258,11 +258,11 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       const mockResults = [
         {
           id: { record_id: 'comp-1' },
-          values: { name: [{ value: 'Company 1' }] },
+          values: { name: 'Company 1' },
         },
         {
           id: { record_id: 'comp-2' },
-          values: { name: [{ value: 'Company 2' }] },
+          values: { name: 'Company 2' },
         },
       ];
 
@@ -271,7 +271,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       );
       mockFormatResourceType.mockReturnValue('company');
 
-      const formatted = batchOperationsConfig.formatResult(
+      const formatted = (batchOperationsConfig.formatResult as any)(
         mockResults,
         BatchOperationType.SEARCH,
         UniversalResourceType.COMPANIES
@@ -361,7 +361,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
         return {
           id: { record_id: 'test' },
-          values: { name: [{ value: 'Test' }] },
+          values: { name: 'Test' },
         };
       });
 

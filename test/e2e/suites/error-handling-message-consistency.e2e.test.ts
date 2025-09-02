@@ -49,7 +49,8 @@ describe.skipIf(
     })) as McpToolResponse;
     if (response.isError) {
       expect(response.error).toBeTruthy();
-      expect(response.error.length).toBeGreaterThan(10);
+      const err = response.error ?? '';
+      expect(err.length).toBeGreaterThan(10);
     }
   }, 60000);
 });

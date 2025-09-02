@@ -1,6 +1,6 @@
 /**
  * PersonCreator - Strategy implementation for person resource creation
- * 
+ *
  * Handles person-specific creation logic including name and email normalization,
  * email retry logic, error recovery, and person record processing.
  */
@@ -8,11 +8,19 @@
 import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
-import { 
+import {
   normalizePersonValues,
   normalizeEmailsToObjectFormat,
-  normalizeEmailsToStringFormat 
+  normalizeEmailsToStringFormat,
 } from '../data-normalizers.js';
+import {
+  extractAttioRecord,
+  assertLooksLikeCreated,
+  isTestRun,
+  debugRecordShape,
+  normalizeRecordForOutput,
+} from '../extractor.js';
+import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
 
 /**
  * Person-specific resource creator
@@ -24,7 +32,7 @@ export class PersonCreator extends BaseCreator {
 
   /**
    * Creates a person record with name and email normalization
-   * 
+   *
    * @param input - Person data including name, email/email_addresses, title, etc.
    * @param context - Shared context with client and utilities
    * @returns Promise<AttioRecord> - Created person record with id.record_id
@@ -33,6 +41,7 @@ export class PersonCreator extends BaseCreator {
     input: Record<string, unknown>,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
+    this.assertClientHasAuth(context);
     const normalizedPerson = this.normalizeInput(input);
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
@@ -41,10 +50,32 @@ export class PersonCreator extends BaseCreator {
     });
 
     try {
-      const response = await this.createPersonWithRetry(context, normalizedPerson);
-      return await this.processResponse(response, context, normalizedPerson);
+      const response = await this.createPersonWithRetry(
+        context,
+        normalizedPerson
+      );
+      const rec = this.extractRecordFromResponse(response);
+      this.finalizeRecord(rec, context);
+      registerMockAliasIfPresent(input, rec?.id?.record_id);
+      const out = normalizeRecordForOutput(rec, 'people');
+
+      // Optional debug to confirm the shape:
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.debug('[PersonCreator] types:', {
+          nameBefore: Array.isArray(rec?.values?.name)
+            ? 'array'
+            : typeof rec?.values?.name,
+          nameAfter: Array.isArray((out as any)?.values?.name)
+            ? 'array'
+            : typeof (out as any)?.values?.name,
+        });
+      }
+
+      return out;
     } catch (err: any) {
-      return this.handleApiError(err, context, { data: { values: normalizedPerson } });
+      return this.handleApiError(err, context, {
+        data: { values: normalizedPerson },
+      });
     }
   }
 
@@ -52,7 +83,9 @@ export class PersonCreator extends BaseCreator {
    * Normalizes person input data
    * Handles name and email field normalization
    */
-  protected normalizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  protected normalizeInput(
+    input: Record<string, unknown>
+  ): Record<string, unknown> {
     return normalizePersonValues(input);
   }
 
@@ -73,12 +106,12 @@ export class PersonCreator extends BaseCreator {
     } catch (firstErr: unknown) {
       const error = firstErr as { response?: { status?: number } };
       const status = error?.response?.status;
-      
+
       // Only retry on 400 with alternate email schema
       if (status === 400) {
         const alt: Record<string, unknown> = { ...filteredPersonData };
         const emails = alt.email_addresses as unknown[] | undefined;
-        
+
         if (emails && emails.length) {
           if (typeof emails[0] === 'string') {
             alt.email_addresses = normalizeEmailsToObjectFormat(emails);
@@ -90,12 +123,21 @@ export class PersonCreator extends BaseCreator {
           ) {
             alt.email_addresses = normalizeEmailsToStringFormat(emails);
           }
-          
-          context.debug(this.constructor.name, 'Retrying person creation with alternate email format', {
-            originalFormat: emails.length > 0 ? typeof emails[0] : 'undefined',
-            retryFormat: Array.isArray(alt.email_addresses) && alt.email_addresses.length > 0 ? typeof alt.email_addresses[0] : 'undefined',
-          });
-          
+
+          context.debug(
+            this.constructor.name,
+            'Retrying person creation with alternate email format',
+            {
+              originalFormat:
+                emails.length > 0 ? typeof emails[0] : 'undefined',
+              retryFormat:
+                Array.isArray(alt.email_addresses) &&
+                alt.email_addresses.length > 0
+                  ? typeof alt.email_addresses[0]
+                  : 'undefined',
+            }
+          );
+
           return await doCreate(alt);
         }
       }
@@ -113,10 +155,10 @@ export class PersonCreator extends BaseCreator {
         {
           field: 'email_addresses',
           value: '', // Will be set dynamically in attemptRecovery
-          operator: 'contains'
-        }
+          operator: 'contains',
+        },
       ],
-      maxAttempts: 1
+      maxAttempts: 1,
     };
   }
 
@@ -151,13 +193,17 @@ export class PersonCreator extends BaseCreator {
             order: { created_at: 'desc' },
           }
         );
-        
+
         const record = this.extractRecordFromSearch(searchResult);
         if (record?.id?.record_id) {
-          context.debug(this.constructor.name, 'Person recovery succeeded by email', {
-            email,
-            recordId: record.id.record_id,
-          });
+          context.debug(
+            this.constructor.name,
+            'Person recovery succeeded by email',
+            {
+              email,
+              recordId: record.id.record_id,
+            }
+          );
           return record;
         }
       }
@@ -194,7 +240,8 @@ export class PersonCreator extends BaseCreator {
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery attempt
-    const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
+    const mustRecover =
+      !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -206,7 +253,6 @@ export class PersonCreator extends BaseCreator {
    * Extracts record from API response
    */
   private extractRecordFromResponse(response: any): any {
-    const { extractAttioRecord } = require('../extractor.js');
     return extractAttioRecord(response);
   }
 
@@ -214,17 +260,27 @@ export class PersonCreator extends BaseCreator {
    * Extracts record from search results
    */
   private extractRecordFromSearch(searchData: any): any {
-    const { extractAttioRecord } = require('../extractor.js');
     return extractAttioRecord(searchData);
   }
 
   /**
    * Finalizes record processing
    */
-  private finalizeRecord(record: any, context: ResourceCreatorContext): AttioRecord {
-    const { assertLooksLikeCreated, isTestRun, debugRecordShape } = require('../extractor.js');
-    
+  private finalizeRecord(
+    record: any,
+    context: ResourceCreatorContext
+  ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
+
+    /* istanbul ignore next */
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.debug(
+        '[create] extracted keys:',
+        record && typeof record === 'object'
+          ? Object.keys(record)
+          : typeof record
+      );
+    }
 
     if (isTestRun()) {
       context.debug(

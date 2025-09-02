@@ -24,6 +24,7 @@ import {
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
+import type { McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 
 describe.skipIf(
@@ -42,11 +43,11 @@ describe.skipIf(
 
   describe('System Health Smoke Tests', () => {
     it('should validate basic API connectivity', async () => {
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'smoke-test-connectivity',
         limit: 1,
-      });
+      })) as McpToolResponse;
 
       expect(response).toBeDefined();
       expect(typeof response).toBe('object');
@@ -70,11 +71,11 @@ describe.skipIf(
       const resourceTypes = ['companies', 'people', 'tasks'];
 
       for (const resourceType of resourceTypes) {
-        const response = await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('search-records', {
           resource_type: resourceType as any,
           query: 'smoke-test',
           limit: 1,
-        });
+        })) as McpToolResponse;
 
         expect(response).toBeDefined();
         console.error(`✅ Resource type ${resourceType} accessible`);
@@ -119,23 +120,23 @@ describe.skipIf(
 
     it('should validate task tool basic operations', async () => {
       // Test task search
-      const searchResponse = await callTasksTool('search-records', {
+      const searchResponse = (await callTasksTool('search-records', {
         resource_type: 'tasks',
         query: 'smoke-test-task',
         limit: 1,
-      });
+      })) as McpToolResponse;
 
       expect(searchResponse).toBeDefined();
       console.error('✅ Task tool search operation validated');
 
       // Test task creation (smoke test with minimal data)
       const taskData = testDataGenerator.tasks.basicTask();
-      const createResponse = await callTasksTool('create-record', {
+      const createResponse = (await callTasksTool('create-record', {
         resource_type: 'tasks',
         record_data: {
           content: taskData.content,
         },
-      });
+      })) as McpToolResponse;
 
       expect(createResponse).toBeDefined();
       console.error('✅ Task tool create operation validated');
@@ -143,11 +144,11 @@ describe.skipIf(
 
     it('should validate notes tool basic operations', async () => {
       // Test notes list (expected to handle gracefully even with invalid ID)
-      const listResponse = await callNotesTool('list-notes', {
+      const listResponse = (await callNotesTool('list-notes', {
         resource_type: 'companies',
         record_id: 'smoke-test-company-id',
         limit: 1,
-      });
+      })) as McpToolResponse;
 
       expect(listResponse).toBeDefined();
       console.error('✅ Notes tool list operation validated');
@@ -158,15 +159,15 @@ describe.skipIf(
     it('should validate basic record creation workflow', async () => {
       const companyData = testDataGenerator.companies.basicCompany();
 
-      const response = await callUniversalTool('create-record', {
+      const response = (await callUniversalTool('create-record', {
         resource_type: 'companies',
         record_data: companyData,
-      });
+      })) as McpToolResponse;
 
       expect(response).toBeDefined();
 
       if (!response.isError) {
-        const data = E2EAssertions.expectMcpData(response);
+        const data = E2EAssertions.expectMcpData(response) as any;
         expect(data).toBeDefined();
         console.error('✅ Basic record creation workflow validated');
 
@@ -198,10 +199,10 @@ describe.skipIf(
       ];
 
       for (const searchQuery of searchQueries) {
-        const response = await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('search-records', {
           ...searchQuery,
           limit: 1,
-        });
+        })) as McpToolResponse;
 
         expect(response).toBeDefined();
         console.error(
@@ -239,7 +240,7 @@ describe.skipIf(
       ];
 
       for (const scenario of errorScenarios) {
-        const response = await scenario.test();
+        const response = (await scenario.test()) as McpToolResponse;
 
         expect(response).toBeDefined();
         expect(response.isError).toBe(true);
@@ -253,11 +254,11 @@ describe.skipIf(
 
   describe('Quick Regression Detection', () => {
     it('should detect API response structure regressions', async () => {
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'regression-structure-test',
         limit: 1,
-      });
+      })) as McpToolResponse;
 
       // Verify response has expected structure
       expect(response).toBeDefined();
@@ -298,7 +299,7 @@ describe.skipIf(
       ];
 
       for (const toolTest of toolTests) {
-        const result = await toolTest();
+        const result = (await toolTest()) as McpToolResponse;
         expect(result).toBeDefined();
       }
 
@@ -311,31 +312,31 @@ describe.skipIf(
         {
           name: 'Search functionality',
           test: async () => {
-            const response = await callUniversalTool('search-records', {
+            const response = (await callUniversalTool('search-records', {
               resource_type: 'companies',
               query: 'functionality-test',
               limit: 1,
-            });
+            })) as McpToolResponse;
             return response.isError || response.content !== undefined;
           },
         },
         {
           name: 'Error handling functionality',
           test: async () => {
-            const response = await callUniversalTool('get-record-details', {
+            const response = (await callUniversalTool('get-record-details', {
               resource_type: 'companies',
               record_id: 'non-existent-for-func-test',
-            });
-            return response.isError && response.error.length > 0;
+            })) as McpToolResponse;
+            return response.isError && (response.error ?? '').length > 0;
           },
         },
         {
           name: 'Parameter validation functionality',
           test: async () => {
-            const response = await callUniversalTool('search-records', {
+            const response = (await callUniversalTool('search-records', {
               resource_type: 'invalid_type' as any,
               query: 'func-test',
-            });
+            })) as McpToolResponse;
             return response.isError;
           },
         },
@@ -377,7 +378,7 @@ describe.skipIf(
 
       for (const perfTest of performanceTests) {
         const startTime = Date.now();
-        const response = await perfTest.test();
+        const response = (await perfTest.test()) as McpToolResponse;
         const endTime = Date.now();
         const duration = endTime - startTime;
 

@@ -105,7 +105,6 @@ export async function createTask(
   if (options.dueDate) {
     taskData.deadline_at = options.dueDate;
   }
-  // Do not include linked_records here; use /linked-records endpoint after create if needed
 
   // Build the full request payload with all required fields for the API
   // Assignees: Attio v2 expects referenced actor references
@@ -117,12 +116,19 @@ export async function createTask(
         },
       ]
     : [];
+
+  // linked_records: Required field - empty array when no record to link, array with record when there is
+  const linkedRecords = options.recordId
+    ? [{ record_id: options.recordId }]
+    : [];
+
   const requestPayload = {
     data: {
       ...taskData,
       is_completed: false, // Always false for new tasks
       assignees,
       deadline_at: taskData.deadline_at || null, // Explicitly null if not provided
+      linked_records: linkedRecords, // Always include this required field
     },
   };
 
