@@ -9,6 +9,7 @@ import {
 import { AttioTask } from '../types/attio.js';
 import { isValidId } from '../utils/validation.js';
 import { shouldUseMockData } from '../services/create/index.js';
+import { deleteTask as apiDelete } from '../api/operations/index.js';
 
 // Input validation helper function is now imported from ../utils/validation.js for consistency
 
@@ -154,15 +155,9 @@ export async function deleteTask(taskId: string): Promise<boolean> {
     return true;
   }
 
-  // Use centralized Attio client for consistent authentication and 404 handling
-  const { getAttioClient } = await import('../api/attio-client.js');
-  const client = getAttioClient();
-
+  // Delegate to API operations implementation (handles retries and envelopes)
   try {
-    const resp = await client.delete(`/objects/tasks/records/${taskId}`);
-    const status = resp?.status ?? 0;
-    // Attio typically returns 204 on success (some gateways return 200)
-    return status === 204 || status === 200;
+    return await apiDelete(taskId);
   } catch (err: any) {
     const status = err?.response?.status ?? err?.status;
     const code = err?.response?.data?.code ?? err?.code;

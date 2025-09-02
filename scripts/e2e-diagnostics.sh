@@ -5,7 +5,7 @@ LOG_DIR=${1:-"/tmp"}
 mkdir -p "$LOG_DIR"
 
 # Load .env so vitest and curl-compatible tools get keys
-ROOT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)
+ROOT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)
 if [[ -f "$ROOT_DIR/.env" ]]; then
   set -a
   # shellcheck disable=SC1090
@@ -27,7 +27,7 @@ for testname in "${TESTS[@]}"; do
   LOG_FILE="$LOG_DIR/e2e-$(echo "$testname" | tr ' ' '-' | tr -cd '[:alnum:]-').log"
   TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
     node --env-file=.env ./node_modules/vitest/vitest.mjs run --config vitest.config.e2e.ts -t "$testname" --reporter=verbose --bail=0 \
-    |& tee "$LOG_FILE" || true
+    2>&1 | tee "$LOG_FILE" || true
   echo "log: $LOG_FILE"
 done
 
