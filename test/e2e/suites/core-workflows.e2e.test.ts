@@ -252,6 +252,10 @@ describe.skipIf(
 
   describe('Tasks Management - Core Operations', () => {
     describe('Task Creation and Basic Operations', () => {
+      beforeAll(async () => {
+        const { TestDataSeeder } = await import('../utils/test-data-seeder.js');
+        await TestDataSeeder.ensureCompany('task-linking', taskTestCompanies);
+      }, 30000);
       it('should create a basic task', async () => {
         const taskData = TaskFactory.create();
 
@@ -517,6 +521,10 @@ describe.skipIf(
     });
 
     describe('Task Deletion and Cleanup', () => {
+      beforeAll(async () => {
+        const { TestDataSeeder } = await import('../utils/test-data-seeder.js');
+        await TestDataSeeder.ensureTask('deletion-test', createdTasks as any);
+      }, 30000);
       it('should delete individual tasks', async () => {
         if (createdTasks.length === 0) {
           console.error(
