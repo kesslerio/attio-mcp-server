@@ -54,6 +54,7 @@ test/e2e/config.local.json
 test-results/
 test/e2e/outputs/
 vitest-report.json
+performance-results/
 
 # Log files
 logs/
