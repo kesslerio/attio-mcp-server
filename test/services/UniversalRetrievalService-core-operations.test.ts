@@ -65,7 +65,7 @@ vi.mock('../../src/objects/notes.js', () => ({ getNote: vi.fn() }));
 vi.mock('../../src/services/create/index.js', () => ({
   shouldUseMockData: vi.fn(),
 }));
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { UniversalRetrievalService } from '../../src/services/UniversalRetrievalService.js';
 import { UniversalResourceType } from '../../src/handlers/tool-configs/universal/types.js';
 import { AttioRecord, AttioTask } from '../../src/types/attio.js';
