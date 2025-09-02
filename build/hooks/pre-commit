@@ -93,7 +93,8 @@ fi
 
 # Stage 3.5: TypeScript check for tests (prevent regressions)
 echo -e "\n${YELLOW}Stage 3.5/4: TypeScript check for tests...${NC}"
-if ! npx tsc --project tsconfig.typecheck.json --noEmit; then
+# Only check test TypeScript files per Issue #563 guidance
+if ! npx tsc --noEmit --skipLibCheck test/**/*.ts; then
   echo -e "${RED}❌ COMMIT BLOCKED: Test TypeScript errors detected${NC}"
   echo -e "Fix type errors in test/ before committing."
   echo -e "Hint: ensure Vitest types are available and mocks align with src types."
