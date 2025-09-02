@@ -41,8 +41,8 @@ vi.mock('../src/api/attio-client', async () => {
   }
 
   // Non-E2E: light stub that won't require an API key
-  const { default: axios } = await import('axios');
-  const mockAxiosInstance = axios.create();
+  // Use the rich mock API client that simulates Attio endpoints
+  const mockAxiosInstance = createMockApiClient() as any;
 
   return {
     // New API

@@ -243,26 +243,36 @@ export const advancedSearchConfig: UniversalToolConfig = {
       }
     }
 
+    // Helper that extracts either primitive, {value}, or [..] shapes
+    const coerce = (v: any): string | undefined => {
+      if (v == null) return undefined;
+      if (typeof v === 'string') return v;
+      if (Array.isArray(v)) {
+        const first = v[0];
+        if (typeof first === 'string') return first;
+        if (first && typeof first === 'object' && 'value' in first)
+          return String((first as any).value);
+      }
+      if (typeof v === 'object' && 'value' in v) return String((v as any).value);
+      return undefined;
+    };
+
     return `Advanced search found ${results.length} ${plural}:\n${results
       .map((record: Record<string, unknown>, index: number) => {
-        const values = record.values as Record<string, unknown>;
-        const recordId = record.id as Record<string, unknown>;
+        const values = record.values as Record<string, unknown> | undefined;
+        const recordId = record.id as Record<string, unknown> | undefined;
         const name =
-          (values?.name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.name as Record<string, unknown>[])?.[0]?.full_name ||
-          (values?.full_name as Record<string, unknown>[])?.[0]?.value ||
-          (values?.title as Record<string, unknown>[])?.[0]?.value ||
+          coerce(values?.name) ||
+          coerce(values?.full_name) ||
+          coerce(values?.title) ||
           'Unnamed';
-        const id = recordId?.record_id || 'unknown';
+        const id = (recordId?.record_id as string) || 'unknown';
 
         // Include additional context for advanced search results
-        const website = (values?.website as Record<string, unknown>[])?.[0]
-          ?.value;
-        const email = (values?.email as Record<string, unknown>[])?.[0]?.value;
-        const industry = (values?.industry as Record<string, unknown>[])?.[0]
-          ?.value;
-        const location = (values?.location as Record<string, unknown>[])?.[0]
-          ?.value;
+        const website = coerce(values?.website);
+        const email = coerce(values?.email);
+        const industry = coerce(values?.industry);
+        const location = coerce(values?.location);
 
         let context = '';
         if (industry) context += ` [${industry}]`;
@@ -953,6 +963,36 @@ export const batchOperationsConfig: UniversalToolConfig = {
       : 'record';
 
     if (Array.isArray(results)) {
+      // Helper to extract a human-friendly name from various value shapes
+      const extractName = (
+        values: Record<string, unknown> | undefined,
+        fallback?: string
+      ): string => {
+        if (!values) return fallback ?? 'Unknown';
+        const nameVal = (values as any).name;
+        const titleVal = (values as any).title;
+
+        const coerce = (v: any): string | undefined => {
+          if (v == null) return undefined;
+          if (typeof v === 'string') return v;
+          if (Array.isArray(v)) {
+            // accept either array of primitives or array of { value }
+            const first = v[0];
+            if (typeof first === 'string') return first;
+            if (first && typeof first === 'object' && 'value' in first)
+              return String((first as any).value);
+          }
+          if (typeof v === 'object' && 'value' in v) return String((v as any).value);
+          return undefined;
+        };
+
+        return (
+          coerce(nameVal) ??
+          coerce(titleVal) ??
+          (fallback ?? 'Unknown')
+        );
+      };
+
       const successCount = results.filter((r) => r.success).length;
       const failureCount = results.length - successCount;
 
@@ -1008,18 +1048,15 @@ export const batchOperationsConfig: UniversalToolConfig = {
           // Legacy format: AttioRecord[] (single search)
           return `Batch search found ${results.length} ${resourceTypeName}s:\n${results
             .map((record: Record<string, unknown>, index: number) => {
-              const values = record.values as Record<string, unknown>;
-              const recordId = record.id as Record<string, unknown>;
-              const name =
-                (values?.name as Record<string, unknown>[])?.[0]?.value ||
-                (values?.title as Record<string, unknown>[])?.[0]?.value ||
-                'Unnamed';
-              const id = recordId?.record_id || 'unknown';
+              const values = record.values as Record<string, unknown> | undefined;
+              const recordId = record.id as Record<string, unknown> | undefined;
+              const name = extractName(values, 'Unnamed');
+              const id = (recordId?.record_id as string) || 'unknown';
               return `${index + 1}. ${name} (ID: ${id})`;
             })
             .join('\n')}`;
-        }
       }
+    }
 
       // Show details for successful operations
       const successful = results.filter((r) => r.success);
@@ -1027,12 +1064,13 @@ export const batchOperationsConfig: UniversalToolConfig = {
         summary += `Successful operations:\n${successful
           .map((op: Record<string, unknown>, index: number) => {
             const opResult = op.result as Record<string, unknown>;
-            const values = opResult?.values as Record<string, unknown>;
-            const name =
-              (values?.name as Record<string, unknown>[])?.[0]?.value ||
-              (values?.title as Record<string, unknown>[])?.[0]?.value ||
-              opResult?.record_id ||
-              'Unknown';
+            const values = opResult?.values as
+              | Record<string, unknown>
+              | undefined;
+            const name = extractName(
+              values,
+              (opResult?.record_id as string) || 'Unknown'
+            );
             return `${index + 1}. ${name}`;
           })
           .join('\n')}`;
