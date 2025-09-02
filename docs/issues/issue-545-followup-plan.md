@@ -18,7 +18,7 @@ Source plan: /private/tmp/issue-545-followup-plan.md
 ### Consolidation (Day 2)
 - [ ] Sweep all E2E tests for assertion consistency
 - [ ] Implement test sequencer configuration (confirm settings in vitest e2e config)
-- [ ] Create health check dashboard script
+- [x] Create health check dashboard script (`scripts/e2e-health-check.sh`)
 - [ ] Run progressive validation stages
 
 ### Finalization (Day 3)
@@ -31,4 +31,6 @@ Source plan: /private/tmp/issue-545-followup-plan.md
 - Added deterministic data seeding without altering production code paths.
 - Followed “E2E ≠ Mocks” policy; seeding uses universal/notes/tasks tools.
 - Kept changes scoped to tests and utilities.
-
+ - Added diagnostics utilities:
+   - `scripts/e2e-health-check.sh` (API connectivity + offline smoke)
+   - `scripts/e2e-diagnostics.sh` (targeted isolated E2E logs)
