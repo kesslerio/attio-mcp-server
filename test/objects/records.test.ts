@@ -38,7 +38,7 @@ describe('Records API', () => {
     get: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
-  };
+  } as unknown as import('axios').AxiosInstance;
 
   beforeEach(() => {
     vi.clearAllMocks();

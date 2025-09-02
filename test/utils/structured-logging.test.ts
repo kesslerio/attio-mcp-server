@@ -2,7 +2,8 @@
  * Tests for enhanced structured logging system
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
+import * as loggerMod from '../../src/utils/logger.js';
+const {
   debug,
   info,
   warn,
@@ -19,7 +20,7 @@ import {
   operationStart,
   operationSuccess,
   operationFailure,
-} from '../../src/utils/logger.js';
+} = loggerMod as any;
 
 // Store original console methods
 const originalConsole = {

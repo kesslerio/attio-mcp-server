@@ -113,7 +113,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
       );
       const mockedExecute = vi.mocked(executeToolRequest);
 
-      const request: CallToolRequest = {
+      const request: any = {
         params: {
           name: 'search-records',
           arguments: {

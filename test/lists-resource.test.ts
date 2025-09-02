@@ -188,7 +188,7 @@ describe('Lists Resource Type', () => {
         expect(newList.name).toBeDefined();
 
         // Store for cleanup
-        testListId = newList.id?.list_id || newList.id;
+        testListId = (newList.id as any)?.list_id || (newList.id as any);
       });
 
       it('should require name and parent_object', async () => {
@@ -241,7 +241,7 @@ describe('Lists Resource Type', () => {
           parent_object: 'companies',
         });
 
-        const tempListId = tempList.id?.list_id || tempList.id;
+        const tempListId = (tempList.id as any)?.list_id || (tempList.id as any);
         const result = await deleteList(tempListId as string);
 
         expect(result).toBe(true);
