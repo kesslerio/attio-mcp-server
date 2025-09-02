@@ -59,7 +59,7 @@ function retrieveMock(id: string): any | undefined {
 
 function getAllMocksByType(type: string): any[] {
   const results: any[] = [];
-  for (const [id, obj] of mockStorage.entries()) {
+  for (const [id, obj] of Array.from(mockStorage.entries())) {
     if (id.startsWith(`${type}-`)) {
       results.push(obj);
     }

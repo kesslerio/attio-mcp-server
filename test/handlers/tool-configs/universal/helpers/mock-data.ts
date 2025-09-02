@@ -102,7 +102,7 @@ export const MockRecordFactory = {
         name: [{ value: overrides.name || `Test Person ${timestamp}` }],
         email_addresses: [
           {
-            email_address: overrides.email || `test-${timestamp}@example.com`,
+            value: overrides.email || `test-${timestamp}@example.com`,
           },
         ],
         ...(overrides.company && {

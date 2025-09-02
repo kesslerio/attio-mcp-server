@@ -33,8 +33,8 @@ import {
   PerformanceTestRunner,
   integrationConfig,
   integrationUtils,
-  IntegrationDataFactory,
 } from './integration-helpers.js';
+import { IntegrationDataFactory } from './mock-data.js';
 import { PERFORMANCE_BUDGETS } from './test-constants.js';
 
 // Test Constants and Configuration

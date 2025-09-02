@@ -108,7 +108,7 @@ describe('Universal Core Operations Attributes Tests', () => {
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
       vi.mocked(handleUniversalDiscoverAttributes).mockResolvedValue(
-        mockSchema
+        mockSchema as any
       );
 
       const params = { resource_type: UniversalResourceType.COMPANIES };

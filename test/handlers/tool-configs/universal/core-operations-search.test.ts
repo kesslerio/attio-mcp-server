@@ -169,7 +169,7 @@ describe('Universal Core Operations Search Tests', () => {
       const { handleUniversalGetDetails } = await import(
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
-      vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord);
+      vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
       const params: UniversalRecordDetailsParams = {
         resource_type: UniversalResourceType.COMPANIES,
@@ -274,9 +274,9 @@ describe('Universal Core Operations Search Tests', () => {
         '../../../../src/handlers/tool-configs/universal/shared-handlers.js'
       );
 
-      vi.mocked(handleUniversalGetDetails).mockResolvedValue({});
-      vi.mocked(handleUniversalCreate).mockResolvedValue({});
-      vi.mocked(handleUniversalUpdate).mockResolvedValue({});
+      vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
+      vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);
+      vi.mocked(handleUniversalUpdate).mockResolvedValue({} as any);
       vi.mocked(handleUniversalDelete).mockResolvedValue({
         success: true,
         record_id: 'test',

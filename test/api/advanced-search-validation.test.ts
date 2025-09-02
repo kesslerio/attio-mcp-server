@@ -12,10 +12,12 @@ vi.resetAllMocks();
 // Unmock the specific module we want to test
 vi.doUnmock('../../src/objects/companies/search.js');
 
-// Import after clearing mocks
-const { advancedSearchCompanies } = await import(
-  '../../src/objects/companies/search.js'
-);
+// Import after clearing mocks - use async function to handle top-level await
+let advancedSearchCompanies: any;
+(async () => {
+  const module = await import('../../src/objects/companies/search.js');
+  advancedSearchCompanies = module.advancedSearchCompanies;
+})();
 
 // Skip tests if no API key or if explicitly disabled
 const SKIP_TESTS =

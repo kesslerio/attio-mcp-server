@@ -2,8 +2,8 @@
  * Tests for the configuration loader
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   loadMappingConfig,
   writeMappingConfig,
@@ -13,20 +13,32 @@ import {
 
 // Mock fs module
 vi.mock('fs', () => ({
-  default: {
-    existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-    promises: {
-      writeFile: vi.fn().mockResolvedValue(undefined),
-    },
-    mkdirSync: vi.fn(),
-  },
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
   promises: {
     writeFile: vi.fn().mockResolvedValue(undefined),
   },
   mkdirSync: vi.fn(),
+}));
+
+// Mock path module
+vi.mock('path', () => ({
+  resolve: vi.fn().mockImplementation((...segments) => {
+    const joined = segments.join('/');
+    if (joined.includes('default.json')) {
+      return '/mock/path/config/mappings/default.json';
+    }
+    if (joined.includes('user.json')) {
+      return '/mock/path/config/mappings/user.json';
+    }
+    return joined;
+  }),
+  dirname: vi.fn().mockImplementation((filePath) => {
+    if (filePath.includes('/')) {
+      return filePath.split('/').slice(0, -1).join('/');
+    }
+    return '.';
+  }),
 }));
 
 describe('Configuration Loader', () => {

@@ -340,7 +340,7 @@ describe('Universal Advanced Operations - Batch Tests', () => {
       const emptyResults: any[] = [];
 
       // For empty arrays, batch formatters should handle empty results appropriately
-      const formatted = batchOperationsConfig.formatResult(
+      const formatted = (batchOperationsConfig.formatResult as any)(
         emptyResults,
         BatchOperationType.SEARCH,
         UniversalResourceType.COMPANIES
