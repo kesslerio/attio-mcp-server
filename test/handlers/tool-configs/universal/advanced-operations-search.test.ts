@@ -36,9 +36,9 @@ describe('Universal Advanced Operations - Search Tests', () => {
         {
           id: { record_id: 'comp-1' },
           values: {
-            name: [{ value: 'Advanced Company' }],
-            industry: [{ value: 'Technology' }],
-            location: [{ value: 'San Francisco' }],
+            name: 'Advanced Company',
+            industry: 'Technology',
+            location: 'San Francisco',
           },
         },
       ];
@@ -77,10 +77,10 @@ describe('Universal Advanced Operations - Search Tests', () => {
         {
           id: { record_id: 'comp-1' },
           values: {
-            name: [{ value: 'Tech Corp' }],
-            industry: [{ value: 'Technology' }],
-            location: [{ value: 'San Francisco' }],
-            website: [{ value: 'https://techcorp.com' }],
+            name: 'Tech Corp',
+            industry: 'Technology',
+            location: 'San Francisco',
+            website: 'https://techcorp.com',
           },
         },
       ];

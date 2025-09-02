@@ -62,7 +62,7 @@ describe.skipIf(
     const companyData = testDataGenerator.companies.basicCompany();
     const createResponse = (await callUniversalTool('create-record', {
       resource_type: 'companies',
-      record_data: companyData,
+      record_data: companyData as any,
     })) as McpToolResponse;
     if (hasValidContent(createResponse)) {
       const companyId = extractRecordId(createResponse);

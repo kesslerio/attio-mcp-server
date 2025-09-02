@@ -881,9 +881,11 @@ export const coreOperationsToolConfigs = {
           (typeof body?.error === 'string' ? body.error : undefined);
 
         const mapped =
-          status === 404 ? 'record not found' :
-          status === 400 || status === 422 ? 'invalid or missing required parameter' :
-          upstreamMsg || 'invalid request';
+          status === 404
+            ? 'record not found'
+            : status === 400 || status === 422
+              ? 'invalid or missing required parameter'
+              : upstreamMsg || 'invalid request';
 
         // IMPORTANT: return MCP shape, not { success: false }
         return { isError: true, error: mapped };

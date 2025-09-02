@@ -21,12 +21,43 @@ import {
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { E2EAssertions } from '../utils/assertions.js';
+import type { McpToolResponse } from '../utils/assertions.js';
 import { testDataGenerator } from '../fixtures/index.js';
 import {
   extractRecordId,
   createTestRecord,
   cleanupTestRecords,
 } from '../utils/error-handling-utils.js';
+
+// Helper: extract first record_id from a search response
+function firstRecordIdFromSearch(
+  response: McpToolResponse
+): string | undefined {
+  if (response.isError || !response.content || response.content.length === 0) {
+    return undefined;
+  }
+  const text = response.content[0]?.text;
+  if (!text) return undefined;
+  try {
+    const parsed = JSON.parse(text as string);
+    if (Array.isArray(parsed) && parsed[0]?.id?.record_id) {
+      return parsed[0].id.record_id;
+    }
+    if (
+      parsed?.data &&
+      Array.isArray(parsed.data) &&
+      parsed.data[0]?.id?.record_id
+    ) {
+      return parsed.data[0].id.record_id;
+    }
+    if (parsed?.id?.record_id) {
+      return parsed.id.record_id;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return undefined;
+}
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
@@ -101,12 +132,13 @@ describe.skipIf(
 
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
-          const response = result.value;
+          const response = result.value as McpToolResponse;
           if (!response.isError) {
             successCount++;
           } else if (
-            response.error.toLowerCase().includes('rate') ||
-            response.error.toLowerCase().includes('limit')
+            typeof response.error === 'string' &&
+            (response.error.toLowerCase().includes('rate') ||
+              response.error.toLowerCase().includes('limit'))
           ) {
             rateLimitCount++;
           }
@@ -176,15 +208,15 @@ describe.skipIf(
       ];
 
       for (const request of malformedRequests) {
-        const response = await request();
+        const response = (await request()) as McpToolResponse;
         expect(response).toBeDefined();
 
         // After malformed request, system should still respond to valid request
-        const validResponse = await callUniversalTool('search-records', {
+        const validResponse = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'recovery-test',
           limit: 1,
-        });
+        })) as McpToolResponse;
         expect(validResponse).toBeDefined();
       }
 
@@ -213,62 +245,44 @@ describe.skipIf(
         {
           name: 'Universal → Task Tool',
           operation: async () => {
-            const searchResponse = await callUniversalTool('search-records', {
+            const searchResponse = (await callUniversalTool('search-records', {
               resource_type: 'tasks',
               query: 'tool-boundary',
               limit: 1,
-            });
+            })) as McpToolResponse;
 
-            if (
-              searchResponse &&
-              !searchResponse.isError &&
-              searchResponse.data
-            ) {
-              const results = Array.isArray(searchResponse.data)
-                ? searchResponse.data
-                : [searchResponse.data];
-              if (results.length > 0) {
-                const taskId = extractRecordId({ data: results[0] });
-                if (taskId) {
-                  return await callTasksTool('get-record-details', {
-                    resource_type: 'tasks',
-                    record_id: taskId,
-                  });
-                }
+            if (searchResponse && !searchResponse.isError) {
+              const taskId = firstRecordIdFromSearch(searchResponse);
+              if (taskId) {
+                return await callTasksTool('get-record-details', {
+                  resource_type: 'tasks',
+                  record_id: taskId,
+                });
               }
             }
-            return searchResponse;
+            return searchResponse as McpToolResponse;
           },
         },
         {
           name: 'Universal → Notes Tool',
           operation: async () => {
-            const companyResponse = await callUniversalTool('search-records', {
+            const companyResponse = (await callUniversalTool('search-records', {
               resource_type: 'companies',
               query: 'tool-boundary',
               limit: 1,
-            });
+            })) as McpToolResponse;
 
-            if (
-              companyResponse &&
-              !companyResponse.isError &&
-              companyResponse.data
-            ) {
-              const results = Array.isArray(companyResponse.data)
-                ? companyResponse.data
-                : [companyResponse.data];
-              if (results.length > 0) {
-                const companyId = extractRecordId({ data: results[0] });
-                if (companyId) {
-                  return await callNotesTool('list-notes', {
-                    resource_type: 'companies',
-                    record_id: companyId,
-                    limit: 1,
-                  });
-                }
+            if (companyResponse && !companyResponse.isError) {
+              const companyId = firstRecordIdFromSearch(companyResponse);
+              if (companyId) {
+                return await callNotesTool('list-notes', {
+                  resource_type: 'companies',
+                  record_id: companyId,
+                  limit: 1,
+                });
               }
             }
-            return companyResponse;
+            return companyResponse as McpToolResponse;
           },
         },
       ];
@@ -287,11 +301,11 @@ describe.skipIf(
     it('should handle network timeout scenarios', async () => {
       // Test with very small timeout to simulate network issues
       const startTime = Date.now();
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'timeout-test',
         limit: 1,
-      });
+      })) as McpToolResponse;
       const endTime = Date.now();
 
       expect(response).toBeDefined();
@@ -304,23 +318,22 @@ describe.skipIf(
 
     it('should validate API version compatibility', async () => {
       // Test that API calls work with current version expectations
-      const versionTestResponse = await callUniversalTool('search-records', {
+      const versionTestResponse = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'version-test',
         limit: 1,
-      });
+      })) as McpToolResponse;
 
       expect(versionTestResponse).toBeDefined();
 
       // Response should have expected structure
       if (!versionTestResponse.isError) {
-        // Check for either data or content property (different tools use different structures)
-        const hasValidResponse =
-          versionTestResponse.data || versionTestResponse.content;
+        // Validate content exists
         expect(
-          hasValidResponse,
-          'Response should have either data or content'
-        ).toBeDefined();
+          versionTestResponse.content &&
+            Array.isArray(versionTestResponse.content),
+          'Response should have content array'
+        ).toBe(true);
       } else {
         expect(versionTestResponse.error).toBeDefined();
         expect(typeof versionTestResponse.error).toBe('string');
@@ -397,11 +410,11 @@ describe.skipIf(
 
       for (const test of errorRecoveryTests) {
         // Trigger error condition
-        const errorResponse = await test.errorOp();
+        const errorResponse = (await test.errorOp()) as McpToolResponse;
         expect(errorResponse.isError).toBe(true);
 
         // Test recovery
-        const recoveryResponse = await test.recoveryOp();
+        const recoveryResponse = (await test.recoveryOp()) as McpToolResponse;
         expect(recoveryResponse).toBeDefined();
 
         console.error(`✅ ${test.name} completed successfully`);
@@ -441,7 +454,9 @@ describe.skipIf(
           }),
       ];
 
-      const results = await Promise.all(consistencyTests.map((test) => test()));
+      const results = (await Promise.all(
+        consistencyTests.map((test) => test())
+      )) as McpToolResponse[];
 
       // Should have mix of success and error responses
       const successCount = results.filter((r) => !r.isError).length;

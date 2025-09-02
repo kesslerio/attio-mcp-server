@@ -8,17 +8,17 @@ import {
   BatchResponse,
   BatchItemResult,
   BatchConfig,
-} from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
+} from '../../src/api/operations/index.js';
+import { getAttioClient } from '../../src/api/attio-client.js';
 import {
   ResourceType,
   Person,
   Company,
   AttioRecord,
-} from '../../src/types/attio';
+} from '../../src/types/attio.js';
 
 // Mock the axios client
-vi.mock('../../src/api/attio-client', () => ({
+vi.mock('../../src/api/attio-client.js', () => ({
   getAttioClient: vi.fn(),
 }));
 
@@ -29,9 +29,9 @@ describe('Batch Operations', () => {
       record_id: 'person123',
     },
     values: {
-      name: [{ value: 'John Doe' }],
-      email: [{ value: 'john.doe@example.com' }],
-      phone: [{ value: '+1234567890' }],
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      phone: '+1234567890',
     },
   };
 
@@ -40,9 +40,9 @@ describe('Batch Operations', () => {
       record_id: 'person456',
     },
     values: {
-      name: [{ value: 'Jane Smith' }],
-      email: [{ value: 'jane.smith@example.com' }],
-      phone: [{ value: '+0987654321' }],
+      name: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      phone: '+0987654321',
     },
   };
 
@@ -51,7 +51,7 @@ describe('Batch Operations', () => {
       record_id: 'company123',
     },
     values: {
-      name: [{ value: 'Acme Inc' }],
+      name: 'Acme Inc',
     },
   };
 
@@ -60,7 +60,7 @@ describe('Batch Operations', () => {
       record_id: 'company456',
     },
     values: {
-      name: [{ value: 'Globex Corp' }],
+      name: 'Globex Corp',
     },
   };
 
@@ -73,7 +73,10 @@ describe('Batch Operations', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (getAttioClient as vi.Mock).mockReturnValue(mockApiClient);
+    // Cast to Vitest Mock type for typing
+    (getAttioClient as unknown as import('vitest').Mock).mockReturnValue(
+      mockApiClient
+    );
   });
 
   describe('executeBatchOperations', () => {
@@ -213,7 +216,9 @@ describe('Batch Operations', () => {
 
       expect(result.results[1].success).toBe(false);
       expect(result.results[1].error).toBeInstanceOf(Error);
-      expect(result.results[1].error.message).toBe('Operation 2 failed');
+      expect((result.results[1].error as Error).message).toBe(
+        'Operation 2 failed'
+      );
 
       expect(result.results[2].success).toBe(true);
       expect(result.results[2].data).toBe('Result for param3');

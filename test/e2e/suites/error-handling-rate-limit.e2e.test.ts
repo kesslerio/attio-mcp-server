@@ -22,14 +22,17 @@ describe.skipIf(
     const responses = await Promise.allSettled(requests);
     responses.forEach((result) => {
       expect(result.status).toMatch(/(fulfilled|rejected)/);
-      if (result.status === 'fulfilled' && result.value.isError) {
-        const error = (result.value as McpToolResponse).error;
-        if (
-          error.includes('rate') ||
-          error.includes('limit') ||
-          error.includes('too many')
-        ) {
-          // acceptable
+      if (result.status === 'fulfilled') {
+        const val = result.value as McpToolResponse;
+        if (val.isError && typeof val.error === 'string') {
+          const error = val.error;
+          if (
+            error.toLowerCase().includes('rate') ||
+            error.toLowerCase().includes('limit') ||
+            error.toLowerCase().includes('too many')
+          ) {
+            // acceptable
+          }
         }
       }
     });

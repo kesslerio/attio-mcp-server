@@ -22,7 +22,7 @@ import { loadE2EConfig, configLoader } from '../utils/config-loader.js';
 import {
   E2ECompanyFactory,
   E2EPersonFactory,
-  E2ETestDataValidator,
+  TestDataValidator,
 } from '../utils/test-data.js';
 import { E2EAssertions } from '../utils/assertions.js';
 import {
@@ -134,8 +134,8 @@ describe.skipIf(
       const person = E2EPersonFactory.create();
 
       // Test data should meet basic validation requirements
-      const companyValidation = E2ETestDataValidator.validateCompany(company);
-      const personValidation = E2ETestDataValidator.validatePerson(person);
+      const companyValidation = TestDataValidator.validateCompany(company);
+      const personValidation = TestDataValidator.validatePerson(person);
 
       expect(companyValidation.isValid).toBe(true);
       expect(personValidation.isValid).toBe(true);
@@ -169,6 +169,9 @@ describe.skipIf(
       // Test data extraction
       const data = E2EAssertions.expectMcpData(mockSuccessResponse);
       expect(data).toBeDefined();
+      if (!data) {
+        throw new Error('Expected data to be defined');
+      }
       expect(data.name).toBe('Test Company');
 
       console.error('✅ E2E assertion utilities validated');

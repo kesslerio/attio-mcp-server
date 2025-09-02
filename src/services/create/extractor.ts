@@ -8,60 +8,83 @@
 import { extractRecordId } from '../../utils/validation/uuid-validation.js';
 import type { AttioRecord } from '../../types/attio.js';
 
+function isRecordLike(x: any): x is AttioRecord {
+  return (
+    !!x && typeof x === 'object' && x.id && typeof x.id.record_id === 'string'
+  );
+}
+
+function collectCandidates(src: any): any[] {
+  const out: any[] = [];
+  if (src == null) return out;
+
+  // Common axios/Attio envelopes
+  if (src.data) out.push(src.data);
+  if (src.data?.data) out.push(src.data.data);
+  if (src.data?.record) out.push(src.data.record);
+  if (src.record) out.push(src.record);
+
+  // Raw object as a candidate too
+  out.push(src);
+
+  // Arrays from bulk or list-like responses
+  const arrayish = [
+    Array.isArray(src) ? src : null,
+    Array.isArray(src?.data) ? src.data : null,
+    Array.isArray(src?.data?.records) ? src.data.records : null,
+    Array.isArray(src?.records) ? src.records : null,
+  ].filter(Boolean) as any[][];
+  for (const arr of arrayish) out.push(...arr);
+
+  return out;
+}
+
 /**
- * Normalizes client responses and adapts id → { id: { record_id } }.
- * Handles various shapes: response | response.data | { data } | { record } | { id: string } | { record_id: string }
+ * Extract a single Attio record from any Attio/axios envelope.
+ * Returns null if we cannot find a record-like shape.
  */
-export function extractAttioRecord(response: any): AttioRecord | null {
-  const payload = (response && (response.data ?? response)) ?? null;
-  const maybeData = (payload && (payload.data ?? payload)) ?? null;
+export function extractAttioRecord(src: any): AttioRecord | null {
+  const candidates = collectCandidates(src);
 
-  // Peel { record: {...} } if present
-  let rec =
-    maybeData && typeof maybeData === 'object' && 'record' in maybeData
-      ? (maybeData as any).record
-      : maybeData;
+  // First try to find a complete record-like object
+  let rec = candidates.find(isRecordLike);
+  if (rec) return rec;
 
-  // If empty object, try to salvage from headers (e.g., Location)
-  const loc = response?.headers?.location || response?.headers?.Location;
-  if (
-    (!rec || (typeof rec === 'object' && Object.keys(rec).length === 0)) &&
-    typeof loc === 'string'
-  ) {
+  // Fallback: try to adapt id formats for partial records
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === 'object') {
+      const c: any = candidate;
+
+      // id as string → adapt
+      if (typeof c.id === 'string') {
+        return { ...c, id: { record_id: c.id } };
+      }
+
+      // explicit record_id → adapt
+      if (
+        typeof c.record_id === 'string' &&
+        (!c.id || typeof c.id !== 'object')
+      ) {
+        return { ...c, id: { record_id: c.record_id } };
+      }
+    }
+  }
+
+  // Last resort: try to salvage from headers (e.g., Location)
+  const loc = src?.headers?.location || src?.headers?.Location;
+  if (typeof loc === 'string') {
     const rid = extractRecordId(loc);
     if (rid) return { id: { record_id: rid } } as AttioRecord;
   }
 
-  if (rec && typeof rec === 'object') {
-    const r: any = rec;
-
-    // id as string → adapt
-    if (typeof r.id === 'string') return { ...r, id: { record_id: r.id } };
-
-    // explicit record_id → adapt
-    if (
-      typeof r.record_id === 'string' &&
-      (!r.id || typeof r.id !== 'object')
-    ) {
-      return { ...r, id: { record_id: r.record_id } };
-    }
-  }
-
-  return rec;
+  return null;
 }
 
 /**
  * Validates if a record looks like a successfully created Attio record
  */
 export function looksLikeCreatedRecord(record: any): boolean {
-  return (
-    record &&
-    typeof record === 'object' &&
-    (('id' in record && (record as any).id?.record_id) ||
-      'record_id' in record ||
-      'web_url' in record ||
-      'created_at' in record)
-  );
+  return isRecordLike(record);
 }
 
 /**
@@ -73,11 +96,17 @@ export function generateMockId(prefix = '12345678-1234-4000'): string {
 }
 
 /**
- * Shared validation utilities
+ * Throws if the object does not look like a freshly created record.
+ * Keeps error messages actionable for E2E.
  */
-export function assertLooksLikeCreated(record: any, context: string): void {
-  if (!looksLikeCreatedRecord(record)) {
-    throw new Error(`${context} returned an empty/invalid record payload`);
+export function assertLooksLikeCreated(rec: any, where: string): asserts rec {
+  if (!isRecordLike(rec)) {
+    const shape =
+      rec && typeof rec === 'object' ? Object.keys(rec) : typeof rec;
+    // Keep as a normal Error to avoid extra wrapping here; creators add context
+    throw new Error(
+      `invalid create result at ${where}; expected { id.record_id, values }, got: ${shape}`
+    );
   }
 }
 
@@ -94,4 +123,106 @@ export function debugRecordShape(record: any): Record<string, unknown> {
     idType: typeof (record as any)?.id,
     keys: Object.keys(record || {}),
   };
+}
+
+// --- Output normalization: flatten Attio values into test-friendly shapes ---
+
+const SINGLETON_FIELDS = new Set<string>([
+  'name',
+  'description',
+  'record_id',
+  'website',
+  'google_business_name',
+  'google_website',
+  'logo_url',
+]);
+
+const MULTI_VALUE_FIELDS = new Set<string>([
+  // keep these as arrays of strings
+  'domains',
+  'categories',
+  'regions',
+  'team',
+  'associated_deals',
+  'associated_workspaces',
+  'services',
+  'notes',
+]);
+
+const DEFAULT_PREF = [
+  'value',
+  'text',
+  'name',
+  'email',
+  'domain',
+  'url',
+  'label',
+];
+
+function extractScalarFromObject(key: string, obj: any) {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  const prefer = key === 'domains' ? ['domain', ...DEFAULT_PREF] : DEFAULT_PREF;
+  for (const k of prefer) {
+    const v = obj[k];
+    if (typeof v === 'string' || typeof v === 'number') return v;
+  }
+  return obj;
+}
+
+function normalizeField(key: string, val: any): any {
+  if (Array.isArray(val)) {
+    const flat = val
+      .map((x) => extractScalarFromObject(key, x))
+      .filter((x) => x != null);
+
+    if (MULTI_VALUE_FIELDS.has(key)) {
+      // domains & co → array of strings
+      return flat;
+    }
+
+    if (SINGLETON_FIELDS.has(key)) {
+      // name/description/etc → single string
+      return flat[0] ?? null;
+    }
+
+    // Generic rule: collapse singletons unless it's a known multi-value field
+    return flat.length === 1 ? flat[0] : flat;
+  }
+
+  if (val && typeof val === 'object') {
+    return extractScalarFromObject(key, val);
+  }
+
+  return val;
+}
+
+function normalizeValuesObject(
+  values?: Record<string, any>,
+  resourceType?: string
+) {
+  if (!values || typeof values !== 'object') return values;
+  const out: Record<string, any> = {};
+
+  for (const [k, v] of Object.entries(values)) {
+    // People records: keep `name` as Attio-style array entries
+    if (resourceType === 'people' && (k === 'name' || k === 'names')) {
+      // be defensive: guarantee array-of-objects shape
+      out[k] = Array.isArray(v) ? v : v == null ? [] : [{ value: String(v) }];
+      continue;
+    }
+
+    out[k] = normalizeField(k, v);
+  }
+  return out;
+}
+
+/** Public: normalize one Attio record to MCP/tool output (flatten values). */
+export function normalizeRecordForOutput<
+  T extends { values?: Record<string, any> },
+>(rec: T, resourceType?: string): T {
+  if (!rec || typeof rec !== 'object') return rec;
+  const copy: any = { ...rec };
+  copy.values = normalizeValuesObject(rec.values, resourceType);
+  return copy as T;
 }

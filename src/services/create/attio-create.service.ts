@@ -4,23 +4,26 @@
  * REFACTORED: Implements the Strategy Pattern using resource-specific creators to handle
  * different Attio resource types. Each creator encapsulates the logic for
  * creating one type of resource, promoting Single Responsibility Principle.
- * 
+ *
  * This refactoring addresses SRP violations by moving resource-specific logic
  * from large methods (~139-168 lines) into focused creator classes (~50-80 lines each).
- * 
+ *
  * Key improvements:
  * - Single Responsibility: Each creator handles one resource type
  * - Maintainability: Easy to add new resource types
- * - Testability: Test each creator independently  
+ * - Testability: Test each creator independently
  * - Code Reuse: Shared utilities in BaseCreator
- * 
+ *
  * See src/services/create/creators/README.md for full documentation.
  */
 
 import type { CreateService } from './types.js';
 import type { AttioRecord } from '../../types/attio.js';
-import type { ResourceCreator, ResourceCreatorContext } from './creators/types.js';
-import { getAttioClient } from '../../api/attio-client.js';
+import type {
+  ResourceCreator,
+  ResourceCreatorContext,
+} from './creators/types.js';
+import { buildAttioClient } from '../../api/attio-client.js';
 import { debug, error as logError } from '../../utils/logger.js';
 import {
   CompanyCreator,
@@ -31,10 +34,10 @@ import {
 
 /**
  * Refactored implementation using Strategy Pattern
- * 
+ *
  * Uses resource-specific creators to handle different resource types,
  * promoting separation of concerns and Single Responsibility Principle.
- * 
+ *
  * @example
  * ```typescript
  * const service = new AttioCreateService();
@@ -47,7 +50,7 @@ import {
 export class AttioCreateService implements CreateService {
   private readonly creators: Map<string, ResourceCreator>;
   private readonly context: ResourceCreatorContext;
-  
+
   // Lazy-loaded dependencies for non-strategy methods
   private taskModule: any = null;
   private converterModule: any = null;
@@ -56,22 +59,34 @@ export class AttioCreateService implements CreateService {
   // Supported resource types for validation
   static readonly SUPPORTED_RESOURCE_TYPES = {
     COMPANIES: 'companies',
-    PEOPLE: 'people', 
+    PEOPLE: 'people',
     TASKS: 'tasks',
-    NOTES: 'notes'
+    NOTES: 'notes',
   } as const;
 
   constructor() {
     // Initialize resource creators using Strategy Pattern
     this.creators = new Map<string, ResourceCreator>();
-    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.COMPANIES, new CompanyCreator());
-    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.PEOPLE, new PersonCreator());
-    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.TASKS, new TaskCreator());
-    this.creators.set(AttioCreateService.SUPPORTED_RESOURCE_TYPES.NOTES, new NoteCreator());
+    this.creators.set(
+      AttioCreateService.SUPPORTED_RESOURCE_TYPES.COMPANIES,
+      new CompanyCreator()
+    );
+    this.creators.set(
+      AttioCreateService.SUPPORTED_RESOURCE_TYPES.PEOPLE,
+      new PersonCreator()
+    );
+    this.creators.set(
+      AttioCreateService.SUPPORTED_RESOURCE_TYPES.TASKS,
+      new TaskCreator()
+    );
+    this.creators.set(
+      AttioCreateService.SUPPORTED_RESOURCE_TYPES.NOTES,
+      new NoteCreator()
+    );
 
     // Create shared context for all creators
     this.context = {
-      client: getAttioClient({ rawE2E: true }),
+      client: buildAttioClient(), // Guarantees proper Authorization header
       debug,
       logError,
     };
@@ -121,7 +136,7 @@ export class AttioCreateService implements CreateService {
 
   /**
    * Updates a task record via delegation to tasks object
-   * 
+   *
    * Note: This method doesn't use strategy pattern as it's an update operation
    * and the existing logic is simple enough to keep inline
    */
@@ -131,7 +146,7 @@ export class AttioCreateService implements CreateService {
   ): Promise<AttioRecord> {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
-    
+
     const updatedTask = await this.taskModule.updateTask(taskId, {
       content: input.content as string,
       status: input.status as string,
@@ -161,7 +176,7 @@ export class AttioCreateService implements CreateService {
 
   /**
    * Lists notes for a resource
-   * 
+   *
    * Note: This method doesn't use strategy pattern as it's a read operation
    * and the existing logic is simple enough to keep inline
    */
@@ -171,7 +186,7 @@ export class AttioCreateService implements CreateService {
   }): Promise<unknown[]> {
     // Ensure dependencies are loaded
     await this.ensureDependencies();
-    
+
     const query = {
       parent_object: params.resource_type,
       parent_record_id: params.record_id,
@@ -195,18 +210,21 @@ export class AttioCreateService implements CreateService {
 
     const normalizedType = resourceType.toLowerCase().trim();
     const creator = this.creators.get(normalizedType);
-    
+
     if (!creator) {
       const supportedTypes = Array.from(this.creators.keys()).sort();
-      const suggestion = this.findClosestResourceType(normalizedType, supportedTypes);
-      
+      const suggestion = this.findClosestResourceType(
+        normalizedType,
+        supportedTypes
+      );
+
       throw new Error(
         `Unsupported resource type: "${resourceType}". ` +
-        `Supported types: ${supportedTypes.join(', ')}.` +
-        (suggestion ? ` Did you mean "${suggestion}"?` : '')
+          `Supported types: ${supportedTypes.join(', ')}.` +
+          (suggestion ? ` Did you mean "${suggestion}"?` : '')
       );
     }
-    
+
     return creator;
   }
 
@@ -214,17 +232,20 @@ export class AttioCreateService implements CreateService {
    * Finds the closest matching resource type for better error messages
    * @private
    */
-  private findClosestResourceType(input: string, supportedTypes: string[]): string | null {
+  private findClosestResourceType(
+    input: string,
+    supportedTypes: string[]
+  ): string | null {
     // Simple similarity check - could be enhanced with better algorithms
-    const similarities = supportedTypes.map(type => ({
+    const similarities = supportedTypes.map((type) => ({
       type,
-      score: this.calculateSimilarity(input, type)
+      score: this.calculateSimilarity(input, type),
     }));
-    
-    const best = similarities.reduce((prev, current) => 
+
+    const best = similarities.reduce((prev, current) =>
       prev.score > current.score ? prev : current
     );
-    
+
     // Only suggest if similarity is reasonable (> 0.5)
     return best.score > 0.5 ? best.type : null;
   }
@@ -236,13 +257,13 @@ export class AttioCreateService implements CreateService {
   private calculateSimilarity(a: string, b: string): number {
     if (a === b) return 1;
     if (a.length === 0 || b.length === 0) return 0;
-    
+
     // Simple character overlap calculation
     const setA = new Set(a.toLowerCase());
     const setB = new Set(b.toLowerCase());
-    const intersection = new Set([...setA].filter(x => setB.has(x)));
+    const intersection = new Set([...setA].filter((x) => setB.has(x)));
     const union = new Set([...setA, ...setB]);
-    
+
     return intersection.size / union.size;
   }
 

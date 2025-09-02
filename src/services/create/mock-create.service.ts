@@ -298,11 +298,11 @@ export class MockCreateService implements CreateService {
     const invalidPatterns = [
       '00000000-0000-0000-0000-000000000000',
       /invalid/i,
-      /^invalid-.*-id-\d+$/
+      /^invalid-.*-id-\d+$/,
     ];
 
-    const isInvalidId = invalidPatterns.some(pattern => 
-      pattern instanceof RegExp 
+    const isInvalidId = invalidPatterns.some((pattern) =>
+      pattern instanceof RegExp
         ? pattern.test(extractedRecordId)
         : pattern === extractedRecordId
     );

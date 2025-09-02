@@ -14,7 +14,9 @@ export interface ErrorAnalysis {
     | 'explicit_success_false'
     | 'meaningful_error_object'
     | 'meaningful_error_string'
-    | 'errors_array_has_items';
+    | 'errors_array_has_items'
+    | 'api_error_array'
+    | 'empty_array';
 }
 
 /**
@@ -28,24 +30,62 @@ export interface ErrorAnalysis {
  * - Error arrays with actual error items
  *
  * @param result - Result object to analyze
+ * @param opts - Optional context for tool-specific logic
  * @returns Error analysis with explicit reasoning
  */
-export function computeErrorWithContext(result: unknown): ErrorAnalysis {
-  // Null or undefined results are always errors
-  if (!result) {
-    return { isError: true, reason: 'null_or_undefined_result' };
+export function computeErrorWithContext(
+  result: unknown,
+  opts?: { toolName?: string; httpStatus?: number }
+): ErrorAnalysis {
+  const toolName = opts?.toolName;
+
+  const isPlainObject =
+    result && typeof result === 'object' && !Array.isArray(result);
+  const isEmptyObject =
+    isPlainObject &&
+    Object.keys(result as Record<string, unknown>).length === 0;
+
+  // 1) Always surface explicit API errors first
+  if (
+    (result as any)?.error ||
+    (Array.isArray((result as any)?.errors) && (result as any).errors.length)
+  ) {
+    return { isError: true, reason: 'meaningful_error_object' };
   }
+
+  // Handle arrays (bulk ops, list endpoints, etc.)
+  if (Array.isArray(result)) {
+    // explicit errors inside any element
+    const hasExplicitErr = result.some(
+      (r) => r?.error || (Array.isArray(r?.errors) && r.errors.length)
+    );
+    if (hasExplicitErr)
+      return { isError: true, reason: 'api_error_array' as const };
+
+    // empty arrays are usually a failure for create/bulk flows
+    if (result.length === 0)
+      return { isError: true, reason: 'empty_array' as const };
+
+    return { isError: false };
+  }
+
+  // 2) Create-record special case:
+  //    On 2xx paths the transport may hand minimal shells through;
+  //    don't classify {} as an error here — let the business layer
+  //    (extractor/assert) decide shape.
+  if (toolName === 'create-record') {
+    if (result == null)
+      return { isError: true, reason: 'null_or_undefined_result' };
+    if (isEmptyObject) return { isError: false };
+  }
+
+  // 3) Legacy heuristics (unchanged for other tools)
+  if (result == null)
+    return { isError: true, reason: 'null_or_undefined_result' };
+  if (isEmptyObject) return { isError: true, reason: 'empty_response' as any };
 
   // Detect empty objects as errors (per Issue #517 analysis)
   // Empty objects {} often indicate failed API responses that should be errors
-  if (
-    result &&
-    typeof result === 'object' &&
-    !Array.isArray(result) &&
-    Object.keys(result).length === 0
-  ) {
-    return { isError: true, reason: 'empty_response' as any };
-  }
 
   // Detect Attio API "unknown" record responses (indicates record not found)
   // Attio sometimes returns fake records with id.record_id: 'unknown' instead of 404s

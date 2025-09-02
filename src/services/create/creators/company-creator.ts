@@ -1,6 +1,6 @@
 /**
  * CompanyCreator - Strategy implementation for company resource creation
- * 
+ *
  * Handles company-specific creation logic including domain normalization,
  * error recovery, and company record processing.
  */
@@ -9,6 +9,14 @@ import type { AttioRecord } from '../../../types/attio.js';
 import type { ResourceCreatorContext, RecoveryOptions } from './types.js';
 import { BaseCreator } from './base-creator.js';
 import { normalizeCompanyValues } from '../data-normalizers.js';
+import {
+  extractAttioRecord,
+  assertLooksLikeCreated,
+  isTestRun,
+  debugRecordShape,
+  normalizeRecordForOutput,
+} from '../extractor.js';
+import { registerMockAliasIfPresent } from '../../../test-support/mock-alias.js';
 
 /**
  * Company-specific resource creator
@@ -20,7 +28,7 @@ export class CompanyCreator extends BaseCreator {
 
   /**
    * Creates a company record with domain normalization
-   * 
+   *
    * @param input - Company data including name, domain/domains, industry, etc.
    * @param context - Shared context with client and utilities
    * @returns Promise<AttioRecord> - Created company record with id.record_id
@@ -29,18 +37,88 @@ export class CompanyCreator extends BaseCreator {
     input: Record<string, unknown>,
     context: ResourceCreatorContext
   ): Promise<AttioRecord> {
+    this.assertClientHasAuth(context);
     const normalizedCompany = this.normalizeInput(input);
     const payload = this.createPayload(normalizedCompany);
 
     context.debug(this.constructor.name, '🔍 EXACT API PAYLOAD', {
       url: this.endpoint,
+      fullUrl: `https://api.attio.com/v2${this.endpoint}`,
       payload: JSON.stringify(payload, null, 2),
     });
 
     try {
+      /* istanbul ignore next */
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        const h = context.client?.defaults?.headers ?? {};
+        const c = h.common ?? {};
+        const hasAuth = Boolean(
+          c.Authorization ||
+            c.authorization ||
+            h.Authorization ||
+            h.authorization
+        );
+        console.debug(`[CompanyCreator] Client probe:`, {
+          baseURL: context.client.defaults?.baseURL,
+          hasAuth,
+        });
+      }
+
       const response = await context.client.post(this.endpoint, payload);
-      return await this.processResponse(response, context, normalizedCompany);
+
+      /* istanbul ignore next */
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.debug(`[CompanyCreator] Raw response:`, {
+          status: response.status,
+          hasData: !!response.data,
+          dataType: typeof response.data,
+          dataKeys:
+            response.data && typeof response.data === 'object'
+              ? Object.keys(response.data)
+              : null,
+          fullResponseData: JSON.stringify(response.data, null, 2),
+        });
+      }
+
+      const rec = this.extractRecordFromResponse(response);
+
+      /* istanbul ignore next */
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.debug(`[CompanyCreator] Extracted record:`, {
+          hasRec: !!rec,
+          recType: typeof rec,
+          recKeys: rec && typeof rec === 'object' ? Object.keys(rec) : null,
+          hasId: !!rec?.id,
+          hasRecordId: !!rec?.id?.record_id,
+        });
+      }
+
+      this.finalizeRecord(rec, context);
+      registerMockAliasIfPresent(input, rec?.id?.record_id);
+
+      const out = normalizeRecordForOutput(rec, 'companies');
+
+      // Optional debug to confirm the shape:
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.debug('[CompanyCreator] types:', {
+          nameBefore: Array.isArray(rec?.values?.name)
+            ? 'array'
+            : typeof rec?.values?.name,
+          nameAfter: typeof (out as any)?.values?.name,
+          domainsAfter: Array.isArray((out as any)?.values?.domains),
+        });
+      }
+
+      return out;
     } catch (err: any) {
+      /* istanbul ignore next */
+      if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+        console.debug(`[CompanyCreator] Exception caught:`, {
+          message: err.message,
+          status: err?.response?.status,
+          hasResponseData: !!err?.response?.data,
+        });
+      }
       return this.handleApiError(err, context, payload);
     }
   }
@@ -49,7 +127,9 @@ export class CompanyCreator extends BaseCreator {
    * Normalizes company input data
    * Handles domain/domains field normalization
    */
-  protected normalizeInput(input: Record<string, unknown>): Record<string, unknown> {
+  protected normalizeInput(
+    input: Record<string, unknown>
+  ): Record<string, unknown> {
     return normalizeCompanyValues(input);
   }
 
@@ -63,15 +143,15 @@ export class CompanyCreator extends BaseCreator {
         {
           field: 'domains',
           value: '', // Will be set dynamically in attemptRecovery
-          operator: 'contains'
+          operator: 'contains',
         },
         {
           field: 'name',
           value: '', // Will be set dynamically in attemptRecovery
-          operator: 'eq'
-        }
+          operator: 'eq',
+        },
       ],
-      maxAttempts: 2
+      maxAttempts: 2,
     };
   }
 
@@ -108,10 +188,14 @@ export class CompanyCreator extends BaseCreator {
         );
         const record = this.extractRecordFromSearch(searchByDomain);
         if (record?.id?.record_id) {
-          context.debug(this.constructor.name, 'Company recovery succeeded by domain', {
-            domain,
-            recordId: record.id.record_id,
-          });
+          context.debug(
+            this.constructor.name,
+            'Company recovery succeeded by domain',
+            {
+              domain,
+              recordId: record.id.record_id,
+            }
+          );
           return record;
         }
       }
@@ -129,10 +213,14 @@ export class CompanyCreator extends BaseCreator {
         );
         const record = this.extractRecordFromSearch(searchByName);
         if (record?.id?.record_id) {
-          context.debug(this.constructor.name, 'Company recovery succeeded by name', {
-            name,
-            recordId: record.id.record_id,
-          });
+          context.debug(
+            this.constructor.name,
+            'Company recovery succeeded by name',
+            {
+              name,
+              recordId: record.id.record_id,
+            }
+          );
           return record;
         }
       }
@@ -170,7 +258,8 @@ export class CompanyCreator extends BaseCreator {
     record = this.enrichRecordId(record, response);
 
     // Handle empty response with recovery attempt
-    const mustRecover = !record || !(record as any).id || !(record as any).id?.record_id;
+    const mustRecover =
+      !record || !(record as any).id || !(record as any).id?.record_id;
     if (mustRecover && normalizedInput) {
       record = await this.attemptRecovery(context, normalizedInput);
     }
@@ -182,8 +271,6 @@ export class CompanyCreator extends BaseCreator {
    * Extracts record from API response
    */
   private extractRecordFromResponse(response: any): any {
-    // Use the existing extractor utility
-    const { extractAttioRecord } = require('../extractor.js');
     return extractAttioRecord(response);
   }
 
@@ -191,17 +278,27 @@ export class CompanyCreator extends BaseCreator {
    * Extracts record from search results
    */
   private extractRecordFromSearch(searchData: any): any {
-    const { extractAttioRecord } = require('../extractor.js');
     return extractAttioRecord(searchData);
   }
 
   /**
    * Finalizes record processing
    */
-  private finalizeRecord(record: any, context: ResourceCreatorContext): AttioRecord {
-    const { assertLooksLikeCreated, isTestRun, debugRecordShape } = require('../extractor.js');
-    
+  private finalizeRecord(
+    record: any,
+    context: ResourceCreatorContext
+  ): AttioRecord {
     assertLooksLikeCreated(record, `${this.constructor.name}.create`);
+
+    /* istanbul ignore next */
+    if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+      console.debug(
+        '[create] extracted keys:',
+        record && typeof record === 'object'
+          ? Object.keys(record)
+          : typeof record
+      );
+    }
 
     if (isTestRun()) {
       context.debug(
@@ -213,5 +310,4 @@ export class CompanyCreator extends BaseCreator {
 
     return record as AttioRecord;
   }
-
 }

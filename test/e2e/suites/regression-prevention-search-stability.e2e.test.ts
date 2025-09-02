@@ -7,6 +7,7 @@ import {
   validateTestEnvironment,
 } from '../utils/enhanced-tool-caller.js';
 import { startTestSuite, endTestSuite } from '../utils/logger.js';
+import type { McpToolResponse } from '../utils/assertions.js';
 
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
@@ -48,10 +49,10 @@ describe.skipIf(
         },
       ];
       for (const c of cases) {
-        const response = await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           ...c.params,
-        } as any);
+        } as any)) as McpToolResponse;
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         console.error(`✅ JSON handling validated for: ${c.name}`);
@@ -69,11 +70,11 @@ describe.skipIf(
         { name: 'Negative offset', params: { limit: 10, offset: -1 } },
       ];
       for (const b of boundary) {
-        const response = await callUniversalTool('search-records', {
+        const response = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'boundary-test',
           ...b.params,
-        } as any);
+        } as any)) as McpToolResponse;
         expect(response).toBeDefined();
         console.error(`✅ ${b.name} handled safely`);
       }
@@ -86,11 +87,11 @@ describe.skipIf(
     'prevents infinite loops and long-running searches',
     async () => {
       const start = Date.now();
-      const response = await callUniversalTool('search-records', {
+      const response = (await callUniversalTool('search-records', {
         resource_type: 'companies',
         query: 'recursion-test',
         limit: 10,
-      } as any);
+      } as any)) as McpToolResponse;
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(30000);
       expect(response).toBeDefined();
@@ -162,15 +163,15 @@ describe.skipIf(
           } as any),
       ];
       for (const op of ops) {
-        const response = await op();
+        const response = (await op()) as McpToolResponse;
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect('isError' in response).toBe(true);
-        const health = await callUniversalTool('search-records', {
+        const health = (await callUniversalTool('search-records', {
           resource_type: 'companies',
           query: 'health-check',
           limit: 1,
-        } as any);
+        } as any)) as McpToolResponse;
         expect(health).toBeDefined();
       }
       console.error('✅ System stability under error conditions validated');
@@ -195,13 +196,13 @@ describe.skipIf(
           } as any),
       ];
       for (const test of cases) {
-        const response = await test();
+        const response = (await test()) as McpToolResponse;
         expect(response).toBeDefined();
         expect(typeof response).toBe('object');
         expect(response).toHaveProperty('isError');
-        if ((response as any).isError) {
+        if (response.isError) {
           expect(response).toHaveProperty('error');
-          expect(typeof (response as any).error).toBe('string');
+          expect(typeof response.error).toBe('string');
         } else {
           expect(response).toHaveProperty('content');
         }

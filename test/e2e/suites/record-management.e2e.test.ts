@@ -35,7 +35,11 @@ import {
   PersonFactory,
   TaskFactory,
 } from '../fixtures/index.js';
-import type { TestDataObject, McpToolResponse } from '../types/index.js';
+import type {
+  TestDataObject,
+  McpToolResponse,
+  McpResponseData,
+} from '../types/index.js';
 
 // Import enhanced tool callers
 import {
@@ -261,7 +265,7 @@ describe.skipIf(
     it('should handle bulk record operations', async () => {
       // Create multiple records of the same type
       const companyBatch = CompanyFactory.createMany(3);
-      const createdCompanies = [];
+      const createdCompanies: McpResponseData[] = [];
 
       for (const companyData of companyBatch) {
         const response = asToolResponse(
@@ -273,7 +277,7 @@ describe.skipIf(
 
         if (!response.isError) {
           const company = E2EAssertions.expectMcpData(response);
-          createdCompanies.push(company);
+          if (company) createdCompanies.push(company);
         }
       }
 
@@ -597,6 +601,4 @@ describe.skipIf(
       console.error('✅ Note retrieval and pagination validation completed');
     }, 30000);
   });
-
-  // Cross-Resource Integration Validation moved to: record-management-relationships.e2e.test.ts
 });

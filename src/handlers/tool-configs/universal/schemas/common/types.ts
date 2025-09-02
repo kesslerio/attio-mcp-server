@@ -9,4 +9,3 @@ export type SanitizedValue =
 export interface SanitizedObject extends Record<string, SanitizedValue> {
   [key: string]: SanitizedValue;
 }
-

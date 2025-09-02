@@ -9,7 +9,7 @@ import {
   ServerError,
   createApiErrorFromStatus,
   createApiErrorFromAxiosError,
-} from '../../src/errors/api-errors';
+} from '../../src/errors/api-errors.js';
 
 describe('api-errors', () => {
   describe('AttioApiError', () => {

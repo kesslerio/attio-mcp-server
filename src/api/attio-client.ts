@@ -16,8 +16,70 @@ import axios, { AxiosInstance } from 'axios';
 import httpAdapter from 'axios/lib/adapters/http.js';
 import { debug, error, OperationType } from '../utils/logger.js';
 
+export type AttioClient = AxiosInstance;
+
 // Global API client instance
 let apiInstance: AxiosInstance | null = null;
+
+/**
+ * Centralized authenticated Attio client builder
+ * Guarantees proper Authorization header and fails fast if API key is missing
+ */
+export function buildAttioClient(opts?: {
+  apiKey?: string;
+  baseURL?: string;
+  timeoutMs?: number;
+}): AttioClient {
+  const apiKey = opts?.apiKey ?? process.env.ATTIO_API_KEY ?? '';
+  const baseURL =
+    opts?.baseURL ?? process.env.ATTIO_BASE_URL ?? 'https://api.attio.com/v2';
+  const timeout = opts?.timeoutMs ?? 30000;
+
+  if (!apiKey) {
+    // Hard fail so E2E points to the real cause
+    throw new Error(
+      'ATTIO_API_KEY is missing; cannot build authenticated Attio client.'
+    );
+  }
+
+  const client = axios.create({ baseURL, timeout });
+
+  // IMPORTANT: Axios stores auth under headers.common
+  client.defaults.headers.common['Authorization'] = `Bearer ${apiKey}`;
+  client.defaults.headers.common['Accept'] = 'application/json';
+  client.defaults.headers.post['Content-Type'] = 'application/json';
+
+  // Optional: very lightweight debug logging (no bodies)
+  if (process.env.MCP_LOG_LEVEL === 'DEBUG') {
+    client.interceptors.request.use((config) => {
+      console.debug(
+        '[attio] →',
+        config.method?.toUpperCase(),
+        (config.baseURL || '') + (config.url || ''),
+        {
+          hasAuth:
+            !!config.headers?.Authorization ||
+            !!client.defaults.headers.common?.Authorization,
+        }
+      );
+      return config;
+    });
+    client.interceptors.response.use(
+      (res) => {
+        console.debug('[attio] ←', res.status, res.config.url);
+        return res;
+      },
+      (err) => {
+        console.debug('[attio] ← ERR', err?.response?.status, err?.config?.url);
+        return Promise.reject(err);
+      }
+    );
+  }
+
+  return client;
+}
+
+// Legacy getAttioClient exists below - it's already implemented
 
 /**
  * Creates and configures an Axios instance for the Attio API

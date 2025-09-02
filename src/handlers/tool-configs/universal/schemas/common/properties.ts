@@ -22,4 +22,3 @@ export const paginationProperties = {
     description: 'Number of results to skip for pagination',
   },
 };
-

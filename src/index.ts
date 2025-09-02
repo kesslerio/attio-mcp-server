@@ -223,14 +223,28 @@ async function main() {
       process.on('SIGTERM', cleanup);
     }
   } catch (error: unknown) {
-    logError('main', 'Server startup failed', error, { pid: process.pid }, 'server-startup', OperationType.SYSTEM);
+    logError(
+      'main',
+      'Server startup failed',
+      error,
+      { pid: process.pid },
+      'server-startup',
+      OperationType.SYSTEM
+    );
     deletePidFile(); // Ensure PID file is deleted on error
     process.exit(1);
   }
 }
 
 main().catch((error) => {
-  logError('main', 'Unhandled error in main process', error, { pid: process.pid }, 'main-unhandled', OperationType.SYSTEM);
+  logError(
+    'main',
+    'Unhandled error in main process',
+    error,
+    { pid: process.pid },
+    'main-unhandled',
+    OperationType.SYSTEM
+  );
   deletePidFile(); // Ensure PID file is deleted on error
   process.exit(1);
 });

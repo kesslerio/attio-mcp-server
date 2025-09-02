@@ -40,8 +40,8 @@ export const testDataGenerator = {
     createMany: CompanyFactory.createMany.bind(CompanyFactory),
     advanced: () =>
       CompanyFactory.create({
-        annual_revenue: '50000000', // Convert to string to match API
-        employee_count: '500',
+        annual_revenue: '50000000',
+        employee_count: 500,
         categories: ['Enterprise', 'Software', 'B2B'],
       }),
   },

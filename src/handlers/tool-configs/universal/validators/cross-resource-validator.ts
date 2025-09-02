@@ -1,5 +1,9 @@
 import { UniversalResourceType } from '../types.js';
-import { ErrorType, HttpStatusCode, UniversalValidationError } from '../errors/validation-errors.js';
+import {
+  ErrorType,
+  HttpStatusCode,
+  UniversalValidationError,
+} from '../errors/validation-errors.js';
 
 export class CrossResourceValidator {
   static async validateCompanyExists(companyId: string): Promise<{
@@ -10,7 +14,11 @@ export class CrossResourceValidator {
       httpStatusCode: HttpStatusCode;
     };
   }> {
-    if (!companyId || typeof companyId !== 'string' || companyId.trim().length === 0) {
+    if (
+      !companyId ||
+      typeof companyId !== 'string' ||
+      companyId.trim().length === 0
+    ) {
       return {
         exists: false,
         error: {
@@ -21,7 +29,9 @@ export class CrossResourceValidator {
       };
     }
     try {
-      const { getAttioClient } = await import('../../../../api/attio-client.js');
+      const { getAttioClient } = await import(
+        '../../../../api/attio-client.js'
+      );
       const client = getAttioClient();
       await client.get(`/objects/companies/records/${companyId.trim()}`);
       return { exists: true };
@@ -47,19 +57,26 @@ export class CrossResourceValidator {
     }
   }
 
-  static async validateRecordRelationships(resourceType: UniversalResourceType, recordData: any): Promise<void> {
+  static async validateRecordRelationships(
+    resourceType: UniversalResourceType,
+    recordData: any
+  ): Promise<void> {
     if (!recordData || typeof recordData !== 'object') return;
     switch (resourceType) {
       case UniversalResourceType.PEOPLE: {
-        const companyId = recordData.company_id || recordData.company?.id || recordData.company;
+        const companyId =
+          recordData.company_id || recordData.company?.id || recordData.company;
         if (companyId) {
           const companyIdString = String(companyId);
-          const validationResult = await this.validateCompanyExists(companyIdString);
+          const validationResult =
+            await this.validateCompanyExists(companyIdString);
           if (!validationResult.exists) {
             const error = validationResult.error!;
             throw new UniversalValidationError(
               error.message,
-              error.type === 'api_error' ? ErrorType.API_ERROR : ErrorType.USER_ERROR,
+              error.type === 'api_error'
+                ? ErrorType.API_ERROR
+                : ErrorType.USER_ERROR,
               {
                 field: 'company_id',
                 suggestion:

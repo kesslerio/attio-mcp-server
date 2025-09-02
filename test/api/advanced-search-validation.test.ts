@@ -3,18 +3,18 @@
  * These tests specifically bypass mocks to test actual validation logic
  */
 import { describe, beforeAll, it, expect, vi } from 'vitest';
-import { initializeAttioClient } from '../../src/api/attio-client';
+import { initializeAttioClient } from '../../src/api/attio-client.js';
 
 // Clear any existing mocks before importing
 vi.clearAllMocks();
 vi.resetAllMocks();
 
 // Unmock the specific module we want to test
-vi.doUnmock('../../src/objects/companies/search');
+vi.doUnmock('../../src/objects/companies/search.js');
 
 // Import after clearing mocks
 const { advancedSearchCompanies } = await import(
-  '../../src/objects/companies/search'
+  '../../src/objects/companies/search.js'
 );
 
 // Skip tests if no API key or if explicitly disabled

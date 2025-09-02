@@ -29,21 +29,31 @@ if (process.env.NODE_ENV === 'test' && process.env.E2E_MODE === 'true') {
   }
 }
 
-// Global mock for attio-client (skip for E2E tests)
-if (process.env.E2E_MODE !== 'true') {
-  vi.mock('../src/api/attio-client', async () => {
-    const mockAxiosInstance = createMockApiClient();
-    return {
-      getAttioClient: vi.fn(() => mockAxiosInstance),
-      initializeAttioClient: vi.fn(() => {
-        // Mock implementation that doesn't require real API key
-        return mockAxiosInstance;
-      }),
-      isAttioClientInitialized: vi.fn(() => true),
-      createAttioClient: vi.fn(() => mockAxiosInstance),
-    };
-  });
-}
+// ⬇️ keep this mock unconditionally; branch *inside* the factory
+vi.mock('../src/api/attio-client', async () => {
+  // In E2E we want the *real* implementation
+  if (process.env.E2E_MODE === 'true') {
+    // Return the actual module (no stubbing)
+    const actual = await vi.importActual<
+      typeof import('../src/api/attio-client')
+    >('../src/api/attio-client');
+    return actual;
+  }
+
+  // Non-E2E: light stub that won't require an API key
+  const { default: axios } = await import('axios');
+  const mockAxiosInstance = axios.create();
+
+  return {
+    // New API
+    buildAttioClient: vi.fn(() => mockAxiosInstance),
+
+    // Legacy APIs kept for compatibility (return the same instance)
+    getAttioClient: vi.fn(() => mockAxiosInstance),
+    initializeAttioClient: vi.fn(() => {}),
+    isAttioClientInitialized: vi.fn(() => true),
+  };
+});
 
 // Global mock for people search functions to fix PersonValidator tests (skip for E2E)
 if (process.env.E2E_MODE !== 'true') {

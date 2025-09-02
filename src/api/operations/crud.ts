@@ -15,10 +15,7 @@ import {
 } from '../../types/attio.js';
 import { secureValidateFields } from '../../utils/validation/field-validation.js';
 import { callWithRetry, RetryConfig } from './retry.js';
-import {
-  OperationType,
-  createScopedLogger,
-} from '../../utils/logger.js';
+import { OperationType, createScopedLogger } from '../../utils/logger.js';
 
 // Create scoped logger for CRUD operations
 const logger = createScopedLogger(
@@ -40,22 +37,24 @@ function getObjectPath(objectSlug: string, objectId?: string): string {
  * Extract ID from various API response shapes
  * @private
  */
-function extractAnyId(obj: Record<string, unknown> | unknown): string | undefined {
+function extractAnyId(
+  obj: Record<string, unknown> | unknown
+): string | undefined {
   if (!obj || typeof obj !== 'object') return;
   const record = obj as Record<string, unknown>;
   const idObj = record.id as Record<string, unknown> | undefined;
   return (
-    idObj?.record_id as string ??
-    idObj?.company_id as string ??
-    idObj?.person_id as string ??
-    idObj?.list_id as string ??
-    idObj?.task_id as string ??
+    (idObj?.record_id as string) ??
+    (idObj?.company_id as string) ??
+    (idObj?.person_id as string) ??
+    (idObj?.list_id as string) ??
+    (idObj?.task_id as string) ??
     (typeof record?.id === 'string' ? record.id : undefined) ??
-    record?.record_id as string ??
-    record?.company_id as string ??
-    record?.person_id as string ??
-    record?.list_id as string ??
-    record?.task_id as string
+    (record?.record_id as string) ??
+    (record?.company_id as string) ??
+    (record?.person_id as string) ??
+    (record?.list_id as string) ??
+    (record?.task_id as string)
   );
 }
 
@@ -98,7 +97,8 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
   }
 
   // If already has the proper structure, return as-is
-  const hasValidId = rawData.id && (rawData.id as Record<string, unknown>).record_id;
+  const hasValidId =
+    rawData.id && (rawData.id as Record<string, unknown>).record_id;
   const hasValues = rawData.values;
   if (hasValidId && hasValues) {
     return rawData as T;
@@ -112,10 +112,14 @@ function ensureAttioRecordStructure<T extends AttioRecord>(
   if (!result.id || !resultId?.record_id) {
     // Probe across common wrappers in order using the helper
     const resultData = result.data as Record<string, unknown> | undefined;
-    const resultDataData = resultData?.data as Record<string, unknown> | undefined;
-    const resultDataRecord = resultData?.record as Record<string, unknown> | undefined;
+    const resultDataData = resultData?.data as
+      | Record<string, unknown>
+      | undefined;
+    const resultDataRecord = resultData?.record as
+      | Record<string, unknown>
+      | undefined;
     const resultDataItems = resultData?.items as unknown[] | undefined;
-    
+
     const extractedId =
       extractAnyId(result) ??
       extractAnyId(resultData) ??
