@@ -483,7 +483,7 @@ export function getLegacyToolNames(): string[] {
  * Get all universal tool names being mapped to
  */
 export function getUniversalToolNames(): string[] {
-  return [...new Set(TOOL_MAPPING_RULES.map((rule) => rule.universalToolName))];
+  return Array.from(new Set(TOOL_MAPPING_RULES.map((rule) => rule.universalToolName)));
 }
 
 /**

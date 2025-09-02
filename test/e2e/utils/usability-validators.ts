@@ -8,8 +8,8 @@
  * - Error message clarity (actionable, consistent wording)
  */
 import { callUniversalTool, callTasksTool } from './enhanced-tool-caller.js';
-import fs from 'node:fs';
-import path from 'node:path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { McpToolResponse } from './assertions.js';
 
 export interface UsabilityTestResult {
