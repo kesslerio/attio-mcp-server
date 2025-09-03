@@ -135,6 +135,39 @@ describe.skipIf(
   });
 
   describe('Universal Record Operations', () => {
+    // Ensure prerequisites for pagination and retrieval tests
+    beforeAll(async () => {
+      try {
+        if (testCompanies.length === 0) {
+          await createTestCompany();
+        }
+        const company = testCompanies[0] as any;
+        const companyId = company?.id?.record_id;
+        if (!companyId) return;
+
+        // Ensure at least 3 notes exist for the company for pagination tests
+        const existingForCompany = createdNotes.filter(
+          (n: any) => n?.parent_record_id === companyId || n?.parent?.record_id === companyId
+        );
+        if (existingForCompany.length < 3) {
+          for (let i = existingForCompany.length; i < 3; i++) {
+            const response = asToolResponse(
+              await callNotesTool('create-note', {
+                resource_type: 'companies',
+                record_id: companyId,
+                title: `E2E Pagination Seed Note ${i + 1}`,
+                content: 'Seed note content for pagination tests',
+                format: 'markdown',
+              })
+            );
+            if (!response.isError) {
+              const note = E2EAssertions.expectMcpData(response);
+              createdNotes.push(note);
+            }
+          }
+        }
+      } catch {}
+    }, 45000);
     it('should create records across different resource types', async () => {
       // Create company record
       const companyData = CompanyFactory.create();

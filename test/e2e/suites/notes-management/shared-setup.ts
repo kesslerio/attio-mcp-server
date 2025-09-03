@@ -96,16 +96,6 @@ export function createSharedSetup() {
 
 // Shared test data creation utilities
 export async function createTestCompany(): Promise<void> {
-  if (process.env.E2E_MODE === 'true') {
-    const mockCompany = {
-      id: { record_id: `mock-company-${Date.now()}` },
-      values: { name: 'E2E Test Company' },
-    } as AttioRecord;
-    testCompanies.push(mockCompany);
-    console.error('🏢 Created mock test company:', mockCompany.id.record_id);
-    return;
-  }
-
   try {
     const companyData = CompanyFactory.create();
     const response = (await callUniversalTool('create-record', {
@@ -135,16 +125,6 @@ export async function createTestCompany(): Promise<void> {
 }
 
 export async function createTestPerson(): Promise<void> {
-  if (process.env.E2E_MODE === 'true') {
-    const mockPerson = {
-      id: { record_id: `mock-person-${Date.now()}` },
-      values: { name: 'E2E Test Person' },
-    } as AttioRecord;
-    testPeople.push(mockPerson);
-    console.error('👤 Created mock test person:', mockPerson.id.record_id);
-    return;
-  }
-
   try {
     const personData = PersonFactory.create();
     const response = (await callUniversalTool('create-record', {

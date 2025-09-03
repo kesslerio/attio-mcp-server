@@ -1281,6 +1281,13 @@ export class UniversalCreateService {
         mappedData.recordId;
       if (recordId) options.recordId = recordId;
 
+      // Target object for linking (Issue #545): ensure we pass along when provided
+      const targetObject =
+        (mappedData as any).target_object || (mappedData as any).targetObject;
+      if (typeof targetObject === 'string' && targetObject.trim()) {
+        (options as any).targetObject = targetObject.trim();
+      }
+
       // Use mock-enabled task creation for test environments
       const createdTask = await createTaskWithMockSupport({
         content,

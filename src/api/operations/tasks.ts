@@ -45,13 +45,14 @@ function transformTaskResponse(task: AttioTask): AttioTask {
  * Helper function to extract task data from API response
  * Handles different response structure patterns
  */
-function extractTaskFromResponse(res: any): AttioTask {
+function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
   // Try different response structure patterns
-  if (res?.data?.data) {
-    return res.data.data;
-  } else if (res?.data && typeof res.data === 'object' && 'id' in res.data) {
+  const data = res?.data as Record<string, unknown>;
+  if (data?.data) {
+    return data.data as AttioTask;
+  } else if (data && typeof data === 'object' && 'id' in data) {
     // Direct task object in data
-    return res.data as unknown as AttioTask;
+    return data as unknown as AttioTask;
   } else {
     throw new Error('Invalid API response structure: missing task data');
   }
@@ -110,7 +111,7 @@ export async function getTask(
   const path = `/tasks/${taskId}`;
   return callWithRetry(async () => {
     const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = extractTaskFromResponse(res);
+    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
     return transformTaskResponse(task);
   }, retryConfig);
 }
@@ -223,7 +224,7 @@ export async function createTask(
       OperationType.API_CALL
     );
 
-    const task = extractTaskFromResponse(res);
+    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
 
     // Note: Only transform content field for create response (status not returned on create)
     const transformed = transformTaskResponse(task);
@@ -257,7 +258,7 @@ export async function updateTask(
   }
   // Assignees: API expects an array in the request envelope
   if (updates.assigneeId) {
-    (data as any).assignees = [
+    (data as Record<string, unknown>).assignees = [
       {
         referenced_actor_type: 'workspace-member',
         referenced_actor_id: updates.assigneeId,
@@ -288,7 +289,7 @@ export async function updateTask(
       path,
       requestPayload
     );
-    const task = extractTaskFromResponse(res);
+    const task = extractTaskFromResponse(res as unknown as Record<string, unknown>);
 
     const transformed = transformTaskResponse(task);
     logTaskDebug(
@@ -299,7 +300,7 @@ export async function updateTask(
     debug(
       'tasks.updateTask',
       'PATCH response received',
-      { status: (res as any)?.status, hasData: !!res?.data },
+      { status: (res as unknown as Record<string, unknown>)?.status, hasData: !!res?.data },
       'updateTask',
       OperationType.API_CALL
     );
@@ -310,7 +311,7 @@ export async function updateTask(
           if (!rid) continue;
           await api.post(`/tasks/${taskId}/linked-records`, { record_id: rid });
         }
-      } catch (e) {
+      } catch {
         // Non-blocking: log and continue
         logTaskDebug('updateTask', 'linked-records post failed', {
           taskId,

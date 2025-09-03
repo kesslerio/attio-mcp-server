@@ -99,7 +99,7 @@ export default defineConfig({
 
     // Global test configuration
     globalSetup: undefined, // E2E tests handle their own global setup
-    setupFiles: ['./test/e2e/setupEnv.ts'], // Validate env vars BEFORE test files
+    setupFiles: ['./test/e2e/setupEnv.ts', './test/e2e/setup/cache-cleanup.ts'], // Validate env vars and setup cache cleanup
 
     // Performance optimizations
     minWorkers: 1,

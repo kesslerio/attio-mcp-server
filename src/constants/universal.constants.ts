@@ -435,7 +435,7 @@ export const ERROR_MESSAGES = {
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Regex pattern for valid phone numbers (international format) */
-export const PHONE_PATTERN = /^\+?[\d\s\-\(\)\.]+$/;
+export const PHONE_PATTERN = /^\+?[\d\s\-().]+$/;
 
 /** Regex pattern for valid URLs */
 export const URL_PATTERN = /^https?:\/\/.+/;

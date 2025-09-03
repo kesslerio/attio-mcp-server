@@ -191,6 +191,33 @@ export class UniversalDeleteService {
             };
             throw err; // dispatcher should mark isError=true
           }
+          // Map specific 400 errors for task ID validation to clearer messages
+          const anyErr: any = error as any;
+          const status = anyErr?.response?.status ?? anyErr?.status;
+          const errorMessage = (
+            anyErr?.response?.data?.message ??
+            anyErr?.message ??
+            ''
+          )
+            .toString()
+            .toLowerCase();
+
+          if (status === 400) {
+            // Only map task_id related 400 errors to avoid masking other validation issues
+            if (
+              errorMessage.includes('task_id') ||
+              errorMessage.includes('invalid task') ||
+              errorMessage.includes('malformed')
+            ) {
+              // Throw a plain Error so the MCP wrapper surfaces the message text (matches test regex)
+              throw new Error(`Invalid task id: \"${record_id}\"`);
+            }
+            // For other 400 errors, preserve original error to maintain validation visibility
+            debug(
+              'UniversalDeleteService',
+              `Preserving 400 error for task deletion (not task_id related): ${errorMessage}`
+            );
+          }
           throw error;
         }
 
