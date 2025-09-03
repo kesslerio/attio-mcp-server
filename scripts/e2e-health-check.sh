@@ -21,13 +21,16 @@ if [[ -z "${ATTIO_API_KEY:-}" ]]; then
   echo "⚠️ ATTIO_API_KEY not set. Skipping API connectivity checks."
 else
   echo -n "API Status: "
-  curl -s -H "Authorization: Bearer $ATTIO_API_KEY" \
-    https://api.attio.com/v2/self | jq -r '.data.workspace.name' || echo "❌ Failed"
+  curl -s --max-time 10 -H "Authorization: Bearer $ATTIO_API_KEY" \
+    https://api.attio.com/v2/self | jq -r '.workspace_name' || echo "❌ Failed"
 
   echo -n "Test Companies (E2E_* prefix): "
-  curl -s -H "Authorization: Bearer $ATTIO_API_KEY" \
-    "https://api.attio.com/v2/objects/companies/records?filter[name][starts_with]=E2E_" \
-    | jq '.data | length'
+  curl -s --max-time 10 -H "Authorization: Bearer $ATTIO_API_KEY" \
+    "https://api.attio.com/v2/objects/companies/records/query" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"filter":{"name":{"contains":"E2E_"}}}' \
+    | jq '.data | length' || echo "❌ Query failed"
 fi
 
 echo -n "Smoke Test (offline): "

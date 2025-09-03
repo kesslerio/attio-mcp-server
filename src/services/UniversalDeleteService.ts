@@ -214,7 +214,8 @@ export class UniversalDeleteService {
             }
             // For other 400 errors, preserve original error to maintain validation visibility
             debug(
-              `[UniversalDeleteService] Preserving 400 error for task deletion (not task_id related): ${errorMessage}`
+              'UniversalDeleteService',
+              `Preserving 400 error for task deletion (not task_id related): ${errorMessage}`
             );
           }
           throw error;

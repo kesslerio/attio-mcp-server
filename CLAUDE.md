@@ -74,6 +74,10 @@ RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: 
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
+### E2E Diagnostic Scripts
+- `./scripts/e2e-health-check.sh 2>&1 | tee /tmp/health.log` - Quick environment health check (API connectivity, test data count, smoke test)
+- `./scripts/e2e-diagnostics.sh /tmp` - Deep analysis of 4 critical failing E2E tests with full debug logs
+
 ### E2E Debugging: Disable Bail and Capture Logs
 
 - Why: Vitest’s default bail can stop later tests after early failures. For end‑to‑end debugging you want every test to run so you can see all failing paths and payload/response traces.
