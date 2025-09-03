@@ -20,6 +20,7 @@ Options:
   -v, --verbose             Extra verbose output
   -w, --watch               Run in watch mode for development
   -c, --cleanup             Clean old logs before running
+  --debug                   Enable API contract debug mode (allow fallbacks)
   --analyze                 Generate failure analysis report
   --timeout SECONDS         Test timeout in seconds (default: 30)
 
@@ -28,6 +29,7 @@ Examples:
   $0 --suite error-handling            # Run all error-handling tests
   $0 --file core-workflows             # Run core-workflows test file
   $0 -p "should create"                # Run tests matching pattern in parallel
+  $0 --debug --json                   # Debug API contract issues with detailed logging
   $0 --analyze                         # Generate analysis report from existing logs
 
 Test Suites:
@@ -50,6 +52,7 @@ JSON_OUTPUT=false
 VERBOSE=false
 WATCH=false
 CLEANUP=false
+DEBUG=false
 ANALYZE=false
 TIMEOUT=30
 
@@ -89,6 +92,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c|--cleanup)
       CLEANUP=true
+      shift
+      ;;
+    --debug)
+      DEBUG=true
       shift
       ;;
     --analyze)
@@ -238,6 +245,15 @@ export MCP_LOG_LEVEL=DEBUG
 export LOG_FORMAT=json
 export E2E_MODE=true
 export USE_MOCK_DATA=false
+
+# Set API contract mode based on --debug flag
+if [[ "$DEBUG" == true ]]; then
+  export E2E_API_CONTRACT_DEBUG=true
+  echo "🐛 Debug mode enabled: API contract violations will be logged but not fail tests"
+else
+  export E2E_API_CONTRACT_STRICT=true
+  echo "🚫 Strict mode enabled: API contract violations will fail tests immediately"
+fi
 
 if [[ "$VERBOSE" == true ]]; then
   export DEBUG="*"
