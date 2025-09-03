@@ -10,8 +10,8 @@ import { FieldMapping } from '../types.js';
  */
 export const TASKS_FIELD_MAPPING: FieldMapping = {
   fieldMappings: {
-    // Content variations
-    title: 'content',
+    // Content variations (removed title to prevent collision)
+    // title field is preserved as-is to avoid data loss when both title and content are provided
     name: 'content',
     task_name: 'content',
     task_title: 'content',
@@ -65,7 +65,6 @@ export const TASKS_FIELD_MAPPING: FieldMapping = {
     'assignee',
   ],
   commonMistakes: {
-    title: 'Use "content" for task text/description',
     name: 'Use "content" for task text/description',
     description: 'Use "content" for task text/description',
     assignee: 'Use "assignee_id" or "assignees" with workspace member ID(s)',

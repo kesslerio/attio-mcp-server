@@ -270,15 +270,19 @@ export class UniversalRetrievalService {
         throw enhancedError;
       }
 
-      // For non-HTTP errors (TypeError, ETIMEDOUT), rethrow as-is
-      // Error-recovery suite expects original error messages
+      // Fallback for any other uncaught errors
+      const fallbackMessage =
+        apiError instanceof Error ? apiError.message : String(apiError);
       enhancedPerformanceTracker.endOperation(
         perfId,
         false,
-        apiError instanceof Error ? apiError.message : String(apiError),
+        fallbackMessage,
         500
       );
-      throw apiError;
+      // Always throw a standard Error object for consistent handling by the dispatcher
+      throw new Error(
+        `Failed to retrieve record ${record_id}: ${fallbackMessage}`
+      );
     }
   }
 

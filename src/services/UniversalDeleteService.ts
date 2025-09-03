@@ -210,7 +210,7 @@ export class UniversalDeleteService {
               errorMessage.includes('malformed')
             ) {
               // Throw a plain Error so the MCP wrapper surfaces the message text (matches test regex)
-              throw new Error(`Invalid task id: \"${record_id}\"`);
+              throw new Error(`Invalid request to delete task ${record_id}`);
             }
             // For other 400 errors, preserve original error to maintain validation visibility
             debug(

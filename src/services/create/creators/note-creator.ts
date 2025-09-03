@@ -90,12 +90,17 @@ export class NoteCreator extends BaseCreator {
       // Ensure dependencies are loaded
       await this.ensureDependencies();
 
+      // Coerce format to Attio-accepted values (converts 'html' to 'plaintext')
+      const coercedFormat = noteInput.format === 'markdown' 
+        ? 'markdown' 
+        : 'plaintext'; // Any non-markdown format becomes plaintext
+
       const noteData = {
         parent_object: noteInput.resource_type,
         parent_record_id,
         title: noteInput.title,
         content: noteInput.content,
-        format: (noteInput.format as 'markdown' | 'plaintext') || 'plaintext',
+        format: coercedFormat,
       };
 
       context.debug(this.constructor.name, 'Creating note with data', noteData);

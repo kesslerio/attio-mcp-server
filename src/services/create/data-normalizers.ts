@@ -156,6 +156,9 @@ export function normalizePersonValues(
     filteredPersonData.email_addresses = normalized;
   } else if (typeof input.email === 'string') {
     filteredPersonData.email_addresses = [String(input.email)];
+  } else if (typeof rawEmails === 'string' && rawEmails) {
+    // Handle case where email_addresses is a single string
+    filteredPersonData.email_addresses = [String(rawEmails)];
   }
 
   // Ensure required fields exist

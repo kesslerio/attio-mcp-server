@@ -15,7 +15,7 @@ import { UniversalResourceType } from '../../../../src/handlers/tool-configs/uni
 
 describe('Tasks Field Mapping Fix - Issue #417', () => {
   it('should map common task field variations to correct field names', async () => {
-    // Test individual mappings to avoid collisions
+    // Test individual mappings - title is no longer mapped to prevent collision (Issue #568)
     const titleMapping = await mapRecordFields(UniversalResourceType.TASKS, {
       title: 'Q4 Follow-up: Test Task',
       due: '2025-02-15',
@@ -25,18 +25,19 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     });
 
     expect(titleMapping.mapped).toEqual({
-      content: 'Q4 Follow-up: Test Task',
+      title: 'Q4 Follow-up: Test Task', // Title is preserved as-is, not mapped to content
       deadline_at: '2025-02-15T00:00:00.000Z',
       assignees: ['user-123'], // Single value converted to array
       is_completed: false, // 'pending' gets transformed to boolean false
       linked_records: 'record-456',
     });
 
+    // Title warning should not exist since it's no longer mapped
     expect(
       titleMapping.warnings.some(
         (w) => w.includes('title') && w.includes('content')
       )
-    ).toBe(true);
+    ).toBe(false);
     expect(titleMapping.warnings.some((w) => w.includes('due'))).toBe(true);
     expect(titleMapping.warnings.some((w) => w.includes('assignee'))).toBe(
       true
@@ -73,7 +74,7 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
 
   it('should validate required fields for tasks', () => {
     const validData = { content: 'Test task' };
-    const invalidData = { title: 'Test task' }; // Should be mapped to content
+    const invalidData = { title: 'Test task' }; // Title is no longer mapped to content (Issue #568)
     const emptyData = {};
 
     // Valid data (after mapping)
@@ -81,12 +82,12 @@ describe('Tasks Field Mapping Fix - Issue #417', () => {
     expect(validResult.valid).toBe(true);
     expect(validResult.errors).toHaveLength(0);
 
-    // Data that needs mapping but has required content via title
+    // Data with only title no longer satisfies content requirement (Issue #568 fix)
     const mappedResult = validateFields(
       UniversalResourceType.TASKS,
       invalidData
     );
-    expect(mappedResult.valid).toBe(true); // Should pass because title maps to content
+    expect(mappedResult.valid).toBe(false); // Should fail because title no longer maps to content
 
     // Empty data should fail
     const emptyResult = validateFields(UniversalResourceType.TASKS, emptyData);

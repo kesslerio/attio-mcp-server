@@ -80,7 +80,8 @@ describe('field-mapper – mappings and basics', () => {
 
     it('maps common task field variations', () => {
       const tasks = FIELD_MAPPINGS[UniversalResourceType.TASKS];
-      expect(tasks.fieldMappings.title).toBe('content');
+      // Title mapping removed to prevent collision with content field (Issue #568)
+      expect(tasks.fieldMappings.title).toBeUndefined();
       expect(tasks.fieldMappings.status).toBe('is_completed');
       expect(tasks.fieldMappings.due_date).toBe('deadline_at');
     });
