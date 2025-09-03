@@ -155,9 +155,10 @@ export async function createTask(
   const taskData: TaskCreateData = {
     content,
     format: 'plaintext', // Required field for Attio API
+    deadline_at: undefined, // Always include deadline_at field, default to undefined
   };
 
-  // Only include deadline_at if provided and not empty/invalid
+  // Set deadline_at if provided and not empty/invalid
   if (options.dueDate && options.dueDate.trim() && options.dueDate !== 'undefined') {
     try {
       taskData.deadline_at = formatDateForAttio(options.dueDate);
@@ -197,7 +198,7 @@ export async function createTask(
       ...taskData,
       is_completed: false, // Always false for new tasks
       assignees,
-      ...(taskData.deadline_at && { deadline_at: taskData.deadline_at }), // Omit when not provided
+      deadline_at: taskData.deadline_at, // Always include deadline_at field (undefined or formatted date)
       linked_records: linkedRecords, // Always include as array (empty when not linking)
     },
   };
