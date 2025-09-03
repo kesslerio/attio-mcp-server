@@ -180,6 +180,7 @@ describe.skipIf(
 
       E2EAssertions.expectMcpSuccess(companyResponse);
       const company = E2EAssertions.expectMcpData(companyResponse)!;
+      console.error('Created company:', company);
       E2EAssertions.expectCompanyRecord(company);
       testCompaniesRecord.push(company);
       createdRecords.push(company);
@@ -195,6 +196,7 @@ describe.skipIf(
 
       E2EAssertions.expectMcpSuccess(personResponse);
       const person = E2EAssertions.expectMcpData(personResponse)!;
+      console.error('Created person:', person);
       E2EAssertions.expectPersonRecord(person);
       testPeopleRecord.push(person);
       createdRecords.push(person);
@@ -213,6 +215,7 @@ describe.skipIf(
 
       E2EAssertions.expectMcpSuccess(taskResponse);
       const task = E2EAssertions.expectMcpData(taskResponse)!;
+      console.error('Created task:', task);
       E2EAssertions.expectTaskRecord(task);
       createdTasks.push(task);
       createdRecords.push(task);
