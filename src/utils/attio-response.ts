@@ -70,7 +70,9 @@ export function coerceNoteFormat(
   format?: string,
   content?: string
 ): { format: 'markdown' | 'plaintext'; content: string } {
-  const attioFormat = format === 'markdown' ? 'markdown' : 'plaintext';
+  // Convert html to markdown to preserve HTML tags, otherwise default to markdown or plaintext
+  const attioFormat =
+    format === 'html' || format === 'markdown' ? 'markdown' : 'plaintext';
 
   // Preserve content as-is - tests expect HTML content to be unchanged
   const processedContent = content || '';

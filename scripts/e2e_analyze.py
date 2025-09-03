@@ -10,6 +10,98 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+def extract_test_details(log_file):
+    """Extract individual test details from log file."""
+    tests = []
+    current_test = None
+    
+    try:
+        with open(log_file, 'r') as f:
+            content = f.read()
+            
+        # Extract test results with timing - format: ✓ test/path > Suite > Group > test name 123ms
+        test_patterns = [
+            r'✓ (test/.+?)\s+(\d+ms)',  # Passed tests
+            r'✗ (test/.+?)\s+(\d+ms)',  # Failed tests (vitest format)
+            r'FAIL\s+(test/.+?\.e2e\.test\.ts) >',  # Failed tests (FAIL format)
+            r'- (test/.+?)\s+\(skipped\)',  # Skipped tests
+        ]
+        
+        for line in content.split('\n'):
+            # Look for test results
+            for i, pattern in enumerate(test_patterns):
+                match = re.search(pattern, line)
+                if match:
+                    test_name = match.group(1).strip()
+                    if i == 0:  # Passed
+                        duration_str = match.group(2)
+                        duration_ms = parse_duration(duration_str)
+                        tests.append({
+                            'name': test_name,
+                            'status': 'passed',
+                            'duration_ms': duration_ms,
+                            'duration_str': duration_str
+                        })
+                    elif i == 1:  # Failed (✗ format)
+                        duration_str = match.group(2)
+                        duration_ms = parse_duration(duration_str)
+                        tests.append({
+                            'name': test_name,
+                            'status': 'failed',
+                            'duration_ms': duration_ms,
+                            'duration_str': duration_str
+                        })
+                    elif i == 2:  # Failed (FAIL format)
+                        tests.append({
+                            'name': test_name,
+                            'status': 'failed',
+                            'duration_ms': 0,  # Duration not available in FAIL format
+                            'duration_str': '0ms'
+                        })
+                    elif i == 3:  # Skipped
+                        tests.append({
+                            'name': test_name,
+                            'status': 'skipped',
+                            'duration_ms': 0,
+                            'duration_str': '0ms'
+                        })
+                    break
+    except Exception as e:
+        print(f"Error extracting test details from {log_file}: {e}", file=sys.stderr)
+        
+    return tests
+
+def parse_duration(duration_str):
+    """Parse duration string to milliseconds."""
+    try:
+        if 'ms' in duration_str:
+            return float(duration_str.replace('ms', ''))
+        elif 's' in duration_str:
+            return float(duration_str.replace('s', '')) * 1000
+        else:
+            return float(duration_str)
+    except:
+        return 0
+
+def extract_vitest_summary(log_file):
+    """Extract test counts from vitest summary line."""
+    try:
+        with open(log_file, 'r') as f:
+            content = f.read()
+        
+        # Look for vitest summary: "Tests  11 failed | 114 passed | 4 skipped (129)"
+        summary_match = re.search(r'Tests\s+(\d+)\s+failed\s*\|\s*(\d+)\s+passed\s*\|\s*(\d+)\s+skipped', content)
+        if summary_match:
+            return {
+                'failed': int(summary_match.group(1)),
+                'passed': int(summary_match.group(2)),
+                'skipped': int(summary_match.group(3))
+            }
+    except Exception as e:
+        print(f"Error extracting vitest summary from {log_file}: {e}", file=sys.stderr)
+    
+    return None
+
 def analyze_log_file(log_file):
     """Analyzes a single log file and returns a dictionary of its stats."""
     stats = {
@@ -21,32 +113,56 @@ def analyze_log_file(log_file):
         'timeout_errors': 0,
         'assertion_errors': 0,
         'connection_errors': 0,
-        'failures': []
+        'failures': [],
+        'tests': []  # Add individual test details
     }
+    
+    # Try to get accurate counts from vitest summary first
+    summary = extract_vitest_summary(log_file)
+    use_summary_counts = summary is not None
+    
+    if use_summary_counts:
+        stats['passed'] = summary['passed']
+        stats['failed'] = summary['failed'] 
+        stats['skipped'] = summary['skipped']
 
+    # Extract individual test details
+    stats['tests'] = extract_test_details(log_file)
+    
     try:
         with open(log_file, 'r') as f:
-            for line in f:
-                if '✓ test/' in line:
+            content = f.read()
+            
+        # If no summary available, count tests by status from individual results
+        if not use_summary_counts:
+            for test in stats['tests']:
+                if test['status'] == 'passed':
                     stats['passed'] += 1
-                elif '✗ test/' in line:
+                elif test['status'] == 'failed':
                     stats['failed'] += 1
-                    stats['failures'].append(line.strip())
-                elif 'skipped (' in line:
+                elif test['status'] == 'skipped':
                     stats['skipped'] += 1
-                
-                duration_match = re.search(r'Duration\s+(\d+\.\d+)s', line)
-                if duration_match:
-                    stats['duration'] = float(duration_match.group(1))
-
-                if 'API' in line and 'error' in line.lower():
-                    stats['api_errors'] += 1
-                if 'timeout' in line.lower():
-                    stats['timeout_errors'] += 1
-                if 'AssertionError' in line:
-                    stats['assertion_errors'] += 1
-                if 'ECONNREFUSED' in line:
-                    stats['connection_errors'] += 1
+        
+        # Always build failures list for details
+        for test in stats['tests']:
+            if test['status'] == 'failed':
+                stats['failures'].append(f"✗ {test['name']} ({test['duration_str']})")
+        
+        # Extract overall duration
+        duration_match = re.search(r'Duration\s+(\d+\.\d+)s', content)
+        if duration_match:
+            stats['duration'] = float(duration_match.group(1))
+        
+        # Count error patterns
+        for line in content.split('\n'):
+            if 'API' in line and 'error' in line.lower():
+                stats['api_errors'] += 1
+            if 'timeout' in line.lower():
+                stats['timeout_errors'] += 1
+            if 'AssertionError' in line:
+                stats['assertion_errors'] += 1
+            if 'ECONNREFUSED' in line:
+                stats['connection_errors'] += 1
 
     except FileNotFoundError:
         print(f"Error: Log file not found at {log_file}", file=sys.stderr)
@@ -129,11 +245,23 @@ def generate_json_report(all_stats):
             'assertion_errors': sum(s['assertion_errors'] for s in all_stats.values()),
             'connection_errors': sum(s['connection_errors'] for s in all_stats.values()),
         },
-        'file_details': {os.path.basename(f): v for f, v in all_stats.items()}
+        'file_details': {os.path.basename(f): v for f, v in all_stats.items()},
+        'all_tests': []
     }
     report['summary']['total_tests'] = report['summary']['total_passed'] + report['summary']['total_failed'] + report['summary']['total_skipped']
     success_rate = (report['summary']['total_passed'] / report['summary']['total_tests'] * 100) if report['summary']['total_tests'] > 0 else 0
     report['summary']['success_rate'] = f"{success_rate:.2f}%"
+    
+    # Collect all individual tests
+    all_tests = []
+    for log_file, stats in all_stats.items():
+        for test in stats.get('tests', []):
+            test_copy = test.copy()
+            test_copy['log_file'] = os.path.basename(log_file)
+            all_tests.append(test_copy)
+    
+    # Sort by duration (longest first) and add to report
+    report['all_tests'] = sorted(all_tests, key=lambda x: x['duration_ms'], reverse=True)
 
     return json.dumps(report, indent=2)
 
@@ -336,6 +464,45 @@ def generate_enhanced_text_report(all_stats: Dict, anomalies: List[Dict], flaky_
     report_lines.append(f"⏸ Skipped: {total_skipped}")
     report_lines.append(f"🎯 Success rate: {success_rate:.2f}%")
     
+    # Per-test breakdown
+    report_lines.append("\n📋 Per-Test Breakdown")
+    report_lines.append("====================")
+    
+    for log_file, stats in all_stats.items():
+        if stats['tests']:
+            file_name = os.path.basename(log_file)
+            report_lines.append(f"\n📁 {file_name} ({len(stats['tests'])} tests)")
+            
+            # Sort tests by duration (longest first)
+            sorted_tests = sorted(stats['tests'], key=lambda x: x['duration_ms'], reverse=True)
+            
+            for test in sorted_tests:
+                status_icon = {
+                    'passed': '✅',
+                    'failed': '❌', 
+                    'skipped': '⏸'
+                }.get(test['status'], '❓')
+                
+                # Extract just the test name (remove path prefix)
+                test_display_name = test['name'].replace('test/e2e/suites/', '').replace('.e2e.test.ts > ', ' > ')
+                
+                report_lines.append(f"  {status_icon} {test_display_name} ({test['duration_str']})")
+    
+    # Show slowest tests overall
+    all_tests = []
+    for stats in all_stats.values():
+        all_tests.extend(stats['tests'])
+    
+    if all_tests:
+        slowest_tests = sorted(all_tests, key=lambda x: x['duration_ms'], reverse=True)[:10]
+        report_lines.append(f"\n🐌 Slowest Tests (Top 10)")
+        report_lines.append("========================")
+        
+        for i, test in enumerate(slowest_tests, 1):
+            test_name = test['name'].replace('test/e2e/suites/', '').replace('.e2e.test.ts', '')
+            status_icon = '✅' if test['status'] == 'passed' else '❌' if test['status'] == 'failed' else '⏸'
+            report_lines.append(f"  {i:2d}. {status_icon} {test_name} ({test['duration_str']})")
+    
     # Baseline comparison
     if baseline:
         report_lines.append(f"\n📊 Baseline Comparison (last {baseline.get('sample_size', 0)} runs)")
@@ -488,14 +655,33 @@ def main():
     else:
         output_file = args.export
         if not output_file:
+            # Determine output directory
+            log_dir = args.log_path if os.path.isdir(args.log_path) else os.path.dirname(args.log_path)
+            if not log_dir or log_dir == '.':
+                log_dir = 'test-results'
+            
+            # Ensure output goes to test-results or specified log directory
+            os.makedirs(log_dir, exist_ok=True)
+            
             if is_single_file:
-                base_name = os.path.basename(args.log_path)
-                output_file = f"analysis-{base_name}.md"
+                base_name = os.path.basename(args.log_path).replace('.log', '')
+                output_file = os.path.join(log_dir, f"analysis-{base_name}.md")
             else:
                 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-                output_file = f"test-analysis-report-{timestamp}.md"
+                output_file = os.path.join(log_dir, f"test-analysis-report-{timestamp}.md")
+            
             if args.json:
                 output_file = output_file.replace('.md', '.json')
+        else:
+            # If export path is specified, ensure it's in test-results if it's just a filename
+            if not os.path.dirname(args.export):
+                log_dir = args.log_path if os.path.isdir(args.log_path) else os.path.dirname(args.log_path)
+                if not log_dir or log_dir == '.':
+                    log_dir = 'test-results'
+                os.makedirs(log_dir, exist_ok=True)
+                output_file = os.path.join(log_dir, args.export)
+            else:
+                output_file = args.export
 
         with open(output_file, 'w') as f:
             f.write(output)

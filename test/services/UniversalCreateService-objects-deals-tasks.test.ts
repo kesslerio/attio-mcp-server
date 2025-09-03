@@ -184,7 +184,6 @@ describe('UniversalCreateService', () => {
       });
       expect(mockCreateService.createTask).toHaveBeenCalledWith({
         content: 'Test Task',
-        title: 'Test Task',
         assigneeId: 'user_123',
         dueDate: '2024-02-01',
         recordId: 'comp_123',
@@ -232,7 +231,6 @@ describe('UniversalCreateService', () => {
       expect(result).toEqual(mockTaskRecord);
       expect(mockCreateService.createTask).toHaveBeenCalledWith({
         content: 'New task',
-        title: 'New task',
       });
     });
   });

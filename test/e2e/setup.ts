@@ -19,6 +19,16 @@ if (process.env.E2E_MODE === 'true') {
       '[E2E Setup] ATTIO_API_KEY available:',
       !!process.env.ATTIO_API_KEY
     );
+
+    // Log API contract mode for debugging
+    const strictMode = process.env.E2E_API_CONTRACT_STRICT !== 'false';
+    const debugMode = process.env.E2E_API_CONTRACT_DEBUG === 'true';
+    console.error(
+      '[E2E Setup] API Contract Mode:',
+      strictMode && !debugMode
+        ? 'STRICT (fail on violations)'
+        : 'DEBUG (allow fallbacks)'
+    );
   }
 }
 

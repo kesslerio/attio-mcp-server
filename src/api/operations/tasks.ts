@@ -59,6 +59,30 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
 }
 
 /**
+ * Helper function to convert date string to ISO 8601 format for Attio API
+ * Handles various input formats and converts them to proper ISO datetime
+ */
+function formatDateForAttio(dateStr: string): string {
+  // If already in ISO format, return as-is
+  if (dateStr.includes('T') && dateStr.includes('Z')) {
+    return dateStr;
+  }
+  
+  // Handle YYYY-MM-DD format by adding time component
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return `${dateStr}T00:00:00Z`;
+  }
+  
+  // Try parsing other formats and convert to ISO
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid date format: ${dateStr}`);
+  }
+  
+  return date.toISOString();
+}
+
+/**
  * Helper function to validate linking parameters
  * Both recordId and targetObject must be provided together, or neither
  */
@@ -133,9 +157,20 @@ export async function createTask(
     format: 'plaintext', // Required field for Attio API
   };
 
-  // Only include deadline_at if provided (will be omitted from payload if undefined)
-  if (options.dueDate) {
-    taskData.deadline_at = options.dueDate;
+  // Only include deadline_at if provided and not empty/invalid
+  if (options.dueDate && options.dueDate.trim() && options.dueDate !== 'undefined') {
+    try {
+      taskData.deadline_at = formatDateForAttio(options.dueDate);
+    } catch (err) {
+      debug(
+        'tasks.createTask',
+        'Invalid date format provided',
+        { dueDate: options.dueDate, error: err instanceof Error ? err.message : String(err) },
+        'createTask',
+        OperationType.VALIDATION
+      );
+      throw new Error(`Invalid date format for task deadline: ${options.dueDate}`);
+    }
   }
 
   // Build the full request payload with all required fields for the API
@@ -265,7 +300,20 @@ export async function updateTask(
       },
     ];
   }
-  if (updates.dueDate) data.deadline_at = updates.dueDate; // Use deadline_at instead of due_date
+  if (updates.dueDate) {
+    try {
+      data.deadline_at = formatDateForAttio(updates.dueDate);
+    } catch (err) {
+      debug(
+        'tasks.updateTask',
+        'Invalid date format provided',
+        { dueDate: updates.dueDate, error: err instanceof Error ? err.message : String(err) },
+        'updateTask',
+        OperationType.VALIDATION
+      );
+      throw new Error(`Invalid date format for task deadline: ${updates.dueDate}`);
+    }
+  }
   // Do not include linked_records in PATCH; call /linked-records after update
 
   // Wrap in Attio envelope as per API requirements

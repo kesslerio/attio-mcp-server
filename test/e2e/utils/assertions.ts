@@ -29,9 +29,34 @@ class ApiContractTracker {
     fallbacksTriggered: 0,
   };
 
+  /**
+   * Check if API contract should be strict (fail on violations)
+   */
+  static isStrictMode(): boolean {
+    // Default to true (strict) unless explicitly set to false
+    const strictMode = process.env.E2E_API_CONTRACT_STRICT;
+    return strictMode !== 'false';
+  }
+
+  /**
+   * Check if debug mode is enabled (allows fallbacks with warnings)
+   */
+  static isDebugMode(): boolean {
+    return process.env.E2E_API_CONTRACT_DEBUG === 'true';
+  }
+
+  /**
+   * Log fallback and optionally throw error based on mode
+   */
   static logFallback(type: 'json_parse_failure' | 'string_extraction', details: string): void {
     const timestamp = new Date().toISOString();
-    console.warn(`[API_CONTRACT_FALLBACK] ${timestamp} - ${type.toUpperCase()}: ${details}`);
+    const mode = this.isStrictMode() ? 'STRICT' : 'DEBUG';
+    
+    if (this.isStrictMode() && !this.isDebugMode()) {
+      console.error(`[API_CONTRACT_VIOLATION] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`);
+    } else {
+      console.warn(`[API_CONTRACT_FALLBACK] ${timestamp} - ${type.toUpperCase()} (${mode}): ${details}`);
+    }
     
     switch (type) {
       case 'json_parse_failure':
@@ -42,6 +67,19 @@ class ApiContractTracker {
         break;
     }
     this.metrics.fallbacksTriggered++;
+  }
+
+  /**
+   * Throw error or warn based on mode setting
+   */
+  static throwOrWarn(type: 'json_parse_failure' | 'string_extraction', message: string): void {
+    this.logFallback(type, message);
+    
+    if (this.isStrictMode() && !this.isDebugMode()) {
+      throw new Error(`API Contract Violation (${type.replace('_', ' ')}): ${message}\n\n` +
+        'This indicates a real API integration issue that needs to be addressed.\n' +
+        'Set E2E_API_CONTRACT_DEBUG=true to temporarily enable fallback mode for troubleshooting.');
+    }
   }
 
   static getMetrics(): ApiContractMetrics {
@@ -393,12 +431,14 @@ export class E2EAssertions {
 
         return parsedData;
       } catch (error: unknown) {
-        // Log JSON parsing fallback for API contract visibility
-        ApiContractTracker.logFallback(
+        // In strict mode, throw error for JSON parse failures
+        // In debug mode, continue with fallback logic
+        ApiContractTracker.throwOrWarn(
           'json_parse_failure', 
           `Failed to parse JSON response. Text length: ${text.length}, Preview: ${text.substring(0, 100)}...`
         );
 
+        // If we reach here, we're in debug/fallback mode
         // Heuristic: handle formatted strings from certain tools (e.g., create-note)
         // Pattern: "✅ Note created successfully: <title> (ID: <id>)..."
         const m = /Note created successfully:\s*(.+?)\s*\(ID:\s*([^\)]+)\)/i.exec(
@@ -408,7 +448,7 @@ export class E2EAssertions {
           const title = m[1];
           const id = m[2];
           
-          // Log string extraction fallback
+          // Log string extraction fallback (only logs in debug mode)
           ApiContractTracker.logFallback(
             'string_extraction',
             `Extracted note data from formatted string. Title: ${title}, ID: ${id}`
@@ -422,13 +462,13 @@ export class E2EAssertions {
           } as unknown as McpResponseData;
         }
         
-        // Log when returning raw text as fallback
+        // Log when returning raw text as fallback (only logs in debug mode)
         ApiContractTracker.logFallback(
           'string_extraction',
           `No extraction pattern matched. Returning raw text as fallback. Length: ${text.length}`
         );
         
-        // Otherwise, return raw text to preserve behavior
+        // Otherwise, return raw text to preserve debug behavior
         return text as unknown as McpResponseData;
       }
     }

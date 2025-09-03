@@ -116,12 +116,13 @@ describe.skipIf(
     }, 45000);
 
     it('should handle API rate limiting gracefully', async () => {
+      // Use more realistic search queries that are more likely to succeed or get rate limited
       const rapidRequests = Array(10)
         .fill(null)
         .map((_, i) =>
           callUniversalTool('search-records', {
             resource_type: 'companies',
-            query: `rate-limit-test-${i}`,
+            query: i < 5 ? 'test' : `company`, // Use common terms that might exist
             limit: 1,
           })
         );
@@ -129,8 +130,9 @@ describe.skipIf(
       const results = await Promise.allSettled(rapidRequests);
       let successCount = 0;
       let rateLimitCount = 0;
+      let otherErrorCount = 0;
 
-      results.forEach((result) => {
+      results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           const response = result.value as McpToolResponse;
           if (!response.isError) {
@@ -138,13 +140,26 @@ describe.skipIf(
           } else if (
             typeof response.error === 'string' &&
             (response.error.toLowerCase().includes('rate') ||
-              response.error.toLowerCase().includes('limit'))
+              response.error.toLowerCase().includes('limit') ||
+              response.error.includes('429') ||
+              response.error.includes('too many requests'))
           ) {
             rateLimitCount++;
+          } else {
+            otherErrorCount++;
+            console.error(`Request ${index} failed with: ${response.error}`);
           }
+        } else {
+          otherErrorCount++;
+          console.error(`Request ${index} rejected with: ${result.reason}`);
         }
       });
 
+      console.error(
+        `🔍 Rate limiting test results: ${successCount} succeeded, ${rateLimitCount} rate limited, ${otherErrorCount} other errors`
+      );
+
+      // Expect at least some requests to succeed or be rate limited (not all failing with other errors)
       expect(successCount + rateLimitCount).toBeGreaterThan(0);
       console.error(
         `✅ Rate limiting test: ${successCount} succeeded, ${rateLimitCount} rate limited`

@@ -248,9 +248,22 @@ echo "▶ Starting test execution..."
 START_TIME=$(date +%s)
 
 if [[ -n "$FILE" ]]; then
-  # If --file is used, pass it as a direct file path argument
+  # If --file is used, find matching files in subdirectories
+  MATCHING_FILES=$(find test/e2e/suites -name "*${FILE}*.e2e.test.ts" -type f)
+  
+  if [[ -z "$MATCHING_FILES" ]]; then
+    echo "❌ No test files found matching pattern: $FILE"
+    echo "Available test files:"
+    find test/e2e/suites -name "*.e2e.test.ts" -type f | sort
+    exit 1
+  fi
+  
+  echo "📁 Found matching files:"
+  echo "$MATCHING_FILES"
+  echo ""
+  
   # shellcheck disable=SC2086
-  $VITEST_CMD "test/e2e/suites/${FILE}.e2e.test.ts" 2>&1 | tee "$LOG_FILE" || true
+  $VITEST_CMD $MATCHING_FILES 2>&1 | tee "$LOG_FILE" || true
 elif [[ -n "$TEST_PATTERN" ]]; then
   # If --suite or a general pattern is used, filter by test name with -t
   # shellcheck disable=SC2086
@@ -270,8 +283,16 @@ echo "📄 Log file: $LOG_FILE"
 
 # Generate quick summary
 if [[ -f "$LOG_FILE" ]]; then
-  PASSED_COUNT=$(grep -c "✓ test/" "$LOG_FILE" || true)
-  FAILED_COUNT=$(grep -c "✗ test/" "$LOG_FILE" || true)
+  # Extract from vitest summary line: "Tests  11 failed | 114 passed | 4 skipped (129)"
+  SUMMARY_LINE=$(grep "Tests  .* failed .* passed" "$LOG_FILE" | tail -1 || true)
+  if [[ -n "$SUMMARY_LINE" ]]; then
+    FAILED_COUNT=$(echo "$SUMMARY_LINE" | grep -o '[0-9]\+ failed' | grep -o '[0-9]\+' || echo "0")
+    PASSED_COUNT=$(echo "$SUMMARY_LINE" | grep -o '[0-9]\+ passed' | grep -o '[0-9]\+' || echo "0")
+  else
+    # Fallback to individual test counting
+    PASSED_COUNT=$(grep -c "✓ test/" "$LOG_FILE" || true)
+    FAILED_COUNT=$(grep -c "^[ ]*FAIL[ ]" "$LOG_FILE" | head -1 || true)
+  fi
 
   # Ensure they are numbers
   PASSED=${PASSED_COUNT:-0}
