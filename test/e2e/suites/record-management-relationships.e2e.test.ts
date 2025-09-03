@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 import { E2ETestBase } from '../setup.js';
 import { E2EAssertions } from '../utils/assertions.js';
-import { CompanyFactory, PersonFactory } from '../fixtures/index.js';
+import { CompanyFactory, PersonFactory, TaskFactory } from '../fixtures/index.js';
 import type { McpToolResponse } from '../types/index.js';
 import {
   callUniversalTool,
@@ -85,10 +85,14 @@ describe.skipIf(
       const person = E2EAssertions.expectMcpData(personResp)!;
       const personId = (person as any).id?.record_id;
 
+      const taskData = TaskFactory.create();
       const taskCreate = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'tasks',
-          record_data: { content: 'Relationship validation task' },
+          record_data: {
+            content: 'Relationship validation task',
+            due_date: taskData.due_date,
+          },
         })
       );
       E2EAssertions.expectMcpSuccess(taskCreate);
@@ -175,11 +179,13 @@ describe.skipIf(
           format: 'markdown',
         })
       );
+      const taskData2 = TaskFactory.create();
       const taskResponse = asToolResponse(
         await callTasksTool('create-record', {
           resource_type: 'tasks',
           record_data: {
             content: 'Consistency validation task',
+            due_date: taskData2.due_date,
             recordId: companyId,
             targetObject: 'companies',
           },

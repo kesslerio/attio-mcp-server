@@ -61,22 +61,39 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
 /**
  * Helper function to convert date string to ISO 8601 format for Attio API
  * Handles various input formats and converts them to proper ISO datetime
+ * Returns null for invalid or empty inputs to prevent API errors
  */
-function formatDateForAttio(dateStr: string): string {
-  // If already in ISO format, return as-is
-  if (dateStr.includes('T') && dateStr.includes('Z')) {
-    return dateStr;
+function formatDateForAttio(dateStr: string): string | null {
+  // Validate input - return null for invalid values to prevent API errors
+  if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '' || 
+      dateStr === 'undefined' || dateStr === 'null') {
+    return null;
+  }
+  
+  const trimmedDate = dateStr.trim();
+  
+  // If already in ISO format, validate and return as-is
+  if (trimmedDate.includes('T') && trimmedDate.includes('Z')) {
+    const testDate = new Date(trimmedDate);
+    if (isNaN(testDate.getTime())) {
+      return null;
+    }
+    return trimmedDate;
   }
   
   // Handle YYYY-MM-DD format by adding time component
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return `${dateStr}T00:00:00Z`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+    const testDate = new Date(`${trimmedDate}T00:00:00Z`);
+    if (isNaN(testDate.getTime())) {
+      return null;
+    }
+    return `${trimmedDate}T00:00:00Z`;
   }
   
   // Try parsing other formats and convert to ISO
-  const date = new Date(dateStr);
+  const date = new Date(trimmedDate);
   if (isNaN(date.getTime())) {
-    throw new Error(`Invalid date format: ${dateStr}`);
+    return null;
   }
   
   return date.toISOString();
@@ -155,23 +172,22 @@ export async function createTask(
   const taskData: TaskCreateData = {
     content,
     format: 'plaintext', // Required field for Attio API
-    deadline_at: undefined, // Always include deadline_at field, default to undefined
   };
 
-  // Set deadline_at if provided and not empty/invalid
+  // Only include deadline_at if a valid date is provided
   if (options.dueDate && options.dueDate.trim() && options.dueDate !== 'undefined') {
-    try {
-      taskData.deadline_at = formatDateForAttio(options.dueDate);
-    } catch (err) {
+    const formattedDate = formatDateForAttio(options.dueDate);
+    if (formattedDate === null) {
       debug(
         'tasks.createTask',
         'Invalid date format provided',
-        { dueDate: options.dueDate, error: err instanceof Error ? err.message : String(err) },
+        { dueDate: options.dueDate },
         'createTask',
         OperationType.VALIDATION
       );
       throw new Error(`Invalid date format for task deadline: ${options.dueDate}`);
     }
+    taskData.deadline_at = formattedDate;
   }
 
   // Build the full request payload with all required fields for the API
@@ -193,14 +209,22 @@ export async function createTask(
     ? [{ target_object: options.targetObject, target_record_id: options.recordId }]
     : [];
 
+  // Build the request payload conditionally including deadline_at only when present
+  const dataPayload: Record<string, unknown> = {
+    content: taskData.content,
+    format: taskData.format,
+    is_completed: false, // Always false for new tasks
+    assignees,
+    linked_records: linkedRecords, // Always include as array (empty when not linking)
+  };
+  
+  // Only include deadline_at in payload if it was set and is valid (avoid sending undefined/null)
+  if (taskData.deadline_at !== undefined && taskData.deadline_at !== null) {
+    dataPayload.deadline_at = taskData.deadline_at;
+  }
+
   const requestPayload = {
-    data: {
-      ...taskData,
-      is_completed: false, // Always false for new tasks
-      assignees,
-      deadline_at: taskData.deadline_at, // Always include deadline_at field (undefined or formatted date)
-      linked_records: linkedRecords, // Always include as array (empty when not linking)
-    },
+    data: dataPayload,
   };
 
   return callWithRetry(async () => {
@@ -302,20 +326,27 @@ export async function updateTask(
     ];
   }
   if (updates.dueDate) {
-    try {
-      data.deadline_at = formatDateForAttio(updates.dueDate);
-    } catch (err) {
+    const formattedDate = formatDateForAttio(updates.dueDate);
+    if (formattedDate === null) {
       debug(
         'tasks.updateTask',
         'Invalid date format provided',
-        { dueDate: updates.dueDate, error: err instanceof Error ? err.message : String(err) },
+        { dueDate: updates.dueDate },
         'updateTask',
         OperationType.VALIDATION
       );
       throw new Error(`Invalid date format for task deadline: ${updates.dueDate}`);
     }
+    data.deadline_at = formattedDate;
   }
-  // Do not include linked_records in PATCH; call /linked-records after update
+  
+  // Include linked_records in PATCH request (per Attio API docs)
+  if (updates.recordIds && updates.recordIds.length) {
+    (data as Record<string, unknown>).linked_records = updates.recordIds.map(recordId => ({
+      target_object: 'companies', // Default to companies - this should be improved to detect object type
+      target_record_id: recordId,
+    }));
+  }
 
   // Wrap in Attio envelope as per API requirements
   const requestPayload = { data };
@@ -353,21 +384,6 @@ export async function updateTask(
       'updateTask',
       OperationType.API_CALL
     );
-    // If linking records was requested, call the linked-records endpoint per Attio v2
-    if (updates.recordIds && updates.recordIds.length) {
-      try {
-        for (const rid of updates.recordIds) {
-          if (!rid) continue;
-          await api.post(`/tasks/${taskId}/linked-records`, { record_id: rid });
-        }
-      } catch {
-        // Non-blocking: log and continue
-        logTaskDebug('updateTask', 'linked-records post failed', {
-          taskId,
-          count: updates.recordIds.length,
-        });
-      }
-    }
 
     return transformed;
   }, retryConfig);
