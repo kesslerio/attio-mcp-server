@@ -18,7 +18,7 @@ import { createErrorResult } from './error-handler.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
-import * as Handlebars from 'handlebars';
+import Handlebars from 'handlebars';
 
 // Define template delegate type since it's not exported by the Handlebars module
 type HandlebarsTemplateDelegate = (

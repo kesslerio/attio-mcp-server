@@ -275,7 +275,7 @@ export class MockService {
         });
 
         // Create company with correct domain format
-        console.log('🔍 POST PATH + PAYLOAD', { path, payload });
+        debug('MockService', 'POST request', { path, payload });
         const response = await client.post(path, payload);
 
         debug('MockService', 'createCompany Raw API response', {
