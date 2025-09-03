@@ -107,6 +107,15 @@ export async function handleUniversalCreateNote(
       content,
       format,
     });
+    // Harden result shape: ensure id object is present for E2E assertions
+    if (!result?.id) {
+      const { unwrapAttio, normalizeNote } = await import(
+        '../../../utils/attio-response.js'
+      );
+      const maybeNote = unwrapAttio<any>(result);
+      const normalized = normalizeNote(maybeNote);
+      return normalized;
+    }
     debug(
       'universal.createNote',
       'Create note result',

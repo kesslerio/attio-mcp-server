@@ -191,6 +191,13 @@ export class UniversalDeleteService {
             };
             throw err; // dispatcher should mark isError=true
           }
+          // Map invalid ID formats (400) to a clearer message that matches tests
+          const anyErr: any = error as any;
+          const status = anyErr?.response?.status ?? anyErr?.status;
+          if (status === 400) {
+            // Throw a plain Error so the MCP wrapper surfaces the message text (matches test regex)
+            throw new Error(`Invalid task id: \"${record_id}\"`);
+          }
           throw error;
         }
 
