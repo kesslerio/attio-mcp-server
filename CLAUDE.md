@@ -74,9 +74,10 @@ RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: 
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
-### E2E Diagnostic Scripts
-- `./scripts/e2e-health-check.sh 2>&1 | tee /tmp/health.log` - Quick environment health check (API connectivity, test data count, smoke test)
-- `./scripts/e2e-diagnostics.sh /tmp` - Deep analysis of 4 critical failing E2E tests with full debug logs
+### E2E Diagnostic Scripts [ENHANCED - Issue #545]
+- `./scripts/e2e-health-check.sh` - Comprehensive environment health check (0-100 score, auto-fix with --fix)
+- `./scripts/e2e-diagnostics.sh` - Enhanced test runner (defaults to test-results/, suite categories, parallel mode)
+- `./scripts/e2e-analyze-simple.sh -s -p` - Test results analysis (pass/fail rates, error patterns, recommendations)
 
 ### E2E Debugging: Disable Bail and Capture Logs
 
@@ -84,6 +85,10 @@ USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 - Command (full suite, no bail, real API):
 
 ```
+# New enhanced approach (recommended)
+./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
+
+# Legacy manual approach (for custom debugging)
 TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
   npx vitest run test/e2e/suites/core-workflows.e2e.test.ts \
   --reporter=verbose --reporter=json --bail=0 \
@@ -94,8 +99,12 @@ TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA
 - Grep examples:
 
 ```
+# Pattern analysis (automated via enhanced scripts)
+./scripts/e2e-analyze-simple.sh -p
+
+# Manual grep for specific patterns
 rg -n "tasks\\.createTask|tasks\\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced_actor" \
-  test-results/e2e-console.core-workflows.realapi.full.log
+  test-results/e2e-*-$(date +%Y%m%d)*.log
 ```
 
 - When to use: Anytime E2E tests appear to “skip” code paths (silent failures) or you need to confirm request/response shapes emitted to Attio.
