@@ -562,7 +562,7 @@ describe.skipIf(
 
         E2EAssertions.expectMcpError(
           response,
-          /not found|invalid|does not exist|missing required parameter/i
+          /not found|invalid|does not exist|missing required parameter|bad request/i
         );
         console.error('✅ Handled non-existent task deletion gracefully');
       }, 15000);

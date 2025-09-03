@@ -100,22 +100,19 @@ export async function handleUniversalCreateNote(
   try {
     // Use factory service for consistent behavior
     const service = getCreateService();
-    const result = await service.createNote({
+    const rawResult = await service.createNote({
       resource_type,
       record_id,
       title,
       content,
       format,
     });
-    // Harden result shape: ensure id object is present for E2E assertions
-    if (!result?.id) {
-      const { unwrapAttio, normalizeNote } = await import(
-        '../../../utils/attio-response.js'
-      );
-      const maybeNote = unwrapAttio<any>(result);
-      const normalized = normalizeNote(maybeNote);
-      return normalized;
-    }
+
+    const { unwrapAttio, normalizeNote } = await import(
+      '../../../utils/attio-response.js'
+    );
+
+    const result = normalizeNote(unwrapAttio<any>(rawResult));
     debug(
       'universal.createNote',
       'Create note result',
