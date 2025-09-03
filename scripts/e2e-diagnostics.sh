@@ -247,10 +247,16 @@ fi
 echo "▶ Starting test execution..."
 START_TIME=$(date +%s)
 
-if [[ -n "$TEST_PATTERN" ]]; then
+if [[ -n "$FILE" ]]; then
+  # If --file is used, pass it as a direct file path argument
+  # shellcheck disable=SC2086
+  $VITEST_CMD "test/e2e/suites/${FILE}.e2e.test.ts" 2>&1 | tee "$LOG_FILE" || true
+elif [[ -n "$TEST_PATTERN" ]]; then
+  # If --suite or a general pattern is used, filter by test name with -t
   # shellcheck disable=SC2086
   $VITEST_CMD -t "$TEST_PATTERN" 2>&1 | tee "$LOG_FILE" || true
 else
+  # Otherwise, run all E2E tests
   # shellcheck disable=SC2086
   $VITEST_CMD 2>&1 | tee "$LOG_FILE" || true
 fi
@@ -264,8 +270,13 @@ echo "📄 Log file: $LOG_FILE"
 
 # Generate quick summary
 if [[ -f "$LOG_FILE" ]]; then
-  PASSED=$(grep -c "✓" "$LOG_FILE" 2>/dev/null || echo "0")
-  FAILED=$(grep -c "✗" "$LOG_FILE" 2>/dev/null || echo "0")
+  PASSED_COUNT=$(grep -c "✓ test/" "$LOG_FILE" || true)
+  FAILED_COUNT=$(grep -c "✗ test/" "$LOG_FILE" || true)
+
+  # Ensure they are numbers
+  PASSED=${PASSED_COUNT:-0}
+  FAILED=${FAILED_COUNT:-0}
+
   echo "📊 Quick summary: $PASSED passed, $FAILED failed"
   
   if [[ "$FAILED" -gt 0 ]]; then
