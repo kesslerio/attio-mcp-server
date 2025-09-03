@@ -75,11 +75,15 @@ RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: 
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
-### E2E Diagnostic Scripts [ENHANCED - Issue #545]
+### E2E Diagnostic Scripts [ENHANCED - Issue #545 & #568]
 
-- `./scripts/e2e-health-check.sh` - Comprehensive environment health check (0-100 score, auto-fix with --fix)
-- `./scripts/e2e-diagnostics.sh` - Enhanced test runner. Runs all E2E tests by default. Use `--file <pattern>` to run a single file or `--suite <name>` for a group of tests.
-- `python3 scripts/e2e_analyze.py` - Analyzes test logs for failures, errors, and performance.
+- `npm run e2e:diagnose` - Enhanced test runner with standardized environment
+- `npm run e2e:diagnose:core` - Focus on core-workflows suite  
+- `npm run e2e:analyze` - **Enhanced analysis with anomaly detection** (baseline comparison, flaky test detection)
+- `npm run e2e:analyze:trends` - 14-day trend analysis for pattern recognition
+- `npm run e2e:health` - Environment health check (0-100 score, auto-fix with --fix)
+
+**POST-FAILURE ANALYSIS WORKFLOW**: Use after test failures for deep-dive debugging, NOT during normal passing test cycles
 
 ### E2E Debugging: Disable Bail and Capture Logs
 

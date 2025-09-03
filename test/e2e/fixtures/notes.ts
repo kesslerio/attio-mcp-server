@@ -102,7 +102,7 @@ export const noteFixtures = {
       E2ENoteFactory.create('people', personId, {
         title: 'E2E Technical Discussion',
         content:
-          'Technical deep-dive with their IT team. Discussed security requirements, API limitations, and integration possibilities. All technical concerns addressed.',
+          'E2E technical deep-dive with their IT team. Discussed security requirements, API limitations, and integration possibilities. All technical concerns addressed.',
         format: 'plaintext',
       }),
 
