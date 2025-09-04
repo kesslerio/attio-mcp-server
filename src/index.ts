@@ -171,7 +171,38 @@ async function main() {
 
     // Connect to MCP transport FIRST - critical for Smithery
     const transport = new StdioServerTransport();
+    
+    // Handle EPIPE errors gracefully (broken pipe during shutdown)
+    process.stdout.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EPIPE') {
+        // Ignore EPIPE errors - this happens when Claude Desktop closes the connection
+        process.exit(0);
+      } else {
+        console.error('stdout error:', error);
+      }
+    });
+    
+    process.stderr.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EPIPE') {
+        // Ignore EPIPE errors - this happens when Claude Desktop closes the connection
+        process.exit(0);
+      } else {
+        console.error('stderr error:', error);
+      }
+    });
+    
     await mcpServer.connect(transport);
+
+    // Global handler for uncaught EPIPE errors from MCP SDK
+    process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EPIPE') {
+        // Gracefully exit on broken pipe - Claude Desktop closed connection
+        process.exit(0);
+      } else {
+        // Re-throw other uncaught exceptions
+        throw error;
+      }
+    });
 
     // Write PID file after successful MCP connection
     writePidFile(process.pid);
