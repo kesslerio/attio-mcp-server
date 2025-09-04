@@ -29,7 +29,7 @@ export type RelativeTimeframe =
  */
 export function getRelativeTimeframeRange(
   timeframe: RelativeTimeframe,
-  timezone: string = 'UTC'
+  _timezone: string = 'UTC'
 ): DateRange {
   const now = new Date();
   let startDate: Date;
@@ -41,19 +41,20 @@ export function getRelativeTimeframeRange(
       endDate = getEndOfDay(now);
       break;
 
-    case 'yesterday':
+    case 'yesterday': {
       const yesterday = new Date(now);
       yesterday.setUTCDate(yesterday.getUTCDate() - 1);
       startDate = getStartOfDay(yesterday);
       endDate = getEndOfDay(yesterday);
       break;
+    }
 
     case 'this_week':
       startDate = getStartOfWeek(now);
       endDate = getEndOfDay(now);
       break;
 
-    case 'last_week':
+    case 'last_week': {
       const lastWeekStart = new Date(now);
       lastWeekStart.setUTCDate(now.getUTCDate() - 7);
       startDate = getStartOfWeek(lastWeekStart);
@@ -62,39 +63,44 @@ export function getRelativeTimeframeRange(
       lastWeekEnd.setUTCDate(startDate.getUTCDate() + 6);
       endDate = getEndOfDay(lastWeekEnd);
       break;
+    }
 
     case 'this_month':
       startDate = getStartOfMonth(now);
       endDate = getEndOfDay(now);
       break;
 
-    case 'last_month':
+    case 'last_month': {
       const lastMonth = new Date(now);
       lastMonth.setUTCMonth(lastMonth.getUTCMonth() - 1);
       startDate = getStartOfMonth(lastMonth);
       endDate = getEndOfMonth(lastMonth);
       break;
+    }
 
-    case 'last_7_days':
-      startDate = new Date(now);
-      startDate.setUTCDate(startDate.getUTCDate() - 7);
-      startDate = getStartOfDay(startDate);
+    case 'last_7_days': {
+      const weekAgo = new Date(now);
+      weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+      startDate = getStartOfDay(weekAgo);
       endDate = getEndOfDay(now);
       break;
+    }
 
-    case 'last_30_days':
-      startDate = new Date(now);
-      startDate.setUTCDate(startDate.getUTCDate() - 30);
-      startDate = getStartOfDay(startDate);
+    case 'last_30_days': {
+      const monthAgo = new Date(now);
+      monthAgo.setUTCDate(monthAgo.getUTCDate() - 30);
+      startDate = getStartOfDay(monthAgo);
       endDate = getEndOfDay(now);
       break;
+    }
 
-    case 'last_90_days':
-      startDate = new Date(now);
-      startDate.setUTCDate(startDate.getUTCDate() - 90);
-      startDate = getStartOfDay(startDate);
+    case 'last_90_days': {
+      const quarterAgo = new Date(now);
+      quarterAgo.setUTCDate(quarterAgo.getUTCDate() - 90);
+      startDate = getStartOfDay(quarterAgo);
       endDate = getEndOfDay(now);
       break;
+    }
 
     default:
       throw new Error(`Unsupported timeframe: ${timeframe}`);

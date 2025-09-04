@@ -1448,8 +1448,8 @@ export class UniversalSearchService {
    * Get search suggestions for a resource type
    */
   static async getSearchSuggestions(
-    resource_type: UniversalResourceType,
-    partialQuery: string
+    _resource_type: UniversalResourceType,
+    _partialQuery: string
   ): Promise<string[]> {
     // For now, return empty array - could be enhanced with actual suggestion logic
     // TODO: implement limit parameter when actual suggestion logic is added
