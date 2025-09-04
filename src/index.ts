@@ -50,6 +50,28 @@ function getStartupDelay(): number {
   return Math.floor(Math.random() * 400) + 100;
 }
 
+// Function to check if existing server is healthy via HTTP health check
+async function checkServerHealth(port: number): Promise<boolean> {
+  try {
+    const response = await fetch(`http://localhost:${port}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000), // 2 second timeout
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.error(`[Health] Health check successful: ${data.status}`);
+      return data.status === 'ok';
+    } else {
+      console.error(`[Health] Health check failed with status: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`[Health] Health check failed:`, error);
+    return false;
+  }
+}
+
 // Interface for PID file data with timestamp and process validation
 interface PidFileData {
   pid: number;
@@ -150,32 +172,49 @@ async function main() {
       
       if (oldPid !== process.pid && isProcessRunning(oldPid)) {
         console.error(
-          `[Main] Old server instance (PID: ${oldPid}) is running. Attempting to send SIGTERM.`
+          `[Main] Active server instance (PID: ${oldPid}) detected. Checking health...`
         );
-        try {
-          process.kill(oldPid, 'SIGTERM');
+        
+        // Try to check if the existing server is healthy by attempting a health check
+        const isHealthy = await checkServerHealth(9877);
+        
+        if (isHealthy) {
           console.error(
-            `[Main] SIGTERM sent to PID ${oldPid}. Waiting for graceful shutdown...`
+            `[Main] Existing server (PID: ${oldPid}) is healthy. This instance will exit gracefully to avoid conflicts.`
           );
-          
-          // Wait longer for graceful shutdown to complete
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-
-          if (isProcessRunning(oldPid)) {
-            console.warn(
-              `[Main] Old process ${oldPid} still running after SIGTERM and wait. Will proceed anyway.`
-            );
-          } else {
+          console.error(
+            `[Main] Claude Desktop should maintain connection to the healthy server (PID: ${oldPid}).`
+          );
+          process.exit(0); // Exit gracefully without disrupting the healthy server
+        } else {
+          console.error(
+            `[Main] Existing server (PID: ${oldPid}) appears unhealthy. Attempting to replace it.`
+          );
+          try {
+            process.kill(oldPid, 'SIGTERM');
             console.error(
-              `[Main] Old process ${oldPid} successfully terminated.`
+              `[Main] SIGTERM sent to unhealthy PID ${oldPid}. Waiting for graceful shutdown...`
+            );
+            
+            // Wait longer for graceful shutdown to complete
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+
+            if (isProcessRunning(oldPid)) {
+              console.warn(
+                `[Main] Old process ${oldPid} still running after SIGTERM and wait. Will proceed anyway.`
+              );
+            } else {
+              console.error(
+                `[Main] Old process ${oldPid} successfully terminated.`
+              );
+              deletePidFile();
+            }
+          } catch (signalError) {
+            console.warn(
+              `[Main] Error sending SIGTERM to PID ${oldPid}: ${signalError}.`
             );
             deletePidFile();
           }
-        } catch (signalError) {
-          console.warn(
-            `[Main] Error sending SIGTERM to PID ${oldPid}: ${signalError}.`
-          );
-          deletePidFile();
         }
       } else if (oldPid === process.pid) {
         console.warn(
@@ -265,11 +304,8 @@ async function main() {
     writePidFile(process.pid);
 
     // Start health check server AFTER MCP is connected (for Docker compatibility)
-    // Only start if not running in stdio mode for Smithery
-    if (
-      process.env.NODE_ENV !== 'production' ||
-      process.env.ENABLE_HEALTH_SERVER === 'true'
-    ) {
+    // Always start health server for process detection and health checks
+    if (true) {
       // Use dynamic port allocation with better defaults
       let healthCheckPort = 9877; // Default port from logs
       if (process.env.HEALTH_PORT) {

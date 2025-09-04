@@ -124,16 +124,25 @@ export function startHealthServer(
       retryTimeout = null;
       console.error('Health check server: Cleared retry timeout.');
     }
-    server.close((err) => {
-      if (err) {
-        console.error('Health check server: Error during close:', err);
-      } else {
-        console.error('Health check server: Successfully closed.');
-      }
+    
+    // Check if server is actually listening before attempting to close
+    if (server.listening) {
+      server.close((err) => {
+        if (err) {
+          console.error('Health check server: Error during close:', err);
+        } else {
+          console.error('Health check server: Successfully closed.');
+        }
+        if (callback) {
+          callback(err);
+        }
+      });
+    } else {
+      console.error('Health check server: Server was not listening, skipping close.');
       if (callback) {
-        callback(err);
+        callback();
       }
-    });
+    }
   };
 
   // Add shutdown method to server
