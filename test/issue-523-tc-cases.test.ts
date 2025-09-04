@@ -308,8 +308,8 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
           filter: {
             path: [['tasks', 'created_at']],
             constraints: {
-              gte: '2024-06-01',
-              lte: '2024-06-30',
+              $gte: '2024-06-01',
+              $lte: '2024-06-30',
             },
           },
           limit: 10,
@@ -353,7 +353,7 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
           filter: {
             path: [['companies', 'created_at']],
             constraints: {
-              gt: '2024-07-01',
+              $gt: '2024-07-01',
             },
           },
         })
@@ -381,7 +381,7 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
           filter: {
             path: [['people', 'last_interaction']],
             constraints: {
-              lt: '2024-05-01',
+              $lt: '2024-05-01',
             },
           },
         })

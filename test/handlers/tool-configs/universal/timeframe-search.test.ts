@@ -140,8 +140,8 @@ describe('Timeframe Search Integration', () => {
       const companiesFilter = createTimeframeQuery(companiesConfig);
       expect(companiesFilter.filter.path).toEqual([['companies', 'created_at']]);
       expect(companiesFilter.filter.constraints).toEqual({
-        gte: '2023-08-01T00:00:00.000Z',
-        lte: '2023-08-15T23:59:59.999Z',
+        $gte: '2023-08-01T00:00:00.000Z',
+        $lte: '2023-08-15T23:59:59.999Z',
       });
       
       // Test people path structure
@@ -156,8 +156,8 @@ describe('Timeframe Search Integration', () => {
       const peopleFilter = createTimeframeQuery(peopleConfig);
       expect(peopleFilter.filter.path).toEqual([['people', 'created_at']]);
       expect(peopleFilter.filter.constraints).toEqual({
-        gte: '2023-08-01T00:00:00.000Z',
-        lte: '2023-08-15T23:59:59.999Z',
+        $gte: '2023-08-01T00:00:00.000Z',
+        $lte: '2023-08-15T23:59:59.999Z',
       });
       
       // Test backwards compatibility (without resourceType)
@@ -171,8 +171,8 @@ describe('Timeframe Search Integration', () => {
       const legacyFilter = createTimeframeQuery(legacyConfig);
       expect(legacyFilter.filter.path).toEqual([['created_at']]);
       expect(legacyFilter.filter.constraints).toEqual({
-        gte: '2023-08-01T00:00:00.000Z',
-        lte: '2023-08-15T23:59:59.999Z',
+        $gte: '2023-08-01T00:00:00.000Z',
+        $lte: '2023-08-15T23:59:59.999Z',
       });
     });
   });

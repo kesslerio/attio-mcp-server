@@ -231,8 +231,8 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
           filter: {
             path: [['companies', 'created_at']],
             constraints: {
-              gte: '2024-01-01',
-              lte: '2024-12-31',
+              $gte: '2024-01-01',
+              $lte: '2024-12-31',
             },
           },
           limit: 20,
@@ -259,7 +259,7 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
           filter: {
             path: [['people', 'last_interaction']],
             constraints: {
-              gt: '2024-06-01',
+              $gt: '2024-06-01',
             },
           },
         })

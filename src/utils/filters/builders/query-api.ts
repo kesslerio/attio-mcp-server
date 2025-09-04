@@ -121,8 +121,8 @@ export function createTimeframeQuery(
       filter: {
         path,
         constraints: {
-          gte: startDate,
-          lte: endDate,
+          $gte: startDate,
+          $lte: endDate,
         },
       },
     };
@@ -134,12 +134,12 @@ export function createTimeframeQuery(
     throw new Error('Timeframe query requires either startDate or endDate');
   }
   
-  // Map operators to constraint format
+  // Map operators to constraint format (using Attio's $-prefixed operators)
   const constraintMap: Record<string, string> = {
-    'greater_than': 'gt',
-    'less_than': 'lt',
-    'greater_than_or_equals': 'gte',
-    'less_than_or_equals': 'lte',
+    'greater_than': '$gt',
+    'less_than': '$lt',
+    'greater_than_or_equals': '$gte',
+    'less_than_or_equals': '$lte',
     'equals': 'value',
   };
   

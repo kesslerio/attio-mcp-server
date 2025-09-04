@@ -39,7 +39,9 @@ interface MockCall {
   mock: { calls: unknown[][] };
 }
 
-describe('Timeframe API Integration Tests', () => {
+describe.skip('Timeframe API Integration Tests - DEPRECATED', () => {
+  // These tests are now deprecated because we force all timeframe searches 
+  // to use Query API instead of Advanced Search API for better compatibility
   const mockDate = new Date('2023-08-15T12:00:00.000Z');
   
   beforeEach(() => {

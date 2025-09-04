@@ -239,6 +239,29 @@ export class UniversalSearchService {
       throw new Error(errorMessage);
     }
 
+    // Auto-detect timeframe searches and FORCE them to use the Query API
+    // The advanced search API doesn't support date comparison operators at all
+    let finalSearchType = search_type;
+    const hasTimeframeParams =
+      processedTimeframeParams.timeframe_attribute &&
+      (processedTimeframeParams.start_date ||
+        processedTimeframeParams.end_date);
+
+    if (hasTimeframeParams) {
+      finalSearchType = SearchType.TIMEFRAME;
+      debug(
+        'UniversalSearchService',
+        'FORCING timeframe search to use Query API (advanced search API does not support date comparisons)',
+        {
+          originalSearchType: search_type,
+          timeframe_attribute: processedTimeframeParams.timeframe_attribute,
+          start_date: processedTimeframeParams.start_date,
+          end_date: processedTimeframeParams.end_date,
+          date_operator: processedTimeframeParams.date_operator,
+        }
+      );
+    }
+
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
     let results: AttioRecord[];
@@ -251,7 +274,7 @@ export class UniversalSearchService {
           filters,
           limit,
           offset,
-          search_type,
+          search_type: finalSearchType,
           fields,
           match_type,
           sort,
@@ -342,6 +365,20 @@ export class UniversalSearchService {
       use_or_logic,
     } = params;
 
+    // Debug: Log search routing decision
+    debug(
+      'UniversalSearchService',
+      'performSearchByResourceType routing decision',
+      {
+        resource_type,
+        search_type,
+        hasTimeframeAttribute: !!timeframe_attribute,
+        hasStartDate: !!start_date,
+        hasEndDate: !!end_date,
+        hasContentFields: !!(content_fields && content_fields.length > 0),
+      }
+    );
+
     // Handle new search types first
     switch (search_type) {
       case SearchType.RELATIONSHIP:
@@ -360,6 +397,17 @@ export class UniversalSearchService {
 
       case SearchType.TIMEFRAME:
         if (timeframe_attribute) {
+          debug(
+            'UniversalSearchService',
+            'Using Query API for timeframe search',
+            {
+              resource_type,
+              attribute: timeframe_attribute,
+              startDate: start_date,
+              endDate: end_date,
+              operator: date_operator || 'between',
+            }
+          );
           const timeframeConfig: TimeframeQuery = {
             resourceType: resource_type,
             attribute: timeframe_attribute,
@@ -396,6 +444,23 @@ export class UniversalSearchService {
         }
         // Fall through to legacy content search behavior
         break;
+    }
+
+    // Debug: Log fallback to legacy search methods
+    if (timeframe_attribute || start_date || end_date) {
+      debug(
+        'UniversalSearchService',
+        'Falling back to legacy search with timeframe parameters',
+        {
+          resource_type,
+          search_type,
+          timeframe_attribute,
+          start_date,
+          end_date,
+          date_operator,
+          reason: 'Using createDateFilter with advanced search API',
+        }
+      );
     }
 
     switch (resource_type) {
@@ -1685,29 +1750,29 @@ export class UniversalSearchService {
     const filters: Array<Record<string, unknown>> = [];
 
     if (date_operator === 'between' && start_date && end_date) {
-      // Between date range
+      // Between date range - use valid API conditions
       filters.push({
         attribute: { slug: timeframe_attribute },
-        condition: 'greater_than_or_equal_to',
+        condition: 'greater_than',
         value: start_date,
       });
       filters.push({
         attribute: { slug: timeframe_attribute },
-        condition: 'less_than_or_equal_to',
+        condition: 'less_than',
         value: end_date,
       });
     } else if (date_operator === 'greater_than' && start_date) {
-      // After start date
+      // After start date - use valid API condition
       filters.push({
         attribute: { slug: timeframe_attribute },
-        condition: 'greater_than_or_equal_to',
+        condition: 'greater_than',
         value: start_date,
       });
     } else if (date_operator === 'less_than' && end_date) {
-      // Before end date
+      // Before end date - use valid API condition
       filters.push({
         attribute: { slug: timeframe_attribute },
-        condition: 'less_than_or_equal_to',
+        condition: 'less_than',
         value: end_date,
       });
     } else if (date_operator === 'equals' && start_date) {

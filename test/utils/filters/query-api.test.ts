@@ -137,8 +137,8 @@ describe('Query API Implementation - Issue #523', () => {
         filter: {
           path: [['created_at']],
           constraints: {
-            gte: '2024-01-01',
-            lte: '2024-12-31',
+            $gte: '2024-01-01',
+            $lte: '2024-12-31',
           },
         },
       });
@@ -157,7 +157,7 @@ describe('Query API Implementation - Issue #523', () => {
         filter: {
           path: [['updated_at']],
           constraints: {
-            gt: '2024-06-01',
+            $gt: '2024-06-01',
           },
         },
       });
@@ -176,7 +176,7 @@ describe('Query API Implementation - Issue #523', () => {
         filter: {
           path: [['last_interaction']],
           constraints: {
-            lt: '2024-03-15',
+            $lt: '2024-03-15',
           },
         },
       });
