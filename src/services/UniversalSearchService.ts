@@ -24,8 +24,17 @@ import { UniversalUtilityService } from './UniversalUtilityService.js';
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 
-// Import error types for validation
-import { FilterValidationError } from '../errors/api-errors.js';
+// Import error types for validation and proper error handling
+import {
+  FilterValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NetworkError,
+  RateLimitError,
+  ServerError,
+  ResourceNotFoundError,
+  createApiErrorFromAxiosError,
+} from '../errors/api-errors.js';
 
 // Import resource-specific search functions
 import { advancedSearchCompanies } from '../objects/companies/index.js';
@@ -44,7 +53,7 @@ import { listNotes, normalizeNoteResponse } from '../objects/notes.js';
 // console.log('listTasks type:', typeof listTasks);
 
 // Import guardrails
-import { assertNoMockInE2E, assertListMembershipRoute } from './_guards.js';
+import { assertNoMockInE2E } from './_guards.js';
 
 // Dynamic imports for better error handling in environments where functions might not be available
 const ensureAdvancedSearchCompanies = async () => {
@@ -106,6 +115,16 @@ import { getAttioClient } from '../api/attio-client.js';
 // Import factory for guard checks
 import { shouldUseMockData } from './create/index.js';
 
+// Import new query API utilities
+import {
+  createRelationshipQuery,
+  createTimeframeQuery,
+  createContentSearchQuery,
+} from '../utils/filters/index.js';
+
+// Import query API types
+import { RelationshipQuery, TimeframeQuery } from '../utils/filters/types.js';
+
 /**
  * UniversalSearchService provides centralized record search functionality
  */
@@ -126,6 +145,15 @@ export class UniversalSearchService {
       fields,
       match_type = MatchType.PARTIAL,
       sort = SortType.NAME,
+      // New TC search parameters
+      relationship_target_type,
+      relationship_target_id,
+      timeframe_attribute,
+      start_date,
+      end_date,
+      date_operator,
+      content_fields,
+      use_or_logic,
     } = params;
 
     // Start performance tracking
@@ -176,6 +204,15 @@ export class UniversalSearchService {
           fields,
           match_type,
           sort,
+          // New TC search parameters
+          relationship_target_type,
+          relationship_target_id,
+          timeframe_attribute,
+          start_date,
+          end_date,
+          date_operator,
+          content_fields,
+          use_or_logic,
         },
         perfId,
         apiStart
@@ -221,6 +258,15 @@ export class UniversalSearchService {
       fields?: string[];
       match_type?: MatchType;
       sort?: SortType;
+      // New TC search parameters
+      relationship_target_type?: UniversalResourceType;
+      relationship_target_id?: string;
+      timeframe_attribute?: string;
+      start_date?: string;
+      end_date?: string;
+      date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
+      content_fields?: string[];
+      use_or_logic?: boolean;
     },
     perfId: string,
     apiStart: number
@@ -234,7 +280,70 @@ export class UniversalSearchService {
       fields,
       match_type,
       sort,
+      relationship_target_type,
+      relationship_target_id,
+      timeframe_attribute,
+      start_date,
+      end_date,
+      date_operator,
+      content_fields,
+      use_or_logic,
     } = params;
+
+    // Handle new search types first
+    switch (search_type) {
+      case SearchType.RELATIONSHIP:
+        if (relationship_target_type && relationship_target_id) {
+          return this.searchByRelationship(
+            resource_type,
+            relationship_target_type,
+            relationship_target_id,
+            limit,
+            offset
+          );
+        }
+        throw new Error(
+          'Relationship search requires target_type and target_id parameters'
+        );
+
+      case SearchType.TIMEFRAME:
+        if (timeframe_attribute) {
+          const timeframeConfig: TimeframeQuery = {
+            attribute: timeframe_attribute,
+            startDate: start_date,
+            endDate: end_date,
+            operator: date_operator || 'between',
+          };
+          return this.searchByTimeframe(
+            resource_type,
+            timeframeConfig,
+            limit,
+            offset
+          );
+        }
+        throw new Error(
+          'Timeframe search requires timeframe_attribute parameter'
+        );
+
+      case SearchType.CONTENT:
+        // Use new Query API if content_fields is explicitly provided
+        // Otherwise, fall back to legacy content search for backward compatibility
+        if (content_fields && content_fields.length > 0) {
+          if (!query) {
+            throw new Error('Content search requires query parameter');
+          }
+          return this.searchByContent(
+            resource_type,
+            query,
+            content_fields,
+            use_or_logic !== false, // Default to true
+            limit,
+            offset
+          );
+        }
+        // Fall through to legacy content search behavior
+        break;
+    }
 
     switch (resource_type) {
       case UniversalResourceType.COMPANIES:
@@ -690,7 +799,7 @@ export class UniversalSearchService {
           if (exactResults.length > 0) {
             return exactResults; // Return exact match results
           }
-        } catch (exactError) {
+        } catch {
           // If exact match fails, fall through to partial matching
           console.debug('Exact match failed, trying client-side filtering');
         }
@@ -936,14 +1045,222 @@ export class UniversalSearchService {
   }
 
   /**
+   * Search records by relationship (TC-010)
+   * Uses proper query API with path-based filtering for connected records
+   */
+  static async searchByRelationship(
+    sourceResourceType: UniversalResourceType,
+    targetResourceType: UniversalResourceType,
+    targetRecordId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
+    const client = getAttioClient();
+
+    // Create relationship query using the proper query API format
+    const relationshipQuery: RelationshipQuery = {
+      sourceObjectType: sourceResourceType,
+      targetObjectType: targetResourceType,
+      targetAttribute: 'id',
+      condition: 'equals',
+      value: targetRecordId,
+    };
+
+    const queryApiFilter = createRelationshipQuery(relationshipQuery);
+
+    try {
+      const path = `/objects/${sourceResourceType}/records/query`;
+      const requestBody = {
+        ...queryApiFilter,
+        limit: limit || 10,
+        offset: offset || 0,
+      };
+
+      const response = await client.post(path, requestBody);
+      return response?.data?.data || [];
+    } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${sourceResourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no relationships found), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No relationship found between ${sourceResourceType} -> ${targetResourceType}`,
+          { targetRecordId }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
+      console.error(
+        `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}:`,
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Search records by timeframe (TC-012)
+   * Uses proper query API with date constraints
+   */
+  static async searchByTimeframe(
+    resourceType: UniversalResourceType,
+    timeframeConfig: TimeframeQuery,
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
+    const client = getAttioClient();
+
+    const queryApiFilter = createTimeframeQuery(timeframeConfig);
+
+    try {
+      const path = `/objects/${resourceType}/records/query`;
+      const requestBody = {
+        ...queryApiFilter,
+        limit: limit || 10,
+        offset: offset || 0,
+      };
+
+      const response = await client.post(path, requestBody);
+      return response?.data?.data || [];
+    } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${resourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no records in timeframe), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No ${resourceType} records found in specified timeframe`,
+          { timeframeConfig }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
+      console.error(`Timeframe search failed for ${resourceType}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Enhanced content search using proper query API (TC-011)
+   * Uses path-based filtering instead of the old filter format
+   */
+  static async searchByContent(
+    resourceType: UniversalResourceType,
+    query: string,
+    searchFields: string[] = [],
+    useOrLogic: boolean = true,
+    limit?: number,
+    offset?: number
+  ): Promise<AttioRecord[]> {
+    const client = getAttioClient();
+
+    // Use default fields based on resource type if none provided
+    let fields = searchFields;
+    if (fields.length === 0) {
+      switch (resourceType) {
+        case UniversalResourceType.COMPANIES:
+          fields = ['name', 'description', 'domains'];
+          break;
+        case UniversalResourceType.PEOPLE:
+          fields = ['name', 'email_addresses', 'job_title'];
+          break;
+        default:
+          fields = ['name'];
+          break;
+      }
+    }
+
+    const queryApiFilter = createContentSearchQuery(fields, query, useOrLogic);
+
+    try {
+      const path = `/objects/${resourceType}/records/query`;
+      const requestBody = {
+        ...queryApiFilter,
+        limit: limit || 10,
+        offset: offset || 0,
+      };
+
+      const response = await client.post(path, requestBody);
+      return response?.data?.data || [];
+    } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${resourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no content matches), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No ${resourceType} records found matching content search`,
+          { query, fields }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
+      console.error(`Content search failed for ${resourceType}:`, error);
+      return [];
+    }
+  }
+
+  /**
    * Get search suggestions for a resource type
    */
   static async getSearchSuggestions(
     resource_type: UniversalResourceType,
-    partialQuery: string,
-    limit: number = 5
+    partialQuery: string
   ): Promise<string[]> {
     // For now, return empty array - could be enhanced with actual suggestion logic
+    // TODO: implement limit parameter when actual suggestion logic is added
     return [];
   }
 
@@ -951,16 +1268,17 @@ export class UniversalSearchService {
    * Count total records for a resource type (without loading all data)
    */
   static async getRecordCount(
-    resource_type: UniversalResourceType,
-    filters?: Record<string, unknown>
+    resource_type: UniversalResourceType
   ): Promise<number> {
+    // TODO: implement filters parameter when count-specific endpoints are added
     // For most resource types, we'd need to implement count-specific endpoints
     // For now, return -1 to indicate count is not available without full search
     switch (resource_type) {
-      case UniversalResourceType.TASKS:
+      case UniversalResourceType.TASKS: {
         // For tasks, we can get the cached count if available
         const cachedTasks = CachingService.getCachedTasks('tasks_cache');
         return cachedTasks ? cachedTasks.length : -1;
+      }
       default:
         return -1; // Count not available without full search
     }

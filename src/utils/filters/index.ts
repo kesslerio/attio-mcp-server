@@ -28,7 +28,7 @@ export * from './cache.js';
 export * from './relationship.js';
 
 // Re-export namespaced Basic utilities for backward compatibility
-import { transformFiltersToApiFormat } from './translators.js';
+import { transformFiltersToApiFormat, transformFiltersToQueryApiFormat } from './translators.js';
 import { validateFilterStructure } from './validators.js';
 import {
   createEqualsFilter,
@@ -100,8 +100,21 @@ export const Relationship = {
 // Legacy exports for backward compatibility
 import { combineFiltersWithAnd, combineFiltersWithOr } from './builders.js';
 
+// New Query API imports
+import {
+  createQueryApiFilter,
+  createPathConstraint,
+  createRelationshipQuery,
+  createTimeframeQuery,
+  createContentSearchQuery,
+  createDateRangeQuery,
+  combineQueryFiltersWithAnd,
+  combineQueryFiltersWithOr,
+} from './builders.js';
+
 export {
   transformFiltersToApiFormat,
+  transformFiltersToQueryApiFormat,
   createEqualsFilter,
   createContainsFilter,
   combineFiltersWithAnd,
@@ -121,6 +134,15 @@ export {
   createPeopleByCompanyListFilter,
   createCompaniesByPeopleListFilter,
   createRecordsByNotesFilter,
+  // New Query API functions
+  createQueryApiFilter,
+  createPathConstraint,
+  createRelationshipQuery,
+  createTimeframeQuery,
+  createContentSearchQuery,
+  createDateRangeQuery,
+  combineQueryFiltersWithAnd,
+  combineQueryFiltersWithOr,
 };
 
 // Re-export ATTRIBUTES as FILTER_ATTRIBUTES for backward compatibility

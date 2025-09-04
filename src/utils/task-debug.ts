@@ -20,7 +20,7 @@ export function logTaskDebug(
   } catch {
     // Fallback to console if logger fails for any reason
     // Avoid throwing in debug paths
-    // eslint-disable-next-line no-console
+
     console.error(`[tasks.${scope}] ${message}`, details || {});
   }
 }

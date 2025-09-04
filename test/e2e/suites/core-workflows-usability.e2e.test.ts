@@ -26,7 +26,7 @@ describe.skipIf(
     if (!env.valid) {
       // Do not fail suite – these are usability metrics, not functional gates
       // but signal in logs for visibility
-      // eslint-disable-next-line no-console
+       
       console.warn('⚠️  E2E environment warnings:', env.warnings);
     }
   });
@@ -39,7 +39,7 @@ describe.skipIf(
     expect(summary.averages.documentationClarity).toBeLessThanOrEqual(1);
 
     // Log summarized metrics for reporting (non-fatal)
-    // eslint-disable-next-line no-console
+     
     console.error(
       '📊 Usability Metrics (Phase 1):',
       JSON.stringify(summary, null, 2)
@@ -47,7 +47,7 @@ describe.skipIf(
 
     // Export JSON/CSV for CI artifacts
     const reports = writeUsabilityReports('core-workflows', summary);
-    // eslint-disable-next-line no-console
+     
     console.error('📝 Usability reports written:', reports);
 
     // Phase 2 scaffolding: compute quality gates (using placeholder E2E stats for now)
@@ -55,7 +55,7 @@ describe.skipIf(
     const gates = deriveDefaultGates(e2eStats, summary);
     const evaluation = evaluateGates(gates);
     const gateReport = writeGateReport('core-workflows', evaluation);
-    // eslint-disable-next-line no-console
+     
     console.error('🚦 Quality gate evaluation written:', gateReport);
   }, 60000);
 });

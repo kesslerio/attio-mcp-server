@@ -5,3 +5,4 @@ export * from './text.js';
 export * from './activity.js';
 export * from './complex.js';
 export * from './types.js';
+export * from './query-api.js';

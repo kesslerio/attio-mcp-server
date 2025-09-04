@@ -47,7 +47,7 @@ export function extractAttioRecord(src: any): AttioRecord | null {
   const candidates = collectCandidates(src);
 
   // First try to find a complete record-like object
-  let rec = candidates.find(isRecordLike);
+  const rec = candidates.find(isRecordLike);
   if (rec) return rec;
 
   // Fallback: try to adapt id formats for partial records
