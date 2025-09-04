@@ -24,8 +24,17 @@ import { UniversalUtilityService } from './UniversalUtilityService.js';
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 
-// Import error types for validation
-import { FilterValidationError } from '../errors/api-errors.js';
+// Import error types for validation and proper error handling
+import {
+  FilterValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NetworkError,
+  RateLimitError,
+  ServerError,
+  ResourceNotFoundError,
+  createApiErrorFromAxiosError,
+} from '../errors/api-errors.js';
 
 // Import resource-specific search functions
 import { advancedSearchCompanies } from '../objects/companies/index.js';
@@ -1070,6 +1079,35 @@ export class UniversalSearchService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${sourceResourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no relationships found), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No relationship found between ${sourceResourceType} -> ${targetResourceType}`,
+          { targetRecordId }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
       console.error(
         `Relationship search failed for ${sourceResourceType} -> ${targetResourceType}:`,
         error
@@ -1103,6 +1141,35 @@ export class UniversalSearchService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${resourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no records in timeframe), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No ${resourceType} records found in specified timeframe`,
+          { timeframeConfig }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
       console.error(`Timeframe search failed for ${resourceType}:`, error);
       return [];
     }
@@ -1151,6 +1218,35 @@ export class UniversalSearchService {
       const response = await client.post(path, requestBody);
       return response?.data?.data || [];
     } catch (error: unknown) {
+      // Handle critical errors that should not be silently ignored
+      const apiError = createApiErrorFromAxiosError(
+        error,
+        `/objects/${resourceType}/records/query`,
+        'POST'
+      );
+
+      // Re-throw critical errors (auth, network, server errors)
+      if (
+        apiError instanceof AuthenticationError ||
+        apiError instanceof AuthorizationError ||
+        apiError instanceof NetworkError ||
+        apiError instanceof RateLimitError ||
+        apiError instanceof ServerError
+      ) {
+        throw apiError;
+      }
+
+      // For benign errors (404 - no content matches), return empty array gracefully
+      if (apiError instanceof ResourceNotFoundError) {
+        debug(
+          'UniversalSearchService',
+          `No ${resourceType} records found matching content search`,
+          { query, fields }
+        );
+        return [];
+      }
+
+      // For other errors, log and return empty (graceful degradation)
       console.error(`Content search failed for ${resourceType}:`, error);
       return [];
     }

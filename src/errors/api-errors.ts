@@ -188,6 +188,79 @@ export class ServerError extends AttioApiError {
 }
 
 /**
+ * Error for network connectivity issues (timeout, connection refused, DNS issues)
+ */
+export class NetworkError extends Error {
+  constructor(
+    message: string,
+    public readonly endpoint: string,
+    public readonly method: string,
+    public readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'NetworkError';
+
+    // This line is needed to properly capture the stack trace
+    Object.setPrototypeOf(this, NetworkError.prototype);
+  }
+
+  /**
+   * Check if an error is a network-related error
+   */
+  static isNetworkError(error: unknown): boolean {
+    if (error instanceof NetworkError) return true;
+
+    // Check for error codes that indicate network issues
+    const errorObj = error as { code?: string; message?: string };
+    if (errorObj.code) {
+      const networkCodes = [
+        'ECONNREFUSED',
+        'ENOTFOUND',
+        'ECONNRESET',
+        'ETIMEDOUT',
+        'ECONNABORTED',
+        'EHOSTUNREACH',
+        'ENETUNREACH',
+      ];
+      if (networkCodes.includes(errorObj.code)) return true;
+    }
+
+    // Check for specific network-related messages
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const networkKeywords = [
+      'Network Error',
+      'fetch failed',
+      'connection refused',
+      'dns lookup failed',
+      'timeout',
+    ];
+
+    // Only match if the message starts with or contains these specific patterns
+    return networkKeywords.some((keyword) =>
+      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  /**
+   * Create a NetworkError from a caught error
+   */
+  static fromError(
+    error: unknown,
+    endpoint: string,
+    method: string
+  ): NetworkError {
+    const originalError =
+      error instanceof Error ? error : new Error(String(error));
+    return new NetworkError(
+      `Network error occurred: ${originalError.message}`,
+      endpoint,
+      method,
+      originalError
+    );
+  }
+}
+
+/**
  * Factory function to create the appropriate error type based on status code
  *
  * @param statusCode - HTTP status code
@@ -244,12 +317,24 @@ export function createApiErrorFromAxiosError(
   error: unknown,
   endpoint: string,
   method: string
-): AttioApiError {
+): AttioApiError | NetworkError {
   const axiosError = error as {
     response?: { status?: number; data?: { message?: string } };
     message?: string;
   };
-  const statusCode = axiosError.response?.status || 500;
+
+  // Check if this is a network error first (no response = network issue)
+  if (!axiosError.response) {
+    // No response means network connectivity issue
+    if (NetworkError.isNetworkError(error)) {
+      return NetworkError.fromError(error, endpoint, method);
+    }
+    // If no response but not a recognized network error, treat as generic API error
+    const message = axiosError.message || 'Unknown API error';
+    return new AttioApiError(message, 500, endpoint, method, {});
+  }
+
+  const statusCode = axiosError.response.status || 500;
   const message =
     axiosError.response?.data?.message ||
     axiosError.message ||
