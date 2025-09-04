@@ -5,7 +5,7 @@
  * Issue #512: Advanced Search Filter Schema Requirements Undocumented
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { validateFilters } from '../../src/utils/filters/validation-utils.js';
 import { FilterValidationError } from '../../src/errors/api-errors.js';
 
@@ -99,18 +99,18 @@ describe('Advanced Search Filter Documentation', () => {
         name: { operator: 'contains', value: 'Test' },
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow(
+      expect(() => validateFilters(invalidFilters as never)).toThrow(
         FilterValidationError
       );
 
       try {
-        validateFilters(invalidFilters as any);
-      } catch (error: any) {
-        expect(error.message).toContain('Invalid filter format');
-        expect(error.message).toContain('Expected structure');
-        expect(error.message).toContain('"filters"');
-        expect(error.message).toContain('array format');
-        expect(error.message).toContain('documentation');
+        validateFilters(invalidFilters as never);
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Invalid filter format');
+        expect((error as Error).message).toContain('Expected structure');
+        expect((error as Error).message).toContain('"filters"');
+        expect((error as Error).message).toContain('array format');
+        expect((error as Error).message).toContain('documentation');
       }
     });
 
@@ -122,15 +122,15 @@ describe('Advanced Search Filter Documentation', () => {
         },
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow(
+      expect(() => validateFilters(invalidFilters as never)).toThrow(
         FilterValidationError
       );
 
       try {
-        validateFilters(invalidFilters as any);
-      } catch (error: any) {
-        expect(error.message).toContain('must be an array');
-        expect(error.message).toContain('Expected format');
+        validateFilters(invalidFilters as never);
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('must be an array');
+        expect((error as Error).message).toContain('Expected format');
       }
     });
 
@@ -144,15 +144,17 @@ describe('Advanced Search Filter Documentation', () => {
         ],
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow(
+      expect(() => validateFilters(invalidFilters as never)).toThrow(
         FilterValidationError
       );
 
       try {
-        validateFilters(invalidFilters as any);
-      } catch (error: any) {
-        expect(error.message).toContain('All filters are invalid');
-        expect(error.message).toContain('Example of valid filter structure');
+        validateFilters(invalidFilters as never);
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('All filters are invalid');
+        expect((error as Error).message).toContain(
+          'Example of valid filter structure'
+        );
       }
     });
   });
@@ -231,7 +233,7 @@ describe('Advanced Search Filter Documentation', () => {
         ],
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow();
+      expect(() => validateFilters(invalidFilters as never)).toThrow();
     });
 
     it('should require attribute.slug property', () => {
@@ -245,7 +247,7 @@ describe('Advanced Search Filter Documentation', () => {
         ],
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow();
+      expect(() => validateFilters(invalidFilters as never)).toThrow();
     });
 
     it('should require condition property', () => {
@@ -259,7 +261,7 @@ describe('Advanced Search Filter Documentation', () => {
         ],
       };
 
-      expect(() => validateFilters(invalidFilters as any)).toThrow();
+      expect(() => validateFilters(invalidFilters as never)).toThrow();
     });
   });
 
@@ -279,16 +281,16 @@ describe('Advanced Search Filter Documentation', () => {
 
       // This should fail with a helpful error message
       expect(() =>
-        validateFilters(originalFailingFormat.filters as any)
+        validateFilters(originalFailingFormat.filters as never)
       ).toThrow(FilterValidationError);
 
       try {
-        validateFilters(originalFailingFormat.filters as any);
-      } catch (error: any) {
+        validateFilters(originalFailingFormat.filters as never);
+      } catch (error: unknown) {
         // Verify the error message provides clear guidance
-        expect(error.message).toContain('Invalid filter format');
-        expect(error.message).toContain('Expected structure');
-        expect(error.message).toContain('array format');
+        expect((error as Error).message).toContain('Invalid filter format');
+        expect((error as Error).message).toContain('Expected structure');
+        expect((error as Error).message).toContain('array format');
       }
     });
 

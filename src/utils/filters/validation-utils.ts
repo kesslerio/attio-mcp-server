@@ -158,8 +158,8 @@ export function validateFiltersObject(
 export function collectInvalidFilters(
   filters: ListEntryFilter[],
   validateConditions: boolean = true
-): { index: number; reason: string; filter: any }[] {
-  const invalidFilters: { index: number; reason: string; filter: any }[] = [];
+): { index: number; reason: string; filter: unknown }[] {
+  const invalidFilters: { index: number; reason: string; filter: unknown }[] = [];
 
   // Check each filter in the array
   filters.forEach((filter, index) => {
@@ -224,7 +224,7 @@ export function collectInvalidFilters(
  * @returns Formatted error message with details
  */
 export function formatInvalidFiltersError(
-  invalidFilters: { index: number; reason: string; filter: any }[]
+  invalidFilters: { index: number; reason: string; filter: unknown }[]
 ): string {
   if (invalidFilters.length === 0) {
     return '';
@@ -323,25 +323,27 @@ export function validateFilters(
  * @param filter - The filter to analyze
  * @returns A string describing what's wrong with the filter
  */
-export function getInvalidFilterReason(filter: any): string {
+export function getInvalidFilterReason(filter: unknown): string {
   if (!filter || typeof filter !== 'object') {
     return `filter is ${filter === null ? 'null' : typeof filter}`;
   }
 
-  if (!filter.attribute) {
+  const filterObj = filter as Record<string, any>;
+
+  if (!filterObj.attribute) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE;
   }
 
-  if (!filter.attribute.slug) {
+  if (!filterObj.attribute.slug) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE_SLUG;
   }
 
-  if (!filter.condition) {
+  if (!filterObj.condition) {
     return ERROR_MESSAGES.MISSING_CONDITION;
   }
 
-  if (!isValidFilterCondition(filter.condition)) {
-    return `invalid condition '${filter.condition}'`;
+  if (!isValidFilterCondition(filterObj.condition)) {
+    return `invalid condition '${filterObj.condition}'`;
   }
 
   return 'unknown issue';
