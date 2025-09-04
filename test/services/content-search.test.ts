@@ -11,7 +11,7 @@ import {
   MatchType,
   SortType,
 } from '../../src/handlers/tool-configs/universal/types.js';
-import { AttioRecord } from '../../src/types/attio.js';
+import { AttioRecord, AttioTask, AttioList } from '../../src/types/attio.js';
 
 // Mock the imported modules
 vi.mock('../../src/objects/companies/index.js', () => ({
@@ -554,7 +554,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(listTasks).mockResolvedValue(mockTasks as any);
+      vi.mocked(listTasks).mockResolvedValue(mockTasks as unknown as AttioTask[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.TASKS,
@@ -578,7 +578,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(listTasks).mockResolvedValue(mockTasks as any);
+      vi.mocked(listTasks).mockResolvedValue(mockTasks as unknown as AttioTask[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.TASKS,
@@ -609,7 +609,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(listTasks).mockResolvedValue(mockTasks as any);
+      vi.mocked(listTasks).mockResolvedValue(mockTasks as unknown as AttioTask[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.TASKS,
@@ -640,7 +640,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(listTasks).mockResolvedValue(mockTasks as any);
+      vi.mocked(listTasks).mockResolvedValue(mockTasks as unknown as AttioTask[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.TASKS,
@@ -674,7 +674,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(searchLists).mockResolvedValue(mockLists as any);
+      vi.mocked(searchLists).mockResolvedValue(mockLists as unknown as AttioList[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
@@ -698,7 +698,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(searchLists).mockResolvedValue(mockLists as any);
+      vi.mocked(searchLists).mockResolvedValue(mockLists as unknown as AttioList[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
@@ -729,7 +729,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(searchLists).mockResolvedValue(mockLists as any);
+      vi.mocked(searchLists).mockResolvedValue(mockLists as unknown as AttioList[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
@@ -760,7 +760,7 @@ describe('Content Search Functionality', () => {
         },
       ];
 
-      vi.mocked(searchLists).mockResolvedValue(mockLists as any);
+      vi.mocked(searchLists).mockResolvedValue(mockLists as unknown as AttioList[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,
@@ -783,7 +783,7 @@ describe('Content Search Functionality', () => {
         api_slug: `customers-${i + 1}`,
       }));
 
-      vi.mocked(searchLists).mockResolvedValue(mockLists as any);
+      vi.mocked(searchLists).mockResolvedValue(mockLists as unknown as AttioList[]);
 
       const result = await UniversalSearchService.searchRecords({
         resource_type: UniversalResourceType.LISTS,

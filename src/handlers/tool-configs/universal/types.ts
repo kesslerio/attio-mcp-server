@@ -321,19 +321,19 @@ export interface BatchOperationsParams {
  * Universal tool configuration interface
  */
 export interface UniversalToolConfig extends ToolConfig {
-  handler: (params: any) => Promise<unknown>;
-  formatResult: (results: any) => string;
+  handler: (params: Record<string, unknown>) => Promise<unknown>;
+  formatResult: (results: unknown) => string;
 }
 
 /**
  * Resource type handler mapping interface
  */
 export interface ResourceTypeHandler {
-  [UniversalResourceType.COMPANIES]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.PEOPLE]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.LISTS]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.RECORDS]: (params: any) => Promise<unknown>;
-  [UniversalResourceType.TASKS]: (params: any) => Promise<unknown>;
+  [UniversalResourceType.COMPANIES]: (params: Record<string, unknown>) => Promise<unknown>;
+  [UniversalResourceType.PEOPLE]: (params: Record<string, unknown>) => Promise<unknown>;
+  [UniversalResourceType.LISTS]: (params: Record<string, unknown>) => Promise<unknown>;
+  [UniversalResourceType.RECORDS]: (params: Record<string, unknown>) => Promise<unknown>;
+  [UniversalResourceType.TASKS]: (params: Record<string, unknown>) => Promise<unknown>;
 }
 
 /**

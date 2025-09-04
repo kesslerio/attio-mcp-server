@@ -24,6 +24,21 @@ vi.mock('../../../../src/objects/people/index.js', () => ({
 import { advancedSearchCompanies } from '../../../../src/objects/companies/index.js';
 import { advancedSearchPeople } from '../../../../src/objects/people/index.js';
 
+// Type interfaces for test data
+interface FilterItem {
+  attribute?: { slug?: string };
+  condition?: string;
+  value?: unknown;
+}
+
+interface FiltersStructure {
+  filters: FilterItem[];
+}
+
+interface MockCall {
+  mock: { calls: unknown[][] };
+}
+
 describe('Timeframe API Integration Tests', () => {
   const mockDate = new Date('2023-08-15T12:00:00.000Z');
   
@@ -50,15 +65,16 @@ describe('Timeframe API Integration Tests', () => {
 
       // Verify that advancedSearchCompanies was called with enhanced filters
       expect(advancedSearchCompanies).toHaveBeenCalledTimes(1);
-      const [filters, limit, offset] = (advancedSearchCompanies as any).mock.calls[0];
+      const [filters, limit, offset] = (advancedSearchCompanies as unknown as MockCall).mock.calls[0];
       
       // Verify that the filters include the date parameters
-      expect(filters).toBeDefined();
-      expect(filters.filters).toBeDefined();
-      expect(Array.isArray(filters.filters)).toBe(true);
+      const filtersData = filters as FiltersStructure;
+      expect(filtersData).toBeDefined();
+      expect(filtersData.filters).toBeDefined();
+      expect(Array.isArray(filtersData.filters)).toBe(true);
       
       // Should contain date range filters
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = filtersData.filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
       expect(dateFilters.length).toBe(2); // Start and end date filters
@@ -74,10 +90,10 @@ describe('Timeframe API Integration Tests', () => {
       await UniversalSearchService.searchRecords(params);
 
       expect(advancedSearchCompanies).toHaveBeenCalledTimes(1);
-      const [filters] = (advancedSearchCompanies as any).mock.calls[0];
+      const [filters] = (advancedSearchCompanies as unknown as MockCall).mock.calls[0];
       
       // Should contain timeframe filters
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'updated_at'
       );
       expect(dateFilters.length).toBe(2); // Start and end date filters
@@ -103,20 +119,20 @@ describe('Timeframe API Integration Tests', () => {
       await UniversalSearchService.searchRecords(params);
 
       expect(advancedSearchCompanies).toHaveBeenCalledTimes(1);
-      const [filters] = (advancedSearchCompanies as any).mock.calls[0];
+      const [filters] = (advancedSearchCompanies as unknown as MockCall).mock.calls[0];
       
       // Should contain both original and date filters
-      expect(filters.filters.length).toBe(3); // 1 original + 2 date filters
+      expect((filters as FiltersStructure).filters.length).toBe(3); // 1 original + 2 date filters
       
       // Verify original filter is preserved
-      const nameFilter = filters.filters.find((f: any) => 
+      const nameFilter = (filters as FiltersStructure).filters.find((f) => 
         f.attribute?.slug === 'name'
       );
       expect(nameFilter).toBeDefined();
       expect(nameFilter.value).toBe('test company');
       
       // Verify date filters are added
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
       expect(dateFilters.length).toBe(2);
@@ -135,15 +151,15 @@ describe('Timeframe API Integration Tests', () => {
 
       // Verify that advancedSearchPeople was called with enhanced filters
       expect(advancedSearchPeople).toHaveBeenCalledTimes(1);
-      const [filters, paginationOptions] = (advancedSearchPeople as any).mock.calls[0];
+      const [filters, paginationOptions] = (advancedSearchPeople as unknown as MockCall).mock.calls[0];
       
       // Verify that the filters include the date parameters
       expect(filters).toBeDefined();
-      expect(filters.filters).toBeDefined();
-      expect(Array.isArray(filters.filters)).toBe(true);
+      expect((filters as FiltersStructure).filters).toBeDefined();
+      expect(Array.isArray((filters as FiltersStructure).filters)).toBe(true);
       
       // Should contain date range filters for created_at
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
       expect(dateFilters.length).toBe(2); // Start and end date filters
@@ -158,10 +174,10 @@ describe('Timeframe API Integration Tests', () => {
       await UniversalSearchService.searchRecords(params);
 
       expect(advancedSearchPeople).toHaveBeenCalledTimes(1);
-      const [filters] = (advancedSearchPeople as any).mock.calls[0];
+      const [filters] = (advancedSearchPeople as unknown as MockCall).mock.calls[0];
       
       // Should contain single date filter
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'updated_at'
       );
       expect(dateFilters.length).toBe(1); // Only start date filter
@@ -187,20 +203,20 @@ describe('Timeframe API Integration Tests', () => {
       await UniversalSearchService.searchRecords(params);
 
       expect(advancedSearchPeople).toHaveBeenCalledTimes(1);
-      const [filters] = (advancedSearchPeople as any).mock.calls[0];
+      const [filters] = (advancedSearchPeople as unknown as MockCall).mock.calls[0];
       
       // Should contain both original and date filters
-      expect(filters.filters.length).toBe(3); // 1 original + 2 date filters
+      expect((filters as FiltersStructure).filters.length).toBe(3); // 1 original + 2 date filters
       
       // Verify original filter is preserved
-      const emailFilter = filters.filters.find((f: any) => 
+      const emailFilter = (filters as FiltersStructure).filters.find((f) => 
         f.attribute?.slug === 'email_addresses'
       );
       expect(emailFilter).toBeDefined();
       expect(emailFilter.value).toBe('@example.com');
       
       // Verify date filters are added
-      const dateFilters = filters.filters.filter((f: any) => 
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
       expect(dateFilters.length).toBe(2);
@@ -218,16 +234,16 @@ describe('Timeframe API Integration Tests', () => {
 
       await UniversalSearchService.searchRecords(params);
 
-      const [filters] = (advancedSearchCompanies as any).mock.calls[0];
-      const dateFilters = filters.filters.filter((f: any) => 
+      const [filters] = (advancedSearchCompanies as unknown as MockCall).mock.calls[0];
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
 
       // Verify correct conditions are used
-      const startFilter = dateFilters.find((f: any) => 
+      const startFilter = dateFilters.find((f) => 
         f.condition === 'greater_than_or_equal_to'
       );
-      const endFilter = dateFilters.find((f: any) => 
+      const endFilter = dateFilters.find((f) => 
         f.condition === 'less_than_or_equal_to'
       );
 
@@ -248,8 +264,8 @@ describe('Timeframe API Integration Tests', () => {
 
       await UniversalSearchService.searchRecords(params);
 
-      const [filters] = (advancedSearchPeople as any).mock.calls[0];
-      const dateFilters = filters.filters.filter((f: any) => 
+      const [filters] = (advancedSearchPeople as unknown as MockCall).mock.calls[0];
+      const dateFilters = (filters as FiltersStructure).filters.filter((f) => 
         f.attribute?.slug === 'created_at'
       );
 
@@ -289,8 +305,8 @@ describe('Timeframe API Integration Tests', () => {
 
       // Should call the API without enhanced filters
       expect(advancedSearchCompanies).toHaveBeenCalledTimes(1);
-      const [filters] = (advancedSearchCompanies as any).mock.calls[0];
-      expect(filters.filters).toEqual([]); // No filters should be added
+      const [filters] = (advancedSearchCompanies as unknown as MockCall).mock.calls[0];
+      expect((filters as FiltersStructure).filters).toEqual([]); // No filters should be added
     });
   });
 });
