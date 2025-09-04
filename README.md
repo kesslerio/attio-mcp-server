@@ -15,13 +15,34 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 > "Find all AI companies with 50+ employees that we haven't contacted in 30 days and add them to our Q1 outreach list"
 
-## ✨ Core Features
+## ✨ Core Features & Implementation Status
 
-### 🎯 **Universal Tools Architecture** (13 Tools)
-**68% Tool Reduction**: Consolidated 40+ resource-specific tools into 13 universal operations for consistent, powerful CRM management.
+### 🎯 **Universal Tools Architecture** (14 Tools)
+**68% Tool Reduction**: Consolidated 40+ resource-specific tools into 14 universal operations for consistent, powerful CRM management.
 - **High Performance**: 89.7% speed improvement with 227KB memory reduction (PR #483)
 - **Enterprise Quality**: 97.15/100 production readiness score with zero breaking changes
 - **Clean Architecture**: Complete production-test separation with mock factory pattern
+
+### 📊 **Feature Implementation Status**
+
+#### ✅ **Fully Implemented**
+- **Companies**: Search, Create, Update, Delete, Advanced Search, Relationship Search
+- **People**: Search, Create, Update, Delete, Advanced Search, Relationship Search  
+- **Lists**: Full CRUD operations, filtering, advanced filtering, entry management
+- **Tasks**: Create, Update, Delete, Search with universal tools
+- **Records**: Universal CRUD operations across all resource types
+- **Notes**: Create and list operations for all record types
+- **Batch Operations**: Create, Update, Delete with chunking and error handling
+
+#### 🚧 **Partially Implemented**
+- **Content Search**: Basic implementation available, may not cover all content types
+- **Timeframe Filters**: Date range filtering implemented, some edge cases may exist
+- **Field Filtering**: Basic field selection available, may not support all attribute types
+
+#### 📋 **Planned / Not Yet Available**
+- **Advanced Analytics**: AI-powered insights and recommendations
+- **Custom Workflow Builders**: Visual automation workflows  
+- **Third-Party Sync**: HubSpot, Salesforce integrations
 
 ### 📊 **Company Management**
 - **Universal Search**: Find companies with `search-records` and `advanced-search`
@@ -56,6 +77,26 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Flexible Filtering**: Text, numeric, date, boolean, and relationship filters
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
+
+## ⚠️ **Known Limitations & Important Notes**
+
+### **Current Limitations**
+- **Task Display Names**: Some tasks may show as "Unnamed" when title field is not properly populated ([Issue #472](https://github.com/kesslerio/attio-mcp-server/issues/472))
+- **JSON Serialization**: Large responses may encounter truncation in some edge cases ([Issue #469](https://github.com/kesslerio/attio-mcp-server/issues/469))
+- **Field Parameter Filtering**: Tasks endpoint `/objects/tasks/attributes` has limitations, handled with fallback patterns
+- **Pagination**: Tasks pagination uses in-memory handling due to API constraints
+
+### **API Compatibility**
+- **Universal Tools**: Primary interface (14 tools) - recommended for all new integrations
+- **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
+- **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
+
+### **Performance Considerations**
+- **Batch Operations**: Optimized with chunking, rate limiting, and error recovery
+- **Large Datasets**: Automatic pagination and field filtering for optimal performance
+- **Rate Limiting**: Built-in protection against API rate limits with exponential backoff
+
+For detailed troubleshooting and solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) and [GitHub Issues](https://github.com/kesslerio/attio-mcp-server/issues).
 
 ## 🎯 **Mastering Advanced Search Filters**
 
@@ -362,12 +403,10 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 Comprehensive documentation is available in the [docs directory](./docs):
 
 ### **Universal Tools (Recommended)**
-- [Universal Tools Overview](./docs/universal-tools/README.md) - Start here for the new universal tools system
-- [Migration Guide](./docs/universal-tools/migration-guide.md) - Migrate from deprecated individual tools
-- [API Reference](./docs/universal-tools/api-reference.md) - Complete reference for all 13 universal tools
-- [User Guide](./docs/universal-tools/user-guide.md) - Best practices and common use cases
-- [Developer Guide](./docs/universal-tools/developer-guide.md) - Extending and customizing universal tools
-- [Troubleshooting](./docs/universal-tools/troubleshooting.md) - Common issues and solutions
+⚠️ **Note**: Universal tools documentation is currently being updated to match the latest implementation. Use the API directly or check the source code for the most accurate interface definitions.
+- [API Overview](./docs/api/api-overview.md) - High-level API concepts and patterns
+- [Universal Tools Source](./src/handlers/tool-configs/universal/) - Current implementation reference
+- [Tool Schemas](./src/handlers/tool-configs/universal/schemas.ts) - Parameter definitions and validation
 
 ### **Getting Started**
 - [Installation & Setup](./docs/getting-started.md)
@@ -375,18 +414,19 @@ Comprehensive documentation is available in the [docs directory](./docs):
 - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
 ### **API Reference**
-- [API Overview](./docs/api/api-overview.md)
-- [Companies API](./docs/api/companies-api.md)
-- [People API](./docs/api/people-api.md)
-- [Lists API](./docs/api/lists-api.md)
-- [Notes API](./docs/api/notes-api.md)
-- [Tasks API](./docs/api/tasks-api.md)
+📋 **Implementation Status**: These docs describe the Attio API endpoints. For MCP tool usage, refer to universal tools documentation above.
+- [API Overview](./docs/api/api-overview.md) - General Attio API concepts
+- [Companies API](./docs/api/companies-api.md) - Company record endpoints ✅ Fully Implemented via Universal Tools
+- [People API](./docs/api/people-api.md) - Person record endpoints ✅ Fully Implemented via Universal Tools
+- [Lists API](./docs/api/lists-api.md) - List management endpoints ✅ Fully Implemented
+- [Notes API](./docs/api/notes-api.md) - Notes endpoints ✅ Basic Implementation
+- [Tasks API](./docs/api/tasks-api.md) - Task endpoints ✅ Implemented via Universal Tools
 
 ### **Advanced Topics**
-- [Batch Operations](./docs/api/batch-operations.md)
-- [Advanced Filtering](./docs/api/advanced-filtering.md)
-- [Error Handling](./docs/api/error-handling.md)
-- [Extending MCP](./docs/api/extending-mcp.md)
+- [Batch Operations](./docs/api/batch-operations.md) - Bulk operations ✅ Implemented with chunking
+- [Advanced Filtering](./docs/api/advanced-filtering.md) - Complex queries ✅ Implemented
+- [Error Handling](./docs/api/error-handling.md) - Error patterns ✅ Enhanced error handling
+- [Extending MCP](./docs/api/extending-mcp.md) - Customization guide
 
 ### **Deployment**
 - [Docker Guide](./docs/docker/docker-guide.md)

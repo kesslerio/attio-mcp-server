@@ -1,5 +1,7 @@
 # Batch Operations API
 
+✅ **Implementation Status**: Batch operations are **fully implemented** with automatic chunking, error recovery, and rate limiting protection.
+
 The Batch Operations API allows you to perform multiple operations in a single request, optimizing API usage and reducing network overhead. This is especially useful for bulk operations like searching for multiple records or retrieving details for multiple entities.
 
 > **💡 Universal Tools Available**: The MCP server now provides a powerful [Universal Batch Tool](../universal-tools/user-guide.md#batch-operations) (`batch-operations`) that consolidates all batch operations across resource types. See the [Migration Guide](../universal-tools/migration-guide.md#batch-tools--universal-equivalents) for updating existing implementations.

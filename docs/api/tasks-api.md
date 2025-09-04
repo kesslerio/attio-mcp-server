@@ -1,8 +1,15 @@
 # Attio Tasks API
 
+✅ **Implementation Status**: Tasks API is **fully implemented** via Universal Tools with `resource_type: 'tasks'`.
+
+⚠️ **Known Limitations**: 
+- Some tasks may display as "Unnamed" when title field is not populated ([Issue #472](https://github.com/kesslerio/attio-mcp-server/issues/472))
+- Tasks pagination uses in-memory handling due to API endpoint limitations
+- `/objects/tasks/attributes` endpoint has limited functionality (handled with fallback patterns)
+
 The Tasks API allows you to manage tasks within Attio. Tasks can be assigned to users, linked to records, and scheduled with due dates.
 
-> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate task operations into 13 powerful tools with `resource_type: 'tasks'`. See the [Migration Guide](../universal-tools/migration-guide.md) for updating existing implementations.
+> **💡 Universal Tools Available**: The MCP server now provides [Universal Tools](../universal-tools/user-guide.md) that consolidate task operations into 14 powerful tools with `resource_type: 'tasks'`. See the [Implementation Status](./implementation-status.md) for the most current feature availability.
 
 ## ✅ Recent Improvements
 
