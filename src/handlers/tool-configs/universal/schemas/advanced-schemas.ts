@@ -44,7 +44,25 @@ export const advancedSearchSchema = {
     query: { type: 'string' as const, description: 'Search query string' },
     filters: {
       type: 'object' as const,
-      description: 'Complex filter conditions',
+      description: `Complex filter conditions with nested array structure.
+
+Required format:
+{
+  "filters": [
+    {
+      "attribute": {"slug": "field_name"}, 
+      "condition": "operator", 
+      "value": "search_value"
+    }
+  ]
+}
+
+Examples:
+- Single filter: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}]}
+- Multiple filters: {"filters": [{"attribute": {"slug": "name"}, "condition": "contains", "value": "Tech"}, {"attribute": {"slug": "industry"}, "condition": "equals", "value": "Technology"}]}
+- OR logic: {"filters": [...], "matchAny": true}
+
+Supported conditions: contains, equals, starts_with, ends_with, greater_than, less_than, is_empty, is_not_empty`,
       additionalProperties: true,
     },
     sort_by: {

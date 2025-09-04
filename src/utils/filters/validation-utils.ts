@@ -19,8 +19,25 @@ import { isValidFilterCondition } from '../../types/attio.js';
 export const ERROR_MESSAGES = {
   MISSING_FILTERS: 'Filter object is required but was undefined or null',
   FILTERS_NOT_ARRAY: (type: string) =>
-    `Invalid filter structure: 'filters' property must be an array but got ${type}`,
-  MISSING_FILTERS_PROPERTY: 'Filters must include a "filters" array property',
+    `Invalid filter structure: 'filters' property must be an array but got ${type}.
+
+Expected format:
+{
+  "filters": [
+    {"attribute": {"slug": "field_name"}, "condition": "contains", "value": "search_term"}
+  ]
+}`,
+  MISSING_FILTERS_PROPERTY: `Invalid filter format. Expected structure:
+{
+  "filters": [
+    {"attribute": {"slug": "field_name"}, "condition": "contains", "value": "search_term"}
+  ]
+}
+
+Common mistake: Using object format instead of array format. 
+Received an object without a "filters" array property.
+
+See documentation for more examples.`,
   EMPTY_FILTERS_ARRAY: 'No filters provided in the filters array',
   INVALID_FILTER_STRUCTURE: (index: number, reason: string) =>
     `Invalid filter structure at index ${index}: ${reason}`,
