@@ -13,6 +13,7 @@ This directory contains comprehensive End-to-End (E2E) tests for the Attio MCP S
 **Optional:** 
 - Customize `config.local.json` with your test preferences
 - Set additional environment variables for custom test data
+- Configure API contract strictness (see API Contract Modes below)
 
 ### 2. Run Tests
 
@@ -29,6 +30,52 @@ npm run test:e2e:limited
 # Get help with available options
 npm run test:e2e:help
 ```
+
+## ⚙️ API Contract Modes
+
+The E2E test suite supports two modes for handling API contract violations:
+
+### Strict Mode (Default) 🚫
+- **Purpose**: Catch real API integration issues early
+- **Behavior**: Tests **fail immediately** when API returns malformed responses
+- **Use for**: Normal development, CI/CD, production validation
+- **Configuration**: Default behavior (no environment variables needed)
+
+### Debug Mode 🐛  
+- **Purpose**: Troubleshoot API issues without failing tests
+- **Behavior**: Log warnings but continue with fallback data parsing
+- **Use for**: Debugging API contract violations, investigating test failures
+- **Configuration**: Set `E2E_API_CONTRACT_DEBUG=true`
+
+### Environment Variables
+
+```bash
+# Strict mode (default) - fail on API contract violations
+export E2E_API_CONTRACT_STRICT=true  # Default: true
+
+# Debug mode - allow fallbacks with warnings  
+export E2E_API_CONTRACT_DEBUG=true   # Default: false
+
+# Example: Enable debug mode for troubleshooting  
+E2E_API_CONTRACT_DEBUG=true npm run test:e2e
+
+# Or use the diagnostic script with --debug flag
+./scripts/e2e-diagnostics.sh --debug --json
+```
+
+### When to Use Each Mode
+
+- **Use Strict Mode** (default) for:
+  - Normal test runs and development
+  - CI/CD pipelines
+  - Validating API integration health
+  - Catching regressions early
+
+- **Use Debug Mode** when:
+  - Investigating test failures
+  - Debugging API response format issues
+  - Temporarily bypassing known API issues
+  - Analyzing what fallback data looks like
 
 ## 🎯 Overview
 

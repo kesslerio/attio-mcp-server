@@ -41,19 +41,20 @@ SUCCESS METRICS: E2E success rate >75% (29/38 tests passing) | Mock data validat
 
 ### TEST COMMAND REFERENCE
 
-| **Test Type**    | **Command**                    | **Requirements** | **Purpose**                                              |
-| ---------------- | ------------------------------ | ---------------- | -------------------------------------------------------- |
-| **Unit Tests**   | `npm test`                     | None             | Fast offline tests with mocks                            |
-| **Integration**  | `npm run test:integration`     | ATTIO_API_KEY    | Real API validation (`test/real-api-validation.test.ts`) |
-| **E2E Tests**    | `npm run test:e2e`             | ATTIO_API_KEY    | End-to-end workflows                                     |
-| **Performance**  | `npm run test:performance:all` | None             | All performance tests                                    |
-| **Smoke Tests**  | `npm run test:smoke`           | None             | Critical path validation                                 |
-| **Offline Mode** | `npm run test:offline`         | None             | Skip all API-dependent tests                             |
-| **CI Quality Gates** | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | ATTIO_API_KEY | E2E + real API + JSON for quality gates |
+| **Test Type**        | **Command**                                                         | **Requirements** | **Purpose**                                              |
+| -------------------- | ------------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
+| **Unit Tests**       | `npm test`                                                          | None             | Fast offline tests with mocks                            |
+| **Integration**      | `npm run test:integration`                                          | ATTIO_API_KEY    | Real API validation (`test/real-api-validation.test.ts`) |
+| **E2E Tests**        | `npm run test:e2e`                                                  | ATTIO_API_KEY    | End-to-end workflows                                     |
+| **Performance**      | `npm run test:performance:all`                                      | None             | All performance tests                                    |
+| **Smoke Tests**      | `npm run test:smoke`                                                | None             | Critical path validation                                 |
+| **Offline Mode**     | `npm run test:offline`                                              | None             | Skip all API-dependent tests                             |
+| **CI Quality Gates** | `npm run test:ci -- --reporter=json > vitest-report.json \|\| true` | ATTIO_API_KEY    | E2E + real API + JSON for quality gates                  |
 
 ### CI vs OFFLINE TESTING
 
 RULE: Different test scopes for different purposes | WHEN: Running tests | DO: Choose appropriate command | ELSE: Missing critical issues
+
 - **`test:offline`**: Validates code logic correctness (10s timeout, mocks only, excludes E2E/integration)
 - **`test:ci`**: Validates production readiness (30s timeout, real APIs, E2E workflows, JSON output for quality gates)
 - **Key insight**: Code can pass offline but fail in production due to API changes, performance regressions, E2E workflow breaks
@@ -74,42 +75,48 @@ RULE: Use debug scripts for targeted testing | WHEN: Developing/debugging | DO: 
 KEY SCRIPTS: `debug-field-mapping.js` (field transforms), `debug-formatresult.js` (Issue #483 compliance), `debug-tools.js` (tool registration), `debug-tool-lookup.js` (dispatcher routing)
 USAGE: `node scripts/debug/[script-name].js` (requires `npm run build` first)
 
-### E2E Diagnostic Scripts [ENHANCED - Issue #545]
-- `./scripts/e2e-health-check.sh` - Comprehensive environment health check (0-100 score, auto-fix with --fix)
-- `./scripts/e2e-diagnostics.sh` - Enhanced test runner (defaults to test-results/, suite categories, parallel mode)
-- `./scripts/e2e-analyze-simple.sh -s -p` - Test results analysis (pass/fail rates, error patterns, recommendations)
+### E2E Diagnostic Scripts [ENHANCED - Issue #545 & #568]
+
+- `npm run e2e:diagnose` - Enhanced test runner with standardized environment
+- `npm run e2e:diagnose:core` - Focus on core-workflows suite  
+- `npm run e2e:analyze` - **Enhanced analysis with anomaly detection** (baseline comparison, flaky test detection)
+- `npm run e2e:analyze:trends` - 14-day trend analysis for pattern recognition
+- `npm run e2e:health` - Environment health check (0-100 score, auto-fix with --fix)
+
+**POST-FAILURE ANALYSIS WORKFLOW**: Use after test failures for deep-dive debugging, NOT during normal passing test cycles
 
 ### E2E Debugging: Disable Bail and Capture Logs
 
 - Why: Vitest’s default bail can stop later tests after early failures. For end‑to‑end debugging you want every test to run so you can see all failing paths and payload/response traces.
 - Command (full suite, no bail, real API):
 
-```
 # New enhanced approach (recommended)
+
 ./scripts/e2e-diagnostics.sh --suite core-workflows --json --verbose
 
 # Legacy manual approach (for custom debugging)
+
 TASKS_DEBUG=true MCP_LOG_LEVEL=DEBUG LOG_FORMAT=json E2E_MODE=true USE_MOCK_DATA=false \
-  npx vitest run test/e2e/suites/core-workflows.e2e.test.ts \
-  --reporter=verbose --reporter=json --bail=0 \
-  |& tee test-results/e2e-console.core-workflows.realapi.full.log
-```
+ npx vitest run test/e2e/suites/core-workflows.e2e.test.ts \
+ --reporter=verbose --reporter=json --bail=0 \
+ |& tee test-results/e2e-console.core-workflows.realapi.full.log
 
 - Capture both stdout+stderr (|&). LOG_FORMAT=json makes logs grep/parse‑friendly.
 - Grep examples:
 
-```
 # Pattern analysis (automated via enhanced scripts)
-./scripts/e2e-analyze-simple.sh -p
+
+python3 scripts/e2e_analyze.py -p
 
 # Manual grep for specific patterns
+
 rg -n "tasks\\.createTask|tasks\\.updateTask|Prepared (create|update) payload|response shape|assignees|referenced_actor" \
-  test-results/e2e-*-$(date +%Y%m%d)*.log
-```
+ test-results/e2e-_-$(date +%Y%m%d)_.log
 
 - When to use: Anytime E2E tests appear to “skip” code paths (silent failures) or you need to confirm request/response shapes emitted to Attio.
 
 ### Policy: E2E ≠ Mocks
+
 - E2E runs always use the real Attio API. Mock injection is disabled by default in E2E.
 - Use `npm run test:offline` for mock‑only smoke/iteration. Don’t mix mocks into E2E.
 

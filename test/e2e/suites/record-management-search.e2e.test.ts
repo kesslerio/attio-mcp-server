@@ -28,9 +28,7 @@ const T30 = 30000,
   T45 = 45000,
   T60 = 60000;
 
-describe.skipIf(
-  !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
-)('Record Management E2E – Search', () => {
+describe('Record Management E2E – Search', () => {
   beforeAll(async () => {
     startTestSuite('record-management-search');
     const envValidation = await validateTestEnvironment();

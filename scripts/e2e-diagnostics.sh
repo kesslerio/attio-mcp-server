@@ -20,6 +20,7 @@ Options:
   -v, --verbose             Extra verbose output
   -w, --watch               Run in watch mode for development
   -c, --cleanup             Clean old logs before running
+  --debug                   Enable API contract debug mode (allow fallbacks)
   --analyze                 Generate failure analysis report
   --timeout SECONDS         Test timeout in seconds (default: 30)
 
@@ -28,6 +29,7 @@ Examples:
   $0 --suite error-handling            # Run all error-handling tests
   $0 --file core-workflows             # Run core-workflows test file
   $0 -p "should create"                # Run tests matching pattern in parallel
+  $0 --debug --json                   # Debug API contract issues with detailed logging
   $0 --analyze                         # Generate analysis report from existing logs
 
 Test Suites:
@@ -50,6 +52,7 @@ JSON_OUTPUT=false
 VERBOSE=false
 WATCH=false
 CLEANUP=false
+DEBUG=false
 ANALYZE=false
 TIMEOUT=30
 
@@ -89,6 +92,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c|--cleanup)
       CLEANUP=true
+      shift
+      ;;
+    --debug)
+      DEBUG=true
       shift
       ;;
     --analyze)
@@ -239,6 +246,15 @@ export LOG_FORMAT=json
 export E2E_MODE=true
 export USE_MOCK_DATA=false
 
+# Set API contract mode based on --debug flag
+if [[ "$DEBUG" == true ]]; then
+  export E2E_API_CONTRACT_DEBUG=true
+  echo "🐛 Debug mode enabled: API contract violations will be logged but not fail tests"
+else
+  export E2E_API_CONTRACT_STRICT=true
+  echo "🚫 Strict mode enabled: API contract violations will fail tests immediately"
+fi
+
 if [[ "$VERBOSE" == true ]]; then
   export DEBUG="*"
 fi
@@ -247,10 +263,29 @@ fi
 echo "▶ Starting test execution..."
 START_TIME=$(date +%s)
 
-if [[ -n "$TEST_PATTERN" ]]; then
+if [[ -n "$FILE" ]]; then
+  # If --file is used, find matching files in subdirectories
+  MATCHING_FILES=$(find test/e2e/suites -name "*${FILE}*.e2e.test.ts" -type f)
+  
+  if [[ -z "$MATCHING_FILES" ]]; then
+    echo "❌ No test files found matching pattern: $FILE"
+    echo "Available test files:"
+    find test/e2e/suites -name "*.e2e.test.ts" -type f | sort
+    exit 1
+  fi
+  
+  echo "📁 Found matching files:"
+  echo "$MATCHING_FILES"
+  echo ""
+  
+  # shellcheck disable=SC2086
+  $VITEST_CMD $MATCHING_FILES 2>&1 | tee "$LOG_FILE" || true
+elif [[ -n "$TEST_PATTERN" ]]; then
+  # If --suite or a general pattern is used, filter by test name with -t
   # shellcheck disable=SC2086
   $VITEST_CMD -t "$TEST_PATTERN" 2>&1 | tee "$LOG_FILE" || true
 else
+  # Otherwise, run all E2E tests
   # shellcheck disable=SC2086
   $VITEST_CMD 2>&1 | tee "$LOG_FILE" || true
 fi
@@ -264,8 +299,21 @@ echo "📄 Log file: $LOG_FILE"
 
 # Generate quick summary
 if [[ -f "$LOG_FILE" ]]; then
-  PASSED=$(grep -c "✓" "$LOG_FILE" 2>/dev/null || echo "0")
-  FAILED=$(grep -c "✗" "$LOG_FILE" 2>/dev/null || echo "0")
+  # Extract from vitest summary line: "Tests  11 failed | 114 passed | 4 skipped (129)"
+  SUMMARY_LINE=$(grep "Tests  .* failed .* passed" "$LOG_FILE" | tail -1 || true)
+  if [[ -n "$SUMMARY_LINE" ]]; then
+    FAILED_COUNT=$(echo "$SUMMARY_LINE" | grep -o '[0-9]\+ failed' | grep -o '[0-9]\+' || echo "0")
+    PASSED_COUNT=$(echo "$SUMMARY_LINE" | grep -o '[0-9]\+ passed' | grep -o '[0-9]\+' || echo "0")
+  else
+    # Fallback to individual test counting
+    PASSED_COUNT=$(grep -c "✓ test/" "$LOG_FILE" || true)
+    FAILED_COUNT=$(grep -c "^[ ]*FAIL[ ]" "$LOG_FILE" | head -1 || true)
+  fi
+
+  # Ensure they are numbers
+  PASSED=${PASSED_COUNT:-0}
+  FAILED=${FAILED_COUNT:-0}
+
   echo "📊 Quick summary: $PASSED passed, $FAILED failed"
   
   if [[ "$FAILED" -gt 0 ]]; then

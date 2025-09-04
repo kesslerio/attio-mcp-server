@@ -57,14 +57,25 @@ export class TaskCreator extends BaseCreator {
       // Ensure dependencies are loaded
       await this.ensureDependencies();
 
+      // Build options object with only defined values to avoid passing "undefined" strings
+      const options: any = {};
+      if (input.assigneeId && input.assigneeId !== 'undefined') {
+        options.assigneeId = input.assigneeId as string;
+      }
+      if (input.dueDate && input.dueDate !== 'undefined' && input.dueDate !== 'null' && 
+          typeof input.dueDate === 'string' && input.dueDate.trim() !== '') {
+        options.dueDate = input.dueDate as string;
+      }
+      if (input.recordId && input.recordId !== 'undefined') {
+        options.recordId = input.recordId as string;
+      }
+      if (input.targetObject && input.targetObject !== 'undefined') {
+        options.targetObject = input.targetObject as string;
+      }
+
       const createdTask = await this.taskModule.createTask(
         input.content as string,
-        {
-          assigneeId: input.assigneeId as string,
-          dueDate: input.dueDate as string,
-          recordId: input.recordId as string,
-          targetObject: input.targetObject as string,
-        }
+        options
       );
 
       context.debug(this.constructor.name, 'Task creation response', {

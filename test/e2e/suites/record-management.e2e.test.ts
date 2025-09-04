@@ -231,15 +231,22 @@ describe.skipIf(
       // Test retrieving each type of record
       for (const record of createdRecords.slice(0, 3)) {
         let resourceType = '';
-        if ((record as any).id?.record_id && (record as any).values?.name) {
-          resourceType = 'companies';
-        } else if (
-          (record as any).id?.record_id &&
-          (record as any).values?.first_name
-        ) {
-          resourceType = 'people';
-        } else if ((record as any).id?.task_id) {
+        if ((record as any).id?.task_id) {
           resourceType = 'tasks';
+        } else if ((record as any).id?.record_id) {
+          // Both companies and people use record_id, need to differentiate by fields
+          // Check for person-specific fields first
+          if (
+            (record as any).values?.email_addresses ||
+            (record as any).values?.phone_numbers ||
+            (record as any).values?.job_title ||
+            (record as any).values?.seniority
+          ) {
+            resourceType = 'people';
+          } else {
+            // Default to companies for records with name but no person-specific fields
+            resourceType = 'companies';
+          }
         }
 
         if (resourceType) {

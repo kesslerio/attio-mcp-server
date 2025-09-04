@@ -51,6 +51,7 @@ import {
   getAttributesSchema,
   discoverAttributesSchema,
   getDetailedInfoSchema,
+  createNoteSchema,
   listNotesSchema,
   validateUniversalToolParams,
 } from './schemas.js';
@@ -845,7 +846,7 @@ export const coreOperationsToolDefinitions = {
   'create-note': {
     name: 'create-note',
     description: 'Create a note for any record type (companies, people, deals)',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: createNoteSchema,
   },
   'list-notes': {
     name: 'list-notes',
@@ -869,13 +870,8 @@ export const coreOperationsToolConfigs = {
         );
         const res = await handleUniversalCreateNote(sanitizedParams);
 
-        // Only normalize when the payload looks like a note
-        const note: any = unwrapAttio<any>(res);
-        if (!note || !(note.id || (note as any).note_id)) {
-          return { isError: true, error: 'invalid response from upstream' };
-        }
-
-        return { isError: false, data: normalizeNote(note) };
+        // The handleUniversalCreateNote already returns normalized data
+        return res;
       } catch (err: any) {
         // Map error body/status into the regex your tests expect
         const status = err?.response?.status;

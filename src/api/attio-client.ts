@@ -1,19 +1,20 @@
-// module banner – shows up as soon as the file is evaluated
-import { fileURLToPath } from 'url';
-// @ts-ignore - import.meta is valid with NodeNext module resolution in tsconfig.json
-const MODULE_FILE = fileURLToPath(import.meta.url);
-console.log('📦 LOADED attio-client', {
-  file: MODULE_FILE,
-  E2E_MODE: process.env.E2E_MODE,
-  USE_MOCK_DATA: process.env.USE_MOCK_DATA,
-});
-export const __MODULE_PATH__ = MODULE_FILE;
-
 /**
  * Attio API client and related utilities
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '../utils/logger.js';
+import { fileURLToPath } from 'url';
+
+// module banner – shows up as soon as the file is evaluated
+// @ts-ignore - import.meta is valid with NodeNext module resolution in tsconfig.json
+const MODULE_FILE = fileURLToPath(import.meta.url);
+// Debug loading info - use logger instead of console.log to avoid JSON parsing issues
+debug('attio-client', 'Module loaded', {
+  file: MODULE_FILE,
+  E2E_MODE: process.env.E2E_MODE,
+  USE_MOCK_DATA: process.env.USE_MOCK_DATA,
+});
+export const __MODULE_PATH__ = MODULE_FILE;
 
 export type AttioClient = AxiosInstance;
 
@@ -112,7 +113,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   ).replace(/\/+$/, '');
 
   // Log which client path is being used
-  console.log('⚙️ Attio client baseURL:', baseURL);
+  debug('attio-client', 'Client baseURL configured', { baseURL });
 
   const client = axios.create({
     baseURL,
@@ -140,7 +141,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     client.interceptors.request.use((config) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-      console.log('🌐 AttioClient request', {
+      debug('attio-client', 'Request sent', {
         baseURL: config.baseURL,
         url: config.url,
         method: config.method,
@@ -150,7 +151,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
     });
     client.interceptors.response.use(
       (res) => {
-        console.log('📥 AttioClient response', {
+        debug('attio-client', 'Response received', {
           status: res.status,
           url: res.config?.url,
           keys:
@@ -181,12 +182,12 @@ export function createAttioClient(apiKey: string): AxiosInstance {
   }
 
   // Add unconditional diagnostics and passthrough error handling
-  console.log('⚙️ DEFAULT Attio client baseURL:', baseURL);
+  debug('attio-client', 'Default client baseURL configured', { baseURL });
 
   client.interceptors.request.use((config) => {
     const redacted = { ...(config.headers || {}) };
     if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-    console.log('🌐 Request', {
+    debug('attio-client', 'Request interceptor', {
       baseURL: config.baseURL,
       url: config.url,
       method: config.method,
@@ -197,7 +198,7 @@ export function createAttioClient(apiKey: string): AxiosInstance {
 
   client.interceptors.response.use(
     (res) => {
-      console.log('📥 Response', {
+      debug('attio-client', 'Response interceptor', {
         status: res.status,
         url: res.config?.url,
         topKeys:
@@ -246,7 +247,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
   const forceReal = isE2E && !useMocks;
 
   // Debug log the client mode selection
-  console.log('🔍 CLIENT MODE SELECTION', {
+  debug('attio-client', 'Client mode selection', {
     isE2E,
     useMocks,
     forceReal,
@@ -308,12 +309,12 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     });
 
     // Add diagnostics and passthrough error handling
-    console.log('⚙️ E2E RAW client baseURL:', baseURL);
+    debug('attio-client', 'E2E RAW client baseURL configured', { baseURL });
 
     rawClient.interceptors.request.use((config) => {
       const redacted = { ...(config.headers || {}) };
       if (redacted.Authorization) redacted.Authorization = 'Bearer ***';
-      console.log('🌐 E2E Request', {
+      debug('attio-client', 'E2E Request sent', {
         baseURL: config.baseURL,
         url: config.url,
         method: config.method,
@@ -324,7 +325,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
 
     rawClient.interceptors.response.use(
       (res) => {
-        console.log('📥 E2E Response', {
+        debug('attio-client', 'E2E Response received', {
           status: res.status,
           url: res.config?.url,
           topKeys:
@@ -370,7 +371,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
       );
     }
   } else {
-    console.log('↩️ RETURNING CACHED DEFAULT CLIENT');
+    debug('attio-client', 'Returning cached default client');
   }
 
   return apiInstance;

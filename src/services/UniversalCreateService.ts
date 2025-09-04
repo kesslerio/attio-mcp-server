@@ -459,7 +459,8 @@ export class UniversalCreateService {
         throw new UniversalValidationError('record_data must be an object');
       }
     }
-    const { resource_type, record_data } = params;
+    const { resource_type } = params;
+    const record_data = params.record_data; // Use the potentially parsed record_data
     if (
       !record_data ||
       typeof record_data !== 'object' ||
@@ -1291,7 +1292,6 @@ export class UniversalCreateService {
       // Use mock-enabled task creation for test environments
       const createdTask = await createTaskWithMockSupport({
         content,
-        title: content, // Dual field support
         ...options,
       });
 

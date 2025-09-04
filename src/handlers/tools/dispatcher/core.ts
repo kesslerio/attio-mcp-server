@@ -380,7 +380,9 @@ export async function executeToolRequest(request: CallToolRequest) {
         isTestRun &&
         (toolName === 'create-record' ||
           toolName === 'update-record' ||
-          toolName === 'create-note')
+          toolName === 'get-record-details' ||
+          toolName === 'create-note' ||
+          toolName === 'search-records')
       ) {
         // Return raw JSON for record operations in E2E mode
         // Handle null/undefined results gracefully instead of throwing
