@@ -21,6 +21,9 @@ import { ValidationService } from './ValidationService.js';
 import { CachingService } from './CachingService.js';
 import { UniversalUtilityService } from './UniversalUtilityService.js';
 
+// Constants for search optimization
+const CONTENT_SEARCH_FETCH_LIMIT = 100; // TODO: Consider adaptive limits based on query complexity
+
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 
@@ -705,7 +708,7 @@ export class UniversalSearchService {
       if (search_type === SearchType.CONTENT && query && query.trim()) {
         // Fetch more lists for client-side filtering
         searchQuery = '';
-        requestLimit = 100; // Increased to allow for filtering
+        requestLimit = CONTENT_SEARCH_FETCH_LIMIT; // Increased to allow for filtering
       } else if (query && query.trim().length > 0) {
         searchQuery = query;
       }
@@ -1475,7 +1478,10 @@ export class UniversalSearchService {
   }
 
   /**
-   * Helper method to extract field value from a list record
+   * Helper method to extract field value from a list record for content search
+   * @param list - The list record to extract the field value from
+   * @param field - The field name to extract (e.g., 'name', 'description')
+   * @returns The field value as a string, or empty string if not found
    */
   private static getListFieldValue(list: AttioRecord, field: string): string {
     const values = list.values as Record<string, unknown>;
@@ -1498,7 +1504,10 @@ export class UniversalSearchService {
   }
 
   /**
-   * Helper method to extract field value from a task record
+   * Helper method to extract field value from a task record for content search
+   * @param task - The task record to extract the field value from
+   * @param field - The field name to extract (e.g., 'content', 'title', 'content_plaintext')
+   * @returns The field value as a string, or empty string if not found
    */
   private static getTaskFieldValue(task: AttioRecord, field: string): string {
     const values = task.values as Record<string, unknown>;

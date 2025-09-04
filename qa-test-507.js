@@ -10,6 +10,7 @@ import { UniversalSearchService } from './src/services/UniversalSearchService.js
 import { UniversalResourceType, SearchType, MatchType, SortType } from './src/handlers/tool-configs/universal/types.js';
 
 // Mock dependencies for QA testing
+// NOTE: Update test data when modifying search logic or adding new resource types
 const mockTasks = [
   {
     id: { task_id: 'task-001' },
@@ -37,6 +38,7 @@ const mockTasks = [
   },
 ];
 
+// NOTE: Keep test data synchronized with UniversalSearchService field expectations
 const mockLists = [
   {
     id: { list_id: 'list-001' },
