@@ -218,10 +218,9 @@ export async function createTask(
     linked_records: linkedRecords, // Always include as array (empty when not linking)
   };
   
-  // Only include deadline_at in payload if it was set and is valid (avoid sending undefined/null)
-  if (taskData.deadline_at !== undefined && taskData.deadline_at !== null) {
-    dataPayload.deadline_at = taskData.deadline_at;
-  }
+  // Always include deadline_at in payload - Attio API expects this field to be present
+  // Use null when no deadline is provided (API validation requires field presence)
+  dataPayload.deadline_at = taskData.deadline_at || null;
 
   const requestPayload = {
     data: dataPayload,

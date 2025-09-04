@@ -268,7 +268,7 @@ export class UniversalSearchService {
         return this.searchRecords_ObjectType(limit, offset, filters);
 
       case UniversalResourceType.DEALS:
-        return this.searchDeals(limit, offset);
+        return this.searchDeals(limit, offset, query);
 
       case UniversalResourceType.TASKS:
         return this.searchTasks(perfId, apiStart, query, limit, offset);
@@ -642,36 +642,88 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search deals using query endpoint
+   * Search deals using query endpoint with filtering support
    */
   private static async searchDeals(
     limit?: number,
-    offset?: number
+    offset?: number,
+    query?: string
   ): Promise<AttioRecord[]> {
-    // Use POST query endpoint for deals since GET /objects/deals/records doesn't exist
-    return this.queryDealRecords({ limit, offset });
+    // Use POST query endpoint for deals with optional name filtering
+    return this.queryDealRecords({ limit, offset, query });
   }
 
   /**
-   * Query deal records using the proper Attio API endpoint
+   * Query deal records using the proper Attio API endpoint with client-side filtering
+   * Note: Attio deals API only supports exact matching, so we implement client-side filtering
    */
   private static async queryDealRecords(params: {
     limit?: number;
     offset?: number;
+    query?: string;
   }): Promise<AttioRecord[]> {
-    const { limit = 10, offset = 0 } = params;
+    const { limit = 10, offset = 0, query } = params;
     const client = getAttioClient();
     try {
-      // Defensive: Ensure parameters are valid before sending to API
-      const safeLimit = Math.max(1, Math.min(limit || 10, 100));
-      const safeOffset = Math.max(0, offset || 0);
-      // Use POST to /objects/deals/records/query (the correct Attio endpoint)
-      const response = await client.post('/objects/deals/records/query', {
-        limit: safeLimit,
-        offset: safeOffset,
-        // Add any additional query parameters as needed
-      });
-      return response?.data?.data || [];
+      // First try exact match if query provided
+      if (query && query.trim()) {
+        try {
+          const exactMatchResponse = await client.post(
+            '/objects/deals/records/query',
+            {
+              filter: {
+                $and: [
+                  {
+                    path: [['deals', 'name']],
+                    constraints: {
+                      value: query.trim(),
+                    },
+                  },
+                ],
+              },
+              limit: Math.min(limit || 10, 100),
+              offset: offset || 0,
+            }
+          );
+
+          const exactResults = exactMatchResponse?.data?.data || [];
+          if (exactResults.length > 0) {
+            return exactResults; // Return exact match results
+          }
+        } catch (exactError) {
+          // If exact match fails, fall through to partial matching
+          console.debug('Exact match failed, trying client-side filtering');
+        }
+      }
+
+      // Fetch all deals for client-side filtering (Attio doesn't support partial matching)
+      const allDealsResponse = await client.post(
+        '/objects/deals/records/query',
+        {
+          limit: 100, // Fetch up to 100 deals for filtering
+          offset: 0,
+        }
+      );
+
+      let allDeals = allDealsResponse?.data?.data || [];
+
+      // Apply client-side filtering if query provided
+      if (query && query.trim()) {
+        const queryLower = query.trim().toLowerCase();
+        allDeals = allDeals.filter((deal: AttioRecord) => {
+          const nameField = deal.values?.name;
+          const name =
+            Array.isArray(nameField) && nameField[0]?.value
+              ? String(nameField[0].value)
+              : '';
+          return name.toLowerCase().includes(queryLower);
+        });
+      }
+
+      // Apply pagination to filtered results
+      const start = offset || 0;
+      const end = start + (limit || 10);
+      return allDeals.slice(start, end);
     } catch (error: unknown) {
       console.error('Failed to query deal records:', error);
       // If the query endpoint also fails, try the simpler approach

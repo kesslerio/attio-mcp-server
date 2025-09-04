@@ -60,6 +60,10 @@ import {
   searchPeopleByNotes,
 } from '../../../objects/people/index.js';
 
+import {
+  searchDealsByCompany,
+} from '../../../objects/deals/index.js';
+
 // Import date-related functions directly from search module to avoid potential circular imports
 import {
   searchPeopleByCreationDate,
@@ -315,6 +319,9 @@ export const searchByRelationshipConfig: UniversalToolConfig = {
 
         case RelationshipType.PEOPLE_TO_COMPANY:
           return await searchCompaniesByPeople(source_id);
+
+        case RelationshipType.COMPANY_TO_DEALS:
+          return await searchDealsByCompany(source_id);
 
         case RelationshipType.PERSON_TO_TASKS:
         case RelationshipType.COMPANY_TO_TASKS:
