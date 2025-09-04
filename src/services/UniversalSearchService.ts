@@ -361,6 +361,7 @@ export class UniversalSearchService {
       case SearchType.TIMEFRAME:
         if (timeframe_attribute) {
           const timeframeConfig: TimeframeQuery = {
+            resourceType: resource_type,
             attribute: timeframe_attribute,
             startDate: start_date,
             endDate: end_date,

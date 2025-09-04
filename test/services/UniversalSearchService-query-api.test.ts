@@ -229,17 +229,11 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         '/objects/companies/records/query',
         expect.objectContaining({
           filter: {
-            path: ['created_at'],
-            constraints: [
-              {
-                operator: 'greater_than_or_equals',
-                value: '2024-01-01',
-              },
-              {
-                operator: 'less_than_or_equals',
-                value: '2024-12-31',
-              },
-            ],
+            path: [['companies', 'created_at']],
+            constraints: {
+              gte: '2024-01-01',
+              lte: '2024-12-31',
+            },
           },
           limit: 20,
           offset: 0,
@@ -263,13 +257,10 @@ describe('UniversalSearchService Query API Integration - Issue #523', () => {
         '/objects/people/records/query',
         expect.objectContaining({
           filter: {
-            path: ['last_interaction'],
-            constraints: [
-              {
-                operator: 'greater_than',
-                value: '2024-06-01',
-              },
-            ],
+            path: [['people', 'last_interaction']],
+            constraints: {
+              gt: '2024-06-01',
+            },
           },
         })
       );

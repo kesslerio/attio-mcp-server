@@ -135,17 +135,11 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: ['created_at'],
-          constraints: [
-            {
-              operator: 'greater_than_or_equals',
-              value: '2024-01-01',
-            },
-            {
-              operator: 'less_than_or_equals',
-              value: '2024-12-31',
-            },
-          ],
+          path: [['created_at']],
+          constraints: {
+            gte: '2024-01-01',
+            lte: '2024-12-31',
+          },
         },
       });
     });
@@ -161,13 +155,10 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: ['updated_at'],
-          constraints: [
-            {
-              operator: 'greater_than',
-              value: '2024-06-01',
-            },
-          ],
+          path: [['updated_at']],
+          constraints: {
+            gt: '2024-06-01',
+          },
         },
       });
     });
@@ -183,13 +174,10 @@ describe('Query API Implementation - Issue #523', () => {
 
       expect(result).toEqual({
         filter: {
-          path: ['last_interaction'],
-          constraints: [
-            {
-              operator: 'less_than',
-              value: '2024-03-15',
-            },
-          ],
+          path: [['last_interaction']],
+          constraints: {
+            lt: '2024-03-15',
+          },
         },
       });
     });

@@ -3,7 +3,7 @@
  * Tests the parameter conversion and validation logic
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { UniversalSearchService } from '../../../../src/services/UniversalSearchService.js';
 import { UniversalResourceType } from '../../../../src/handlers/tool-configs/universal/types.js';
 import type { UniversalSearchParams } from '../../../../src/handlers/tool-configs/universal/types.js';
@@ -120,6 +120,60 @@ describe('Timeframe Search Integration', () => {
 
       // Should fall back to regular company search and return results
       expect(Array.isArray(results)).toBe(true);
+    });
+  });
+
+  describe('API Path Structure Validation', () => {
+    it('should build correct API path structure for timeframe queries', async () => {
+      // Import the createTimeframeQuery function to test directly
+      const { createTimeframeQuery } = await import('../../../../src/utils/filters/builders/query-api.js');
+      
+      // Test companies path structure
+      const companiesConfig = {
+        resourceType: 'companies',
+        attribute: 'created_at',
+        startDate: '2023-08-01T00:00:00.000Z',
+        endDate: '2023-08-15T23:59:59.999Z',
+        operator: 'between' as const,
+      };
+      
+      const companiesFilter = createTimeframeQuery(companiesConfig);
+      expect(companiesFilter.filter.path).toEqual([['companies', 'created_at']]);
+      expect(companiesFilter.filter.constraints).toEqual({
+        gte: '2023-08-01T00:00:00.000Z',
+        lte: '2023-08-15T23:59:59.999Z',
+      });
+      
+      // Test people path structure
+      const peopleConfig = {
+        resourceType: 'people',
+        attribute: 'created_at',
+        startDate: '2023-08-01T00:00:00.000Z',
+        endDate: '2023-08-15T23:59:59.999Z',
+        operator: 'between' as const,
+      };
+      
+      const peopleFilter = createTimeframeQuery(peopleConfig);
+      expect(peopleFilter.filter.path).toEqual([['people', 'created_at']]);
+      expect(peopleFilter.filter.constraints).toEqual({
+        gte: '2023-08-01T00:00:00.000Z',
+        lte: '2023-08-15T23:59:59.999Z',
+      });
+      
+      // Test backwards compatibility (without resourceType)
+      const legacyConfig = {
+        attribute: 'created_at',
+        startDate: '2023-08-01T00:00:00.000Z',
+        endDate: '2023-08-15T23:59:59.999Z',
+        operator: 'between' as const,
+      };
+      
+      const legacyFilter = createTimeframeQuery(legacyConfig);
+      expect(legacyFilter.filter.path).toEqual([['created_at']]);
+      expect(legacyFilter.filter.constraints).toEqual({
+        gte: '2023-08-01T00:00:00.000Z',
+        lte: '2023-08-15T23:59:59.999Z',
+      });
     });
   });
 });

@@ -144,43 +144,42 @@ docker run -d \
 | `ATTIO_WORKSPACE_ID` | Your Attio workspace ID | No |
 | `NODE_ENV` | Node environment (development/production) | No |
 
-## Health Check
+## Server Status
 
-The container includes a health check that monitors the server's status. You can view the health status with:
+You can check if the container is running with:
 
 ```bash
 docker ps
 ```
 
-The health check configuration:
-- Test command: `curl -f http://localhost:3000/health`
-- Interval: 30 seconds
-- Timeout: 10 seconds
-- Retries: 3
-- Start period: 5 seconds
+The simplified MCP server uses stdio transport and doesn't require HTTP health checks.
 
 ## Integrating with Claude
 
-To use the dockerized Attio MCP Server with Claude, add the following to your Claude Desktop configuration:
+To use the Attio MCP Server with Claude, add the following to your Claude Desktop configuration:
 
 ```json
 {
   "mcpServers": {
     "attio": {
-      "url": "http://localhost:3000"
+      "command": "node",
+      "args": ["/path/to/attio-mcp-server/dist/index.js"],
+      "env": {
+        "ATTIO_API_KEY": "your_api_key_here"
+      }
     }
   }
 }
 ```
+
+For Docker deployment, the container should run the MCP server process directly rather than exposing HTTP endpoints.
 
 ## Docker Compose Reference
 
 The included `docker-compose.yml` file sets up:
 
 - Image building from the local Dockerfile
-- Port mapping (3000:3000)
 - Environment variables from .env file
-- Container health check
 - Automatic restart unless stopped
 
 ## Troubleshooting
@@ -195,17 +194,20 @@ docker logs attio-mcp-server
 
 Common issues:
 - Invalid API key: Check your ATTIO_API_KEY environment variable
-- Port conflict: Change the host port in docker-compose.yml or run command
+- Missing environment variables: Ensure all required variables are set in .env
 
-### Health Check Fails
+### MCP Server Issues
 
-If the health check fails:
+If the MCP server isn't working:
 
 1. Check the logs: `docker logs attio-mcp-server`
-2. Verify network connectivity: `curl -v http://localhost:3000/health`
-3. Check if the server is running inside the container: 
+2. Verify the server process is running:
    ```
    docker exec -it attio-mcp-server sh -c "ps aux | grep node"
+   ```
+3. Test the server can start manually:
+   ```
+   docker exec -it attio-mcp-server node dist/index.js
    ```
 
 ## Advanced Configuration

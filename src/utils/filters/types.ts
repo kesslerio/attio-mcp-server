@@ -102,6 +102,7 @@ export interface RelationshipQuery {
  * Timeframe query configuration
  */
 export interface TimeframeQuery {
+  resourceType?: string;
   attribute: string;
   startDate?: string;
   endDate?: string;

@@ -97,7 +97,7 @@ export function createRelationshipQuery(
 export function createTimeframeQuery(
   config: TimeframeQuery
 ): AttioQueryApiFilter {
-  const { attribute, startDate, endDate, operator } = config;
+  const { resourceType, attribute, startDate, endDate, operator } = config;
   
   // Validate required parameters
   if (!attribute) {
@@ -108,6 +108,10 @@ export function createTimeframeQuery(
     throw new Error('Timeframe query requires operator');
   }
   
+  // Build the proper path - use resourceType + attribute if resourceType is provided
+  // Note: Attio API expects path as nested array format: [[objectType, attribute]]
+  const path = resourceType ? [[resourceType, attribute]] : [[attribute]];
+  
   // For date range queries
   if (operator === 'between') {
     if (!startDate || !endDate) {
@@ -115,17 +119,11 @@ export function createTimeframeQuery(
     }
     return {
       filter: {
-        path: [attribute],
-        constraints: [
-          {
-            operator: 'greater_than_or_equals',
-            value: startDate,
-          },
-          {
-            operator: 'less_than_or_equals',
-            value: endDate,
-          },
-        ],
+        path,
+        constraints: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
     };
   }
@@ -136,7 +134,25 @@ export function createTimeframeQuery(
     throw new Error('Timeframe query requires either startDate or endDate');
   }
   
-  return createQueryApiFilter([attribute], operator, value);
+  // Map operators to constraint format
+  const constraintMap: Record<string, string> = {
+    'greater_than': 'gt',
+    'less_than': 'lt',
+    'greater_than_or_equals': 'gte',
+    'less_than_or_equals': 'lte',
+    'equals': 'value',
+  };
+  
+  const constraintKey = constraintMap[operator] || 'value';
+  
+  return {
+    filter: {
+      path,
+      constraints: {
+        [constraintKey]: value,
+      },
+    },
+  };
 }
 
 /**
