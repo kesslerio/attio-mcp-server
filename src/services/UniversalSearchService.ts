@@ -125,6 +125,9 @@ import {
   createContentSearchQuery,
 } from '../utils/filters/index.js';
 
+// Import timeframe utility functions for Issue #475
+import { convertDateParamsToTimeframeQuery } from '../utils/filters/timeframe-utils.js';
+
 // Import query API types
 import { RelationshipQuery, TimeframeQuery } from '../utils/filters/types.js';
 
@@ -157,6 +160,15 @@ export class UniversalSearchService {
       date_operator,
       content_fields,
       use_or_logic,
+      // Issue #475: New date filtering parameters
+      date_from,
+      date_to,
+      created_after,
+      created_before,
+      updated_after,
+      updated_before,
+      timeframe,
+      date_field,
     } = params;
 
     // Start performance tracking
@@ -191,6 +203,42 @@ export class UniversalSearchService {
       performance.now() - validationStart
     );
 
+    // Issue #475: Convert user-friendly date parameters to API format
+    let processedTimeframeParams = {
+      timeframe_attribute,
+      start_date,
+      end_date,
+      date_operator,
+    };
+
+    try {
+      const dateConversion = convertDateParamsToTimeframeQuery({
+        date_from,
+        date_to,
+        created_after,
+        created_before,
+        updated_after,
+        updated_before,
+        timeframe,
+        date_field,
+      });
+
+      if (dateConversion) {
+        // Use converted parameters, prioritizing user-friendly parameters
+        processedTimeframeParams = {
+          ...processedTimeframeParams,
+          ...dateConversion,
+        };
+      }
+    } catch (dateError: unknown) {
+      // Re-throw date validation errors with helpful context
+      const errorMessage =
+        dateError instanceof Error
+          ? `Date parameter validation failed: ${dateError.message}`
+          : 'Invalid date parameters provided';
+      throw new Error(errorMessage);
+    }
+
     // Track API call timing
     const apiStart = enhancedPerformanceTracker.markApiStart(perfId);
     let results: AttioRecord[];
@@ -210,10 +258,11 @@ export class UniversalSearchService {
           // New TC search parameters
           relationship_target_type,
           relationship_target_id,
-          timeframe_attribute,
-          start_date,
-          end_date,
-          date_operator,
+          // Use processed timeframe parameters (Issue #475)
+          timeframe_attribute: processedTimeframeParams.timeframe_attribute,
+          start_date: processedTimeframeParams.start_date,
+          end_date: processedTimeframeParams.end_date,
+          date_operator: processedTimeframeParams.date_operator,
           content_fields,
           use_or_logic,
         },
@@ -358,7 +407,14 @@ export class UniversalSearchService {
           search_type,
           fields,
           match_type,
-          sort
+          sort,
+          // Issue #475: Pass timeframe parameters
+          {
+            timeframe_attribute,
+            start_date,
+            end_date,
+            date_operator,
+          }
         );
 
       case UniversalResourceType.PEOPLE:
@@ -370,7 +426,14 @@ export class UniversalSearchService {
           search_type,
           fields,
           match_type,
-          sort
+          sort,
+          // Issue #475: Pass timeframe parameters
+          {
+            timeframe_attribute,
+            start_date,
+            end_date,
+            date_operator,
+          }
         );
 
       case UniversalResourceType.LISTS:
@@ -431,15 +494,34 @@ export class UniversalSearchService {
     search_type: SearchType = SearchType.BASIC,
     fields?: string[],
     match_type: MatchType = MatchType.PARTIAL,
-    sort: SortType = SortType.NAME
+    sort: SortType = SortType.NAME,
+    // Issue #475: Add timeframe parameters
+    timeframeParams?: {
+      timeframe_attribute?: string;
+      start_date?: string;
+      end_date?: string;
+      date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
+    }
   ): Promise<AttioRecord[]> {
-    if (filters) {
+    // Issue #475: Merge timeframe parameters into filters
+    let enhancedFilters = filters;
+    if (
+      timeframeParams?.timeframe_attribute &&
+      (timeframeParams.start_date || timeframeParams.end_date)
+    ) {
+      const dateFilter = this.createDateFilter(timeframeParams);
+      if (dateFilter) {
+        enhancedFilters = this.mergeFilters(filters, dateFilter);
+      }
+    }
+
+    if (enhancedFilters) {
       const searchFn = await ensureAdvancedSearchCompanies();
       if (!searchFn) {
         throw new Error('Companies search function not available');
       }
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      return await searchFn(filters, limit, offset);
+      return await searchFn(enhancedFilters, limit, offset);
     } else if (query && query.trim().length > 0) {
       // Auto-detect domain-like queries and search domains field specifically
       const looksLikeDomain =
@@ -552,15 +634,34 @@ export class UniversalSearchService {
     search_type: SearchType = SearchType.BASIC,
     fields?: string[],
     match_type: MatchType = MatchType.PARTIAL,
-    sort: SortType = SortType.NAME
+    sort: SortType = SortType.NAME,
+    // Issue #475: Add timeframe parameters
+    timeframeParams?: {
+      timeframe_attribute?: string;
+      start_date?: string;
+      end_date?: string;
+      date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
+    }
   ): Promise<AttioRecord[]> {
-    if (filters) {
+    // Issue #475: Merge timeframe parameters into filters
+    let enhancedFilters = filters;
+    if (
+      timeframeParams?.timeframe_attribute &&
+      (timeframeParams.start_date || timeframeParams.end_date)
+    ) {
+      const dateFilter = this.createDateFilter(timeframeParams);
+      if (dateFilter) {
+        enhancedFilters = this.mergeFilters(filters, dateFilter);
+      }
+    }
+
+    if (enhancedFilters) {
       const searchFn = await ensureAdvancedSearchPeople();
       if (!searchFn) {
         throw new Error('People search function not available');
       }
       // FilterValidationError will bubble up naturally from searchFn, including for invalid empty filters
-      const paginatedResult = await searchFn(filters, {
+      const paginatedResult = await searchFn(enhancedFilters, {
         limit,
         offset,
       });
@@ -1562,5 +1663,106 @@ export class UniversalSearchService {
     }
 
     return '';
+  }
+
+  /**
+   * Issue #475: Create date filter from timeframe parameters
+   */
+  private static createDateFilter(timeframeParams: {
+    timeframe_attribute?: string;
+    start_date?: string;
+    end_date?: string;
+    date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
+  }): Record<string, unknown> | null {
+    const { timeframe_attribute, start_date, end_date, date_operator } =
+      timeframeParams;
+
+    if (!timeframe_attribute) {
+      return null;
+    }
+
+    const filters: Array<Record<string, unknown>> = [];
+
+    if (date_operator === 'between' && start_date && end_date) {
+      // Between date range
+      filters.push({
+        attribute: { slug: timeframe_attribute },
+        condition: 'greater_than_or_equal_to',
+        value: start_date,
+      });
+      filters.push({
+        attribute: { slug: timeframe_attribute },
+        condition: 'less_than_or_equal_to',
+        value: end_date,
+      });
+    } else if (date_operator === 'greater_than' && start_date) {
+      // After start date
+      filters.push({
+        attribute: { slug: timeframe_attribute },
+        condition: 'greater_than_or_equal_to',
+        value: start_date,
+      });
+    } else if (date_operator === 'less_than' && end_date) {
+      // Before end date
+      filters.push({
+        attribute: { slug: timeframe_attribute },
+        condition: 'less_than_or_equal_to',
+        value: end_date,
+      });
+    } else if (date_operator === 'equals' && start_date) {
+      // Exact date match
+      filters.push({
+        attribute: { slug: timeframe_attribute },
+        condition: 'equals',
+        value: start_date,
+      });
+    }
+
+    if (filters.length === 0) {
+      return null;
+    }
+
+    return {
+      filters,
+      matchAny: false, // Use AND logic for date ranges
+    };
+  }
+
+  /**
+   * Issue #475: Merge timeframe filters with existing filters
+   */
+  private static mergeFilters(
+    existingFilters: Record<string, unknown> | undefined,
+    dateFilter: Record<string, unknown>
+  ): Record<string, unknown> {
+    if (!existingFilters) {
+      return dateFilter;
+    }
+
+    // If existing filters already has a filters array, merge them
+    if (
+      Array.isArray(existingFilters.filters) &&
+      Array.isArray(dateFilter.filters)
+    ) {
+      return {
+        ...existingFilters,
+        filters: [...existingFilters.filters, ...dateFilter.filters],
+      };
+    }
+
+    // Otherwise, create a new structure with both sets of filters
+    const existingFilterArray = Array.isArray(existingFilters.filters)
+      ? existingFilters.filters
+      : [];
+    const dateFilterArray = Array.isArray(dateFilter.filters)
+      ? dateFilter.filters
+      : [];
+
+    return {
+      ...existingFilters,
+      filters: [...existingFilterArray, ...dateFilterArray],
+      // Preserve existing matchAny logic if it exists
+      matchAny: existingFilters.matchAny || false,
+    };
   }
 }

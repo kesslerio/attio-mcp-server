@@ -53,7 +53,7 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 
 ### 🔧 **Advanced Capabilities**
 - **Batch Processing**: Handle bulk operations with error tracking
-- **Flexible Filtering**: Text, numeric, date, boolean, and relationship filters
+- **Enhanced Filtering**: Text, numeric, date, boolean, and relationship filters with timeframe search (Issue #475)
 - **Data Export**: JSON serialization for integrations
 - **Real-time Updates**: Live data synchronization with Attio
 
@@ -325,6 +325,8 @@ Deal stages are specific to your workspace. Check your Attio workspace settings 
 ### **For Sales Teams**
 ```
 "Find all companies in the AI space with 50+ employees that we haven't contacted in 30 days"
+"Show me all prospects added yesterday"
+"Find companies created in the last 7 days with revenue over $10M"
 "Create a task to follow up with Microsoft about the enterprise deal"
 "Add John Smith from Google to our Q1 prospect list"
 ```
