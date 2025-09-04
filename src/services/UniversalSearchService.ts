@@ -371,7 +371,15 @@ export class UniversalSearchService {
         );
 
       case UniversalResourceType.LISTS:
-        return this.searchLists(query, limit, offset);
+        return this.searchLists(
+          query,
+          limit,
+          offset,
+          search_type,
+          fields,
+          match_type,
+          sort
+        );
 
       case UniversalResourceType.RECORDS:
         return this.searchRecords_ObjectType(limit, offset, filters);
@@ -380,7 +388,17 @@ export class UniversalSearchService {
         return this.searchDeals(limit, offset, query);
 
       case UniversalResourceType.TASKS:
-        return this.searchTasks(perfId, apiStart, query, limit, offset);
+        return this.searchTasks(
+          perfId,
+          apiStart,
+          query,
+          limit,
+          offset,
+          search_type,
+          fields,
+          match_type,
+          sort
+        );
 
       case UniversalResourceType.NOTES:
         return this.searchNotes(
@@ -661,12 +679,16 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search lists and convert to AttioRecord format
+   * Search lists with content search support and convert to AttioRecord format
    */
   private static async searchLists(
     query?: string,
     limit?: number,
-    offset?: number
+    offset?: number,
+    search_type: SearchType = SearchType.BASIC,
+    fields?: string[],
+    match_type: MatchType = MatchType.PARTIAL,
+    sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     // Check for mock usage in E2E mode and throw if forbidden
     if (shouldUseMockData()) {
@@ -676,13 +698,22 @@ export class UniversalSearchService {
     }
 
     try {
-      const lists =
-        query && query.trim().length > 0
-          ? await searchLists(query, limit || 10, offset || 0)
-          : await searchLists('', limit || 10, offset || 0);
+      // For content search, fetch all lists to enable client-side filtering
+      let searchQuery = '';
+      let requestLimit = limit || 10;
+
+      if (search_type === SearchType.CONTENT && query && query.trim()) {
+        // Fetch more lists for client-side filtering
+        searchQuery = '';
+        requestLimit = 100; // Increased to allow for filtering
+      } else if (query && query.trim().length > 0) {
+        searchQuery = query;
+      }
+
+      const lists = await searchLists(searchQuery, requestLimit, 0);
 
       // Convert AttioList[] to AttioRecord[] format
-      return lists.map(
+      let records = lists.map(
         (list) =>
           ({
             id: {
@@ -700,6 +731,35 @@ export class UniversalSearchService {
             },
           }) as unknown as AttioRecord
       );
+
+      // Apply content search filtering if requested
+      if (search_type === SearchType.CONTENT && query && query.trim()) {
+        const searchFields = fields || ['name', 'description'];
+        const queryLower = query.trim().toLowerCase();
+
+        records = records.filter((record: AttioRecord) => {
+          return searchFields.some((field) => {
+            const fieldValue = this.getListFieldValue(record, field);
+            if (match_type === MatchType.EXACT) {
+              return fieldValue.toLowerCase() === queryLower;
+            } else {
+              return fieldValue.toLowerCase().includes(queryLower);
+            }
+          });
+        });
+
+        // Apply relevance ranking if requested
+        if (sort === SortType.RELEVANCE) {
+          records = this.rankByRelevance(records, query, searchFields);
+        }
+
+        // Apply pagination to filtered results
+        const start = offset || 0;
+        const end = start + (limit || 10);
+        return records.slice(start, end);
+      }
+
+      return records;
     } catch (error: unknown) {
       // Handle benign status codes (404/204) by returning empty success
       if (error && typeof error === 'object' && 'status' in error) {
@@ -854,14 +914,18 @@ export class UniversalSearchService {
   }
 
   /**
-   * Search tasks with performance optimization and caching
+   * Search tasks with performance optimization, caching, and content search support
    */
   private static async searchTasks(
     perfId: string,
     apiStart: number,
     query?: string,
     limit?: number,
-    offset?: number
+    offset?: number,
+    search_type: SearchType = SearchType.BASIC,
+    fields?: string[],
+    match_type: MatchType = MatchType.PARTIAL,
+    sort: SortType = SortType.NAME
   ): Promise<AttioRecord[]> {
     /**
      * PERFORMANCE-OPTIMIZED TASKS PAGINATION
@@ -921,27 +985,51 @@ export class UniversalSearchService {
       enhancedPerformanceTracker.markTiming(perfId, 'other', 1);
     }
 
-    // Smart pagination with early termination for unreasonable offsets
-    const start = offset || 0;
-    const requestedLimit = limit || 10;
-
     // Handle empty dataset cleanly
     if (tasks.length === 0) {
       return []; // No warning for empty datasets
     }
 
+    // Apply content search filtering if requested
+    let filteredTasks = tasks;
+    if (search_type === SearchType.CONTENT && query && query.trim()) {
+      const searchFields = fields || ['content', 'title', 'content_plaintext'];
+      const queryLower = query.trim().toLowerCase();
+
+      filteredTasks = tasks.filter((task: AttioRecord) => {
+        return searchFields.some((field) => {
+          const fieldValue = this.getTaskFieldValue(task, field);
+          if (match_type === MatchType.EXACT) {
+            return fieldValue.toLowerCase() === queryLower;
+          } else {
+            return fieldValue.toLowerCase().includes(queryLower);
+          }
+        });
+      });
+
+      // Apply relevance ranking if requested
+      if (sort === SortType.RELEVANCE) {
+        filteredTasks = this.rankByRelevance(
+          filteredTasks,
+          query,
+          searchFields
+        );
+      }
+    }
+
+    // Smart pagination with early termination for unreasonable offsets
+    const start = offset || 0;
+    const requestedLimit = limit || 10;
+
     // Performance optimization: Don't process if offset exceeds dataset
-    if (start >= tasks.length) {
+    if (start >= filteredTasks.length) {
       console.info(
-        `Tasks pagination: offset ${start} exceeds dataset size ${tasks.length}, returning empty results`
+        `Tasks pagination: offset ${start} exceeds filtered dataset size ${filteredTasks.length}, returning empty results`
       );
       return [];
     } else {
-      const end = Math.min(start + requestedLimit, tasks.length);
-      const paginatedTasks = tasks.slice(start, end);
-
-      // Tasks are already converted to AttioRecord[] in cache
-      const results = paginatedTasks;
+      const end = Math.min(start + requestedLimit, filteredTasks.length);
+      const paginatedTasks = filteredTasks.slice(start, end);
 
       // Log pagination performance metrics
       enhancedPerformanceTracker.markTiming(
@@ -950,7 +1038,7 @@ export class UniversalSearchService {
         fromCache ? 1 : performance.now() - apiStart
       );
 
-      return results;
+      return paginatedTasks;
     }
   }
 
@@ -1384,6 +1472,52 @@ export class UniversalSearchService {
     });
 
     return scoredResults.map((item) => item.record);
+  }
+
+  /**
+   * Helper method to extract field value from a list record
+   */
+  private static getListFieldValue(list: AttioRecord, field: string): string {
+    const values = list.values as Record<string, unknown>;
+    if (!values) return '';
+
+    const fieldValue = values[field];
+
+    // Handle different field value structures for lists
+    if (typeof fieldValue === 'string') {
+      return fieldValue;
+    } else if (
+      fieldValue &&
+      typeof fieldValue === 'object' &&
+      'value' in fieldValue
+    ) {
+      return String((fieldValue as { value: unknown }).value || '');
+    }
+
+    return '';
+  }
+
+  /**
+   * Helper method to extract field value from a task record
+   */
+  private static getTaskFieldValue(task: AttioRecord, field: string): string {
+    const values = task.values as Record<string, unknown>;
+    if (!values) return '';
+
+    const fieldValue = values[field];
+
+    // Handle different field value structures for tasks
+    if (typeof fieldValue === 'string') {
+      return fieldValue;
+    } else if (
+      fieldValue &&
+      typeof fieldValue === 'object' &&
+      'value' in fieldValue
+    ) {
+      return String((fieldValue as { value: unknown }).value || '');
+    }
+
+    return '';
   }
 
   /**
