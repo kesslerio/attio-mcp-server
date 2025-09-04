@@ -19,8 +19,25 @@ import { isValidFilterCondition } from '../../types/attio.js';
 export const ERROR_MESSAGES = {
   MISSING_FILTERS: 'Filter object is required but was undefined or null',
   FILTERS_NOT_ARRAY: (type: string) =>
-    `Invalid filter structure: 'filters' property must be an array but got ${type}`,
-  MISSING_FILTERS_PROPERTY: 'Filters must include a "filters" array property',
+    `Invalid filter structure: 'filters' property must be an array but got ${type}.
+
+Expected format:
+{
+  "filters": [
+    {"attribute": {"slug": "field_name"}, "condition": "contains", "value": "search_term"}
+  ]
+}`,
+  MISSING_FILTERS_PROPERTY: `Invalid filter format. Expected structure:
+{
+  "filters": [
+    {"attribute": {"slug": "field_name"}, "condition": "contains", "value": "search_term"}
+  ]
+}
+
+Common mistake: Using object format instead of array format. 
+Received an object without a "filters" array property.
+
+See documentation for more examples.`,
   EMPTY_FILTERS_ARRAY: 'No filters provided in the filters array',
   INVALID_FILTER_STRUCTURE: (index: number, reason: string) =>
     `Invalid filter structure at index ${index}: ${reason}`,
@@ -141,8 +158,8 @@ export function validateFiltersObject(
 export function collectInvalidFilters(
   filters: ListEntryFilter[],
   validateConditions: boolean = true
-): { index: number; reason: string; filter: any }[] {
-  const invalidFilters: { index: number; reason: string; filter: any }[] = [];
+): { index: number; reason: string; filter: unknown }[] {
+  const invalidFilters: { index: number; reason: string; filter: unknown }[] = [];
 
   // Check each filter in the array
   filters.forEach((filter, index) => {
@@ -207,7 +224,7 @@ export function collectInvalidFilters(
  * @returns Formatted error message with details
  */
 export function formatInvalidFiltersError(
-  invalidFilters: { index: number; reason: string; filter: any }[]
+  invalidFilters: { index: number; reason: string; filter: unknown }[]
 ): string {
   if (invalidFilters.length === 0) {
     return '';
@@ -274,9 +291,12 @@ export function validateFilters(
     const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
-    // Add examples to help the user fix their filters
+    // Add examples to help the user fix their filters - show relevant example based on context
+    const relevantExample = invalidFilters.length > 1 
+      ? FILTER_EXAMPLES.MULTIPLE_CONDITIONS 
+      : FILTER_EXAMPLES.SIMPLE;
     errorMessage +=
-      '\n\nExample of valid filter structure: \n' + FILTER_EXAMPLES.SIMPLE;
+      '\n\nExample of valid filter structure: \n' + relevantExample;
 
     // Determine most appropriate error category based on invalid filters
     let category = FilterErrorCategory.STRUCTURE;
@@ -306,25 +326,27 @@ export function validateFilters(
  * @param filter - The filter to analyze
  * @returns A string describing what's wrong with the filter
  */
-export function getInvalidFilterReason(filter: any): string {
+export function getInvalidFilterReason(filter: unknown): string {
   if (!filter || typeof filter !== 'object') {
     return `filter is ${filter === null ? 'null' : typeof filter}`;
   }
 
-  if (!filter.attribute) {
+  const filterObj = filter as Record<string, any>;
+
+  if (!filterObj.attribute) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE;
   }
 
-  if (!filter.attribute.slug) {
+  if (!filterObj.attribute.slug) {
     return ERROR_MESSAGES.MISSING_ATTRIBUTE_SLUG;
   }
 
-  if (!filter.condition) {
+  if (!filterObj.condition) {
     return ERROR_MESSAGES.MISSING_CONDITION;
   }
 
-  if (!isValidFilterCondition(filter.condition)) {
-    return `invalid condition '${filter.condition}'`;
+  if (!isValidFilterCondition(filterObj.condition)) {
+    return `invalid condition '${filterObj.condition}'`;
   }
 
   return 'unknown issue';
