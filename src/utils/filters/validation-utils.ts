@@ -291,9 +291,12 @@ export function validateFilters(
     const errorDetails = formatInvalidFiltersError(invalidFilters);
     let errorMessage = `${ERROR_MESSAGES.ALL_FILTERS_INVALID} ${errorDetails}`;
 
-    // Add examples to help the user fix their filters
+    // Add examples to help the user fix their filters - show relevant example based on context
+    const relevantExample = invalidFilters.length > 1 
+      ? FILTER_EXAMPLES.MULTIPLE_CONDITIONS 
+      : FILTER_EXAMPLES.SIMPLE;
     errorMessage +=
-      '\n\nExample of valid filter structure: \n' + FILTER_EXAMPLES.SIMPLE;
+      '\n\nExample of valid filter structure: \n' + relevantExample;
 
     // Determine most appropriate error category based on invalid filters
     let category = FilterErrorCategory.STRUCTURE;
