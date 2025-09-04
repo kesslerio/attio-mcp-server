@@ -45,7 +45,7 @@ function extractAttioRecord(response: any) {
   const maybeData = (payload && (payload.data ?? payload)) ?? null;
 
   // Peel { record: {...} } if present
-  let rec =
+  const rec =
     maybeData && typeof maybeData === 'object' && 'record' in maybeData
       ? (maybeData as any).record
       : maybeData;

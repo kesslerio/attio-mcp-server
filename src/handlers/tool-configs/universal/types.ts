@@ -124,11 +124,13 @@ export enum RelationshipType {
 }
 
 /**
- * Search type options for content search
+ * Search type options for different search modes
  */
 export enum SearchType {
   BASIC = 'basic',
   CONTENT = 'content',
+  RELATIONSHIP = 'relationship',
+  TIMEFRAME = 'timeframe',
 }
 
 /**
@@ -163,6 +165,17 @@ export interface UniversalSearchParams {
   fields?: string[];
   match_type?: MatchType;
   sort?: SortType;
+  // New TC-010: Relationship search parameters
+  relationship_target_type?: UniversalResourceType;
+  relationship_target_id?: string;
+  // New TC-012: Timeframe search parameters
+  timeframe_attribute?: string;
+  start_date?: string;
+  end_date?: string;
+  date_operator?: 'greater_than' | 'less_than' | 'between' | 'equals';
+  // New TC-011: Enhanced content search parameters
+  content_fields?: string[];
+  use_or_logic?: boolean;
 }
 
 /**

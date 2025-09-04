@@ -258,7 +258,7 @@ export class UniversalUpdateService {
       );
     }
 
-    let { mapped: mappedData, warnings } = mappingResult;
+    const { mapped: mappedData, warnings } = mappingResult;
     if (warnings.length > 0) {
       debug('UniversalUpdateService', 'Field mapping applied:', {
         warnings: warnings.join('\n'),
@@ -533,7 +533,7 @@ export class UniversalUpdateService {
     const hasForbiddenFields = this.hasForbiddenContent(attioPayload.values);
 
     // 2) Check existence - only if input validation passes
-    let taskExists = true;
+    const taskExists = true;
     try {
       // In mock mode, skip live existence check; otherwise verify via API
       if (!shouldUseMockData()) {
@@ -799,7 +799,7 @@ export class UniversalUpdateService {
       if (typeof value === 'string') {
         // Preserve special characters but ensure they're properly encoded for API
         // The goal is to maintain the user's intended content exactly as provided
-        let sanitizedValue = value;
+        const sanitizedValue = value;
 
         // Only apply minimal sanitization that doesn't change content meaning
         // Preserve quotes, newlines, tabs, and special characters as-is

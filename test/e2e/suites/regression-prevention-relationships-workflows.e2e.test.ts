@@ -21,7 +21,7 @@ import { startTestSuite, endTestSuite } from '../utils/logger.js';
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Regression Prevention – Relationships & Workflows', () => {
-  let testRecordIds: string[] = [];
+  const testRecordIds: string[] = [];
   const T45 = 45000,
     T60 = 60000;
   let prevForceRealApi: string | undefined;

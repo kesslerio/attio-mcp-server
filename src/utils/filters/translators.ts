@@ -23,6 +23,8 @@ import {
   ListEntryFilters,
   ListEntryFilter,
   AttioApiFilter,
+  AttioQueryApiFilter,
+  PathConstraint,
   FilterConditionType,
   FIELD_SPECIAL_HANDLING,
 } from './types.js';
@@ -192,6 +194,123 @@ export function transformFiltersToApiFormat(
     validateConditions,
     isListEntryContext
   );
+}
+
+/**
+ * Transforms list entry filters to the new Query API format with path and constraints
+ * 
+ * This function creates the proper Attio Query API structure as required by Issue #523.
+ * Uses path-based filtering with constraints for relationship, content, and timeframe searches.
+ * 
+ * @param filters - Filter configuration from the MCP API
+ * @param validateConditions - Whether to validate condition types
+ * @returns Query API formatted filter object
+ * @throws FilterValidationError if validation fails
+ */
+export function transformFiltersToQueryApiFormat(
+  filters: ListEntryFilters | undefined,
+  validateConditions: boolean = true
+): AttioQueryApiFilter {
+  // Handle undefined/null filters gracefully
+  if (!filters) {
+    return {};
+  }
+
+  // Check if filters has a filters property and it's an array
+  if (!('filters' in filters) || !Array.isArray(filters.filters)) {
+    return {};
+  }
+
+  // If filters array is empty, return empty result
+  if (filters.filters.length === 0) {
+    return {};
+  }
+
+  try {
+    // Use the central validation utility for consistent error messages
+    const validatedFilters = validateFilters(filters, validateConditions);
+
+    // Check if filters array exists and handle undefined case
+    if (!validatedFilters.filters || validatedFilters.filters.length === 0) {
+      return {};
+    }
+
+    // Single filter case
+    if (validatedFilters.filters.length === 1) {
+      const filter = validatedFilters.filters[0];
+      return {
+        filter: {
+          path: [filter.attribute.slug],
+          constraints: [
+            {
+              operator: filter.condition,
+              value: filter.value,
+            },
+          ],
+        },
+      };
+    }
+
+    // Multiple filters case
+    const useOrLogic = validatedFilters.matchAny === true;
+    
+    if (useOrLogic) {
+      // OR logic: create array of individual filter objects
+      const orConditions = validatedFilters.filters.map(filter => ({
+        path: [filter.attribute.slug],
+        constraints: [
+          {
+            operator: filter.condition,
+            value: filter.value,
+          },
+        ],
+      }));
+
+      return {
+        filter: {
+          $or: orConditions.map(condition => ({ filter: condition })),
+        },
+      };
+    } else {
+      // AND logic: create single filter with multiple constraints
+      // For now, we'll use $and structure for multiple different attributes
+      const andConditions = validatedFilters.filters.map(filter => ({
+        filter: {
+          path: [filter.attribute.slug],
+          constraints: [
+            {
+              operator: filter.condition,
+              value: filter.value,
+            },
+          ],
+        },
+      }));
+
+      return {
+        filter: {
+          $and: andConditions,
+        },
+      };
+    }
+  } catch (error: unknown) {
+    // Check if this is a FilterValidationError
+    if (error instanceof FilterValidationError) {
+      // For condition validation errors when validateConditions is true, re-throw
+      if (
+        validateConditions &&
+        (error.message.includes('Invalid condition') ||
+          error.message.includes('Invalid filter condition'))
+      ) {
+        throw error;
+      }
+
+      // For structure errors (missing properties), return empty result instead of throwing
+      return {};
+    }
+
+    // Re-throw non-FilterValidationError errors
+    throw error;
+  }
 }
 
 /**

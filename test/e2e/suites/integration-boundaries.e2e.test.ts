@@ -62,7 +62,7 @@ function firstRecordIdFromSearch(
 describe.skipIf(
   !process.env.ATTIO_API_KEY || process.env.SKIP_E2E_TESTS === 'true'
 )('Integration Boundaries E2E Tests', () => {
-  let testRecordIds: string[] = [];
+  const testRecordIds: string[] = [];
 
   beforeAll(async () => {
     const validation = await validateTestEnvironment();

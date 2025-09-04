@@ -56,6 +56,59 @@ export type AttioApiFilter = {
 };
 
 /**
+ * New Query API format for Attio - proper path-based filtering
+ * Based on Attio API documentation for advanced filtering with constraints
+ */
+export interface AttioQueryApiFilter {
+  filter?: {
+    path: string[];
+    constraints: {
+      operator: string;
+      value: unknown;
+    }[];
+  } | {
+    $and?: AttioQueryApiFilter[];
+    $or?: AttioQueryApiFilter[];
+  } | {
+    [field: string]: {
+      [operator: string]: any;
+    };
+  };
+}
+
+/**
+ * Path constraint for relationship queries
+ */
+export interface PathConstraint {
+  path: string[];
+  constraints: {
+    operator: string;
+    value: unknown;
+  }[];
+}
+
+/**
+ * Relationship query configuration
+ */
+export interface RelationshipQuery {
+  sourceObjectType: string;
+  targetObjectType: string;
+  targetAttribute: string;
+  condition: string;
+  value: unknown;
+}
+
+/**
+ * Timeframe query configuration
+ */
+export interface TimeframeQuery {
+  attribute: string;
+  startDate?: string;
+  endDate?: string;
+  operator: 'greater_than' | 'less_than' | 'between' | 'equals';
+}
+
+/**
  * Error type for rate-limiting on relationship queries
  */
 export class RelationshipRateLimitError extends Error {
