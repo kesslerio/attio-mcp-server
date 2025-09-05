@@ -1,8 +1,6 @@
 # Attio Lists API
 
-✅ **Implementation Status**: Lists API is **fully implemented** with 11 MCP tools providing complete CRUD operations and advanced filtering capabilities.
-
-The Lists API allows you to manage lists within Attio. Lists provide organized views of records, with optional filtering, sorting, and grouping.
+The Lists API allows you to manage lists within Attio. Lists provide organized views of records, with optional filtering, sorting, and grouping. The Lists API is fully implemented with 11 MCP tools providing complete CRUD operations and advanced filtering capabilities.
 
 ## 🚀 **Available MCP Tools**
 

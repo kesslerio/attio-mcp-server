@@ -39,11 +39,6 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 - **Timeframe Filters**: Date range filtering implemented, some edge cases may exist
 - **Field Filtering**: Basic field selection available, may not support all attribute types
 
-#### 📋 **Planned / Not Yet Available**
-- **Advanced Analytics**: AI-powered insights and recommendations
-- **Custom Workflow Builders**: Visual automation workflows  
-- **Third-Party Sync**: HubSpot, Salesforce integrations
-
 ### 📊 **Company Management**
 - **Universal Search**: Find companies with `search-records` and `advanced-search`
 - **Full CRUD**: Create, read, update, and delete with universal record operations
@@ -81,8 +76,6 @@ Transform your CRM workflows with AI-powered automation. Instead of clicking thr
 ## ⚠️ **Known Limitations & Important Notes**
 
 ### **Current Limitations**
-- **Task Display Names**: Some tasks may show as "Unnamed" when title field is not properly populated ([Issue #472](https://github.com/kesslerio/attio-mcp-server/issues/472))
-- **JSON Serialization**: Large responses may encounter truncation in some edge cases ([Issue #469](https://github.com/kesslerio/attio-mcp-server/issues/469))
 - **Field Parameter Filtering**: Tasks endpoint `/objects/tasks/attributes` has limitations, handled with fallback patterns
 - **Pagination**: Tasks pagination uses in-memory handling due to API constraints
 
@@ -545,12 +538,7 @@ We welcome contributions! Please see our [Contributing Guidelines](./CONTRIB.md)
 
 ## 📈 What's Next?
 
-This initial release provides a solid foundation for CRM automation. Future versions will include:
-
-- **Enhanced AI Insights**: AI-powered data analysis and recommendations
-- **Custom Workflow Builders**: Visual workflow creation for complex automations
-- **Advanced Reporting**: Comprehensive analytics and dashboard integrations
-- **Third-Party Integrations**: HubSpot, Salesforce, and other CRM sync capabilities
+This initial release provides a solid foundation for CRM automation.
 
 ## 🔗 Links
 
