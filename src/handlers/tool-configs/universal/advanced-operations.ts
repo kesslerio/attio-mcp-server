@@ -17,6 +17,7 @@ import {
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
+  DateField,
 } from './types.js';
 
 import {
@@ -665,16 +666,32 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         offset 
       } = sanitizedParams;
 
+      // Type assertion for better type safety - date_field should be one of the allowed values
+      const typedDateField = date_field as DateField | undefined;
+
       // Convert relative_range to start_date/end_date if provided
       if (relative_range) {
         let dateRange: { start: string; end: string };
         
-        // Convert underscore format to space format for parsing
-        // e.g., "last_7_days" -> "last 7 days"
+        /**
+         * Normalization Logic for Relative Date Ranges
+         * 
+         * This logic handles the conversion between different relative date formats:
+         * 1. Schema format (underscore): "last_7_days", "this_week" 
+         * 2. Parser format (spaces): "last 7 days", "this week"
+         * 
+         * The normalization process:
+         * - Replace number patterns: "last_7_days" -> "last 7 days" 
+         * - Replace remaining underscores: "this_week" -> "this week"
+         * - Convert to lowercase for consistent parsing
+         * 
+         * This allows the same tool to accept both user-friendly formats
+         * while maintaining compatibility with existing date parsing utilities.
+         */
         const normalizedRange = relative_range
-          .replace(/_(\d+)_/g, ' $1 ')  // "last_7_days" -> "last 7 days"
-          .replace(/_/g, ' ')           // "this_week" -> "this week"
-          .toLowerCase();
+          .replace(/_(\d+)_/g, ' $1 ')  // Handle number patterns: "last_7_days" -> "last 7 days"
+          .replace(/_/g, ' ')           // Handle word separators: "this_week" -> "this week"
+          .toLowerCase();               // Ensure consistent case for parsing
         
         // Handle relative ranges with space format
         if (isRelativeDate(normalizedRange)) {
@@ -699,9 +716,19 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         end_date = dateRange.end;
       }
 
-      // Derive timeframe_type from date_field if not provided
-      if (!timeframe_type && date_field) {
-        switch (date_field) {
+      /**
+       * Timeframe Type Derivation Logic
+       * 
+       * When timeframe_type is not explicitly provided, we derive it from the date_field:
+       * - 'created_at' maps to TimeframeType.CREATED (record creation dates)
+       * - 'updated_at' maps to TimeframeType.MODIFIED (record modification dates)  
+       * - 'due_date' maps to TimeframeType.MODIFIED (fallback - no dedicated DUE_DATE type)
+       * 
+       * This automatic mapping allows users to specify just date_field and get
+       * appropriate timeframe handling without needing to understand internal types.
+       */
+      if (!timeframe_type && typedDateField) {
+        switch (typedDateField) {
           case 'created_at':
             timeframe_type = TimeframeType.CREATED;
             break;
