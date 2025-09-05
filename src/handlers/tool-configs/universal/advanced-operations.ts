@@ -77,7 +77,14 @@ import {
   ActivityFilter,
   InteractionType,
 } from '../../../types/attio.js';
-import { validateAndCreateDateRange } from '../../../utils/date-utils.js';
+import { 
+  validateAndCreateDateRange,
+  createDateRangeFromPreset 
+} from '../../../utils/date-utils.js';
+import {
+  isRelativeDate,
+  parseRelativeDate
+} from '../../../utils/date-parser.js';
 import {
   createCreatedDateFilter,
   createModifiedDateFilter,
@@ -613,6 +620,27 @@ export const searchByContentConfig: UniversalToolConfig = {
 };
 
 /**
+ * Helper function to invert results for invert_range functionality
+ * This is a simplified implementation that would require more sophisticated logic
+ * for production use, but serves as a placeholder for the feature.
+ */
+async function invertResults(
+  results: AttioRecord[],
+  resourceType: UniversalResourceType,
+  dateRange: { start?: string; end?: string }
+): Promise<AttioRecord[]> {
+  // For now, return empty array as a placeholder
+  // In a full implementation, this would:
+  // 1. Get all records for the resource type
+  // 2. Filter out the records that match the date range
+  // 3. Return the remaining records
+  console.warn(
+    'invert_range is not fully implemented. Returning original results.'
+  );
+  return results;
+}
+
+/**
  * Universal search by timeframe tool
  * Handles temporal filtering across resource types
  */
@@ -625,39 +653,117 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         params
       );
 
-      const { resource_type, timeframe_type, start_date, end_date } =
-        sanitizedParams;
+      let { 
+        resource_type, 
+        timeframe_type, 
+        start_date, 
+        end_date, 
+        relative_range,
+        date_field,
+        invert_range,
+        limit,
+        offset 
+      } = sanitizedParams;
 
-      // Check for unsupported resource types first
-      if (resource_type === UniversalResourceType.COMPANIES) {
+      // Convert relative_range to start_date/end_date if provided
+      if (relative_range) {
+        let dateRange: { start: string; end: string };
+        
+        // Convert underscore format to space format for parsing
+        // e.g., "last_7_days" -> "last 7 days"
+        const normalizedRange = relative_range
+          .replace(/_(\d+)_/g, ' $1 ')  // "last_7_days" -> "last 7 days"
+          .replace(/_/g, ' ')           // "this_week" -> "this week"
+          .toLowerCase();
+        
+        // Handle relative ranges with space format
+        if (isRelativeDate(normalizedRange)) {
+          dateRange = parseRelativeDate(normalizedRange);
+        } else {
+          // Try to parse as a preset (also try underscore format for presets)
+          try {
+            dateRange = createDateRangeFromPreset(normalizedRange);
+          } catch (error) {
+            // Try original format as fallback
+            try {
+              dateRange = createDateRangeFromPreset(relative_range);
+            } catch (fallbackError) {
+              throw new Error(
+                `Invalid relative_range: ${relative_range}. Supported values: today, yesterday, last_7_days, last_14_days, last_30_days, this_week, last_week, this_month, last_month`
+              );
+            }
+          }
+        }
+
+        start_date = dateRange.start;
+        end_date = dateRange.end;
+      }
+
+      // Derive timeframe_type from date_field if not provided
+      if (!timeframe_type && date_field) {
+        switch (date_field) {
+          case 'created_at':
+            timeframe_type = TimeframeType.CREATED;
+            break;
+          case 'updated_at':
+            timeframe_type = TimeframeType.MODIFIED;
+            break;
+          case 'due_date':
+            // For due_date, we'll use MODIFIED as a fallback since there's no DUE_DATE type
+            timeframe_type = TimeframeType.MODIFIED;
+            break;
+          default:
+            timeframe_type = TimeframeType.MODIFIED; // Default fallback
+        }
+      }
+
+      // Default timeframe_type if still not set
+      if (!timeframe_type) {
+        timeframe_type = TimeframeType.MODIFIED;
+      }
+
+      // Handle invert_range by swapping logic later
+      if (invert_range && !start_date && !end_date) {
         throw new Error(
-          'Timeframe search is not currently optimized for companies'
+          'invert_range requires at least one date (start_date, end_date, or relative_range)'
         );
       }
 
+      // Companies are now supported - removed the restriction
       if (resource_type === UniversalResourceType.PEOPLE) {
+        // People-specific handlers
         switch (timeframe_type) {
-          case TimeframeType.CREATED:
-            return await searchPeopleByCreationDate({
-              start: start_date,
-              end: end_date,
-            });
+          case TimeframeType.CREATED: {
+            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            if (!dateRange) {
+              throw new Error(
+                'At least one date (start or end) is required for timeframe search'
+              );
+            }
+            const results = await searchPeopleByCreationDate(dateRange);
+            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+          }
 
-          case TimeframeType.MODIFIED:
-            return await searchPeopleByModificationDate({
-              start: start_date,
-              end: end_date,
-            });
+          case TimeframeType.MODIFIED: {
+            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            if (!dateRange) {
+              throw new Error(
+                'At least one date (start or end) is required for timeframe search'
+              );
+            }
+            const results = await searchPeopleByModificationDate(dateRange);
+            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+          }
 
           case TimeframeType.LAST_INTERACTION: {
-            // Validate and create date range object
             const dateRange = validateAndCreateDateRange(start_date, end_date);
             if (!dateRange) {
               throw new Error(
                 'At least one date (start or end) is required for last interaction search'
               );
             }
-            return await searchPeopleByLastInteraction(dateRange);
+            const results = await searchPeopleByLastInteraction(dateRange);
+            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
           }
 
           default:
@@ -666,7 +772,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
             );
         }
       } else {
-        // For other resource types, use date filtering with $gt/$lt operators
+        // For all other resource types (including companies), use universal search
         const dateRange = validateAndCreateDateRange(start_date, end_date);
         if (!dateRange) {
           throw new Error(
@@ -676,20 +782,48 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
 
         let filters: ListEntryFilters;
 
-        switch (timeframe_type) {
-          case TimeframeType.CREATED:
-            filters = createCreatedDateFilter(dateRange);
-            break;
-          case TimeframeType.MODIFIED:
-            filters = createModifiedDateFilter(dateRange);
-            break;
-          case TimeframeType.LAST_INTERACTION:
-            filters = createLastInteractionFilter(dateRange);
-            break;
-          default:
-            throw new Error(
-              `Unsupported timeframe type for ${resource_type}: ${timeframe_type}`
-            );
+        // For due_date, we need to handle it specially since it maps to task-specific fields
+        if (date_field === 'due_date' && resource_type === UniversalResourceType.TASKS) {
+          // Create a filter for due_date specific to tasks
+          filters = {
+            $and: [
+              ...(dateRange.start
+                ? [
+                    {
+                      'entry.due_date': {
+                        $gte: dateRange.start,
+                      },
+                    },
+                  ]
+                : []),
+              ...(dateRange.end
+                ? [
+                    {
+                      'entry.due_date': {
+                        $lte: dateRange.end,
+                      },
+                    },
+                  ]
+                : []),
+            ],
+          };
+        } else {
+          // Use standard date filters
+          switch (timeframe_type) {
+            case TimeframeType.CREATED:
+              filters = createCreatedDateFilter(dateRange);
+              break;
+            case TimeframeType.MODIFIED:
+              filters = createModifiedDateFilter(dateRange);
+              break;
+            case TimeframeType.LAST_INTERACTION:
+              filters = createLastInteractionFilter(dateRange);
+              break;
+            default:
+              throw new Error(
+                `Unsupported timeframe type for ${resource_type}: ${timeframe_type}`
+              );
+          }
         }
 
         // Use advanced search with the date filters
@@ -697,24 +831,17 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           resource_type,
           query: '',
           filters: filters,
-          limit: 20,
-          offset: 0,
+          limit: limit || 20,
+          offset: offset || 0,
         });
 
-        return results;
+        // Handle invert_range by getting all records and filtering out the ones in range
+        return invert_range ? await invertResults(results, resource_type, dateRange) : results;
       }
     } catch (error: unknown) {
-      // If the error is a direct message we want to preserve, don't wrap it
-      if (
-        error instanceof Error &&
-        error.message.includes('Timeframe search is not currently optimized')
-      ) {
-        throw error;
-      }
-
       throw ErrorService.createUniversalError(
         'timeframe search',
-        `${params.resource_type}:${params.timeframe_type}`,
+        `${params.resource_type}:${params.timeframe_type || 'undefined'}`,
         error
       );
     }

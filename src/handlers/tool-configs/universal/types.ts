@@ -298,9 +298,12 @@ export interface ContentSearchParams {
  */
 export interface TimeframeSearchParams {
   resource_type: UniversalResourceType;
-  timeframe_type: TimeframeType;
+  timeframe_type?: TimeframeType; // Make optional since it can be derived from date_field
   start_date?: string;
   end_date?: string;
+  relative_range?: string; // New: Support relative dates like 'today', 'last_7_days', etc.
+  date_field?: string; // New: Field to filter on (created_at, updated_at, due_date)
+  invert_range?: boolean; // New: Find records NOT in the date range
   limit?: number;
   offset?: number;
 }

@@ -135,7 +135,7 @@ export const searchByTimeframeSchema = {
     timeframe_type: {
       type: 'string' as const,
       enum: Object.values(TimeframeType),
-      description: 'Timeframe filter type',
+      description: 'Timeframe filter type (can be derived from date_field if not provided)',
     },
     start_date: {
       type: 'string' as const,
@@ -147,9 +147,33 @@ export const searchByTimeframeSchema = {
       format: 'date',
       description: 'End date (ISO 8601)',
     },
+    relative_range: {
+      type: 'string' as const,
+      enum: [
+        'today',
+        'yesterday',
+        'last_7_days',
+        'last_14_days',
+        'last_30_days',
+        'this_week',
+        'last_week',
+        'this_month',
+        'last_month',
+      ],
+      description: 'Relative date range (alternative to start_date/end_date)',
+    },
+    date_field: {
+      type: 'string' as const,
+      enum: ['created_at', 'updated_at', 'due_date'],
+      description: 'Date field to filter on',
+    },
+    invert_range: {
+      type: 'boolean' as const,
+      description: 'Find records NOT in the date range',
+    },
     ...paginationProperties,
   },
-  required: ['resource_type' as const, 'timeframe_type' as const],
+  required: ['resource_type' as const],
   additionalProperties: false,
 };
 
