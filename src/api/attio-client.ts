@@ -6,7 +6,7 @@ import { debug, error, OperationType } from '../utils/logger.js';
 import { fileURLToPath } from 'url';
 
 // module banner – shows up as soon as the file is evaluated
-// @ts-ignore - import.meta is valid with NodeNext module resolution in tsconfig.json
+// import.meta is valid with NodeNext module resolution in tsconfig.json
 const MODULE_FILE = fileURLToPath(import.meta.url);
 // Debug loading info - use logger instead of console.log to avoid JSON parsing issues
 debug('attio-client', 'Module loaded', {

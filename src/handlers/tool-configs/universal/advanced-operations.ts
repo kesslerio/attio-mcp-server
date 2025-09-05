@@ -266,11 +266,33 @@ export const advancedSearchConfig: UniversalToolConfig = {
       .map((record: Record<string, unknown>, index: number) => {
         const values = record.values as Record<string, unknown> | undefined;
         const recordId = record.id as Record<string, unknown> | undefined;
-        const name =
-          coerce(values?.name) ||
-          coerce(values?.full_name) ||
-          coerce(values?.title) ||
-          'Unnamed';
+        
+        // Enhanced name extraction that handles person name structure
+        let name = 'Unnamed';
+        
+        // For people: Try person-specific name fields first
+        if (resourceType === UniversalResourceType.PEOPLE) {
+          const nameArray = values?.name as any[];
+          if (Array.isArray(nameArray) && nameArray.length > 0) {
+            name = nameArray[0]?.full_name || 
+                   nameArray[0]?.value || 
+                   nameArray[0]?.formatted || 
+                   'Unnamed';
+          } else {
+            // Fallback to other person name fields
+            const fullNameArray = values?.full_name as any[];
+            if (Array.isArray(fullNameArray) && fullNameArray.length > 0) {
+              name = fullNameArray[0]?.value || 'Unnamed';
+            }
+          }
+        } else {
+          // For other resource types: Use original logic
+          name = coerce(values?.name) ||
+                 coerce(values?.full_name) ||
+                 coerce(values?.title) ||
+                 'Unnamed';
+        }
+        
         const id = (recordId?.record_id as string) || 'unknown';
 
         // Include additional context for advanced search results

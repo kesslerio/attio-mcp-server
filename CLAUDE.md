@@ -26,9 +26,12 @@ RULE: Use smart test selection | WHEN: Local development | DO: `npm run test:aff
 
 ## TEST DATA CLEANUP
 
-RULE: Always cleanup test data | WHEN: After testing | DO: Use automated cleanup utilities | ELSE: Attio workspace pollution
-`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion
-⚠️ CRITICAL: Use `--dry-run` first to preview deletions | Supports custom prefixes: `--prefix=TEST_,QA_,E2E_,DEMO_`
+RULE: Always use API token filtering | WHEN: Cleaning test data | DO: Use WORKSPACE_API_UUID | ELSE: Risk deleting other users' data
+RULE: Verify before deletion | WHEN: Running cleanup | DO: Always dry-run first | ELSE: Accidental data loss
+
+### Commands
+`npm run cleanup:test-data` - Dry run preview (safe) | `npm run cleanup:test-data:live` - Live deletion  
+⚠️ CRITICAL: Set `WORKSPACE_API_UUID` in .env | Only deletes MCP server data via API token filtering
 
 ## TESTING REQUIREMENTS [ISSUE #480 ENHANCED]
 

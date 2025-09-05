@@ -38,7 +38,7 @@ export interface ErrorContext {
   /** Original error for debugging */
   originalError?: Error;
   /** Server response data for debugging */
-  serverData?: any;
+  serverData?: Record<string, unknown>;
 }
 
 /**

@@ -263,7 +263,7 @@ Complete guide to using timeframe search functionality in the Attio MCP Server.
 For complete API documentation, see:
 - [Universal Search Service](../src/services/UniversalSearchService.ts)
 - [Timeframe Utils](../src/utils/filters/timeframe-utils.ts)
-- [MCP Test Examples](../test/mcp/comprehensive-timeframe-validation.test.ts)
+- [MCP Test Examples](../test/e2e/mcp/comprehensive-timeframe-validation.test.ts)
 
 ## 🔗 Related Documentation
 

@@ -173,7 +173,7 @@ class ApiTokenCleanup {
         }
         return 'Unknown';
       case 'tasks':
-        return record.content || record.title || 'Unknown';
+        return record.content_plaintext || record.content || record.title || 'Unknown';
       case 'lists':
         return record.name || 'Unknown';
       case 'notes':
@@ -543,12 +543,230 @@ class ApiTokenCleanup {
    * Placeholder cleanup methods for other resource types
    * These would need to be implemented similar to cleanupCompanies
    */
+  /**
+   * Clean up people with API token filtering
+   */
   private async cleanupPeople(): Promise<void> {
-    console.log('  ⚠️  People cleanup not yet implemented in this version');
+    const people = await this.findRecordsByToken('people');
+    this.stats.people.found = people.length;
+
+    if (people.length === 0) {
+      console.log('  ✅ No people found');
+      return;
+    }
+
+    console.log(`  🔍 Found ${people.length} people`);
+
+    // Filter out excluded records
+    const filteredPeople = people.filter(person => {
+      const shouldSkip = this.shouldExclude(person, 'people');
+      if (shouldSkip) {
+        this.stats.people.skipped++;
+      }
+      return !shouldSkip;
+    });
+
+    console.log(`  📋 After exclusions: ${filteredPeople.length} people to process`);
+    if (this.stats.people.skipped > 0) {
+      console.log(`  ⏭️  Skipped: ${this.stats.people.skipped} people (whitelist/exclusion patterns)`);
+    }
+
+    if (this.options.dryRun) {
+      filteredPeople.forEach((person, index) => {
+        const name = this.extractRecordName(person, 'people');
+        const reason = this.getDeletionReason(person);
+        const isRealData = this.looksLikeRealData(person, 'people');
+        const warning = isRealData ? ' ⚠️  LOOKS LIKE REAL DATA' : '';
+        const createdAt = person.created_at || person.values?.created_at?.[0]?.value || 'Unknown';
+        
+        console.log(
+          `    ${index + 1}. ${name} (${person.id.record_id})${warning}`
+        );
+        console.log(`       Reason: ${reason} | Created: ${createdAt}`);
+      });
+      return;
+    }
+
+    // Process in parallel chunks
+    const chunks = this.chunkArray(filteredPeople, this.options.parallel);
+
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map(async (person) => {
+          try {
+            await retryWithBackoff(async () => {
+              await this.client.delete(
+                `/objects/people/records/${person.id.record_id}`
+              );
+            });
+
+            // Log deletion
+            if (this.options.auditLog) {
+              this.auditLog.push({
+                resourceType: 'people',
+                recordId: person.id.record_id,
+                name: this.extractRecordName(person, 'people'),
+                deletionReason: this.getDeletionReason(person),
+                createdAt: person.created_at || person.values?.created_at?.[0]?.value || 'Unknown',
+                createdBy: person.values?.created_by?.[0]?.referenced_actor_id || 'Unknown',
+                timestamp: new Date().toISOString(),
+                recordData: person
+              });
+            }
+
+            this.stats.people.deleted++;
+            if (this.options.verbose) {
+              console.log(
+                `    ✅ Deleted: ${this.extractRecordName(person, 'people')}`
+              );
+            }
+          } catch (error) {
+            this.stats.people.errors++;
+            console.error(
+              `    ❌ Failed to delete person ${person.id.record_id}:`,
+              getDetailedErrorMessage(error)
+            );
+          }
+        })
+      );
+
+      // Rate limiting between chunks
+      if (chunks.indexOf(chunk) < chunks.length - 1) {
+        await waitForRateLimit(200);
+      }
+    }
   }
 
+  /**
+   * Clean up tasks with API token filtering
+   */
   private async cleanupTasks(): Promise<void> {
-    console.log('  ⚠️  Tasks cleanup not yet implemented in this version');
+    try {
+      // Get all tasks first (no API token filtering available in tasks API)
+      const response = await retryWithBackoff(async () => {
+        return this.client.get('/tasks?pageSize=500');
+      });
+
+      const allTasks = response.data?.data ?? [];
+      
+      // Debug: Show structure of first task to help with future field issues
+      if (allTasks.length > 0 && process.env.DEBUG_TASK_STRUCTURE) {
+        console.log('📋 Debug: First task structure:', JSON.stringify(allTasks[0], null, 2));
+      }
+      
+      // Filter tasks by API token and prefixes client-side
+      const tasks = allTasks.filter((task: any) => {
+        // Check API token match if in api-token or both mode
+        if (this.options.filterMode === 'api-token' || this.options.filterMode === 'both') {
+          const createdByApiToken = task.created_by?.referenced_actor_id === this.options.apiToken;
+          if (!createdByApiToken) {
+            return false;
+          }
+        }
+
+        // Check prefix match if in prefix or both mode
+        if (this.options.filterMode === 'prefix' || this.options.filterMode === 'both') {
+          const content = task.content_plaintext || task.content || task.title || '';
+          const matchesPrefix = this.options.prefixes.some(prefix => 
+            content.startsWith(prefix)
+          );
+          if (!matchesPrefix) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      this.stats.tasks.found = tasks.length;
+
+      if (tasks.length === 0) {
+        console.log('  ✅ No tasks found');
+        return;
+      }
+
+      console.log(`  🔍 Found ${tasks.length} tasks`);
+
+      // Filter out excluded records
+      const filteredTasks = tasks.filter(task => {
+        const shouldSkip = this.shouldExclude(task, 'tasks');
+        if (shouldSkip) {
+          this.stats.tasks.skipped++;
+        }
+        return !shouldSkip;
+      });
+
+      console.log(`  📋 After exclusions: ${filteredTasks.length} tasks to process`);
+      if (this.stats.tasks.skipped > 0) {
+        console.log(`  ⏭️  Skipped: ${this.stats.tasks.skipped} tasks (whitelist/exclusion patterns)`);
+      }
+
+      if (this.options.dryRun) {
+        filteredTasks.forEach((task, index) => {
+          const name = this.extractRecordName(task, 'tasks');
+          const reason = this.getDeletionReason(task);
+          const isRealData = this.looksLikeRealData(task, 'tasks');
+          const warning = isRealData ? ' ⚠️  LOOKS LIKE REAL DATA' : '';
+          const createdAt = task.created_at || 'Unknown';
+          
+          console.log(
+            `    ${index + 1}. ${name} (${task.id?.task_id || 'unknown'})${warning}`
+          );
+          console.log(`       Reason: ${reason} | Created: ${createdAt}`);
+        });
+        return;
+      }
+
+      // Process in parallel chunks
+      const chunks = this.chunkArray(filteredTasks, this.options.parallel);
+
+      for (const chunk of chunks) {
+        await Promise.all(
+          chunk.map(async (task) => {
+            try {
+              await retryWithBackoff(async () => {
+                await this.client.delete(`/tasks/${task.id?.task_id}`);
+              });
+
+              // Log deletion
+              if (this.options.auditLog) {
+                this.auditLog.push({
+                  resourceType: 'tasks',
+                  recordId: task.id?.task_id || 'unknown',
+                  name: this.extractRecordName(task, 'tasks'),
+                  deletionReason: this.getDeletionReason(task),
+                  createdAt: task.created_at || 'Unknown',
+                  createdBy: task.created_by?.referenced_actor_id || 'Unknown',
+                  timestamp: new Date().toISOString(),
+                  recordData: task
+                });
+              }
+
+              this.stats.tasks.deleted++;
+              if (this.options.verbose) {
+                console.log(
+                  `    ✅ Deleted: ${this.extractRecordName(task, 'tasks')}`
+                );
+              }
+            } catch (error) {
+              this.stats.tasks.errors++;
+              console.error(
+                `    ❌ Failed to delete task ${task.id?.task_id}:`,
+                getDetailedErrorMessage(error)
+              );
+            }
+          })
+        );
+
+        // Rate limiting between chunks
+        if (chunks.indexOf(chunk) < chunks.length - 1) {
+          await waitForRateLimit(200);
+        }
+      }
+    } catch (error) {
+      console.error('  ❌ Error during tasks cleanup:', getDetailedErrorMessage(error));
+      this.stats.tasks.errors++;
+    }
   }
 
   private async cleanupLists(): Promise<void> {
@@ -649,7 +867,7 @@ function parseArgs(): CleanupOptions {
     filterMode: 'both',
     prefixes: ['Perf Test', 'Perf Compare', '🏢 Test'],
     excludePatterns: [],
-    resourceTypes: ['companies'],
+    resourceTypes: ['companies', 'people', 'tasks'],
     parallel: 3, // More conservative for API token mode
     verbose: false,
     requireConfirmation: true,

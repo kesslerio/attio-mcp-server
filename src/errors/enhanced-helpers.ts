@@ -12,14 +12,17 @@ export interface EnhancedApiErrorLike extends Error {
 }
 
 export function isEnhancedApiError(e: unknown): e is EnhancedApiErrorLike {
+  if (!e || typeof e !== 'object') {
+    return false;
+  }
+
+  const errorObj = e as Record<string, unknown>;
   return (
-    !!e &&
-    typeof e === 'object' &&
-    ((e as any).name === 'EnhancedApiError' ||
-      // Check if it has the typical EnhancedApiError properties (from real class or mock)
-      (typeof (e as any).statusCode === 'number' &&
-        typeof (e as any).endpoint === 'string' &&
-        typeof (e as any).method === 'string'))
+    errorObj.name === 'EnhancedApiError' ||
+    // Check if it has the typical EnhancedApiError properties (from real class or mock)
+    (typeof errorObj.statusCode === 'number' &&
+      typeof errorObj.endpoint === 'string' &&
+      typeof errorObj.method === 'string')
   );
 }
 
@@ -42,25 +45,27 @@ export function withEnumerableMessage<T extends Error>(e: T): T {
 
 export function ensureEnhanced(
   e: unknown,
-  ctx?: Record<string, any>
+  ctx?: Record<string, unknown>
 ): EnhancedApiErrorLike {
   if (isEnhancedApiError(e)) {
     // Enrich context and return as-is
-    (e as any).context = { ...(e as any).context, ...ctx };
-    return e as EnhancedApiErrorLike;
+    const enhanced = e as EnhancedApiErrorLike;
+    enhanced.context = { ...enhanced.context, ...ctx };
+    return enhanced;
   }
 
+  const errorObj = e as Record<string, unknown>;
   const err = new Error(
-    (e as any)?.message ?? String(e)
+    (errorObj?.message as string) ?? String(e)
   ) as EnhancedApiErrorLike;
   err.name = 'EnhancedApiError';
   err.statusCode =
-    (e as any)?.statusCode ??
-    (e as any)?.status ??
-    (e as any)?.response?.status ??
+    (errorObj?.statusCode as number) ??
+    (errorObj?.status as number) ??
+    ((errorObj?.response as Record<string, unknown>)?.status as number) ??
     500;
-  err.endpoint = ctx?.endpoint;
-  err.method = ctx?.method;
+  err.endpoint = ctx?.endpoint as string;
+  err.method = ctx?.method as string;
   err.context = { ...ctx, originalError: e };
   return err;
 }

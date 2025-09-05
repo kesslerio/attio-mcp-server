@@ -4,7 +4,7 @@
 
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
-> **🚀 Universal Tools Available**: The MCP server provides [Universal Tools](../implementation-status.md) that consolidate 40+ resource-specific operations into 14 powerful universal tools + 11 specialized Lists tools. This provides better performance, consistent APIs, and simplified integration. For current feature availability, see the [Implementation Status](./implementation-status.md) guide.
+> **🚀 Universal Tools Available**: The MCP server provides Universal Tools that consolidate 40+ resource-specific operations into 14 powerful universal tools + 11 specialized Lists tools. This provides better performance, consistent APIs, and simplified integration.
 
 ## Understanding the Model Context Protocol (MCP)
 
@@ -64,7 +64,7 @@ Claude can interact with Attio using **25 fully implemented tools** provided by 
 #### ⚠️ Legacy Tools (Deprecated)
 Legacy resource-specific tools are deprecated but available with `DISABLE_UNIVERSAL_TOOLS=true`. Migration to Universal Tools is recommended for better performance and consistency.
 
-**Current Implementation Guide**: See [Implementation Status](./implementation-status.md) for detailed feature availability and testing status.
+**Current Tools**: All 25 tools (14 Universal Tools + 11 Lists Tools) are fully implemented and tested.
 
 ### Advanced Filtering Capabilities
 

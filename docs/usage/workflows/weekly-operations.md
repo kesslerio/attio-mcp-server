@@ -47,29 +47,27 @@ Create weekly operational roadmap with success criteria.
 
 ### 🔧 Tuesday: Data Quality & Hygiene Deep Dive
 
-**🧹 Comprehensive Data Quality Audit (45 minutes)**
+**🧹 Systematic Data Review & Cleanup (45 minutes)**
+
+**Step 1: Companies Missing Key Information (15 mins)**
 ```
-Run complete data quality assessment across all key areas:
+Search for companies missing website URLs and show me the first 20 results. 
+Include company name, industry if available, and any contact information we have. 
+Help me prioritize which ones are most important to research and update based on recent activity or deal potential.
+```
 
-Companies:
-- Missing critical fields (industry, website, size, location)
-- Inconsistent naming conventions and duplicates
-- Outdated information needing refresh
-- Integration data sync accuracy
+**Step 2: People Without Complete Contact Info (15 mins)**
+```
+Find people records that have phone numbers but are missing email addresses. 
+Show me their name, company, job title, and phone number. 
+Limit to 15 results and prioritize by company value or recent interactions.
+```
 
-People:
-- Incomplete contact information (email, phone, job title)
-- Outdated job information and company associations
-- Duplicate person records
-- Email deliverability status
-
-Deals:
-- Missing or inaccurate deal stages
-- Unrealistic close dates or deal values
-- Incomplete stakeholder mapping
-- Stale deals needing status updates
-
-Generate prioritized cleanup task list with business impact assessment.
+**Step 3: Recent Records Needing Attention (15 mins)**
+```
+Show me all companies and people added in the last 7 days that might need additional information. 
+Focus on records with minimal data that could be easily enhanced through research or outreach.
+Create a task list for data completion priorities.
 ```
 
 **🔍 Advanced Duplicate Detection (30 minutes)**
@@ -98,57 +96,56 @@ Track enhancement success rates and data quality improvements.
 
 ---
 
-### 📈 Wednesday: Analytics & Performance Optimization
+### 🔍 Wednesday: Record Review & Relationship Mapping
 
-**📊 Weekly Business Intelligence Report (45 minutes)**
+**📊 Weekly Pipeline Review (30 minutes)**
+
+**Step 1: Deal Status Check**
 ```
-Generate comprehensive business intelligence insights:
-
-Sales Performance:
-- Pipeline velocity and conversion trends
-- Deal size and cycle time analysis
-- Win/loss patterns and reasons
-- Territory and rep performance comparison
-- Forecast accuracy and trending
-
-Customer Success Metrics:
-- Customer health score distributions
-- Renewal rate predictions and trends
-- Support ticket volume and resolution patterns
-- Expansion opportunity identification
-- Churn risk assessment and prevention
-
-Marketing Attribution:
-- Lead source performance and ROI
-- Campaign effectiveness and conversion rates
-- Content engagement and progression patterns
-- Channel optimization opportunities
-
-Create executive dashboard with key insights and recommendations.
+Show me all open deals and their current status. 
+Include company name, deal value, stage, last activity date, and assigned owner.
+Help me identify which deals haven't been updated in over a week and need attention.
 ```
 
-**⚡ System Performance Analysis (30 minutes)**
+**Step 2: High-Value Account Analysis**  
 ```
-Analyze system performance and user experience:
-- Query response times and optimization opportunities
-- Feature utilization patterns across teams
-- Mobile vs desktop usage analytics
-- Integration performance and reliability
-- Error patterns and resolution tracking
-
-Identify performance bottlenecks and create optimization plan.
+Find companies with deal values over $10,000 that have multiple contacts.
+Show me all the people associated with each high-value company and their roles.
+Help me identify relationship gaps where we should add more contacts.
 ```
 
-**🎯 Process Efficiency Assessment (40 minutes)**
-```
-Evaluate operational process effectiveness:
-- Time-to-complete analysis for key workflows
-- User adoption rates for new features or processes
-- Automation effectiveness and ROI measurement
-- Training impact on productivity and accuracy
-- Compliance adherence and gap identification
+**⚡ Contact Relationship Mapping (45 minutes)**
 
-Recommend process improvements and automation opportunities.
+**Step 1: Company Contact Coverage**
+```
+Show me companies where we have 2+ deals but only 1 contact person.
+Include company name, total deal value, and the single contact we have.
+Prioritize by deal value and help me identify where we need broader relationships.
+```
+
+**Step 2: Contact Information Updates**
+```
+Find people who work at companies we've had recent activity with, but whose contact information might be outdated (added more than 6 months ago).
+Focus on companies with active deals or recent meetings.
+Create a list for contact verification and updates.
+```
+
+**🎯 List Management & Organization (40 minutes)**
+
+**Step 1: List Health Check**
+```
+Review all active lists in our CRM and show me:
+- List names and entry counts
+- Last time each list was updated  
+- Lists that might have outdated or irrelevant entries
+Help me identify which lists need cleaning or consolidation.
+```
+
+**Step 2: Prospect List Updates**
+```
+Show me prospects in our active target lists who haven't been contacted in 30+ days.
+Include their company, contact info, and any notes about previous interactions.
+Help me prioritize re-engagement based on company value and previous response levels.
 ```
 
 ---
