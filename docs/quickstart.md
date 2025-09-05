@@ -4,7 +4,7 @@ Get up and running with the Attio MCP Server in under 5 minutes. This guide will
 
 ## Prerequisites
 
-- **Node.js**: Version 18 or higher ([Download here](https://nodejs.org/))
+- **Node.js**: Version 20 or higher ([Download here](https://nodejs.org/))
 - **Attio Account**: Active Attio workspace ([Sign up here](https://attio.com/))
 - **Attio API Key**: Generate from [Attio Settings → API](https://app.attio.com/settings/api)
 - **Claude Desktop**: Latest version ([Download here](https://claude.ai/desktop))
@@ -15,12 +15,12 @@ Choose your preferred installation method:
 
 ### Option A: NPM (Recommended)
 ```bash
-npm install -g attio-mcp-server
+npm install -g attio-mcp
 ```
 
 ### Option B: Smithery (Auto-configuration)
 ```bash
-npx -y @smithery/cli install @kesslerio/attio-mcp-server --client claude
+npx -y @smithery/cli install @kesslerio/attio-mcp --client claude
 ```
 
 ### Option C: Manual Installation
@@ -50,11 +50,11 @@ Verify the server is installed correctly:
 
 ```bash
 # Test the command exists
-attio-mcp-server --help
+attio-mcp --help
 
 # Expected output:
-# Attio MCP Server v2.x.x
-# Usage: attio-mcp-server [options]
+# Attio MCP Server v0.1.x
+# Usage: attio-mcp [options]
 # Options:
 #   --help     Show help
 #   --version  Show version
@@ -79,32 +79,34 @@ echo "ATTIO_API_KEY=your_64_character_api_key_here" > .env
 echo "ATTIO_WORKSPACE_ID=your_workspace_id_here" >> .env
 ```
 
-## Step 5: Quick API Test
+## Step 5: Test MCP Server
 
-Test your API connection with a simple command:
+Test that the MCP server starts correctly:
 
 ```bash
 # Set environment variables (Linux/Mac)
 export ATTIO_API_KEY="your_api_key_here"
 export ATTIO_WORKSPACE_ID="your_workspace_id_here"
 
-# Quick test - discover your workspace attributes
-node -e "
-const { execSync } = require('child_process');
-try {
-  const result = execSync('curl -H \"Authorization: Bearer $ATTIO_API_KEY\" https://api.attio.com/v2/objects/companies/attributes', { encoding: 'utf8' });
-  console.log('✅ API Connection Successful!');
-  console.log('First 3 company attributes:', JSON.parse(result).data.slice(0, 3).map(attr => attr.title));
-} catch (error) {
-  console.error('❌ API Connection Failed:', error.message);
-}
-"
+# Test MCP server starts
+echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0.0"}}}' | attio-mcp
 ```
 
-**Expected Output:**
+**Expected Output (should include):**
+```json
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},...}}
 ```
-✅ API Connection Successful!
-First 3 company attributes: [ 'Name', 'Website', 'Industry' ]
+
+**Alternative: Quick API Connection Test**
+```bash
+# Quick test - discover your workspace attributes using the CLI tool
+attio-discover attributes --limit 3
+
+# Expected output:
+# ✅ Found 3 company attributes:
+# 1. Name (text)
+# 2. Website (url) 
+# 3. Industry (select)
 ```
 
 ## Step 6: Configure Claude Desktop
@@ -123,7 +125,7 @@ Edit the file to include the Attio MCP server:
 {
   "mcpServers": {
     "attio-mcp": {
-      "command": "attio-mcp-server",
+      "command": "attio-mcp",
       "env": {
         "ATTIO_API_KEY": "your_64_character_api_key_here",
         "ATTIO_WORKSPACE_ID": "your_workspace_id_here"
@@ -144,9 +146,14 @@ Edit the file to include the Attio MCP server:
 ```
 
 **Expected Behavior:**
-- Claude should list 25 available Attio tools (14 Universal + 11 Lists tools)
+- Claude should list available Attio MCP tools (search-records, get-record-details, etc.)
 - Claude should perform a search and return company results
 - You should see companies with "tech", "technology" or similar in their names
+
+**⚠️ Troubleshooting**: If Claude doesn't see the tools:
+1. Check Claude Desktop → Settings → Features → Model Context Protocol is enabled
+2. Completely restart Claude Desktop (quit and reopen)
+3. Verify config file syntax with: `python -m json.tool ~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
 ## Step 8: Your First Real Query
 
@@ -178,9 +185,17 @@ Found 3 companies created in the last 30 days:
 
 ## Common Setup Issues & Solutions
 
-### Issue: "Command not found: attio-mcp-server"
-**Solution**: NPM global install path issue
+### Issue: "Command not found: attio-mcp"
+**Solution**: NPM global install path issue or wrong package
 ```bash
+# Verify correct package is installed
+npm list -g attio-mcp
+# Should show: attio-mcp@0.1.x
+
+# If not installed or wrong package:
+npm uninstall -g attio-mcp-server  # Remove wrong package
+npm install -g attio-mcp           # Install correct package
+
 # Check npm global path
 npm config get prefix
 
@@ -212,11 +227,17 @@ curl -H "Authorization: Bearer $ATTIO_API_KEY" \
 ### Issue: Claude Desktop doesn't see the server
 **Solution**: Configuration path and restart
 1. Verify config file location is correct for your OS
-2. Completely quit Claude Desktop (not just close window)
-3. Check for JSON syntax errors in config file:
+2. **Enable MCP in Claude**: Settings → Features → Model Context Protocol (toggle on)
+3. Completely quit Claude Desktop (not just close window)  
+4. Check for JSON syntax errors in config file:
 ```bash
 # Validate JSON syntax (Linux/Mac)
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+```
+5. Test MCP server starts manually:
+```bash
+attio-mcp --version
+# Should output version number
 ```
 
 ### Issue: "Rate limit exceeded"
@@ -250,10 +271,11 @@ For optimal performance:
 
 Now that you're set up, explore these guides:
 
-- **[Universal Tools Usage Guide](universal-tools/usage-guide.md)**: Master all 14 universal tools
-- **[Cookbook](universal-tools/cookbook.md)**: Real-world workflow examples
-- **[Best Practices](best-practices.md)**: Performance and optimization tips
-- **[Error Handling Guide](error-handling-guide.md)**: Troubleshoot common issues
+- **[Sales Playbook](usage/playbooks/sales-playbook.md)**: Copy-paste prompts for sales workflows
+- **[Customer Success Playbook](usage/playbooks/customer-success-playbook.md)**: Customer health monitoring prompts
+- **[Operations Playbook](usage/playbooks/operations-playbook.md)**: Bulk operations and data management
+- **[Universal Tools Reference](usage/universal-tools-quick-reference.md)**: Complete tool guide with examples
+- **[Troubleshooting Guide](usage/troubleshooting.md)**: Common issues and solutions
 
 ## Quick Reference Card
 
