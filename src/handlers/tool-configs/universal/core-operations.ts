@@ -173,10 +173,23 @@ export const searchRecordsConfig: UniversalToolConfig = {
               : getFirstValue(values.content) || 'Unnamed';
           id = String(record.id?.task_id || record.id?.record_id || 'unknown');
         } else if (resourceType === UniversalResourceType.PEOPLE) {
-          // For people, prefer name with optional email
-          const nameValue = getFirstValue(values.name);
-          const emailValue = getFirstValue(values.email);
-          const name = nameValue || 'Unnamed';
+          // For people, use comprehensive name extraction logic (with proper type handling)
+          const valuesAny = values as any;
+          const name = 
+            valuesAny?.name?.[0]?.full_name ||
+            valuesAny?.name?.[0]?.value ||
+            valuesAny?.name?.[0]?.formatted ||
+            valuesAny?.full_name?.[0]?.value ||
+            getFirstValue(values.name) ||
+            'Unnamed';
+          
+          // Add email if available for better identification
+          const emailValue = 
+            valuesAny?.email_addresses?.[0]?.email_address ||
+            valuesAny?.email_addresses?.[0]?.value ||
+            getFirstValue(values.email) ||
+            getFirstValue(valuesAny.email_addresses);
+          
           identifier = emailValue ? `${name} (${emailValue})` : name;
         } else if (resourceType === UniversalResourceType.COMPANIES) {
           // For companies, prefer name with optional website or email
