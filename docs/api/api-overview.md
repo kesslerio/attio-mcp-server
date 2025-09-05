@@ -1,8 +1,10 @@
 # Attio API Overview
 
+✅ **Current Status**: Attio MCP Server implements **25 total tools** - 14 Universal Tools + 11 Lists Tools
+
 Attio provides a powerful REST API that allows developers to build applications that read and write information to and from Attio workspaces. The API exchanges JSON over HTTPS and provides comprehensive access to Attio's core functionality.
 
-> **🚀 Universal Tools Now Available**: The MCP server has been enhanced with [Universal Tools](../universal-tools/user-guide.md) that consolidate 40+ resource-specific operations into 13 powerful universal tools. This provides better performance, consistent APIs, and simplified integration. See the [Migration Guide](../universal-tools/migration-guide.md) for details.
+> **🚀 Universal Tools Available**: The MCP server provides [Universal Tools](../implementation-status.md) that consolidate 40+ resource-specific operations into 14 powerful universal tools + 11 specialized Lists tools. This provides better performance, consistent APIs, and simplified integration. For current feature availability, see the [Implementation Status](./implementation-status.md) guide.
 
 ## Understanding the Model Context Protocol (MCP)
 
@@ -28,25 +30,41 @@ Claude uses these URIs to reference specific records when performing operations.
 
 ### Available Tools
 
-Claude can interact with Attio using the Universal Tools system provided by the MCP server:
+Claude can interact with Attio using **25 fully implemented tools** provided by the MCP server:
 
-#### Universal Tools (Recommended)
-- **`search-records`**: Universal search across companies, people, records, and tasks
-- **`advanced-search`**: Complex filtering with multiple conditions and sorting
-- **`get-record-details`**: Retrieve detailed information for any record type
-- **`create-record`**: Create new records across all resource types
-- **`update-record`**: Update existing records with validation
-- **`batch-operations`**: Bulk operations for multiple records
-- **`search-by-relationship`**: Cross-resource relationship searches
-- **`search-by-content`**: Content-based searches (notes, activity)
-- **`search-by-timeframe`**: Time-based searches with date ranges
+#### ✅ Universal Tools (14 tools) - Primary Interface
+- **`search-records`** - Universal search across companies, people, records, and tasks
+- **`get-record-details`** - Retrieve detailed information for any record type
+- **`create-record`** - Create new records across all resource types  
+- **`update-record`** - Update existing records with validation
+- **`delete-record`** - Delete records across all resource types
+- **`get-attributes`** - Get attribute definitions for resource types
+- **`discover-attributes`** - Discover available attributes with examples
+- **`get-detailed-info`** - Get specific info types (basic, contact, business, social)
+- **`advanced-search`** - Complex filtering with multiple conditions
+- **`search-by-relationship`** - Cross-resource relationship searches
+- **`search-by-content`** - Content-based searches (notes, activity)
+- **`search-by-timeframe`** - Time-based searches with date ranges
+- **`batch-operations`** - Bulk operations for multiple records
+- **`batch-search`** - Bulk search operations
 
-#### Legacy Tools (Deprecated)
-- Search tools: `search-companies`, `search-people` (use `search-records` instead)
-- Detail tools: `get-company-details`, `get-person-details` (use `get-record-details` instead)
-- Create tools: `create-company`, `create-person` (use `create-record` instead)
+#### ✅ Lists Tools (11 tools) - Specialized List Management  
+- **`get-lists`** - Get all CRM lists
+- **`get-list-details`** - Get specific list configuration
+- **`get-list-entries`** - Get entries from lists with pagination
+- **`filter-list-entries`** - Filter entries by single attribute
+- **`advanced-filter-list-entries`** - Complex filtering with AND/OR logic
+- **`add-record-to-list`** - Add records to lists
+- **`remove-record-from-list`** - Remove records from lists
+- **`update-list-entry`** - Update list entry attributes (stage changes)
+- **`filter-list-entries-by-parent`** - Filter by parent record properties
+- **`filter-list-entries-by-parent-id`** - Filter by specific parent record ID
+- **`get-record-list-memberships`** - Find all lists containing a record
 
-**Migration:** See the [Universal Tools Migration Guide](../universal-tools/migration-guide.md) for complete migration instructions.
+#### ⚠️ Legacy Tools (Deprecated)
+Legacy resource-specific tools are deprecated but available with `DISABLE_UNIVERSAL_TOOLS=true`. Migration to Universal Tools is recommended for better performance and consistency.
+
+**Current Implementation Guide**: See [Implementation Status](./implementation-status.md) for detailed feature availability and testing status.
 
 ### Advanced Filtering Capabilities
 
