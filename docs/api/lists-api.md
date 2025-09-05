@@ -1,6 +1,24 @@
 # Attio Lists API
 
+✅ **Implementation Status**: Lists API is **fully implemented** with 11 MCP tools providing complete CRUD operations and advanced filtering capabilities.
+
 The Lists API allows you to manage lists within Attio. Lists provide organized views of records, with optional filtering, sorting, and grouping.
+
+## 🚀 **Available MCP Tools**
+
+The following 11 MCP tools are fully implemented and tested:
+
+1. `get-lists` - Get all CRM lists
+2. `get-list-details` - Get specific list configuration  
+3. `get-list-entries` - Get entries from a list with pagination
+4. `filter-list-entries` - Filter entries by single attribute
+5. `advanced-filter-list-entries` - Complex filtering with AND/OR logic
+6. `add-record-to-list` - Add records to lists
+7. `remove-record-from-list` - Remove records from lists
+8. `update-list-entry` - Update list entry attributes (e.g., stage changes)
+9. `filter-list-entries-by-parent` - Filter by parent record properties
+10. `filter-list-entries-by-parent-id` - Filter by specific parent record ID
+11. `get-record-list-memberships` - Find all lists containing a record
 
 ## Using Lists with Claude
 
