@@ -154,6 +154,7 @@ export enum SortType {
 
 /**
  * Relative timeframe options for date filtering (Issue #475)
+ * Updated to match sales playbook requirements and schema enum values
  */
 export type RelativeTimeframe = 
   | 'today'
@@ -163,8 +164,14 @@ export type RelativeTimeframe =
   | 'this_month'
   | 'last_month'
   | 'last_7_days'
+  | 'last_14_days'  // Added for sales playbook "Deal Recovery" use case
   | 'last_30_days'
   | 'last_90_days';
+
+/**
+ * Date field options for timeframe filtering
+ */
+export type DateField = 'created_at' | 'updated_at' | 'due_date';
 
 /**
  * Universal search parameters
@@ -301,8 +308,8 @@ export interface TimeframeSearchParams {
   timeframe_type?: TimeframeType; // Make optional since it can be derived from date_field
   start_date?: string;
   end_date?: string;
-  relative_range?: string; // New: Support relative dates like 'today', 'last_7_days', etc.
-  date_field?: string; // New: Field to filter on (created_at, updated_at, due_date)
+  relative_range?: RelativeTimeframe; // Updated: Use specific union type instead of generic string
+  date_field?: DateField; // Updated: Use specific union type instead of generic string
   invert_range?: boolean; // New: Find records NOT in the date range
   limit?: number;
   offset?: number;

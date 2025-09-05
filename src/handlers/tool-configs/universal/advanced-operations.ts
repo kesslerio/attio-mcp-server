@@ -620,24 +620,24 @@ export const searchByContentConfig: UniversalToolConfig = {
 };
 
 /**
- * Helper function to invert results for invert_range functionality
- * This is a simplified implementation that would require more sophisticated logic
- * for production use, but serves as a placeholder for the feature.
+ * Helper function to create inverted date range for invert_range functionality
+ * Instead of finding records IN the date range, find records BEFORE the range start
+ * This is used for finding "stale" records that haven't been updated recently
  */
-async function invertResults(
-  results: AttioRecord[],
-  resourceType: UniversalResourceType,
-  dateRange: { start?: string; end?: string }
-): Promise<AttioRecord[]> {
-  // For now, return empty array as a placeholder
-  // In a full implementation, this would:
-  // 1. Get all records for the resource type
-  // 2. Filter out the records that match the date range
-  // 3. Return the remaining records
-  console.warn(
-    'invert_range is not fully implemented. Returning original results.'
-  );
-  return results;
+function createInvertedDateRange(dateRange: { start?: string; end?: string }): { start?: string; end?: string } {
+  if (!dateRange.start) {
+    // If no start date, we can't create a meaningful inverted range
+    throw new Error('Cannot invert date range without a start date');
+  }
+  
+  // For invert_range, we want records BEFORE the original start date
+  // So the new range is: from very early date TO the original start date
+  const veryEarlyDate = '1970-01-01T00:00:00.000Z'; // Unix epoch
+  
+  return {
+    start: veryEarlyDate,
+    end: dateRange.start
+  };
 }
 
 /**
@@ -734,36 +734,48 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         // People-specific handlers
         switch (timeframe_type) {
           case TimeframeType.CREATED: {
-            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            let dateRange = validateAndCreateDateRange(start_date, end_date);
             if (!dateRange) {
               throw new Error(
                 'At least one date (start or end) is required for timeframe search'
               );
             }
+            // Handle invert_range by modifying the date range before the API call
+            if (invert_range) {
+              dateRange = createInvertedDateRange(dateRange);
+            }
             const results = await searchPeopleByCreationDate(dateRange);
-            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+            return results;
           }
 
           case TimeframeType.MODIFIED: {
-            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            let dateRange = validateAndCreateDateRange(start_date, end_date);
             if (!dateRange) {
               throw new Error(
                 'At least one date (start or end) is required for timeframe search'
               );
             }
+            // Handle invert_range by modifying the date range before the API call
+            if (invert_range) {
+              dateRange = createInvertedDateRange(dateRange);
+            }
             const results = await searchPeopleByModificationDate(dateRange);
-            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+            return results;
           }
 
           case TimeframeType.LAST_INTERACTION: {
-            const dateRange = validateAndCreateDateRange(start_date, end_date);
+            let dateRange = validateAndCreateDateRange(start_date, end_date);
             if (!dateRange) {
               throw new Error(
                 'At least one date (start or end) is required for last interaction search'
               );
             }
+            // Handle invert_range by modifying the date range before the API call
+            if (invert_range) {
+              dateRange = createInvertedDateRange(dateRange);
+            }
             const results = await searchPeopleByLastInteraction(dateRange);
-            return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+            return results;
           }
 
           default:
@@ -773,11 +785,16 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         }
       } else {
         // For all other resource types (including companies), use universal search
-        const dateRange = validateAndCreateDateRange(start_date, end_date);
+        let dateRange = validateAndCreateDateRange(start_date, end_date);
         if (!dateRange) {
           throw new Error(
             'At least one date (start or end) is required for timeframe search'
           );
+        }
+
+        // Handle invert_range by modifying the date range before creating filters
+        if (invert_range) {
+          dateRange = createInvertedDateRange(dateRange);
         }
 
         let filters: ListEntryFilters;
@@ -835,8 +852,7 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
           offset: offset || 0,
         });
 
-        // Handle invert_range by getting all records and filtering out the ones in range
-        return invert_range ? await invertResults(results, resource_type, dateRange) : results;
+        return results;
       }
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(

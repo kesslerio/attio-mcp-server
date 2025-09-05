@@ -9,6 +9,8 @@ import {
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
+  RelativeTimeframe,
+  DateField,
 } from '../types.js';
 
 export const getDetailedInfoSchema = {
@@ -152,19 +154,20 @@ export const searchByTimeframeSchema = {
       enum: [
         'today',
         'yesterday',
-        'last_7_days',
-        'last_14_days',
-        'last_30_days',
         'this_week',
         'last_week',
         'this_month',
         'last_month',
-      ],
+        'last_7_days',
+        'last_14_days',  // Added to match sales playbook requirements
+        'last_30_days',
+        'last_90_days',  // Added to match RelativeTimeframe type
+      ] as const satisfies readonly RelativeTimeframe[],
       description: 'Relative date range (alternative to start_date/end_date)',
     },
     date_field: {
       type: 'string' as const,
-      enum: ['created_at', 'updated_at', 'due_date'],
+      enum: ['created_at', 'updated_at', 'due_date'] as const satisfies readonly DateField[],
       description: 'Date field to filter on',
     },
     invert_range: {
