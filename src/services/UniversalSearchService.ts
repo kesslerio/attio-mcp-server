@@ -24,6 +24,35 @@ import { UniversalUtilityService } from './UniversalUtilityService.js';
 // Constants for search optimization
 const CONTENT_SEARCH_FETCH_LIMIT = 100; // TODO: Consider adaptive limits based on query complexity
 
+/**
+ * Performance Optimization Guidelines (Based on PR Review Feedback)
+ *
+ * 1. TIMEFRAME QUERY ROUTING:
+ *    - Automatically routes timeframe searches to Query API (not Advanced Search)
+ *    - Query API supports date comparisons with $gte/$lte operators
+ *    - Advanced Search API lacks date comparison support
+ *
+ * 2. CACHING STRATEGY:
+ *    - Consider implementing result caching for expensive timeframe queries
+ *    - Cache key should include: resource_type + timeframe_attribute + date_range
+ *    - TTL should be short (5-10 minutes) for time-sensitive data
+ *
+ * 3. PAGINATION OPTIMIZATION:
+ *    - Use appropriate limits for large timeframe ranges (default: 100, max: 1000)
+ *    - Consider streaming results for very large datasets
+ *    - Implement cursor-based pagination for better performance
+ *
+ * 4. DATE FIELD VALIDATION:
+ *    - Pre-validate date fields against resource schema to avoid API errors
+ *    - Cache field validation results to reduce repeated lookups
+ *    - Gracefully handle unsupported date fields (e.g., last_contacted_at)
+ *
+ * 5. QUERY COMPLEXITY MANAGEMENT:
+ *    - Monitor query execution time and implement circuit breakers
+ *    - Consider query complexity scoring for adaptive limits
+ *    - Log slow queries for optimization opportunities
+ */
+
 // Import performance tracking
 import { enhancedPerformanceTracker } from '../middleware/performance-enhanced.js';
 
