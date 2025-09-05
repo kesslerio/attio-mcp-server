@@ -1,0 +1,9 @@
+{
+  "description": "Whitelist of record IDs that should never be deleted by cleanup scripts",
+  "recordIds": [
+    "43e714d8-9603-42c8-a394-eed22cf05b48"
+  ],
+  "notes": [
+    "43e714d8-9603-42c8-a394-eed22cf05b48 - Example company record (created 2025-09-04 by API token a6a39ec3-12ea-489b-9c7a-4859c3b43215)"
+  ]
+}
