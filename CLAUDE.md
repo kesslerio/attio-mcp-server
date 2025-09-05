@@ -401,6 +401,29 @@ NEVER use web search as the first option. ALWAYS follow this sequence:
 
 **Available Sources**: Attio API, GitHub API, Vitest, Node.js, TypeScript, React, Next.js, MongoDB, and many others
 
+## MCP TOOL TESTING
+
+RULE: Validate MCP tools with real API calls | WHEN: MCP tool changes | DO: Use mcp-test-client for end-to-end validation | ELSE: Production failures
+SETUP: `npm install --save-dev mcp-test-client` (already installed)
+USAGE: Create test in `test/mcp/` directory:
+```typescript
+import { MCPTestClient } from 'mcp-test-client';
+
+const client = new MCPTestClient({
+  serverCommand: 'node',
+  serverArgs: ['./dist/index.js'],
+});
+await client.init();
+
+await client.assertToolCall('search-records', params, (result) => {
+  expect(result.isError).toBeFalsy();
+  // Validate real API responses
+});
+
+await client.cleanup();
+```
+BENEFITS: Tests real MCP server, validates tool registration, catches API integration issues, prevents regressions
+
 CLEAR THOUGHT MCP INTEGRATION
 
 RULE: Use systematic problem-solving | WHEN: Complex problems | DO: See @docs/tools/clear-thought-tools.md for comprehensive tool reference | ELSE: Incomplete analysis

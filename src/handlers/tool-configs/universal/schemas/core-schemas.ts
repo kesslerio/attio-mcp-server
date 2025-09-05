@@ -15,7 +15,7 @@ export const searchRecordsSchema = {
     },
     search_type: {
       type: 'string' as const,
-      enum: ['basic', 'content'] as const,
+      enum: ['basic', 'content', 'timeframe'] as const,
       description: 'Type of search',
     },
     fields: {
@@ -32,6 +32,58 @@ export const searchRecordsSchema = {
       type: 'string' as const,
       enum: ['relevance', 'created', 'modified', 'name'] as const,
       description: 'Sort order',
+    },
+    // Date range filtering parameters
+    date_from: {
+      type: 'string' as const,
+      description: 'Start date for filtering (ISO 8601 format)',
+      format: 'date-time',
+    },
+    date_to: {
+      type: 'string' as const,
+      description: 'End date for filtering (ISO 8601 format)',
+      format: 'date-time',
+    },
+    created_after: {
+      type: 'string' as const,
+      description: 'Filter records created after this date (ISO 8601)',
+      format: 'date-time',
+    },
+    created_before: {
+      type: 'string' as const,
+      description: 'Filter records created before this date (ISO 8601)',
+      format: 'date-time',
+    },
+    updated_after: {
+      type: 'string' as const,
+      description: 'Filter records updated after this date (ISO 8601)',
+      format: 'date-time',
+    },
+    updated_before: {
+      type: 'string' as const,
+      description: 'Filter records updated before this date (ISO 8601)',
+      format: 'date-time',
+    },
+    timeframe: {
+      type: 'string' as const,
+      enum: [
+        'today',
+        'yesterday', 
+        'this_week',
+        'last_week',
+        'this_month',
+        'last_month',
+        'last_7_days',
+        'last_30_days',
+        'last_90_days'
+      ] as const,
+      description: 'Relative timeframe filter',
+    },
+    date_field: {
+      type: 'string' as const,
+      enum: ['created_at', 'updated_at'] as const,
+      default: 'created_at',
+      description: 'Which date field to filter on',
     },
     ...paginationProperties,
   },

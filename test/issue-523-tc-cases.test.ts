@@ -306,17 +306,11 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         '/objects/tasks/records/query',
         expect.objectContaining({
           filter: {
-            path: ['created_at'],
-            constraints: [
-              {
-                operator: 'greater_than_or_equals',
-                value: '2024-06-01',
-              },
-              {
-                operator: 'less_than_or_equals', 
-                value: '2024-06-30',
-              },
-            ],
+            path: [['tasks', 'created_at']],
+            constraints: {
+              $gte: '2024-06-01',
+              $lte: '2024-06-30',
+            },
           },
           limit: 10,
           offset: 0,
@@ -357,13 +351,10 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         '/objects/companies/records/query',
         expect.objectContaining({
           filter: {
-            path: ['created_at'],
-            constraints: [
-              {
-                operator: 'greater_than',
-                value: '2024-07-01',
-              },
-            ],
+            path: [['companies', 'created_at']],
+            constraints: {
+              $gt: '2024-07-01',
+            },
           },
         })
       );
@@ -388,13 +379,10 @@ describe('Issue #523 Test Cases - Query API Implementation', () => {
         '/objects/people/records/query',
         expect.objectContaining({
           filter: {
-            path: ['last_interaction'],
-            constraints: [
-              {
-                operator: 'less_than',
-                value: '2024-05-01',
-              },
-            ],
+            path: [['people', 'last_interaction']],
+            constraints: {
+              $lt: '2024-05-01',
+            },
           },
         })
       );

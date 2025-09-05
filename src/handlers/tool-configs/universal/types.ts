@@ -153,6 +153,20 @@ export enum SortType {
 }
 
 /**
+ * Relative timeframe options for date filtering (Issue #475)
+ */
+export type RelativeTimeframe = 
+  | 'today'
+  | 'yesterday'
+  | 'this_week'
+  | 'last_week'
+  | 'this_month'
+  | 'last_month'
+  | 'last_7_days'
+  | 'last_30_days'
+  | 'last_90_days';
+
+/**
  * Universal search parameters
  */
 export interface UniversalSearchParams {
@@ -176,6 +190,16 @@ export interface UniversalSearchParams {
   // New TC-011: Enhanced content search parameters
   content_fields?: string[];
   use_or_logic?: boolean;
+  
+  // Issue #475: Enhanced date filtering parameters
+  date_from?: string;
+  date_to?: string;
+  created_after?: string;
+  created_before?: string;
+  updated_after?: string;
+  updated_before?: string;
+  timeframe?: RelativeTimeframe;
+  date_field?: 'created_at' | 'updated_at';
 }
 
 /**
@@ -338,7 +362,7 @@ export interface UniversalResultFormatter {
     resourceType: UniversalResourceType
   ) => string;
   formatAttributes: (
-    attributes: any,
+    attributes: Record<string, unknown>,
     resourceType: UniversalResourceType
   ) => string;
 }

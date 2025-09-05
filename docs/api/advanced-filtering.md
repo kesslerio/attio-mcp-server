@@ -240,46 +240,126 @@ const complexFilter = {
 };
 ```
 
-### Date Range Filtering
+### Date Range Filtering (Issue #475)
+
+The Attio MCP server provides enhanced timeframe filtering capabilities that support both absolute date ranges and relative timeframes. This functionality works with the Universal Search tools for companies, people, and other resource types.
+
+#### **Using Absolute Date Ranges**
 
 ```typescript
-// People created in 2023
-const dateRangeFilter = {
-  filters: [
-    {
-      attribute: { slug: 'created_at' },
-      condition: FilterConditionType.GREATER_THAN_OR_EQUALS,
-      value: "2023-01-01T00:00:00Z"
-    },
-    {
-      attribute: { slug: 'created_at' },
-      condition: FilterConditionType.LESS_THAN,
-      value: "2024-01-01T00:00:00Z"
-    }
-  ]
+// Search companies created between specific dates
+const searchParams = {
+  resource_type: 'companies',
+  date_from: '2023-08-01T00:00:00Z',
+  date_to: '2023-08-15T23:59:59Z',
+  date_field: 'created_at'  // Attribute to filter on
 };
 
-// Using the createDateRangeFilter helper function
-const dateRangeFilter = createDateRangeFilter('created_at', {
-  start: "2023-01-01T00:00:00Z",
-  end: "2024-01-01T00:00:00Z"
-});
+// Search people updated after a specific date
+const searchParams = {
+  resource_type: 'people',
+  updated_after: '2023-08-01T00:00:00Z'  // Only records updated after this date
+};
 
-// Using a preset for this month
-const thisMonthFilter = createDateRangeFilter('created_at', {
-  preset: 'this_month'
-});
-
-// Using a relative date (last 30 days)
-const last30DaysFilter = createDateRangeFilter('created_at', {
-  start: {
-    unit: 'day',
-    value: 30,
-    direction: 'past'
-  },
-  end: new Date().toISOString()
-});
+// Search companies created before a specific date
+const searchParams = {
+  resource_type: 'companies',
+  created_before: '2023-08-15T23:59:59Z'  // Only records created before this date
+};
 ```
+
+#### **Using Relative Timeframes**
+
+```typescript
+// Search companies created in the last 7 days
+const searchParams = {
+  resource_type: 'companies',
+  timeframe: 'last_7_days',
+  date_field: 'created_at'
+};
+
+// Search people updated this month
+const searchParams = {
+  resource_type: 'people', 
+  timeframe: 'this_month',
+  date_field: 'updated_at'
+};
+
+// Search companies created yesterday
+const searchParams = {
+  resource_type: 'companies',
+  timeframe: 'yesterday',
+  date_field: 'created_at'
+};
+```
+
+#### **Supported Relative Timeframes**
+
+| Timeframe | Description |
+|-----------|-------------|
+| `today` | Records from today (current date) |
+| `yesterday` | Records from yesterday |
+| `this_week` | Records from Monday of current week to now |
+| `last_week` | Records from Monday to Sunday of previous week |
+| `this_month` | Records from first day of current month to now |
+| `last_month` | Records from first to last day of previous month |
+| `last_7_days` | Records from 7 days ago to now |
+| `last_30_days` | Records from 30 days ago to now |
+| `last_90_days` | Records from 90 days ago to now |
+
+#### **Date Field Options**
+
+| Field | Description |
+|-------|-------------|
+| `created_at` | When the record was created (default) |
+| `updated_at` | When the record was last updated |
+
+#### **Combining with Other Filters**
+
+Date filtering can be combined with other search parameters and filters:
+
+```typescript
+// Search tech companies created in the last 30 days
+const searchParams = {
+  resource_type: 'companies',
+  timeframe: 'last_30_days',
+  date_field: 'created_at',
+  filters: {
+    filters: [{
+      attribute: { slug: 'industry' },
+      condition: 'contains',
+      value: 'Technology'
+    }]
+  }
+};
+
+// Search people by name and date range
+const searchParams = {
+  resource_type: 'people',
+  query: 'John Smith',
+  date_from: '2023-01-01T00:00:00Z',
+  date_to: '2023-12-31T23:59:59Z',
+  date_field: 'updated_at'
+};
+```
+
+#### **MCP Tool Usage**
+
+When using Claude Desktop, you can use natural language with the Universal Search tools:
+
+```
+"Find all companies created in the last 7 days"
+"Search for people updated this month"
+"Show me companies created between August 1st and 15th"
+"Find all contacts added yesterday"
+```
+
+#### **Technical Notes**
+
+- All dates must be in ISO 8601 format (e.g., `2023-08-15T12:00:00Z`)
+- Relative timeframes take precedence over absolute dates when both are provided
+- Timeframe filtering uses UTC timezone for consistent results
+- Date validation is performed to ensure proper format and logical date ranges
 
 ### Numeric Range Filtering
 
