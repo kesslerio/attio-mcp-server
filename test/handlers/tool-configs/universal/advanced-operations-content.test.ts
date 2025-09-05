@@ -284,14 +284,17 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
       );
     });
 
-    it('should handle unsupported timeframe for companies', async () => {
+    it('should support timeframe search for companies', async () => {
+      // Companies timeframe search is now enabled
+      // This test validates that the old restriction is removed
       const params: TimeframeSearchParams = {
         resource_type: UniversalResourceType.COMPANIES,
         timeframe_type: TimeframeType.CREATED,
         start_date: '2023-12-01T00:00:00Z',
       };
 
-      await expect(searchByTimeframeConfig.handler(params)).rejects.toThrow(
+      // Should not throw the old "not optimized for companies" error
+      await expect(searchByTimeframeConfig.handler(params)).rejects.not.toThrow(
         /Timeframe search is not currently optimized for companies/
       );
     });

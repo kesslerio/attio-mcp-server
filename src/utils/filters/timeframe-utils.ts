@@ -40,6 +40,7 @@ export type RelativeTimeframe =
   | 'this_month'   // First day of current month to now
   | 'last_month'   // First to last day of previous month
   | 'last_7_days'  // 7 days ago to now (rolling window)
+  | 'last_14_days' // 14 days ago to now (rolling window) - Added for sales playbook
   | 'last_30_days' // 30 days ago to now (rolling window)
   | 'last_90_days'; // 90 days ago to now (rolling window)
 
@@ -115,6 +116,14 @@ export function getRelativeTimeframeRange(
       const weekAgo = new Date(now);
       weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
       startDate = getStartOfDay(weekAgo);
+      endDate = getEndOfDay(now);
+      break;
+    }
+
+    case 'last_14_days': {
+      const twoWeeksAgo = new Date(now);
+      twoWeeksAgo.setUTCDate(twoWeeksAgo.getUTCDate() - 14);
+      startDate = getStartOfDay(twoWeeksAgo);
       endDate = getEndOfDay(now);
       break;
     }
@@ -379,7 +388,7 @@ function getEndOfMonth(date: Date): Date {
 export function validateTimeframe(timeframe: string): TimeframeValidation {
   const supportedTimeframes: RelativeTimeframe[] = [
     'today', 'yesterday', 'this_week', 'last_week', 'this_month', 
-    'last_month', 'last_7_days', 'last_30_days', 'last_90_days'
+    'last_month', 'last_7_days', 'last_14_days', 'last_30_days', 'last_90_days'
   ];
 
   if (!timeframe || typeof timeframe !== 'string') {
