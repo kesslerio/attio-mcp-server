@@ -312,7 +312,7 @@ describe('Sales Playbook Validation Suite', () => {
     prompt: string,
     expectedOutcome: string,
     toolName: string,
-    toolParams: any
+    toolParams: Record<string, unknown>
   ): Promise<PlaybookTestResult> {
     const startTime = performance.now();
 
