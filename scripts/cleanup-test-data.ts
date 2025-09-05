@@ -428,7 +428,7 @@ class TestDataCleanup {
     if (this.options.dryRun) {
       tasks.forEach((task, index) => {
         console.log(
-          `    ${index + 1}. ${task.content || task.title || 'Unknown'} (${task.id.task_id})`
+          `    ${index + 1}. ${task.content_plaintext || task.content || task.title || 'Unknown'} (${task.id.task_id})`
         );
       });
       return;
@@ -448,7 +448,7 @@ class TestDataCleanup {
             this.stats.tasks.deleted++;
             if (this.options.verbose) {
               console.log(
-                `    ✅ Deleted: ${task.content || task.title || task.id.task_id}`
+                `    ✅ Deleted: ${task.content_plaintext || task.content || task.title || task.id.task_id}`
               );
             }
           } catch (error) {
@@ -935,10 +935,15 @@ class TestDataCleanup {
 
       const tasks = response.data?.data ?? [];
 
+      // Debug: Show structure of first task to help with future field issues
+      if (tasks.length > 0 && process.env.DEBUG_TASK_STRUCTURE) {
+        console.log('📋 Debug: First task structure:', JSON.stringify(tasks[0], null, 2));
+      }
+
       // Filter tasks by prefix in content or title
       for (const prefix of this.options.prefixes) {
         const prefixTasks = tasks.filter((task: any) => {
-          const content = task.content || task.content_plaintext || '';
+          const content = task.content_plaintext || task.content || '';
           const title = task.title || '';
           return content.startsWith(prefix) || title.startsWith(prefix);
         });
