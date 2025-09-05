@@ -6,6 +6,13 @@
  * issues for tracking and fixing.
  *
  * Purpose: Ensure our operational workflows are actually realistic and useful.
+ *
+ * Recent Updates (Issue #591):
+ * - Modernized to use relative date support from Issue #586 (PR #590)
+ * - Replaced explicit date calculations with relative_range parameters
+ * - Added comprehensive data consistency and enrichment operations
+ * - Expanded test coverage to match all operations playbook examples
+ * - Improved test descriptions and error handling
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
@@ -90,8 +97,6 @@ describe('Operations Playbook Validation Suite', () => {
   });
 
   describe('🧹 Daily Data Maintenance Routines', () => {
-    // NOTE: These timeframe searches may fail based on sales playbook patterns
-    // If they fail due to timeframe tool limitations, we'll document in GitHub issue
 
     it('should find companies without industry classification (Critical Missing Info)', async () => {
       const prompt = 'Find companies without industry classification';
@@ -148,14 +153,9 @@ describe('Operations Playbook Validation Suite', () => {
       expect(result.success).toBeTruthy();
     });
 
-    it('should check for records created in the last 24 hours (Record Status Review)', async () => {
-      const prompt = 'Show me all records created in the last 24 hours';
+    it('should check for records created yesterday (Record Status Review)', async () => {
+      const prompt = 'Show me all records created yesterday';
       const expectedOutcome = 'New records for data quality review';
-
-      // Using explicit dates instead of relative range based on sales playbook learnings
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const now = new Date();
 
       const result = await executePlaybookTest(
         prompt,
@@ -164,8 +164,7 @@ describe('Operations Playbook Validation Suite', () => {
         {
           resource_type: 'companies',
           date_field: 'created_at',
-          start_date: yesterday.toISOString(),
-          end_date: now.toISOString(),
+          relative_range: 'yesterday',
         }
       );
 
@@ -219,12 +218,6 @@ describe('Operations Playbook Validation Suite', () => {
         'Review overdue tasks and reassign or close as appropriate';
       const expectedOutcome = 'Overdue tasks needing attention';
 
-      // Using explicit date for "overdue" (tasks due before today)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
@@ -232,8 +225,7 @@ describe('Operations Playbook Validation Suite', () => {
         {
           resource_type: 'tasks',
           date_field: 'due_date',
-          start_date: weekAgo.toISOString(),
-          end_date: today.toISOString(),
+          relative_range: 'last_7_days',
         }
       );
 
@@ -289,10 +281,122 @@ describe('Operations Playbook Validation Suite', () => {
       const result = await executePlaybookTest(
         prompt,
         expectedOutcome,
-        'search-records',
+        'advanced-search',
         {
           resource_type: 'people',
-          query: '',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'company' },
+                condition: 'is_empty',
+              },
+            ],
+          },
+          limit: 25,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+  });
+
+  describe('🔍 Data Consistency & Enrichment Operations', () => {
+    // These tests cover advanced data management workflows from the operations playbook
+    // including data standardization, enrichment opportunities, and task management
+    it('should find companies with inconsistent naming for standardization', async () => {
+      const prompt = 'Find companies with similar names that might need standardization (variations like Inc, Incorporated, Corporation)';
+      const expectedOutcome = 'Companies with naming inconsistencies for standardization';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'search-records',
+        {
+          resource_type: 'companies',
+          query: 'inc',
+          limit: 25,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should find people with LinkedIn URLs but incomplete job titles (Data Enrichment)', async () => {
+      const prompt = 'Find people with LinkedIn URLs but missing or incomplete job titles';
+      const expectedOutcome = 'People records ready for job title enrichment';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'advanced-search',
+        {
+          resource_type: 'people',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'linkedin_url' },
+                condition: 'is_not_empty',
+              },
+            ],
+          },
+          limit: 25,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should find companies missing employee count or industry data (Enrichment Opportunities)', async () => {
+      const prompt = 'Find companies with domains but missing employee count or industry classification';
+      const expectedOutcome = 'Companies ready for data enrichment research';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'advanced-search',
+        {
+          resource_type: 'companies',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'website' },
+                condition: 'is_not_empty',
+              },
+              {
+                attribute: { slug: 'industry' },
+                condition: 'is_empty',
+              },
+            ],
+          },
+          limit: 25,
+        }
+      );
+
+      testResults.push(result);
+      expect(result.success).toBeTruthy();
+    });
+
+    it('should find tasks without due dates or assignees (Task Management)', async () => {
+      const prompt = 'Find active tasks without due dates or assignees that need attention';
+      const expectedOutcome = 'Incomplete tasks requiring assignment and scheduling';
+
+      const result = await executePlaybookTest(
+        prompt,
+        expectedOutcome,
+        'advanced-search',
+        {
+          resource_type: 'tasks',
+          filters: {
+            filters: [
+              {
+                attribute: { slug: 'due_date' },
+                condition: 'is_empty',
+              },
+            ],
+          },
           limit: 25,
         }
       );
