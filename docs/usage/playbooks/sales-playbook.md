@@ -343,11 +343,9 @@ Identify areas where I'm excelling and areas for improvement. What best practice
 
 ### When Deal Information Is Missing
 
-**Problem**: Deals or Tasks showing as "Unnamed" (Known Issue #472)
-
-**Universal Tools Fix**:
+**Universal Tools Solution**:
 ```
-❌ Avoid: "Show me all my tasks" (may display "Unnamed")
+For comprehensive task details:
 ✅ Use: "Get task details for tasks created in last 7 days, showing content and title fields"
 
 For deals with missing info:

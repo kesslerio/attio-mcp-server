@@ -38,21 +38,6 @@
 
 ### 📊 Data Display Issues
 
-#### **Scenario**: Tasks showing as "Unnamed" (Known Issue #472)
-
-**What you see**: Tasks appear in lists but show "Unnamed" instead of actual task content
-
-**Current Workaround**:
-```
-Instead of: "Show me all my tasks"
-Use: "Get task details for each task individually using their IDs"
-
-Or try: "Find all tasks created in the last 7 days and show me their full details including content and title fields"
-```
-
-**Technical Details**: <details><summary>Expand for technical info</summary>
-This is a known limitation where the task list API returns incomplete data. The universal tools now support both `content` and `title` fields to handle this inconsistency.
-</details>
 
 #### **Scenario**: Long JSON responses getting cut off (Known Issue #469)
 
@@ -281,7 +266,6 @@ curl -H "Authorization: Bearer att_your_key_here" \
 
 | Issue | Impact | Workaround | Status |
 |-------|---------|------------|---------|
-| **Tasks show "Unnamed"** | Task lists incomplete | Use individual task queries or field-specific searches | Tracking #472 |
 | **JSON truncation** | Large responses cut off | Use pagination and filtering | Tracking #469 |
 | **Lists API edge cases** | Some list operations inconsistent | Use universal tools with explicit resource_type | Resolved in latest |
 
