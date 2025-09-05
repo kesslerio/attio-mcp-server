@@ -12,6 +12,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import { MCPTestClient } from 'mcp-test-client';
 import type { ToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { execSync } from 'child_process';
+import { writeFileSync } from 'fs';
 
 interface PlaybookTestResult {
   success: boolean;
@@ -458,7 +459,7 @@ describe('Operations Playbook Validation Suite', () => {
 `;
 
     // Write the report file
-    require('fs').writeFileSync(reportPath, report);
+    writeFileSync(reportPath, report);
     console.log(`📄 Created failure analysis report: ${reportPath}`);
   }
 

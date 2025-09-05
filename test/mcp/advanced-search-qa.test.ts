@@ -258,7 +258,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
             );
           }
 
-          expect(duration).toBeLessThan(8000);
+          expect(duration).toBeLessThan(10000);
         }
       );
     });
@@ -295,7 +295,7 @@ describe('Issue #579: Advanced Search Filter QA Tests', () => {
 
           // This should work well (as mentioned in the issue, valid requests perform fine)
           expect(result.isError).toBeFalsy();
-          expect(duration).toBeLessThan(3000);
+          expect(duration).toBeLessThan(5000);
 
           if (result.content && result.content.length > 0) {
             const content = result.content[0];

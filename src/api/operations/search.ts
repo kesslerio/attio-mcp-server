@@ -204,14 +204,13 @@ export async function advancedSearchObject<T extends AttioRecord>(
       // Tests expect this specific error type to bubble up
       if (
         err instanceof FilterValidationError ||
-        (err as any)?.name === 'FilterValidationError'
+        (err as Record<string, unknown>)?.name === 'FilterValidationError'
       ) {
         throw err;
       }
 
       // For all other errors, enhance them for consistency
       throw ErrorEnhancer.ensureEnhanced(err, {
-        method: 'POST',
         resourceType: objectType,
       } as any);
     }

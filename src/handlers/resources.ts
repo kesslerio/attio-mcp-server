@@ -95,7 +95,7 @@ export function registerResourceHandlers(server: Server): void {
             return {
               resources: safeList.map((list) => formatListAsResource(list)),
             };
-          } catch (error: unknown) {
+          } catch {
             // For resource requests, always return resources array even on error
             return {
               resources: [],
