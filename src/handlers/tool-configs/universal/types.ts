@@ -261,7 +261,6 @@ export interface UniversalAttributesParams {
 export interface UniversalDetailedInfoParams {
   resource_type: UniversalResourceType;
   record_id: string;
-  info_type: DetailedInfoType;
 }
 
 /**
@@ -305,12 +304,13 @@ export interface ContentSearchParams {
  */
 export interface TimeframeSearchParams {
   resource_type: UniversalResourceType;
-  timeframe_type?: TimeframeType; // Make optional since it can be derived from date_field
+  timeframe_type?: TimeframeType;
   start_date?: string;
   end_date?: string;
-  relative_range?: RelativeTimeframe; // Updated: Use specific union type instead of generic string
-  date_field?: DateField; // Updated: Use specific union type instead of generic string
-  invert_range?: boolean; // New: Find records NOT in the date range
+  // New parameters to support relative timeframe searches (Issue #475)
+  relative_range?: string;
+  invert_range?: boolean;
+  date_field?: 'created_at' | 'updated_at' | 'modified_at';
   limit?: number;
   offset?: number;
 }
@@ -320,7 +320,13 @@ export interface TimeframeSearchParams {
  */
 export interface BatchOperationsParams {
   resource_type: UniversalResourceType;
-  operation_type: BatchOperationType;
+  // New flexible format
+  operations?: Array<{
+    operation: 'create' | 'update' | 'delete';
+    record_data: Record<string, unknown>;
+  }>;
+  // Legacy format
+  operation_type?: BatchOperationType;
   records?: Array<Record<string, unknown>>;
   record_ids?: string[];
   limit?: number;

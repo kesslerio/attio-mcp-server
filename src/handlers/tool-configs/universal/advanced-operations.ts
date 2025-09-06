@@ -17,7 +17,6 @@ import {
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
-  DateField,
 } from './types.js';
 
 import {
@@ -65,38 +64,20 @@ import {
   searchDealsByCompany,
 } from '../../../objects/deals/index.js';
 
-// Import date-related functions directly from search module to avoid potential circular imports
-import {
-  searchPeopleByCreationDate,
-  searchPeopleByModificationDate,
-  searchPeopleByLastInteraction,
-  searchPeopleByActivity,
-} from '../../../objects/people/search.js';
 
 import {
   AttioRecord,
-  ActivityFilter,
-  InteractionType,
 } from '../../../types/attio.js';
-import { 
-  validateAndCreateDateRange,
-  createDateRangeFromPreset 
-} from '../../../utils/date-utils.js';
-import {
-  isRelativeDate,
-  parseRelativeDate
-} from '../../../utils/date-parser.js';
-import {
-  createCreatedDateFilter,
-  createModifiedDateFilter,
-  createLastInteractionFilter,
-} from '../../../utils/filters/index.js';
 import { ListEntryFilters } from '../../../api/operations/types.js';
 import { UniversalSearchService } from '../../../services/UniversalSearchService.js';
 import {
   validateBatchOperation,
   validateSearchQuery,
 } from '../../../utils/batch-validation.js';
+
+// Import new filter utilities
+import { normalizeOperator, apiSemaphore } from '../../../utils/AttioFilterOperators.js';
+import { mapFieldName } from '../../../utils/AttioFieldMapper.js';
 
 // Import for client-side note filtering implementation
 import { getAttioClient } from '../../../api/attio-client.js';
@@ -117,6 +98,7 @@ function delay(ms: number): Promise<void> {
 /**
  * Processes items in parallel with controlled concurrency and error isolation
  * Each item's success/failure is tracked independently for batch operations
+ * Uses apiSemaphore for rate limiting and 429 backoff
  */
 async function processInParallelWithErrorIsolation<T, R = unknown>(
   items: T[],
@@ -130,14 +112,12 @@ async function processInParallelWithErrorIsolation<T, R = unknown>(
     data?: T;
   }> = [];
 
-  // Process items in chunks to control concurrency
-  for (let i = 0; i < items.length; i += maxConcurrency) {
-    const chunk = items.slice(i, i + maxConcurrency);
-
-    // Process chunk in parallel with Promise.allSettled for error isolation
-    const chunkPromises = chunk.map(async (item, chunkIndex) => {
+  // Use apiSemaphore for rate limiting with 429 backoff
+  // Process all items through the semaphore (it handles concurrency internally)
+  const promises = items.map((item, index) => 
+    apiSemaphore.acquire(async () => {
       try {
-        const result = await processor(item, i + chunkIndex);
+        const result = await processor(item, index);
         return { success: true, result };
       } catch (error: unknown) {
         return {
@@ -146,26 +126,22 @@ async function processInParallelWithErrorIsolation<T, R = unknown>(
           data: item,
         };
       }
-    });
+    })
+  );
 
-    const chunkResults = await Promise.allSettled(chunkPromises);
-
-    // Add results from this chunk (allSettled results are always fulfilled)
-    for (const settledResult of chunkResults) {
-      if (settledResult.status === 'fulfilled') {
-        results.push(settledResult.value);
-      } else {
-        // This should rarely happen since we handle errors in the inner promise
-        results.push({
-          success: false,
-          error: `Unexpected processing error: ${settledResult.reason}`,
-        });
-      }
-    }
-
-    // Add delay between chunks to respect rate limits
-    if (i + maxConcurrency < items.length) {
-      await delay(BATCH_DELAY_MS);
+  // Wait for all operations to complete
+  const allResults = await Promise.allSettled(promises);
+  
+  // Extract results (allSettled results are always fulfilled due to our error handling)
+  for (const settledResult of allResults) {
+    if (settledResult.status === 'fulfilled') {
+      results.push(settledResult.value);
+    } else {
+      // This should rarely happen since we handle errors in the semaphore
+      results.push({
+        success: false,
+        error: `Unexpected processing error: ${settledResult.reason}`,
+      });
     }
   }
 
@@ -185,7 +161,57 @@ export const advancedSearchConfig: UniversalToolConfig = {
         params
       );
 
-      const { resource_type, query, filters, limit, offset } = sanitizedParams;
+      const { resource_type, query, limit, offset } = sanitizedParams;
+
+      // Advanced search uses Attio's non-$ operator dialect (equals, contains, gte/lte, is_not_empty, ...).
+      // Perform a light de-normalization: translate any $-prefixed operators to the expected strings
+      // and coerce is_not_empty value to true when omitted.
+      let filters = sanitizedParams.filters as any;
+      try {
+        const deDollar = (cond: string): string => {
+          if (!cond) return cond;
+          if (cond.startsWith('$')) {
+            const raw = cond.slice(1);
+            switch (raw) {
+              case 'eq': return 'equals';
+              case 'contains': return 'contains';
+              case 'starts_with': return 'starts_with';
+              case 'ends_with': return 'ends_with';
+              case 'gt': return 'gt';
+              case 'gte': return 'gte';
+              case 'lt': return 'lt';
+              case 'lte': return 'lte';
+              case 'not_empty': return 'is_not_empty';
+              default: return raw; // fallback
+            }
+          }
+          // Also accept already-correct tokens and legacy typos
+          if (cond === 'is_not_empty' || cond === 'equals' || cond === 'contains' ||
+              cond === 'starts_with' || cond === 'ends_with' || cond === 'gt' ||
+              cond === 'gte' || cond === 'lt' || cond === 'lte') return cond;
+          return cond;
+        };
+
+        if (filters && typeof filters === 'object' && Array.isArray((filters as any).filters)) {
+          filters = {
+            ...filters,
+            filters: ((filters as any).filters as any[]).map((f) => {
+              if (!f || typeof f !== 'object') return f;
+              const next = { ...f } as Record<string, any>;
+              if (typeof next.condition === 'string') {
+                next.condition = deDollar(next.condition);
+              }
+              if (next.condition === 'is_not_empty' && (next.value == null || next.value === '')) {
+                next.value = true;
+              }
+              return next;
+            }),
+          };
+        }
+      } catch {
+        // If transformation fails, proceed with original filters; downstream validation will report details
+        filters = sanitizedParams.filters as any;
+      }
 
       // Validate list_membership filter if present
       if (filters?.list_membership && !isValidUUID(filters.list_membership)) {
@@ -526,50 +552,78 @@ export const searchByContentConfig: UniversalToolConfig = {
         params
       );
 
-      const { resource_type, content_type, search_query } = sanitizedParams;
+      const { resource_type, content_type, search_query, limit, offset } = sanitizedParams;
 
-      switch (content_type) {
-        case ContentSearchType.NOTES:
-          // Use specialized functions for notes search
-          if (resource_type === UniversalResourceType.COMPANIES) {
-            return await searchCompaniesByNotes(search_query);
-          } else if (resource_type === UniversalResourceType.PEOPLE) {
-            return await searchPeopleByNotes(search_query);
-          } else {
-            // For other resource types, throw specific error
-            throw new Error(
-              `Content search not supported for resource type ${resource_type}`
-            );
+      // For notes search, use the notes API directly since notes don't support query endpoints
+      if (content_type === ContentSearchType.NOTES && resource_type === UniversalResourceType.NOTES) {
+        // Import the notes module for direct access
+        const { listNotes } = await import('../../../objects/notes.js');
+        
+        try {
+          // Get all notes and filter by content manually
+          const allNotes = await listNotes({ limit: 1000, offset: 0 }); // Get a reasonable batch
+          const notes = allNotes.data || [];
+          
+          // Filter notes by content (case-insensitive search in title and content)
+          const filteredNotes = notes.filter(note => {
+            const searchLower = search_query.toLowerCase();
+            const titleMatch = note.title?.toLowerCase().includes(searchLower);
+            const contentMatch = note.content_plaintext?.toLowerCase().includes(searchLower) ||
+                                note.content_markdown?.toLowerCase().includes(searchLower);
+            return titleMatch || contentMatch;
+          });
+          
+          // Apply pagination
+          const startIndex = offset || 0;
+          const endIndex = startIndex + (limit || 10);
+          const paginatedNotes = filteredNotes.slice(startIndex, endIndex);
+          
+          // Convert to AttioRecord format for consistency
+          return paginatedNotes.map(note => ({
+            id: { record_id: note.id.note_id },
+            resource_type: 'notes' as const,
+            values: {
+              title: note.title,
+              content_plaintext: note.content_plaintext,
+              content_markdown: note.content_markdown,
+              parent_object: note.parent_object,
+              parent_record_id: note.parent_record_id,
+              created_at: note.created_at,
+              meeting_id: note.meeting_id || null,
+              tags: note.tags || [],
+            },
+            raw: note,
+          }));
+        } catch (error: any) {
+          // If no notes are found (404), return empty array instead of throwing error
+          if (error?.response?.status === 404) {
+            return [];
           }
+          // Re-throw other errors
+          throw error;
+        }
+      }
 
-        case ContentSearchType.ACTIVITY:
-          if (resource_type === UniversalResourceType.PEOPLE) {
-            // Create proper ActivityFilter with required dateRange property
-            const activityFilter: ActivityFilter = {
-              dateRange: {
-                preset: 'last_month', // Default to last month for activity search
-              },
-              interactionType: InteractionType.ANY, // Search all interaction types
-            };
-            return await searchPeopleByActivity(activityFilter);
-          }
-          break;
+      // For other content types that are not supported
+      if (content_type === ContentSearchType.ACTIVITY) {
+        throw new Error(
+          `Activity content search is not currently available for ${resource_type}. ` +
+            `This feature requires access to activity/interaction API endpoints. ` +
+            `As an alternative, try searching by notes content or using timeframe search.`
+        );
+      }
 
-        case ContentSearchType.INTERACTIONS:
-          // Interaction-based content search requires access to interaction/activity APIs
-          // This functionality may require additional Attio API endpoints
-          throw new Error(
-            `Interaction content search is not currently available for ${resource_type}. ` +
-              `This feature requires access to interaction/activity API endpoints. ` +
-              `As an alternative, try searching by notes content or using timeframe search with 'last_interaction' type.`
-          );
-
-        default:
-          throw new Error(`Unsupported content type: ${content_type}`);
+      if (content_type === ContentSearchType.INTERACTIONS) {
+        throw new Error(
+          `Interaction content search is not currently available for ${resource_type}. ` +
+            `This feature requires access to interaction/activity API endpoints. ` +
+            `As an alternative, try searching by notes content or using timeframe search with 'last_interaction' type.`
+        );
       }
 
       throw new Error(
-        `Content search not supported for resource type ${resource_type} and content type ${content_type}`
+        `Content search not supported for resource type ${resource_type} and content type ${content_type}. ` +
+        `Supported combinations: resource_type=notes with content_type=notes`
       );
     } catch (error: unknown) {
       // If the error is a direct message we want to preserve, don't wrap it
@@ -620,30 +674,10 @@ export const searchByContentConfig: UniversalToolConfig = {
   },
 };
 
-/**
- * Helper function to create inverted date range for invert_range functionality
- * Instead of finding records IN the date range, find records BEFORE the range start
- * This is used for finding "stale" records that haven't been updated recently
- */
-function createInvertedDateRange(dateRange: { start?: string; end?: string }): { start?: string; end?: string } {
-  if (!dateRange.start) {
-    // If no start date, we can't create a meaningful inverted range
-    throw new Error('Cannot invert date range without a start date');
-  }
-  
-  // For invert_range, we want records BEFORE the original start date
-  // So the new range is: from very early date TO the original start date
-  const veryEarlyDate = '1970-01-01T00:00:00.000Z'; // Unix epoch
-  
-  return {
-    start: veryEarlyDate,
-    end: dateRange.start
-  };
-}
 
 /**
  * Universal search by timeframe tool
- * Handles temporal filtering across resource types
+ * Handles temporal filtering across resource types using Attio API v2 filters
  */
 export const searchByTimeframeConfig: UniversalToolConfig = {
   name: 'search-by-timeframe',
@@ -654,233 +688,160 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
         params
       );
 
-      let { 
+      const { 
         resource_type, 
-        timeframe_type, 
+        timeframe_type,
         start_date, 
-        end_date, 
+        end_date,
         relative_range,
-        date_field,
         invert_range,
+        date_field,
         limit,
         offset 
       } = sanitizedParams;
 
-      // Type assertion for better type safety - date_field should be one of the allowed values
-      const typedDateField = date_field as DateField | undefined;
-
-      // Convert relative_range to start_date/end_date if provided
+      // Process relative_range parameter if provided (Issue #475)
+      let processedStartDate = start_date;
+      let processedEndDate = end_date;
+      
       if (relative_range) {
-        let dateRange: { start: string; end: string };
+        // Import the timeframe utility to convert relative ranges
+        const { getRelativeTimeframeRange } = await import('../../../utils/filters/timeframe-utils.js');
         
-        /**
-         * Normalization Logic for Relative Date Ranges
-         * 
-         * This logic handles the conversion between different relative date formats:
-         * 1. Schema format (underscore): "last_7_days", "this_week" 
-         * 2. Parser format (spaces): "last 7 days", "this week"
-         * 
-         * The normalization process:
-         * - Replace number patterns: "last_7_days" -> "last 7 days" 
-         * - Replace remaining underscores: "this_week" -> "this week"
-         * - Convert to lowercase for consistent parsing
-         * 
-         * This allows the same tool to accept both user-friendly formats
-         * while maintaining compatibility with existing date parsing utilities.
-         */
-        const normalizedRange = relative_range
-          .replace(/_(\d+)_/g, ' $1 ')  // Handle number patterns: "last_7_days" -> "last 7 days"
-          .replace(/_/g, ' ')           // Handle word separators: "this_week" -> "this week"
-          .toLowerCase();               // Ensure consistent case for parsing
-        
-        // Handle relative ranges with space format
-        if (isRelativeDate(normalizedRange)) {
-          dateRange = parseRelativeDate(normalizedRange);
-        } else {
-          // Try to parse as a preset (also try underscore format for presets)
-          try {
-            dateRange = createDateRangeFromPreset(normalizedRange);
-          } catch (error) {
-            // Try original format as fallback
-            try {
-              dateRange = createDateRangeFromPreset(relative_range);
-            } catch (fallbackError) {
-              throw new Error(
-                `Invalid relative_range: ${relative_range}. Supported values: today, yesterday, last_7_days, last_14_days, last_30_days, this_week, last_week, this_month, last_month`
-              );
-            }
-          }
-        }
-
-        start_date = dateRange.start;
-        end_date = dateRange.end;
-      }
-
-      /**
-       * Timeframe Type Derivation Logic
-       * 
-       * When timeframe_type is not explicitly provided, we derive it from the date_field:
-       * - 'created_at' maps to TimeframeType.CREATED (record creation dates)
-       * - 'updated_at' maps to TimeframeType.MODIFIED (record modification dates)  
-       * - 'due_date' maps to TimeframeType.MODIFIED (fallback - no dedicated DUE_DATE type)
-       * 
-       * This automatic mapping allows users to specify just date_field and get
-       * appropriate timeframe handling without needing to understand internal types.
-       */
-      if (!timeframe_type && typedDateField) {
-        switch (typedDateField) {
-          case 'created_at':
-            timeframe_type = TimeframeType.CREATED;
-            break;
-          case 'updated_at':
-            timeframe_type = TimeframeType.MODIFIED;
-            break;
-          case 'due_date':
-            // For due_date, we'll use MODIFIED as a fallback since there's no DUE_DATE type
-            timeframe_type = TimeframeType.MODIFIED;
-            break;
-          default:
-            timeframe_type = TimeframeType.MODIFIED; // Default fallback
+        try {
+          const range = getRelativeTimeframeRange(relative_range as any);
+          processedStartDate = range.startDate;
+          processedEndDate = range.endDate;
+        } catch (error) {
+          throw new Error(
+            `Invalid relative_range '${relative_range}'. Supported options: today, yesterday, this_week, last_week, this_month, last_month, last_7_days, last_14_days, last_30_days, last_90_days`
+          );
         }
       }
 
-      // Default timeframe_type if still not set
-      if (!timeframe_type) {
-        timeframe_type = TimeframeType.MODIFIED;
-      }
-
-      // Handle invert_range by swapping logic later
-      if (invert_range && !start_date && !end_date) {
+      // Validate that at least one date is provided (after processing relative_range)
+      if (!processedStartDate && !processedEndDate) {
         throw new Error(
-          'invert_range requires at least one date (start_date, end_date, or relative_range)'
+          'At least one date (start_date or end_date) is required for timeframe search'
         );
       }
 
-      // Companies are now supported - removed the restriction
-      if (resource_type === UniversalResourceType.PEOPLE) {
-        // People-specific handlers
-        switch (timeframe_type) {
-          case TimeframeType.CREATED: {
-            let dateRange = validateAndCreateDateRange(start_date, end_date);
-            if (!dateRange) {
-              throw new Error(
-                'At least one date (start or end) is required for timeframe search'
-              );
-            }
-            // Handle invert_range by modifying the date range before the API call
-            if (invert_range) {
-              dateRange = createInvertedDateRange(dateRange);
-            }
-            const results = await searchPeopleByCreationDate(dateRange);
-            return results;
-          }
-
-          case TimeframeType.MODIFIED: {
-            let dateRange = validateAndCreateDateRange(start_date, end_date);
-            if (!dateRange) {
-              throw new Error(
-                'At least one date (start or end) is required for timeframe search'
-              );
-            }
-            // Handle invert_range by modifying the date range before the API call
-            if (invert_range) {
-              dateRange = createInvertedDateRange(dateRange);
-            }
-            const results = await searchPeopleByModificationDate(dateRange);
-            return results;
-          }
-
-          case TimeframeType.LAST_INTERACTION: {
-            let dateRange = validateAndCreateDateRange(start_date, end_date);
-            if (!dateRange) {
-              throw new Error(
-                'At least one date (start or end) is required for last interaction search'
-              );
-            }
-            // Handle invert_range by modifying the date range before the API call
-            if (invert_range) {
-              dateRange = createInvertedDateRange(dateRange);
-            }
-            const results = await searchPeopleByLastInteraction(dateRange);
-            return results;
-          }
-
+      // Determine the timestamp field to filter on (Issue #475)
+      // Use date_field if provided, otherwise fall back to timeframe_type logic
+      let timestampField: string;
+      if (date_field) {
+        // Map date_field directly to proper field name
+        switch (date_field) {
+          case 'created_at':
+            timestampField = mapFieldName('created_at');
+            break;
+          case 'updated_at':
+            timestampField = mapFieldName('modified_at'); // Map updated_at to modified_at
+            break;
+          case 'modified_at':
+            timestampField = mapFieldName('modified_at');
+            break;
           default:
-            throw new Error(
-              `Unsupported timeframe type for people: ${timeframe_type}`
-            );
+            throw new Error(`Unsupported date_field: ${date_field}`);
         }
       } else {
-        // For all other resource types (including companies), use universal search
-        let dateRange = validateAndCreateDateRange(start_date, end_date);
-        if (!dateRange) {
-          throw new Error(
-            'At least one date (start or end) is required for timeframe search'
-          );
+        // Fallback to original timeframe_type logic
+        const effectiveTimeframeType = timeframe_type || TimeframeType.MODIFIED;
+        switch (effectiveTimeframeType) {
+          case TimeframeType.CREATED:
+            timestampField = mapFieldName('created_at');
+            break;
+          case TimeframeType.MODIFIED:
+            timestampField = mapFieldName('modified_at');
+            break;
+          case TimeframeType.LAST_INTERACTION:
+            timestampField = mapFieldName('modified_at');
+            break;
+          default:
+            throw new Error(`Unsupported timeframe type: ${effectiveTimeframeType}`);
         }
-
-        // Handle invert_range by modifying the date range before creating filters
-        if (invert_range) {
-          dateRange = createInvertedDateRange(dateRange);
-        }
-
-        let filters: ListEntryFilters;
-
-        // For due_date, we need to handle it specially since it maps to task-specific fields
-        if (date_field === 'due_date' && resource_type === UniversalResourceType.TASKS) {
-          // Create a filter for due_date specific to tasks
-          filters = {
-            $and: [
-              ...(dateRange.start
-                ? [
-                    {
-                      'entry.due_date': {
-                        $gte: dateRange.start,
-                      },
-                    },
-                  ]
-                : []),
-              ...(dateRange.end
-                ? [
-                    {
-                      'entry.due_date': {
-                        $lte: dateRange.end,
-                      },
-                    },
-                  ]
-                : []),
-            ],
-          };
-        } else {
-          // Use standard date filters
-          switch (timeframe_type) {
-            case TimeframeType.CREATED:
-              filters = createCreatedDateFilter(dateRange);
-              break;
-            case TimeframeType.MODIFIED:
-              filters = createModifiedDateFilter(dateRange);
-              break;
-            case TimeframeType.LAST_INTERACTION:
-              filters = createLastInteractionFilter(dateRange);
-              break;
-            default:
-              throw new Error(
-                `Unsupported timeframe type for ${resource_type}: ${timeframe_type}`
-              );
-          }
-        }
-
-        // Use advanced search with the date filters
-        const results = await UniversalSearchService.searchRecords({
-          resource_type,
-          query: '',
-          filters: filters,
-          limit: limit || 20,
-          offset: offset || 0,
-        });
-
-        return results;
       }
+
+      // Build the date filter using proper Attio API v2 filter syntax
+      // Use normalized operators with $ prefix
+      const dateFilters: any[] = [];
+      
+      const coerceIso = (d?: string, endBoundary = false): string | undefined => {
+        if (!d) return undefined;
+        // If date-only (YYYY-MM-DD), expand to full UTC boundary
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+          return endBoundary ? `${d}T23:59:59.999Z` : `${d}T00:00:00Z`;
+        }
+        return d;
+      };
+
+      const startIso = coerceIso(processedStartDate, false);
+      const endIso = coerceIso(processedEndDate, true);
+
+      // Handle invert_range logic (Issue #475)
+      if (invert_range) {
+        // For inverted searches, we want records that were NOT updated in the timeframe
+        // This means records older than the start date OR newer than the end date
+        if (startIso && endIso) {
+          // For a range inversion, we want records outside the range
+          // This is typically records older than the start date (before the timeframe)
+          dateFilters.push({
+            attribute: { slug: timestampField },
+            condition: normalizeOperator('lt'), // Less than start date
+            value: startIso
+          });
+        } else if (startIso) {
+          // Only start date - invert to find records older than this date
+          dateFilters.push({
+            attribute: { slug: timestampField },
+            condition: normalizeOperator('lt'),
+            value: startIso
+          });
+        } else if (endIso) {
+          // Only end date - invert to find records newer than this date
+          dateFilters.push({
+            attribute: { slug: timestampField },
+            condition: normalizeOperator('gt'),
+            value: endIso
+          });
+        }
+      } else {
+        // Normal (non-inverted) logic
+        if (startIso) {
+          dateFilters.push({
+            attribute: { slug: timestampField },
+            condition: normalizeOperator('gte'), // Normalize to $gte
+            value: startIso
+          });
+        }
+        
+        if (endIso) {
+          dateFilters.push({
+            attribute: { slug: timestampField },
+            condition: normalizeOperator('lte'), // Normalize to $lte
+            value: endIso
+          });
+        }
+      }
+
+      // Create the filter object with the expected structure (legacy compatibility)
+      const filters = { filters: dateFilters } as any;
+
+      // Use the universal search handler; pass timeframe params explicitly so the
+      // UniversalSearchService can FORCE Query API routing for date comparisons
+      return await handleUniversalSearch({
+        resource_type,
+        query: '',
+        filters,
+        // Force timeframe routing parameters
+        timeframe_attribute: timestampField,
+        start_date: startIso,
+        end_date: endIso,
+        date_operator: 'between',
+        limit: limit || 20,
+        offset: offset || 0,
+      });
+
     } catch (error: unknown) {
       throw ErrorService.createUniversalError(
         'timeframe search',
@@ -948,15 +909,93 @@ export const searchByTimeframeConfig: UniversalToolConfig = {
  */
 export const batchOperationsConfig: UniversalToolConfig = {
   name: 'batch-operations',
-  handler: async (params: BatchOperationsParams): Promise<any> => {
+  handler: async (params: any): Promise<any> => {
     try {
       const sanitizedParams = validateUniversalToolParams(
         'batch-operations',
         params
       );
 
+      const { resource_type, operations } = sanitizedParams;
+
+      // Support both old format (operation_type + records) and new format (operations array)
+      if (operations && Array.isArray(operations)) {
+        // New flexible format: operations array with individual operation objects
+        const results = await Promise.all(
+          operations.map(async (op: any, index: number) => {
+            try {
+              const { operation, record_data } = op;
+              
+              switch (operation) {
+                case 'create':
+                  return {
+                    index,
+                    success: true,
+                    result: await handleUniversalCreate({
+                      resource_type,
+                      record_data,
+                      return_details: true,
+                    }),
+                  };
+                  
+                case 'update':
+                  if (!record_data?.id) {
+                    throw new Error('Record ID is required for update operation');
+                  }
+                  return {
+                    index,
+                    success: true,
+                    result: await handleUniversalUpdate({
+                      resource_type,
+                      record_id: typeof record_data.id === 'string' 
+                        ? record_data.id 
+                        : (record_data.id as any)?.record_id || String(record_data.id),
+                      record_data,
+                      return_details: true,
+                    }),
+                  };
+                  
+                case 'delete':
+                  if (!record_data?.id) {
+                    throw new Error('Record ID is required for delete operation');
+                  }
+                  return {
+                    index,
+                    success: true,
+                    result: await handleUniversalDelete({
+                      resource_type,
+                      record_id: typeof record_data.id === 'string' 
+                        ? record_data.id 
+                        : (record_data.id as any)?.record_id || String(record_data.id),
+                    }),
+                  };
+                  
+                default:
+                  throw new Error(`Unsupported operation: ${operation}`);
+              }
+            } catch (error: any) {
+              // Return error result rather than throwing to allow other operations to succeed
+              return {
+                index,
+                success: false,
+                error: error.message || String(error),
+              };
+            }
+          })
+        );
+        
+        return {
+          operations: results,
+          summary: {
+            total: results.length,
+            successful: results.filter(r => r.success).length,
+            failed: results.filter(r => !r.success).length,
+          },
+        };
+      }
+
+      // Fallback to old format for backward compatibility
       const {
-        resource_type,
         operation_type,
         records,
         record_ids,
@@ -972,28 +1011,30 @@ export const batchOperationsConfig: UniversalToolConfig = {
             );
           }
 
-          // Validate batch operation with comprehensive checks
-          const createValidation = validateBatchOperation({
-            items: records,
-            operationType: 'create',
-            resourceType: resource_type,
-            checkPayload: true,
-          });
-          if (!createValidation.isValid) {
-            throw new Error(createValidation.error);
-          }
-
-          // Use parallel processing with controlled concurrency
-          return await processInParallelWithErrorIsolation(
-            records,
-            async (recordData: Record<string, unknown>) => {
-              return await handleUniversalCreate({
-                resource_type,
-                record_data: recordData,
-                return_details: true,
-              });
-            }
+          // Use Promise.all for parallel processing
+          const results = await Promise.all(
+            records.map(async (recordData: Record<string, unknown>, index: number) => {
+              try {
+                const result = await handleUniversalCreate({
+                  resource_type,
+                  record_data: recordData,
+                  return_details: true,
+                });
+                return { index, success: true, result };
+              } catch (error: any) {
+                return { index, success: false, error: error.message };
+              }
+            })
           );
+          
+          return {
+            operations: results,
+            summary: {
+              total: results.length,
+              successful: results.filter(r => r.success).length,
+              failed: results.filter(r => !r.success).length,
+            },
+          };
         }
 
         case BatchOperationType.UPDATE: {
